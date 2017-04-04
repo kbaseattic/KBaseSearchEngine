@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="lib/src"/>
+	<classpathentry kind="src" path="test/src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/ini4j/ini4j-0.5.2.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/jackson/jackson-annotations-2.2.3.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/jackson/jackson-core-2.2.3.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/jackson/jackson-databind-2.2.3.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/jetty/jetty-all-7.0.0.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/jna/jna-3.4.0.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/joda/joda-time-2.2.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/junit/junit-4.9.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/kbase/auth/kbase-auth-0.4.4.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/kbase/common/kbase-common-0.0.23.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/logback/logback-core-1.1.2.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/logback/logback-classic-1.1.2.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/servlet/servlet-api-2.5.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/syslog4j/syslog4j-0.9.46.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/apache_commons/commons-io-2.4.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
