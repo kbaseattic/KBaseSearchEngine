@@ -58,7 +58,25 @@ public class SubObjectExtractorTest {
         }
     }
 
-    private static Map<String, String> extractSubObjects(String resourceName, 
+    @Test
+    public void test03() throws Exception {
+        Map<String, String> data = extractSubObjects("genome01", 
+                "/features/[*]/location/0", "[*]");
+        Assert.assertEquals(3, data.size());
+        for (int i = 0; i < data.size(); i++) {
+            String locText = data.get("/features/" + i + "/location/0");
+            Assert.assertNotNull(locText);
+            @SuppressWarnings("unchecked")
+            List<Object> loc = UObject.transformStringToObject(locText, List.class);
+            Assert.assertEquals(4, loc.size());
+            Assert.assertTrue(loc.get(0) instanceof String);
+            Assert.assertTrue(loc.get(1) instanceof Integer);
+            Assert.assertTrue(loc.get(2) instanceof String);
+            Assert.assertTrue(loc.get(3) instanceof Integer);
+        }
+    }
+
+    public static Map<String, String> extractSubObjects(String resourceName, 
             String pathToSub, String... objPaths) throws Exception {
         JsonParser jp = getParsedJsonResource(resourceName);
         Map<String, String> data = new LinkedHashMap<String, String>();
