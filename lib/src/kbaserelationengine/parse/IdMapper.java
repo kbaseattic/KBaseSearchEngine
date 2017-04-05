@@ -4,16 +4,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 /**
- * Extraction of searchable subset based on JSON token stream.
+ * Extraction of primary/foreign key values based on JSON token stream.
  * @author rsutormin
  */
-public class SubObjectExtractor {
+public class IdMapper {
 
 	/**
 	 * Extract the fields listed in selection from the element and add them to the subset.
@@ -28,23 +29,22 @@ public class SubObjectExtractor {
 	 * a mapping or array.
 	 * @throws ObjectParseException 
 	 */
-	public static void extract(ObjectJsonPath pathToSub, List<ObjectJsonPath> objpaths, 
-	        JsonParser jts, SubObjectConsumer consumer) throws IOException, ObjectParseException {
+	public static void mapKeys(ObjectJsonPath pathToPrimary, Map<ObjectJsonPath, String> foreignKeyTypes, 
+	        JsonParser jts, IdConsumer consumer) throws IOException, ObjectParseException {
 		//if the selection is empty, we return without adding anything
-		SubObjectExtractionNode root = new SubObjectExtractionNode();
-		SubObjectExtractionNode sub = root.addPath(pathToSub, true, false);
-		for (ObjectJsonPath path: objpaths) {
-		    sub.addPath(JsonTokenUtil.trimPath(path), false, true);
+		IdMappingNode root = new IdMappingNode();
+		root.addPath(pathToPrimary, true, null);
+		for (ObjectJsonPath path: foreignKeyTypes.keySet()) {
+		    root.addPath(path, false, foreignKeyTypes.get(path));
 		}
-		extract(root, jts, consumer);
+		mapKeys(root, jts, consumer);
 	}
 	
-	public static void extract(SubObjectExtractionNode tree, JsonParser jts, 
-	        SubObjectConsumer consumer) throws IOException, ObjectParseException {
+	public static void mapKeys(IdMappingNode tree, JsonParser jts, 
+	        IdConsumer consumer) throws IOException, ObjectParseException {
 		JsonToken t = jts.nextToken();
-		extractFieldsWithOpenToken(jts, t, tree, consumer, new ArrayList<String>(), 
-		        false, false, true);
-		consumer.flush();
+		mapKeysWithOpenToken(jts, t, tree, consumer, new ArrayList<String>(), 
+		        false, false);
 	}
 	
 	/*
@@ -52,22 +52,20 @@ public class SubObjectExtractor {
 	 * and making decisions whether or not we need to process this token or block of tokens or
 	 * just skip it.
 	 */
-	private static void extractFieldsWithOpenToken(JsonParser jts, JsonToken current, 
-			SubObjectExtractionNode selection, SubObjectConsumer consumer, 
-			List<String> path, boolean strictMaps, boolean strictArrays,
-			boolean fromSkippedLevel) throws IOException, ObjectParseException {
-	    if (fromSkippedLevel && !selection.isSkipLevel()) {
-	        // It means we're starting sub-object (or whole object is needed)
-	        consumer.nextObject(ObjectJsonPath.getPathText(path));
-	    }
+	private static void mapKeysWithOpenToken(JsonParser jts, JsonToken current, 
+	        IdMappingNode selection, IdConsumer consumer, List<String> path, boolean strictMaps, 
+	        boolean strictArrays) throws IOException, ObjectParseException {
 		JsonToken t = current;
-		boolean skipLvl = selection.isSkipLevel();
 		if (t == JsonToken.START_OBJECT) {	// we observe open of mapping/object in real json data
+		    if (selection.isPrimary() || selection.getForeignType() != null) {
+                throw new ObjectParseException("Invalid ID mapping selection: object cannot be " +
+                        "used as key value, at: " + ObjectJsonPath.getPathText(path));
+		    }
 			if (selection.hasChildren()) {	// we have some restrictions for this object in selection
 				// we will remove visited keys from selectedFields and check emptiness at object end
 				Set<String> selectedFields = new LinkedHashSet<String>(selection.getChildren().keySet());
 				boolean all = false;
-				SubObjectExtractionNode allChild = null;
+				IdMappingNode allChild = null;
 				if (selectedFields.contains("*")) {
 					all = true;
 					selectedFields.remove("*");
@@ -78,16 +76,9 @@ public class SubObjectExtractor {
 								"specific fields (" + selectedFields + "), at: " + 
 								ObjectJsonPath.getPathText(path));
 				}
-				// process first token standing for start of object
-				if (!skipLvl) {
-				    JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());
-				}
 				while (true) {
 					t = jts.nextToken();
 					if (t == JsonToken.END_OBJECT) {
-					    if (!skipLvl) {
-					        JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());
-					    }
 						break;
 					}
 					if (t != JsonToken.FIELD_NAME)
@@ -99,18 +90,15 @@ public class SubObjectExtractor {
 						// we process it and value following after that
 						if (!all)
 							selectedFields.remove(fieldName);
-						if (!skipLvl) {
-						    JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());
-						}
 						// read first token of value block in order to prepare state for recursive 
 						// extractFieldsWithOpenToken call
 						t = jts.nextToken();
 						// add field to the tail of path branch
 						path.add(fieldName);
 						// process value corresponding to this field recursively
-						extractFieldsWithOpenToken(jts, t, all ? allChild : 
+						mapKeysWithOpenToken(jts, t, all ? allChild : 
 							selection.getChildren().get(fieldName), consumer, path, 
-							strictMaps, strictArrays, selection.isSkipLevel());
+							strictMaps, strictArrays);
 						// remove field from tail of path branch
 						path.remove(path.size() - 1);
 					} else {
@@ -127,18 +115,14 @@ public class SubObjectExtractor {
 							"a field or key named '" + notFound + "', at: " + 
 					        getPathText(path, notFound));
 				}
-			} else {  // need all fields and values
-			    if (selection.isNeedAll()) {
-			        JsonTokenUtil.writeTokensFromCurrent(jts, t, consumer.getOutput());
-			    } else {
-			        JsonTokenUtil.skipChildren(jts, t);
-			    }
+			} else {
+			    JsonTokenUtil.skipChildren(jts, t);
 			}
 		} else if (t == JsonToken.START_ARRAY) {	// we observe open of array/list in real json data
 			if (selection.hasChildren()) {  // we have some restrictions for array item positions in selection
 				Set<String> selectedFields = new LinkedHashSet<String>(
 				        selection.getChildren().keySet());
-				SubObjectExtractionNode allChild = null;
+				IdMappingNode allChild = null;
 				// now we support only '[*]' which means all elements and set of numbers in case of 
 				// certain item positions are selected in array
 				if (!selectedFields.contains("[*]")) {
@@ -163,18 +147,12 @@ public class SubObjectExtractor {
 								"specific elements (" + selectedFields + "), at: " + 
 								ObjectJsonPath.getPathText(path));
 				}
-				if (!skipLvl) {
-				    JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());  // write start of array into output
-				}
 				for (int pos = 0; ; pos++) {
 					t = jts.nextToken();
 					if (t == JsonToken.END_ARRAY) {
-					    if (!skipLvl) {
-					        JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());
-					    }
 						break;
 					}
-					SubObjectExtractionNode child = null;
+					IdMappingNode child = null;
 					if (allChild != null) {
 						child = allChild; 
 					} else {
@@ -191,8 +169,8 @@ public class SubObjectExtractor {
 						// add element position to the tail of path branch
 						path.add("" + pos);
 						// process value of this element recursively
-						extractFieldsWithOpenToken(jts, t, child, consumer, path, strictMaps, 
-						        strictArrays, selection.isSkipLevel());
+						mapKeysWithOpenToken(jts, t, child, consumer, path, strictMaps, 
+						        strictArrays);
 						// remove field from tail of path branch
 						path.remove(path.size() - 1);
 					}
@@ -204,12 +182,7 @@ public class SubObjectExtractor {
 							"at position '" + notFound + "', at: " + getPathText(path, notFound));
 				}
 			} else {
-			    if (selection.isNeedAll()) {
-			        // need all elements
-			        JsonTokenUtil.writeTokensFromCurrent(jts, t, consumer.getOutput());
-			    } else {
-			        JsonTokenUtil.skipChildren(jts, t);
-			    }
+			    JsonTokenUtil.skipChildren(jts, t);
 			}
 		} else {	// we observe scalar value (text, integer, double, boolean, null) in real json data
 			if (selection.hasChildren())
@@ -217,7 +190,14 @@ public class SubObjectExtractor {
 						"fields or elements that do not exist because data at this location is " +
 						"a scalar value (i.e. string, integer, float), at: " + 
 						ObjectJsonPath.getPathText(path));
-			JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());
+			if (selection.isPrimary() || selection.getForeignType() != null) {
+			    Object value = JsonTokenUtil.getCurrentTokenPrimitive(jts, t);
+			    if (selection.isPrimary()) {
+			        consumer.setPrimaryId(value);
+			    } else {
+			        consumer.addForeignKeyId(selection.getForeignType(), value);
+			    }
+			}
 		}
 	}
 

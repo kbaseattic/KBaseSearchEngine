@@ -3,7 +3,7 @@ package kbaserelationengine.parse.test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,13 +26,8 @@ public class SubObjectExtractorTest {
 
     @Test
     public void test01() throws Exception {
-        JsonParser jp = getParsedJsonResource("genome01");
-        Map<String, String> data = new LinkedHashMap<String, String>();
-        SubObjectConsumer consumer = createStringMapConsumer(data);
-        ObjectJsonPath pathToSub = new ObjectJsonPath("/features/[*]");
-        List<ObjectJsonPath> objPaths = Arrays.asList(
-                new ObjectJsonPath("id"), new ObjectJsonPath("location"));
-        SubObjectExtractor.extract(pathToSub, objPaths, jp, consumer);
+        Map<String, String> data = extractSubObjects("genome01", 
+                "/features/[*]", "id", "location");
         Assert.assertEquals(3, data.size());
         for (int i = 0; i < data.size(); i++) {
             String featureText = data.get("/features/" + i);
@@ -43,6 +38,38 @@ public class SubObjectExtractorTest {
             Assert.assertNotNull(feature.get("id"));
             Assert.assertNotNull(feature.get("location"));
         }
+    }
+
+    @Test
+    public void test02() throws Exception {
+        Map<String, String> data = extractSubObjects("genome01", 
+                "/", "domain", "gc_content", "genetic_code", "id", "num_contigs",
+                "scientific_name", "source", "source_id", "additional");
+        Assert.assertEquals(1, data.size());
+        for (int i = 0; i < data.size(); i++) {
+            String genomeText = data.get("");
+            Assert.assertNotNull(genomeText);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> genome = UObject.transformStringToObject(genomeText, Map.class);
+            Assert.assertEquals(8, genome.size());
+            Assert.assertNotNull(genome.get("id"));
+            Assert.assertNotNull(genome.get("scientific_name"));
+            Assert.assertEquals(11, genome.get("genetic_code"));
+        }
+    }
+
+    private static Map<String, String> extractSubObjects(String resourceName, 
+            String pathToSub, String... objPaths) throws Exception {
+        JsonParser jp = getParsedJsonResource(resourceName);
+        Map<String, String> data = new LinkedHashMap<String, String>();
+        SubObjectConsumer consumer = createStringMapConsumer(data);
+        List<ObjectJsonPath> objPaths2 = new ArrayList<ObjectJsonPath>();
+        for (String objPath : objPaths) {
+            objPaths2.add(new ObjectJsonPath(objPath));
+        }
+        SubObjectExtractor.extract(new ObjectJsonPath(pathToSub), 
+                objPaths2, jp, consumer);
+        return data;
     }
     
     private static SubObjectConsumer createStringMapConsumer(final Map<String, String> data) {

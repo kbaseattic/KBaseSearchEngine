@@ -1,11 +1,12 @@
 package kbaserelationengine.parse;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class ObjectJsonPath {
     private final String[] pathItems;
     
-    public ObjectJsonPath(String fullPath) throws Exception {
+    public ObjectJsonPath(String fullPath) throws ObjectParseException {
         this.pathItems = parseJsonPath(fullPath);
     }
     
@@ -17,7 +18,7 @@ public class ObjectJsonPath {
         return pathItems;
     }
     
-    public static String[] parseJsonPath(String path) throws Exception {
+    public static String[] parseJsonPath(String path) throws ObjectParseException {
         String p = path;
         if (p.startsWith("/"))
             p = p.substring(1);
@@ -37,7 +38,7 @@ public class ObjectJsonPath {
                         } else if (next != '0') {
                             String errorBlock = ret[pos];
                             errorBlock = errorBlock.substring(0, origN) + "[->]" + errorBlock.substring(origN);
-                            throw new Exception("Wrong usage of ~ in json pointer path: " + 
+                            throw new ObjectParseException("Wrong usage of ~ in json pointer path: " + 
                                     path + " (" + errorBlock + ")");
                         }
                         item.deleteCharAt(n + 1);
@@ -65,4 +66,33 @@ public class ObjectJsonPath {
             ret.append("/").append(item.replace("~", "~0").replace("/", "~1"));
         return ret.toString();
     }
+
+    @Override
+    public String toString() {
+        return "ObjectJsonPath [pathItems=" + Arrays.toString(pathItems) + "]";
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + Arrays.hashCode(pathItems);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ObjectJsonPath other = (ObjectJsonPath) obj;
+        if (!Arrays.equals(pathItems, other.pathItems))
+            return false;
+        return true;
+    }
+    
+    
 }
