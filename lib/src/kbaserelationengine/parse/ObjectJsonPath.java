@@ -14,6 +14,13 @@ public class ObjectJsonPath {
         this.pathItems = pathItems;
     }
     
+    public static ObjectJsonPath path(String... pathItems) throws ObjectParseException {
+        if (pathItems == null || pathItems.length == 0) {
+            return new ObjectJsonPath("");
+        }
+        return new ObjectJsonPath(pathItems);
+    }
+    
     public String[] getPathItems() {
         return pathItems;
     }
@@ -69,7 +76,7 @@ public class ObjectJsonPath {
 
     @Override
     public String toString() {
-        return "ObjectJsonPath [pathItems=" + Arrays.toString(pathItems) + "]";
+        return getPathText(pathItems);
     }
 
     @Override

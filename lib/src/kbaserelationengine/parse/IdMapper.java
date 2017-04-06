@@ -29,13 +29,14 @@ public class IdMapper {
 	 * a mapping or array.
 	 * @throws ObjectParseException 
 	 */
-	public static void mapKeys(ObjectJsonPath pathToPrimary, Map<ObjectJsonPath, String> foreignKeyTypes, 
+	public static void mapKeys(ObjectJsonPath pathToPrimary, 
+	        Map<ObjectJsonPath, KeyLookupRules> foreignKeyRules, 
 	        JsonParser jts, IdConsumer consumer) throws IOException, ObjectParseException {
 		//if the selection is empty, we return without adding anything
 		IdMappingNode root = new IdMappingNode();
 		root.addPath(pathToPrimary, true, null);
-		for (ObjectJsonPath path: foreignKeyTypes.keySet()) {
-		    root.addPath(path, false, foreignKeyTypes.get(path));
+		for (ObjectJsonPath path: foreignKeyRules.keySet()) {
+		    root.addPath(path, false, foreignKeyRules.get(path));
 		}
 		mapKeys(root, jts, consumer);
 	}
@@ -57,13 +58,14 @@ public class IdMapper {
 	        boolean strictArrays) throws IOException, ObjectParseException {
 		JsonToken t = current;
 		if (t == JsonToken.START_OBJECT) {	// we observe open of mapping/object in real json data
-		    if (selection.isPrimary() || selection.getForeignType() != null) {
+		    if (selection.isPrimary() || selection.getForeignKeyLookupRules() != null) {
                 throw new ObjectParseException("Invalid ID mapping selection: object cannot be " +
                         "used as key value, at: " + ObjectJsonPath.getPathText(path));
 		    }
 			if (selection.hasChildren()) {	// we have some restrictions for this object in selection
 				// we will remove visited keys from selectedFields and check emptiness at object end
-				Set<String> selectedFields = new LinkedHashSet<String>(selection.getChildren().keySet());
+				Set<String> selectedFields = new LinkedHashSet<String>(
+				        selection.getChildren().keySet());
 				boolean all = false;
 				IdMappingNode allChild = null;
 				if (selectedFields.contains("*")) {
@@ -118,8 +120,10 @@ public class IdMapper {
 			} else {
 			    JsonTokenUtil.skipChildren(jts, t);
 			}
-		} else if (t == JsonToken.START_ARRAY) {	// we observe open of array/list in real json data
-			if (selection.hasChildren()) {  // we have some restrictions for array item positions in selection
+		} else if (t == JsonToken.START_ARRAY) {
+		    // we observe open of array/list in real json data
+			if (selection.hasChildren()) {
+			    // we have some restrictions for array item positions in selection
 				Set<String> selectedFields = new LinkedHashSet<String>(
 				        selection.getChildren().keySet());
 				IdMappingNode allChild = null;
@@ -184,18 +188,19 @@ public class IdMapper {
 			} else {
 			    JsonTokenUtil.skipChildren(jts, t);
 			}
-		} else {	// we observe scalar value (text, integer, double, boolean, null) in real json data
+		} else {	
+		    // we observe scalar value (text, integer, double, boolean, null) in real json data
 			if (selection.hasChildren())
 				throw new ObjectParseException("Invalid selection: the path given specifies " +
 						"fields or elements that do not exist because data at this location is " +
 						"a scalar value (i.e. string, integer, float), at: " + 
 						ObjectJsonPath.getPathText(path));
-			if (selection.isPrimary() || selection.getForeignType() != null) {
+			if (selection.isPrimary() || selection.getForeignKeyLookupRules() != null) {
 			    Object value = JsonTokenUtil.getCurrentTokenPrimitive(jts, t);
 			    if (selection.isPrimary()) {
 			        consumer.setPrimaryId(value);
 			    } else {
-			        consumer.addForeignKeyId(selection.getForeignType(), value);
+			        consumer.addForeignKeyId(selection.getForeignKeyLookupRules(), value);
 			    }
 			}
 		}

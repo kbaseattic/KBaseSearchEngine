@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class IdMappingNode {
     private boolean primary = false;
-    private String foreignType = null;
+    private KeyLookupRules foreignKeyLookupRules = null;
 
     private Map<String, IdMappingNode> children = null;
     
@@ -34,31 +34,31 @@ public class IdMappingNode {
         this.primary = primary;
     }
     
-    public String getForeignType() {
-        return foreignType;
+    public KeyLookupRules getForeignKeyLookupRules() {
+        return foreignKeyLookupRules;
     }
     
-    public void setForeignType(String foreignType) {
-        this.foreignType = foreignType;
+    public void setForeignKeyLookupRules(KeyLookupRules foreignKeyLookupRules) {
+        this.foreignKeyLookupRules = foreignKeyLookupRules;
     }
 
     public IdMappingNode addPath(ObjectJsonPath jsonPath, boolean primary,
-            String foreignType) {
+            KeyLookupRules foreignKeyLookupRules) {
         String[] path = jsonPath.getPathItems();
         if (path.length == 0 || path[0].isEmpty()) {
             this.primary = primary;
-            this.foreignType = foreignType;
+            this.foreignKeyLookupRules = foreignKeyLookupRules;
             return this;
         } else {
-            return addPath(path, 0, primary, foreignType);
+            return addPath(path, 0, primary, foreignKeyLookupRules);
         }
     }
     
     private IdMappingNode addPath(String[] path, int pos, boolean primary,
-            String foreignType) {
+            KeyLookupRules foreignKeyLookupRules) {
         if (pos >= path.length) {
             this.primary = primary;
-            this.foreignType = foreignType;
+            this.foreignKeyLookupRules = foreignKeyLookupRules;
             return this;
         } else {
             String key = path[pos];
@@ -69,7 +69,7 @@ public class IdMappingNode {
             } else {
                 child = getChildren().get(key);
             }
-            return child.addPath(path, pos + 1, primary, foreignType);
+            return child.addPath(path, pos + 1, primary, foreignKeyLookupRules);
         }
     }
 }
