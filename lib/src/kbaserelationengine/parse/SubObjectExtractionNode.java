@@ -3,6 +3,8 @@ package kbaserelationengine.parse;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import kbaserelationengine.common.ObjectJsonPath;
+
 /**
  * This class describes schema of subdata extraction.
  * @author rsutormin

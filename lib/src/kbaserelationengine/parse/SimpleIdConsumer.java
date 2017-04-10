@@ -5,6 +5,8 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import kbaserelationengine.system.KeyLookupRules;
+
 public class SimpleIdConsumer implements IdConsumer {
     private Object primaryKey = null;
     private Map<KeyLookupRules, Set<Object>> rulesToForeignKeys = null;

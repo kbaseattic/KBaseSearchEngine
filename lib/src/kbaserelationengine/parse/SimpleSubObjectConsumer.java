@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 
+import kbaserelationengine.common.ObjectJsonPath;
 import us.kbase.common.service.UObject;
 
 public class SimpleSubObjectConsumer implements SubObjectConsumer {

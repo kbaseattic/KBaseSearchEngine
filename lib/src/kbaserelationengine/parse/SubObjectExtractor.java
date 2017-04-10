@@ -9,6 +9,9 @@ import java.util.Set;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
+import kbaserelationengine.common.JsonTokenUtil;
+import kbaserelationengine.common.ObjectJsonPath;
+
 /**
  * Extraction of searchable subset based on JSON token stream.
  * @author rsutormin

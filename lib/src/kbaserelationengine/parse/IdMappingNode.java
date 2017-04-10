@@ -3,6 +3,9 @@ package kbaserelationengine.parse;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import kbaserelationengine.common.ObjectJsonPath;
+import kbaserelationengine.system.KeyLookupRules;
+
 public class IdMappingNode {
     private boolean primary = false;
     private KeyLookupRules foreignKeyLookupRules = null;

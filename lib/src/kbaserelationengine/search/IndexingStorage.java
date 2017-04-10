@@ -1,12 +1,15 @@
-package kbaserelationengine.parse;
+package kbaserelationengine.search;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import kbaserelationengine.common.GUID;
+import kbaserelationengine.common.ObjectJsonPath;
+import kbaserelationengine.system.IndexingRules;
 
 public interface IndexingStorage {
-    public void addObjectType(ObjectTypeParsingRules typeDef) throws IOException;
-    
-    public ObjectTypeParsingRules getObjectType(String globalObjectType) throws IOException;
     
     /**
      * Adds object to searchable indexing storage.
@@ -17,8 +20,12 @@ public interface IndexingStorage {
      * @param indexingPathToRules  indexing rules
      * @throws IOException
      */
-    public void indexObject(String id, String objectType, String typedId, Object value, 
+    public void indexObject(GUID id, String objectType, Object value, 
             Map<ObjectJsonPath, IndexingRules> indexingPathToRules) throws IOException;
     
-    public String lookupIdByTypedId(String objectType, String typedId) throws IOException;
+    public List<Object> getObjectsByIds(Set<GUID> id) throws IOException;
+    
+    public Set<GUID> searchIdsByText(String text, List<SortingRule> sorting) throws IOException;
+
+    public Set<GUID> lookupIdsByKey(String keyName, Object keyValue) throws IOException;
 }

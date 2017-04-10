@@ -1,4 +1,4 @@
-package kbaserelationengine.parse;
+package kbaserelationengine.common;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -7,6 +7,8 @@ import java.math.BigInteger;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+
+import kbaserelationengine.parse.ObjectParseException;
 
 public class JsonTokenUtil {
 

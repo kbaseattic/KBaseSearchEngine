@@ -1,6 +1,8 @@
-package kbaserelationengine.parse;
+package kbaserelationengine.system;
 
 import java.util.Map;
+
+import kbaserelationengine.common.ObjectJsonPath;
 
 public class ObjectTypeParsingRules {
     private String globalObjectType;

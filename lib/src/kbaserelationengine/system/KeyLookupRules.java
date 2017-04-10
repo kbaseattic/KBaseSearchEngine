@@ -1,4 +1,4 @@
-package kbaserelationengine.parse;
+package kbaserelationengine.system;
 
 public class KeyLookupRules {
     private String targetObjectType;

@@ -11,6 +11,14 @@ import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonParser;
 
+import kbaserelationengine.common.GUID;
+import kbaserelationengine.common.ObjectJsonPath;
+import kbaserelationengine.relations.Relation;
+import kbaserelationengine.relations.RelationStorage;
+import kbaserelationengine.search.IndexingStorage;
+import kbaserelationengine.system.KeyLookupRules;
+import kbaserelationengine.system.ObjectTypeParsingRules;
+import kbaserelationengine.system.SystemStorage;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.UObject;
@@ -21,7 +29,7 @@ import workspace.WorkspaceClient;
 
 public class ObjectParser {
     public void filterSubObjects(URL wsUrl, File tempDir, AuthToken token, 
-            String objRef, ObjectTypeParsingRules parsingRules,
+            String objRef, ObjectTypeParsingRules parsingRules, SystemStorage system,
             IndexingStorage indexStorage, RelationStorage relationStorage) throws Exception {
         if (!tempDir.exists()) {
             tempDir.mkdirs();
@@ -56,27 +64,33 @@ public class ObjectParser {
             if (storageType == null) {
                 storageType = "WS";
             }
-            String id = storageType + "/" + resolvedRef;
-            String typedId = resolvedRef;
+            String textId = storageType + ":" + resolvedRef;
             if (parsingRules.getPathToSubObjects() != null) {
                 String innerTextId = idConsumer.getPrimaryKey() == null ? path.toString() : 
                     ("/" + String.valueOf(idConsumer.getPrimaryKey()));
-                String innerSubType = parsingRules.getInnerSubType() == null ? "sub" : 
+                String innerSubType = parsingRules.getInnerSubType() == null ? "_" : 
                     parsingRules.getInnerSubType();
-                id += "/" + innerSubType + innerTextId;
-                typedId += innerTextId;
+                textId += ":" + innerSubType + innerTextId;
             }
+            GUID id = new GUID(textId);
             String objectType = parsingRules.getGlobalObjectType();
             Object subObjValue = UObject.transformStringToObject(subJson, Object.class);
-            indexStorage.indexObject(id, objectType, typedId, subObjValue, 
+            indexStorage.indexObject(id, objectType, subObjValue, 
                     parsingRules.getIndexingPathToRules());
             for (KeyLookupRules lookupRules : idConsumer.getRulesToForeignKeys().keySet()) {
                 Set<Object> foreignIds = idConsumer.getRulesToForeignKeys().get(lookupRules);
-                for (Object foreignId : foreignIds) {
-                    String id2 = indexStorage.lookupIdByTypedId(lookupRules.getTargetObjectType(),
-                            String.valueOf(foreignId));
-                    relationStorage.addRelation(id, id2, lookupRules.getRelationType());
+                Set<GUID> normedIds = system.normalizeObjectIds(foreignIds, 
+                        lookupRules.getTargetObjectType());
+                List<Relation> links = new ArrayList<>();
+                for (GUID id2 : normedIds) {
+                    Relation link = new Relation();
+                    link.setId1(id);
+                    link.setType1(objectType);
+                    link.setId2(id2);
+                    link.setType2(lookupRules.getTargetObjectType());
+                    link.setLinkType(lookupRules.getRelationType());
                 }
+                relationStorage.addRelations(links);
             }
         }
     }

@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.Map;
 
 import junit.framework.Assert;
+import kbaserelationengine.common.ObjectJsonPath;
 import kbaserelationengine.parse.IdConsumer;
 import kbaserelationengine.parse.IdMapper;
-import kbaserelationengine.parse.KeyLookupRules;
-import kbaserelationengine.parse.ObjectJsonPath;
+import kbaserelationengine.system.KeyLookupRules;
 
 import org.junit.Test;
 

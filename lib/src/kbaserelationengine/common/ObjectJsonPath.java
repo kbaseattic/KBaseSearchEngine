@@ -1,7 +1,9 @@
-package kbaserelationengine.parse;
+package kbaserelationengine.common;
 
 import java.util.Arrays;
 import java.util.List;
+
+import kbaserelationengine.parse.ObjectParseException;
 
 public class ObjectJsonPath {
     private final String[] pathItems;

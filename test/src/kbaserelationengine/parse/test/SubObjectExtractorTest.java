@@ -7,8 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import junit.framework.Assert;
-
-import kbaserelationengine.parse.ObjectJsonPath;
+import kbaserelationengine.common.ObjectJsonPath;
 import kbaserelationengine.parse.SimpleSubObjectConsumer;
 import kbaserelationengine.parse.SubObjectConsumer;
 import kbaserelationengine.parse.SubObjectExtractor;
