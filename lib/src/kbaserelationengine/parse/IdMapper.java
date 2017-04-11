@@ -12,7 +12,7 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import kbaserelationengine.common.JsonTokenUtil;
 import kbaserelationengine.common.ObjectJsonPath;
-import kbaserelationengine.system.KeyLookupRules;
+import kbaserelationengine.system.RelationRules;
 
 /**
  * Extraction of primary/foreign key values based on JSON token stream.
@@ -34,7 +34,7 @@ public class IdMapper {
 	 * @throws ObjectParseException 
 	 */
 	public static void mapKeys(ObjectJsonPath pathToPrimary, 
-	        Map<ObjectJsonPath, KeyLookupRules> foreignKeyRules, 
+	        Map<ObjectJsonPath, RelationRules> foreignKeyRules, 
 	        JsonParser jts, IdConsumer consumer) throws IOException, ObjectParseException {
 		//if the selection is empty, we return without adding anything
 		IdMappingNode root = new IdMappingNode();

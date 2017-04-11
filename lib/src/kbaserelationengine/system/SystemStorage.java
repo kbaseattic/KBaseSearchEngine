@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import kbaserelationengine.common.GUID;
+import us.kbase.auth.AuthToken;
 
 public interface SystemStorage {
     
@@ -12,7 +13,7 @@ public interface SystemStorage {
 
     public List<ObjectTypeParsingRules> listObjectTypes() throws IOException;
 
-    public Set<GUID> filterObjectIdsForUser(String user, Set<GUID> ids) throws IOException;
+    public Set<GUID> filterObjectIdsForUser(String user, AuthToken userToken, Set<GUID> ids) throws IOException;
     
     public Set<GUID> collapseVersions(Set<GUID> ids) throws IOException;
     

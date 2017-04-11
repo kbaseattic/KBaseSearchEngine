@@ -4,11 +4,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import kbaserelationengine.common.ObjectJsonPath;
-import kbaserelationengine.system.KeyLookupRules;
+import kbaserelationengine.system.RelationRules;
 
 public class IdMappingNode {
     private boolean primary = false;
-    private KeyLookupRules foreignKeyLookupRules = null;
+    private RelationRules foreignKeyLookupRules = null;
 
     private Map<String, IdMappingNode> children = null;
     
@@ -37,16 +37,16 @@ public class IdMappingNode {
         this.primary = primary;
     }
     
-    public KeyLookupRules getForeignKeyLookupRules() {
+    public RelationRules getForeignKeyLookupRules() {
         return foreignKeyLookupRules;
     }
     
-    public void setForeignKeyLookupRules(KeyLookupRules foreignKeyLookupRules) {
+    public void setForeignKeyLookupRules(RelationRules foreignKeyLookupRules) {
         this.foreignKeyLookupRules = foreignKeyLookupRules;
     }
 
     public IdMappingNode addPath(ObjectJsonPath jsonPath, boolean primary,
-            KeyLookupRules foreignKeyLookupRules) {
+            RelationRules foreignKeyLookupRules) {
         String[] path = jsonPath.getPathItems();
         if (path.length == 0 || path[0].isEmpty()) {
             this.primary = primary;
@@ -58,7 +58,7 @@ public class IdMappingNode {
     }
     
     private IdMappingNode addPath(String[] path, int pos, boolean primary,
-            KeyLookupRules foreignKeyLookupRules) {
+            RelationRules foreignKeyLookupRules) {
         if (pos >= path.length) {
             this.primary = primary;
             this.foreignKeyLookupRules = foreignKeyLookupRules;

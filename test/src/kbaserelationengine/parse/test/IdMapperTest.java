@@ -10,7 +10,7 @@ import junit.framework.Assert;
 import kbaserelationengine.common.ObjectJsonPath;
 import kbaserelationengine.parse.IdConsumer;
 import kbaserelationengine.parse.IdMapper;
-import kbaserelationengine.system.KeyLookupRules;
+import kbaserelationengine.system.RelationRules;
 
 import org.junit.Test;
 
@@ -92,11 +92,11 @@ public class IdMapperTest {
             String pathToPrimary, String... foreignKeyPathToTypePairs) throws Exception {
         Map<String, String> data = new LinkedHashMap<String, String>();
         IdConsumer consumer = createStringMapConsumer(data);
-        Map<ObjectJsonPath, KeyLookupRules> foreignKeyPathToType = new LinkedHashMap<>();
+        Map<ObjectJsonPath, RelationRules> foreignKeyPathToType = new LinkedHashMap<>();
         for (int i = 0; i < foreignKeyPathToTypePairs.length / 2; i++) {
             String idPath = foreignKeyPathToTypePairs[i * 2];
             String keyType = foreignKeyPathToTypePairs[i * 2 + 1];
-            KeyLookupRules keyRules = new KeyLookupRules();
+            RelationRules keyRules = new RelationRules();
             keyRules.setTargetObjectType(keyType);
             foreignKeyPathToType.put(new ObjectJsonPath(idPath), keyRules);
         }
@@ -112,7 +112,7 @@ public class IdMapperTest {
                 data.put(UObject.transformObjectToString(value), "!");
             }
             @Override
-            public void addForeignKeyId(KeyLookupRules keyRules, Object value) {
+            public void addForeignKeyId(RelationRules keyRules, Object value) {
                 data.put(UObject.transformObjectToString(value), keyRules.getTargetObjectType());
             }
         };

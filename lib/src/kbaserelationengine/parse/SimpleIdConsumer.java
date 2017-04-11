@@ -5,17 +5,17 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import kbaserelationengine.system.KeyLookupRules;
+import kbaserelationengine.system.RelationRules;
 
 public class SimpleIdConsumer implements IdConsumer {
     private Object primaryKey = null;
-    private Map<KeyLookupRules, Set<Object>> rulesToForeignKeys = null;
+    private Map<RelationRules, Set<Object>> rulesToForeignKeys = null;
     
     public Object getPrimaryKey() {
         return primaryKey;
     }
     
-    public Map<KeyLookupRules, Set<Object>> getRulesToForeignKeys() {
+    public Map<RelationRules, Set<Object>> getRulesToForeignKeys() {
         return rulesToForeignKeys;
     }
     
@@ -25,7 +25,7 @@ public class SimpleIdConsumer implements IdConsumer {
     }
     
     @Override
-    public void addForeignKeyId(KeyLookupRules lookupRules, Object value) {
+    public void addForeignKeyId(RelationRules lookupRules, Object value) {
         if (rulesToForeignKeys == null) {
             rulesToForeignKeys = new LinkedHashMap<>();
         }

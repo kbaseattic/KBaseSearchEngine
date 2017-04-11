@@ -1,6 +1,6 @@
 package kbaserelationengine.system;
 
-public class KeyLookupRules {
+public class RelationRules {
     private String targetObjectType;
     private String relationType;
     
@@ -45,7 +45,7 @@ public class KeyLookupRules {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        KeyLookupRules other = (KeyLookupRules) obj;
+        RelationRules other = (RelationRules) obj;
         if (relationType == null) {
             if (other.relationType != null)
                 return false;

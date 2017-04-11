@@ -16,7 +16,7 @@ import kbaserelationengine.common.ObjectJsonPath;
 import kbaserelationengine.relations.Relation;
 import kbaserelationengine.relations.RelationStorage;
 import kbaserelationengine.search.IndexingStorage;
-import kbaserelationengine.system.KeyLookupRules;
+import kbaserelationengine.system.RelationRules;
 import kbaserelationengine.system.ObjectTypeParsingRules;
 import kbaserelationengine.system.SystemStorage;
 import us.kbase.auth.AuthToken;
@@ -58,7 +58,7 @@ public class ObjectParser {
             SimpleIdConsumer idConsumer = new SimpleIdConsumer();
             try (JsonParser subJts = UObject.getMapper().getFactory().createParser(subJson)) {
                 IdMapper.mapKeys(parsingRules.getPrimaryKeyPath(), 
-                        parsingRules.getForeignKeyPathToLookupRules(), subJts, idConsumer);
+                        parsingRules.getRelationPathToRules(), subJts, idConsumer);
             }
             String storageType = parsingRules.getStorageType();
             if (storageType == null) {
@@ -77,7 +77,7 @@ public class ObjectParser {
             Object subObjValue = UObject.transformStringToObject(subJson, Object.class);
             indexStorage.indexObject(id, objectType, subObjValue, 
                     parsingRules.getIndexingPathToRules());
-            for (KeyLookupRules lookupRules : idConsumer.getRulesToForeignKeys().keySet()) {
+            for (RelationRules lookupRules : idConsumer.getRulesToForeignKeys().keySet()) {
                 Set<Object> foreignIds = idConsumer.getRulesToForeignKeys().get(lookupRules);
                 Set<GUID> normedIds = system.normalizeObjectIds(foreignIds, 
                         lookupRules.getTargetObjectType());

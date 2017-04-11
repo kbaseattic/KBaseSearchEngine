@@ -1,0 +1,9 @@
+﻿{
+	"global-object-type": "SeedOntologyTerm",
+	"storage-type": "SeedOntologyDataSource",
+	"primary-key-path": "id",
+	"indexing-path-to-rules": {
+		"id": {"keyword-type": "string"}
+	},
+	"primary-key-path": "id"
+}

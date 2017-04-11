@@ -1,0 +1,23 @@
+﻿{
+	"global-object-type": "GenomeFeature",
+	"storage-type": "WS",
+	"storage-object-type": "KBaseGenomes.Genome",
+	"inner-sub-type": "feature",
+	"path-to-sub-objects": "/features/[*]/",
+	"indexing-path-to-rules": {
+		"id": {"keyword-type": "string"},
+		"function": {"full-text": true},
+		"aliases/[*]": {"full-text": true},
+		"location": {},
+		"protein_translation": {},
+		"type": {"keyword-type": "string"},
+		"ontology_terms/*/*/id": {"keyword-type": "string"}
+	},
+	"primary-key-path": "id",
+	"relation-path-to-rules": {
+		"ontology_terms/SSO/*/id": {
+			"target-object-type": "SeedOntologyTerm",
+			"relation-type": "feature-to-seed"
+		}
+	}
+}
