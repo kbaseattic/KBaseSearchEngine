@@ -13,11 +13,11 @@ public interface SystemStorage {
 
     public List<ObjectTypeParsingRules> listObjectTypes() throws IOException;
 
+    public String getTypeForObjectId(GUID id) throws IOException;
+
     public Set<GUID> filterObjectIdsForUser(String user, AuthToken userToken, Set<GUID> ids) throws IOException;
     
     public Set<GUID> collapseVersions(Set<GUID> ids) throws IOException;
-    
-    public String getTypeForObjectId(GUID id) throws IOException;
-    
+        
     public Set<GUID> normalizeObjectIds(Set<Object> typedIds, String type) throws IOException;
 }

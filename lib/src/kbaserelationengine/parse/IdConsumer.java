@@ -2,7 +2,16 @@ package kbaserelationengine.parse;
 
 import kbaserelationengine.system.RelationRules;
 
-public interface IdConsumer {
-    public void setPrimaryId(Object value);
-    public void addForeignKeyId(RelationRules lookupRules, Object value);
+public abstract class IdConsumer implements ValueConsumer<IdMappingRules> {
+    public abstract void setPrimaryId(Object value);
+    public abstract void addForeignKeyId(RelationRules lookupRules, Object value);
+    
+    @Override
+    public void addValue(IdMappingRules rules, Object value) {
+        if (rules.isPrimaryKey()) {
+            setPrimaryId(value);
+        } else {
+            addForeignKeyId(rules.getForeignKeyRules(), value);
+        }
+    }
 }

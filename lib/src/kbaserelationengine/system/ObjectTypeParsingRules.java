@@ -2,7 +2,9 @@ package kbaserelationengine.system;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import kbaserelationengine.common.ObjectJsonPath;
@@ -15,7 +17,7 @@ public class ObjectTypeParsingRules {
     private String storageObjectType;
     private String innerSubType;
     private ObjectJsonPath pathToSubObjects;
-    private Map<ObjectJsonPath, IndexingRules> indexingPathToRules;
+    private List<IndexingRules> indexingRules;
     private ObjectJsonPath primaryKeyPath;
     private Map<ObjectJsonPath, RelationRules> relationPathToRules;
     
@@ -59,13 +61,12 @@ public class ObjectTypeParsingRules {
         this.pathToSubObjects = pathToSubObjects;
     }
 
-    public Map<ObjectJsonPath, IndexingRules> getIndexingPathToRules() {
-        return indexingPathToRules;
+    public List<IndexingRules> getIndexingRules() {
+        return indexingRules;
     }
     
-    public void setIndexingPathToRules(
-            Map<ObjectJsonPath, IndexingRules> indexingPathToRules) {
-        this.indexingPathToRules = indexingPathToRules;
+    public void setIndexingRules(List<IndexingRules> indexingRules) {
+        this.indexingRules = indexingRules;
     }
     
     public ObjectJsonPath getPrimaryKeyPath() {
@@ -108,17 +109,17 @@ public class ObjectTypeParsingRules {
         ret.setPathToSubObjects(getPath((String)obj.get("path-to-sub-objects")));
         // Indexing
         @SuppressWarnings("unchecked")
-        Map<String, Object> indexingPathToRules = 
-                (Map<String, Object>)obj.get("indexing-path-to-rules");
-        if (indexingPathToRules != null) {
-            ret.setIndexingPathToRules(new LinkedHashMap<>());
-            for (String key : indexingPathToRules.keySet()) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> rulesObj = (Map<String, Object>)indexingPathToRules.get(key);
+        List<Map<String, Object>> indexingRules = 
+                (List<Map<String, Object>>)obj.get("indexing-rules");
+        if (indexingRules != null) {
+            ret.setIndexingRules(new ArrayList<>());
+            for (Map<String, Object> rulesObj : indexingRules) {
                 IndexingRules rules = new IndexingRules();
+                rules.setPath(new ObjectJsonPath((String)rulesObj.get("path")));
                 rules.setFullText((Boolean)rulesObj.get("full-text"));
                 rules.setKeywordType((String)rulesObj.get("keyword-type"));
-                ret.getIndexingPathToRules().put(new ObjectJsonPath(key), rules);
+                rules.setKeyName((String)rulesObj.get("key-name"));
+                ret.getIndexingRules().add(rules);
             }
         }
         ret.setPrimaryKeyPath(getPath((String)obj.get("primary-key-path")));

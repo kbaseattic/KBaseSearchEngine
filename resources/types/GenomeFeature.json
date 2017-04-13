@@ -4,15 +4,36 @@
 	"storage-object-type": "KBaseGenomes.Genome",
 	"inner-sub-type": "feature",
 	"path-to-sub-objects": "/features/[*]/",
-	"indexing-path-to-rules": {
-		"id": {"keyword-type": "string"},
-		"function": {"full-text": true},
-		"aliases/[*]": {"full-text": true},
-		"location": {},
-		"protein_translation": {},
-		"type": {"keyword-type": "string"},
-		"ontology_terms/*/*/id": {"keyword-type": "string"}
-	},
+	"indexing-rules": [
+		{
+			"path": "id",
+			"keyword-type": "string"
+		},
+		{
+			"path": "function",
+			"full-text": true
+		},
+		{
+			"path": "aliases/[*]",
+			"full-text": true,
+			"key-name": "aliases"
+		},
+		{
+			"path": "location"
+		},
+		{
+			"path": "protein_translation"
+		},
+		{
+			"path": "type",
+			"keyword-type": "string"
+		},
+		{
+			"path": "ontology_terms/*/*/id",
+			"keyword-type": "string",
+			"key-name": "ontology_terms"
+		}
+	],
 	"primary-key-path": "id",
 	"relation-path-to-rules": {
 		"ontology_terms/SSO/*/id": {

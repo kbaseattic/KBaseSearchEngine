@@ -17,6 +17,7 @@ import kbaserelationengine.relations.Relation;
 import kbaserelationengine.relations.RelationStorage;
 import kbaserelationengine.search.IndexingStorage;
 import kbaserelationengine.system.RelationRules;
+import kbaserelationengine.system.IndexingRules;
 import kbaserelationengine.system.ObjectTypeParsingRules;
 import kbaserelationengine.system.SystemStorage;
 import us.kbase.auth.AuthToken;
@@ -43,8 +44,8 @@ public class ObjectParser {
                 Arrays.asList(new ObjectSpecification().withRef(objRef)))).getData().get(0);
         String resolvedRef = getRefFromObjectInfo(obj.getInfo());
         List<ObjectJsonPath> indexingPaths = new ArrayList<>();
-        for (ObjectJsonPath path : parsingRules.getIndexingPathToRules().keySet()) {
-            indexingPaths.add(path);
+        for (IndexingRules rules : parsingRules.getIndexingRules()) {
+            indexingPaths.add(rules.getPath());
         }
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
@@ -74,9 +75,7 @@ public class ObjectParser {
             }
             GUID id = new GUID(textId);
             String objectType = parsingRules.getGlobalObjectType();
-            Object subObjValue = UObject.transformStringToObject(subJson, Object.class);
-            indexStorage.indexObject(id, objectType, subObjValue, 
-                    parsingRules.getIndexingPathToRules());
+            indexStorage.indexObject(id, objectType, subJson, parsingRules.getIndexingRules());
             for (RelationRules lookupRules : idConsumer.getRulesToForeignKeys().keySet()) {
                 Set<Object> foreignIds = idConsumer.getRulesToForeignKeys().get(lookupRules);
                 Set<GUID> normedIds = system.normalizeObjectIds(foreignIds, 

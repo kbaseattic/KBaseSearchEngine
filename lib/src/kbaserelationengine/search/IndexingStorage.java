@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import kbaserelationengine.common.GUID;
-import kbaserelationengine.common.ObjectJsonPath;
+import kbaserelationengine.parse.ObjectParseException;
 import kbaserelationengine.system.IndexingRules;
 
 public interface IndexingStorage {
@@ -15,13 +15,15 @@ public interface IndexingStorage {
      * Adds object to searchable indexing storage.
      * @param id  global object ID including: storage type, parent object reference, inner sub-type and inner sub-object unique key (last two are optional)
      * @param objectType  global type of object
-     * @param typedId  unique ID across objects of given type including: parent object reference and inner sub-object unique key (last one is optional)
-     * @param value  object value (consisting of maps, lists and primitive types like number, string, boolean or null)
-     * @param indexingPathToRules  indexing rules
+     * @param jsonValue  object value (consisting of maps, lists and primitive types like number, string, boolean or null)
+     * @param indexingRules  indexing rules
      * @throws IOException
      */
-    public void indexObject(GUID id, String objectType, Object value, 
-            Map<ObjectJsonPath, IndexingRules> indexingPathToRules) throws IOException;
+    public void indexObject(GUID id, String objectType, String jsonValue, 
+            List<IndexingRules> indexingRules) throws IOException, ObjectParseException;
+
+    public void indexObjects(String objectType, Map<GUID, String> idToJsonValues, 
+            List<IndexingRules> indexingRules) throws IOException, ObjectParseException;
     
     public List<Object> getObjectsByIds(Set<GUID> id) throws IOException;
     

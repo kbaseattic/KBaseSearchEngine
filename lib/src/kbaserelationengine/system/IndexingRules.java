@@ -1,8 +1,20 @@
 package kbaserelationengine.system;
 
+import kbaserelationengine.common.ObjectJsonPath;
+
 public class IndexingRules {
+    private ObjectJsonPath path;
     private boolean fullText;
     private String keywordType;
+    private String keyName;
+    
+    public ObjectJsonPath getPath() {
+        return path;
+    }
+    
+    public void setPath(ObjectJsonPath path) {
+        this.path = path;
+    }
     
     public boolean isFullText() {
         return fullText;
@@ -18,5 +30,13 @@ public class IndexingRules {
     
     public void setKeywordType(String keywordType) {
         this.keywordType = keywordType;
+    }
+    
+    public String getKeyName() {
+        return keyName;
+    }
+    
+    public void setKeyName(String keyName) {
+        this.keyName = keyName;
     }
 }

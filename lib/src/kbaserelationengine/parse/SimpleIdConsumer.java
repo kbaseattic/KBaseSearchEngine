@@ -7,7 +7,7 @@ import java.util.Set;
 
 import kbaserelationengine.system.RelationRules;
 
-public class SimpleIdConsumer implements IdConsumer {
+public class SimpleIdConsumer extends IdConsumer {
     private Object primaryKey = null;
     private Map<RelationRules, Set<Object>> rulesToForeignKeys = null;
     

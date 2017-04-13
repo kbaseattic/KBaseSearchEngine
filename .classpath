@@ -18,5 +18,8 @@
 	<classpathentry kind="lib" path="../jars/lib/jars/servlet/servlet-api-2.5.jar"/>
 	<classpathentry kind="lib" path="../jars/lib/jars/syslog4j/syslog4j-0.9.46.jar"/>
 	<classpathentry kind="lib" path="../jars/lib/jars/apache_commons/commons-io-2.4.jar"/>
+	<classpathentry kind="lib" path="lib/jars/elasticsearch/rest-5.3.0.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/apache_commons/http/httpclient-4.3.1.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/apache_commons/http/httpcore-4.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
