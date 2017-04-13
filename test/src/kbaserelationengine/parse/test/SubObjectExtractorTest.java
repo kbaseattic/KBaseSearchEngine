@@ -94,7 +94,7 @@ public class SubObjectExtractorTest {
         return SubObjectExtractorTest.class.getResourceAsStream(name + ".json.properties");
     }
     
-    private static JsonParser getParsedJsonResource(String name) throws Exception {
+    public static JsonParser getParsedJsonResource(String name) throws Exception {
         return UObject.getMapper().getFactory().createParser(getJsonResource(name));
     }
 }

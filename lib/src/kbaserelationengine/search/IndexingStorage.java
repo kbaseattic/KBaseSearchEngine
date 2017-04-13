@@ -25,9 +25,13 @@ public interface IndexingStorage {
     public void indexObjects(String objectType, Map<GUID, String> idToJsonValues, 
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException;
     
+    public void shareObject(GUID id, int accessGroupId) throws IOException;
+    
     public List<Object> getObjectsByIds(Set<GUID> id) throws IOException;
     
-    public Set<GUID> searchIdsByText(String text, List<SortingRule> sorting) throws IOException;
+    public Set<GUID> searchIdsByText(String text, List<SortingRule> sorting, 
+            Set<Integer> accessGroupIds, boolean isAdmin) throws IOException;
 
-    public Set<GUID> lookupIdsByKey(String keyName, Object keyValue) throws IOException;
+    public Set<GUID> lookupIdsByKey(String keyName, Object keyValue,
+            Set<Integer> accessGroupIds, boolean isAdmin) throws IOException;
 }

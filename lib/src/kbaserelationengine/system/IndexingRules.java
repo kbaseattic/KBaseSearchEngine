@@ -4,9 +4,9 @@ import kbaserelationengine.common.ObjectJsonPath;
 
 public class IndexingRules {
     private ObjectJsonPath path;
-    private boolean fullText;
-    private String keywordType;
-    private String keyName;
+    private boolean fullText = false;
+    private String keywordType = null;
+    private String keyName = null;
     
     public ObjectJsonPath getPath() {
         return path;

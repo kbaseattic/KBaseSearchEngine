@@ -116,7 +116,10 @@ public class ObjectTypeParsingRules {
             for (Map<String, Object> rulesObj : indexingRules) {
                 IndexingRules rules = new IndexingRules();
                 rules.setPath(new ObjectJsonPath((String)rulesObj.get("path")));
-                rules.setFullText((Boolean)rulesObj.get("full-text"));
+                Boolean fullText = (Boolean)rulesObj.get("full-text");
+                if (fullText != null) {
+                    rules.setFullText(fullText);
+                }
                 rules.setKeywordType((String)rulesObj.get("keyword-type"));
                 rules.setKeyName((String)rulesObj.get("key-name"));
                 ret.getIndexingRules().add(rules);
