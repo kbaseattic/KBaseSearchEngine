@@ -26,7 +26,8 @@
 		},
 		{
 			"path": "type",
-			"keyword-type": "string"
+			"keyword-type": "string",
+			"key-name": "feature_type"
 		},
 		{
 			"path": "ontology_terms/*/*/id",
