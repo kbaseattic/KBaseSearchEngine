@@ -35,10 +35,10 @@ public class ElasticIndexingStorageTest {
     
     @BeforeClass
     public static void prepare() throws Exception {
-        String esIndexName = "test_" + System.currentTimeMillis();
-        System.out.println("Creating Elasticsearch index: " + esIndexName);
+        String indexNamePrefix = "test_" + System.currentTimeMillis() + ".";
         indexStorage = new ElasticIndexingStorage(
-                new HttpHost("localhost", 9200), esIndexName);
+                new HttpHost("localhost", 9200));
+        indexStorage.setIndexNamePrefix(indexNamePrefix);
     }
     
     @AfterClass
@@ -46,7 +46,7 @@ public class ElasticIndexingStorageTest {
         if (!cleanupAfter) {
             return;
         }
-        List<String> indNames = indexStorage.listIndeces();
+        Set<String> indNames = indexStorage.listIndeces();
         for (String index : indNames) {
             if (!index.startsWith("test_")) {
                 System.out.println("Skipping Elasticsearch index: " + index);
@@ -57,9 +57,9 @@ public class ElasticIndexingStorageTest {
         }
     }
     
+    @SuppressWarnings("unchecked")
     @Test
     public void testSave() throws Exception {
-        @SuppressWarnings("unchecked")
         Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
                 new File("resources/types/GenomeFeature.json"), Map.class);
         ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules.fromObject(parsingRulesObj);
@@ -79,13 +79,17 @@ public class ElasticIndexingStorageTest {
             indexStorage.indexObject(id, parsingRules.getGlobalObjectType(), subJson, 
                     parsingRules.getIndexingRules());
         }
-        indexStorage.refreshIndex(null);
-        Set<GUID> ids = indexStorage.searchIdsByText(parsingRules.getGlobalObjectType(), "RfaH", 
+        indexStorage.refreshIndex(indexStorage.getIndex(parsingRules.getGlobalObjectType()));
+        Map<String, Integer> typeToCount = indexStorage.searchTypeByText("Rfah", null, false);
+        Assert.assertEquals(1, typeToCount.size());
+        String type = typeToCount.keySet().iterator().next();
+        Assert.assertEquals(1, (int)typeToCount.get(type));
+        Set<GUID> ids = indexStorage.searchIdsByText(type, "RfaH", 
                 null, null, false);
         Assert.assertEquals(1, ids.size());
         GUID id = ids.iterator().next();
         Assert.assertEquals("WS:1/1/1:feature/NewGenome.CDS.6210", id.toString());
-        List<Object> objList = indexStorage.getObjectsByIds(parsingRules.getGlobalObjectType(),
+        List<Object> objList = indexStorage.getObjectsByIds(
                 new HashSet<>(Arrays.asList(id)));
         Assert.assertEquals(1, objList.size());
         Map<String, Object> obj = (Map<String, Object>)objList.get(0);
