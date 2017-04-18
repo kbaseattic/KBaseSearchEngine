@@ -12,6 +12,8 @@ public interface SystemStorage {
     public ObjectTypeParsingRules getObjectType(String type) throws IOException;
 
     public List<ObjectTypeParsingRules> listObjectTypes() throws IOException;
+    
+    public List<ObjectTypeParsingRules> listObjectTypesByStorageObjectType(String storageObjectType) throws IOException;
 
     public String getTypeForObjectId(GUID id) throws IOException;
 

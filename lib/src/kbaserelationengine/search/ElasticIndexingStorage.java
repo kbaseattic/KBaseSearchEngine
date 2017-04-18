@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -32,6 +33,7 @@ import kbaserelationengine.parse.ValueCollectingNode;
 import kbaserelationengine.parse.ValueCollector;
 import kbaserelationengine.parse.ValueConsumer;
 import kbaserelationengine.system.IndexingRules;
+import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.UObject;
 
 public class ElasticIndexingStorage implements IndexingStorage {
@@ -39,6 +41,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private String indexNamePrefix;
     private boolean mergeTypes = false;
     private boolean skipFullJson = false;
+    private boolean allPublic = false;
     private Map<String, String> typeToIndex = new LinkedHashMap<>();
 
     public ElasticIndexingStorage(HttpHost esHost) throws IOException {
@@ -75,13 +78,22 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     public String getIndex(String objectType) throws IOException {
+        return checkIndex(objectType, null);
+    }
+    
+    private String checkIndex(String objectType, List<IndexingRules> indexingRules) 
+            throws IOException {
         String key = mergeTypes ? "all_types" : objectType;
         String ret = typeToIndex.get(key);
         if (ret == null) {
             ret = (indexNamePrefix + key).toLowerCase();
             if (!listIndeces().contains(ret)) {
+                if (indexingRules == null) {
+                    throw new IOException("Index wasn't created for type " + objectType);
+                }
                 System.out.println("Creating Elasticsearch index: " + ret);
                 makeRequest("PUT", "/" + ret, null);
+                createDataTable(objectType, indexingRules);
             }
             typeToIndex.put(key, ret);
         }
@@ -99,7 +111,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public void indexObject(GUID id, String objectType, String json,
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
-        checkSchema(objectType, indexingRules);
+        String indexName = checkIndex(objectType, indexingRules);
         Map<String, List<Object>> indexPart = new LinkedHashMap<>();
         ValueConsumer<IndexingRules> consumer = new ValueConsumer<IndexingRules>() {
             @Override
@@ -128,25 +140,119 @@ public class ElasticIndexingStorage implements IndexingStorage {
         try (JsonParser jp = UObject.getMapper().getFactory().createParser(json)) {
             collector.mapKeys(root, jp, consumer);
         }
-        GUID parentId = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
+        GUID parentGUID = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
                 id.getAccessGroupObjectId(), id.getVersion(), null, null);
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.putAll(indexPart);
         doc.put("_guid", id.toString());
-        doc.put("_pguid", parentId.toString());
+        String parentId = checkParentDoc(indexName, 
+                new HashSet<>(Arrays.asList(parentGUID))).get(parentGUID);
         doc.put("_otype", objectType);
         if (!skipFullJson) {
             doc.put("_ojson", json);
         }
         // Save new doc with auto-incremented ID
         // TODO: save many docs at once in bulk mode
-        makeRequest("POST", "/" + getIndex(objectType) + "/" + getTableName() + "/", doc);
-        shareObject(parentId, id.getAccessGroupId());
+        makeRequest("POST", "/" + indexName + "/" + getDataTableName() + "/", doc, Arrays.asList(
+                new Tuple2<String, String>().withE1("parent").withE2(parentId)));
+        //shareObject(parentId, id.getAccessGroupId());
+    }
+    
+    @SuppressWarnings({ "serial", "unchecked" })
+    private Map<GUID, String> lookupParentDocIds(String indexName, Set<GUID> guids) throws IOException {
+        Map<String, Object> match = new LinkedHashMap<String, Object>() {{
+            put("_guid", guids.stream().map(u -> u.toString()).collect(Collectors.toList()));
+        }};
+        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+            put("terms", match);
+        }};
+        Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
+            put("query", query);
+        }};
+        String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_search";
+        Response resp = makeRequest("GET", urlPath, doc);
+        Map<String, Object> data = UObject.getMapper().readValue(
+                resp.getEntity().getContent(), Map.class);
+        Map<GUID, String> ret = new LinkedHashMap<>();
+        Map<String, Object> hitMap = (Map<String, Object>)data.get("hits");
+        List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
+        for (Map<String, Object> hit : hitList) {
+            String id = (String)hit.get("_id");
+            Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
+            GUID guid = new GUID((String)obj.get("_guid"));
+            ret.put(guid, id);
+        }
+        return ret;
+    }
+
+    @SuppressWarnings({ "serial", "unchecked" })
+    private Map<String, Map<String, Object>> lookupParentDocsByPrefix(String indexName,
+            GUID guid) throws IOException {
+        String prefix = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
+                guid.getAccessGroupObjectId(), null, null, null).toString();
+        Map<String, Object> match = new LinkedHashMap<String, Object>() {{
+            put("prefix", prefix);
+        }};
+        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+            put("term", match);
+        }};
+        Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
+            put("query", query);
+        }};
+        String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_search";
+        Response resp = makeRequest("GET", urlPath, doc);
+        Map<String, Object> data = UObject.getMapper().readValue(
+                resp.getEntity().getContent(), Map.class);
+        Map<String, Map<String, Object>> ret = new LinkedHashMap<>();
+        Map<String, Object> hitMap = (Map<String, Object>)data.get("hits");
+        List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
+        for (Map<String, Object> hit : hitList) {
+            Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
+            String id = (String)hit.get("_id");
+            ret.put(id, obj);
+        }
+        return ret;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<GUID, String> checkParentDoc(String indexName, Set<GUID> parentGUIDs) 
+            throws IOException {
+        boolean changed = false;
+        Map<GUID, String> ret = lookupParentDocIds(indexName, parentGUIDs);
+        for (GUID parentGUID : parentGUIDs) {
+            if (ret.containsKey(parentGUID)) {
+                continue;
+            }
+            String prefix = new GUID(parentGUID.getStorageCode(), parentGUID.getAccessGroupId(),
+                    parentGUID.getAccessGroupObjectId(), null, null, null).toString();
+            Map<String, Object> doc = new LinkedHashMap<>();
+            doc.put("_guid", parentGUID.toString());
+            doc.put("prefix", prefix);
+            doc.put("version", parentGUID.getVersion());
+            int accessGroupId = parentGUID.getAccessGroupId();
+            doc.put("lastin", accessGroupId);
+            doc.put("groups", accessGroupId);
+            Response resp = makeRequest("POST", "/" + indexName + "/" + getAccessTableName() + "/", 
+                    doc);
+            Map<String, Object> data = UObject.getMapper().readValue(
+                    resp.getEntity().getContent(), Map.class);
+            ret.put(parentGUID, (String)data.get("_id"));
+            changed = true;
+        }
+        if (changed) {
+            refreshIndex(indexName);
+        }
+        return ret;
     }
     
     @Override
     public void shareObject(GUID id, int accessGroupId) throws IOException {
         //throw new IllegalStateException("Unsupported");
+    }
+    
+    @Override
+    public void unshareObject(GUID id, int accessGroupId) throws IOException {
+        // TODO Auto-generated method stub
     }
     
     @SuppressWarnings({ "serial", "unchecked" })
@@ -162,7 +268,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             put("query", query);
             put("_source", Arrays.asList("_ojson"));
         }};
-        String urlPath = "/_all/" + getTableName() + "/_search";
+        String urlPath = "/_all/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
@@ -201,7 +307,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             put("aggregations", aggs);
             put("size", 0);
         }};
-        String urlPath = "/_all/" + getTableName() + "/_search";
+        String urlPath = "/_all/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
@@ -237,7 +343,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             put("_source", Arrays.asList("_guid"));
         }};
         String indexName = objectType == null ? "_all" : getIndex(objectType);
-        String urlPath = "/" + indexName + "/" + getTableName() + "/_search";
+        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
@@ -279,9 +385,20 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public Response refreshIndex(String indexName) throws IOException {
         return makeRequest("POST", "/" + indexName + "/_refresh", null);
     }
-    
+
     private Response makeRequest(String reqType, String urlPath, Map<String, ?> doc) 
             throws IOException {
+        return makeRequest(reqType, urlPath, doc, Collections.<String, String>emptyMap());
+    }
+
+    private Response makeRequest(String reqType, String urlPath, Map<String, ?> doc, 
+            List<Tuple2<String, String>> attributes) throws IOException {
+        return makeRequest(reqType, urlPath, doc, attributes.stream().collect(
+                Collectors.toMap(u -> u.getE1(), u -> u.getE2())));
+    }
+    
+    private Response makeRequest(String reqType, String urlPath, Map<String, ?> doc, 
+            Map<String, String> attributes) throws IOException {
         try {
             RestClientBuilder restClientBld = RestClient.builder(esHost);
             List<Header> headers = new ArrayList<>();
@@ -303,8 +420,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             HttpEntity body = doc == null ? null : 
                 new StringEntity(UObject.transformObjectToString(doc));
             RestClient restClient = restClientBld.build();
-            return restClient.performRequest(reqType, urlPath, Collections.<String, String>emptyMap(),
-                    body);
+            return restClient.performRequest(reqType, urlPath, attributes, body);
         } catch (ResponseException ex) {
             throw new IOException(ex.getMessage(), ex);
         }
@@ -320,13 +436,17 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return keywordType;
     }
     
-    private String getTableName() {
-        return "main";
+    private String getDataTableName() {
+        return "data";
+    }
+    
+    private String getAccessTableName() {
+        return "access";
     }
     
     @SuppressWarnings("serial")
-    private void checkSchema(String type, List<IndexingRules> indexingRules) throws IOException {
-        String tableName = getTableName();
+    private void createAccessTable() {
+        String tableName = getAccessTableName();
         Map<String, Object> doc = new LinkedHashMap<>();
         Map<String, Object> table = new LinkedHashMap<>();
         doc.put(tableName, table);
@@ -335,7 +455,33 @@ public class ElasticIndexingStorage implements IndexingStorage {
         props.put("_guid", new LinkedHashMap<String, Object>() {{
             put("type", "keyword");
         }});
-        props.put("_pguid", new LinkedHashMap<String, Object>() {{
+        props.put("prefix", new LinkedHashMap<String, Object>() {{
+            put("type", "keyword");
+        }});
+        props.put("version", new LinkedHashMap<String, Object>() {{
+            put("type", "integer");
+        }});
+        props.put("lastin", new LinkedHashMap<String, Object>() {{
+            put("type", "integer");
+        }});
+        props.put("groups", new LinkedHashMap<String, Object>() {{
+            put("type", "integer");
+        }});
+    }
+    
+    @SuppressWarnings("serial")
+    private void createDataTable(String type, List<IndexingRules> indexingRules) throws IOException {
+        createAccessTable();
+        String tableName = getDataTableName();
+        Map<String, Object> doc = new LinkedHashMap<>();
+        Map<String, Object> table = new LinkedHashMap<>();
+        doc.put(tableName, table);
+        table.put("_parent", new LinkedHashMap<String, Object>() {{
+            put("type", getAccessTableName());
+        }});
+        Map<String, Object> props = new LinkedHashMap<>();
+        table.put("properties", props);
+        props.put("_guid", new LinkedHashMap<String, Object>() {{
             put("type", "keyword");
         }});
         props.put("_otype", new LinkedHashMap<String, Object>() {{

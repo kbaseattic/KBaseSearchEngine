@@ -51,11 +51,19 @@ public class ObjectParser {
     }
     
     public static void processSubObjects(URL wsUrl, File tempDir, AuthToken token, 
-            String objRef, ObjectTypeParsingRules parsingRules, SystemStorage system,
+            String objRef, String storageObjectType, SystemStorage system,
             IndexingStorage indexStorage, RelationStorage relationStorage) throws Exception {
         File tempFile = prepareTempFile(tempDir);
         ObjectData obj = loadObject(wsUrl, tempFile, token, objRef);
         String resolvedRef = getRefFromObjectInfo(obj.getInfo());
+        for (ObjectTypeParsingRules parsingRules : system.listObjectTypesByStorageObjectType(storageObjectType)) {
+            processSubObjects(obj, resolvedRef, objRef, parsingRules, system, indexStorage, relationStorage);
+        }
+    }
+    
+    public static void processSubObjects(ObjectData obj, String resolvedRef, 
+            String objRef, ObjectTypeParsingRules parsingRules, SystemStorage system,
+            IndexingStorage indexStorage, RelationStorage relationStorage) throws Exception {
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
         try (JsonParser jts = obj.getData().getPlacedStream()) {
