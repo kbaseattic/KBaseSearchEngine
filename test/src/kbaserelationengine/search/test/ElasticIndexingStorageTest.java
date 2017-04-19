@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -84,11 +85,23 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals(1, typeToCount.size());
         String type = typeToCount.keySet().iterator().next();
         Assert.assertEquals(1, (int)typeToCount.get(type));
-        Set<GUID> ids = indexStorage.searchIdsByText(type, "RfaH", 
-                null, null, false);
+        GUID expectedGUID = new GUID("WS:1/1/1:feature/NewGenome.CDS.6210");
+        // Admin mode
+        Set<GUID> ids = indexStorage.searchIdsByText(type, "RfaH", null, null, true);
         Assert.assertEquals(1, ids.size());
         GUID id = ids.iterator().next();
-        Assert.assertEquals("WS:1/1/1:feature/NewGenome.CDS.6210", id.toString());
+        Assert.assertEquals(expectedGUID, id);
+        // Wrong groups
+        Set<Integer> accessGroupIds = new LinkedHashSet<>(Arrays.asList(2, 3));
+        ids = indexStorage.searchIdsByText(type, "RfaH", null, accessGroupIds, false);
+        Assert.assertEquals(0, ids.size());
+        // Right groups
+        accessGroupIds = new LinkedHashSet<>(Arrays.asList(1, 2, 3));
+        ids = indexStorage.searchIdsByText(type, "RfaH", null, accessGroupIds, false);
+        Assert.assertEquals(1, ids.size());
+        id = ids.iterator().next();
+        Assert.assertEquals(expectedGUID, id);
+        // Check object loading by IDs
         List<Object> objList = indexStorage.getObjectsByIds(
                 new HashSet<>(Arrays.asList(id)));
         Assert.assertEquals(1, objList.size());
