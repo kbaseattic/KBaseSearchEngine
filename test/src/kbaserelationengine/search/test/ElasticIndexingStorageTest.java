@@ -110,5 +110,10 @@ public class ElasticIndexingStorageTest {
         Assert.assertTrue(obj.containsKey("location"));
         Assert.assertTrue(obj.containsKey("function"));
         Assert.assertTrue(obj.containsKey("type"));
+        // Search by keyword
+        ids = indexStorage.lookupIdsByKey(type, "ontology_terms", "SSO:000008186", accessGroupIds, false);
+        Assert.assertEquals(1, ids.size());
+        id = ids.iterator().next();
+        Assert.assertEquals(expectedGUID, id);
     }
 }
