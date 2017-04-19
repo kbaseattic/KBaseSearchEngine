@@ -25,9 +25,9 @@ public interface IndexingStorage {
     public void indexObjects(String objectType, Map<GUID, String> idToJsonValues, 
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException;
     
-    public void shareObject(GUID id, int accessGroupId) throws IOException;
+    public void shareObject(Set<GUID> id, int accessGroupId) throws IOException;
 
-    public void unshareObject(GUID id, int accessGroupId) throws IOException;
+    public void unshareObject(Set<GUID> id, int accessGroupId) throws IOException;
 
     public List<Object> getObjectsByIds(Set<GUID> id) throws IOException;
 

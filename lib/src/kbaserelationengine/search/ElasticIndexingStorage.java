@@ -126,9 +126,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
             public void addValue(IndexingRules rules, Object value) {
                 String key;
                 if (mergeTypes) {
-                    key = "all";
+                    key = getKeyProperty("all");
                 } else {
-                    key = getKeyName(rules);
+                    key = getKeyProperty(getKeyName(rules));
                 }
                 List<Object> values = indexPart.get(key);
                 if (values == null) {
@@ -152,12 +152,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 id.getAccessGroupObjectId(), id.getVersion(), null, null);
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.putAll(indexPart);
-        doc.put("_guid", id.toString());
+        doc.put("guid", id.toString());
         String parentId = checkParentDoc(indexName, 
                 new HashSet<>(Arrays.asList(parentGUID))).get(parentGUID);
-        doc.put("_otype", objectType);
+        doc.put("otype", objectType);
         if (!skipFullJson) {
-            doc.put("_ojson", json);
+            doc.put("ojson", json);
         }
         // Save new doc with auto-incremented ID
         // TODO: save many docs at once in bulk mode
@@ -272,27 +272,34 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @Override
-    public void shareObject(GUID id, int accessGroupId) throws IOException {
+    public void shareObject(Set<GUID> guid, int accessGroupId) throws IOException {
+        //Map<String, AccessInfo> esidToAccess = lookupParentDocsByPrefix();
         //throw new IllegalStateException("Unsupported");
     }
     
     @Override
-    public void unshareObject(GUID id, int accessGroupId) throws IOException {
+    public void unshareObject(Set<GUID> guid, int accessGroupId) throws IOException {
         // TODO Auto-generated method stub
     }
     
     @SuppressWarnings({ "serial", "unchecked" })
     @Override
     public List<Object> getObjectsByIds(Set<GUID> ids) throws IOException {
-        Map<String, Object> match = new LinkedHashMap<String, Object>() {{
-            put("_guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList()));
+        Map<String, Object> terms = new LinkedHashMap<String, Object>() {{
+            put("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList()));
+        }};
+        Map<String, Object> filter = new LinkedHashMap<String, Object>() {{
+            put("terms", terms);
+        }};
+        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+            put("filter", filter);
         }};
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
-            put("terms", match);
+            put("bool", bool);
         }};
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
-            put("_source", Arrays.asList("_ojson"));
+            put("_source", Arrays.asList("ojson"));
         }};
         String urlPath = "/_all/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
@@ -303,7 +310,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
-            String jsonText = (String)obj.get("_ojson");
+            String jsonText = (String)obj.get("ojson");
             ret.add(UObject.transformStringToObject(jsonText, Map.class));
         }
         return ret;
@@ -320,7 +327,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             put("match", match);
         }};
         Map<String, Object> terms = new LinkedHashMap<String, Object>() {{
-            put("field", "_otype");
+            put("field", "otype");
         }};
         Map<String, Object> agg = new LinkedHashMap<String, Object>() {{
             put("terms", terms);
@@ -352,12 +359,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public Set<GUID> searchIdsByText(String objectType, String text, List<SortingRule> sorting,
             Set<Integer> accessGroupIds, boolean isAdmin) throws IOException {
-        return queryIds(objectType, "match", "_all", text, accessGroupIds, isAdmin);
+        return queryIds(objectType, "match", "_all", text, sorting, accessGroupIds, isAdmin);
     }
     
     @SuppressWarnings({ "serial", "unchecked" })
     public Set<GUID> queryIds(String objectType, String queryType, String keyName, 
-            Object keyValue, Set<Integer> accessGroupIds, boolean isAdmin) throws IOException {
+            Object keyValue, List<SortingRule> sorting, 
+            Set<Integer> accessGroupIds, boolean isAdmin) throws IOException {
         Map<String, Object> match1 = new LinkedHashMap<String, Object>() {{
             put(keyName, keyValue);
         }};
@@ -395,8 +403,20 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }};
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
-            put("_source", Arrays.asList("_guid"));
+            put("_source", Arrays.asList("guid"));
         }};
+        if (sorting != null && sorting.size() > 0) {
+            List<Object> sort = new ArrayList<>();
+            doc.put("sort", sort);
+            for (SortingRule sr : sorting) {
+                Map<String, Object> sortOrder = new LinkedHashMap<String, Object>() {{
+                    put("order", sr.ascending ? "asc" : "desc");
+                }};
+                sort.add(new LinkedHashMap<String, Object>() {{
+                    put(getKeyProperty(sr.keyName), sortOrder);
+                }});
+            }
+        }
         String indexName = objectType == null ? "_all" : getIndex(objectType);
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
@@ -407,7 +427,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
-            String guidText = (String)obj.get("_guid");
+            String guidText = (String)obj.get("guid");
             ret.add(new GUID(guidText));
         }
         return ret;
@@ -416,7 +436,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public Set<GUID> lookupIdsByKey(String objectType, String keyName, Object keyValue,
             Set<Integer> accessGroupIds, boolean isAdmin) throws IOException {
-        return queryIds(objectType, "term", keyName, keyValue, accessGroupIds, isAdmin);
+        return queryIds(objectType, "term", getKeyProperty(keyName), keyValue, null, 
+                accessGroupIds, isAdmin);
     }
     
     private String getKeyName(IndexingRules rules) {
@@ -424,6 +445,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
             rules.getPath().getPathItems()[0];
     }
     
+    private String getKeyProperty(String keyName) {
+        return "key." + keyName;
+    }
+
     @SuppressWarnings("unchecked")
     public Set<String> listIndeces() throws IOException {
         Set<String> ret = new TreeSet<>();
@@ -539,14 +564,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }});
         Map<String, Object> props = new LinkedHashMap<>();
         table.put("properties", props);
-        props.put("_guid", new LinkedHashMap<String, Object>() {{
+        props.put("guid", new LinkedHashMap<String, Object>() {{
             put("type", "keyword");
         }});
-        props.put("_otype", new LinkedHashMap<String, Object>() {{
+        props.put("otype", new LinkedHashMap<String, Object>() {{
             put("type", "keyword");
         }});
         if (!skipFullJson) {
-            props.put("_ojson", new LinkedHashMap<String, Object>() {{
+            props.put("ojson", new LinkedHashMap<String, Object>() {{
                 put("type", "keyword");
                 put("index", false);
             }});
@@ -560,7 +585,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 if (rules.getKeywordType() == null && !rules.isFullText()) {
                     continue;
                 }
-                String propName = getKeyName(rules);
+                String propName = getKeyProperty(getKeyName(rules));
                 String propType = getEsType(rules.isFullText(), rules.getKeywordType());
                 props.put(propName, new LinkedHashMap<String, Object>() {{
                     put("type", propType);
