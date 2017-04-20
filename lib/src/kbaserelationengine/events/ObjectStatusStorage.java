@@ -3,8 +3,6 @@ package kbaserelationengine.events;
 import java.io.IOException;
 import java.util.List;
 
-import kbaserelationengine.common.GUID;
-
 public interface ObjectStatusStorage {
 	
 	public void createStorage() throws IOException;
@@ -27,7 +25,7 @@ public interface ObjectStatusStorage {
 	
 	public boolean nextPage(ObjectStatusCursor cursor) throws IOException;
 	
-	public List<ObjectStatus> find(String storageCode, boolean processed, List<GUID> guids) throws IOException;
+	public List<ObjectStatus> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds) throws IOException;
 
 	
 }

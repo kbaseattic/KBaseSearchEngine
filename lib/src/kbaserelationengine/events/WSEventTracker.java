@@ -8,7 +8,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
-import kbaserelationengine.common.GUID;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple11;
@@ -54,16 +53,16 @@ public class WSEventTracker {
 	}
 	
 	class ObjDescriptor{
-		Long wsId;
-		Long objId;
-		Long version;
+		Integer wsId;
+		String objId;
+		Integer version;
 		String dataType;
 		boolean isDeleted;
 		boolean isProcessed;
 		
 		ObjectStatusEventType evetType;
 		
-		public ObjDescriptor(Long wsId, Long objId, Long version, String dataType, boolean isDeleted) {
+		public ObjDescriptor(Integer wsId, String objId, Integer version, String dataType, boolean isDeleted) {
 			super();
 			this.wsId = wsId;
 			this.objId = objId;
@@ -82,7 +81,7 @@ public class WSEventTracker {
 
     	
     	// Objects which are candidates for create/update/delete events 
-    	Map<Long,List<ObjDescriptor>> objCandidates = new Hashtable<Long,List<ObjDescriptor>>(); 
+    	Map<String,List<ObjDescriptor>> objCandidates = new Hashtable<String,List<ObjDescriptor>>(); 
 
     	
     	List<Long> wsIds = getWorkspaceIds(true);
@@ -118,12 +117,12 @@ public class WSEventTracker {
 	}
 	
 	private void collectObjects(List<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> rows,
-			Map<Long, List<ObjDescriptor>> objCandidates,
+			Map<String, List<ObjDescriptor>> objCandidates,
 			List<ObjDescriptor> dataPalettes, boolean isDeleted) {
 		
     	for(Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>> row: rows){
     		    		
-    		ObjDescriptor od = new ObjDescriptor(row.getE7(), row.getE1(),  row.getE5(), row.getE3().split("-")[0], isDeleted);
+    		ObjDescriptor od = new ObjDescriptor(row.getE7().intValue(), row.getE1().toString(),  row.getE5().intValue(), row.getE3().split("-")[0], isDeleted);
     		if(od.dataType.equals(DATA_PALETTE_TYPE)){
     			dataPalettes.add(od);
     		} else{
@@ -138,20 +137,23 @@ public class WSEventTracker {
 	}
 
 	private void processObjectCandidates(Long wsId,
-			Map<Long, List<ObjDescriptor>> objCandidates) throws IOException {
+			Map<String, List<ObjDescriptor>> objCandidates) throws IOException {
 		
-		List<GUID> guids = new ArrayList<GUID>();
-		for(Long objId: objCandidates.keySet()){
-			guids.add(new GUID(WS_STORAGE_CODE, wsId.intValue(), objId.toString(), null, null, null));
+		List<String> objIds = new ArrayList<String>();
+		for(String objId: objCandidates.keySet()){
+			objIds.add(objId.toString());
 		}
 	
-		// Mark objects that were already indexed before
-		List<ObjectStatus> objPrevStates = objStatusStorage.find(WS_STORAGE_CODE, false, guids);
+		System.out.println(objIds);
+		
+		
+		// Mark objects that were already processed before
+		List<ObjectStatus> objPrevStates = objStatusStorage.find(WS_STORAGE_CODE, wsId.intValue(), objIds);
 		for(ObjectStatus op: objPrevStates){
 			List<ObjDescriptor> candidates = objCandidates.get(op.getAccessGroupObjectId());
 			if(candidates != null){
 				for(ObjDescriptor od: candidates){
-					if(od.version.equals(op.getVersion())){
+					if(od.version.intValue() == op.getVersion().intValue() ){
 						od.isProcessed = true;
 					}
 				}
@@ -159,7 +161,7 @@ public class WSEventTracker {
 		}
 		
 		// Define eventType for all nonindexed ones and raise event
-		for(Map.Entry<Long, List<ObjDescriptor>> entry: objCandidates.entrySet()){
+		for(Map.Entry<String, List<ObjDescriptor>> entry: objCandidates.entrySet()){
 			for(ObjDescriptor od: entry.getValue()){
 				if(od.isProcessed ) continue;
 				
@@ -184,6 +186,7 @@ public class WSEventTracker {
 	}
 
 	private void processDataPalettes(List<ObjDescriptor> dataPalettes) {
+		//TODO
 	}
 
 	

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.ObjectStatus;
 import kbaserelationengine.events.ObjectStatusCursor;
 import kbaserelationengine.events.ObjectStatusStorage;
@@ -19,12 +18,6 @@ public class FakeObjectStatusStorage implements ObjectStatusStorage {
 	@Override
 	public List<ObjectStatus> find(String storageCode, boolean processed,
 			int maxSize) throws IOException {
-		return new ArrayList<ObjectStatus>();
-	}
-
-	@Override
-	public List<ObjectStatus> find(String storageCode, boolean processed,
-			List<GUID> guids) throws IOException {
 		return new ArrayList<ObjectStatus>();
 	}
 
@@ -61,5 +54,13 @@ public class FakeObjectStatusStorage implements ObjectStatusStorage {
 	public boolean nextPage(ObjectStatusCursor cursor) throws IOException {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+
+	@Override
+	public List<ObjectStatus> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds)
+			throws IOException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

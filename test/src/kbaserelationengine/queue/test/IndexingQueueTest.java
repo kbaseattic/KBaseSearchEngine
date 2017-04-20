@@ -29,9 +29,9 @@ public class IndexingQueueTest {
 		int i = 0;
 		while(it.hasNext()){
 			System.out.println(it.next());
-			if(i++%5 == 0){
+//			if(i++%5 == 0){
 				it.markAsVisitied(true);
-			}
+//			}
 		}
 		
 		count = queue.count();
@@ -44,7 +44,7 @@ public class IndexingQueueTest {
 		
 		System.out.println("Number of records:");
 		System.out.println("\tbefore\t" + queue.count());		
-		queue.markAsNonprocessed("WS", "KBaseGenomeAnnotations.Assembly-6.0");
+		queue.markAsNonprocessed("WS", "KBaseBiochem.Media");
 		System.out.println("\tafter\t" + queue.count());		
 	}
 }

@@ -25,15 +25,23 @@ import workspace.WorkspaceClient;
 
 public class WSEventTrackerTest {
 	WSEventTracker wet;
+	ObjectStatusStorage fakeStorage;
+	ESObjectStatusStorage esStorage;
 	
 	@Before
 	public void init() throws MalformedURLException{
-        ObjectStatusStorage fakeStorage = new FakeObjectStatusStorage();
-        String token = System.getenv().get("AUTH_TOKEN");
-        wet = new WSEventTracker(new URL("https://ci.kbase.us/services/ws"), new AuthToken(token, "unknown"), fakeStorage);
+        fakeStorage = new FakeObjectStatusStorage();
+        esStorage = new ESObjectStatusStorage(new HttpHost("localhost", 9200));
+
+        ObjectStatusStorage storage = esStorage;
         
-        ObjectStatusEventListener listener; 
         
+        AuthToken token = new AuthToken(System.getenv().get("AUTH_TOKEN"), "unknown") ;
+    	URL wsURL = new URL("https://ci.kbase.us/services/ws");
+        wet = new WSEventTracker(wsURL, token , storage);
+        
+        // Register listeners
+        ObjectStatusEventListener listener;         
         listener = new ObjectStatusEventListener(){
 			@Override
 			public void statusChanged(ObjectStatus obj) throws IOException {
@@ -42,15 +50,13 @@ public class WSEventTrackerTest {
         }; 
         wet.registerEventListener(listener);
         
-        listener = new ESObjectStatusStorage(new HttpHost("localhost", 9200));
-        wet.registerEventListener(listener);
+        wet.registerEventListener(esStorage);
 	}
 	
     @Test
     public void testRefilQueueStorage() throws Exception {      
-		ESObjectStatusStorage storage = new ESObjectStatusStorage(new HttpHost("localhost", 9200));
-		storage.deleteStorage();
-		storage.createStorage();    	
+//		esStorage.deleteStorage();
+//		esStorage.createStorage();    	
         wet.update();        
     }	
     

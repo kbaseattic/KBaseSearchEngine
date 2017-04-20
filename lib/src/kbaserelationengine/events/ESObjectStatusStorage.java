@@ -7,8 +7,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import kbaserelationengine.common.GUID;
-
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -22,6 +20,7 @@ import org.elasticsearch.client.RestClientBuilder;
 import us.kbase.common.service.UObject;
 
 public class ESObjectStatusStorage implements ObjectStatusStorage, ObjectStatusEventListener{
+	private static final int MAX_SIZE = 10000; 
     private RestClient _restClient = null;
 	private HttpHost esHost;
 	private String esIndexName = "object_indexing_queue";
@@ -194,26 +193,25 @@ public class ESObjectStatusStorage implements ObjectStatusStorage, ObjectStatusE
 	
 	@SuppressWarnings("unchecked")
     @Override	
-	public List<ObjectStatus> find(String storageCode, boolean processed, List<GUID> guids) throws IOException {
-		List<String> accessGroupObjectIds = new ArrayList<String>();
-		for(GUID guid: guids){
-			accessGroupObjectIds.add(guid.getAccessGroupObjectId());
-		}
+	public List<ObjectStatus> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds) throws IOException{
 		
-		refreshIndex();
+		refreshIndex();		
 		ESQuery query = new ESQuery()
+			.value("size", MAX_SIZE)
 			.map("query")
-				.map("bool")
-					.array("must")
-						.map(null)
-							.map("term")
-								.value("processed", processed)
-							.back()
+			.map("constant_score")
+			.map("filter")
+			.map("bool")
+				.array("must")						
+					.map(null)
+						.map("term")
+							.value("accessGroupId", accessGroupId)
 						.back()
-						.map(null)
-							.map("term")
-								.value("accessGroupObjectId", accessGroupObjectIds);	
-		
+					.back()
+					.map(null)
+						.map("terms")
+							.value("accessGroupObjectId", accessGroupObjectIds);
+				
 		String url = "/" + esIndexName + "/";
 		if(storageCode != null){
 			url += storageCode + "/";
@@ -223,7 +221,8 @@ public class ESObjectStatusStorage implements ObjectStatusStorage, ObjectStatusE
 
 		Map<String, Object> data = UObject.getMapper().readValue(
 			resp.getEntity().getContent(), Map.class);
-		List<Map<String, Object>> hits  = (List<Map<String, Object>>) data.get("hits");
+		List<Map<String, Object>> hits  = (List<Map<String, Object>>) 
+				((LinkedHashMap<String,Object>) data.get("hits")).get("hits");	
 		
 		return toObjectStatuses(hits);
 	}
