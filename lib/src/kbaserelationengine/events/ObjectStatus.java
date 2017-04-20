@@ -26,6 +26,17 @@ public class ObjectStatus {
 		this.eventType = eventType;
 	}
 
+	@Override
+	public String toString(){
+		return "{" + "_id=" + _id
+		+" ,storageCode=" + storageCode
+		+" ,accessGroupId=" + accessGroupId
+		+" ,accessGroupObjectId=" + accessGroupObjectId
+		+" ,version=" + version
+		+" ,storageObjectType=" + storageObjectType
+		+" ,eventType=" + eventType.toString();
+	}
+	
 	public GUID toGUID(){
 		return new GUID(storageCode, accessGroupId, accessGroupObjectId, version, null, null);
 	}
