@@ -8,18 +8,21 @@ MAINTAINER KBase Developer
 
 # RUN apt-get update
 
-RUN apt-get update && \
-    apt-get install -y openjdk-8-jdk && \
-    apt-get install -y ant && \
-    apt-get clean
+RUN sudo apt-get install nano \
+	&& add-apt-repository ppa:openjdk-r/ppa \
+	&& sudo apt-get update \
+	&& sudo apt-get -y install openjdk-8-jdk \
+	&& echo java versions: \
+	&& java -version \
+	&& javac -version \
+	&& echo $JAVA_HOME \
+	&& ls -l /usr/lib/jvm \
+	&& cd /kb/runtime \
+	&& rm java \
+	&& ln -s /usr/lib/jvm/java-8-openjdk-amd64 java \
+	&& ls -l
 
-RUN apt-get update && \
-    apt-get install ca-certificates-java && \
-    apt-get clean && \
-    update-ca-certificates -f
-
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/
-RUN export JAVA_HOME
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 
 # -----------------------------------------
 

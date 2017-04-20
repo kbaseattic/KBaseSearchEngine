@@ -35,10 +35,21 @@
     <include name="slf4j/slf4j-api-1.7.7.jar"/>
     <include name="syslog4j/syslog4j-0.9.46.jar"/>
     <include name="kbase/workspace/WorkspaceClient-0.6.0.jar"/>
+    <include name="apache_commons/commons-logging-1.1.1.jar"/>
+    <include name="apache_commons/commons-io-2.4.jar"/>
+  </fileset>
+
+  <fileset dir="lib/jars" id="lib2">
+    <include name="apache_commons/http/httpasyncclient-4.1.2.jar"/>
+    <include name="apache_commons/http/httpclient-4.5.2.jar"/>
+    <include name="apache_commons/http/httpcore-4.4.5.jar"/>
+    <include name="apache_commons/http/httpcore-nio-4.4.5.jar"/>
+    <include name="elasticsearch/rest-5.3.0.jar"/>
   </fileset>
 
   <path id="compile.classpath">
     <fileset refid="lib"/>
+    <fileset refid="lib2"/>
   </path>
 
   <path id="src.path">
@@ -57,7 +68,7 @@ branch=${git.branch}
 commit=${git.commit}</echo>
     <!-- Compile class files-->
     <javac destdir="${classes}" includeantruntime="false"
-            target="1.7" source="1.7" debug="true"
+            target="1.8" source="1.8" debug="true"
             classpathref="compile.classpath" compiler="modern">
       <src refid="src.path"/>
     </javac>

@@ -26,6 +26,7 @@ import kbaserelationengine.parse.SimpleSubObjectConsumer;
 import kbaserelationengine.parse.SubObjectConsumer;
 import kbaserelationengine.parse.test.SubObjectExtractorTest;
 import kbaserelationengine.search.ElasticIndexingStorage;
+import kbaserelationengine.system.IndexingRules;
 import kbaserelationengine.system.ObjectTypeParsingRules;
 import us.kbase.common.service.UObject;
 
@@ -115,5 +116,27 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals(1, ids.size());
         id = ids.iterator().next();
         Assert.assertEquals(expectedGUID, id);
+    }
+    
+    @Test
+    public void testVersions() throws Exception {
+        String objType = "Simple";
+        IndexingRules ir = new IndexingRules();
+        ir.setPath(new ObjectJsonPath("prop1"));
+        ir.setFullText(true);
+        List<IndexingRules> indexingRules= Arrays.asList(ir);
+        GUID id1 = new GUID("WS:2/1/1");
+        indexStorage.indexObject(id1, objType, "{\"prop1\":\"abc 123\"}", indexingRules);
+        GUID id2 = new GUID("WS:2/1/2");
+        indexStorage.indexObject(id2, objType, "{\"prop1\":\"abc 124\"}", indexingRules);
+        GUID id3 = new GUID("WS:2/1/3");
+        indexStorage.indexObject(id3, objType, "{\"prop1\":\"abc 125\"}", indexingRules);
+        indexStorage.refreshIndex(indexStorage.getIndex(objType));
+        Set<GUID> ids = indexStorage.searchIdsByText(objType, "abc", null, 
+                new LinkedHashSet<>(Arrays.asList(2)), false);
+        Assert.assertEquals(1, ids.size());
+        Assert.assertEquals(id3, ids.iterator().next());
+        Assert.assertEquals(0, indexStorage.searchIdsByText(objType, "123", null, 
+                new LinkedHashSet<>(Arrays.asList(2)), false).size());
     }
 }

@@ -199,9 +199,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return ret;
     }
 
+    public Map<String, AccessInfo> lookupParentDocsByPrefix(GUID guid) throws IOException {
+        return lookupParentDocsByPrefix(null, guid);
+    }
+
     @SuppressWarnings({ "serial", "unchecked" })
     public Map<String, AccessInfo> lookupParentDocsByPrefix(String indexName,
             GUID guid) throws IOException {
+        if (indexName == null) {
+            indexName = "_all";
+        }
         String prefix = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), null, null, null).toString();
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
@@ -224,8 +231,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
         List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
+            String index = (String)hit.get("_index");
+            String type = (String)hit.get("_type");
             String id = (String)hit.get("_id");
-            ret.put(id, AccessInfo.fromMap(obj));
+            ret.put(index + "/" + type + "/" + id, AccessInfo.fromMap(obj));
         }
         return ret;
     }
@@ -264,6 +273,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     resp.getEntity().getContent(), Map.class);
             ret.put(parentGUID, (String)data.get("_id"));
             changed = true;
+            updateLastInForOtherVersions(indexName, parentGUID, parentGUID.getAccessGroupId());
         }
         if (changed) {
             refreshIndex(indexName);
@@ -271,14 +281,93 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return ret;
     }
     
+    @SuppressWarnings({ "serial", "unchecked" })
+    private boolean updateLastInForOtherVersions(String indexName, GUID guid, 
+            int accessGroupId) throws IOException {
+        if (indexName == null) {
+            indexName = "_all";
+        }
+        String prefix = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
+                guid.getAccessGroupObjectId(), null, null, null).toString();
+        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+            put("must", Arrays.asList(createFilter("term", "prefix", prefix),
+                    createFilter("term", "lastin", accessGroupId)));
+            put("must_not", Arrays.asList(createFilter("term", "version", guid.getVersion())));
+        }};
+        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+            put("bool", bool);
+        }};
+        Map<String, Object> script = new LinkedHashMap<String, Object>() {{
+            put("inline", "ctx._source.lastin.remove(ctx._source.lastin.indexOf(" + accessGroupId + "))");
+        }};
+        Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
+            put("query", query);
+            put("script", script);
+        }};
+        String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_update_by_query";
+        Response resp = makeRequest("POST", urlPath, doc);
+        Map<String, Object> data = UObject.getMapper().readValue(
+                resp.getEntity().getContent(), Map.class);
+        return (Integer)data.get("updated") > 0;
+    }
+    
+    @SuppressWarnings({ "serial", "unchecked" })
     @Override
-    public void shareObject(Set<GUID> guid, int accessGroupId) throws IOException {
-        //Map<String, AccessInfo> esidToAccess = lookupParentDocsByPrefix();
-        //throw new IllegalStateException("Unsupported");
+    public void shareObject(Set<GUID> guids, int accessGroupId) throws IOException {
+        String indexName = "_all";
+        for (GUID guid : guids) {
+            String prefix = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
+                    guid.getAccessGroupObjectId(), null, null, null).toString();
+            Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+                put("filter", Arrays.asList(createFilter("term", "prefix", prefix),
+                        new LinkedHashMap<String, Object>() {{
+                            put("bool", createFilter("term", "version", guid.getVersion()));
+                        }}));
+            }};
+            Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+                put("bool", bool);
+            }};
+            Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
+                put("query", query);
+            }};
+            String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_search";
+            Response resp = makeRequest("GET", urlPath, doc);
+            Map<String, Object> data = UObject.getMapper().readValue(
+                    resp.getEntity().getContent(), Map.class);
+            System.out.println("shareObject: " + data);
+        }
+        /*Map<String, AccessInfo> changes = new LinkedHashMap<>();
+        for (GUID guid : guids) {
+            int currentGroup = guid.getAccessGroupId();
+            int currentVer = guid.getVersion();
+            Map<String, AccessInfo> esidToAccess = lookupParentDocsByPrefix(guid);
+            // Let's check if currentVer is >= last version for currentGroup
+            int maxVer = -1;
+            for (String esid : esidToAccess.keySet()) {
+                AccessInfo ai = esidToAccess.get(esid);
+                if (ai.lastIn.contains(currentGroup)) {
+                    if (maxVer < ai.version) {
+                        maxVer = ai.version;
+                    }
+                }
+            }
+            if (currentVer > maxVer) {
+                for (String esid : esidToAccess.keySet()) {
+                    AccessInfo ai = esidToAccess.get(esid);
+                    if (ai.lastIn.contains(currentGroup) && ai.version != currentVer) {
+                        ai.lastIn.remove(currentGroup);
+                        changes.put(esid, ai);
+                    } else if (ai.version == currentVer && !ai.lastIn.contains(currentGroup)) {
+                        ai.lastIn.add(currentGroup);
+                        changes.put(esid, ai);
+                    }
+                }
+            }
+        }*/
     }
     
     @Override
-    public void unshareObject(Set<GUID> guid, int accessGroupId) throws IOException {
+    public void unshareObject(Set<GUID> guids, int accessGroupId) throws IOException {
         // TODO Auto-generated method stub
     }
     
