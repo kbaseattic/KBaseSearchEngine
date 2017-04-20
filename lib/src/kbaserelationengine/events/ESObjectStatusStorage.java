@@ -21,10 +21,10 @@ import org.elasticsearch.client.RestClientBuilder;
 
 import us.kbase.common.service.UObject;
 
-public class ESObjectStatusStorage implements ObjectStatusStorage{
+public class ESObjectStatusStorage implements ObjectStatusStorage, ObjectStatusEventListener{
     private RestClient _restClient = null;
 	private HttpHost esHost;
-	private String esIndexName = "_ObjectIndexingQueue";
+	private String esIndexName = "object_indexing_queue";
 
     public ESObjectStatusStorage(HttpHost esHost) {
 		super();
@@ -46,10 +46,17 @@ public class ESObjectStatusStorage implements ObjectStatusStorage{
     }		
 	
 	
-	public void initStorage() throws IOException {
+	@Override
+	public void createStorage() throws IOException {
         makeRequest("PUT", "/" + esIndexName, null);    	
 	}
-        
+       
+	@Override
+	public void deleteStorage() throws IOException {
+        makeRequest("DELETE", "/" + esIndexName, null);    	
+	}	
+	
+	@Override
     public void store(ObjectStatus obj) throws IOException{
         Map<String, Object> doc = new LinkedHashMap<String, Object>();
         
@@ -59,15 +66,26 @@ public class ESObjectStatusStorage implements ObjectStatusStorage{
         doc.put("eventType", obj.getEventType().toString());
         doc.put("storageObjectType", obj.getStorageObjectType());
         doc.put("indexed", false);
+        doc.put("processed", false);
         
         makeRequest("POST", "/" + esIndexName + "/" + obj.getStorageCode() + "/", doc);		    	
     }
+
+    @Override
+	public void statusChanged(ObjectStatus obj) throws IOException {
+		store(obj);
+	}	
     
-	public void markAsIndexed(ObjectStatus row) throws IOException {
-		ESQuery query = new ESQuery().value("indexed",true);		
-		makeRequest("PUT", "/" + esIndexName + "/" + row.getStorageCode() + "/" + row.getId()  , query.document());				
+    @Override
+	public void markAsProcessed(ObjectStatus row, boolean isIndexed) throws IOException {
+		ESQuery query = new ESQuery()
+			.map("doc")
+			.value("processed", true)
+			.value("indexed",isIndexed);
+		
+		makeRequest("POST", "/" + esIndexName + "/" + row.getStorageCode() + "/" + row.getId() + "/" + "_update" , query.document());				
 	}
-	
+
 	private Response makeRequest(String reqType, String urlPath, Map<String, ?> doc) throws IOException{
 		RestClient restClient = restClient();
 		HttpEntity body = doc == null ? null : 
@@ -76,11 +94,13 @@ public class ESObjectStatusStorage implements ObjectStatusStorage{
 	}
 
 	@SuppressWarnings("unchecked")
-	public int countNonIndexedObjects(String storageCode) throws IOException {
+	@Override
+	public int count(String storageCode, boolean processed) throws IOException {
+		refreshIndex();		
 		ESQuery query = new ESQuery()
-			.term("query")
-			.term("match")
-			.value("indexed",false);
+			.map("query")
+				.map("match")
+					.value("processed", processed);
 		
 		String url = "/" + esIndexName + "/";
 		if(storageCode != null){
@@ -98,14 +118,16 @@ public class ESObjectStatusStorage implements ObjectStatusStorage{
 
 
 	@SuppressWarnings("unchecked")
-	public List<ObjectStatus> find(String storageCode, int maxSize)
+    @Override	
+	public List<ObjectStatus> find(String storageCode, boolean processed, int maxSize)
 			throws IOException {
+		refreshIndex();	
 		ESQuery query = new ESQuery()
 			.value("from",0)
 			.value("size",maxSize)
-			.term("query")
-			.term("match")
-			.value("indexed",false);
+			.map("query")
+				.map("match")
+					.value("processed",false);
 	
 		String url = "/" + esIndexName + "/";
 		if(storageCode != null){
@@ -115,14 +137,128 @@ public class ESObjectStatusStorage implements ObjectStatusStorage{
 		Response resp = makeRequest("GET", url + "_search", query.document());
 		Map<String, Object> data = UObject.getMapper().readValue(
             resp.getEntity().getContent(), Map.class);
-		List<Map<String, Object>> hits  = (List<Map<String, Object>> ) data.get("hits");
+		List<Map<String, Object>> hits  = (List<Map<String, Object>>) 
+				((LinkedHashMap<String,Object>) data.get("hits")).get("hits");	
+		return toObjectStatuses(hits);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public ObjectStatusCursor cursor(String storageCode, boolean processed, int pageSize, String timeAlive)
+			throws IOException {
+		
+		refreshIndex();		
+		ESQuery query = new ESQuery()
+				.value("size", pageSize)
+				.map("query")
+					.map("match")
+						.value("processed",false);
+		
+		String url = "/" + esIndexName + "/";
+		if(storageCode != null){
+			url += storageCode + "/";
+		}
+
+		Response resp = makeRequest("GET", url + "_search?scroll=" + timeAlive, query.document());	
+		Map<String, Object> data = UObject.getMapper().readValue(
+            resp.getEntity().getContent(), Map.class);
+		List<Map<String, Object>> hits  = (List<Map<String, Object>>) 
+				((LinkedHashMap<String,Object>) data.get("hits")).get("hits");	
+		
+		ObjectStatusCursor cursor = new ObjectStatusCursor( 
+				(String) data.get("_scroll_id"),
+				pageSize,
+				timeAlive
+		);
+		cursor.nextPage(toObjectStatuses(hits));
+		return cursor;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public boolean nextPage(ObjectStatusCursor cursor) throws IOException {
+		ESQuery query = new ESQuery()
+				.value("scroll", cursor.getTimeAlive())
+				.value("scroll_id", cursor.getCursorId());
+
+		Response resp = makeRequest("GET", "/_search/scroll", query.document());	
+		Map<String, Object> data = UObject.getMapper().readValue(
+            resp.getEntity().getContent(), Map.class);
+		List<Map<String, Object>> hits  = (List<Map<String, Object>>) 
+				((LinkedHashMap<String,Object>) data.get("hits")).get("hits");	
+		
+		cursor.nextPage(toObjectStatuses(hits));
+		return cursor.getData().size() > 0;
+	}	
 	
+	
+	@SuppressWarnings("unchecked")
+    @Override	
+	public List<ObjectStatus> find(String storageCode, boolean processed, List<GUID> guids) throws IOException {
+		List<String> accessGroupObjectIds = new ArrayList<String>();
+		for(GUID guid: guids){
+			accessGroupObjectIds.add(guid.getAccessGroupObjectId());
+		}
+		
+		refreshIndex();
+		ESQuery query = new ESQuery()
+			.map("query")
+				.map("bool")
+					.array("must")
+						.map(null)
+							.map("term")
+								.value("processed", processed)
+							.back()
+						.back()
+						.map(null)
+							.map("term")
+								.value("accessGroupObjectId", accessGroupObjectIds);	
+		
+		String url = "/" + esIndexName + "/";
+		if(storageCode != null){
+			url += storageCode + "/";
+		}
+
+		Response resp = makeRequest("GET", url + "_search", query.document());
+
+		Map<String, Object> data = UObject.getMapper().readValue(
+			resp.getEntity().getContent(), Map.class);
+		List<Map<String, Object>> hits  = (List<Map<String, Object>>) data.get("hits");
+		
+		return toObjectStatuses(hits);
+	}
+	
+	@Override
+	public void markAsNonprocessed(String storageCode, String storageObjectType)
+			throws IOException {
+		
+		ESQuery query = new ESQuery()
+			.map("query")
+				.map("match")
+					.value("storageObjectType",storageObjectType)
+				.back()
+			.back()
+			.map("script")
+				.value("inline", "ctx._source.processed = false; ctx._source.indexed = false;");
+
+		String url = "/" + esIndexName + "/";
+		if(storageCode != null){
+			url += storageCode + "/";
+		}		
+		makeRequest("POST", url + "_update_by_query", query.document());		
+	}
+	
+	
+	@SuppressWarnings("unchecked")
+	private List<ObjectStatus> toObjectStatuses(List<Map<String, Object>> hits) {
 		List<ObjectStatus> rows = new ArrayList<ObjectStatus>();		
-		for(Map<String, Object> hit: hits){				
-			storageCode = (String)hit.get("_type");
+		for(Map<String, Object> hit: hits){								
+			String storageCode = (String)hit.get("_type");
+			String _id = (String)hit.get("_id");
+			hit = (Map<String, Object>) hit.get("_source");
 		
 			rows.add( new ObjectStatus(
-				(String) hit.get("_id") , 
+				_id, 
 				storageCode, 
 				(Integer)hit.get("accessGroupId"),
 				(String)hit.get("accessGroupObjectId"), 
@@ -131,18 +267,11 @@ public class ESObjectStatusStorage implements ObjectStatusStorage{
 				ObjectStatusEventType.valueOf((String)hit.get("eventType"))
 			));
 		}			
-	
-		return rows;	
+		return rows;
 	}
 
 
-
-	public List<ObjectStatus> find(String storageCode, List<GUID> guids)
-			throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
-    
+    private void refreshIndex() throws IOException {
+        makeRequest("POST", "/" + esIndexName + "/_refresh", null);
+    }
 }
