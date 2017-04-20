@@ -59,7 +59,7 @@ public class WSEventTracker {
 		Long version;
 		String dataType;
 		boolean isDeleted;
-		boolean isIndexed;
+		boolean isProcessed;
 		
 		ObjectStatusEventType evetType;
 		
@@ -105,6 +105,7 @@ public class WSEventTracker {
     		// Only deleted
         	params = new ListObjectsParams().withIds( Arrays.asList(wsId) );
         	params.setShowAllVersions(1L);
+        	params.setShowDeleted(1L);
         	params.setShowOnlyDeleted(1L);
         	rows = wsClient.listObjects(params);
         	collectObjects(rows, objCandidates, dataPalettes, true);    		    		
@@ -112,7 +113,7 @@ public class WSEventTracker {
         	processObjectCandidates(wsId, objCandidates);   
     	}
     	
-    	// Process all palettes. We should do it only after evenets like create/update/detele are done
+    	// Process all palettes. We should do it only after events like create/update/detele are done
     	processDataPalettes(dataPalettes);
 	}
 	
@@ -121,8 +122,9 @@ public class WSEventTracker {
 			List<ObjDescriptor> dataPalettes, boolean isDeleted) {
 		
     	for(Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>> row: rows){
-    		ObjDescriptor od = new ObjDescriptor(row.getE7(), row.getE1(),  row.getE5(), row.getE3(), isDeleted);
-    		if(od.dataType.startsWith(DATA_PALETTE_TYPE)){
+    		    		
+    		ObjDescriptor od = new ObjDescriptor(row.getE7(), row.getE1(),  row.getE5(), row.getE3().split("-")[0], isDeleted);
+    		if(od.dataType.equals(DATA_PALETTE_TYPE)){
     			dataPalettes.add(od);
     		} else{
     			List<ObjDescriptor> ods = objCandidates.get(od.objId);
@@ -144,13 +146,13 @@ public class WSEventTracker {
 		}
 	
 		// Mark objects that were already indexed before
-		List<ObjectStatus> objPrevStates = objStatusStorage.find(WS_STORAGE_CODE, guids);
+		List<ObjectStatus> objPrevStates = objStatusStorage.find(WS_STORAGE_CODE, false, guids);
 		for(ObjectStatus op: objPrevStates){
 			List<ObjDescriptor> candidates = objCandidates.get(op.getAccessGroupObjectId());
 			if(candidates != null){
 				for(ObjDescriptor od: candidates){
 					if(od.version.equals(op.getVersion())){
-						od.isIndexed = true;
+						od.isProcessed = true;
 					}
 				}
 			}
@@ -159,12 +161,12 @@ public class WSEventTracker {
 		// Define eventType for all nonindexed ones and raise event
 		for(Map.Entry<Long, List<ObjDescriptor>> entry: objCandidates.entrySet()){
 			for(ObjDescriptor od: entry.getValue()){
-				if(od.isIndexed ) continue;
+				if(od.isProcessed ) continue;
 				
 				if(od.isDeleted){
 					raiseEvent(od, ObjectStatusEventType.DELETED);
 				} else{
-					if(od.version.equals("1")){
+					if(od.version.intValue() == 1){
 						raiseEvent(od, ObjectStatusEventType.CREATED);
 					} else{
 						raiseEvent(od, ObjectStatusEventType.NEW_VERSION);						
