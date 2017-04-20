@@ -4,14 +4,17 @@ import java.io.IOException;
 import java.util.List;
 
 import kbaserelationengine.events.ObjectStatus;
+import kbaserelationengine.events.ObjectStatusCursor;
 import kbaserelationengine.events.ObjectStatusStorage;
 
 public class IndexingQueue {
-	private final static int BUFFER_SIZE = 100;
+	private final static String BUFFER_ALIVE_TIME = "1m";
+	private final static int BUFFER_SIZE = 10;
 	private ObjectStatusStorage objStatusStorage;	
 	
 	class _Iterator implements IndexingIterator{
 		String storageCode;
+		ObjectStatusCursor cursor = null;
 		ObjectStatus[] buffer = new ObjectStatus[BUFFER_SIZE];
 		int nextPos = 0;
 		int nItems = 0;
@@ -22,6 +25,7 @@ public class IndexingQueue {
 			this.storageCode = storageCode;
 		}
 				
+
 		@Override
 		public boolean hasNext() throws IOException {
 			if(bufferEmpy()){
@@ -31,27 +35,33 @@ public class IndexingQueue {
 		}
 
 		private void loadBuffer() throws IOException {
-			List<ObjectStatus> rows = list(storageCode, BUFFER_SIZE);
-			
+			if(cursor == null){
+				cursor = objStatusStorage.cursor(storageCode, false, BUFFER_SIZE, BUFFER_ALIVE_TIME);							
+			} else{
+				objStatusStorage.nextPage(cursor);
+			}
+						
 			int i = 0;
-			for(ObjectStatus row : rows){
+			for(ObjectStatus row : cursor.getData()){
 				buffer[i++] = row;
 			}
 			nextPos = 0;
-			nItems = rows.size();
+			nItems = cursor.getData().size();
 		}
 
 		private boolean bufferEmpy() {
-			return nextPos < nItems;
+			return !(nextPos < nItems);
 		}
 
 		@Override
 		public void markAsVisitied(boolean isIndexed) throws IOException {
-			if(bufferEmpy()){
+			int curPos = nextPos - 1;
+			if( curPos >= 0 && curPos < nItems){
+				objStatusStorage.markAsProcessed(buffer[curPos], isIndexed);
+				
+			} else{
 				throw new IndexOutOfBoundsException();
 			}					
-			ObjectStatus curObect = buffer[nextPos - 1];
-			objStatusStorage.markAsProcessed(curObect, isIndexed);
 		}
 
 		@Override
