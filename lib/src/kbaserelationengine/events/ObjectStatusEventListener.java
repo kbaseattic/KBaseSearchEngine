@@ -4,5 +4,5 @@ import java.io.IOException;
 
 
 public interface ObjectStatusEventListener {
-	public void statusChanged(ObjectStatus obj) throws IOException;
+	public void statusChanged(ObjectStatusEvent event) throws IOException;
 }

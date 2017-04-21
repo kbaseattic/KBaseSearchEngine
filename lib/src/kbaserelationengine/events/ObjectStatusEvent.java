@@ -2,7 +2,7 @@ package kbaserelationengine.events;
 
 import kbaserelationengine.common.GUID;
 
-public class ObjectStatus {
+public class ObjectStatusEvent {
 	private String _id;
     private String storageCode;
     private Integer accessGroupId;
@@ -12,7 +12,7 @@ public class ObjectStatus {
     private ObjectStatusEventType eventType;
     
     
-	public ObjectStatus(String _id, String storageCode, Integer accessGroupId,
+	public ObjectStatusEvent(String _id, String storageCode, Integer accessGroupId,
 			String accessGroupObjectId, Integer version,
 			String storageObjectType,
 			ObjectStatusEventType eventType) {
@@ -26,6 +26,17 @@ public class ObjectStatus {
 		this.eventType = eventType;
 	}
 
+	@Override
+	public String toString(){
+		return "{" + "_id=" + _id
+		+" ,storageCode=" + storageCode
+		+" ,accessGroupId=" + accessGroupId
+		+" ,accessGroupObjectId=" + accessGroupObjectId
+		+" ,version=" + version
+		+" ,storageObjectType=" + storageObjectType
+		+" ,eventType=" + eventType.toString();
+	}
+	
 	public GUID toGUID(){
 		return new GUID(storageCode, accessGroupId, accessGroupObjectId, version, null, null);
 	}

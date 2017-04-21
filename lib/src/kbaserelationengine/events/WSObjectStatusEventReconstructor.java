@@ -8,7 +8,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
-import kbaserelationengine.common.GUID;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple11;
@@ -18,27 +17,26 @@ import workspace.ListObjectsParams;
 import workspace.ListWorkspaceInfoParams;
 import workspace.WorkspaceClient;
 
-public class WSEventTracker {
+public class WSObjectStatusEventReconstructor {
 	
 	private static String WS_STORAGE_CODE = "WS";
 	private static String DATA_PALETTE_TYPE = "DataPalette.DataPalette";
 	
 	private URL wsUrl;
 	private AuthToken token;
-	private ObjectStatusStorage objStatusStorage;
+	private ObjectStatusEventStorage objStatusStorage;
+	private WSObjectStatusEventTrigger eventTrigger;
 	
 	private WorkspaceClient _wsClient;
-	private List<ObjectStatusEventListener> eventListeners = new ArrayList<ObjectStatusEventListener>(); 
 	
-	public WSEventTracker(URL wsUrl, AuthToken token, ObjectStatusStorage objStatusStorage) {
+	public WSObjectStatusEventReconstructor(URL wsUrl, AuthToken token, 
+			ObjectStatusEventStorage objStatusStorage,
+			WSObjectStatusEventTrigger eventTrigger) {
 		this.wsUrl = wsUrl;
 		this.token = token;
 		this.objStatusStorage = objStatusStorage;
+		this.eventTrigger = eventTrigger;
 	}
-		
-	public void registerEventListener(ObjectStatusEventListener listener){
-		eventListeners.add(listener);
-	}	
 		
 	public void update() throws IOException {
 		try {
@@ -54,22 +52,34 @@ public class WSEventTracker {
 	}
 	
 	class ObjDescriptor{
-		Long wsId;
-		Long objId;
-		Long version;
+		Integer wsId;
+		String objId;
+		Integer version;
 		String dataType;
 		boolean isDeleted;
-		boolean isIndexed;
+		boolean isProcessed;
 		
 		ObjectStatusEventType evetType;
 		
-		public ObjDescriptor(Long wsId, Long objId, Long version, String dataType, boolean isDeleted) {
+		public ObjDescriptor(Integer wsId, String objId, Integer version, String dataType, boolean isDeleted) {
 			super();
 			this.wsId = wsId;
 			this.objId = objId;
 			this.version = version;
 			this.dataType = dataType;
 			this.isDeleted = isDeleted;
+		}
+		
+		@Override
+		public String toString(){
+			return "{ wsId=" + wsId
+					+ ", objId=" + objId
+					+ ", version=" + version
+					+ ", dataType=" + dataType
+					+ ", isDeleted=" + isDeleted
+					+ ", isProcessed=" + isProcessed
+					+ ", evetType=" + (evetType != null ? evetType.toString() : null)
+					+" }";
 		}
 	}
 	
@@ -82,7 +92,7 @@ public class WSEventTracker {
 
     	
     	// Objects which are candidates for create/update/delete events 
-    	Map<Long,List<ObjDescriptor>> objCandidates = new Hashtable<Long,List<ObjDescriptor>>(); 
+    	Map<String,List<ObjDescriptor>> objCandidates = new Hashtable<String,List<ObjDescriptor>>(); 
 
     	
     	List<Long> wsIds = getWorkspaceIds(true);
@@ -105,24 +115,26 @@ public class WSEventTracker {
     		// Only deleted
         	params = new ListObjectsParams().withIds( Arrays.asList(wsId) );
         	params.setShowAllVersions(1L);
+        	params.setShowDeleted(1L);
         	params.setShowOnlyDeleted(1L);
         	rows = wsClient.listObjects(params);
         	collectObjects(rows, objCandidates, dataPalettes, true);    		    		
         	
-        	processObjectCandidates(wsId, objCandidates);   
+//        	processObjectCandidates(wsId, objCandidates);   
     	}
     	
-    	// Process all palettes. We should do it only after evenets like create/update/detele are done
+    	// Process all palettes. We should do it only after events like create/update/detele are done
     	processDataPalettes(dataPalettes);
 	}
 	
 	private void collectObjects(List<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> rows,
-			Map<Long, List<ObjDescriptor>> objCandidates,
+			Map<String, List<ObjDescriptor>> objCandidates,
 			List<ObjDescriptor> dataPalettes, boolean isDeleted) {
 		
     	for(Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>> row: rows){
-    		ObjDescriptor od = new ObjDescriptor(row.getE7(), row.getE1(),  row.getE5(), row.getE3(), isDeleted);
-    		if(od.dataType.startsWith(DATA_PALETTE_TYPE)){
+    		    		
+    		ObjDescriptor od = new ObjDescriptor(row.getE7().intValue(), row.getE1().toString(),  row.getE5().intValue(), row.getE3().split("-")[0], isDeleted);
+    		if(od.dataType.equals(DATA_PALETTE_TYPE)){
     			dataPalettes.add(od);
     		} else{
     			List<ObjDescriptor> ods = objCandidates.get(od.objId);
@@ -136,52 +148,56 @@ public class WSEventTracker {
 	}
 
 	private void processObjectCandidates(Long wsId,
-			Map<Long, List<ObjDescriptor>> objCandidates) throws IOException {
+		Map<String, List<ObjDescriptor>> objCandidates) throws IOException {
 		
-		List<GUID> guids = new ArrayList<GUID>();
-		for(Long objId: objCandidates.keySet()){
-			guids.add(new GUID(WS_STORAGE_CODE, wsId.intValue(), objId.toString(), null, null, null));
+		List<String> objIds = new ArrayList<String>();
+		for(String objId: objCandidates.keySet()){
+			objIds.add(objId.toString());
 		}
 	
-		// Mark objects that were already indexed before
-		List<ObjectStatus> objPrevStates = objStatusStorage.find(WS_STORAGE_CODE, guids);
-		for(ObjectStatus op: objPrevStates){
+		System.out.println(objIds);
+		
+		
+		// Mark objects that were already processed before
+		List<ObjectStatusEvent> objPrevStates = objStatusStorage.find(WS_STORAGE_CODE, wsId.intValue(), objIds);
+		for(ObjectStatusEvent op: objPrevStates){
 			List<ObjDescriptor> candidates = objCandidates.get(op.getAccessGroupObjectId());
 			if(candidates != null){
 				for(ObjDescriptor od: candidates){
-					if(od.version.equals(op.getVersion())){
-						od.isIndexed = true;
+					if(od.version.intValue() == op.getVersion().intValue() ){
+						od.isProcessed = true;
 					}
 				}
 			}
 		}
 		
 		// Define eventType for all nonindexed ones and raise event
-		for(Map.Entry<Long, List<ObjDescriptor>> entry: objCandidates.entrySet()){
+		for(Map.Entry<String, List<ObjDescriptor>> entry: objCandidates.entrySet()){
 			for(ObjDescriptor od: entry.getValue()){
-				if(od.isIndexed ) continue;
+				if(od.isProcessed ) continue;
 				
 				if(od.isDeleted){
-					raiseEvent(od, ObjectStatusEventType.DELETED);
+					triggerEvent(od, ObjectStatusEventType.DELETED);
 				} else{
-					if(od.version.equals("1")){
-						raiseEvent(od, ObjectStatusEventType.CREATED);
+					if(od.version.intValue() == 1){
+						triggerEvent(od, ObjectStatusEventType.CREATED);
 					} else{
-						raiseEvent(od, ObjectStatusEventType.NEW_VERSION);						
+						triggerEvent(od, ObjectStatusEventType.NEW_VERSION);						
 					}
 				}
 			} 
 		}		
 	}
 
-	private void raiseEvent(ObjDescriptor od, ObjectStatusEventType eventType) throws IOException {
-		ObjectStatus os = new ObjectStatus(null,WS_STORAGE_CODE,od.wsId.intValue(), od.objId.toString(), od.version.intValue(), od.dataType, eventType);
-		for(ObjectStatusEventListener listener: eventListeners){
-			listener.statusChanged(os);
-		}		
+	private void triggerEvent(ObjDescriptor od, ObjectStatusEventType eventType) throws IOException {
+		ObjectStatusEvent event = new ObjectStatusEvent(null,WS_STORAGE_CODE,od.wsId.intValue(), od.objId.toString(), od.version.intValue(), od.dataType, eventType);
+		eventTrigger.trigger(event);
 	}
 
 	private void processDataPalettes(List<ObjDescriptor> dataPalettes) {
+		for(ObjDescriptor dp: dataPalettes){
+			System.out.println("Data pallete: " + dp);
+		}
 	}
 
 	
