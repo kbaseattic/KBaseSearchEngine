@@ -2,7 +2,7 @@ package kbaserelationengine.events;
 
 import kbaserelationengine.common.GUID;
 
-public class ObjectStatus {
+public class ObjectStatusEvent {
 	private String _id;
     private String storageCode;
     private Integer accessGroupId;
@@ -12,7 +12,7 @@ public class ObjectStatus {
     private ObjectStatusEventType eventType;
     
     
-	public ObjectStatus(String _id, String storageCode, Integer accessGroupId,
+	public ObjectStatusEvent(String _id, String storageCode, Integer accessGroupId,
 			String accessGroupObjectId, Integer version,
 			String storageObjectType,
 			ObjectStatusEventType eventType) {

@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import kbaserelationengine.events.ObjectStatus;
+import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusCursor;
-import kbaserelationengine.events.ObjectStatusStorage;
+import kbaserelationengine.events.ObjectStatusEventStorage;
 
-public class FakeObjectStatusStorage implements ObjectStatusStorage {
+public class FakeObjectStatusStorage implements ObjectStatusEventStorage {
 
 	@Override
 	public int count(String storageCode, boolean processed) throws IOException {
@@ -16,9 +16,9 @@ public class FakeObjectStatusStorage implements ObjectStatusStorage {
 	}
 
 	@Override
-	public List<ObjectStatus> find(String storageCode, boolean processed,
+	public List<ObjectStatusEvent> find(String storageCode, boolean processed,
 			int maxSize) throws IOException {
-		return new ArrayList<ObjectStatus>();
+		return new ArrayList<ObjectStatusEvent>();
 	}
 
 	@Override
@@ -35,12 +35,12 @@ public class FakeObjectStatusStorage implements ObjectStatusStorage {
 	}
 
 	@Override
-	public void markAsProcessed(ObjectStatus row, boolean isIndexed)
+	public void markAsProcessed(ObjectStatusEvent row, boolean isIndexed)
 			throws IOException {
 	}
 
 	@Override
-	public void store(ObjectStatus obj) throws IOException {
+	public void store(ObjectStatusEvent obj) throws IOException {
 	}
 
 	@Override
@@ -58,7 +58,7 @@ public class FakeObjectStatusStorage implements ObjectStatusStorage {
 
 
 	@Override
-	public List<ObjectStatus> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds)
+	public List<ObjectStatusEvent> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds)
 			throws IOException {
 		// TODO Auto-generated method stub
 		return null;

@@ -19,13 +19,13 @@ import org.elasticsearch.client.RestClientBuilder;
 
 import us.kbase.common.service.UObject;
 
-public class ESObjectStatusStorage implements ObjectStatusStorage, ObjectStatusEventListener{
+public class ESObjectStatusEventStorage implements ObjectStatusEventStorage, ObjectStatusEventListener{
 	private static final int MAX_SIZE = 10000; 
     private RestClient _restClient = null;
 	private HttpHost esHost;
 	private String esIndexName = "object_indexing_queue";
 
-    public ESObjectStatusStorage(HttpHost esHost) {
+    public ESObjectStatusEventStorage(HttpHost esHost) {
 		super();
 		this.esHost = esHost;
 	}
@@ -56,7 +56,7 @@ public class ESObjectStatusStorage implements ObjectStatusStorage, ObjectStatusE
 	}	
 	
 	@Override
-    public void store(ObjectStatus obj) throws IOException{
+    public void store(ObjectStatusEvent obj) throws IOException{
         Map<String, Object> doc = new LinkedHashMap<String, Object>();
         
         doc.put("accessGroupId", obj.getAccessGroupId());
@@ -71,12 +71,12 @@ public class ESObjectStatusStorage implements ObjectStatusStorage, ObjectStatusE
     }
 
     @Override
-	public void statusChanged(ObjectStatus obj) throws IOException {
+	public void statusChanged(ObjectStatusEvent obj) throws IOException {
 		store(obj);
 	}	
     
     @Override
-	public void markAsProcessed(ObjectStatus row, boolean isIndexed) throws IOException {
+	public void markAsProcessed(ObjectStatusEvent row, boolean isIndexed) throws IOException {
 		ESQuery query = new ESQuery()
 			.map("doc")
 			.value("processed", true)
@@ -118,7 +118,7 @@ public class ESObjectStatusStorage implements ObjectStatusStorage, ObjectStatusE
 
 	@SuppressWarnings("unchecked")
     @Override	
-	public List<ObjectStatus> find(String storageCode, boolean processed, int maxSize)
+	public List<ObjectStatusEvent> find(String storageCode, boolean processed, int maxSize)
 			throws IOException {
 		refreshIndex();	
 		ESQuery query = new ESQuery()
@@ -193,7 +193,7 @@ public class ESObjectStatusStorage implements ObjectStatusStorage, ObjectStatusE
 	
 	@SuppressWarnings("unchecked")
     @Override	
-	public List<ObjectStatus> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds) throws IOException{
+	public List<ObjectStatusEvent> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds) throws IOException{
 		
 		refreshIndex();		
 		ESQuery query = new ESQuery()
@@ -249,14 +249,14 @@ public class ESObjectStatusStorage implements ObjectStatusStorage, ObjectStatusE
 	
 	
 	@SuppressWarnings("unchecked")
-	private List<ObjectStatus> toObjectStatuses(List<Map<String, Object>> hits) {
-		List<ObjectStatus> rows = new ArrayList<ObjectStatus>();		
+	private List<ObjectStatusEvent> toObjectStatuses(List<Map<String, Object>> hits) {
+		List<ObjectStatusEvent> rows = new ArrayList<ObjectStatusEvent>();		
 		for(Map<String, Object> hit: hits){								
 			String storageCode = (String)hit.get("_type");
 			String _id = (String)hit.get("_id");
 			hit = (Map<String, Object>) hit.get("_source");
 		
-			rows.add( new ObjectStatus(
+			rows.add( new ObjectStatusEvent(
 				_id, 
 				storageCode, 
 				(Integer)hit.get("accessGroupId"),

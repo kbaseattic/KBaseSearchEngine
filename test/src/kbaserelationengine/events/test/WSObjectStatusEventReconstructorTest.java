@@ -9,11 +9,12 @@ import org.apache.http.HttpHost;
 import org.junit.Before;
 import org.junit.Test;
 
-import kbaserelationengine.events.ESObjectStatusStorage;
-import kbaserelationengine.events.ObjectStatus;
+import kbaserelationengine.events.ESObjectStatusEventStorage;
+import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventListener;
-import kbaserelationengine.events.ObjectStatusStorage;
-import kbaserelationengine.events.WSEventTracker;
+import kbaserelationengine.events.ObjectStatusEventStorage;
+import kbaserelationengine.events.WSObjectStatusEventReconstructor;
+import kbaserelationengine.events.WSObjectStatusEventTrigger;
 import kbaserelationengine.events.test.fake.FakeObjectStatusStorage;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
@@ -23,34 +24,35 @@ import workspace.ObjectSpecification;
 import workspace.WorkspaceClient;
 
 
-public class WSEventTrackerTest {
-	WSEventTracker wet;
-	ObjectStatusStorage fakeStorage;
-	ESObjectStatusStorage esStorage;
+public class WSObjectStatusEventReconstructorTest {
+	WSObjectStatusEventReconstructor wet;
+	ObjectStatusEventStorage fakeStorage;
+	ESObjectStatusEventStorage esStorage;
 	
 	@Before
 	public void init() throws MalformedURLException{
         fakeStorage = new FakeObjectStatusStorage();
-        esStorage = new ESObjectStatusStorage(new HttpHost("localhost", 9200));
+        esStorage = new ESObjectStatusEventStorage(new HttpHost("localhost", 9200));
 
-        ObjectStatusStorage storage = esStorage;
+        ObjectStatusEventStorage storage = esStorage;
+        WSObjectStatusEventTrigger eventTrigger = new WSObjectStatusEventTrigger();
         
         
         AuthToken token = new AuthToken(System.getenv().get("AUTH_TOKEN"), "unknown") ;
     	URL wsURL = new URL("https://ci.kbase.us/services/ws");
-        wet = new WSEventTracker(wsURL, token , storage);
+        wet = new WSObjectStatusEventReconstructor(wsURL, token , storage, eventTrigger);
         
         // Register listeners
         ObjectStatusEventListener listener;         
         listener = new ObjectStatusEventListener(){
 			@Override
-			public void statusChanged(ObjectStatus obj) throws IOException {
+			public void statusChanged(ObjectStatusEvent obj) throws IOException {
 				System.out.println(obj);
 			}
         }; 
-        wet.registerEventListener(listener);
+        eventTrigger.registerListener(listener);  
         
-        wet.registerEventListener(esStorage);
+        eventTrigger.registerListener(esStorage);
 	}
 	
     @Test

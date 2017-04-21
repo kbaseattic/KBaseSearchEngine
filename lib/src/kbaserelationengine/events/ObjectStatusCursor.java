@@ -9,7 +9,7 @@ public class ObjectStatusCursor {
 	private int pageSize;
 	private String timeAlive;
 	private int pageIndex;
-	List<ObjectStatus> data = new ArrayList<ObjectStatus>();
+	List<ObjectStatusEvent> data = new ArrayList<ObjectStatusEvent>();
 	
 	public ObjectStatusCursor(String cursorId, int pageSize, String timeAlive) {
 		super();
@@ -19,7 +19,7 @@ public class ObjectStatusCursor {
 		pageIndex = 0;
 	}
 
-	protected void nextPage(List<ObjectStatus> items){
+	protected void nextPage(List<ObjectStatusEvent> items){
 		pageIndex++;
 		data.clear();
 		data.addAll(items);
@@ -41,7 +41,7 @@ public class ObjectStatusCursor {
 		return pageIndex;
 	}
 
-	public List<ObjectStatus> getData() {
+	public List<ObjectStatusEvent> getData() {
 		return data;
 	}
 

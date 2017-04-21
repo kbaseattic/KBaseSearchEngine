@@ -6,17 +6,17 @@ import org.apache.http.HttpHost;
 import org.junit.Before;
 import org.junit.Test;
 
-import kbaserelationengine.events.ESObjectStatusStorage;
-import kbaserelationengine.queue.IndexingIterator;
-import kbaserelationengine.queue.IndexingQueue;
+import kbaserelationengine.events.ESObjectStatusEventStorage;
+import kbaserelationengine.queue.ObjectStatusEventIterator;
+import kbaserelationengine.queue.ObjectStatusEventQueue;
 
-public class IndexingQueueTest {
-	IndexingQueue queue;
+public class ObjectStatusEventQueueTest {
+	ObjectStatusEventQueue queue;
 	
 	@Before
 	public void init(){
-		ESObjectStatusStorage storage = new ESObjectStatusStorage(new HttpHost("localhost", 9200));
-		queue = new IndexingQueue(storage);
+		ESObjectStatusEventStorage storage = new ESObjectStatusEventStorage(new HttpHost("localhost", 9200));
+		queue = new ObjectStatusEventQueue(storage);
 	}
 	
 	@Test
@@ -25,7 +25,7 @@ public class IndexingQueueTest {
 		System.out.println("Number of records " + count);
 
 		
-		IndexingIterator it = queue.iterator("WS");
+		ObjectStatusEventIterator it = queue.iterator("WS");
 		int i = 0;
 		while(it.hasNext()){
 			System.out.println(it.next());
@@ -43,8 +43,10 @@ public class IndexingQueueTest {
 	public void testUnmarkDataType() throws IOException {
 		
 		System.out.println("Number of records:");
-		System.out.println("\tbefore\t" + queue.count());		
+		System.out.println("\tbefore\t" + queue.count());	
+		
 		queue.markAsNonprocessed("WS", "KBaseBiochem.Media");
+		
 		System.out.println("\tafter\t" + queue.count());		
 	}
 }

@@ -5,13 +5,13 @@ import java.io.IOException;
 import org.apache.http.HttpHost;
 import org.junit.Test;
 
-import kbaserelationengine.events.ESObjectStatusStorage;
+import kbaserelationengine.events.ESObjectStatusEventStorage;
 
 public class ESObjectStatusStorageTest {
 
 	@Test
 	public void test01() throws IOException {
-		ESObjectStatusStorage storage = new ESObjectStatusStorage(new HttpHost("localhost", 9200));
+		ESObjectStatusEventStorage storage = new ESObjectStatusEventStorage(new HttpHost("localhost", 9200));
 		storage.deleteStorage();
 		storage.createStorage();
 		

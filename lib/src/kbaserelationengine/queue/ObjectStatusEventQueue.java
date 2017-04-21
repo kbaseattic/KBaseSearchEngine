@@ -3,19 +3,19 @@ package kbaserelationengine.queue;
 import java.io.IOException;
 import java.util.List;
 
-import kbaserelationengine.events.ObjectStatus;
+import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusCursor;
-import kbaserelationengine.events.ObjectStatusStorage;
+import kbaserelationengine.events.ObjectStatusEventStorage;
 
-public class IndexingQueue {
+public class ObjectStatusEventQueue {
 	private final static String BUFFER_ALIVE_TIME = "1m";
 	private final static int BUFFER_SIZE = 10;
-	private ObjectStatusStorage objStatusStorage;	
+	private ObjectStatusEventStorage objStatusStorage;	
 	
-	class _Iterator implements IndexingIterator{
+	class _Iterator implements ObjectStatusEventIterator{
 		String storageCode;
 		ObjectStatusCursor cursor = null;
-		ObjectStatus[] buffer = new ObjectStatus[BUFFER_SIZE];
+		ObjectStatusEvent[] buffer = new ObjectStatusEvent[BUFFER_SIZE];
 		int nextPos = 0;
 		int nItems = 0;
 		
@@ -42,7 +42,7 @@ public class IndexingQueue {
 			}
 						
 			int i = 0;
-			for(ObjectStatus row : cursor.getData()){
+			for(ObjectStatusEvent row : cursor.getData()){
 				buffer[i++] = row;
 			}
 			nextPos = 0;
@@ -65,7 +65,7 @@ public class IndexingQueue {
 		}
 
 		@Override
-		public ObjectStatus next() {
+		public ObjectStatusEvent next() {
 			if(bufferEmpy()){
 				throw new IndexOutOfBoundsException();
 			}					
@@ -73,11 +73,11 @@ public class IndexingQueue {
 		}		
 	}
 		
-	public IndexingQueue(ObjectStatusStorage objStatusStorage){
+	public ObjectStatusEventQueue(ObjectStatusEventStorage objStatusStorage){
 		this.objStatusStorage = objStatusStorage;
 	}    
     	
-	public IndexingIterator iterator(String storageCode){		
+	public ObjectStatusEventIterator iterator(String storageCode){		
 		return new _Iterator(storageCode);
 	}
 	
@@ -93,11 +93,11 @@ public class IndexingQueue {
 		return objStatusStorage.count(storageCode, false);
 	}
 
-	public List<ObjectStatus> list(int maxSize) throws IOException {
+	public List<ObjectStatusEvent> list(int maxSize) throws IOException {
 		return list(null, maxSize);
 	}
 
-	public List<ObjectStatus> list(String storageCode,
+	public List<ObjectStatusEvent> list(String storageCode,
 			int maxSize) throws IOException {
 		return objStatusStorage.find(storageCode, false, maxSize);
 	}		

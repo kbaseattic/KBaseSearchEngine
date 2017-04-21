@@ -2,13 +2,13 @@ package kbaserelationengine.queue;
 
 import java.io.IOException;
 
-import kbaserelationengine.events.ObjectStatus;
+import kbaserelationengine.events.ObjectStatusEvent;
 
-public interface IndexingIterator {
+public interface ObjectStatusEventIterator {
 	
 	public boolean hasNext() throws IOException;
 	
-	public ObjectStatus next() throws IOException;
+	public ObjectStatusEvent next() throws IOException;
 	
 	public void markAsVisitied(boolean isIndexed) throws IOException;
 	
