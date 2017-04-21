@@ -57,13 +57,14 @@ public class ObjectParser {
         ObjectData obj = loadObject(wsUrl, tempFile, token, objRef);
         String resolvedRef = getRefFromObjectInfo(obj.getInfo());
         for (ObjectTypeParsingRules parsingRules : system.listObjectTypesByStorageObjectType(storageObjectType)) {
-            processSubObjects(obj, resolvedRef, objRef, parsingRules, system, indexStorage, relationStorage);
+            processSubObjects(obj, resolvedRef, parsingRules, system, indexStorage, relationStorage);
         }
     }
     
-    public static void processSubObjects(ObjectData obj, String resolvedRef, 
-            String objRef, ObjectTypeParsingRules parsingRules, SystemStorage system,
-            IndexingStorage indexStorage, RelationStorage relationStorage) throws Exception {
+    public static void processSubObjects(ObjectData obj, String objRef, 
+            ObjectTypeParsingRules parsingRules, SystemStorage system,
+            IndexingStorage indexStorage, RelationStorage relationStorage) 
+                    throws IOException, ObjectParseException {
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
         try (JsonParser jts = obj.getData().getPlacedStream()) {
@@ -76,7 +77,7 @@ public class ObjectParser {
                 IdMapper.mapKeys(parsingRules.getPrimaryKeyPath(), 
                         parsingRules.getRelationPathToRules(), subJts, idConsumer);
             }
-            GUID id = prepareGUID(parsingRules, resolvedRef, path, idConsumer);
+            GUID id = prepareGUID(parsingRules, objRef, path, idConsumer);
             indexStorage.indexObject(id, parsingRules.getGlobalObjectType(), subJson, 
                     parsingRules.getIndexingRules());
             storeRelations(parsingRules, system, relationStorage, idConsumer, id);

@@ -1,5 +1,8 @@
 package kbaserelationengine.system;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -85,7 +88,14 @@ public class ObjectTypeParsingRules {
             Map<ObjectJsonPath, RelationRules> foreignKeyPathToLookupRules) {
         this.relationPathToRules = foreignKeyPathToLookupRules;
     }
-    
+
+    public static ObjectTypeParsingRules fromFile(File file) 
+            throws ObjectParseException, IOException {
+        try (InputStream is = new FileInputStream(file)) {
+            return fromStream(is);
+        }
+    }
+
     public static ObjectTypeParsingRules fromJson(String json) throws ObjectParseException {
         @SuppressWarnings("unchecked")
         Map<String, Object> obj = UObject.transformStringToObject(json, Map.class);
