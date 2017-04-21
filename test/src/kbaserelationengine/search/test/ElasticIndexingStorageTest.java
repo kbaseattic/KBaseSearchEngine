@@ -125,18 +125,65 @@ public class ElasticIndexingStorageTest {
         ir.setPath(new ObjectJsonPath("prop1"));
         ir.setFullText(true);
         List<IndexingRules> indexingRules= Arrays.asList(ir);
-        GUID id1 = new GUID("WS:2/1/1");
-        indexStorage.indexObject(id1, objType, "{\"prop1\":\"abc 123\"}", indexingRules);
-        GUID id2 = new GUID("WS:2/1/2");
-        indexStorage.indexObject(id2, objType, "{\"prop1\":\"abc 124\"}", indexingRules);
-        GUID id3 = new GUID("WS:2/1/3");
-        indexStorage.indexObject(id3, objType, "{\"prop1\":\"abc 125\"}", indexingRules);
+        GUID id11 = new GUID("WS:2/1/1");
+        indexStorage.indexObject(id11, objType, "{\"prop1\":\"abc 123\"}", indexingRules);
+        GUID id2 = new GUID("WS:2/2/1");
+        indexStorage.indexObject(id2, objType, "{\"prop1\":\"abd\"}", indexingRules);
+        GUID id3 = new GUID("WS:3/1/1");
+        indexStorage.indexObject(id3, objType, "{\"prop1\":\"abc\"}", indexingRules);
+        GUID id12 = new GUID("WS:2/1/2");
+        indexStorage.indexObject(id12, objType, "{\"prop1\":\"abc 124\"}", indexingRules);
+        GUID id13 = new GUID("WS:2/1/3");
+        indexStorage.indexObject(id13, objType, "{\"prop1\":\"abc 125\"}", indexingRules);
         indexStorage.refreshIndex(indexStorage.getIndex(objType));
-        Set<GUID> ids = indexStorage.searchIdsByText(objType, "abc", null, 
-                new LinkedHashSet<>(Arrays.asList(2)), false);
-        Assert.assertEquals(1, ids.size());
-        Assert.assertEquals(id3, ids.iterator().next());
+        checkIdInSet(indexStorage.searchIdsByText(objType, "abc", null, 
+                new LinkedHashSet<>(Arrays.asList(2)), false), 1, id13);
+        checkIdInSet(indexStorage.searchIdsByText(objType, "125", null, 
+                new LinkedHashSet<>(Arrays.asList(2)), false), 1, id13);
         Assert.assertEquals(0, indexStorage.searchIdsByText(objType, "123", null, 
                 new LinkedHashSet<>(Arrays.asList(2)), false).size());
+        checkIdInSet(indexStorage.searchIdsByText(objType, "abd", null, 
+                new LinkedHashSet<>(Arrays.asList(2)), false), 1, id2);
+        checkIdInSet(indexStorage.searchIdsByText(objType, "abc", null, 
+                new LinkedHashSet<>(Arrays.asList(3)), false), 1, id3);
+    }
+    
+    @Test
+    public void testSharing() throws Exception {
+        String objType = "Sharable";
+        IndexingRules ir = new IndexingRules();
+        ir.setPath(new ObjectJsonPath("prop2"));
+        ir.setKeywordType("integer");
+        List<IndexingRules> indexingRules= Arrays.asList(ir);
+        GUID id1 = new GUID("WS:10/1/1");
+        indexStorage.indexObject(id1, objType, "{\"prop2\": 123}", indexingRules);
+        GUID id2 = new GUID("WS:10/1/2");
+        indexStorage.indexObject(id2, objType, "{\"prop2\": 124}", indexingRules);
+        GUID id3 = new GUID("WS:10/1/3");
+        indexStorage.indexObject(id3, objType, "{\"prop2\": 125}", indexingRules);
+        indexStorage.refreshIndex(indexStorage.getIndex(objType));
+        Assert.assertEquals(0, indexStorage.lookupIdsByKey(objType, "prop2", 123, 
+                new LinkedHashSet<>(Arrays.asList(10)), false).size());
+        checkIdInSet(indexStorage.lookupIdsByKey(objType, "prop2", 125, 
+                new LinkedHashSet<>(Arrays.asList(10)), false), 1, id3);
+        indexStorage.shareObject(new LinkedHashSet<>(Arrays.asList(id1)), 11);
+        checkIdInSet(indexStorage.lookupIdsByKey(objType, "prop2", 123, 
+                new LinkedHashSet<>(Arrays.asList(11)), false), 1, id1);
+        Assert.assertEquals(0, indexStorage.lookupIdsByKey(objType, "prop2", 124, 
+                new LinkedHashSet<>(Arrays.asList(11)), false).size());
+        Assert.assertEquals(0, indexStorage.lookupIdsByKey(objType, "prop2", 125, 
+                new LinkedHashSet<>(Arrays.asList(11)), false).size());
+        indexStorage.shareObject(new LinkedHashSet<>(Arrays.asList(id2)), 11);
+        Assert.assertEquals(0, indexStorage.lookupIdsByKey(objType, "prop2", 123, 
+                new LinkedHashSet<>(Arrays.asList(11)), false).size());
+        checkIdInSet(indexStorage.lookupIdsByKey(objType, "prop2", 124, 
+                new LinkedHashSet<>(Arrays.asList(11)), false), 1, id2);
+        Assert.assertEquals(0, indexStorage.lookupIdsByKey(objType, "prop2", 125, 
+                new LinkedHashSet<>(Arrays.asList(11)), false).size());
+    }
+    
+    private static void checkIdInSet(Set<GUID> ids, int size, GUID id) {
+        Assert.assertEquals(size, ids.size());
+        Assert.assertTrue("Set contains: " + ids, ids.contains(id));
     }
 }
