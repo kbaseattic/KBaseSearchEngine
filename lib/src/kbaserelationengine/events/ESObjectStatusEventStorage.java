@@ -62,6 +62,8 @@ public class ESObjectStatusEventStorage implements ObjectStatusEventStorage, Obj
         doc.put("accessGroupId", obj.getAccessGroupId());
         doc.put("accessGroupObjectId", obj.getAccessGroupObjectId().toString());
         doc.put("version", obj.getVersion());
+        doc.put("targetAccessGroupId", obj.getTargetAccessGroupId());
+        doc.put("timestamp", obj.getTimestamp());
         doc.put("eventType", obj.getEventType().toString());
         doc.put("storageObjectType", obj.getStorageObjectType());
         doc.put("indexed", false);
@@ -262,6 +264,8 @@ public class ESObjectStatusEventStorage implements ObjectStatusEventStorage, Obj
 				(Integer)hit.get("accessGroupId"),
 				(String)hit.get("accessGroupObjectId"), 
 				(Integer)hit.get("version"), 
+				(Integer) hit.get("targetAccessGroupId"),
+				(Long) hit.get("timestamp"),
 				(String)hit.get("storageObjectType"), 
 				ObjectStatusEventType.valueOf((String)hit.get("eventType"))
 			));

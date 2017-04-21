@@ -4,17 +4,29 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.DateTimeFormatterBuilder;
 
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple9;
+import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
+import workspace.GetObjects2Params;
+import workspace.GetObjects2Results;
 import workspace.ListObjectsParams;
 import workspace.ListWorkspaceInfoParams;
+import workspace.ObjectData;
+import workspace.ObjectSpecification;
 import workspace.WorkspaceClient;
 
 public class WSObjectStatusEventReconstructor {
@@ -28,6 +40,14 @@ public class WSObjectStatusEventReconstructor {
 	private WSObjectStatusEventTrigger eventTrigger;
 	
 	private WorkspaceClient _wsClient;
+	
+	private final static DateTimeFormatter DATE_PARSER =
+			new DateTimeFormatterBuilder()
+				.append(DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss"))
+				.appendOptional(DateTimeFormat.forPattern(".SSS").getParser())
+				.append(DateTimeFormat.forPattern("Z"))
+				.toFormatter();	
+	
 	
 	public WSObjectStatusEventReconstructor(URL wsUrl, AuthToken token, 
 			ObjectStatusEventStorage objStatusStorage,
@@ -56,17 +76,19 @@ public class WSObjectStatusEventReconstructor {
 		String objId;
 		Integer version;
 		String dataType;
+		long timestamp;
 		boolean isDeleted;
 		boolean isProcessed;
 		
 		ObjectStatusEventType evetType;
 		
-		public ObjDescriptor(Integer wsId, String objId, Integer version, String dataType, boolean isDeleted) {
+		public ObjDescriptor(Integer wsId, String objId, Integer version, String dataType, long timestamp, boolean isDeleted) {
 			super();
 			this.wsId = wsId;
 			this.objId = objId;
 			this.version = version;
 			this.dataType = dataType;
+			this.timestamp = timestamp;
 			this.isDeleted = isDeleted;
 		}
 		
@@ -76,10 +98,15 @@ public class WSObjectStatusEventReconstructor {
 					+ ", objId=" + objId
 					+ ", version=" + version
 					+ ", dataType=" + dataType
+					+ ", timestamp=" + timestamp
 					+ ", isDeleted=" + isDeleted
 					+ ", isProcessed=" + isProcessed
 					+ ", evetType=" + (evetType != null ? evetType.toString() : null)
 					+" }";
+		}
+
+		public String toRef() {
+			return wsId.toString() + "/" + objId + "/" + version.toString();
 		}
 	}
 	
@@ -133,7 +160,13 @@ public class WSObjectStatusEventReconstructor {
 		
     	for(Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>> row: rows){
     		    		
-    		ObjDescriptor od = new ObjDescriptor(row.getE7().intValue(), row.getE1().toString(),  row.getE5().intValue(), row.getE3().split("-")[0], isDeleted);
+    		ObjDescriptor od = new ObjDescriptor(
+    				row.getE7().intValue(), 
+    				row.getE1().toString(),  
+    				row.getE5().intValue(), 
+    				row.getE3().split("-")[0],
+    				DATE_PARSER.parseDateTime(row.getE4()).getMillis(),
+    				isDeleted);
     		if(od.dataType.equals(DATA_PALETTE_TYPE)){
     			dataPalettes.add(od);
     		} else{
@@ -190,18 +223,129 @@ public class WSObjectStatusEventReconstructor {
 	}
 
 	private void triggerEvent(ObjDescriptor od, ObjectStatusEventType eventType) throws IOException {
-		ObjectStatusEvent event = new ObjectStatusEvent(null,WS_STORAGE_CODE,od.wsId.intValue(), od.objId.toString(), od.version.intValue(), od.dataType, eventType);
+		ObjectStatusEvent event = new ObjectStatusEvent(
+				null,
+				WS_STORAGE_CODE,
+				od.wsId.intValue(), 
+				od.objId.toString(), 
+				od.version.intValue(), 
+				null,
+				od.timestamp,
+				od.dataType, eventType);
 		eventTrigger.trigger(event);
 	}
 
-	private void processDataPalettes(List<ObjDescriptor> dataPalettes) {
-		for(ObjDescriptor dp: dataPalettes){
-			System.out.println("Data pallete: " + dp);
-		}
+	private void processDataPalettes(List<ObjDescriptor> dataPalettes) throws IOException, JsonClientException {
+		
+		List<ObjectStatusEvent> events = reconstructDataPalletObjectStatusEvents(dataPalettes);
+
 	}
 
-	
-    private List<Long> getWorkspaceIds(boolean excludePublicWorkspaces) throws IOException, JsonClientException{
+	class DataPallete implements Comparable<DataPallete>{
+		long wsId;
+		long objId;
+		long version;
+		long timestamp;
+		String[] refs;
+		DataPallete(ObjectData data){
+			this.wsId = data.getInfo().getE7();
+			this.objId = data.getInfo().getE1();
+			this.version = data.getInfo().getE5();
+			this.timestamp = DATE_PARSER.parseDateTime(data.getInfo().getE4()).getMillis();
+			List<UObject> urefs = data.getData().asMap().get("data").asList();
+			refs = new String[urefs.size()];
+        	for(int i = 0; i < urefs.size(); i++){
+        		refs[i] = (String) urefs.get(i).asMap().get("ref").asScalar();
+        	}
+
+		}
+		@Override
+		public int compareTo(DataPallete o) {
+			if(wsId < o.wsId) return -1;
+			else if(wsId > o.wsId) return 1;
+			
+			//We expect that worksapce can have DataPallete objects with the same objId
+			//thus we do not have to check obj ids 
+			return version < o.version ? -1 : (version >o.version ? 1 :0);
+		}
+	}
+    private List<ObjectStatusEvent> reconstructDataPalletObjectStatusEvents(List<ObjDescriptor> dataPalettes) throws IOException, JsonClientException {
+    	
+    	// Get data palettes
+    	WorkspaceClient wsClient = wsClient();    	
+    	List<ObjectSpecification> objSpecs = new ArrayList<ObjectSpecification>();
+    	for(ObjDescriptor od: dataPalettes){
+    		objSpecs.add(new ObjectSpecification().withRef(od.toRef()));
+    	}
+    	GetObjects2Params params = new GetObjects2Params();
+        params.withObjects(objSpecs);
+        GetObjects2Results ret = wsClient.getObjects2(params);
+        
+        List<DataPallete> dps = new ArrayList<DataPallete>();
+        for(ObjectData data: ret.getData()){
+        	dps.add(new DataPallete(data));
+        }
+        Collections.sort(dps);
+        
+        // Reconstruct history of events
+        List<ObjectStatusEvent> events = new ArrayList<ObjectStatusEvent>();        
+        Set<String> curRefs = new HashSet<String>();         
+        for(DataPallete dp: dps){
+        	for(String ref: dp.refs){
+        		if(!curRefs.contains(ref)){
+        			// New ref
+        			String[] vals = ref.split("/");
+        			ObjectStatusEvent event = new ObjectStatusEvent(
+        					null, 
+        					WS_STORAGE_CODE, 
+        					Integer.parseInt(vals[0]),
+        					vals[1],
+        					Integer.parseInt(vals[2]),
+        					(int)dp.wsId,
+        					dp.timestamp,        					
+        					DATA_PALETTE_TYPE,
+        					ObjectStatusEventType.SHARED);
+        				events.add(event);
+        		} else{
+        			// Exist
+        			curRefs.remove(ref);
+        		}
+        	}
+        	// All that were not found are unshared
+        	for(String ref: curRefs){
+    			String[] vals = ref.split("/");
+    			ObjectStatusEvent event = new ObjectStatusEvent(
+    					null, 
+    					WS_STORAGE_CODE, 
+    					Integer.parseInt(vals[0]),
+    					vals[1],
+    					Integer.parseInt(vals[2]),
+    					(int)dp.wsId,
+    					dp.timestamp,        					
+    					DATA_PALETTE_TYPE,
+    					ObjectStatusEventType.UNSHARED);
+    			events.add(event);        		
+        	}
+        	// Set up the current state
+        	curRefs.clear();
+        	curRefs.addAll(Arrays.asList(dp.refs));
+        	
+        	
+        	System.out.println(dp.wsId + "/" + dp.objId + "/" + dp.version + ": " + dp.timestamp);
+        }
+        
+        System.out.println("=== Events");
+        for(ObjectStatusEvent event: events){
+        	System.out.println(event);
+        }
+        
+        
+//        System.out.println(ret);
+        
+		return null;
+	}
+
+	private List<Long> getWorkspaceIds(boolean excludePublicWorkspaces) throws IOException, JsonClientException{
     	List<Long> wsIds = new ArrayList<Long>();
     	ListWorkspaceInfoParams params = new ListWorkspaceInfoParams();
     	if(excludePublicWorkspaces){

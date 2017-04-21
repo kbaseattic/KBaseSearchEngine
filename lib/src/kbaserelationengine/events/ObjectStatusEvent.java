@@ -8,12 +8,16 @@ public class ObjectStatusEvent {
     private Integer accessGroupId;
     private String accessGroupObjectId;
     private Integer version;
+    private Integer targetAccessGroupId;
+    private Long timestamp;
     private String storageObjectType;
     private ObjectStatusEventType eventType;
     
     
 	public ObjectStatusEvent(String _id, String storageCode, Integer accessGroupId,
 			String accessGroupObjectId, Integer version,
+		    Integer targetAccessGroupId,
+		    Long timestamp,
 			String storageObjectType,
 			ObjectStatusEventType eventType) {
 		super();
@@ -22,6 +26,8 @@ public class ObjectStatusEvent {
 		this.accessGroupId = accessGroupId;
 		this.accessGroupObjectId = accessGroupObjectId;
 		this.version = version;
+		this.targetAccessGroupId = targetAccessGroupId;
+		this.timestamp = timestamp;
 		this.storageObjectType = storageObjectType;
 		this.eventType = eventType;
 	}
@@ -29,12 +35,14 @@ public class ObjectStatusEvent {
 	@Override
 	public String toString(){
 		return "{" + "_id=" + _id
-		+" ,storageCode=" + storageCode
-		+" ,accessGroupId=" + accessGroupId
-		+" ,accessGroupObjectId=" + accessGroupObjectId
-		+" ,version=" + version
-		+" ,storageObjectType=" + storageObjectType
-		+" ,eventType=" + eventType.toString();
+		+", storageCode=" + storageCode
+		+", accessGroupId=" + accessGroupId
+		+", accessGroupObjectId=" + accessGroupObjectId
+		+", version=" + version
+		+", targetAccessGroupId=" + targetAccessGroupId
+		+", timestamp=" + timestamp
+		+", storageObjectType=" + storageObjectType
+		+", eventType=" + eventType.toString();
 	}
 	
 	public GUID toGUID(){
@@ -72,5 +80,15 @@ public class ObjectStatusEvent {
 	public ObjectStatusEventType getEventType() {
 		return eventType;
 	}
+
+	public Integer getTargetAccessGroupId() {
+		return targetAccessGroupId;
+	}
+
+	public Long getTimestamp() {
+		return timestamp;
+	}
+	
+	
     
 }
