@@ -4,12 +4,15 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Map;
 
 import org.apache.http.HttpHost;
 import org.junit.Before;
 import org.junit.Test;
 
+import kbaserelationengine.events.AccessGroupStatus;
 import kbaserelationengine.events.ESObjectStatusEventStorage;
+import kbaserelationengine.events.MongoDBObjectStatusEventStorage;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventListener;
 import kbaserelationengine.events.ObjectStatusEventStorage;
@@ -22,19 +25,22 @@ import workspace.GetObjects2Params;
 import workspace.GetObjects2Results;
 import workspace.ObjectSpecification;
 import workspace.WorkspaceClient;
+import workspace.WorkspaceIdentity;
 
 
 public class WSObjectStatusEventReconstructorTest {
 	WSObjectStatusEventReconstructor wet;
 	ObjectStatusEventStorage fakeStorage;
 	ESObjectStatusEventStorage esStorage;
+	MongoDBObjectStatusEventStorage mdStorage;
 	
 	@Before
 	public void init() throws MalformedURLException{
         fakeStorage = new FakeObjectStatusStorage();
         esStorage = new ESObjectStatusEventStorage(new HttpHost("localhost", 9200));
+        mdStorage  = new MongoDBObjectStatusEventStorage("localhost", 27017);
 
-        ObjectStatusEventStorage storage = esStorage;
+        ObjectStatusEventStorage storage = mdStorage;
         WSObjectStatusEventTrigger eventTrigger = new WSObjectStatusEventTrigger();
         
         
@@ -49,10 +55,15 @@ public class WSObjectStatusEventReconstructorTest {
 			public void statusChanged(ObjectStatusEvent obj) throws IOException {
 				System.out.println(obj);
 			}
+
+			@Override
+			public void statusChanged(AccessGroupStatus newStatus) throws IOException {
+				System.out.println(newStatus);				
+			}
         }; 
         eventTrigger.registerListener(listener);  
         
-        eventTrigger.registerListener(esStorage);
+        eventTrigger.registerListener(mdStorage);
 	}
 	
     @Test
@@ -60,12 +71,18 @@ public class WSObjectStatusEventReconstructorTest {
 //		esStorage.deleteStorage();
 //		esStorage.createStorage();    	
         wet.update();        
-    }	
+    }	       
     
+//    @Test
+    public void test02() throws Exception {
+    	WorkspaceClient wsClient =  wet.wsClient();
+		Map<String, String> ret = wsClient.getPermissions(new WorkspaceIdentity().withId(19971L));
+		for(String key: ret.keySet()){
+			System.out.println(key);
+		}
+    }
+
     
-    @Test
-    public void test02() throws Exception {        
-    }	
     
 //  @Test
     public void test99() throws IOException, JsonClientException{

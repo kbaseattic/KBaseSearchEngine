@@ -5,4 +5,6 @@ import java.io.IOException;
 
 public interface ObjectStatusEventListener {
 	public void statusChanged(ObjectStatusEvent event) throws IOException;
+
+	public void statusChanged(AccessGroupStatus newStatus) throws IOException;
 }

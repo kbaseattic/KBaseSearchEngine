@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import kbaserelationengine.events.ObjectStatusEvent;
+import kbaserelationengine.events.AccessGroupStatus;
 import kbaserelationengine.events.ObjectStatusCursor;
 import kbaserelationengine.events.ObjectStatusEventStorage;
 
@@ -60,6 +61,12 @@ public class FakeObjectStatusStorage implements ObjectStatusEventStorage {
 	@Override
 	public List<ObjectStatusEvent> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds)
 			throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<AccessGroupStatus> findAccessGroups(String storageCode) throws IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}

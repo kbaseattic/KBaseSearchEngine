@@ -16,10 +16,15 @@ public class WSObjectStatusEventTrigger implements ObjectStatusEventTrigger{
 	public void trigger(ObjectStatusEvent event) throws IOException {
 		for(ObjectStatusEventListener listner: eventListeners){
 			listner.statusChanged(event);
-		}
-		
+		}		
 	}
 	
+	@Override
+	public void trigger(AccessGroupStatus newStatus) throws IOException {
+		for(ObjectStatusEventListener listner: eventListeners){
+			listner.statusChanged(newStatus);
+		}		
+	}
 	
 
 }

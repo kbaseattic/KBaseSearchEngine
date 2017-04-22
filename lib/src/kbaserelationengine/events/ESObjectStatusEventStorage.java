@@ -277,4 +277,11 @@ public class ESObjectStatusEventStorage implements ObjectStatusEventStorage, Obj
     private void refreshIndex() throws IOException {
         makeRequest("POST", "/" + esIndexName + "/_refresh", null);
     }
+
+
+	@Override
+	public void statusChanged(AccessGroupStatus newStatus) throws IOException {
+		// TODO Auto-generated method stub
+		
+	}
 }
