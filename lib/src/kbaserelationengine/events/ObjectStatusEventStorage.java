@@ -29,7 +29,5 @@ public interface ObjectStatusEventStorage {
 
 	
 	public List<AccessGroupStatus> findAccessGroups(String storageCode) throws IOException;
-	
-	public List<Integer> findAccessGroupIds(String storageCode, String user) throws IOException;	
-	
+		
 }

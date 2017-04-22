@@ -19,7 +19,7 @@ import org.elasticsearch.client.RestClientBuilder;
 
 import us.kbase.common.service.UObject;
 
-public class ESObjectStatusEventStorage implements ObjectStatusEventStorage, ObjectStatusEventListener{
+public class ESObjectStatusEventStorage implements AccessGroupProvider, ObjectStatusEventStorage, ObjectStatusEventListener{
 	private static final int MAX_SIZE = 10000; 
     private RestClient _restClient = null;
 	private HttpHost esHost;
