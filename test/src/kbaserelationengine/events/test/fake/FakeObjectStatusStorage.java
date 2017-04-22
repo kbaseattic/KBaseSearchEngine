@@ -70,4 +70,10 @@ public class FakeObjectStatusStorage implements ObjectStatusEventStorage {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public List<Integer> findAccessGroupIds(String storageCode, String user) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

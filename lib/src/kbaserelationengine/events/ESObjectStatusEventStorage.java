@@ -284,4 +284,18 @@ public class ESObjectStatusEventStorage implements ObjectStatusEventStorage, Obj
 		// TODO Auto-generated method stub
 		
 	}
+
+
+	@Override
+	public List<AccessGroupStatus> findAccessGroups(String storageCode) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	@Override
+	public List<Integer> findAccessGroupIds(String storageCode, String user) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
