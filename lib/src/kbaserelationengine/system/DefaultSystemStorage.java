@@ -45,6 +45,9 @@ public class DefaultSystemStorage implements SystemStorage {
             String storageObjectType) throws IOException {
         List<ObjectTypeParsingRules> ret = null;
         for (ObjectTypeParsingRules rule : parsingRules) {
+            if (rule.getStorageObjectType() == null) {
+                continue;
+            }
             if (rule.getStorageObjectType().equals(storageObjectType)) {
                 if (ret == null) {
                     ret = new ArrayList<>();

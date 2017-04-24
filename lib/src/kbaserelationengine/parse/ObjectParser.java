@@ -82,6 +82,7 @@ public class ObjectParser {
                     parsingRules.getIndexingRules());
             storeRelations(parsingRules, system, relationStorage, idConsumer, id);
         }
+        indexStorage.flushIndexing(parsingRules.getGlobalObjectType());
     }
 
     public static void storeRelations(ObjectTypeParsingRules parsingRules,

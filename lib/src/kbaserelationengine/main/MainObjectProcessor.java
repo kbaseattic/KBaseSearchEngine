@@ -10,12 +10,12 @@ import java.util.List;
 import org.apache.http.HttpHost;
 
 import kbaserelationengine.common.GUID;
-import kbaserelationengine.events.ESObjectStatusEventStorage;
+import kbaserelationengine.events.MongoDBStatusEventStorage;
 import kbaserelationengine.events.ObjectStatusEvent;
-import kbaserelationengine.events.ObjectStatusEventListener;
-import kbaserelationengine.events.ObjectStatusEventStorage;
-import kbaserelationengine.events.WSObjectStatusEventReconstructor;
-import kbaserelationengine.events.WSObjectStatusEventTrigger;
+import kbaserelationengine.events.StatusEventListener;
+import kbaserelationengine.events.StatusEventStorage;
+import kbaserelationengine.events.WSStatusEventReconstructor;
+import kbaserelationengine.events.WSStatusEventTrigger;
 import kbaserelationengine.parse.ObjectParseException;
 import kbaserelationengine.parse.ObjectParser;
 import kbaserelationengine.queue.ObjectStatusEventIterator;
@@ -30,35 +30,40 @@ import kbaserelationengine.system.SystemStorage;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
 import workspace.ObjectData;
+import workspace.SetPermissionsParams;
+import workspace.WorkspaceClient;
 
 public class MainObjectProcessor {
     private URL wsURL;
     private AuthToken kbaseIndexerToken;
     private File tempDir;
-    private WSObjectStatusEventReconstructor wsEventReconstructor;
-    private ObjectStatusEventStorage eventStorage;
+    private WSStatusEventReconstructor wsEventReconstructor;
+    private StatusEventStorage eventStorage;
     private ObjectStatusEventQueue queue;
     private Thread mainRunner;
     private SystemStorage systemStorage;
     private IndexingStorage indexingStorage;
     private RelationStorage relationStorage;
     
-    public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, HttpHost esHost,
+    public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, String mongoHost, 
+            int mongoPort, String mongoDbName, HttpHost esHost, String esIndexPrefix, 
             File typesDir, File tempDir, boolean startLifecycleRunner) 
                     throws IOException, ObjectParseException {
         this.wsURL = wsURL;
         this.kbaseIndexerToken = kbaseIndexerToken;
         this.tempDir = tempDir;
-        eventStorage = new ESObjectStatusEventStorage(esHost);
-        WSObjectStatusEventTrigger eventTrigger = new WSObjectStatusEventTrigger();
-        wsEventReconstructor = new WSObjectStatusEventReconstructor(wsURL, kbaseIndexerToken, 
+        eventStorage = new MongoDBStatusEventStorage(mongoHost, mongoPort, mongoDbName);
+        WSStatusEventTrigger eventTrigger = new WSStatusEventTrigger();
+        wsEventReconstructor = new WSStatusEventReconstructor(wsURL, kbaseIndexerToken, 
                 eventStorage, eventTrigger);
-        eventTrigger.registerListener((ObjectStatusEventListener)eventStorage);
+        eventTrigger.registerListener((StatusEventListener)eventStorage);
         queue = new ObjectStatusEventQueue(eventStorage);
         systemStorage = new DefaultSystemStorage(wsURL, typesDir);
-        indexingStorage = new ElasticIndexingStorage(esHost);
+        ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost);
+        esStorage.setIndexNamePrefix(esIndexPrefix);
+        indexingStorage = esStorage;
         relationStorage = new DefaultRelationStorage();
-        
+        // We switch this flag off in tests 
         if (startLifecycleRunner) {
             startLifecycleRunner();
         }
@@ -120,9 +125,14 @@ public class MainObjectProcessor {
         while (iter.hasNext()) {
             ObjectStatusEvent ev = iter.next();
             if (!isStorageTypeSupported(ev.getStorageObjectType())) {
+                System.out.println("Skipping " + ev.getEventType() + ", " + 
+                        ev.getStorageObjectType() + ", " + ev.toGUID());
                 iter.markAsVisitied(false);
                 continue;
             }
+            System.out.println("Processing " + ev.getEventType() + ", " + 
+                    ev.getStorageObjectType() + ", " + ev.toGUID() + "...");
+            long time = System.currentTimeMillis();
             switch (ev.getEventType()) {
             case CREATED:
             case NEW_VERSION:
@@ -130,11 +140,17 @@ public class MainObjectProcessor {
                 break;
             case DELETED:
                 unshare(ev.toGUID(), ev.getAccessGroupId());
+                break;
             case SHARED:
                 share(ev.toGUID(), ev.getTargetAccessGroupId());
+                break;
             case UNSHARED:
                 unshare(ev.toGUID(), ev.getTargetAccessGroupId());
+                break;
+            default:
+                throw new IllegalStateException("Unsupported event type: " + ev.getEventType());
             }
+            System.out.println("    (processing time: " + (System.currentTimeMillis() - time) + "ms.)");
         }
     }
     
@@ -162,5 +178,19 @@ public class MainObjectProcessor {
 
     public void unshare(GUID guid, int accessGroupId) throws IOException {
         indexingStorage.unshareObject(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
+    }
+    
+    public void addWorkspaceToIndex(String wsNameOrId, AuthToken user)
+            throws IOException, JsonClientException {
+        WorkspaceClient wsClient = new WorkspaceClient(wsURL, user);
+        wsClient.setIsInsecureHttpConnectionAllowed(true); 
+        SetPermissionsParams params = new SetPermissionsParams();
+        try {
+            params.setId(Long.parseLong(wsNameOrId));
+        } catch (NumberFormatException e) {
+            params.setWorkspace(wsNameOrId);
+        }
+        wsClient.setPermissions(params.withUsers(
+                Arrays.asList(kbaseIndexerToken.getUserName())).withNewPermission("w"));
     }
 }

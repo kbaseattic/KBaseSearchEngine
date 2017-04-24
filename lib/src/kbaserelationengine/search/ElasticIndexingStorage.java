@@ -165,6 +165,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 new Tuple2<String, String>().withE1("parent").withE2(parentId)));
     }
     
+    @Override
+    public void flushIndexing(String objectType) throws IOException {
+        refreshIndex(getIndex(objectType));
+    }
+    
     @SuppressWarnings({ "serial", "unchecked" })
     private Map<GUID, String> lookupParentDocIds(String indexName, Set<GUID> guids) throws IOException {
         Map<String, Object> terms = new LinkedHashMap<String, Object>() {{
