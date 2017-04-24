@@ -3,7 +3,7 @@ package kbaserelationengine.events;
 import java.io.IOException;
 import java.util.List;
 
-public interface ObjectStatusEventStorage {
+public interface StatusEventStorage {
 	
 	public void createStorage() throws IOException;
 		

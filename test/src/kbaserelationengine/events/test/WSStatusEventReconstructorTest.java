@@ -12,13 +12,13 @@ import org.junit.Test;
 
 import kbaserelationengine.events.AccessGroupStatus;
 import kbaserelationengine.events.ESObjectStatusEventStorage;
-import kbaserelationengine.events.MongoDBObjectStatusEventStorage;
+import kbaserelationengine.events.MongoDBStatusEventStorage;
 import kbaserelationengine.events.ObjectStatusEvent;
-import kbaserelationengine.events.ObjectStatusEventListener;
-import kbaserelationengine.events.ObjectStatusEventStorage;
-import kbaserelationengine.events.WSObjectStatusEventReconstructor;
-import kbaserelationengine.events.WSObjectStatusEventTrigger;
-import kbaserelationengine.events.test.fake.FakeObjectStatusStorage;
+import kbaserelationengine.events.StatusEventListener;
+import kbaserelationengine.events.StatusEventStorage;
+import kbaserelationengine.events.WSStatusEventReconstructor;
+import kbaserelationengine.events.WSStatusEventTrigger;
+import kbaserelationengine.events.test.fake.FakeStatusStorage;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
 import workspace.GetObjects2Params;
@@ -28,29 +28,29 @@ import workspace.WorkspaceClient;
 import workspace.WorkspaceIdentity;
 
 
-public class WSObjectStatusEventReconstructorTest {
-	WSObjectStatusEventReconstructor wet;
-	ObjectStatusEventStorage fakeStorage;
+public class WSStatusEventReconstructorTest {
+	WSStatusEventReconstructor wet;
+	StatusEventStorage fakeStorage;
 	ESObjectStatusEventStorage esStorage;
-	MongoDBObjectStatusEventStorage mdStorage;
+	MongoDBStatusEventStorage mdStorage;
 	
 	@Before
 	public void init() throws MalformedURLException{
-        fakeStorage = new FakeObjectStatusStorage();
+        fakeStorage = new FakeStatusStorage();
         esStorage = new ESObjectStatusEventStorage(new HttpHost("localhost", 9200));
-        mdStorage  = new MongoDBObjectStatusEventStorage("localhost", 27017);
+        mdStorage  = new MongoDBStatusEventStorage("localhost", 27017);
 
-        ObjectStatusEventStorage storage = mdStorage;
-        WSObjectStatusEventTrigger eventTrigger = new WSObjectStatusEventTrigger();
+        StatusEventStorage storage = mdStorage;
+        WSStatusEventTrigger eventTrigger = new WSStatusEventTrigger();
         
         
         AuthToken token = new AuthToken(System.getenv().get("AUTH_TOKEN"), "unknown") ;
     	URL wsURL = new URL("https://ci.kbase.us/services/ws");
-        wet = new WSObjectStatusEventReconstructor(wsURL, token , storage, eventTrigger);
+        wet = new WSStatusEventReconstructor(wsURL, token , storage, eventTrigger);
         
         // Register listeners
-        ObjectStatusEventListener listener;         
-        listener = new ObjectStatusEventListener(){
+        StatusEventListener listener;         
+        listener = new StatusEventListener(){
 			@Override
 			public void statusChanged(ObjectStatusEvent obj) throws IOException {
 				System.out.println(obj);

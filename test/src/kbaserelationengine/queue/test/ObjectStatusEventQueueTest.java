@@ -7,7 +7,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import kbaserelationengine.events.ESObjectStatusEventStorage;
-import kbaserelationengine.events.MongoDBObjectStatusEventStorage;
+import kbaserelationengine.events.MongoDBStatusEventStorage;
 import kbaserelationengine.queue.ObjectStatusEventIterator;
 import kbaserelationengine.queue.ObjectStatusEventQueue;
 
@@ -17,7 +17,7 @@ public class ObjectStatusEventQueueTest {
 	@Before
 	public void init(){
 //		ESObjectStatusEventStorage storage = new ESObjectStatusEventStorage(new HttpHost("localhost", 9200));
-		MongoDBObjectStatusEventStorage storage = new MongoDBObjectStatusEventStorage("localhost", 27017);
+		MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage("localhost", 27017);
 
 		queue = new ObjectStatusEventQueue(storage);
 	}

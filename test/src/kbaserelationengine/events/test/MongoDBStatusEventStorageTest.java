@@ -6,14 +6,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import kbaserelationengine.events.AccessGroupStatus;
-import kbaserelationengine.events.MongoDBObjectStatusEventStorage;
+import kbaserelationengine.events.MongoDBStatusEventStorage;
 
-public class MDObjectStatusEventStorageTest {
-	MongoDBObjectStatusEventStorage mdStorage;
+public class MongoDBStatusEventStorageTest {
+	MongoDBStatusEventStorage mdStorage;
 
 	@Before
 	public void init(){
-        mdStorage  = new MongoDBObjectStatusEventStorage("localhost", 27017);
+        mdStorage  = new MongoDBStatusEventStorage("localhost", 27017);
 	}
 	
 	//@Test

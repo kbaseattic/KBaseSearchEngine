@@ -7,9 +7,9 @@ import java.util.List;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.AccessGroupStatus;
 import kbaserelationengine.events.ObjectStatusCursor;
-import kbaserelationengine.events.ObjectStatusEventStorage;
+import kbaserelationengine.events.StatusEventStorage;
 
-public class FakeObjectStatusStorage implements ObjectStatusEventStorage {
+public class FakeStatusStorage implements StatusEventStorage {
 
 	@Override
 	public int count(String storageCode, boolean processed) throws IOException {

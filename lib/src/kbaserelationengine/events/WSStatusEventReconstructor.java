@@ -29,15 +29,15 @@ import workspace.ObjectSpecification;
 import workspace.WorkspaceClient;
 import workspace.WorkspaceIdentity;
 
-public class WSObjectStatusEventReconstructor {
+public class WSStatusEventReconstructor {
 	
 	private static String WS_STORAGE_CODE = "WS";
 	private static String DATA_PALETTE_TYPE = "DataPalette.DataPalette";
 	
 	private URL wsUrl;
 	private AuthToken token;
-	private ObjectStatusEventStorage objStatusStorage;
-	private WSObjectStatusEventTrigger eventTrigger;
+	private StatusEventStorage objStatusStorage;
+	private WSStatusEventTrigger eventTrigger;
 	
 	private WorkspaceClient _wsClient;
 	
@@ -52,9 +52,9 @@ public class WSObjectStatusEventReconstructor {
 			DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ssZ").withZoneUTC();
 	
 	
-	public WSObjectStatusEventReconstructor(URL wsUrl, AuthToken token, 
-			ObjectStatusEventStorage objStatusStorage,
-			WSObjectStatusEventTrigger eventTrigger) {
+	public WSStatusEventReconstructor(URL wsUrl, AuthToken token, 
+			StatusEventStorage objStatusStorage,
+			WSStatusEventTrigger eventTrigger) {
 		this.wsUrl = wsUrl;
 		this.token = token;
 		this.objStatusStorage = objStatusStorage;

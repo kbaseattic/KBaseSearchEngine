@@ -13,7 +13,7 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 
-public class MongoDBObjectStatusEventStorage implements ObjectStatusEventStorage, ObjectStatusEventListener{
+public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEventStorage, StatusEventListener{
 	private static final String DB_NAME = "DataStatus";
 	private static final String COLLECTION_GROUP_STATUS = "GroupStatus";
 	private static final String COLLECTION_OBJECT_STATUS_EVENTS = "ObjectStatusEvents";
@@ -22,7 +22,7 @@ public class MongoDBObjectStatusEventStorage implements ObjectStatusEventStorage
 	private int port;
 	private MongoClient mongoClient;
 	
-	public MongoDBObjectStatusEventStorage(String host, int port){
+	public MongoDBStatusEventStorage(String host, int port){
 		this.host = host;
 		this.port = port;
 		mongoClient = new MongoClient(this.host, this.port);
@@ -72,6 +72,7 @@ public class MongoDBObjectStatusEventStorage implements ObjectStatusEventStorage
 		return gss;
 	}
 	
+	@Override
 	public List<Integer> findAccessGroupIds(String storageCode, String user){
 		BasicDBList queryItems = new BasicDBList();
 		queryItems.add(new BasicDBObject("users", user));

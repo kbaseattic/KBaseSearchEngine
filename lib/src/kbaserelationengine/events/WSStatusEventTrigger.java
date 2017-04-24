@@ -4,24 +4,24 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class WSObjectStatusEventTrigger implements ObjectStatusEventTrigger{
-	private List<ObjectStatusEventListener> eventListeners = new ArrayList<ObjectStatusEventListener>(); 
+public class WSStatusEventTrigger implements StatusEventTrigger{
+	private List<StatusEventListener> eventListeners = new ArrayList<StatusEventListener>(); 
 
 	@Override
-	public void registerListener(ObjectStatusEventListener listener) {
+	public void registerListener(StatusEventListener listener) {
 		eventListeners.add(listener);
 	}
 
 	@Override
 	public void trigger(ObjectStatusEvent event) throws IOException {
-		for(ObjectStatusEventListener listner: eventListeners){
+		for(StatusEventListener listner: eventListeners){
 			listner.statusChanged(event);
 		}		
 	}
 	
 	@Override
 	public void trigger(AccessGroupStatus newStatus) throws IOException {
-		for(ObjectStatusEventListener listner: eventListeners){
+		for(StatusEventListener listner: eventListeners){
 			listner.statusChanged(newStatus);
 		}		
 	}

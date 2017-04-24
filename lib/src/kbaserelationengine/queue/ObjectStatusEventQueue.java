@@ -5,12 +5,12 @@ import java.util.List;
 
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusCursor;
-import kbaserelationengine.events.ObjectStatusEventStorage;
+import kbaserelationengine.events.StatusEventStorage;
 
 public class ObjectStatusEventQueue {
 	private final static String BUFFER_ALIVE_TIME = "1m";
 	private final static int BUFFER_SIZE = 10;
-	private ObjectStatusEventStorage objStatusStorage;	
+	private StatusEventStorage objStatusStorage;	
 	
 	class _Iterator implements ObjectStatusEventIterator{
 		String storageCode;
@@ -73,7 +73,7 @@ public class ObjectStatusEventQueue {
 		}		
 	}
 		
-	public ObjectStatusEventQueue(ObjectStatusEventStorage objStatusStorage){
+	public ObjectStatusEventQueue(StatusEventStorage objStatusStorage){
 		this.objStatusStorage = objStatusStorage;
 	}    
     	
