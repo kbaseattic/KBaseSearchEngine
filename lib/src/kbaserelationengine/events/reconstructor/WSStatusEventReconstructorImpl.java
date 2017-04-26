@@ -126,11 +126,12 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
     	int wssIndex = 0;
     	int agsIndex = 0;
     	
-    	WorkspaceDescriptor ws = wssIndex < wss.size() ? wss.get(wssIndex) : null;
-    	AccessGroupStatus ag = agsIndex < ags.size() ? ags.get(agsIndex) : null;
+//    	WorkspaceDescriptor ws = wssIndex < wss.size() ? wss.get(wssIndex) : null;
+//    	AccessGroupStatus ag = agsIndex < ags.size() ? ags.get(agsIndex) : null;
+//    	
+//    	int wsId = ws != null ? ws.wsId : -1;
+//    	int agId = ag != null ? ag.getAccessGroupId().intValue() : -1;
     	
-    	int wsId = ws != null ? ws.wsId : -1;
-    	int agId = ag != null ? ag.getAccessGroupId().intValue() : -1;
     	while(true){
     		
     		if(wssIndex >= wss.size() ) break;
@@ -145,6 +146,11 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
     			break;
     		} else{
     			// We have both ws and ag
+    	    	WorkspaceDescriptor ws = wss.get(wssIndex);
+    	    	AccessGroupStatus ag = ags.get(agsIndex);
+    	    	int wsId = ws.wsId;
+    	    	int agId = ag.getAccessGroupId().intValue();
+    			
         		if(wsId == agId){
         			// We processed this workspace before
         			

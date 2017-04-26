@@ -69,6 +69,8 @@ public class WSStatusEventReconstructorTest {
     	Set<Long> excludeWsIds = new HashSet<Long>();
 //    	excludeWsIds.add(19971L);
 //    	excludeWsIds.add(20281L);
+//    	excludeWsIds.add(20266L);
+    	
     	
         reconstructor.processWorkspaceObjects(AccessType.PRIVATE, PresenceType.PRESENT, excludeWsIds );        
     }	       
