@@ -69,20 +69,27 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
 	    	Collections.sort(wss);
 	    	
 	    	// Filter by timestamps
-	    	List<WorkspaceDescriptor> filteredWss = filterByTimestamps(wss, ags);
-
-	    	
-	    	// Let us first implement non-deleted
-	    	if(objPresenceType != PresenceType.PRESENT) return;
+	    	List<WorkspaceDescriptor> filteredWss = filterByTimestamps(wss, ags);	    	
 	    	
 	    	// Phase 1: do all objects 
-	    	for(WorkspaceDescriptor ws: filteredWss){
-	    		doWorkspaceObjects(ws); 
+	    	if(objPresenceType == PresenceType.PRESENT || objPresenceType == PresenceType.ALL){
+		    	for(WorkspaceDescriptor ws: filteredWss){
+		    		doWorkspaceObjects(ws); 
+		    	}	    		
+	    	} else if(objPresenceType == PresenceType.DELETED || objPresenceType == PresenceType.ALL){
+		    	for(WorkspaceDescriptor ws: filteredWss){
+		    		doWorkspaceDeletedObjects(ws); 
+		    	}	    			    		
 	    	}
 	    	
 	    	// Phase 2: do all data palettes 
-	    	for(WorkspaceDescriptor ws: filteredWss){
-	    		doWorkspaceDataPalettes(ws);
+	    	if(objPresenceType == PresenceType.PRESENT || objPresenceType == PresenceType.ALL){
+	    		for(WorkspaceDescriptor ws: filteredWss){
+	    			doWorkspaceDataPalettes(ws);
+	    		}
+	    	} else if(objPresenceType == PresenceType.DELETED || objPresenceType == PresenceType.ALL){
+	    		// Do not do anything. Data Palette object can not be deleted, 
+	    		// unless the whole workspace is deleted
 	    	}
 	    	
     		// Phase 3: update all workspace states
@@ -92,11 +99,9 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
 	    	
 		} catch (JsonClientException e) {
 			throw new IOException(e);
-		}		
-		
+		}				
 	};
 	
-
 
 	@Override
 	public void processWorkspacePermissions(
@@ -125,13 +130,7 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
 				
     	int wssIndex = 0;
     	int agsIndex = 0;
-    	
-//    	WorkspaceDescriptor ws = wssIndex < wss.size() ? wss.get(wssIndex) : null;
-//    	AccessGroupStatus ag = agsIndex < ags.size() ? ags.get(agsIndex) : null;
-//    	
-//    	int wsId = ws != null ? ws.wsId : -1;
-//    	int agId = ag != null ? ag.getAccessGroupId().intValue() : -1;
-    	
+    	  	
     	while(true){
     		
     		if(wssIndex >= wss.size() ) break;
@@ -182,24 +181,6 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
     	return filteredWss;
 	}
 
-	private void updateWorskapceState(WorkspaceDescriptor ws) throws IOException, JsonClientException {
-		WorkspaceClient wsClient = wsClient();
-		
-		// Get full list of users who can access this workspace
-		WorkspaceIdentity params = new WorkspaceIdentity().withId((long)ws.wsId);
-    	Map<String, String> usersMap = wsClient.getPermissions(params);
-		String[] users = usersMap.keySet().toArray(new String[usersMap.size()]);
-		
-		AccessGroupStatus ag = new AccessGroupStatus(
-				ws.ag != null ? ws.ag.getId() : null, 
-				WS_STORAGE_CODE, 
-				ws.wsId, 
-				ws.timestamp, 
-				ws.isPrivate,
-				ws.isDeleted, 
-				users);
-		eventTrigger.trigger(ag);			
-	}
 
 	private void doWorkspaceObjects(WorkspaceDescriptor ws) throws IOException, JsonClientException {
     	WorkspaceClient wsClient = wsClient();
@@ -224,7 +205,31 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
     	objectStatusEventsBuffer.clear();
     	buildEvents(ws, rows, ObjectStatusEventType.CREATED, objectStatusEventsBuffer, true);		
     	triggerEvents(objectStatusEventsBuffer);
-	}	
+	}
+	
+	private void doWorkspaceDeletedObjects(WorkspaceDescriptor ws) throws IOException, JsonClientException {
+		
+		// We can not do anything about deleted workspaces...
+		if(ws.isDeleted) return;
+		
+		// Process deleted objects in the present workspaces
+    	WorkspaceClient wsClient = wsClient();
+    	
+		ListObjectsParams params;
+		List<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> rows;
+		params = new ListObjectsParams().withIds( Arrays.asList((long)ws.wsId) );
+    	params.setShowAllVersions(1L);
+    	params.setShowDeleted(1L);
+    	params.setShowOnlyDeleted(1L);
+    	
+    	// We will process ALL deleted objects. Roman, sorry... you will have duplicated DELETED events
+    	rows = wsClient.listObjects(params);
+    	
+    	objectStatusEventsBuffer.clear();
+    	buildEvents(ws, rows, ObjectStatusEventType.DELETED, objectStatusEventsBuffer, true);		
+    	triggerEvents(objectStatusEventsBuffer);		
+	}
+	
 	
 	private void doWorkspaceDataPalettes(WorkspaceDescriptor ws) throws IOException, JsonClientException {
     	WorkspaceClient wsClient = wsClient();
@@ -248,6 +253,25 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
         	reconstructDataPalletObjectStatusEvents(ws, objectDescriptorsBuffer, objectStatusEventsBuffer);
         	triggerEvents(objectStatusEventsBuffer);    	
     	}
+	}
+	
+	private void updateWorskapceState(WorkspaceDescriptor ws) throws IOException, JsonClientException {
+		WorkspaceClient wsClient = wsClient();
+		
+		// Get full list of users who can access this workspace
+		WorkspaceIdentity params = new WorkspaceIdentity().withId((long)ws.wsId);
+    	Map<String, String> usersMap = wsClient.getPermissions(params);
+		String[] users = usersMap.keySet().toArray(new String[usersMap.size()]);
+		
+		AccessGroupStatus ag = new AccessGroupStatus(
+				ws.ag != null ? ws.ag.getId() : null, 
+				WS_STORAGE_CODE, 
+				ws.wsId, 
+				ws.timestamp, 
+				ws.isPrivate,
+				ws.isDeleted, 
+				users);
+		eventTrigger.trigger(ag);			
 	}
 	
 	
@@ -456,7 +480,7 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
     	List<Tuple9<Long, String, String, String, Long, String, String, String, Map<String, String>>> wsInfos;
 
     	
-    	// Private && non deleted 
+    	// Private && present 
     	params.setExcludeGlobal(1L);
     	params.setShowDeleted(0L);
     	params.setShowOnlyDeleted(0L);
@@ -493,7 +517,7 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
     		}    		
     	}
     	
-    	// Public && non deleted
+    	// Public && present
 		if( (wsAccessStatus == AccessType.PUBLIC || wsAccessStatus == AccessType.ALL) &&
     			(objPresenceType == PresenceType.PRESENT || objPresenceType == PresenceType.ALL)){
 			
