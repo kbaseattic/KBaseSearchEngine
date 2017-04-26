@@ -1,5 +1,5 @@
 package kbaserelationengine.events;
 
 public enum ObjectStatusEventType {
-	CREATED, NEW_VERSION, DELETED, SHARED, UNSHARED
+	CREATED, NEW_VERSION, DELETED, SHARED, UNSHARED, PUBLISHED, UNPUBLISHED;
 }

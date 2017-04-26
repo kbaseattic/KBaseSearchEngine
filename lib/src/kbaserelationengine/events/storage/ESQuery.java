@@ -1,4 +1,4 @@
-package kbaserelationengine.events;
+package kbaserelationengine.events.storage;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

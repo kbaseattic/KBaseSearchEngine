@@ -12,6 +12,7 @@ public class ObjectStatusEvent {
     private Long timestamp;
     private String storageObjectType;
     private ObjectStatusEventType eventType;
+    private Boolean isGlobalAccessed;
     
     
 	public ObjectStatusEvent(String _id, String storageCode, Integer accessGroupId,
@@ -19,7 +20,8 @@ public class ObjectStatusEvent {
 		    Integer targetAccessGroupId,
 		    Long timestamp,
 			String storageObjectType,
-			ObjectStatusEventType eventType) {
+			ObjectStatusEventType eventType,
+			Boolean isGlobalAccessed) {
 		super();
 		this._id = _id;
 		this.storageCode = storageCode;
@@ -30,6 +32,7 @@ public class ObjectStatusEvent {
 		this.timestamp = timestamp;
 		this.storageObjectType = storageObjectType;
 		this.eventType = eventType;
+		this.isGlobalAccessed = isGlobalAccessed;
 	}
 
 	@Override
@@ -42,7 +45,8 @@ public class ObjectStatusEvent {
 		+", targetAccessGroupId=" + targetAccessGroupId
 		+", timestamp=" + timestamp
 		+", storageObjectType=" + storageObjectType
-		+", eventType=" + eventType.toString();
+		+", eventType=" + eventType.toString()
+		+", isGlobalAccessed=" + isGlobalAccessed.toString();
 	}
 	
 	public GUID toGUID(){
@@ -89,6 +93,9 @@ public class ObjectStatusEvent {
 		return timestamp;
 	}
 	
+	public Boolean isGlobalAccessed(){
+		return isGlobalAccessed;
+	}
 	
     
 }
