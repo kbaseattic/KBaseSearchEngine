@@ -1,6 +1,10 @@
 package kbaserelationengine.search;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -18,6 +22,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
+import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHeader;
 import org.elasticsearch.client.Response;
@@ -43,10 +48,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private boolean skipFullJson = false;
     private boolean allPublic = false;
     private Map<String, String> typeToIndex = new LinkedHashMap<>();
+    private RestClient restClient = null;
+    private File tempDir;
 
-    public ElasticIndexingStorage(HttpHost esHost) throws IOException {
+    public ElasticIndexingStorage(HttpHost esHost, File tempDir) throws IOException {
         this.esHost = esHost;
         this.indexNamePrefix = "";
+        this.tempDir = tempDir;
     }
     
     public HttpHost getEsHost() {
@@ -100,7 +108,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     throw new IOException("Index wasn't created for type " + objectType);
                 }
                 System.out.println("Creating Elasticsearch index: " + ret);
-                //makeRequest("PUT", "/" + ret, null);
                 createTables(ret, indexingRules);
             }
             typeToIndex.put(key, ret);
@@ -108,18 +115,49 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return ret;
     }
     
+    @SuppressWarnings("serial")
     @Override
     public void indexObjects(String objectType, Map<GUID, String> idToJsonValues, 
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
+        String indexName = checkIndex(objectType, indexingRules);
+        Set<GUID> parentGuids = new LinkedHashSet<>();
+        Map<GUID, GUID> guidToParentGuid = new LinkedHashMap<>();
         for (GUID id : idToJsonValues.keySet()) {
-            indexObject(id, objectType, idToJsonValues.get(id), indexingRules);
+            GUID parentGuid = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
+                    id.getAccessGroupObjectId(), id.getVersion(), null, null);
+            parentGuids.add(parentGuid);
+            guidToParentGuid.put(id, parentGuid);
         }
+        File tempFile = File.createTempFile("es_bulk_", ".json", tempDir);
+        PrintWriter pw = new PrintWriter(tempFile);
+        Map<GUID, String> parentGuidToEsId = checkParentDoc(indexName, parentGuids);
+        for (GUID id : idToJsonValues.keySet()) {
+            GUID parentGuid = guidToParentGuid.get(id);
+            String esParentId = parentGuidToEsId.get(parentGuid);
+            String json = idToJsonValues.get(id);
+            Map<String, Object> doc = convertObject(id, objectType, json, indexingRules);
+            /*makeRequest("POST", "/" + indexName + "/" + getDataTableName() + "/", doc, Arrays.asList(
+                    new Tuple2<String, String>().withE1("parent").withE2(esParentId)));*/
+            Map<String, Object> index = new LinkedHashMap<String, Object>() {{
+                put("_index", indexName);
+                put("_type", getDataTableName());
+                put("parent", esParentId);
+            }};
+            Map<String, Object> header = new LinkedHashMap<String, Object>() {{
+                put("index", index);
+            }};
+            pw.println(UObject.transformObjectToString(header));
+            pw.println(UObject.transformObjectToString(doc));
+        }
+        pw.close();
+        System.out.println("Temp-file: " + tempFile + ", size=" + tempFile.length());
+        makeBulkRequest("POST", indexName, tempFile);
+        tempFile.delete();
+        refreshIndex(indexName);
     }
     
-    @Override
-    public void indexObject(GUID id, String objectType, String json,
+    private Map<String, Object> convertObject(GUID id, String objectType, String json, 
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
-        String indexName = checkIndex(objectType, indexingRules);
         Map<String, List<Object>> indexPart = new LinkedHashMap<>();
         ValueConsumer<IndexingRules> consumer = new ValueConsumer<IndexingRules>() {
             @Override
@@ -148,21 +186,31 @@ public class ElasticIndexingStorage implements IndexingStorage {
         try (JsonParser jp = UObject.getMapper().getFactory().createParser(json)) {
             collector.mapKeys(root, jp, consumer);
         }
-        GUID parentGUID = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
-                id.getAccessGroupObjectId(), id.getVersion(), null, null);
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.putAll(indexPart);
         doc.put("guid", id.toString());
-        String parentId = checkParentDoc(indexName, 
-                new HashSet<>(Arrays.asList(parentGUID))).get(parentGUID);
         doc.put("otype", objectType);
         if (!skipFullJson) {
             doc.put("ojson", json);
         }
-        // Save new doc with auto-incremented ID
-        // TODO: save many docs at once in bulk mode
+        return doc;
+    }
+    
+    @Override
+    public void indexObject(GUID id, String objectType, String json,
+            List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
+        //Map<GUID, String> guidToJson = new LinkedHashMap<>();
+        //guidToJson.put(id, json);
+        //indexObjects(objectType, guidToJson, indexingRules);
+        String indexName = checkIndex(objectType, indexingRules);
+        GUID parentGUID = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
+                id.getAccessGroupObjectId(), id.getVersion(), null, null);
+        String esParentId = checkParentDoc(indexName, 
+                new HashSet<>(Arrays.asList(parentGUID))).get(parentGUID);
+        Map<String, Object> doc = convertObject(id, objectType, json, indexingRules);
         makeRequest("POST", "/" + indexName + "/" + getDataTableName() + "/", doc, Arrays.asList(
-                new Tuple2<String, String>().withE1("parent").withE2(parentId)));
+                new Tuple2<String, String>().withE1("parent").withE2(esParentId)));
+        refreshIndex(indexName);
     }
     
     @Override
@@ -657,14 +705,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 Collectors.toMap(u -> u.getE1(), u -> u.getE2())));
     }
     
-    private Response makeRequest(String reqType, String urlPath, Map<String, ?> doc, 
-            Map<String, String> attributes) throws IOException {
-        try {
+    private RestClient getRestClient() {
+        if (restClient == null) {
             RestClientBuilder restClientBld = RestClient.builder(esHost);
             List<Header> headers = new ArrayList<>();
-            if (doc != null) {
-                headers.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
-            }
+            headers.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
             //headers.add(new BasicHeader("Role", "Read"));
             restClientBld.setDefaultHeaders(headers.toArray(new Header[headers.size()]));
             /*
@@ -677,9 +722,28 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 }
             });
             */
+            restClient = restClientBld.build();
+        }
+        return restClient;
+    }
+    
+    private Response makeBulkRequest(String reqType, String indexName, File jsonData) 
+            throws IOException {
+        RestClient restClient = getRestClient();
+        try (InputStream is = new FileInputStream(jsonData)) {
+            InputStreamEntity body = new InputStreamEntity(is);
+            Response response = restClient.performRequest(reqType, indexName + "/_bulk", 
+                    Collections.emptyMap(), body);
+            return response;
+        }
+    }
+    
+    private Response makeRequest(String reqType, String urlPath, Map<String, ?> doc, 
+            Map<String, String> attributes) throws IOException {
+        try {
             HttpEntity body = doc == null ? null : 
                 new StringEntity(UObject.transformObjectToString(doc));
-            RestClient restClient = restClientBld.build();
+            RestClient restClient = getRestClient();  //restClientBld.build();
             return restClient.performRequest(reqType, urlPath, attributes, body);
         } catch (ResponseException ex) {
             throw new IOException(ex.getMessage(), ex);
@@ -773,5 +837,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
             }
         }
         makeRequest("PUT", "/" + indexName, doc);
+    }
+    
+    public void close() throws IOException {
+        if (restClient != null) {
+            restClient.close();
+            restClient = null;
+        }
     }
 }

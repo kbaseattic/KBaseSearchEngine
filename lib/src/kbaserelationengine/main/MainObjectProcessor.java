@@ -6,6 +6,7 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.http.HttpHost;
 
@@ -36,7 +37,7 @@ import workspace.WorkspaceClient;
 public class MainObjectProcessor {
     private URL wsURL;
     private AuthToken kbaseIndexerToken;
-    private File tempDir;
+    private File rootTempDir;
     private WSStatusEventReconstructor wsEventReconstructor;
     private StatusEventStorage eventStorage;
     private ObjectStatusEventQueue queue;
@@ -51,7 +52,7 @@ public class MainObjectProcessor {
                     throws IOException, ObjectParseException {
         this.wsURL = wsURL;
         this.kbaseIndexerToken = kbaseIndexerToken;
-        this.tempDir = tempDir;
+        this.rootTempDir = tempDir;
         eventStorage = new MongoDBStatusEventStorage(mongoHost, mongoPort, mongoDbName);
         WSStatusEventTrigger eventTrigger = new WSStatusEventTrigger();
         wsEventReconstructor = new WSStatusEventReconstructor(wsURL, kbaseIndexerToken, 
@@ -59,7 +60,8 @@ public class MainObjectProcessor {
         eventTrigger.registerListener((StatusEventListener)eventStorage);
         queue = new ObjectStatusEventQueue(eventStorage);
         systemStorage = new DefaultSystemStorage(wsURL, typesDir);
-        ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost);
+        ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
+                getTempSubDir("esbulk"));
         esStorage.setIndexNamePrefix(esIndexPrefix);
         indexingStorage = esStorage;
         relationStorage = new DefaultRelationStorage();
@@ -67,6 +69,18 @@ public class MainObjectProcessor {
         if (startLifecycleRunner) {
             startLifecycleRunner();
         }
+    }
+    
+    private File getWsLoadTempDir() {
+        return getTempSubDir("wsload");
+    }
+    
+    private File getTempSubDir(String subName) {
+        File ret = new File(rootTempDir, subName);
+        if (!ret.exists()) {
+            ret.mkdirs();
+        }
+        return ret;
     }
     
     public void startLifecycleRunner() {
@@ -133,43 +147,59 @@ public class MainObjectProcessor {
             System.out.println("Processing " + ev.getEventType() + ", " + 
                     ev.getStorageObjectType() + ", " + ev.toGUID() + "...");
             long time = System.currentTimeMillis();
-            switch (ev.getEventType()) {
-            case CREATED:
-            case NEW_VERSION:
-                indexObject(ev.toGUID(), ev.getStorageObjectType());
-                break;
-            case DELETED:
-                unshare(ev.toGUID(), ev.getAccessGroupId());
-                break;
-            case SHARED:
-                share(ev.toGUID(), ev.getTargetAccessGroupId());
-                break;
-            case UNSHARED:
-                unshare(ev.toGUID(), ev.getTargetAccessGroupId());
-                break;
-            default:
-                throw new IllegalStateException("Unsupported event type: " + ev.getEventType());
-            }
+            processOneEvent(ev);
+            iter.markAsVisitied(true);
             System.out.println("    (processing time: " + (System.currentTimeMillis() - time) + "ms.)");
         }
     }
     
+    public void processOneEvent(ObjectStatusEvent ev) 
+            throws IOException, JsonClientException, ObjectParseException {
+        switch (ev.getEventType()) {
+        case CREATED:
+        case NEW_VERSION:
+            indexObject(ev.toGUID(), ev.getStorageObjectType());
+            break;
+        case DELETED:
+            unshare(ev.toGUID(), ev.getAccessGroupId());
+            break;
+        case SHARED:
+            share(ev.toGUID(), ev.getTargetAccessGroupId());
+            break;
+        case UNSHARED:
+            unshare(ev.toGUID(), ev.getTargetAccessGroupId());
+            break;
+        default:
+            throw new IllegalStateException("Unsupported event type: " + ev.getEventType());
+        }
+    }
+
     public boolean isStorageTypeSupported(String storageObjectType) throws IOException {
         return systemStorage.listObjectTypesByStorageObjectType(storageObjectType) != null;
     }
     
     public void indexObject(GUID guid, String storageObjectType) 
             throws IOException, JsonClientException, ObjectParseException {
-        File tempFile = ObjectParser.prepareTempFile(tempDir);
+        System.out.println("Processing object: " + guid);
+        long t1 = System.currentTimeMillis();
+        File tempFile = ObjectParser.prepareTempFile(getWsLoadTempDir());
         String objRef = guid.getAccessGroupId() + "/" + guid.getAccessGroupObjectId() + "/" +
                 guid.getVersion();
         ObjectData obj = ObjectParser.loadObject(wsURL, tempFile, kbaseIndexerToken, objRef);
+        System.out.println("  (loading time: " + (System.currentTimeMillis() - t1) + " ms.)");
         List<ObjectTypeParsingRules> parsingRules = 
                 systemStorage.listObjectTypesByStorageObjectType(storageObjectType);
         for (ObjectTypeParsingRules rule : parsingRules) {
-            ObjectParser.processSubObjects(obj, objRef, rule, systemStorage, 
-                    indexingStorage, relationStorage);
+            long t2 = System.currentTimeMillis();
+            Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, objRef, rule, 
+                    systemStorage, relationStorage);
+            System.out.println("  (parsing time: " + (System.currentTimeMillis() - t2) + " ms.)");
+            long t3 = System.currentTimeMillis();
+            indexingStorage.indexObjects(rule.getGlobalObjectType(), guidToJson, 
+                    rule.getIndexingRules());
+            System.out.println("  (indexing time: " + (System.currentTimeMillis() - t3) + " ms.)");
         }
+        tempFile.delete();
     }
     
     public void share(GUID guid, int accessGroupId) throws IOException {
@@ -192,5 +222,9 @@ public class MainObjectProcessor {
         }
         wsClient.setPermissions(params.withUsers(
                 Arrays.asList(kbaseIndexerToken.getUserName())).withNewPermission("w"));
+    }
+    
+    public IndexingStorage getIndexingStorage(String objectType) {
+        return indexingStorage;
     }
 }

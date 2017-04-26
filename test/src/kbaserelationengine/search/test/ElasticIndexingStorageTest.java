@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -31,23 +32,30 @@ import kbaserelationengine.system.ObjectTypeParsingRules;
 import us.kbase.common.service.UObject;
 
 public class ElasticIndexingStorageTest {
-    public static final boolean cleanupAfter = true;
+    public static final boolean cleanup = true;
     
     private static ElasticIndexingStorage indexStorage;
+    private static File tempDir = null;
     
     @BeforeClass
     public static void prepare() throws Exception {
+        tempDir = new File("test_local/temp_files/esbulk");
         String indexNamePrefix = "test_" + System.currentTimeMillis() + ".";
         indexStorage = new ElasticIndexingStorage(
-                new HttpHost("localhost", 9200));
+                new HttpHost("localhost", 9200), tempDir);
         indexStorage.setIndexNamePrefix(indexNamePrefix);
+        cleanup();
+        tempDir.mkdirs();
     }
     
     @AfterClass
     public static void teardown() throws Exception {
-        if (!cleanupAfter) {
-            return;
+        if (cleanup) {
+            cleanup();
         }
+    }
+    
+    private static void cleanup() throws Exception {
         Set<String> indNames = indexStorage.listIndeces();
         for (String index : indNames) {
             if (!index.startsWith("test_")) {
@@ -56,6 +64,9 @@ public class ElasticIndexingStorageTest {
             }
             System.out.println("Deleting Elasticsearch index: " + index);
             indexStorage.deleteIndex(index);
+        }
+        if (tempDir != null && tempDir.exists()) {
+            FileUtils.deleteQuietly(tempDir);
         }
     }
     
@@ -81,7 +92,7 @@ public class ElasticIndexingStorageTest {
             indexStorage.indexObject(id, parsingRules.getGlobalObjectType(), subJson, 
                     parsingRules.getIndexingRules());
         }
-        indexStorage.refreshIndex(indexStorage.getIndex(parsingRules.getGlobalObjectType()));
+        //indexStorage.refreshIndex(indexStorage.getIndex(parsingRules.getGlobalObjectType()));
         Map<String, Integer> typeToCount = indexStorage.searchTypeByText("Rfah", null, false);
         Assert.assertEquals(1, typeToCount.size());
         String type = typeToCount.keySet().iterator().next();
@@ -135,7 +146,7 @@ public class ElasticIndexingStorageTest {
         indexStorage.indexObject(id12, objType, "{\"prop1\":\"abc 124\"}", indexingRules);
         GUID id13 = new GUID("WS:2/1/3");
         indexStorage.indexObject(id13, objType, "{\"prop1\":\"abc 125\"}", indexingRules);
-        indexStorage.refreshIndex(indexStorage.getIndex(objType));
+        //indexStorage.refreshIndex(indexStorage.getIndex(objType));
         checkIdInSet(indexStorage.searchIdsByText(objType, "abc", null, 
                 new LinkedHashSet<>(Arrays.asList(2)), false), 1, id13);
         checkIdInSet(indexStorage.searchIdsByText(objType, "125", null, 
@@ -161,7 +172,7 @@ public class ElasticIndexingStorageTest {
         indexStorage.indexObject(id2, objType, "{\"prop2\": 124}", indexingRules);
         GUID id3 = new GUID("WS:10/1/3");
         indexStorage.indexObject(id3, objType, "{\"prop2\": 125}", indexingRules);
-        indexStorage.refreshIndex(indexStorage.getIndex(objType));
+        //indexStorage.refreshIndex(indexStorage.getIndex(objType));
         Assert.assertEquals(0, indexStorage.lookupIdsByKey(objType, "prop2", 123, 
                 new LinkedHashSet<>(Arrays.asList(10)), false).size());
         checkIdInSet(indexStorage.lookupIdsByKey(objType, "prop2", 125, 
