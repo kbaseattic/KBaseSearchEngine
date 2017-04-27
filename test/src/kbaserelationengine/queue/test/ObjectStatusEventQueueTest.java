@@ -2,12 +2,10 @@ package kbaserelationengine.queue.test;
 
 import java.io.IOException;
 
-import org.apache.http.HttpHost;
 import org.junit.Before;
 import org.junit.Test;
 
-import kbaserelationengine.events.ESObjectStatusEventStorage;
-import kbaserelationengine.events.MongoDBStatusEventStorage;
+import kbaserelationengine.events.storage.MongoDBStatusEventStorage;
 import kbaserelationengine.queue.ObjectStatusEventIterator;
 import kbaserelationengine.queue.ObjectStatusEventQueue;
 
@@ -32,8 +30,8 @@ public class ObjectStatusEventQueueTest {
 		int i = 0;
 		while(it.hasNext()){
 			System.out.println(it.next());
-			if(i++%5 == 0){
-				it.markAsVisitied(true);
+			if(i++%2 == 0){
+//				it.markAsVisitied(false);
 			}
 		}
 		
@@ -42,13 +40,13 @@ public class ObjectStatusEventQueueTest {
 		
 	}
 	
-	@Test
+//	@Test
 	public void testUnmarkDataType() throws IOException {
 		
 		System.out.println("Number of records:");
 		System.out.println("\tbefore\t" + queue.count());	
 		
-		queue.markAsNonprocessed("WS", "KBaseBiochem.Media");
+		queue.markAsNonprocessed("WS", "KBaseNarrative.Narrative");
 		
 		System.out.println("\tafter\t" + queue.count());		
 	}

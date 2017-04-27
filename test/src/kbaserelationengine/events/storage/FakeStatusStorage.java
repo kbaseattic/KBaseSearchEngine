@@ -1,13 +1,13 @@
-package kbaserelationengine.events.test.fake;
+package kbaserelationengine.events.storage;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import kbaserelationengine.events.ObjectStatusEvent;
+import kbaserelationengine.events.storage.ObjectStatusCursor;
+import kbaserelationengine.events.storage.StatusEventStorage;
 import kbaserelationengine.events.AccessGroupStatus;
-import kbaserelationengine.events.ObjectStatusCursor;
-import kbaserelationengine.events.StatusEventStorage;
 
 public class FakeStatusStorage implements StatusEventStorage {
 

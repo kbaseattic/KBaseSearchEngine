@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.util.List;
 
 import kbaserelationengine.events.ObjectStatusEvent;
-import kbaserelationengine.events.ObjectStatusCursor;
-import kbaserelationengine.events.StatusEventStorage;
+import kbaserelationengine.events.storage.ObjectStatusCursor;
+import kbaserelationengine.events.storage.StatusEventStorage;
 
 public class ObjectStatusEventQueue {
 	private final static String BUFFER_ALIVE_TIME = "1m";

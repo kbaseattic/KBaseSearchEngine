@@ -1,7 +1,10 @@
-package kbaserelationengine.events;
+package kbaserelationengine.events.storage;
 
 import java.io.IOException;
 import java.util.List;
+
+import kbaserelationengine.events.AccessGroupStatus;
+import kbaserelationengine.events.ObjectStatusEvent;
 
 public interface StatusEventStorage {
 	
