@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -16,9 +17,13 @@ import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.MongoDBStatusEventStorage;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.StatusEventListener;
-import kbaserelationengine.events.StatusEventStorage;
-import kbaserelationengine.events.WSStatusEventReconstructor;
 import kbaserelationengine.events.WSStatusEventTrigger;
+import kbaserelationengine.events.reconstructor.AccessType;
+import kbaserelationengine.events.reconstructor.PresenceType;
+import kbaserelationengine.events.reconstructor.WSStatusEventReconstructor;
+import kbaserelationengine.events.reconstructor.WSStatusEventReconstructorImpl;
+import kbaserelationengine.events.storage.FakeStatusStorage;
+import kbaserelationengine.events.storage.StatusEventStorage;
 import kbaserelationengine.parse.ObjectParseException;
 import kbaserelationengine.parse.ObjectParser;
 import kbaserelationengine.queue.ObjectStatusEventIterator;
@@ -55,9 +60,9 @@ public class MainObjectProcessor {
         this.wsURL = wsURL;
         this.kbaseIndexerToken = kbaseIndexerToken;
         this.rootTempDir = tempDir;
-        eventStorage = new MongoDBStatusEventStorage(mongoHost, mongoPort, mongoDbName);
+        eventStorage = new FakeStatusStorage(); //new MongoDBStatusEventStorage(mongoHost, mongoPort, mongoDbName);
         WSStatusEventTrigger eventTrigger = new WSStatusEventTrigger();
-        wsEventReconstructor = new WSStatusEventReconstructor(wsURL, kbaseIndexerToken, 
+        wsEventReconstructor = new WSStatusEventReconstructorImpl(wsURL, kbaseIndexerToken, 
                 eventStorage, eventTrigger);
         eventTrigger.registerListener((StatusEventListener)eventStorage);
         queue = new ObjectStatusEventQueue(eventStorage);
@@ -135,8 +140,8 @@ public class MainObjectProcessor {
     
     public void performOneTick() 
             throws IOException, JsonClientException, ObjectParseException {
-        wsEventReconstructor.doPublicWorkspaces();
-        wsEventReconstructor.doPrivateWorkspaces();
+        wsEventReconstructor.processWorkspaceObjects(AccessType.PRIVATE, PresenceType.PRESENT, 
+                Collections.emptySet());
         ObjectStatusEventIterator iter = queue.iterator("WS");
         while (iter.hasNext()) {
             ObjectStatusEvent ev = iter.next();

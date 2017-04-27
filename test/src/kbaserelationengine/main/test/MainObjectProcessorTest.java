@@ -92,7 +92,7 @@ public class MainObjectProcessorTest {
     public void testManual() throws Exception {
         //mop.performOneTick();
         ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", 20266, "2", 1, null, 
-                System.currentTimeMillis(), "KBaseGenomes.Genome", ObjectStatusEventType.CREATED);
+                System.currentTimeMillis(), "KBaseGenomes.Genome", ObjectStatusEventType.CREATED, false);
         mop.processOneEvent(ev);
         String query = "TrkA";
         Map<String, Integer> typeToCount = mop.getIndexingStorage("*").searchTypeByText(query, null, true);
