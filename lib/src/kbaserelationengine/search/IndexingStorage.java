@@ -19,11 +19,14 @@ public interface IndexingStorage {
      * @param indexingRules  indexing rules
      * @throws IOException
      */
-    public void indexObject(GUID id, String objectType, String jsonValue, 
+    public void indexObject(GUID id, String objectType, String jsonValue, String objectName,
+            long timestamp, String parentJsonValue, Map<String, String> metadata, boolean isPublic,
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException;
 
-    public void indexObjects(String objectType, Map<GUID, String> idToJsonValues, 
-            List<IndexingRules> indexingRules) throws IOException, ObjectParseException;
+    public void indexObjects(String objectType, String objectName, long timestamp,
+            String parentJsonValue, Map<String, String> metadata, Map<GUID, String> idToJsonValues,
+            boolean isPublic, List<IndexingRules> indexingRules) 
+                    throws IOException, ObjectParseException;
     
     public void flushIndexing(String objectType) throws IOException;
     
@@ -31,7 +34,7 @@ public interface IndexingStorage {
 
     public void unshareObject(Set<GUID> id, int accessGroupId) throws IOException;
 
-    public List<Object> getObjectsByIds(Set<GUID> id) throws IOException;
+    public List<ObjectData> getObjectsByIds(Set<GUID> id) throws IOException;
 
     public Map<String, Integer> searchTypeByText(String text,
             Set<Integer> accessGroupIds, boolean isAdmin) throws IOException;

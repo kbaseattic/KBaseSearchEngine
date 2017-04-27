@@ -7,6 +7,8 @@ public class IndexingRules {
     private boolean fullText = false;
     private String keywordType = null;
     private String keyName = null;
+    private String transform = null;
+    private boolean fromParent = false;
     
     public ObjectJsonPath getPath() {
         return path;
@@ -38,5 +40,21 @@ public class IndexingRules {
     
     public void setKeyName(String keyName) {
         this.keyName = keyName;
+    }
+    
+    public String getTransform() {
+        return transform;
+    }
+    
+    public void setTransform(String transform) {
+        this.transform = transform;
+    }
+    
+    public boolean isFromParent() {
+        return fromParent;
+    }
+    
+    public void setFromParent(boolean fromParent) {
+        this.fromParent = fromParent;
     }
 }

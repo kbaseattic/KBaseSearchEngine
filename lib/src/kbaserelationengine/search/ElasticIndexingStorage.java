@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.http.Header;
@@ -30,9 +31,11 @@ import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 
 import kbaserelationengine.common.GUID;
+import kbaserelationengine.common.ObjectJsonPath;
 import kbaserelationengine.parse.ObjectParseException;
 import kbaserelationengine.parse.ValueCollectingNode;
 import kbaserelationengine.parse.ValueCollector;
@@ -117,8 +120,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     @SuppressWarnings("serial")
     @Override
-    public void indexObjects(String objectType, Map<GUID, String> idToJsonValues, 
-            List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
+    public void indexObjects(String objectType, String objectName, long timestamp, 
+            String parentJsonValue, Map<String, String> metadata, Map<GUID, String> idToJsonValues,
+            boolean isPublic, List<IndexingRules> indexingRules) 
+                    throws IOException, ObjectParseException {
         String indexName = checkIndex(objectType, indexingRules);
         Set<GUID> parentGuids = new LinkedHashSet<>();
         Map<GUID, GUID> guidToParentGuid = new LinkedHashMap<>();
@@ -129,85 +134,151 @@ public class ElasticIndexingStorage implements IndexingStorage {
             guidToParentGuid.put(id, parentGuid);
         }
         File tempFile = File.createTempFile("es_bulk_", ".json", tempDir);
-        PrintWriter pw = new PrintWriter(tempFile);
-        Map<GUID, String> parentGuidToEsId = checkParentDoc(indexName, parentGuids);
-        for (GUID id : idToJsonValues.keySet()) {
-            GUID parentGuid = guidToParentGuid.get(id);
-            String esParentId = parentGuidToEsId.get(parentGuid);
-            String json = idToJsonValues.get(id);
-            Map<String, Object> doc = convertObject(id, objectType, json, indexingRules);
-            /*makeRequest("POST", "/" + indexName + "/" + getDataTableName() + "/", doc, Arrays.asList(
-                    new Tuple2<String, String>().withE1("parent").withE2(esParentId)));*/
-            Map<String, Object> index = new LinkedHashMap<String, Object>() {{
-                put("_index", indexName);
-                put("_type", getDataTableName());
-                put("parent", esParentId);
-            }};
-            Map<String, Object> header = new LinkedHashMap<String, Object>() {{
-                put("index", index);
-            }};
-            pw.println(UObject.transformObjectToString(header));
-            pw.println(UObject.transformObjectToString(doc));
+        try {
+            PrintWriter pw = new PrintWriter(tempFile);
+            Map<GUID, String> parentGuidToEsId = checkParentDoc(indexName, parentGuids);
+            for (GUID id : idToJsonValues.keySet()) {
+                GUID parentGuid = guidToParentGuid.get(id);
+                String esParentId = parentGuidToEsId.get(parentGuid);
+                String json = idToJsonValues.get(id);
+                Map<String, Object> doc = convertObject(id, objectType, json, objectName, timestamp,
+                        parentJsonValue, metadata, indexingRules);
+                Map<String, Object> index = new LinkedHashMap<String, Object>() {{
+                    put("_index", indexName);
+                    put("_type", getDataTableName());
+                    put("parent", esParentId);
+                }};
+                Map<String, Object> header = new LinkedHashMap<String, Object>() {{
+                    put("index", index);
+                }};
+                pw.println(UObject.transformObjectToString(header));
+                pw.println(UObject.transformObjectToString(doc));
+            }
+            pw.close();
+            makeBulkRequest("POST", indexName, tempFile);
+        } finally {
+            tempFile.delete();
         }
-        pw.close();
-        System.out.println("Temp-file: " + tempFile + ", size=" + tempFile.length());
-        makeBulkRequest("POST", indexName, tempFile);
-        tempFile.delete();
         refreshIndex(indexName);
     }
     
     private Map<String, Object> convertObject(GUID id, String objectType, String json, 
+            String objectName, long timestamp, String parentJson, Map<String, String> metadata,
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
         Map<String, List<Object>> indexPart = new LinkedHashMap<>();
-        ValueConsumer<IndexingRules> consumer = new ValueConsumer<IndexingRules>() {
+        ValueConsumer<List<IndexingRules>> consumer = new ValueConsumer<List<IndexingRules>>() {
             @Override
-            public void addValue(IndexingRules rules, Object value) {
-                String key;
-                if (mergeTypes) {
-                    key = getKeyProperty("all");
-                } else {
-                    key = getKeyProperty(getKeyName(rules));
+            public void addValue(List<IndexingRules> rulesList, Object value) {
+                for (IndexingRules rules : rulesList) {
+                    Object valueFinal = value;
+                    String key;
+                    if (mergeTypes) {
+                        key = getKeyProperty("all");
+                    } else {
+                        key = getKeyProperty(getKeyName(rules));
+                    }
+                    List<Object> values = indexPart.get(key);
+                    if (values == null) {
+                        values = new ArrayList<>();
+                        indexPart.put(key, values);
+                    }
+                    if (rules.getTransform() != null) {
+                        valueFinal = transform(valueFinal, rules.getTransform());
+                    }
+                    values.add(valueFinal);
                 }
-                List<Object> values = indexPart.get(key);
-                if (values == null) {
-                    values = new ArrayList<>();
-                    indexPart.put(key, values);
-                }
-                values.add(value);
             }
         };
-        ValueCollectingNode<IndexingRules> root = new ValueCollectingNode<>();
-        for (IndexingRules rules : indexingRules) {
-            if (rules.isFullText() || rules.getKeywordType() != null) {
-                root.addPath(rules.getPath(), rules);
-            }
-        }
-        ValueCollector<IndexingRules> collector = new ValueCollector<IndexingRules>();
-        try (JsonParser jp = UObject.getMapper().getFactory().createParser(json)) {
-            collector.mapKeys(root, jp, consumer);
+        // Sub-objects
+        extractIndexingPart(json, false, indexingRules, consumer);
+        // Parent
+        if (parentJson != null) {
+            extractIndexingPart(parentJson, true, indexingRules, consumer);
         }
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.putAll(indexPart);
         doc.put("guid", id.toString());
         doc.put("otype", objectType);
+        doc.put("oname", objectName);
+        doc.put("timestamp", timestamp);
         if (!skipFullJson) {
             doc.put("ojson", json);
+            doc.put("pjson", parentJson);
         }
         return doc;
     }
     
+    @SuppressWarnings("unchecked")
+    private Object transform(Object value, String transform) {
+        String retProp = null;
+        if (transform.contains(".")) {
+            String[] parts = transform.split(Pattern.quote("."));
+            transform = parts[0];
+            retProp = parts[1];
+        }
+        switch (transform) {
+        case "location":
+            List<List<Object>> loc = (List<List<Object>>)value;
+            Map<String, Object> retLoc = new LinkedHashMap<>();
+            retLoc.put("contig_id", loc.get(0).get(0));
+            String strand = (String)loc.get(0).get(2);
+            retLoc.put("strand", strand);
+            int start = (Integer)loc.get(0).get(1);
+            int len = (Integer)loc.get(0).get(3);
+            retLoc.put("length", len);
+            retLoc.put("start", strand.equals("+") ? start : (start - len + 1));
+            retLoc.put("stop", strand.equals("+") ? (start + len - 1) : start);
+            if (retProp == null) {
+                return retLoc;
+            }
+            return retLoc.get(retProp);
+        case "string":
+            return String.valueOf(value);
+        case "integer":
+            return Integer.parseInt(String.valueOf(value));
+        default:
+            throw new IllegalStateException("Unsupported transformation type: " + transform);
+        }
+    }
+
+    private void extractIndexingPart(String json, boolean fromParent,
+            List<IndexingRules> indexingRules, ValueConsumer<List<IndexingRules>> consumer)
+            throws IOException, ObjectParseException, JsonParseException {
+        Map<ObjectJsonPath, List<IndexingRules>> pathToRules = new LinkedHashMap<>();
+        for (IndexingRules rules : indexingRules) {
+            if (rules.isFromParent() != fromParent) {
+                continue;
+            }
+            if (rules.isFullText() || rules.getKeywordType() != null) {
+                List<IndexingRules> rulesList = pathToRules.get(rules.getPath());
+                if (rulesList == null) {
+                    rulesList = new ArrayList<>();
+                    pathToRules.put(rules.getPath(), rulesList);
+                }
+                rulesList.add(rules);
+            }
+        }
+        ValueCollectingNode<List<IndexingRules>> root = new ValueCollectingNode<>();
+        for (ObjectJsonPath path : pathToRules.keySet()) {
+            root.addPath(path, pathToRules.get(path));
+        }
+        ValueCollector<List<IndexingRules>> collector = new ValueCollector<List<IndexingRules>>();
+        try (JsonParser jp = UObject.getMapper().getFactory().createParser(json)) {
+            collector.mapKeys(root, jp, consumer);
+        }
+    }
+    
     @Override
-    public void indexObject(GUID id, String objectType, String json,
+    public void indexObject(GUID id, String objectType, String json, String objectName,
+            long timestamp, String parentJsonValue, Map<String, String> metadata, boolean isPublic,
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
-        //Map<GUID, String> guidToJson = new LinkedHashMap<>();
-        //guidToJson.put(id, json);
-        //indexObjects(objectType, guidToJson, indexingRules);
         String indexName = checkIndex(objectType, indexingRules);
         GUID parentGUID = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
                 id.getAccessGroupObjectId(), id.getVersion(), null, null);
         String esParentId = checkParentDoc(indexName, 
                 new HashSet<>(Arrays.asList(parentGUID))).get(parentGUID);
-        Map<String, Object> doc = convertObject(id, objectType, json, indexingRules);
+        Map<String, Object> doc = convertObject(id, objectType, json, objectName, timestamp, 
+                parentJsonValue, metadata, indexingRules);
         makeRequest("POST", "/" + indexName + "/" + getDataTableName() + "/", doc, Arrays.asList(
                 new Tuple2<String, String>().withE1("parent").withE2(esParentId)));
         refreshIndex(indexName);
@@ -512,7 +583,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     @SuppressWarnings({ "serial", "unchecked" })
     @Override
-    public List<Object> getObjectsByIds(Set<GUID> ids) throws IOException {
+    public List<ObjectData> getObjectsByIds(Set<GUID> ids) throws IOException {
         Map<String, Object> terms = new LinkedHashMap<String, Object>() {{
             put("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList()));
         }};
@@ -527,19 +598,46 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }};
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
-            put("_source", Arrays.asList("ojson"));
+            //put("_source", Arrays.asList("ojson"));
         }};
         String urlPath = "/_all/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
-        List<Object> ret = new ArrayList<>();
+        List<ObjectData> ret = new ArrayList<>();
         Map<String, Object> hitMap = (Map<String, Object>)data.get("hits");
         List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
-            String jsonText = (String)obj.get("ojson");
-            ret.add(UObject.transformStringToObject(jsonText, Map.class));
+            ObjectData item = new ObjectData();
+            item.guid = new GUID((String)obj.get("guid"));
+            item.parentGuid = new GUID(item.guid.getStorageCode(), item.guid.getAccessGroupId(),
+                    item.guid.getAccessGroupObjectId(), item.guid.getVersion(), null, null);
+            item.objectName = (String)obj.get("oname");
+            Object dateProp = obj.get("timestamp");
+            item.timestamp = (dateProp instanceof Long) ? (Long)dateProp : 
+                Long.parseLong(String.valueOf(dateProp));
+            item.data = UObject.transformStringToObject((String)obj.get("ojson"), Object.class);
+            String pjson = (String)obj.get("pjson");
+            if (pjson != null) {
+                item.parentData = UObject.transformStringToObject(pjson, Object.class);
+            }
+            Map<String, String> keyProps = new LinkedHashMap<>();
+            for (String key : obj.keySet()) {
+                if (key.startsWith("key.")) {
+                    Object objValue = obj.get(key);
+                    String textValue = null;
+                    if (objValue instanceof List) {
+                        textValue = ((List<Object>)objValue).stream().map(Object::toString)
+                                .collect(Collectors.joining(", "));
+                    } else {
+                        textValue = String.valueOf(objValue);
+                    }
+                    keyProps.put(key.substring(4), textValue);
+                }
+            }
+            item.keyProps = keyProps;
+            ret.add(item);
         }
         return ret;
     }
@@ -814,8 +912,18 @@ public class ElasticIndexingStorage implements IndexingStorage {
         props.put("otype", new LinkedHashMap<String, Object>() {{
             put("type", "keyword");
         }});
+        props.put("oname", new LinkedHashMap<String, Object>() {{
+            put("type", "text");
+        }});
+        props.put("timestamp", new LinkedHashMap<String, Object>() {{
+            put("type", "date");
+        }});
         if (!skipFullJson) {
             props.put("ojson", new LinkedHashMap<String, Object>() {{
+                put("type", "keyword");
+                put("index", false);
+            }});
+            props.put("pjson", new LinkedHashMap<String, Object>() {{
                 put("type", "keyword");
                 put("index", false);
             }});

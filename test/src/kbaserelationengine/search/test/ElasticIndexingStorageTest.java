@@ -2,6 +2,7 @@ package kbaserelationengine.search.test;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -27,6 +28,7 @@ import kbaserelationengine.parse.SimpleSubObjectConsumer;
 import kbaserelationengine.parse.SubObjectConsumer;
 import kbaserelationengine.parse.test.SubObjectExtractorTest;
 import kbaserelationengine.search.ElasticIndexingStorage;
+import kbaserelationengine.search.ObjectData;
 import kbaserelationengine.system.IndexingRules;
 import kbaserelationengine.system.ObjectTypeParsingRules;
 import us.kbase.common.service.UObject;
@@ -78,6 +80,10 @@ public class ElasticIndexingStorageTest {
         ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules.fromObject(parsingRulesObj);
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
+        String parentJson = null;
+        try (JsonParser jts = SubObjectExtractorTest.getParsedJsonResource("genome01")) {
+            parentJson = ObjectParser.extractParentFragment(parsingRules, jts);
+        }
         try (JsonParser jts = SubObjectExtractorTest.getParsedJsonResource("genome01")) {
             ObjectParser.extractSubObjects(parsingRules, subObjConsumer, jts);
         }
@@ -90,7 +96,8 @@ public class ElasticIndexingStorageTest {
             }
             GUID id = ObjectParser.prepareGUID(parsingRules, "1/1/1", path, idConsumer);
             indexStorage.indexObject(id, parsingRules.getGlobalObjectType(), subJson, 
-                    parsingRules.getIndexingRules());
+                    "MyGenome.1", System.currentTimeMillis(), parentJson, Collections.emptyMap(),
+                    false, parsingRules.getIndexingRules());
         }
         //indexStorage.refreshIndex(indexStorage.getIndex(parsingRules.getGlobalObjectType()));
         Map<String, Integer> typeToCount = indexStorage.searchTypeByText("Rfah", null, false);
@@ -114,10 +121,10 @@ public class ElasticIndexingStorageTest {
         id = ids.iterator().next();
         Assert.assertEquals(expectedGUID, id);
         // Check object loading by IDs
-        List<Object> objList = indexStorage.getObjectsByIds(
+        List<ObjectData> objList = indexStorage.getObjectsByIds(
                 new HashSet<>(Arrays.asList(id)));
         Assert.assertEquals(1, objList.size());
-        Map<String, Object> obj = (Map<String, Object>)objList.get(0);
+        Map<String, Object> obj = (Map<String, Object>)objList.get(0).data;
         Assert.assertTrue(obj.containsKey("id"));
         Assert.assertTrue(obj.containsKey("location"));
         Assert.assertTrue(obj.containsKey("function"));
@@ -137,15 +144,20 @@ public class ElasticIndexingStorageTest {
         ir.setFullText(true);
         List<IndexingRules> indexingRules= Arrays.asList(ir);
         GUID id11 = new GUID("WS:2/1/1");
-        indexStorage.indexObject(id11, objType, "{\"prop1\":\"abc 123\"}", indexingRules);
+        indexStorage.indexObject(id11, objType, "{\"prop1\":\"abc 123\"}", "obj.1", 0, null, null,
+                false, indexingRules);
         GUID id2 = new GUID("WS:2/2/1");
-        indexStorage.indexObject(id2, objType, "{\"prop1\":\"abd\"}", indexingRules);
+        indexStorage.indexObject(id2, objType, "{\"prop1\":\"abd\"}", "obj.2", 0, null, null,
+                false, indexingRules);
         GUID id3 = new GUID("WS:3/1/1");
-        indexStorage.indexObject(id3, objType, "{\"prop1\":\"abc\"}", indexingRules);
+        indexStorage.indexObject(id3, objType, "{\"prop1\":\"abc\"}", "obj.3", 0, null, null,
+                false, indexingRules);
         GUID id12 = new GUID("WS:2/1/2");
-        indexStorage.indexObject(id12, objType, "{\"prop1\":\"abc 124\"}", indexingRules);
+        indexStorage.indexObject(id12, objType, "{\"prop1\":\"abc 124\"}", "obj.1", 0, null, null,
+                false, indexingRules);
         GUID id13 = new GUID("WS:2/1/3");
-        indexStorage.indexObject(id13, objType, "{\"prop1\":\"abc 125\"}", indexingRules);
+        indexStorage.indexObject(id13, objType, "{\"prop1\":\"abc 125\"}", "obj.1", 0, null, null,
+                false, indexingRules);
         //indexStorage.refreshIndex(indexStorage.getIndex(objType));
         checkIdInSet(indexStorage.searchIdsByText(objType, "abc", null, 
                 new LinkedHashSet<>(Arrays.asList(2)), false), 1, id13);
@@ -167,11 +179,14 @@ public class ElasticIndexingStorageTest {
         ir.setKeywordType("integer");
         List<IndexingRules> indexingRules= Arrays.asList(ir);
         GUID id1 = new GUID("WS:10/1/1");
-        indexStorage.indexObject(id1, objType, "{\"prop2\": 123}", indexingRules);
+        indexStorage.indexObject(id1, objType, "{\"prop2\": 123}", "obj.1", 0, null, null,
+                false, indexingRules);
         GUID id2 = new GUID("WS:10/1/2");
-        indexStorage.indexObject(id2, objType, "{\"prop2\": 124}", indexingRules);
+        indexStorage.indexObject(id2, objType, "{\"prop2\": 124}", "obj.1", 0, null, null,
+                false, indexingRules);
         GUID id3 = new GUID("WS:10/1/3");
-        indexStorage.indexObject(id3, objType, "{\"prop2\": 125}", indexingRules);
+        indexStorage.indexObject(id3, objType, "{\"prop2\": 125}", "obj.1", 0, null, null,
+                false, indexingRules);
         //indexStorage.refreshIndex(indexStorage.getIndex(objType));
         Assert.assertEquals(0, indexStorage.lookupIdsByKey(objType, "prop2", 123, 
                 new LinkedHashSet<>(Arrays.asList(10)), false).size());

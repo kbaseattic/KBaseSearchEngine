@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 
 import kbaserelationengine.common.GUID;
@@ -48,21 +49,6 @@ public class ObjectParser {
         wc._setFileForNextRpcResponse(tempFile);
         return wc.getObjects2(new GetObjects2Params().withObjects(
                 Arrays.asList(new ObjectSpecification().withRef(objRef)))).getData().get(0);
-    }
-    
-    public static void processSubObjects(URL wsUrl, File tempDir, AuthToken token, 
-            String objRef, String storageObjectType, SystemStorage system,
-            IndexingStorage indexStorage, RelationStorage relationStorage) throws Exception {
-        File tempFile = prepareTempFile(tempDir);
-        ObjectData obj = loadObject(wsUrl, tempFile, token, objRef);
-        String resolvedRef = getRefFromObjectInfo(obj.getInfo());
-        for (ObjectTypeParsingRules parsingRules : system.listObjectTypesByStorageObjectType(
-                storageObjectType)) {
-            Map<GUID, String> guidToJson = parseSubObjects(obj, resolvedRef, parsingRules, 
-                    system, relationStorage);
-            indexStorage.indexObjects(parsingRules.getGlobalObjectType(), guidToJson, 
-                    parsingRules.getIndexingRules());
-        }
     }
     
     public static Map<GUID, String> parseSubObjects(ObjectData obj, String objRef, 
@@ -126,12 +112,37 @@ public class ObjectParser {
         GUID id = new GUID(textId);
         return id;
     }
+    
+    public static String extractParentFragment(ObjectTypeParsingRules parsingRules,
+            JsonParser jts) throws ObjectParseException, IOException {
+        if (parsingRules.getPathToSubObjects() == null) {
+            return null;
+        }
+        List<ObjectJsonPath> indexingPaths = new ArrayList<>();
+        for (IndexingRules rules : parsingRules.getIndexingRules()) {
+            if (!rules.isFromParent()) {
+                continue;
+            }
+            indexingPaths.add(rules.getPath());
+        }
+        if (indexingPaths.size() == 0) {
+            return null;
+        }
+        Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
+        SubObjectConsumer parentConsumer = new SimpleSubObjectConsumer(pathToJson);
+        ObjectJsonPath pathToSubObjects = new ObjectJsonPath("/");
+        SubObjectExtractor.extract(pathToSubObjects, indexingPaths, jts, parentConsumer);
+        return pathToJson.get(pathToJson.keySet().iterator().next());
+    }
 
     public static void extractSubObjects(ObjectTypeParsingRules parsingRules,
             SubObjectConsumer subObjConsumer, JsonParser jts)
             throws ObjectParseException, IOException {
         List<ObjectJsonPath> indexingPaths = new ArrayList<>();
         for (IndexingRules rules : parsingRules.getIndexingRules()) {
+            if (rules.isFromParent()) {
+                continue;
+            }
             indexingPaths.add(rules.getPath());
         }
         ObjectJsonPath pathToSubObjects = parsingRules.getPathToSubObjects() == null ?

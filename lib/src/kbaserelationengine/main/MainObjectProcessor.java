@@ -10,6 +10,8 @@ import java.util.Map;
 
 import org.apache.http.HttpHost;
 
+import com.fasterxml.jackson.core.JsonParser;
+
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.MongoDBStatusEventStorage;
 import kbaserelationengine.events.ObjectStatusEvent;
@@ -158,7 +160,7 @@ public class MainObjectProcessor {
         switch (ev.getEventType()) {
         case CREATED:
         case NEW_VERSION:
-            indexObject(ev.toGUID(), ev.getStorageObjectType());
+            indexObject(ev.toGUID(), ev.getStorageObjectType(), ev.getTimestamp());
             break;
         case DELETED:
             unshare(ev.toGUID(), ev.getAccessGroupId());
@@ -178,28 +180,39 @@ public class MainObjectProcessor {
         return systemStorage.listObjectTypesByStorageObjectType(storageObjectType) != null;
     }
     
-    public void indexObject(GUID guid, String storageObjectType) 
+    public void indexObject(GUID guid, String storageObjectType, Long timestamp) 
             throws IOException, JsonClientException, ObjectParseException {
         System.out.println("Processing object: " + guid);
         long t1 = System.currentTimeMillis();
         File tempFile = ObjectParser.prepareTempFile(getWsLoadTempDir());
-        String objRef = guid.getAccessGroupId() + "/" + guid.getAccessGroupObjectId() + "/" +
-                guid.getVersion();
-        ObjectData obj = ObjectParser.loadObject(wsURL, tempFile, kbaseIndexerToken, objRef);
-        System.out.println("  (loading time: " + (System.currentTimeMillis() - t1) + " ms.)");
-        List<ObjectTypeParsingRules> parsingRules = 
-                systemStorage.listObjectTypesByStorageObjectType(storageObjectType);
-        for (ObjectTypeParsingRules rule : parsingRules) {
-            long t2 = System.currentTimeMillis();
-            Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, objRef, rule, 
-                    systemStorage, relationStorage);
-            System.out.println("  (parsing time: " + (System.currentTimeMillis() - t2) + " ms.)");
-            long t3 = System.currentTimeMillis();
-            indexingStorage.indexObjects(rule.getGlobalObjectType(), guidToJson, 
-                    rule.getIndexingRules());
-            System.out.println("  (indexing time: " + (System.currentTimeMillis() - t3) + " ms.)");
+        try {
+            String objRef = guid.getAccessGroupId() + "/" + guid.getAccessGroupObjectId() + "/" +
+                    guid.getVersion();
+            ObjectData obj = ObjectParser.loadObject(wsURL, tempFile, kbaseIndexerToken, objRef);
+            System.out.println("  (loading time: " + (System.currentTimeMillis() - t1) + " ms.)");
+            List<ObjectTypeParsingRules> parsingRules = 
+                    systemStorage.listObjectTypesByStorageObjectType(storageObjectType);
+            for (ObjectTypeParsingRules rule : parsingRules) {
+                long t2 = System.currentTimeMillis();
+                String parentJson = null;
+                try (JsonParser jts = obj.getData().getPlacedStream()) {
+                    parentJson = ObjectParser.extractParentFragment(rule, jts);
+                }
+                Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, objRef, rule, 
+                        systemStorage, relationStorage);
+                System.out.println("  (parsing time: " + (System.currentTimeMillis() - t2) + " ms.)");
+                long t3 = System.currentTimeMillis();
+                if (timestamp == null) {
+                    timestamp = System.currentTimeMillis();
+                }
+                indexingStorage.indexObjects(rule.getGlobalObjectType(), obj.getInfo().getE2(), 
+                        timestamp, parentJson, obj.getInfo().getE11(), guidToJson, 
+                        false, rule.getIndexingRules());
+                System.out.println("  (indexing time: " + (System.currentTimeMillis() - t3) + " ms.)");
+            }
+        } finally {
+            tempFile.delete();
         }
-        tempFile.delete();
     }
     
     public void share(GUID guid, int accessGroupId) throws IOException {

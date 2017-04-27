@@ -132,6 +132,11 @@ public class ObjectTypeParsingRules {
                 }
                 rules.setKeywordType((String)rulesObj.get("keyword-type"));
                 rules.setKeyName((String)rulesObj.get("key-name"));
+                rules.setTransform((String)rulesObj.get("transform"));
+                Boolean fromParent = (Boolean)rulesObj.get("from-parent");
+                if (fromParent != null) {
+                    rules.setFromParent(fromParent);
+                }
                 ret.getIndexingRules().add(rules);
             }
         }

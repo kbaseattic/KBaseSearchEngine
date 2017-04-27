@@ -1,16 +1,19 @@
 package kbaserelationengine.parse;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import kbaserelationengine.common.JsonTokenUtil;
 import kbaserelationengine.common.ObjectJsonPath;
+import us.kbase.common.service.UObject;
 
 /**
  * Extraction of primary/foreign key values based on JSON token stream.
@@ -34,6 +37,15 @@ public class ValueCollector <T> {
 	        ValueCollectingNode<T> selection, ValueConsumer<T> consumer, List<String> path, 
 	        boolean strictMaps, boolean strictArrays) throws IOException, ObjectParseException {
 		JsonToken t = current;
+        if (selection.getRules() != null && (t == JsonToken.START_OBJECT || t == JsonToken.START_ARRAY)) {
+            StringWriter outChars = new StringWriter();
+            JsonGenerator jsonGen = UObject.getMapper().getFactory().createGenerator(outChars);
+            JsonTokenUtil.writeTokensFromCurrent(jts, current, jsonGen);
+            jsonGen.close();
+            Object value = UObject.transformStringToObject(outChars.toString(), Object.class);
+            consumer.addValue(selection.getRules(), value);
+            return;
+        }
 		if (t == JsonToken.START_OBJECT) {	// we observe open of mapping/object in real json data
 		    if (selection.getRules() != null) {
                 throw new ObjectParseException("Invalid ID mapping selection: object cannot be " +

@@ -20,6 +20,7 @@ import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.main.MainObjectProcessor;
 import kbaserelationengine.search.ElasticIndexingStorage;
+import kbaserelationengine.search.ObjectData;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
@@ -90,8 +91,8 @@ public class MainObjectProcessorTest {
     @Test
     public void testManual() throws Exception {
         //mop.performOneTick();
-        ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", 20266, "2", 1, null, 0L, 
-                "KBaseGenomes.Genome", ObjectStatusEventType.CREATED);
+        ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", 20266, "2", 1, null, 
+                System.currentTimeMillis(), "KBaseGenomes.Genome", ObjectStatusEventType.CREATED);
         mop.processOneEvent(ev);
         String query = "TrkA";
         Map<String, Integer> typeToCount = mop.getIndexingStorage("*").searchTypeByText(query, null, true);
@@ -102,7 +103,7 @@ public class MainObjectProcessorTest {
         String type = typeToCount.keySet().iterator().next();
         Set<GUID> guids = mop.getIndexingStorage("*").searchIdsByText(type, query, null, null, true);
         System.out.println("GUIDs found: " + guids);
-        Object obj = mop.getIndexingStorage("*").getObjectsByIds(guids).get(0);
+        ObjectData obj = mop.getIndexingStorage("*").getObjectsByIds(guids).get(0);
         System.out.println("Object: " + obj);
     }
 }
