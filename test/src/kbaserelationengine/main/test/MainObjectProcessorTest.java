@@ -23,11 +23,13 @@ import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.main.MainObjectProcessor;
+import kbaserelationengine.parse.ObjectParseException;
 import kbaserelationengine.search.ElasticIndexingStorage;
 import kbaserelationengine.search.ObjectData;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
+import us.kbase.common.service.JsonClientException;
 
 public class MainObjectProcessorTest {
     private static final boolean cleanup = true;
@@ -114,22 +116,56 @@ public class MainObjectProcessorTest {
         System.out.println("Feature: " + obj);
     }
 
+    private void indexFewVersions(ObjectStatusEvent ev) throws Exception {
+        for (int i = Math.max(1, ev.getVersion() - 5); i <= ev.getVersion(); i++) {
+            mop.processOneEvent(new ObjectStatusEvent(ev.getId(), ev.getStorageCode(), 
+                    ev.getAccessGroupId(), ev.getAccessGroupObjectId(), i, 
+                    ev.getTargetAccessGroupId(), ev.getTimestamp(), ev.getStorageObjectType(),
+                    ev.getEventType(), ev.isGlobalAccessed()));
+        }
+    }
+    
+    private void checkSearch(int expectedCount, String type, String query, int accessGroupId,
+            boolean debugOutput) throws Exception {
+        Set<GUID> ids = mop.getIndexingStorage("*").searchIdsByText(type, query, null, 
+                new LinkedHashSet<>(Arrays.asList(accessGroupId)), false);
+        if (debugOutput) {
+            System.out.println("DEBUG: " + mop.getIndexingStorage("*").getObjectsByIds(ids));
+        }
+        Assert.assertEquals(1, ids.size());
+    }
+    
+    @Ignore
     @Test
     public void testNarrativeManually() throws Exception {
-        ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", 20266, "1", 7, null, 
-                System.currentTimeMillis(), "KBaseNarrative.Narrative", ObjectStatusEventType.CREATED, false);
-        mop.processOneEvent(ev);
-        Assert.assertEquals(1, mop.getIndexingStorage("*").searchIdsByText("Narrative", "tree", null, null, true).size());
-        Assert.assertEquals(1, mop.getIndexingStorage("*").searchIdsByText("Narrative", "species", null, null, true).size());
-        for (int i = 70; i <= 78; i++) {
-            ev = new ObjectStatusEvent("-1", "WS", 10455, "1", i, null, 
-                    System.currentTimeMillis(), "KBaseNarrative.Narrative", ObjectStatusEventType.CREATED, false);
-            mop.processOneEvent(ev);
-        }
-        Set<Integer> accessGroupIds = new LinkedHashSet<>(Arrays.asList(10455));
-        Assert.assertEquals(1, mop.getIndexingStorage("*").searchIdsByText("Narrative", 
-                "Catalog.migrate_module_to_new_git_url", null, accessGroupIds, false).size());
-        Assert.assertEquals(1, mop.getIndexingStorage("*").searchIdsByText("Narrative", 
-                "Super password!", null, accessGroupIds, false).size());
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", 20266, "1", 7, null, 
+                System.currentTimeMillis(), "KBaseNarrative.Narrative", 
+                ObjectStatusEventType.CREATED, false));
+        checkSearch(1, "Narrative", "tree", 20266, false);
+        checkSearch(1, "Narrative", "species", 20266, false);
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
+                System.currentTimeMillis(), "KBaseNarrative.Narrative", 
+                ObjectStatusEventType.CREATED, false));
+        checkSearch(1, "Narrative", "Catalog.migrate_module_to_new_git_url", 10455, false);
+        checkSearch(1, "Narrative", "Super password!", 10455, false);
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", 480, "1", 254, null, 
+                System.currentTimeMillis(), "KBaseNarrative.Narrative", 
+                ObjectStatusEventType.CREATED, false));
+        checkSearch(1, "Narrative", "weird text", 480, false);
+        checkSearch(1, "Narrative", "functionality", 480, false);
+    }
+    
+    @Test
+    public void testReadsManually() throws Exception {
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", 20266, "5", 1, null, 
+                System.currentTimeMillis(), "KBaseFile.PairedEndLibrary", 
+                ObjectStatusEventType.CREATED, false));
+        checkSearch(1, "PairedEndLibrary", "Illumina", 20266, true);
+        checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", 20266, false);
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", 20266, "6", 1, null, 
+                System.currentTimeMillis(), "KBaseFile.SingleEndLibrary", 
+                ObjectStatusEventType.CREATED, false));
+        checkSearch(1, "SingleEndLibrary", "PacBio", 20266, true);
+        checkSearch(1, "SingleEndLibrary", "reads.2", 20266, false);
     }
 }
