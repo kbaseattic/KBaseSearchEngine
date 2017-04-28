@@ -138,74 +138,87 @@ public class SubObjectExtractor {
 			    }
 			}
 		} else if (t == JsonToken.START_ARRAY) {	// we observe open of array/list in real json data
-			if (selection.hasChildren()) {  // we have some restrictions for array item positions in selection
-				Set<String> selectedFields = new LinkedHashSet<String>(
-				        selection.getChildren().keySet());
-				SubObjectExtractionNode allChild = null;
-				// now we support only '[*]' which means all elements and set of numbers in case of 
-				// certain item positions are selected in array
-				if (!selectedFields.contains("[*]")) {
-					for (String item : selectedFields) {
-						try {
-							Integer.parseInt(item);
-						} catch (NumberFormatException ex) {
-							throw new ObjectParseException("Invalid selection: data at '" + 
-							        ObjectJsonPath.getPathText(path) + "' is an array, so " +
-							        "element selection must be an integer. You requested element" +
-							        " '" + item + "', at: " + ObjectJsonPath.getPathText(path));
-						}
-					}
-				}
-				if (selectedFields.contains("[*]")) {
-					selectedFields.remove("[*]");
-					allChild = selection.getChildren().get("[*]");
-					// if there is [*] keyword selected there shouldn't be anything else in selection
-					if (selectedFields.size() > 0)
-						throw new ObjectParseException("Invalid selection: the selection path " +
-								"contains both '[*]' to select all elements and selection of " +
-								"specific elements (" + selectedFields + "), at: " + 
-								ObjectJsonPath.getPathText(path));
-				}
-				if (!skipLvl) {
-				    JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());  // write start of array into output
-				}
-				for (int pos = 0; ; pos++) {
-					t = jts.nextToken();
-					if (t == JsonToken.END_ARRAY) {
-					    if (!skipLvl) {
-					        JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());
-					    }
-						break;
-					}
-					SubObjectExtractionNode child = null;
-					if (allChild != null) {
-						child = allChild; 
-					} else {
-						String key = "" + pos;
-						if (selection.getChildren().containsKey(key)) {
-							child = selection.getChildren().get(key);
-							selectedFields.remove(key);
-						}
-					}
-					if (child == null) {
-						// this element of array is not selected, skip it
-					    JsonTokenUtil.skipChildren(jts, t);
-					} else {
-						// add element position to the tail of path branch
-						path.add("" + pos);
-						// process value of this element recursively
-						extractFieldsWithOpenToken(jts, t, child, consumer, path, strictMaps, 
-						        strictArrays, selection.isSkipLevel());
-						// remove field from tail of path branch
-						path.remove(path.size() - 1);
-					}
-				}
-				// let's check have we visited all selected items in this array
-				if (strictArrays && !selectedFields.isEmpty()) {
-					String notFound = selectedFields.iterator().next();
-					throw new ObjectParseException("Invalid selection: no array element exists " +
-							"at position '" + notFound + "', at: " + getPathText(path, notFound));
-				}
+		    if (selection.hasChildren()) {  // we have some restrictions for array item positions in selection
+		        Set<String> selectedFields = new LinkedHashSet<String>(
+		                selection.getChildren().keySet());
+		        if (selectedFields.size() == 1 && selectedFields.contains("{size}")) {
+		            int size = 0;
+		            while (true) {
+		                t = jts.nextToken();
+		                if (t == JsonToken.END_ARRAY) {
+		                    break;
+		                }
+		                JsonTokenUtil.skipChildren(jts, t);
+		                size++;
+		            }
+		            consumer.getOutput().writeNumber(size);
+		        } else {
+		            SubObjectExtractionNode allChild = null;
+		            // now we support only '[*]' which means all elements and set of numbers in case of 
+		            // certain item positions are selected in array
+		            if (!selectedFields.contains("[*]")) {
+		                for (String item : selectedFields) {
+		                    try {
+		                        Integer.parseInt(item);
+		                    } catch (NumberFormatException ex) {
+		                        throw new ObjectParseException("Invalid selection: data at '" + 
+		                                ObjectJsonPath.getPathText(path) + "' is an array, so " +
+		                                "element selection must be an integer. You requested element" +
+		                                " '" + item + "', at: " + ObjectJsonPath.getPathText(path));
+		                    }
+		                }
+		            }
+		            if (selectedFields.contains("[*]")) {
+		                selectedFields.remove("[*]");
+		                allChild = selection.getChildren().get("[*]");
+		                // if there is [*] keyword selected there shouldn't be anything else in selection
+		                if (selectedFields.size() > 0)
+		                    throw new ObjectParseException("Invalid selection: the selection path " +
+		                            "contains both '[*]' to select all elements and selection of " +
+		                            "specific elements (" + selectedFields + "), at: " + 
+		                            ObjectJsonPath.getPathText(path));
+		            }
+		            if (!skipLvl) {
+		                JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());  // write start of array into output
+		            }
+		            for (int pos = 0; ; pos++) {
+		                t = jts.nextToken();
+		                if (t == JsonToken.END_ARRAY) {
+		                    if (!skipLvl) {
+		                        JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());
+		                    }
+		                    break;
+		                }
+		                SubObjectExtractionNode child = null;
+		                if (allChild != null) {
+		                    child = allChild; 
+		                } else {
+		                    String key = "" + pos;
+		                    if (selection.getChildren().containsKey(key)) {
+		                        child = selection.getChildren().get(key);
+		                        selectedFields.remove(key);
+		                    }
+		                }
+		                if (child == null) {
+		                    // this element of array is not selected, skip it
+		                    JsonTokenUtil.skipChildren(jts, t);
+		                } else {
+		                    // add element position to the tail of path branch
+		                    path.add("" + pos);
+		                    // process value of this element recursively
+		                    extractFieldsWithOpenToken(jts, t, child, consumer, path, strictMaps, 
+		                            strictArrays, selection.isSkipLevel());
+		                    // remove field from tail of path branch
+		                    path.remove(path.size() - 1);
+		                }
+		            }
+		            // let's check have we visited all selected items in this array
+		            if (strictArrays && !selectedFields.isEmpty()) {
+		                String notFound = selectedFields.iterator().next();
+		                throw new ObjectParseException("Invalid selection: no array element exists " +
+		                        "at position '" + notFound + "', at: " + getPathText(path, notFound));
+		            }
+		        }
 			} else {
 			    if (selection.isNeedAll()) {
 			        // need all elements

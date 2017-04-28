@@ -89,11 +89,13 @@ public class MainObjectProcessorTest {
     }
     
     @Test
-    public void testManual() throws Exception {
+    public void testGenomeManually() throws Exception {
         //mop.performOneTick();
         ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", 20266, "2", 1, null, 
                 System.currentTimeMillis(), "KBaseGenomes.Genome", ObjectStatusEventType.CREATED, false);
         mop.processOneEvent(ev);
+        System.out.println("Genome: " + mop.getIndexingStorage("*").getObjectsByIds(
+                mop.getIndexingStorage("*").searchIdsByText("Genome", "test", null, null, true)).get(0));
         String query = "TrkA";
         Map<String, Integer> typeToCount = mop.getIndexingStorage("*").searchTypeByText(query, null, true);
         System.out.println("Counts per type: " + typeToCount);
@@ -104,6 +106,6 @@ public class MainObjectProcessorTest {
         Set<GUID> guids = mop.getIndexingStorage("*").searchIdsByText(type, query, null, null, true);
         System.out.println("GUIDs found: " + guids);
         ObjectData obj = mop.getIndexingStorage("*").getObjectsByIds(guids).get(0);
-        System.out.println("Object: " + obj);
+        System.out.println("Feature: " + obj);
     }
 }

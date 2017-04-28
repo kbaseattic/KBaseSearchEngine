@@ -1,0 +1,28 @@
+{
+	"global-object-type": "Genome",
+	"storage-type": "WS",
+	"storage-object-type": "KBaseGenomes.Genome",
+	"indexing-rules": [
+		{
+			"path": "id",
+			"keyword-type": "string"
+		},
+		{
+			"path": "domain",
+			"keyword-type": "string"
+		},
+		{
+			"path": "taxonomy",
+			"full-text": true
+		},
+		{
+			"path": "scientific_name",
+			"full-text": true
+		},
+		{
+			"path": "features/{size}",
+			"keyword-type": "integer",
+			"key-name": "features"
+		}
+	]
+}

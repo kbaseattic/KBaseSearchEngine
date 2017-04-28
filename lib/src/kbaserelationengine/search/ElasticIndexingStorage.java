@@ -611,8 +611,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
             Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
             ObjectData item = new ObjectData();
             item.guid = new GUID((String)obj.get("guid"));
-            item.parentGuid = new GUID(item.guid.getStorageCode(), item.guid.getAccessGroupId(),
-                    item.guid.getAccessGroupObjectId(), item.guid.getVersion(), null, null);
             item.objectName = (String)obj.get("oname");
             Object dateProp = obj.get("timestamp");
             item.timestamp = (dateProp instanceof Long) ? (Long)dateProp : 
@@ -621,6 +619,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
             String pjson = (String)obj.get("pjson");
             if (pjson != null) {
                 item.parentData = UObject.transformStringToObject(pjson, Object.class);
+                item.parentGuid = new GUID(item.guid.getStorageCode(), item.guid.getAccessGroupId(),
+                        item.guid.getAccessGroupObjectId(), item.guid.getVersion(), null, null);
             }
             Map<String, String> keyProps = new LinkedHashMap<>();
             for (String key : obj.keySet()) {

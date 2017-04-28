@@ -64,7 +64,7 @@ public class MainObjectProcessor {
         WSStatusEventTrigger eventTrigger = new WSStatusEventTrigger();
         wsEventReconstructor = new WSStatusEventReconstructorImpl(wsURL, kbaseIndexerToken, 
                 eventStorage, eventTrigger);
-        eventTrigger.registerListener((StatusEventListener)eventStorage);
+        //eventTrigger.registerListener((StatusEventListener)eventStorage);
         queue = new ObjectStatusEventQueue(eventStorage);
         systemStorage = new DefaultSystemStorage(wsURL, typesDir);
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
@@ -194,7 +194,7 @@ public class MainObjectProcessor {
             String objRef = guid.getAccessGroupId() + "/" + guid.getAccessGroupObjectId() + "/" +
                     guid.getVersion();
             ObjectData obj = ObjectParser.loadObject(wsURL, tempFile, kbaseIndexerToken, objRef);
-            System.out.println("  (loading time: " + (System.currentTimeMillis() - t1) + " ms.)");
+            System.out.println("  Loading time: " + (System.currentTimeMillis() - t1) + " ms.");
             List<ObjectTypeParsingRules> parsingRules = 
                     systemStorage.listObjectTypesByStorageObjectType(storageObjectType);
             for (ObjectTypeParsingRules rule : parsingRules) {
@@ -205,7 +205,8 @@ public class MainObjectProcessor {
                 }
                 Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, objRef, rule, 
                         systemStorage, relationStorage);
-                System.out.println("  (parsing time: " + (System.currentTimeMillis() - t2) + " ms.)");
+                System.out.println("  " + rule.getGlobalObjectType() + ": parsing time: " + 
+                        (System.currentTimeMillis() - t2) + " ms.");
                 long t3 = System.currentTimeMillis();
                 if (timestamp == null) {
                     timestamp = System.currentTimeMillis();
@@ -213,7 +214,8 @@ public class MainObjectProcessor {
                 indexingStorage.indexObjects(rule.getGlobalObjectType(), obj.getInfo().getE2(), 
                         timestamp, parentJson, obj.getInfo().getE11(), guidToJson, 
                         false, rule.getIndexingRules());
-                System.out.println("  (indexing time: " + (System.currentTimeMillis() - t3) + " ms.)");
+                System.out.println("  " + rule.getGlobalObjectType() + ": indexing time: " + 
+                        (System.currentTimeMillis() - t3) + " ms.");
             }
         } finally {
             tempFile.delete();

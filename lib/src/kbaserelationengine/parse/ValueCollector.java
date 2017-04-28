@@ -179,11 +179,14 @@ public class ValueCollector <T> {
 			}
 		} else {	
 		    // we observe scalar value (text, integer, double, boolean, null) in real json data
-			if (selection.hasChildren())
+			if (selection.hasChildren()) {
+			    if (selection.getChildren().size() != 1 || 
+			            !selection.getChildren().containsKey("{size}"))
 				throw new ObjectParseException("Invalid selection: the path given specifies " +
 						"fields or elements that do not exist because data at this location is " +
 						"a scalar value (i.e. string, integer, float), at: " + 
 						ObjectJsonPath.getPathText(path));
+			}
 			if (selection.getRules() != null) {
 			    Object value = JsonTokenUtil.getCurrentTokenPrimitive(jts, t);
 			    consumer.addValue(selection.getRules(), value);

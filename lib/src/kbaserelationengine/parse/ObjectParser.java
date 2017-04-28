@@ -63,9 +63,12 @@ public class ObjectParser {
         for (ObjectJsonPath path : pathToJson.keySet()) {
             String subJson = pathToJson.get(path);
             SimpleIdConsumer idConsumer = new SimpleIdConsumer();
-            try (JsonParser subJts = UObject.getMapper().getFactory().createParser(subJson)) {
-                IdMapper.mapKeys(parsingRules.getPrimaryKeyPath(), 
-                        parsingRules.getRelationPathToRules(), subJts, idConsumer);
+            if (parsingRules.getPrimaryKeyPath() != null || 
+                    parsingRules.getRelationPathToRules() != null) {
+                try (JsonParser subJts = UObject.getMapper().getFactory().createParser(subJson)) {
+                    IdMapper.mapKeys(parsingRules.getPrimaryKeyPath(), 
+                            parsingRules.getRelationPathToRules(), subJts, idConsumer);
+                }
             }
             GUID id = prepareGUID(parsingRules, objRef, path, idConsumer);
             guidToJson.put(id, subJson);
