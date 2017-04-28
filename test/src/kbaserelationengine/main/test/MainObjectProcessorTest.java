@@ -5,16 +5,20 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
 import org.apache.http.HttpHost;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.mongodb.MongoClient;
 
+import junit.framework.Assert;
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
@@ -88,6 +92,7 @@ public class MainObjectProcessorTest {
         }
     }
     
+    @Ignore
     @Test
     public void testGenomeManually() throws Exception {
         //mop.performOneTick();
@@ -107,5 +112,24 @@ public class MainObjectProcessorTest {
         System.out.println("GUIDs found: " + guids);
         ObjectData obj = mop.getIndexingStorage("*").getObjectsByIds(guids).get(0);
         System.out.println("Feature: " + obj);
+    }
+
+    @Test
+    public void testNarrativeManually() throws Exception {
+        ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", 20266, "1", 7, null, 
+                System.currentTimeMillis(), "KBaseNarrative.Narrative", ObjectStatusEventType.CREATED, false);
+        mop.processOneEvent(ev);
+        Assert.assertEquals(1, mop.getIndexingStorage("*").searchIdsByText("Narrative", "tree", null, null, true).size());
+        Assert.assertEquals(1, mop.getIndexingStorage("*").searchIdsByText("Narrative", "species", null, null, true).size());
+        for (int i = 70; i <= 78; i++) {
+            ev = new ObjectStatusEvent("-1", "WS", 10455, "1", i, null, 
+                    System.currentTimeMillis(), "KBaseNarrative.Narrative", ObjectStatusEventType.CREATED, false);
+            mop.processOneEvent(ev);
+        }
+        Set<Integer> accessGroupIds = new LinkedHashSet<>(Arrays.asList(10455));
+        Assert.assertEquals(1, mop.getIndexingStorage("*").searchIdsByText("Narrative", 
+                "Catalog.migrate_module_to_new_git_url", null, accessGroupIds, false).size());
+        Assert.assertEquals(1, mop.getIndexingStorage("*").searchIdsByText("Narrative", 
+                "Super password!", null, accessGroupIds, false).size());
     }
 }

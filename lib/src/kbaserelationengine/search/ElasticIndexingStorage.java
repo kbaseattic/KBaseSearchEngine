@@ -185,7 +185,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     if (rules.getTransform() != null) {
                         valueFinal = transform(valueFinal, rules.getTransform());
                     }
-                    values.add(valueFinal);
+                    addOrAddAll(valueFinal, values);
                 }
             }
         };
@@ -207,7 +207,18 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         return doc;
     }
-    
+
+    @SuppressWarnings("unchecked")
+    private void addOrAddAll(Object valueFinal, List<Object> values) {
+        if (valueFinal != null) {
+            if (valueFinal instanceof List) {
+                values.addAll((List<Object>)valueFinal);
+            } else {
+                values.add(valueFinal);
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private Object transform(Object value, String transform) {
         String retProp = null;
@@ -232,6 +243,27 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 return retLoc;
             }
             return retLoc.get(retProp);
+        case "values":
+            if (value == null) {
+                return null;
+            }
+            if (value instanceof List) {
+                List<Object> input = (List<Object>)value;
+                List<Object> ret = new ArrayList<>();
+                for (Object item : input) {
+                    addOrAddAll(transform(item, transform), ret);
+                }
+                return ret;
+            }
+            if (value instanceof Map) {
+                Map<String, Object> input = (Map<String, Object>)value;
+                List<Object> ret = new ArrayList<>();
+                for (Object item : input.values()) {
+                    addOrAddAll(transform(item, transform), ret);
+                }
+                return ret;
+            }
+            return String.valueOf(value);
         case "string":
             return String.valueOf(value);
         case "integer":
