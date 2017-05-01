@@ -23,8 +23,13 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.message.BasicHeader;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
@@ -46,6 +51,8 @@ import us.kbase.common.service.UObject;
 
 public class ElasticIndexingStorage implements IndexingStorage {
     private HttpHost esHost;
+    private String esUser;
+    private String esPassword;
     private String indexNamePrefix;
     private boolean mergeTypes = false;
     private boolean skipFullJson = false;
@@ -62,6 +69,22 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     public HttpHost getEsHost() {
         return esHost;
+    }
+    
+    public File getTempDir() {
+        return tempDir;
+    }
+    
+    public String getEsUser() {
+        return esUser;
+    }
+    
+    public void setEsUser(String esUser) {
+        this.esUser = esUser;
+    }
+    
+    public void setEsPassword(String esPassword) {
+        this.esPassword = esPassword;
     }
 
     public String getIndexNamePrefix() {
@@ -842,16 +865,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
             headers.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
             //headers.add(new BasicHeader("Role", "Read"));
             restClientBld.setDefaultHeaders(headers.toArray(new Header[headers.size()]));
-            /*
-            CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-            credentialsProvider.setCredentials(AuthScope.ANY, 
-                    new UsernamePasswordCredentials("esadmin", "12345"));
-            restClientBld.setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-                public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder hacb) {
-                    return hacb.setDefaultCredentialsProvider(credentialsProvider);
-                }
-            });
-            */
+            if (esUser != null) {
+                CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+                credentialsProvider.setCredentials(AuthScope.ANY, 
+                        new UsernamePasswordCredentials(esUser, esPassword));
+                restClientBld.setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
+                    public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder hacb) {
+                        return hacb.setDefaultCredentialsProvider(credentialsProvider);
+                    }
+                });
+            }
             restClient = restClientBld.build();
         }
         return restClient;

@@ -25,5 +25,6 @@
 	<classpathentry kind="lib" path="lib/jars/apache_commons/http/httpclient-4.5.2.jar"/>
 	<classpathentry kind="lib" path="lib/jars/apache_commons/http/httpcore-4.4.5.jar"/>
 	<classpathentry kind="lib" path="lib/jars/mongodb/mongo-java-driver-3.4.2.jar"/>
+	<classpathentry kind="lib" path="lib/jars/apache_commons/commons-codec-1.10.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

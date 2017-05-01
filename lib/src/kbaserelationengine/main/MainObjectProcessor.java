@@ -14,9 +14,7 @@ import org.apache.http.HttpHost;
 import com.fasterxml.jackson.core.JsonParser;
 
 import kbaserelationengine.common.GUID;
-import kbaserelationengine.events.MongoDBStatusEventStorage;
 import kbaserelationengine.events.ObjectStatusEvent;
-import kbaserelationengine.events.StatusEventListener;
 import kbaserelationengine.events.WSStatusEventTrigger;
 import kbaserelationengine.events.reconstructor.AccessType;
 import kbaserelationengine.events.reconstructor.PresenceType;
@@ -54,8 +52,8 @@ public class MainObjectProcessor {
     private RelationStorage relationStorage;
     
     public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, String mongoHost, 
-            int mongoPort, String mongoDbName, HttpHost esHost, String esIndexPrefix, 
-            File typesDir, File tempDir, boolean startLifecycleRunner) 
+            int mongoPort, String mongoDbName, HttpHost esHost, String esUser, String esPassword,
+            String esIndexPrefix, File typesDir, File tempDir, boolean startLifecycleRunner) 
                     throws IOException, ObjectParseException {
         this.wsURL = wsURL;
         this.kbaseIndexerToken = kbaseIndexerToken;
@@ -69,6 +67,10 @@ public class MainObjectProcessor {
         systemStorage = new DefaultSystemStorage(wsURL, typesDir);
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
                 getTempSubDir("esbulk"));
+        if (esUser != null) {
+            esStorage.setEsUser(esUser);
+            esStorage.setEsPassword(esPassword);
+        }
         esStorage.setIndexNamePrefix(esIndexPrefix);
         indexingStorage = esStorage;
         relationStorage = new DefaultRelationStorage();

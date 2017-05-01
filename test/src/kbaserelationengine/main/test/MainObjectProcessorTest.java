@@ -23,13 +23,11 @@ import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.main.MainObjectProcessor;
-import kbaserelationengine.parse.ObjectParseException;
 import kbaserelationengine.search.ElasticIndexingStorage;
 import kbaserelationengine.search.ObjectData;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
-import us.kbase.common.service.JsonClientException;
 
 public class MainObjectProcessorTest {
     private static final boolean cleanup = true;
@@ -54,10 +52,12 @@ public class MainObjectProcessorTest {
         int mongoPort = Integer.parseInt(props.getProperty("secure.mongo_port"));
         String elasticHost = props.getProperty("secure.elastic_host");
         int elasticPort = Integer.parseInt(props.getProperty("secure.elastic_port"));
+        String esUser = props.getProperty("secure.elastic_user");
+        String esPassword = props.getProperty("secure.elastic_password");
         HttpHost esHostPort = new HttpHost(elasticHost, elasticPort);
         if (cleanup) {
             deleteAllTestMongoDBs(mongoHost, mongoPort);
-            deleteAllTestElasticIndices(esHostPort);
+            deleteAllTestElasticIndices(esHostPort, esUser, esPassword);
         }
         String kbaseEndpoint = props.getProperty("kbase_endpoint");
         URL wsUrl = new URL(kbaseEndpoint + "/ws");
@@ -69,7 +69,8 @@ public class MainObjectProcessorTest {
         String mongoDbName = "test_" + System.currentTimeMillis() + "_DataStatus";
         String esIndexPrefix = "test_" + System.currentTimeMillis() + ".";
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, mongoHost,
-                mongoPort, mongoDbName, esHostPort, esIndexPrefix, typesDir, tempDir, false);
+                mongoPort, mongoDbName, esHostPort, esUser, esPassword, esIndexPrefix, 
+                typesDir, tempDir, false);
     }
     
     private static void deleteAllTestMongoDBs(String mongoHost, int mongoPort) {
@@ -84,8 +85,13 @@ public class MainObjectProcessorTest {
         }
     }
     
-    private static void deleteAllTestElasticIndices(HttpHost esHostPort) throws IOException {
+    private static void deleteAllTestElasticIndices(HttpHost esHostPort, String esUser,
+            String esPassword) throws IOException {
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort, null);
+        if (esUser != null) {
+            esStorage.setEsUser(esUser);
+            esStorage.setEsPassword(esPassword);
+        }
         for (String indexName : esStorage.listIndeces()) {
             if (indexName.startsWith("test_")) {
                 System.out.println("Deleting Elastic index: " + indexName);
@@ -94,7 +100,6 @@ public class MainObjectProcessorTest {
         }
     }
     
-    @Ignore
     @Test
     public void testGenomeManually() throws Exception {
         //mop.performOneTick();
@@ -135,7 +140,6 @@ public class MainObjectProcessorTest {
         Assert.assertEquals(1, ids.size());
     }
     
-    @Ignore
     @Test
     public void testNarrativeManually() throws Exception {
         indexFewVersions(new ObjectStatusEvent("-1", "WS", 20266, "1", 7, null, 
