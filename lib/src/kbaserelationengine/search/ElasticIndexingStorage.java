@@ -56,10 +56,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private String indexNamePrefix;
     private boolean mergeTypes = false;
     private boolean skipFullJson = false;
-    private boolean allPublic = false;
     private Map<String, String> typeToIndex = new LinkedHashMap<>();
     private RestClient restClient = null;
     private File tempDir;
+    
+    public static final int PUBLIC_ACCESS_GROUP = -1;
+    public static final int ADMIN_ACCESS_GROUP = -2;
 
     public ElasticIndexingStorage(HttpHost esHost, File tempDir) throws IOException {
         this.esHost = esHost;
@@ -111,14 +113,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         this.skipFullJson = skipFullJson;
     }
     
-    public boolean isAllPublic() {
-        return allPublic;
-    }
-    
-    public void setAllPublic(boolean allPublic) {
-        this.allPublic = allPublic;
-    }
-    
     public String getIndex(String objectType) throws IOException {
         return checkIndex(objectType, null);
     }
@@ -159,13 +153,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         File tempFile = File.createTempFile("es_bulk_", ".json", tempDir);
         try {
             PrintWriter pw = new PrintWriter(tempFile);
-            Map<GUID, String> parentGuidToEsId = checkParentDoc(indexName, parentGuids);
+            Map<GUID, String> parentGuidToEsId = checkParentDoc(indexName, parentGuids, isPublic);
             for (GUID id : idToJsonValues.keySet()) {
                 GUID parentGuid = guidToParentGuid.get(id);
                 String esParentId = parentGuidToEsId.get(parentGuid);
                 String json = idToJsonValues.get(id);
-                Map<String, Object> doc = convertObject(id, objectType, json, objectName, timestamp,
-                        parentJsonValue, metadata, indexingRules);
+                Map<String, Object> doc = convertObject(id, objectType, json, objectName, 
+                        timestamp, parentJsonValue, metadata, indexingRules);
                 Map<String, Object> index = new LinkedHashMap<String, Object>() {{
                     put("_index", indexName);
                     put("_type", getDataTableName());
@@ -331,7 +325,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         GUID parentGUID = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
                 id.getAccessGroupObjectId(), id.getVersion(), null, null);
         String esParentId = checkParentDoc(indexName, 
-                new HashSet<>(Arrays.asList(parentGUID))).get(parentGUID);
+                new HashSet<>(Arrays.asList(parentGUID)), isPublic).get(parentGUID);
         Map<String, Object> doc = convertObject(id, objectType, json, objectName, timestamp, 
                 parentJsonValue, metadata, indexingRules);
         makeRequest("POST", "/" + indexName + "/" + getDataTableName() + "/", doc, Arrays.asList(
@@ -467,8 +461,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @SuppressWarnings("unchecked")
-    public Map<GUID, String> checkParentDoc(String indexName, Set<GUID> parentGUIDs) 
-            throws IOException {
+    public Map<GUID, String> checkParentDoc(String indexName, Set<GUID> parentGUIDs, 
+            boolean isPublic) throws IOException {
         boolean changed = false;
         Map<GUID, String> ret = lookupParentDocIds(indexName, parentGUIDs);
         for (GUID parentGUID : parentGUIDs) {
@@ -481,16 +475,24 @@ public class ElasticIndexingStorage implements IndexingStorage {
             doc.put("pguid", parentGUID.toString());
             doc.put("prefix", prefix);
             doc.put("version", parentGUID.getVersion());
-            int accessGroupId = parentGUID.getAccessGroupId();
-            doc.put("lastin", new LinkedHashSet<>(Arrays.asList(accessGroupId)));
-            doc.put("groups", new LinkedHashSet<>(Arrays.asList(accessGroupId)));
+            Set<Integer> accessGroupIds = new LinkedHashSet<>(Arrays.asList(
+                    ADMIN_ACCESS_GROUP));
+            if (parentGUID.getAccessGroupId() != null) {
+                accessGroupIds.add(parentGUID.getAccessGroupId());
+            }
+            if (isPublic) {
+                accessGroupIds.add(PUBLIC_ACCESS_GROUP);
+            }
+            doc.put("lastin", accessGroupIds);
+            doc.put("groups", accessGroupIds);
             Response resp = makeRequest("POST", "/" + indexName + "/" + getAccessTableName() + "/", 
                     doc);
             Map<String, Object> data = UObject.getMapper().readValue(
                     resp.getEntity().getContent(), Map.class);
             ret.put(parentGUID, (String)data.get("_id"));
             changed = true;
-            removeAccessGroupForOtherVersions(indexName, parentGUID, parentGUID.getAccessGroupId());
+            removeAccessGroupForOtherVersions(indexName, parentGUID, 
+                    accessGroupIds.toArray(new Integer[accessGroupIds.size()]));
         }
         if (changed) {
             refreshIndex(indexName);
@@ -500,7 +502,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     @SuppressWarnings({ "serial", "unchecked" })
     private boolean removeAccessGroupForOtherVersions(String indexName, GUID guid, 
-            int accessGroupId) throws IOException {
+            Integer... accessGroupIds) throws IOException {
         if (indexName == null) {
             indexName = "_all";
         }
@@ -508,14 +510,22 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 guid.getAccessGroupObjectId(), null, null, null).toString();
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
             put("must", Arrays.asList(createFilter("term", "prefix", prefix),
-                    createFilter("term", "lastin", accessGroupId)));
+                    createFilter("terms", "lastin", accessGroupIds)));
             put("must_not", Arrays.asList(createFilter("term", "version", guid.getVersion())));
         }};
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
         }};
+        StringBuilder inline = new StringBuilder();
+        for (int accessGroupId : accessGroupIds) {
+            inline.append(""+ 
+                    "if (ctx._source.lastin.indexOf(" + accessGroupId + ") >= 0) {\n" +
+                    "  ctx._source.lastin.remove(ctx._source.lastin.indexOf(" + accessGroupId + "));\n" +
+                    "}\n"
+                    );
+        }
         Map<String, Object> script = new LinkedHashMap<String, Object>() {{
-            put("inline", "ctx._source.lastin.remove(ctx._source.lastin.indexOf(" + accessGroupId + "))");
+            put("inline", inline.toString());
         }};
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
@@ -602,7 +612,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     @Override
-    public void shareObject(Set<GUID> guids, int accessGroupId) throws IOException {
+    public void shareObjects(Set<GUID> guids, int accessGroupId) throws IOException {
         Map<String, Set<GUID>> indexToGuids = groupIdsByIndex(guids);
         for (String indexName : indexToGuids.keySet()) {
             boolean needRefresh = false;
@@ -621,7 +631,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @Override
-    public void unshareObject(Set<GUID> guids, int accessGroupId) throws IOException {
+    public void unshareObjects(Set<GUID> guids, int accessGroupId) throws IOException {
         Map<String, Set<GUID>> indexToGuids = groupIdsByIndex(guids);
         for (String indexName : indexToGuids.keySet()) {
             boolean needRefresh = false;
@@ -634,6 +644,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 refreshIndex(indexName);
             }
         }
+    }
+    
+    @Override
+    public void publishObjects(Set<GUID> guids) throws IOException {
+        shareObjects(guids, PUBLIC_ACCESS_GROUP);
+    }
+    
+    @Override
+    public void unpublishObjects(Set<GUID> guids) throws IOException {
+        unshareObjects(guids, PUBLIC_ACCESS_GROUP);
     }
     
     @SuppressWarnings({ "serial", "unchecked" })
@@ -700,12 +720,23 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @SuppressWarnings({ "serial", "unchecked" })
     @Override
     public Map<String, Integer> searchTypeByText(String text,
-            Set<Integer> accessGroupIds, boolean isAdmin) throws IOException {
+            AccessFilter accessFilter) throws IOException {
         Map<String, Object> match = new LinkedHashMap<String, Object>() {{
             put("_all", text);
         }};
-        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+        Map<String, Object> must1 = new LinkedHashMap<String, Object>() {{
             put("match", match);
+        }};
+        Map<String, Object> must2 = createAccessMustBlock(accessFilter);
+        if (must2 == null) {
+            return Collections.emptyMap();
+        }
+        List<Object> mustList = new ArrayList<>(Arrays.asList(must1, must2));
+        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+            put("must", mustList);
+        }};
+        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+            put("bool", bool);
         }};
         Map<String, Object> terms = new LinkedHashMap<String, Object>() {{
             put("field", "otype");
@@ -739,43 +770,57 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     @Override
     public Set<GUID> searchIdsByText(String objectType, String text, List<SortingRule> sorting,
-            Set<Integer> accessGroupIds, boolean isAdmin) throws IOException {
-        return queryIds(objectType, "match", "_all", text, sorting, accessGroupIds, isAdmin);
+            AccessFilter accessFilter) throws IOException {
+        return queryIds(objectType, "match", "_all", text, sorting, accessFilter);
+    }
+    
+    @SuppressWarnings("serial")
+    private Map<String, Object> createAccessMustBlock(AccessFilter accessFilter) {
+        Set<Integer> accessGroupIds = new LinkedHashSet<>();
+        if (accessFilter.isAdmin) {
+            accessGroupIds.add(ADMIN_ACCESS_GROUP);
+        } else {
+            if (accessFilter.accessGroupIds != null) {
+                accessGroupIds.addAll(accessFilter.accessGroupIds);
+            }
+            if (accessFilter.withPublic) {
+                accessGroupIds.add(PUBLIC_ACCESS_GROUP);
+            }
+        }
+        if (accessGroupIds.isEmpty()) {
+            return null;
+        }
+        String groupListProp = accessFilter.withAllHistory ? "groups" : "lastin";
+        Map<String, Object> match2 = new LinkedHashMap<String, Object>() {{
+            put(groupListProp, accessGroupIds);
+        }};
+        Map<String, Object> query2 = new LinkedHashMap<String, Object>() {{
+            put("terms", match2);
+        }};
+        Map<String, Object> hasParent = new LinkedHashMap<String, Object>() {{
+            put("parent_type", getAccessTableName());
+            put("query", query2);
+        }};
+        return new LinkedHashMap<String, Object>() {{
+            put("has_parent", hasParent);
+        }};
     }
     
     @SuppressWarnings({ "serial", "unchecked" })
     public Set<GUID> queryIds(String objectType, String queryType, String keyName, 
             Object keyValue, List<SortingRule> sorting, 
-            Set<Integer> accessGroupIds, boolean isAdmin) throws IOException {
+            AccessFilter accessFilter) throws IOException {
         Map<String, Object> match1 = new LinkedHashMap<String, Object>() {{
             put(keyName, keyValue);
         }};
         Map<String, Object> must1 = new LinkedHashMap<String, Object>() {{
             put(queryType, match1);
         }};
-        List<Object> mustList = new ArrayList<>(Arrays.asList(must1));
-        if (!(allPublic || isAdmin)) {
-            if (accessGroupIds == null) {
-                throw new NullPointerException("accessGroupIds parameter can't be null "
-                        + "if not in admin mode");
-            }
-            if (accessGroupIds.isEmpty()) {
-                return Collections.emptySet();
-            }
-            Map<String, Object> match2 = new LinkedHashMap<String, Object>() {{
-                put("lastin", accessGroupIds);
-            }};
-            Map<String, Object> query2 = new LinkedHashMap<String, Object>() {{
-                put("terms", match2);
-            }};
-            Map<String, Object> hasParent = new LinkedHashMap<String, Object>() {{
-                put("parent_type", getAccessTableName());
-                put("query", query2);
-            }};
-            mustList.add(new LinkedHashMap<String, Object>() {{
-                put("has_parent", hasParent);
-            }});
+        Map<String, Object> must2 = createAccessMustBlock(accessFilter);
+        if (must2 == null) {
+            return Collections.emptySet();
         }
+        List<Object> mustList = new ArrayList<>(Arrays.asList(must1, must2));
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
             put("must", mustList);
         }};
@@ -816,9 +861,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     @Override
     public Set<GUID> lookupIdsByKey(String objectType, String keyName, Object keyValue,
-            Set<Integer> accessGroupIds, boolean isAdmin) throws IOException {
+            AccessFilter accessFilter) throws IOException {
         return queryIds(objectType, "term", getKeyProperty(keyName), keyValue, null, 
-                accessGroupIds, isAdmin);
+                accessFilter);
     }
     
     private String getKeyName(IndexingRules rules) {

@@ -19,7 +19,7 @@ public interface IndexingStorage {
      * @param indexingRules  indexing rules
      * @throws IOException
      */
-    public void indexObject(GUID id, String objectType, String jsonValue, String objectName,
+    public void indexObject(GUID guid, String objectType, String jsonValue, String objectName,
             long timestamp, String parentJsonValue, Map<String, String> metadata, boolean isPublic,
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException;
 
@@ -30,18 +30,22 @@ public interface IndexingStorage {
     
     public void flushIndexing(String objectType) throws IOException;
     
-    public void shareObject(Set<GUID> id, int accessGroupId) throws IOException;
+    public void shareObjects(Set<GUID> guids, int accessGroupId) throws IOException;
 
-    public void unshareObject(Set<GUID> id, int accessGroupId) throws IOException;
+    public void unshareObjects(Set<GUID> guids, int accessGroupId) throws IOException;
 
-    public List<ObjectData> getObjectsByIds(Set<GUID> id) throws IOException;
+    public void publishObjects(Set<GUID> guids) throws IOException;
+
+    public void unpublishObjects(Set<GUID> guids) throws IOException;
+
+    public List<ObjectData> getObjectsByIds(Set<GUID> guids) throws IOException;
 
     public Map<String, Integer> searchTypeByText(String text,
-            Set<Integer> accessGroupIds, boolean isAdmin) throws IOException;
+            AccessFilter accessFilter) throws IOException;
 
     public Set<GUID> searchIdsByText(String objectType, String text, List<SortingRule> sorting,
-            Set<Integer> accessGroupIds, boolean isAdmin) throws IOException;
+            AccessFilter accessFilter) throws IOException;
 
     public Set<GUID> lookupIdsByKey(String objectType, String keyName, Object keyValue,
-            Set<Integer> accessGroupIds, boolean isAdmin) throws IOException;
+            AccessFilter accessFilter) throws IOException;
 }

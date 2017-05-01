@@ -225,11 +225,11 @@ public class MainObjectProcessor {
     }
     
     public void share(GUID guid, int accessGroupId) throws IOException {
-        indexingStorage.shareObject(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
+        indexingStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
     }
 
     public void unshare(GUID guid, int accessGroupId) throws IOException {
-        indexingStorage.unshareObject(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
+        indexingStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
     }
     
     public void addWorkspaceToIndex(String wsNameOrId, AuthToken user)
