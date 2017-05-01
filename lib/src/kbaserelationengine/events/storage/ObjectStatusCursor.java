@@ -21,7 +21,7 @@ public class ObjectStatusCursor {
 		pageIndex = 0;
 	}
 
-	protected void nextPage(List<ObjectStatusEvent> items){
+	public void nextPage(List<ObjectStatusEvent> items){
 		pageIndex++;
 		data.clear();
 		data.addAll(items);

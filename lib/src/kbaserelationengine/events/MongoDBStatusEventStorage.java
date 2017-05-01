@@ -13,6 +13,9 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 
+import kbaserelationengine.events.storage.ObjectStatusCursor;
+import kbaserelationengine.events.storage.StatusEventStorage;
+
 public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEventStorage, StatusEventListener{
 	private static final String DEFAULT_DB_NAME = "DataStatus";
 	private static final String COLLECTION_GROUP_STATUS = "GroupStatus";
@@ -70,6 +73,8 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 					(String)dobj.get("storageCode"), 
 					(Integer) dobj.get("accessGroupId"), 
 					(Long)dobj.get("timestamp"),
+					false,
+					false,
 					users
 			));
 		}
@@ -189,7 +194,8 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 					(Integer)dobj.get("targetAccessGroupId"),
 					(Long)dobj.get("timestamp"),
 					(String)dobj.get("storageObjectType"),
-					ObjectStatusEventType.valueOf((String)dobj.get("eventType"))					
+					ObjectStatusEventType.valueOf((String)dobj.get("eventType")),
+					false
 					);
 			events.add(event);
 		}	
