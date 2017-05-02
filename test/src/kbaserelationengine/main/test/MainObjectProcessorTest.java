@@ -5,8 +5,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -25,6 +23,7 @@ import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.main.MainObjectProcessor;
 import kbaserelationengine.search.AccessFilter;
 import kbaserelationengine.search.ElasticIndexingStorage;
+import kbaserelationengine.search.MatchFilter;
 import kbaserelationengine.search.ObjectData;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
@@ -101,7 +100,6 @@ public class MainObjectProcessorTest {
         }
     }
     
-    @Ignore
     @Test
     public void testGenomeManually() throws Exception {
         //mop.performOneTick();
@@ -109,17 +107,20 @@ public class MainObjectProcessorTest {
                 System.currentTimeMillis(), "KBaseGenomes.Genome", ObjectStatusEventType.CREATED, false);
         mop.processOneEvent(ev);
         System.out.println("Genome: " + mop.getIndexingStorage("*").getObjectsByIds(
-                mop.getIndexingStorage("*").searchIdsByText("Genome", "test", null, 
+                mop.getIndexingStorage("*").searchIds("Genome", 
+                        MatchFilter.create().withFullTextInAll("test"), null, 
                         AccessFilter.create().withAdmin(true))).get(0));
         String query = "TrkA";
-        Map<String, Integer> typeToCount = mop.getIndexingStorage("*").searchTypeByText(query, 
+        Map<String, Integer> typeToCount = mop.getIndexingStorage("*").searchTypes(
+                MatchFilter.create().withFullTextInAll(query), 
                 AccessFilter.create().withAdmin(true));
         System.out.println("Counts per type: " + typeToCount);
         if (typeToCount.size() == 0) {
             return;
         }
         String type = typeToCount.keySet().iterator().next();
-        Set<GUID> guids = mop.getIndexingStorage("*").searchIdsByText(type, query, null, 
+        Set<GUID> guids = mop.getIndexingStorage("*").searchIds(type, 
+                MatchFilter.create().withFullTextInAll(query), null, 
                 AccessFilter.create().withAdmin(true));
         System.out.println("GUIDs found: " + guids);
         ObjectData obj = mop.getIndexingStorage("*").getObjectsByIds(guids).get(0);
@@ -137,7 +138,8 @@ public class MainObjectProcessorTest {
     
     private void checkSearch(int expectedCount, String type, String query, int accessGroupId,
             boolean debugOutput) throws Exception {
-        Set<GUID> ids = mop.getIndexingStorage("*").searchIdsByText(type, query, null, 
+        Set<GUID> ids = mop.getIndexingStorage("*").searchIds(type, 
+                MatchFilter.create().withFullTextInAll(query), null, 
                 AccessFilter.create().withAccessGroups(accessGroupId));
         if (debugOutput) {
             System.out.println("DEBUG: " + mop.getIndexingStorage("*").getObjectsByIds(ids));
@@ -145,7 +147,6 @@ public class MainObjectProcessorTest {
         Assert.assertEquals(1, ids.size());
     }
     
-    @Ignore
     @Test
     public void testNarrativeManually() throws Exception {
         indexFewVersions(new ObjectStatusEvent("-1", "WS", 20266, "1", 7, null, 
@@ -165,7 +166,6 @@ public class MainObjectProcessorTest {
         checkSearch(1, "Narrative", "functionality", 480, false);
     }
     
-    @Ignore
     @Test
     public void testReadsManually() throws Exception {
         indexFewVersions(new ObjectStatusEvent("-1", "WS", 20266, "5", 1, null, 
@@ -180,6 +180,7 @@ public class MainObjectProcessorTest {
         checkSearch(1, "SingleEndLibrary", "reads.2", 20266, false);
     }
     
+    @Ignore
     @Test
     public void testOneTick() throws Exception {
         mop.performOneTick();

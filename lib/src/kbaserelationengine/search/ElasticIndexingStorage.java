@@ -452,9 +452,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     @SuppressWarnings("serial")
     private Map<String, Object> createFilter(String queryType, String keyName, Object value) {
-        Map<String, Object> term = new LinkedHashMap<String, Object>() {{
-            put(keyName, value);
-        }};
+        Map<String, Object> term;
+        if (keyName != null) {
+            term = new LinkedHashMap<String, Object>() {{
+                put(keyName, value);
+            }};
+        } else {
+            term = new LinkedHashMap<>();
+        }
         return new LinkedHashMap<String, Object>() {{
             put(queryType, term);
         }};
@@ -719,19 +724,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     @SuppressWarnings({ "serial", "unchecked" })
     @Override
-    public Map<String, Integer> searchTypeByText(String text,
+    public Map<String, Integer> searchTypes(MatchFilter matchFilter,
             AccessFilter accessFilter) throws IOException {
-        Map<String, Object> match = new LinkedHashMap<String, Object>() {{
-            put("_all", text);
-        }};
-        Map<String, Object> must1 = new LinkedHashMap<String, Object>() {{
-            put("match", match);
-        }};
         Map<String, Object> must2 = createAccessMustBlock(accessFilter);
         if (must2 == null) {
             return Collections.emptyMap();
         }
-        List<Object> mustList = new ArrayList<>(Arrays.asList(must1, must2));
+        List<Object> mustList = new ArrayList<>(prepareMustFilters(matchFilter, 
+                accessFilter.withAllHistory));
+        mustList.add(must2);
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
             put("must", mustList);
         }};
@@ -769,12 +770,38 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @Override
-    public Set<GUID> searchIdsByText(String objectType, String text, List<SortingRule> sorting,
-            AccessFilter accessFilter) throws IOException {
-        return queryIds(objectType, "match", "_all", text, sorting, accessFilter);
+    public Set<GUID> searchIds(String objectType, MatchFilter matchFilter, 
+            List<SortingRule> sorting, AccessFilter accessFilter) throws IOException {
+        return queryIds(objectType, prepareMustFilters(matchFilter, accessFilter.withAllHistory),
+                sorting, accessFilter);
     }
     
-    @SuppressWarnings("serial")
+    private List<Map<String, Object>> prepareMustFilters(MatchFilter matchFilter,
+            boolean withAllHistory) {
+        List<Map<String, Object>> ret = new ArrayList<>();
+        if (matchFilter.fullTextInAll != null) {
+            ret.add(createFilter("match", "_all", matchFilter.fullTextInAll));
+        }
+        if (matchFilter.accessGroupId != null) {
+            ret.add(createAccessMustBlock(new LinkedHashSet<>(Arrays.asList(
+                    matchFilter.accessGroupId)), withAllHistory));
+        }
+        if (matchFilter.objectName != null) {
+            ret.add(createFilter("match", "oname", matchFilter.fullTextInAll));
+        }
+        if (matchFilter.lookupInKeys != null) {
+            for (String keyName : matchFilter.lookupInKeys.keySet()) {
+                MatchValue value = matchFilter.lookupInKeys.get(keyName);
+                ret.add(createFilter("term", getKeyProperty(keyName), value.value));
+            }
+        }
+        // TODO: support parent giud, timestamp range, integer/double ranges
+        if (ret.isEmpty()) {
+            ret.add(createFilter("match_all", null, null));
+        }
+        return ret;
+    }
+    
     private Map<String, Object> createAccessMustBlock(AccessFilter accessFilter) {
         Set<Integer> accessGroupIds = new LinkedHashSet<>();
         if (accessFilter.isAdmin) {
@@ -790,7 +817,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (accessGroupIds.isEmpty()) {
             return null;
         }
-        String groupListProp = accessFilter.withAllHistory ? "groups" : "lastin";
+        return createAccessMustBlock(accessGroupIds, accessFilter.withAllHistory);
+    }
+    
+    @SuppressWarnings("serial")
+    private Map<String, Object> createAccessMustBlock(Set<Integer> accessGroupIds, 
+            boolean withAllHistory) {
+        String groupListProp = withAllHistory ? "groups" : "lastin";
         Map<String, Object> match2 = new LinkedHashMap<String, Object>() {{
             put(groupListProp, accessGroupIds);
         }};
@@ -807,20 +840,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @SuppressWarnings({ "serial", "unchecked" })
-    public Set<GUID> queryIds(String objectType, String queryType, String keyName, 
-            Object keyValue, List<SortingRule> sorting, 
-            AccessFilter accessFilter) throws IOException {
-        Map<String, Object> match1 = new LinkedHashMap<String, Object>() {{
-            put(keyName, keyValue);
-        }};
-        Map<String, Object> must1 = new LinkedHashMap<String, Object>() {{
-            put(queryType, match1);
-        }};
+    public Set<GUID> queryIds(String objectType, List<Map<String, Object>> filters, 
+            List<SortingRule> sorting, AccessFilter accessFilter) throws IOException {
         Map<String, Object> must2 = createAccessMustBlock(accessFilter);
         if (must2 == null) {
             return Collections.emptySet();
         }
-        List<Object> mustList = new ArrayList<>(Arrays.asList(must1, must2));
+        List<Object> mustList = new ArrayList<>(filters);
+        mustList.add(must2);
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
             put("must", mustList);
         }};
@@ -857,13 +884,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
             ret.add(new GUID(guidText));
         }
         return ret;
-    }
-
-    @Override
-    public Set<GUID> lookupIdsByKey(String objectType, String keyName, Object keyValue,
-            AccessFilter accessFilter) throws IOException {
-        return queryIds(objectType, "term", getKeyProperty(keyName), keyValue, null, 
-                accessFilter);
     }
     
     private String getKeyName(IndexingRules rules) {

@@ -40,12 +40,9 @@ public interface IndexingStorage {
 
     public List<ObjectData> getObjectsByIds(Set<GUID> guids) throws IOException;
 
-    public Map<String, Integer> searchTypeByText(String text,
+    public Map<String, Integer> searchTypes(MatchFilter matchFilter,
             AccessFilter accessFilter) throws IOException;
 
-    public Set<GUID> searchIdsByText(String objectType, String text, List<SortingRule> sorting,
-            AccessFilter accessFilter) throws IOException;
-
-    public Set<GUID> lookupIdsByKey(String objectType, String keyName, Object keyValue,
+    public Set<GUID> searchIds(String objectType, MatchFilter matchFilter, List<SortingRule> sorting,
             AccessFilter accessFilter) throws IOException;
 }
