@@ -18,6 +18,7 @@ public class ObjectStatusEventQueue {
 		ObjectStatusEvent[] buffer = new ObjectStatusEvent[BUFFER_SIZE];
 		int nextPos = 0;
 		int nItems = 0;
+		int nMarkedAsVisited = 0;
 		
 
 		public _Iterator(String storageCode) {
@@ -38,7 +39,7 @@ public class ObjectStatusEventQueue {
 			if(cursor == null){
 				cursor = objStatusStorage.cursor(storageCode, false, BUFFER_SIZE, BUFFER_ALIVE_TIME);							
 			} else{
-				objStatusStorage.nextPage(cursor);
+				objStatusStorage.nextPage(cursor, nMarkedAsVisited);
 			}
 						
 			int i = 0;
@@ -61,7 +62,8 @@ public class ObjectStatusEventQueue {
 				
 			} else{
 				throw new IndexOutOfBoundsException();
-			}					
+			}		
+			nMarkedAsVisited++;
 		}
 
 		@Override

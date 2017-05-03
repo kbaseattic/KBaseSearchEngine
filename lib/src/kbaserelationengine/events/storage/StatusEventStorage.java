@@ -26,7 +26,7 @@ public interface StatusEventStorage {
 	
 	public ObjectStatusCursor cursor(String storageCode, boolean processed, int pageSize, String timeAlive) throws IOException;
 	
-	public boolean nextPage(ObjectStatusCursor cursor) throws IOException;
+	public boolean nextPage(ObjectStatusCursor cursor, int nRemovedItems) throws IOException;
 	
 	public List<ObjectStatusEvent> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds) throws IOException;
 

@@ -51,12 +51,6 @@ public class FakeStatusStorage implements StatusEventStorage {
 		return null;
 	}
 
-	@Override
-	public boolean nextPage(ObjectStatusCursor cursor) throws IOException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
 
 	@Override
 	public List<ObjectStatusEvent> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds)
@@ -69,6 +63,12 @@ public class FakeStatusStorage implements StatusEventStorage {
 	public List<AccessGroupStatus> findAccessGroups(String storageCode) throws IOException {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public boolean nextPage(ObjectStatusCursor cursor, int nRemovedItems) throws IOException {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 }

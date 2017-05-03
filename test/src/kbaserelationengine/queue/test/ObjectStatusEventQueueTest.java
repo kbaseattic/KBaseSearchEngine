@@ -28,15 +28,20 @@ public class ObjectStatusEventQueueTest {
 		
 		ObjectStatusEventIterator it = queue.iterator("WS");
 		int i = 0;
+		int n = 0;
 		while(it.hasNext()){
-			System.out.println(it.next());
-			if(i++%2 == 0){
-//				it.markAsVisitied(false);
+			it.next();
+//			System.out.println(it.next());
+			if(i%2 == 0){
+				it.markAsVisitied(false);
+				n++;
 			}
+			i++;
 		}
 		
 		count = queue.count();
 		System.out.println("Number of records " + count);		
+		System.out.println("Number of marked " + n);		
 		
 	}
 	

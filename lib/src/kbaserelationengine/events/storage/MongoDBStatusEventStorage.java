@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import com.mongodb.BasicDBList;
@@ -12,6 +13,8 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 
 import kbaserelationengine.events.AccessGroupProvider;
 import kbaserelationengine.events.AccessGroupStatus;
@@ -49,7 +52,7 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 	private DBCollection collection(String name){
 		return  mongoClient.getDB(DB_NAME).getCollection(name);
 	}
-	
+		
 	@Override	
 	public List<AccessGroupStatus> findAccessGroups(String storageCode){
 		BasicDBObject query = new BasicDBObject();
@@ -116,6 +119,35 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 		
 		collection(COLLECTION_GROUP_STATUS).update(query, dobj, true, false);				
 	}	
+	
+	private void updateGroupPrivelages(AccessGroupStatus obj) {
+				
+		
+//		DBObject dobj = new BasicDBObject();		
+//		dobj.put("storageCode", obj.getStorageCode());
+//		dobj.put("accessGroupId", obj.getAccessGroupId());
+//		dobj.put("timestamp", obj.getTimestamp());
+//		dobj.put("isDeleted", obj.isDeleted());
+//		dobj.put("isPrivate", obj.isPrivate());
+//		dobj.put("users", obj.getUsers());
+		
+		// Update only info about privacy and users
+		BasicDBObject dobj = new BasicDBObject();
+		dobj.append("$set", new BasicDBObject("isPrivate", obj.isPrivate()));		
+		dobj.append("$set", new BasicDBObject("users", obj.getUsers()));		
+		
+		
+//		ObjectId objId = obj.getId() != null ?  new ObjectId(obj.getId() ) : new ObjectId();
+		BasicDBObject query = new BasicDBObject("_id",  new ObjectId(obj.getId() ) );
+		
+//		BasicDBList queryItems = new BasicDBList();
+//		queryItems.add(new BasicDBObject("storageCode", obj.getStorageCode()));			
+//		queryItems.add(new BasicDBObject("accessGroupId", obj.getAccessGroupId()));
+//		BasicDBObject query = new BasicDBObject("$and", queryItems);
+		
+		collection(COLLECTION_GROUP_STATUS).update(query, dobj, false, false);				
+	}
+	
 	
 	
 	@Override
@@ -244,14 +276,14 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 		BasicDBObject query = new BasicDBObject("$and", queryItems);
 		
 		_Cursor cursor = new _Cursor(null, pageSize, timeAlive, query);
-		nextPage(cursor);
+		nextPage(cursor, 0);
 		return cursor;
 	}
 
 	@Override
-	public boolean nextPage(ObjectStatusCursor cursor) throws IOException {
+	public boolean nextPage(ObjectStatusCursor cursor, int nRemovedItems) throws IOException {
 		_Cursor _cursor = (_Cursor)cursor;
-		List<ObjectStatusEvent> objs = find(_cursor.query, _cursor.getPageIndex()*_cursor.getPageSize(), _cursor.getPageSize());
+		List<ObjectStatusEvent> objs = find(_cursor.query, _cursor.getPageIndex()*_cursor.getPageSize() - nRemovedItems, _cursor.getPageSize());
 		
 		_cursor.nextPage(objs);
 		
@@ -266,13 +298,27 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 	}
 
 	@Override
-	public void statusChanged(ObjectStatusEvent event) throws IOException {
-		store(event);		
+	public void objectStatusChanged(List<ObjectStatusEvent> events) throws IOException {
+		//TODO bulk query
+		for(ObjectStatusEvent event: events){
+			store(event);		
+		}
 	}
 
 	@Override
-	public void statusChanged(AccessGroupStatus newStatus) throws IOException {
-		store(newStatus);		
+	public void groupPermissionsChanged(List<AccessGroupStatus> newStatuses) throws IOException {
+		//TODO bulk query
+		for(AccessGroupStatus newStatus: newStatuses){
+			updateGroupPrivelages(newStatus);
+		}
 	}
-	
+
+
+	@Override
+	public void groupStatusChanged(List<AccessGroupStatus> newStatuses) throws IOException {
+		//TODO bulk query
+		for(AccessGroupStatus newStatus: newStatuses){
+			store(newStatus);				
+		}		
+	}	
 }

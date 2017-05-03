@@ -35,24 +35,24 @@ public class WSTest {
 	public void init() throws IOException{
         AuthToken token = new AuthToken(System.getenv().get("AUTH_TOKEN"), "unknown") ;
     	URL wsURL = new URL("https://ci.kbase.us/services/ws");
-        WSStatusEventReconstructorImpl wet = new WSStatusEventReconstructorImpl(wsURL, token , null, null);
+        WSStatusEventReconstructorImpl wet = new WSStatusEventReconstructorImpl(wsURL, token , null);
         wsClient = wet.wsClient();	
 	}
 	
 	@Test
 	public void test() throws IOException, JsonClientException{
 		Long wsId = 20281L;
-		Long newWsId = 20282L;
-		Long objId = 2L;
+//		Long newWsId = 20282L;
+//		Long objId = 2L;
 
-		wsId = newWsId;
+//		wsId = newWsId;
 		
 		System.out.println("=======Before "); 
 //		printStat(wsId);
 		
 		//Do something
 //		undeleteObject(wsId, objId);
-		deleteWorkspace(wsId);
+//		deleteWorkspace(wsId);
 //		undeleteWorksapce(wsId);
 		
 //		Long newWsId = createWarksapace("ws_test");
@@ -62,10 +62,38 @@ public class WSTest {
 		
 		System.out.println("=======After "); 
 //		printStat(wsId);
-		listPrivateDeletedWorksapces();
+//		listPrivateDeletedWorksapces();
+		
+		listAllObjects(wsId);
 		
 	}
 	
+	private void listAllObjects(Long wsId) throws IOException, JsonClientException {
+		ListObjectsParams params;
+		List<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> rows;
+		params = new ListObjectsParams().withIds( Arrays.asList(wsId) );
+    	params.setShowHidden(1L);
+    	params.setShowAllVersions(1L);      
+    	params.setType("DataPalette.DataPalette");
+    	
+		String dateTo = Util.DATE_FORMATTER.print(1493838717000L + 1000);
+		params.withBefore(dateTo);
+		
+    	rows = wsClient.listObjects(params);
+    	for(Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>> row: rows){    		
+
+    		String storageObjectType = row.getE3().split("-")[0];
+    		ObjectDescriptor od = new ObjectDescriptor(
+    				row.getE7().intValue(), 
+    				row.getE1().toString(),  
+    				row.getE5().intValue(),
+    				storageObjectType,
+    				Util.DATE_PARSER.parseDateTime(row.getE4()).getMillis(),
+    				false);
+    		System.out.println(od);
+    	}			
+	}
+
 	public void listPrivateDeletedWorksapces() throws IOException, JsonClientException{
 		ListWorkspaceInfoParams params = new ListWorkspaceInfoParams();
 		params .setExcludeGlobal(1L);

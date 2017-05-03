@@ -46,7 +46,4 @@ public class ObjectStatusCursor {
 	public List<ObjectStatusEvent> getData() {
 		return data;
 	}
-
-	
-	
 }
