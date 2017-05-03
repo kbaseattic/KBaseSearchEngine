@@ -109,7 +109,7 @@ public class MainObjectProcessorTest {
         System.out.println("Genome: " + mop.getIndexingStorage("*").getObjectsByIds(
                 mop.getIndexingStorage("*").searchIds("Genome", 
                         MatchFilter.create().withFullTextInAll("test"), null, 
-                        AccessFilter.create().withAdmin(true))).get(0));
+                        AccessFilter.create().withAdmin(true), null).guids).get(0));
         String query = "TrkA";
         Map<String, Integer> typeToCount = mop.getIndexingStorage("*").searchTypes(
                 MatchFilter.create().withFullTextInAll(query), 
@@ -121,7 +121,7 @@ public class MainObjectProcessorTest {
         String type = typeToCount.keySet().iterator().next();
         Set<GUID> guids = mop.getIndexingStorage("*").searchIds(type, 
                 MatchFilter.create().withFullTextInAll(query), null, 
-                AccessFilter.create().withAdmin(true));
+                AccessFilter.create().withAdmin(true), null).guids;
         System.out.println("GUIDs found: " + guids);
         ObjectData obj = mop.getIndexingStorage("*").getObjectsByIds(guids).get(0);
         System.out.println("Feature: " + obj);
@@ -140,7 +140,7 @@ public class MainObjectProcessorTest {
             boolean debugOutput) throws Exception {
         Set<GUID> ids = mop.getIndexingStorage("*").searchIds(type, 
                 MatchFilter.create().withFullTextInAll(query), null, 
-                AccessFilter.create().withAccessGroups(accessGroupId));
+                AccessFilter.create().withAccessGroups(accessGroupId), null).guids;
         if (debugOutput) {
             System.out.println("DEBUG: " + mop.getIndexingStorage("*").getObjectsByIds(ids));
         }

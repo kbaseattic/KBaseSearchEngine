@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -111,22 +110,21 @@ public class PerformanceTester {
         String wsName = "ReferenceDataManager";
         WorkspaceClient wc = new WorkspaceClient(wsUrl, kbaseIndexerToken);
         wc.setIsInsecureHttpConnectionAllowed(true);
-        int blockPos = 0;
+        int blockPos = 10;
         int blockSize = 100;
-        for (int n = 0; n < 10; n++, blockPos++) {
+        for (int n = 0; n < 3; n++, blockPos++) {
             System.out.println("\nProcessing block #" + blockPos);
             int genomesInit = 0;
             try {
-                genomesInit = new ArrayList<>(mop.getIndexingStorage("*").searchIds("Genome", 
-                        MatchFilter.create().withLookupInKey("features", new MatchValue(1, null)), null,
-                        AccessFilter.create().withPublic(true).withAdmin(true))).size();
+                genomesInit = countGenomes();
             } catch (Exception e) {
                 System.out.println(e.getMessage());
             }
             long minObjId = blockPos * blockSize + 1;
             long maxObjId = (blockPos + 1) * blockSize;
             List<String> refs = wc.listObjects(new ListObjectsParams().withWorkspaces(
-                    Arrays.asList(wsName)).withMinObjectID(minObjId).withMaxObjectID(maxObjId))
+                    Arrays.asList(wsName)).withMinObjectID(minObjId).withMaxObjectID(maxObjId)
+                    .withType("KBaseGenomes.Genome"))
                     .stream().map(ObjectParser::getRefFromObjectInfo).collect(Collectors.toList());
             System.out.println("Refs: " + refs.size());
             long processTime = 0;
@@ -144,22 +142,24 @@ public class PerformanceTester {
                     System.out.println("Error: " + ex.getMessage());
                 }
             }
-            int genomes = new ArrayList<>(mop.getIndexingStorage("*").searchIds("Genome", 
-                    MatchFilter.create().withLookupInKey("features", new MatchValue(1, null)), null,
-                    AccessFilter.create().withPublic(true).withAdmin(true))).size();
+            int genomes = countGenomes();
             System.out.println("Processing time: " + (((double)processTime) / (genomes - genomesInit)) + 
                     " ms. per genome (" + (genomes - genomesInit) + " genomes)");
             testCommonStats();
         }
     }
     
+    private int countGenomes() throws Exception {
+        return mop.getIndexingStorage("*").searchIds("Genome", 
+                MatchFilter.create().withLookupInKey("features", new MatchValue(1, null)), null,
+                AccessFilter.create().withPublic(true).withAdmin(true), null).total;
+    }
+    
     @Ignore
     @Test
     public void testCommonStats() throws Exception {
         String query = "transporter";
-        int genomes = new ArrayList<>(mop.getIndexingStorage("*").searchIds("Genome", 
-                MatchFilter.create().withLookupInKey("features", new MatchValue(1, null)), null,
-                AccessFilter.create().withPublic(true).withAdmin(true))).size();
+        int genomes = countGenomes();
         int features = mop.getIndexingStorage("*").searchTypes(MatchFilter.create(),
                 AccessFilter.create().withPublic(true).withAdmin(true)).get("GenomeFeature");
         System.out.println("Total genomes/features processed: " + genomes + "/" + features);

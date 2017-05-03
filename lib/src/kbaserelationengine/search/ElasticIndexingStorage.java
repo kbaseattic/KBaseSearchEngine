@@ -790,12 +790,18 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @Override
+    public FoundIds searchIds(String objectType, MatchFilter matchFilter, 
+            List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination) 
+                    throws IOException {
+        return queryIds(objectType, prepareMustFilters(matchFilter, accessFilter.withAllHistory),
+                sorting, accessFilter, pagination);
+    }
+
     public Set<GUID> searchIds(String objectType, MatchFilter matchFilter, 
             List<SortingRule> sorting, AccessFilter accessFilter) throws IOException {
-        return queryIds(objectType, prepareMustFilters(matchFilter, accessFilter.withAllHistory),
-                sorting, accessFilter);
+        return searchIds(objectType, matchFilter, sorting, accessFilter, null).guids;
     }
-    
+
     private List<Map<String, Object>> prepareMustFilters(MatchFilter matchFilter,
             boolean withAllHistory) {
         List<Map<String, Object>> ret = new ArrayList<>();
@@ -873,11 +879,24 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @SuppressWarnings({ "serial", "unchecked" })
-    public Set<GUID> queryIds(String objectType, List<Map<String, Object>> filters, 
-            List<SortingRule> sorting, AccessFilter accessFilter) throws IOException {
+    public FoundIds queryIds(String objectType, List<Map<String, Object>> filters, 
+            List<SortingRule> sorting, AccessFilter accessFilter, Pagination pg) 
+                    throws IOException {
+        Pagination pagination = pg == null ? new Pagination(0, 50) : pg;
+        if (sorting == null || sorting.isEmpty()) {
+            SortingRule sr = new SortingRule();
+            sr.isTimestamp = true;
+            sr.ascending = true;
+            sorting = Arrays.asList(sr);
+        }
+        FoundIds ret = new FoundIds();
+        ret.pagination = pagination;
+        ret.sortingRules = sorting;
         Map<String, Object> must2 = createAccessMustBlock(accessFilter);
         if (must2 == null) {
-            return Collections.emptySet();
+            ret.total = 0;
+            ret.guids = Collections.emptySet();
+            return ret;
         }
         List<Object> mustList = new ArrayList<>(filters);
         mustList.add(must2);
@@ -890,34 +909,34 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
             put("_source", Arrays.asList("guid"));
-            put("from", 0);
-            put("size", 10000);
+            put("from", pagination.start);
+            put("size", pagination.count);
         }};
-        if (sorting != null && sorting.size() > 0) {
-            List<Object> sort = new ArrayList<>();
-            doc.put("sort", sort);
-            for (SortingRule sr : sorting) {
-                Map<String, Object> sortOrder = new LinkedHashMap<String, Object>() {{
-                    put("order", sr.ascending ? "asc" : "desc");
-                }};
-                sort.add(new LinkedHashMap<String, Object>() {{
-                    put(getKeyProperty(sr.keyName), sortOrder);
-                }});
-            }
+        List<Object> sort = new ArrayList<>();
+        doc.put("sort", sort);
+        for (SortingRule sr : sorting) {
+            String keyProp = sr.isTimestamp ? "timestamp" : (sr.isObjectName ? "oname" : 
+                getKeyProperty(sr.keyName));
+            Map<String, Object> sortOrder = new LinkedHashMap<String, Object>() {{
+                put("order", sr.ascending ? "asc" : "desc");
+            }};
+            sort.add(new LinkedHashMap<String, Object>() {{
+                put(keyProp, sortOrder);
+            }});
         }
         String indexName = objectType == null ? (indexNamePrefix + "*") : getIndex(objectType);
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
-        Set<GUID> ret = new LinkedHashSet<>();
+        ret.guids = new LinkedHashSet<>();
         Map<String, Object> hitMap = (Map<String, Object>)data.get("hits");
-        int total = (Integer)hitMap.get("total");
+        ret.total = (Integer)hitMap.get("total");
         List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
             String guidText = (String)obj.get("guid");
-            ret.add(new GUID(guidText));
+            ret.guids.add(new GUID(guidText));
         }
         return ret;
     }

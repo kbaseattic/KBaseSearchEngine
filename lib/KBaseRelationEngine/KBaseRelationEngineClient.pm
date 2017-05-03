@@ -12,6 +12,7 @@ eval {
     $get_time = sub { Time::HiRes::gettimeofday() };
 };
 
+use Bio::KBase::AuthToken;
 
 # Client version should match Impl version
 # This is a Semantic Version number,
@@ -74,6 +75,27 @@ sub new
 	push(@{$self->{headers}}, 'Kbrpc-Errordest', $self->{kbrpc_error_dest});
     }
 
+    #
+    # This module requires authentication.
+    #
+    # We create an auth token, passing through the arguments that we were (hopefully) given.
+
+    {
+	my %arg_hash2 = @args;
+	if (exists $arg_hash2{"token"}) {
+	    $self->{token} = $arg_hash2{"token"};
+	} elsif (exists $arg_hash2{"user_id"}) {
+	    my $token = Bio::KBase::AuthToken->new(@args);
+	    if (!$token->error_message) {
+	        $self->{token} = $token->token;
+	    }
+	}
+	
+	if (exists $self->{token})
+	{
+	    $self->{client}->{token} = $self->{token};
+	}
+    }
 
     my $ua = $self->{client}->ua;	 
     my $timeout = $ENV{CDMI_TIMEOUT} || (30 * 60);	 
@@ -84,6 +106,516 @@ sub new
 }
 
 
+
+
+=head2 add_workspace_to_index
+
+  $obj->add_workspace_to_index($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a KBaseRelationEngine.AddWorkspaceToIndexInput
+AddWorkspaceToIndexInput is a reference to a hash where the following keys are defined:
+	ws_name has a value which is a string
+	ws_id has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a KBaseRelationEngine.AddWorkspaceToIndexInput
+AddWorkspaceToIndexInput is a reference to a hash where the following keys are defined:
+	ws_name has a value which is a string
+	ws_id has a value which is an int
+
+
+=end text
+
+=item Description
+
+This operation means that given workspace will be shared with
+system indexing user with write access. User calling this
+function should be owner of this workspace.
+
+=back
+
+=cut
+
+ sub add_workspace_to_index
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function add_workspace_to_index (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to add_workspace_to_index:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'add_workspace_to_index');
+	}
+    }
+
+    my $url = $self->{url};
+    my $result = $self->{client}->call($url, $self->{headers}, {
+	    method => "KBaseRelationEngine.add_workspace_to_index",
+	    params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'add_workspace_to_index',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return;
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method add_workspace_to_index",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'add_workspace_to_index',
+				       );
+    }
+}
+ 
+
+
+=head2 search_types
+
+  $return = $obj->search_types($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a KBaseRelationEngine.SearchTypesInput
+$return is a KBaseRelationEngine.SearchTypesOutput
+SearchTypesInput is a reference to a hash where the following keys are defined:
+	match_filter has a value which is a KBaseRelationEngine.MatchFilter
+	access_filter has a value which is a KBaseRelationEngine.AccessFilter
+MatchFilter is a reference to a hash where the following keys are defined:
+	full_text_in_all has a value which is a string
+	access_group_id has a value which is an int
+	object_name has a value which is a string
+	parent_guid has a value which is a KBaseRelationEngine.GUID
+	timestamp has a value which is a KBaseRelationEngine.MatchValue
+	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseRelationEngine.MatchValue
+GUID is a string
+MatchValue is a reference to a hash where the following keys are defined:
+	value has a value which is a string
+	int_value has a value which is an int
+	double_value has a value which is a float
+	bool_value has a value which is a KBaseRelationEngine.boolean
+	min_int has a value which is an int
+	max_int has a value which is an int
+	min_date has a value which is an int
+	max_date has a value which is an int
+	min_double has a value which is a float
+	max_double has a value which is a float
+boolean is an int
+AccessFilter is a reference to a hash where the following keys are defined:
+	with_private has a value which is a KBaseRelationEngine.boolean
+	with_public has a value which is a KBaseRelationEngine.boolean
+	with_all_history has a value which is a KBaseRelationEngine.boolean
+SearchTypesOutput is a reference to a hash where the following keys are defined:
+	type_to_count has a value which is a reference to a hash where the key is a string and the value is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a KBaseRelationEngine.SearchTypesInput
+$return is a KBaseRelationEngine.SearchTypesOutput
+SearchTypesInput is a reference to a hash where the following keys are defined:
+	match_filter has a value which is a KBaseRelationEngine.MatchFilter
+	access_filter has a value which is a KBaseRelationEngine.AccessFilter
+MatchFilter is a reference to a hash where the following keys are defined:
+	full_text_in_all has a value which is a string
+	access_group_id has a value which is an int
+	object_name has a value which is a string
+	parent_guid has a value which is a KBaseRelationEngine.GUID
+	timestamp has a value which is a KBaseRelationEngine.MatchValue
+	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseRelationEngine.MatchValue
+GUID is a string
+MatchValue is a reference to a hash where the following keys are defined:
+	value has a value which is a string
+	int_value has a value which is an int
+	double_value has a value which is a float
+	bool_value has a value which is a KBaseRelationEngine.boolean
+	min_int has a value which is an int
+	max_int has a value which is an int
+	min_date has a value which is an int
+	max_date has a value which is an int
+	min_double has a value which is a float
+	max_double has a value which is a float
+boolean is an int
+AccessFilter is a reference to a hash where the following keys are defined:
+	with_private has a value which is a KBaseRelationEngine.boolean
+	with_public has a value which is a KBaseRelationEngine.boolean
+	with_all_history has a value which is a KBaseRelationEngine.boolean
+SearchTypesOutput is a reference to a hash where the following keys are defined:
+	type_to_count has a value which is a reference to a hash where the key is a string and the value is an int
+
+
+=end text
+
+=item Description
+
+
+
+=back
+
+=cut
+
+ sub search_types
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function search_types (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to search_types:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'search_types');
+	}
+    }
+
+    my $url = $self->{url};
+    my $result = $self->{client}->call($url, $self->{headers}, {
+	    method => "KBaseRelationEngine.search_types",
+	    params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'search_types',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method search_types",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'search_types',
+				       );
+    }
+}
+ 
+
+
+=head2 search_objects
+
+  $return = $obj->search_objects($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a KBaseRelationEngine.SearchObjectsInput
+$return is a KBaseRelationEngine.SearchObjectsOutput
+SearchObjectsInput is a reference to a hash where the following keys are defined:
+	object_type has a value which is a string
+	match_filter has a value which is a KBaseRelationEngine.MatchFilter
+	sorting_rules has a value which is a reference to a list where each element is a KBaseRelationEngine.SortingRule
+	access_filter has a value which is a KBaseRelationEngine.AccessFilter
+	pagination has a value which is a KBaseRelationEngine.Pagination
+MatchFilter is a reference to a hash where the following keys are defined:
+	full_text_in_all has a value which is a string
+	access_group_id has a value which is an int
+	object_name has a value which is a string
+	parent_guid has a value which is a KBaseRelationEngine.GUID
+	timestamp has a value which is a KBaseRelationEngine.MatchValue
+	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseRelationEngine.MatchValue
+GUID is a string
+MatchValue is a reference to a hash where the following keys are defined:
+	value has a value which is a string
+	int_value has a value which is an int
+	double_value has a value which is a float
+	bool_value has a value which is a KBaseRelationEngine.boolean
+	min_int has a value which is an int
+	max_int has a value which is an int
+	min_date has a value which is an int
+	max_date has a value which is an int
+	min_double has a value which is a float
+	max_double has a value which is a float
+boolean is an int
+SortingRule is a reference to a hash where the following keys are defined:
+	is_timestamp has a value which is a KBaseRelationEngine.boolean
+	is_object_name has a value which is a KBaseRelationEngine.boolean
+	key_name has a value which is a string
+	ascending has a value which is a KBaseRelationEngine.boolean
+AccessFilter is a reference to a hash where the following keys are defined:
+	with_private has a value which is a KBaseRelationEngine.boolean
+	with_public has a value which is a KBaseRelationEngine.boolean
+	with_all_history has a value which is a KBaseRelationEngine.boolean
+Pagination is a reference to a hash where the following keys are defined:
+	start has a value which is an int
+	count has a value which is an int
+SearchObjectsOutput is a reference to a hash where the following keys are defined:
+	pagination has a value which is a KBaseRelationEngine.Pagination
+	sorting_rules has a value which is a reference to a list where each element is a KBaseRelationEngine.SortingRule
+	objects has a value which is a reference to a list where each element is a KBaseRelationEngine.ObjectData
+	total has a value which is an int
+ObjectData is a reference to a hash where the following keys are defined:
+	guid has a value which is a KBaseRelationEngine.GUID
+	parent_guid has a value which is a KBaseRelationEngine.GUID
+	object_name has a value which is a string
+	timestamp has a value which is an int
+	parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
+	data has a value which is an UnspecifiedObject, which can hold any non-null object
+	key_props has a value which is a reference to a hash where the key is a string and the value is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a KBaseRelationEngine.SearchObjectsInput
+$return is a KBaseRelationEngine.SearchObjectsOutput
+SearchObjectsInput is a reference to a hash where the following keys are defined:
+	object_type has a value which is a string
+	match_filter has a value which is a KBaseRelationEngine.MatchFilter
+	sorting_rules has a value which is a reference to a list where each element is a KBaseRelationEngine.SortingRule
+	access_filter has a value which is a KBaseRelationEngine.AccessFilter
+	pagination has a value which is a KBaseRelationEngine.Pagination
+MatchFilter is a reference to a hash where the following keys are defined:
+	full_text_in_all has a value which is a string
+	access_group_id has a value which is an int
+	object_name has a value which is a string
+	parent_guid has a value which is a KBaseRelationEngine.GUID
+	timestamp has a value which is a KBaseRelationEngine.MatchValue
+	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseRelationEngine.MatchValue
+GUID is a string
+MatchValue is a reference to a hash where the following keys are defined:
+	value has a value which is a string
+	int_value has a value which is an int
+	double_value has a value which is a float
+	bool_value has a value which is a KBaseRelationEngine.boolean
+	min_int has a value which is an int
+	max_int has a value which is an int
+	min_date has a value which is an int
+	max_date has a value which is an int
+	min_double has a value which is a float
+	max_double has a value which is a float
+boolean is an int
+SortingRule is a reference to a hash where the following keys are defined:
+	is_timestamp has a value which is a KBaseRelationEngine.boolean
+	is_object_name has a value which is a KBaseRelationEngine.boolean
+	key_name has a value which is a string
+	ascending has a value which is a KBaseRelationEngine.boolean
+AccessFilter is a reference to a hash where the following keys are defined:
+	with_private has a value which is a KBaseRelationEngine.boolean
+	with_public has a value which is a KBaseRelationEngine.boolean
+	with_all_history has a value which is a KBaseRelationEngine.boolean
+Pagination is a reference to a hash where the following keys are defined:
+	start has a value which is an int
+	count has a value which is an int
+SearchObjectsOutput is a reference to a hash where the following keys are defined:
+	pagination has a value which is a KBaseRelationEngine.Pagination
+	sorting_rules has a value which is a reference to a list where each element is a KBaseRelationEngine.SortingRule
+	objects has a value which is a reference to a list where each element is a KBaseRelationEngine.ObjectData
+	total has a value which is an int
+ObjectData is a reference to a hash where the following keys are defined:
+	guid has a value which is a KBaseRelationEngine.GUID
+	parent_guid has a value which is a KBaseRelationEngine.GUID
+	object_name has a value which is a string
+	timestamp has a value which is an int
+	parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
+	data has a value which is an UnspecifiedObject, which can hold any non-null object
+	key_props has a value which is a reference to a hash where the key is a string and the value is a string
+
+
+=end text
+
+=item Description
+
+
+
+=back
+
+=cut
+
+ sub search_objects
+{
+    my($self, @args) = @_;
+
+# Authentication: required
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function search_objects (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to search_objects:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'search_objects');
+	}
+    }
+
+    my $url = $self->{url};
+    my $result = $self->{client}->call($url, $self->{headers}, {
+	    method => "KBaseRelationEngine.search_objects",
+	    params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'search_objects',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method search_objects",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'search_objects',
+				       );
+    }
+}
+ 
+
+
+=head2 list_type_keys
+
+  $return = $obj->list_type_keys($params)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$params is a KBaseRelationEngine.ListTypeKeysInput
+$return is a KBaseRelationEngine.ListTypeKeysOutput
+ListTypeKeysInput is a reference to a hash where the following keys are defined:
+	object_type has a value which is a string
+ListTypeKeysOutput is a reference to a hash where the following keys are defined:
+	type_to_keys has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a KBaseRelationEngine.KeyDescription
+KeyDescription is a reference to a hash where the following keys are defined:
+	key_name has a value which is a string
+	key_ui_title has a value which is a string
+	key_value_type has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$params is a KBaseRelationEngine.ListTypeKeysInput
+$return is a KBaseRelationEngine.ListTypeKeysOutput
+ListTypeKeysInput is a reference to a hash where the following keys are defined:
+	object_type has a value which is a string
+ListTypeKeysOutput is a reference to a hash where the following keys are defined:
+	type_to_keys has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a KBaseRelationEngine.KeyDescription
+KeyDescription is a reference to a hash where the following keys are defined:
+	key_name has a value which is a string
+	key_ui_title has a value which is a string
+	key_value_type has a value which is a string
+
+
+=end text
+
+=item Description
+
+
+
+=back
+
+=cut
+
+ sub list_type_keys
+{
+    my($self, @args) = @_;
+
+# Authentication: none
+
+    if ((my $n = @args) != 1)
+    {
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
+							       "Invalid argument count for function list_type_keys (received $n, expecting 1)");
+    }
+    {
+	my($params) = @args;
+
+	my @_bad_arguments;
+        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
+        if (@_bad_arguments) {
+	    my $msg = "Invalid arguments passed to list_type_keys:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+								   method_name => 'list_type_keys');
+	}
+    }
+
+    my $url = $self->{url};
+    my $result = $self->{client}->call($url, $self->{headers}, {
+	    method => "KBaseRelationEngine.list_type_keys",
+	    params => \@args,
+    });
+    if ($result) {
+	if ($result->is_error) {
+	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
+					       code => $result->content->{error}->{code},
+					       method_name => 'list_type_keys',
+					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
+					      );
+	} else {
+	    return wantarray ? @{$result->result} : $result->result->[0];
+	}
+    } else {
+        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method list_type_keys",
+					    status_line => $self->{client}->status_line,
+					    method_name => 'list_type_keys',
+				       );
+    }
+}
+ 
   
 sub status
 {
@@ -119,7 +651,7 @@ sub status
 sub version {
     my ($self) = @_;
     my $result = $self->{client}->call($self->{url}, $self->{headers}, {
-        method => "${last_module.module_name}.version",
+        method => "KBaseRelationEngine.version",
         params => [],
     });
     if ($result) {
@@ -127,16 +659,16 @@ sub version {
             Bio::KBase::Exceptions::JSONRPC->throw(
                 error => $result->error_message,
                 code => $result->content->{code},
-                method_name => '${last_method.name}',
+                method_name => 'list_type_keys',
             );
         } else {
             return wantarray ? @{$result->result} : $result->result->[0];
         }
     } else {
         Bio::KBase::Exceptions::HTTP->throw(
-            error => "Error invoking method ${last_method.name}",
+            error => "Error invoking method list_type_keys",
             status_line => $self->{client}->status_line,
-            method_name => '${last_method.name}',
+            method_name => 'list_type_keys',
         );
     }
 }
@@ -170,6 +702,568 @@ sub _validate_version {
 }
 
 =head1 TYPES
+
+
+
+=head2 boolean
+
+=over 4
+
+
+
+=item Description
+
+A boolean. 0 = false, other = true.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+an int
+</pre>
+
+=end html
+
+=begin text
+
+an int
+
+=end text
+
+=back
+
+
+
+=head2 GUID
+
+=over 4
+
+
+
+=item Description
+
+Global user identificator. It has structure like this:
+  <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 AddWorkspaceToIndexInput
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+ws_name has a value which is a string
+ws_id has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+ws_name has a value which is a string
+ws_id has a value which is an int
+
+
+=end text
+
+=back
+
+
+
+=head2 MatchValue
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+value has a value which is a string
+int_value has a value which is an int
+double_value has a value which is a float
+bool_value has a value which is a KBaseRelationEngine.boolean
+min_int has a value which is an int
+max_int has a value which is an int
+min_date has a value which is an int
+max_date has a value which is an int
+min_double has a value which is a float
+max_double has a value which is a float
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+value has a value which is a string
+int_value has a value which is an int
+double_value has a value which is a float
+bool_value has a value which is a KBaseRelationEngine.boolean
+min_int has a value which is an int
+max_int has a value which is an int
+min_date has a value which is an int
+max_date has a value which is an int
+min_double has a value which is a float
+max_double has a value which is a float
+
+
+=end text
+
+=back
+
+
+
+=head2 MatchFilter
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+full_text_in_all has a value which is a string
+access_group_id has a value which is an int
+object_name has a value which is a string
+parent_guid has a value which is a KBaseRelationEngine.GUID
+timestamp has a value which is a KBaseRelationEngine.MatchValue
+lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseRelationEngine.MatchValue
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+full_text_in_all has a value which is a string
+access_group_id has a value which is an int
+object_name has a value which is a string
+parent_guid has a value which is a KBaseRelationEngine.GUID
+timestamp has a value which is a KBaseRelationEngine.MatchValue
+lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseRelationEngine.MatchValue
+
+
+=end text
+
+=back
+
+
+
+=head2 AccessFilter
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+with_private has a value which is a KBaseRelationEngine.boolean
+with_public has a value which is a KBaseRelationEngine.boolean
+with_all_history has a value which is a KBaseRelationEngine.boolean
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+with_private has a value which is a KBaseRelationEngine.boolean
+with_public has a value which is a KBaseRelationEngine.boolean
+with_all_history has a value which is a KBaseRelationEngine.boolean
+
+
+=end text
+
+=back
+
+
+
+=head2 SearchTypesInput
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+match_filter has a value which is a KBaseRelationEngine.MatchFilter
+access_filter has a value which is a KBaseRelationEngine.AccessFilter
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+match_filter has a value which is a KBaseRelationEngine.MatchFilter
+access_filter has a value which is a KBaseRelationEngine.AccessFilter
+
+
+=end text
+
+=back
+
+
+
+=head2 SearchTypesOutput
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+type_to_count has a value which is a reference to a hash where the key is a string and the value is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+type_to_count has a value which is a reference to a hash where the key is a string and the value is an int
+
+
+=end text
+
+=back
+
+
+
+=head2 SortingRule
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+is_timestamp has a value which is a KBaseRelationEngine.boolean
+is_object_name has a value which is a KBaseRelationEngine.boolean
+key_name has a value which is a string
+ascending has a value which is a KBaseRelationEngine.boolean
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+is_timestamp has a value which is a KBaseRelationEngine.boolean
+is_object_name has a value which is a KBaseRelationEngine.boolean
+key_name has a value which is a string
+ascending has a value which is a KBaseRelationEngine.boolean
+
+
+=end text
+
+=back
+
+
+
+=head2 Pagination
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+start has a value which is an int
+count has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+start has a value which is an int
+count has a value which is an int
+
+
+=end text
+
+=back
+
+
+
+=head2 SearchObjectsInput
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+object_type has a value which is a string
+match_filter has a value which is a KBaseRelationEngine.MatchFilter
+sorting_rules has a value which is a reference to a list where each element is a KBaseRelationEngine.SortingRule
+access_filter has a value which is a KBaseRelationEngine.AccessFilter
+pagination has a value which is a KBaseRelationEngine.Pagination
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+object_type has a value which is a string
+match_filter has a value which is a KBaseRelationEngine.MatchFilter
+sorting_rules has a value which is a reference to a list where each element is a KBaseRelationEngine.SortingRule
+access_filter has a value which is a KBaseRelationEngine.AccessFilter
+pagination has a value which is a KBaseRelationEngine.Pagination
+
+
+=end text
+
+=back
+
+
+
+=head2 ObjectData
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+guid has a value which is a KBaseRelationEngine.GUID
+parent_guid has a value which is a KBaseRelationEngine.GUID
+object_name has a value which is a string
+timestamp has a value which is an int
+parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
+data has a value which is an UnspecifiedObject, which can hold any non-null object
+key_props has a value which is a reference to a hash where the key is a string and the value is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+guid has a value which is a KBaseRelationEngine.GUID
+parent_guid has a value which is a KBaseRelationEngine.GUID
+object_name has a value which is a string
+timestamp has a value which is an int
+parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
+data has a value which is an UnspecifiedObject, which can hold any non-null object
+key_props has a value which is a reference to a hash where the key is a string and the value is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 SearchObjectsOutput
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+pagination has a value which is a KBaseRelationEngine.Pagination
+sorting_rules has a value which is a reference to a list where each element is a KBaseRelationEngine.SortingRule
+objects has a value which is a reference to a list where each element is a KBaseRelationEngine.ObjectData
+total has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+pagination has a value which is a KBaseRelationEngine.Pagination
+sorting_rules has a value which is a reference to a list where each element is a KBaseRelationEngine.SortingRule
+objects has a value which is a reference to a list where each element is a KBaseRelationEngine.ObjectData
+total has a value which is an int
+
+
+=end text
+
+=back
+
+
+
+=head2 ListTypeKeysInput
+
+=over 4
+
+
+
+=item Description
+
+object_type - optional parameter; if not specified all types are described.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+object_type has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+object_type has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 KeyDescription
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+key_name has a value which is a string
+key_ui_title has a value which is a string
+key_value_type has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+key_name has a value which is a string
+key_ui_title has a value which is a string
+key_value_type has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 ListTypeKeysOutput
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+type_to_keys has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a KBaseRelationEngine.KeyDescription
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+type_to_keys has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a KBaseRelationEngine.KeyDescription
+
+
+=end text
+
+=back
 
 
 

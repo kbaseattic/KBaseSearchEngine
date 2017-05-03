@@ -1,6 +1,8 @@
 package kbaserelationengine.search;
 
 public class SortingRule {
-    String keyName;
-    boolean ascending;
+    public boolean isTimestamp;
+    public boolean isObjectName;
+    public String keyName;
+    public boolean ascending;
 }

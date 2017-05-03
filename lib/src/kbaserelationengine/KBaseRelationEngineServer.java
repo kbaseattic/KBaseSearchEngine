@@ -3,9 +3,11 @@ package kbaserelationengine;
 import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonServerMethod;
 import us.kbase.common.service.JsonServerServlet;
 import us.kbase.common.service.JsonServerSyslog;
+import us.kbase.common.service.RpcContext;
 
 //BEGIN_HEADER
 //END_HEADER
@@ -19,8 +21,8 @@ import us.kbase.common.service.JsonServerSyslog;
 public class KBaseRelationEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
     private static final String version = "0.0.1";
-    private static final String gitUrl = "";
-    private static final String gitCommitHash = "";
+    private static final String gitUrl = "https://github.com/kbaseapps/KBaseRelationEngine";
+    private static final String gitCommitHash = "a11727fe9b5d1c9216f5d672a29ca86803086f5f";
 
     //BEGIN_CLASS_HEADER
     //END_CLASS_HEADER
@@ -29,6 +31,66 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         super("KBaseRelationEngine");
         //BEGIN_CONSTRUCTOR
         //END_CONSTRUCTOR
+    }
+
+    /**
+     * <p>Original spec-file function name: add_workspace_to_index</p>
+     * <pre>
+     * This operation means that given workspace will be shared with
+     * system indexing user with write access. User calling this
+     * function should be owner of this workspace.
+     * </pre>
+     * @param   params   instance of type {@link kbaserelationengine.AddWorkspaceToIndexInput AddWorkspaceToIndexInput}
+     */
+    @JsonServerMethod(rpc = "KBaseRelationEngine.add_workspace_to_index", async=true)
+    public void addWorkspaceToIndex(AddWorkspaceToIndexInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
+        //BEGIN add_workspace_to_index
+        //END add_workspace_to_index
+    }
+
+    /**
+     * <p>Original spec-file function name: search_types</p>
+     * <pre>
+     * </pre>
+     * @param   params   instance of type {@link kbaserelationengine.SearchTypesInput SearchTypesInput}
+     * @return   instance of type {@link kbaserelationengine.SearchTypesOutput SearchTypesOutput}
+     */
+    @JsonServerMethod(rpc = "KBaseRelationEngine.search_types", async=true)
+    public SearchTypesOutput searchTypes(SearchTypesInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
+        SearchTypesOutput returnVal = null;
+        //BEGIN search_types
+        //END search_types
+        return returnVal;
+    }
+
+    /**
+     * <p>Original spec-file function name: search_objects</p>
+     * <pre>
+     * </pre>
+     * @param   params   instance of type {@link kbaserelationengine.SearchObjectsInput SearchObjectsInput}
+     * @return   instance of type {@link kbaserelationengine.SearchObjectsOutput SearchObjectsOutput}
+     */
+    @JsonServerMethod(rpc = "KBaseRelationEngine.search_objects", async=true)
+    public SearchObjectsOutput searchObjects(SearchObjectsInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
+        SearchObjectsOutput returnVal = null;
+        //BEGIN search_objects
+        //END search_objects
+        return returnVal;
+    }
+
+    /**
+     * <p>Original spec-file function name: list_type_keys</p>
+     * <pre>
+     * </pre>
+     * @param   params   instance of type {@link kbaserelationengine.ListTypeKeysInput ListTypeKeysInput}
+     * @return   instance of type {@link kbaserelationengine.ListTypeKeysOutput ListTypeKeysOutput}
+     */
+    @JsonServerMethod(rpc = "KBaseRelationEngine.list_type_keys", async=true)
+    public ListTypeKeysOutput listTypeKeys(ListTypeKeysInput params, RpcContext jsonRpcContext) throws Exception {
+        ListTypeKeysOutput returnVal = null;
+        //BEGIN list_type_keys
+        //END list_type_keys
+        return returnVal;
     }
     @JsonServerMethod(rpc = "KBaseRelationEngine.status")
     public Map<String, Object> status() {
