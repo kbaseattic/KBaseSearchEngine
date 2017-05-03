@@ -10,6 +10,8 @@ public interface WSStatusEventReconstructor {
 			PresenceType objPresenceType,
 			Set<Long> excludedWsIds) throws IOException;
 	
+	public void processWorkspaceObjects( Long wsId, 
+			PresenceType objPresenceType) throws IOException;
 	
 	public void processWorkspacePermissions(
 			AccessType wsAccessType, 

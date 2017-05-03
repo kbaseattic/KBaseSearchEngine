@@ -65,21 +65,58 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
 		eventListeners.add(listener);
 	}
 	
-	
 	@Override
 	public void processWorkspaceObjects(
 			AccessType wsAccessType, 
 			PresenceType objPresenceType,
 			Set<Long> excludedWsIds) throws IOException{
+		
+		// Get current state: workspaces status  
+		try {
+	    	List<WorkspaceDescriptor> wss = getWorkspacesDescriptors(wsAccessType, objPresenceType, excludedWsIds);
+	    	Collections.sort(wss);
+	    	
+	    	processWorkspaceObjects(wss, objPresenceType);
+	    	
+		} catch (JsonClientException e) {
+			throw new IOException(e);
+		}						
+	}
+
+	@Override
+	public void processWorkspaceObjects(Long wsId, PresenceType objPresenceType) throws IOException {
+		
+		// Get current state: workspaces status  
+		try {
+			WorkspaceDescriptor ws = getWorkspacesDescriptor(wsId);	    	
+	    	processWorkspaceObjects(Arrays.asList(ws), objPresenceType);	    	
+		} catch (JsonClientException e) {
+			throw new IOException(e);
+		}
+	}
+
+	@Override
+	public void processWorkspacePermissions(
+			AccessType wsAccessType, 
+			Set<Long> excludedWsIds) throws IOException{
+		
+		try {
+			// We will process only PRESENT workspaces
+	    	List<WorkspaceDescriptor> wss = getWorkspacesDescriptors(wsAccessType, PresenceType.PRESENT, excludedWsIds);
+	    	attachPreviousState(wss);
+	    	updateWorskapcesPermissions(wss);	    				
+		} catch (JsonClientException e) {
+			throw new IOException(e);
+		}		
+	};	
+	
+	private void processWorkspaceObjects(List<WorkspaceDescriptor> wss, 
+			PresenceType objPresenceType) throws IOException{
 		try {
 			// Get history: accessGroups (workspaces) processed before
 			List<AccessGroupStatus> ags = objStatusStorage.findAccessGroups(WS_STORAGE_CODE);
 			Collections.sort(ags);
-			
-			// Get current state: workspaces status  
-	    	List<WorkspaceDescriptor> wss = getWorkspacesDescriptors(wsAccessType, objPresenceType, excludedWsIds);
-	    	Collections.sort(wss);
-	    	
+				    	
 	    	// Filter by timestamps
 	    	List<WorkspaceDescriptor> filteredWss = filterByTimestamps(wss, ags);	    	
 	    	
@@ -131,21 +168,6 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
 		}				
 	};
 	
-
-	@Override
-	public void processWorkspacePermissions(
-			AccessType wsAccessType, 
-			Set<Long> excludedWsIds) throws IOException{
-		
-		try {
-			// We will process only PRESENT workspaces
-	    	List<WorkspaceDescriptor> wss = getWorkspacesDescriptors(wsAccessType, PresenceType.PRESENT, excludedWsIds);
-	    	attachPreviousState(wss);
-	    	updateWorskapcesPermissions(wss);	    				
-		} catch (JsonClientException e) {
-			throw new IOException(e);
-		}		
-	};
 	
 	private void updateWorskapcesPermissions(List<WorkspaceDescriptor> wss) throws IOException, JsonClientException {
 		accessGroupStatusBuffer.clear();
@@ -497,6 +519,21 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
         }
 	}
 
+    
+	private WorkspaceDescriptor getWorkspacesDescriptor(Long wsId) throws IOException, JsonClientException{
+		
+    	WorkspaceClient wsClient = wsClient();    	
+    	WorkspaceIdentity params = new WorkspaceIdentity();
+    	params.setId(wsId);
+		Tuple9<Long, String, String, String, Long, String, String, String, Map<String, String>> wsInfo = wsClient.getWorkspaceInfo(params);
+    	
+		// We do not know whether it is deleted/private
+		return new  WorkspaceDescriptor(
+				wsInfo.getE1().intValue(), 
+				Util.DATE_PARSER.parseDateTime(wsInfo.getE4()).getMillis(),
+				false, false);		
+    }
+    
 	private List<WorkspaceDescriptor> getWorkspacesDescriptors(AccessType wsAccessStatus, PresenceType objPresenceType, Set<Long> excludedWsIds) throws IOException, JsonClientException{
 		
 		List<WorkspaceDescriptor> wss = new ArrayList<WorkspaceDescriptor>();
@@ -638,5 +675,4 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
     	}
     	return _wsClient;
     }
-
 }

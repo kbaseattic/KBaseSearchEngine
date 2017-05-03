@@ -61,7 +61,7 @@ public class WSStatusEventReconstructorTest {
 				}				
 			}
         }; 
-        reconstructor.registerListener(listener);  
+//       reconstructor.registerListener(listener);  
         
         reconstructor.registerListener(mdStorage);
 	}
@@ -73,9 +73,13 @@ public class WSStatusEventReconstructorTest {
 //    	excludeWsIds.add(20281L);
 //    	excludeWsIds.add(20266L);
     	
-    	
+    	System.out.println("Started");
+    	reconstructor.processWorkspaceObjects(15L, PresenceType.PRESENT);
+    	System.out.println("\tdone - processWorkspaceObjects");
         reconstructor.processWorkspaceObjects(AccessType.PRIVATE, PresenceType.PRESENT, excludeWsIds );
+    	System.out.println("\tdone - processWorkspaceObjects");
         reconstructor.processWorkspacePermissions(AccessType.ALL, null);
+    	System.out.println("\tdone - processWorkspacePermissions");
         
     }	           	
 }
