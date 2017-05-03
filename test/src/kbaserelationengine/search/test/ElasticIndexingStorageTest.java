@@ -149,6 +149,37 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals(expectedGUID, id);
     }
     
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testGenome() throws Exception {
+        Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
+                new File("resources/types/Genome.json"), Map.class);
+        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules.fromObject(parsingRulesObj);
+        Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
+        SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
+        String parentJson = null;
+        try (JsonParser jts = SubObjectExtractorTest.getParsedJsonResource("genome01")) {
+            parentJson = ObjectParser.extractParentFragment(parsingRules, jts);
+        }
+        try (JsonParser jts = SubObjectExtractorTest.getParsedJsonResource("genome01")) {
+            ObjectParser.extractSubObjects(parsingRules, subObjConsumer, jts);
+        }
+        for (ObjectJsonPath path : pathToJson.keySet()) {
+            String subJson = pathToJson.get(path);
+            SimpleIdConsumer idConsumer = new SimpleIdConsumer();
+            GUID id = ObjectParser.prepareGUID(parsingRules, "2/1/1", path, idConsumer);
+            indexStorage.indexObject(id, parsingRules.getGlobalObjectType(), subJson, 
+                    "MyGenome.1", System.currentTimeMillis(), parentJson, Collections.emptyMap(),
+                    false, parsingRules.getIndexingRules());
+        }
+        Set<GUID> guids = indexStorage.searchIds("Genome", MatchFilter.create().withLookupInKey(
+                "features", new MatchValue(1, null)), null, AccessFilter.create().withAdmin(true));
+        Assert.assertEquals(1, guids.size());
+        ObjectData found = indexStorage.getObjectsByIds(guids).get(0);
+        Assert.assertTrue(found.keyProps.containsKey("features"));
+        Assert.assertEquals("3", found.keyProps.get("features"));
+    }
+    
     @Test
     public void testVersions() throws Exception {
         String objType = "Simple";

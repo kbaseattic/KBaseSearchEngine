@@ -141,6 +141,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
             String parentJsonValue, Map<String, String> metadata, Map<GUID, String> idToJsonValues,
             boolean isPublic, List<IndexingRules> indexingRules) 
                     throws IOException, ObjectParseException {
+        if (idToJsonValues.size() == 0) {
+            return;
+        }
         String indexName = checkIndex(objectType, indexingRules);
         Set<GUID> parentGuids = new LinkedHashSet<>();
         Map<GUID, GUID> guidToParentGuid = new LinkedHashMap<>();
@@ -389,7 +392,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             put("query", query);
             put("_source", Arrays.asList("guid"));
         }};
-        String urlPath = "/_all/" + getDataTableName() + "/_search";
+        String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
@@ -418,7 +421,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public Map<String, AccessInfo> lookupParentDocsByPrefix(String indexName,
             GUID guid) throws IOException {
         if (indexName == null) {
-            indexName = "_all";
+            indexName = indexNamePrefix + "*";
         }
         String prefix = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), null, null, null).toString();
@@ -464,7 +467,24 @@ public class ElasticIndexingStorage implements IndexingStorage {
             put(queryType, term);
         }};
     }
-    
+
+    @SuppressWarnings("serial")
+    private Map<String, Object> createRangeFilter(String keyName, Object gte, Object lte) {
+        Map<String, Object> range = new LinkedHashMap<>();
+        if (gte != null) {
+            range.put("gte", gte);
+        }
+        if (lte != null) {
+            range.put("lte", lte);
+        }
+        Map<String, Object> term = new LinkedHashMap<String, Object>() {{
+            put(keyName, range);
+        }};
+        return new LinkedHashMap<String, Object>() {{
+            put("range", term);
+        }};
+    }
+
     @SuppressWarnings("unchecked")
     public Map<GUID, String> checkParentDoc(String indexName, Set<GUID> parentGUIDs, 
             boolean isPublic) throws IOException {
@@ -509,7 +529,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private boolean removeAccessGroupForOtherVersions(String indexName, GUID guid, 
             Integer... accessGroupIds) throws IOException {
         if (indexName == null) {
-            indexName = "_all";
+            indexName = indexNamePrefix + "*";
         }
         String prefix = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), null, null, null).toString();
@@ -547,7 +567,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private boolean removeAccessGroupForVersion(String indexName, GUID guid, 
             int accessGroupId) throws IOException {
         if (indexName == null) {
-            indexName = "_all";
+            indexName = indexNamePrefix + "*";
         }
         // Check that we work with other than physical access group this object exists in.
         boolean fromAllGroups = accessGroupId != guid.getAccessGroupId();
@@ -586,7 +606,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         // Here we try to update 'lastin' parameter in access parent. The idea is we need only one
         // version among other parent with the same prefix to contain any particular access group.
         if (indexName == null) {
-            indexName = "_all";
+            indexName = indexNamePrefix + "*";
         }
         String prefix = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), null, null, null).toString();
@@ -680,7 +700,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             put("query", query);
             //put("_source", Arrays.asList("ojson"));
         }};
-        String urlPath = "/_all/" + getDataTableName() + "/_search";
+        String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
@@ -753,7 +773,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             put("aggregations", aggs);
             put("size", 0);
         }};
-        String urlPath = "/_all/" + getDataTableName() + "/_search";
+        String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
@@ -792,10 +812,23 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (matchFilter.lookupInKeys != null) {
             for (String keyName : matchFilter.lookupInKeys.keySet()) {
                 MatchValue value = matchFilter.lookupInKeys.get(keyName);
-                ret.add(createFilter("term", getKeyProperty(keyName), value.value));
+                String keyProp = getKeyProperty(keyName);
+                if (value.value != null) {
+                    ret.add(createFilter("term", keyProp, value.value));
+                } else if (value.minInt != null || value.maxInt != null) {
+                    ret.add(createRangeFilter(keyProp, value.minInt, value.maxInt));
+                } else if (value.minDate != null || value.maxDate != null) {
+                    ret.add(createRangeFilter(keyProp, value.minDate, value.maxDate));
+                } else if (value.minDouble != null || value.maxDouble != null) {
+                    ret.add(createRangeFilter(keyProp, value.minDouble, value.maxDouble));
+                }
             }
         }
-        // TODO: support parent giud, timestamp range, integer/double ranges
+        if (matchFilter.timestamp != null) {
+            ret.add(createRangeFilter("timestamp", matchFilter.timestamp.minDate, 
+                    matchFilter.timestamp.maxDate));
+        }
+        // TODO: support parent guid
         if (ret.isEmpty()) {
             ret.add(createFilter("match_all", null, null));
         }
@@ -857,6 +890,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
             put("_source", Arrays.asList("guid"));
+            put("from", 0);
+            put("size", 10000);
         }};
         if (sorting != null && sorting.size() > 0) {
             List<Object> sort = new ArrayList<>();
@@ -870,13 +905,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 }});
             }
         }
-        String indexName = objectType == null ? "_all" : getIndex(objectType);
+        String indexName = objectType == null ? (indexNamePrefix + "*") : getIndex(objectType);
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         Set<GUID> ret = new LinkedHashSet<>();
         Map<String, Object> hitMap = (Map<String, Object>)data.get("hits");
+        int total = (Integer)hitMap.get("total");
         List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
@@ -950,7 +986,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         RestClient restClient = getRestClient();
         try (InputStream is = new FileInputStream(jsonData)) {
             InputStreamEntity body = new InputStreamEntity(is);
-            Response response = restClient.performRequest(reqType, indexName + "/_bulk", 
+            Response response = restClient.performRequest(reqType, "/" + indexName + "/_bulk", 
                     Collections.emptyMap(), body);
             return response;
         }

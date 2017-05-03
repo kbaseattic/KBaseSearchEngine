@@ -187,9 +187,14 @@ public class ValueCollector <T> {
 						"a scalar value (i.e. string, integer, float), at: " + 
 						ObjectJsonPath.getPathText(path));
 			}
-			if (selection.getRules() != null) {
+			T rules = selection.getRules();
+			if (rules == null && selection.getChildren().size() == 1 && 
+			        selection.getChildren().containsKey("{size}")) {
+			    rules = selection.getChildren().get("{size}").getRules();
+			}
+			if (rules != null) {
 			    Object value = JsonTokenUtil.getCurrentTokenPrimitive(jts, t);
-			    consumer.addValue(selection.getRules(), value);
+			    consumer.addValue(rules, value);
 			}
 		}
 	}

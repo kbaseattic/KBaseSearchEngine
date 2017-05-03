@@ -70,7 +70,7 @@ public class MainObjectProcessorTest {
         String esIndexPrefix = "test_" + System.currentTimeMillis() + ".";
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, mongoHost,
                 mongoPort, mongoDbName, esHostPort, esUser, esPassword, esIndexPrefix, 
-                typesDir, tempDir, false);
+                typesDir, tempDir, false, true);
     }
     
     private static void deleteAllTestMongoDBs(String mongoHost, int mongoPort) {

@@ -10,14 +10,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.common.ObjectJsonPath;
 import kbaserelationengine.relations.Relation;
 import kbaserelationengine.relations.RelationStorage;
-import kbaserelationengine.search.IndexingStorage;
 import kbaserelationengine.system.RelationRules;
 import kbaserelationengine.system.IndexingRules;
 import kbaserelationengine.system.ObjectTypeParsingRules;

@@ -45,6 +45,8 @@
     <include name="apache_commons/http/httpcore-4.4.5.jar"/>
     <include name="apache_commons/http/httpcore-nio-4.4.5.jar"/>
     <include name="elasticsearch/rest-5.3.0.jar"/>
+    <include name="apache_commons/commons-codec-1.10.jar"/>
+    <include name="mongodb/mongo-java-driver-3.4.2.jar"/>
   </fileset>
 
   <path id="compile.classpath">
@@ -74,8 +76,10 @@ commit=${git.commit}</echo>
     </javac>
     <!-- Copy resource files-->
     <copy todir="${classes}">
-      <fileset dir="${src}">
-      </fileset>
+      <fileset dir="${src}"/>
+    </copy>
+    <copy todir="${classes}">
+      <fileset dir="${test.src}"/>
     </copy>
     <jar destfile="${dist}/${jar.file}" basedir="${classes}"/>
     <delete dir="${classes}"/>
@@ -117,7 +121,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbaserelationengine.KBaseRelation
       <formatter type="plain" usefile="false" />
       <batchtest>
         <fileset dir="${test.src}">
-          <include name="**/test/**Test.java"/>
+          <include name="kbaserelationengine/parse/test/**Test.java"/>
         </fileset>
       </batchtest>
     </junit>

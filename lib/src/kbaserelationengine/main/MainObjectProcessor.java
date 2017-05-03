@@ -50,11 +50,13 @@ public class MainObjectProcessor {
     private SystemStorage systemStorage;
     private IndexingStorage indexingStorage;
     private RelationStorage relationStorage;
+    private boolean logging;
     
     public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, String mongoHost, 
             int mongoPort, String mongoDbName, HttpHost esHost, String esUser, String esPassword,
-            String esIndexPrefix, File typesDir, File tempDir, boolean startLifecycleRunner) 
-                    throws IOException, ObjectParseException {
+            String esIndexPrefix, File typesDir, File tempDir, boolean startLifecycleRunner,
+            boolean logging) throws IOException, ObjectParseException {
+        this.logging = logging;
         this.wsURL = wsURL;
         this.kbaseIndexerToken = kbaseIndexerToken;
         this.rootTempDir = tempDir;
@@ -189,14 +191,18 @@ public class MainObjectProcessor {
     
     public void indexObject(GUID guid, String storageObjectType, Long timestamp) 
             throws IOException, JsonClientException, ObjectParseException {
-        System.out.println("Processing object: " + guid);
+        if (logging) {
+            System.out.println("Processing object: " + guid);
+        }
         long t1 = System.currentTimeMillis();
         File tempFile = ObjectParser.prepareTempFile(getWsLoadTempDir());
         try {
             String objRef = guid.getAccessGroupId() + "/" + guid.getAccessGroupObjectId() + "/" +
                     guid.getVersion();
             ObjectData obj = ObjectParser.loadObject(wsURL, tempFile, kbaseIndexerToken, objRef);
-            System.out.println("  Loading time: " + (System.currentTimeMillis() - t1) + " ms.");
+            if (logging) {
+                System.out.println("  Loading time: " + (System.currentTimeMillis() - t1) + " ms.");
+            }
             List<ObjectTypeParsingRules> parsingRules = 
                     systemStorage.listObjectTypesByStorageObjectType(storageObjectType);
             for (ObjectTypeParsingRules rule : parsingRules) {
@@ -207,8 +213,10 @@ public class MainObjectProcessor {
                 }
                 Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, objRef, rule, 
                         systemStorage, relationStorage);
-                System.out.println("  " + rule.getGlobalObjectType() + ": parsing time: " + 
-                        (System.currentTimeMillis() - t2) + " ms.");
+                if (logging) {
+                    System.out.println("  " + rule.getGlobalObjectType() + ": parsing time: " + 
+                            (System.currentTimeMillis() - t2) + " ms.");
+                }
                 long t3 = System.currentTimeMillis();
                 if (timestamp == null) {
                     timestamp = System.currentTimeMillis();
@@ -216,8 +224,10 @@ public class MainObjectProcessor {
                 indexingStorage.indexObjects(rule.getGlobalObjectType(), obj.getInfo().getE2(), 
                         timestamp, parentJson, obj.getInfo().getE11(), guidToJson, 
                         false, rule.getIndexingRules());
-                System.out.println("  " + rule.getGlobalObjectType() + ": indexing time: " + 
-                        (System.currentTimeMillis() - t3) + " ms.");
+                if (logging) {
+                    System.out.println("  " + rule.getGlobalObjectType() + ": indexing time: " + 
+                            (System.currentTimeMillis() - t3) + " ms.");
+                }
             }
         } finally {
             tempFile.delete();
