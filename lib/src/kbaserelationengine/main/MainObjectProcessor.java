@@ -9,12 +9,19 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.http.HttpHost;
 
 import com.fasterxml.jackson.core.JsonParser;
 
+import kbaserelationengine.AccessFilter;
+import kbaserelationengine.MatchFilter;
+import kbaserelationengine.SearchTypesInput;
+import kbaserelationengine.SearchTypesOutput;
 import kbaserelationengine.common.GUID;
+import kbaserelationengine.events.AccessGroupProvider;
 import kbaserelationengine.events.AccessGroupStatus;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.StatusEventListener;
@@ -47,6 +54,7 @@ public class MainObjectProcessor {
     private File rootTempDir;
     private WSStatusEventReconstructor wsEventReconstructor;
     private StatusEventStorage eventStorage;
+    private AccessGroupProvider accessGroupProvider;
     private ObjectStatusEventQueue queue;
     private Thread mainRunner;
     private SystemStorage systemStorage;
@@ -62,11 +70,13 @@ public class MainObjectProcessor {
         this.wsURL = wsURL;
         this.kbaseIndexerToken = kbaseIndexerToken;
         this.rootTempDir = tempDir;
-        eventStorage = new MongoDBStatusEventStorage(mongoHost, mongoPort, mongoDbName);
+        MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(mongoHost, mongoPort, mongoDbName);
+        eventStorage = storage;
+        accessGroupProvider = storage;
         WSStatusEventReconstructorImpl reconstructor = new WSStatusEventReconstructorImpl(
                 wsURL, kbaseIndexerToken, eventStorage);
         wsEventReconstructor = reconstructor;
-        reconstructor.registerListener((StatusEventListener)eventStorage);
+        reconstructor.registerListener(storage);
         if (logger != null) {
             reconstructor.registerListener(new StatusEventListener() {
                 @Override
@@ -176,7 +186,7 @@ public class MainObjectProcessor {
         throw new IllegalStateException("Failed to stop Lifecycle Runner");
     }
     
-    public void performOneTick() 
+    public void performOneTick()
             throws IOException, JsonClientException, ObjectParseException {
         Set<Long> excludeWsIds = Collections.emptySet();
         //Set<Long> excludeWsIds = new LinkedHashSet<>(Arrays.asList(10455L));
@@ -304,5 +314,46 @@ public class MainObjectProcessor {
     
     public IndexingStorage getIndexingStorage(String objectType) {
         return indexingStorage;
+    }
+    
+    private static boolean toBool(Long value) {
+        return value != null && value == 1L;
+    }
+
+    private static Integer toInteger(Long value) {
+        return value == null ? null : (int)(long)value;
+    }
+
+    private static GUID toGUID(String value) {
+        return value == null ? null : new GUID(value);
+    }
+
+    private kbaserelationengine.search.MatchFilter toSearch(MatchFilter mf) {
+        kbaserelationengine.search.MatchFilter ret = 
+                new kbaserelationengine.search.MatchFilter()
+                .withFullTextInAll(mf.getFullTextInAll())
+                .withAccessGroupId(toInteger(mf.getAccessGroupId()))
+                .withObjectName(mf.getObjectName())
+                .withParentGuid(toGUID(mf.getParentGuid()));
+        return ret;
+    }
+
+    private kbaserelationengine.search.AccessFilter toSearch(AccessFilter af, String user)
+            throws IOException {
+        List<Integer> accessGroupIds = accessGroupProvider.findAccessGroupIds("WS", user);
+        return new kbaserelationengine.search.AccessFilter()
+                .withPublic(toBool(af.getWithPublic()))
+                .withAllHistory(toBool(af.getWithAllHistory()))
+                .withAccessGroups(new LinkedHashSet<>(accessGroupIds));
+    }
+    
+    public SearchTypesOutput searchTypes(SearchTypesInput params, String user) throws Exception {
+        MatchFilter mf = params.getMatchFilter();
+        kbaserelationengine.search.MatchFilter matchFilter = toSearch(mf);
+        AccessFilter af = params.getAccessFilter();
+        kbaserelationengine.search.AccessFilter accessFilter = toSearch(af, user);
+        Map<String, Integer> ret = indexingStorage.searchTypes(matchFilter, accessFilter);
+        return new SearchTypesOutput().withTypeToCount(ret.keySet().stream().collect(
+                Collectors.toMap(Function.identity(), c -> (long)(int)ret.get(c))));
     }
 }

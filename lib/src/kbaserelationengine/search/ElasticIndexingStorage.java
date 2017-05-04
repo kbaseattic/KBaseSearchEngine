@@ -26,6 +26,8 @@ import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.config.RequestConfig.Builder;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -981,6 +983,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private RestClient getRestClient() {
         if (restClient == null) {
             RestClientBuilder restClientBld = RestClient.builder(esHost);
+            restClientBld.setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
+                @Override
+                public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder) {
+                    return requestConfigBuilder.setConnectTimeout(10000)
+                            .setSocketTimeout(120000);
+                }
+            }).setMaxRetryTimeoutMillis(120000);
             List<Header> headers = new ArrayList<>();
             headers.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
             //headers.add(new BasicHeader("Role", "Read"));
@@ -1097,10 +1106,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
             props.put("ojson", new LinkedHashMap<String, Object>() {{
                 put("type", "keyword");
                 put("index", false);
+                put("doc_values", false);
             }});
             props.put("pjson", new LinkedHashMap<String, Object>() {{
                 put("type", "keyword");
                 put("index", false);
+                put("doc_values", false);
             }});
         }
         if (mergeTypes) {

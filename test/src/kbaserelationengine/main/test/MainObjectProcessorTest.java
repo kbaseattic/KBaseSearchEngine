@@ -162,7 +162,6 @@ public class MainObjectProcessorTest {
         Assert.assertEquals(1, ids.size());
     }
     
-    @Ignore
     @Test
     public void testNarrativeManually() throws Exception {
         indexFewVersions(new ObjectStatusEvent("-1", "WS", 20266, "1", 7, null, 
@@ -182,6 +181,7 @@ public class MainObjectProcessorTest {
         checkSearch(1, "Narrative", "functionality", 480, false);
     }
     
+    @Ignore
     @Test
     public void testReadsManually() throws Exception {
         indexFewVersions(new ObjectStatusEvent("-1", "WS", 20266, "5", 1, null, 
