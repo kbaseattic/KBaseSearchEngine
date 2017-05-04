@@ -3,6 +3,7 @@ package kbaserelationengine;
 import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonServerMethod;
 import us.kbase.common.service.JsonServerServlet;
@@ -10,6 +11,15 @@ import us.kbase.common.service.JsonServerSyslog;
 import us.kbase.common.service.RpcContext;
 
 //BEGIN_HEADER
+
+import java.io.PrintWriter;
+import java.net.URL;
+
+import org.apache.http.HttpHost;
+
+import kbaserelationengine.main.LineLogger;
+import kbaserelationengine.main.MainObjectProcessor;
+
 //END_HEADER
 
 /**
@@ -25,11 +35,51 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
     private static final String gitCommitHash = "a11727fe9b5d1c9216f5d672a29ca86803086f5f";
 
     //BEGIN_CLASS_HEADER
+    private MainObjectProcessor mop = null;
+    
     //END_CLASS_HEADER
 
     public KBaseRelationEngineServer() throws Exception {
         super("KBaseRelationEngine");
         //BEGIN_CONSTRUCTOR
+        URL wsUrl = new URL(config.get("workspace-url"));
+        String tokenStr = config.get("indexer-token");
+        AuthToken kbaseIndexerToken = getAuth(config).validateToken(tokenStr);
+        String mongoHost = config.get("mongo-host");
+        int mongoPort = Integer.parseInt(config.get("mongo-port"));
+        String elasticHost = config.get("elastic-host");
+        int elasticPort = Integer.parseInt(config.get("elastic-port"));
+        String esUser = config.get("elastic-user");
+        String esPassword = config.get("elastic-password");
+        HttpHost esHostPort = new HttpHost(elasticHost, elasticPort);
+        File typesDir = new File(config.get("types-dir"));
+        File tempDir = new File(config.get("scratch"));
+        if (!tempDir.exists()) {
+            tempDir.mkdirs();
+        }
+        String mongoDbName = config.get("mongo-database");
+        String esIndexPrefix = config.get("elastic-namespace") + ".";
+        File logFile = new File(tempDir, "log_" + System.currentTimeMillis() + ".txt");
+        PrintWriter logPw = new PrintWriter(logFile);
+        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, mongoHost,
+                mongoPort, mongoDbName, esHostPort, esUser, esPassword, esIndexPrefix, 
+                typesDir, tempDir, true, new LineLogger() {
+                    @Override
+                    public void logInfo(String line) {
+                        logPw.println(line);
+                        logPw.flush();
+                    }
+                    @Override
+                    public void logError(String line) {
+                        logPw.println(line);
+                        logPw.flush();
+                    }
+                    @Override
+                    public void logError(Throwable error) {
+                        error.printStackTrace(logPw);
+                        logPw.flush();
+                    }
+                });
         //END_CONSTRUCTOR
     }
 
@@ -45,6 +95,9 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
     @JsonServerMethod(rpc = "KBaseRelationEngine.add_workspace_to_index", async=true)
     public void addWorkspaceToIndex(AddWorkspaceToIndexInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         //BEGIN add_workspace_to_index
+        String wsNameOrId = params.getWsName() != null ? params.getWsName() :
+            String.valueOf(params.getWsId());
+        mop.addWorkspaceToIndex(wsNameOrId, authPart);
         //END add_workspace_to_index
     }
 

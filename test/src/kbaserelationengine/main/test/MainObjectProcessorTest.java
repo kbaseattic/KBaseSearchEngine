@@ -20,6 +20,7 @@ import junit.framework.Assert;
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
+import kbaserelationengine.main.LineLogger;
 import kbaserelationengine.main.MainObjectProcessor;
 import kbaserelationengine.search.AccessFilter;
 import kbaserelationengine.search.ElasticIndexingStorage;
@@ -70,7 +71,20 @@ public class MainObjectProcessorTest {
         String esIndexPrefix = "test_" + System.currentTimeMillis() + ".";
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, mongoHost,
                 mongoPort, mongoDbName, esHostPort, esUser, esPassword, esIndexPrefix, 
-                typesDir, tempDir, false, true);
+                typesDir, tempDir, false, new LineLogger() {
+                    @Override
+                    public void logInfo(String line) {
+                        System.out.println(line);
+                    }
+                    @Override
+                    public void logError(String line) {
+                        System.err.println(line);
+                    }
+                    @Override
+                    public void logError(Throwable error) {
+                        error.printStackTrace();
+                    }
+                });
     }
     
     private static void deleteAllTestMongoDBs(String mongoHost, int mongoPort) {
@@ -100,6 +114,7 @@ public class MainObjectProcessorTest {
         }
     }
     
+    @Ignore
     @Test
     public void testGenomeManually() throws Exception {
         //mop.performOneTick();
@@ -147,6 +162,7 @@ public class MainObjectProcessorTest {
         Assert.assertEquals(1, ids.size());
     }
     
+    @Ignore
     @Test
     public void testNarrativeManually() throws Exception {
         indexFewVersions(new ObjectStatusEvent("-1", "WS", 20266, "1", 7, null, 
@@ -183,6 +199,12 @@ public class MainObjectProcessorTest {
     @Ignore
     @Test
     public void testOneTick() throws Exception {
-        mop.performOneTick();
+        for (int i = 0; i < 10; i++) {
+            System.out.println();
+            long t1 = System.currentTimeMillis();
+            mop.performOneTick();
+            System.out.println("FULL TICK TIME: " + (System.currentTimeMillis() - t1) + " ms.");
+            Thread.sleep(1000);
+        }
     }
 }

@@ -75,7 +75,7 @@ public class PerformanceTester {
         String esIndexPrefix = "performance.";
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, mongoHost,
                 mongoPort, mongoDbName, esHostPort, esUser, esPassword, esIndexPrefix, 
-                typesDir, tempDir, false, false);
+                typesDir, tempDir, false, null);
     }
     
     private static void deleteAllTestMongoDBs(String mongoHost, int mongoPort) {

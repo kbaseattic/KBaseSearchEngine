@@ -8,19 +8,21 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.http.HttpHost;
 
 import com.fasterxml.jackson.core.JsonParser;
 
 import kbaserelationengine.common.GUID;
+import kbaserelationengine.events.AccessGroupStatus;
 import kbaserelationengine.events.ObjectStatusEvent;
-import kbaserelationengine.events.WSStatusEventTrigger;
+import kbaserelationengine.events.StatusEventListener;
 import kbaserelationengine.events.reconstructor.AccessType;
 import kbaserelationengine.events.reconstructor.PresenceType;
 import kbaserelationengine.events.reconstructor.WSStatusEventReconstructor;
 import kbaserelationengine.events.reconstructor.WSStatusEventReconstructorImpl;
-import kbaserelationengine.events.storage.FakeStatusStorage;
+import kbaserelationengine.events.storage.MongoDBStatusEventStorage;
 import kbaserelationengine.events.storage.StatusEventStorage;
 import kbaserelationengine.parse.ObjectParseException;
 import kbaserelationengine.parse.ObjectParser;
@@ -50,21 +52,47 @@ public class MainObjectProcessor {
     private SystemStorage systemStorage;
     private IndexingStorage indexingStorage;
     private RelationStorage relationStorage;
-    private boolean logging;
+    private LineLogger logger;
     
     public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, String mongoHost, 
             int mongoPort, String mongoDbName, HttpHost esHost, String esUser, String esPassword,
             String esIndexPrefix, File typesDir, File tempDir, boolean startLifecycleRunner,
-            boolean logging) throws IOException, ObjectParseException {
-        this.logging = logging;
+            LineLogger logger) throws IOException, ObjectParseException {
+        this.logger = logger;
         this.wsURL = wsURL;
         this.kbaseIndexerToken = kbaseIndexerToken;
         this.rootTempDir = tempDir;
-        eventStorage = new FakeStatusStorage(); //new MongoDBStatusEventStorage(mongoHost, mongoPort, mongoDbName);
-        WSStatusEventTrigger eventTrigger = new WSStatusEventTrigger();
-        wsEventReconstructor = new WSStatusEventReconstructorImpl(wsURL, kbaseIndexerToken, 
-                eventStorage, eventTrigger);
-        //eventTrigger.registerListener((StatusEventListener)eventStorage);
+        eventStorage = new MongoDBStatusEventStorage(mongoHost, mongoPort, mongoDbName);
+        WSStatusEventReconstructorImpl reconstructor = new WSStatusEventReconstructorImpl(
+                wsURL, kbaseIndexerToken, eventStorage);
+        wsEventReconstructor = reconstructor;
+        reconstructor.registerListener((StatusEventListener)eventStorage);
+        if (logger != null) {
+            reconstructor.registerListener(new StatusEventListener() {
+                @Override
+                public void objectStatusChanged(List<ObjectStatusEvent> events) 
+                        throws IOException {
+                    for (ObjectStatusEvent obj : events){
+                        logger.logInfo("[Reconstructor] " + obj);
+                    }
+                }
+                @Override
+                public void groupStatusChanged(List<AccessGroupStatus> newStatuses)
+                        throws IOException {
+                    for (AccessGroupStatus obj : newStatuses){
+                        logger.logInfo("[Reconstructor] " + obj);
+                    }
+                }
+                
+                @Override
+                public void groupPermissionsChanged(List<AccessGroupStatus> newStatuses)
+                        throws IOException {
+                    for (AccessGroupStatus obj : newStatuses){
+                        logger.logInfo("[Reconstructor] " + obj);
+                    }
+                }
+            });
+        }
         queue = new ObjectStatusEventQueue(eventStorage);
         systemStorage = new DefaultSystemStorage(wsURL, typesDir);
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
@@ -109,9 +137,7 @@ public class MainObjectProcessor {
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
                         } catch (Exception e) {
-                            String codePlace = e.getStackTrace().length > 0 ? 
-                                    e.getStackTrace()[0].toString() : "<not-available>";
-                                    System.out.println("Error in Lifecycle runner: " + e + ", " + codePlace);
+                            logError(e);
                         }
                     }
                 } finally {
@@ -120,6 +146,14 @@ public class MainObjectProcessor {
             }
         });
         mainRunner.start();
+    }
+    
+    private void logError(Throwable e) {
+        String codePlace = e.getStackTrace().length == 0 ? "<not-available>" : 
+            e.getStackTrace()[0].toString();
+        if (logger != null) {
+            logger.logError("Error in Lifecycle runner: " + e + ", " + codePlace);
+        }
     }
     
     public boolean stopLifecycleRunner() {
@@ -144,23 +178,37 @@ public class MainObjectProcessor {
     
     public void performOneTick() 
             throws IOException, JsonClientException, ObjectParseException {
+        Set<Long> excludeWsIds = Collections.emptySet();
+        //Set<Long> excludeWsIds = new LinkedHashSet<>(Arrays.asList(10455L));
         wsEventReconstructor.processWorkspaceObjects(AccessType.PRIVATE, PresenceType.PRESENT, 
-                Collections.emptySet());
+                excludeWsIds);
         ObjectStatusEventIterator iter = queue.iterator("WS");
         while (iter.hasNext()) {
             ObjectStatusEvent ev = iter.next();
             if (!isStorageTypeSupported(ev.getStorageObjectType())) {
-                System.out.println("Skipping " + ev.getEventType() + ", " + 
-                        ev.getStorageObjectType() + ", " + ev.toGUID());
+                if (logger != null) {
+                    logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
+                            ev.getStorageObjectType() + ", " + ev.toGUID());
+                }
                 iter.markAsVisitied(false);
                 continue;
             }
-            System.out.println("Processing " + ev.getEventType() + ", " + 
-                    ev.getStorageObjectType() + ", " + ev.toGUID() + "...");
+            if (logger != null) {
+                logger.logInfo("[Indexer] processing " + ev.getEventType() + ", " + 
+                        ev.getStorageObjectType() + ", " + ev.toGUID() + "...");
+            }
             long time = System.currentTimeMillis();
-            processOneEvent(ev);
+            try {
+                processOneEvent(ev);
+            } catch (Exception e) {
+                logError(e);
+                iter.markAsVisitied(false);
+                continue;
+            }
             iter.markAsVisitied(true);
-            System.out.println("    (processing time: " + (System.currentTimeMillis() - time) + "ms.)");
+            if (logger != null) {
+                logger.logInfo("[Indexer]   (total time: " + (System.currentTimeMillis() - time) + "ms.)");
+            }
         }
     }
     
@@ -191,17 +239,15 @@ public class MainObjectProcessor {
     
     public void indexObject(GUID guid, String storageObjectType, Long timestamp) 
             throws IOException, JsonClientException, ObjectParseException {
-        if (logging) {
-            System.out.println("Processing object: " + guid);
-        }
         long t1 = System.currentTimeMillis();
         File tempFile = ObjectParser.prepareTempFile(getWsLoadTempDir());
         try {
             String objRef = guid.getAccessGroupId() + "/" + guid.getAccessGroupObjectId() + "/" +
                     guid.getVersion();
             ObjectData obj = ObjectParser.loadObject(wsURL, tempFile, kbaseIndexerToken, objRef);
-            if (logging) {
-                System.out.println("  Loading time: " + (System.currentTimeMillis() - t1) + " ms.");
+            if (logger != null) {
+                logger.logInfo("[Indexer]   " + guid + ", loading time: " + 
+                        (System.currentTimeMillis() - t1) + " ms.");
             }
             List<ObjectTypeParsingRules> parsingRules = 
                     systemStorage.listObjectTypesByStorageObjectType(storageObjectType);
@@ -213,9 +259,9 @@ public class MainObjectProcessor {
                 }
                 Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, objRef, rule, 
                         systemStorage, relationStorage);
-                if (logging) {
-                    System.out.println("  " + rule.getGlobalObjectType() + ": parsing time: " + 
-                            (System.currentTimeMillis() - t2) + " ms.");
+                if (logger != null) {
+                    logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", parsing " +
+                            "time: " + (System.currentTimeMillis() - t2) + " ms.");
                 }
                 long t3 = System.currentTimeMillis();
                 if (timestamp == null) {
@@ -224,9 +270,9 @@ public class MainObjectProcessor {
                 indexingStorage.indexObjects(rule.getGlobalObjectType(), obj.getInfo().getE2(), 
                         timestamp, parentJson, obj.getInfo().getE11(), guidToJson, 
                         false, rule.getIndexingRules());
-                if (logging) {
-                    System.out.println("  " + rule.getGlobalObjectType() + ": indexing time: " + 
-                            (System.currentTimeMillis() - t3) + " ms.");
+                if (logger != null) {
+                    logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", indexing " +
+                            "time: " + (System.currentTimeMillis() - t3) + " ms.");
                 }
             }
         } finally {

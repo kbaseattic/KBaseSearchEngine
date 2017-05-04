@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import com.mongodb.BasicDBList;
@@ -13,8 +12,6 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 
 import kbaserelationengine.events.AccessGroupProvider;
 import kbaserelationengine.events.AccessGroupStatus;
@@ -23,17 +20,23 @@ import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.events.StatusEventListener;
 
 public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEventStorage, StatusEventListener{
-	private static final String DB_NAME = "DataStatus";
+	private static final String DEFAULT_DB_NAME = "DataStatus";
 	private static final String COLLECTION_GROUP_STATUS = "GroupStatus";
 	private static final String COLLECTION_OBJECT_STATUS_EVENTS = "ObjectStatusEvents";
 	
 	private String host;
 	private int port;
+	private String dbName;
 	private MongoClient mongoClient;
-	
+
 	public MongoDBStatusEventStorage(String host, int port){
+	    this(host, port, DEFAULT_DB_NAME);
+	}
+	
+	public MongoDBStatusEventStorage(String host, int port, String dbName){
 		this.host = host;
 		this.port = port;
+		this.dbName = dbName;
 		mongoClient = new MongoClient(this.host, this.port);
 	}
 	
@@ -50,7 +53,7 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 	}
 
 	private DBCollection collection(String name){
-		return  mongoClient.getDB(DB_NAME).getCollection(name);
+		return  mongoClient.getDB(dbName).getCollection(name);
 	}
 		
 	@Override	

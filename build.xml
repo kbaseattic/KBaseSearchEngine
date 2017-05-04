@@ -90,6 +90,7 @@ commit=${git.commit}</echo>
     <mkdir dir="${dist}/lib"/>
     <copy todir="${dist}/lib/" flatten="true">
       <fileset refid="lib"/>
+      <fileset refid="lib2"/>
       <resources>
         <file file="${dist}/${jar.file}"/>
       </resources>
