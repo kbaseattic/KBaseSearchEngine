@@ -3,7 +3,10 @@ package kbaserelationengine;
 import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
+import us.kbase.auth.ConfigurableAuthService;
 import us.kbase.common.service.JsonServerMethod;
 import us.kbase.common.service.JsonServerServlet;
 import us.kbase.common.service.JsonServerSyslog;
@@ -12,6 +15,8 @@ import us.kbase.common.service.RpcContext;
 //BEGIN_HEADER
 
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -46,7 +51,14 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         //BEGIN_CONSTRUCTOR
         URL wsUrl = new URL(config.get("workspace-url"));
         String tokenStr = config.get("indexer-token");
-        AuthToken kbaseIndexerToken = getAuth(config).validateToken(tokenStr);
+        final String authURL = getAuthUrlFromConfig(config);
+        final AuthConfig c = new AuthConfig();
+        if ("true".equals(getAuthAllowInsecureFromConfig(config))) {
+            c.withAllowInsecureURLs(true);
+        }
+        c.withKBaseAuthServerURL(new URL(authURL));
+        ConfigurableAuthService auth = new ConfigurableAuthService(c);
+        AuthToken kbaseIndexerToken = auth.validateToken(tokenStr);
         String mongoHost = config.get("mongo-host");
         int mongoPort = Integer.parseInt(config.get("mongo-port"));
         String elasticHost = config.get("elastic-host");
