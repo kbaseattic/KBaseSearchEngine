@@ -4,9 +4,7 @@ import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
-import us.kbase.auth.ConfigurableAuthService;
 import us.kbase.common.service.JsonServerMethod;
 import us.kbase.common.service.JsonServerServlet;
 import us.kbase.common.service.JsonServerSyslog;
@@ -15,8 +13,6 @@ import us.kbase.common.service.RpcContext;
 //BEGIN_HEADER
 
 import java.io.PrintWriter;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -27,6 +23,9 @@ import org.apache.http.HttpHost;
 
 import kbaserelationengine.main.LineLogger;
 import kbaserelationengine.main.MainObjectProcessor;
+
+import us.kbase.auth.AuthConfig;
+import us.kbase.auth.ConfigurableAuthService;
 //END_HEADER
 
 /**
