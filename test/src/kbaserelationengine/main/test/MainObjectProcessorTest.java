@@ -84,7 +84,7 @@ public class MainObjectProcessorTest {
                     public void logError(Throwable error) {
                         error.printStackTrace();
                     }
-                });
+                }, null);
     }
     
     private static void deleteAllTestMongoDBs(String mongoHost, int mongoPort) {
@@ -124,7 +124,7 @@ public class MainObjectProcessorTest {
         System.out.println("Genome: " + mop.getIndexingStorage("*").getObjectsByIds(
                 mop.getIndexingStorage("*").searchIds("Genome", 
                         MatchFilter.create().withFullTextInAll("test"), null, 
-                        AccessFilter.create().withAdmin(true), null).guids).get(0));
+                        AccessFilter.create().withAdmin(true), null).guids, null).get(0));
         String query = "TrkA";
         Map<String, Integer> typeToCount = mop.getIndexingStorage("*").searchTypes(
                 MatchFilter.create().withFullTextInAll(query), 
@@ -138,7 +138,7 @@ public class MainObjectProcessorTest {
                 MatchFilter.create().withFullTextInAll(query), null, 
                 AccessFilter.create().withAdmin(true), null).guids;
         System.out.println("GUIDs found: " + guids);
-        ObjectData obj = mop.getIndexingStorage("*").getObjectsByIds(guids).get(0);
+        ObjectData obj = mop.getIndexingStorage("*").getObjectsByIds(guids, null).get(0);
         System.out.println("Feature: " + obj);
     }
 
@@ -157,7 +157,7 @@ public class MainObjectProcessorTest {
                 MatchFilter.create().withFullTextInAll(query), null, 
                 AccessFilter.create().withAccessGroups(accessGroupId), null).guids;
         if (debugOutput) {
-            System.out.println("DEBUG: " + mop.getIndexingStorage("*").getObjectsByIds(ids));
+            System.out.println("DEBUG: " + mop.getIndexingStorage("*").getObjectsByIds(ids, null));
         }
         Assert.assertEquals(1, ids.size());
     }

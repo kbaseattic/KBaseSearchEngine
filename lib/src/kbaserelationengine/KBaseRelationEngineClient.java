@@ -215,19 +215,36 @@ public class KBaseRelationEngineClient {
     }
 
     /**
-     * <p>Original spec-file function name: list_type_keys</p>
+     * <p>Original spec-file function name: get_objects</p>
      * <pre>
      * </pre>
-     * @param   params   instance of type {@link kbaserelationengine.ListTypeKeysInput ListTypeKeysInput}
-     * @return   instance of type {@link kbaserelationengine.ListTypeKeysOutput ListTypeKeysOutput}
+     * @param   params   instance of type {@link kbaserelationengine.GetObjectsInput GetObjectsInput}
+     * @return   instance of type {@link kbaserelationengine.GetObjectsOutput GetObjectsOutput}
      * @throws IOException if an IO exception occurs
      * @throws JsonClientException if a JSON RPC exception occurs
      */
-    public ListTypeKeysOutput listTypeKeys(ListTypeKeysInput params, RpcContext... jsonRpcContext) throws IOException, JsonClientException {
+    public GetObjectsOutput getObjects(GetObjectsInput params, RpcContext... jsonRpcContext) throws IOException, JsonClientException {
         List<Object> args = new ArrayList<Object>();
         args.add(params);
-        TypeReference<List<ListTypeKeysOutput>> retType = new TypeReference<List<ListTypeKeysOutput>>() {};
-        List<ListTypeKeysOutput> res = caller.jsonrpcCall("KBaseRelationEngine.list_type_keys", args, retType, true, false, jsonRpcContext, this.serviceVersion);
+        TypeReference<List<GetObjectsOutput>> retType = new TypeReference<List<GetObjectsOutput>>() {};
+        List<GetObjectsOutput> res = caller.jsonrpcCall("KBaseRelationEngine.get_objects", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        return res.get(0);
+    }
+
+    /**
+     * <p>Original spec-file function name: list_types</p>
+     * <pre>
+     * </pre>
+     * @param   params   instance of type {@link kbaserelationengine.ListTypesInput ListTypesInput}
+     * @return   instance of type {@link kbaserelationengine.ListTypesOutput ListTypesOutput}
+     * @throws IOException if an IO exception occurs
+     * @throws JsonClientException if a JSON RPC exception occurs
+     */
+    public ListTypesOutput listTypes(ListTypesInput params, RpcContext... jsonRpcContext) throws IOException, JsonClientException {
+        List<Object> args = new ArrayList<Object>();
+        args.add(params);
+        TypeReference<List<ListTypesOutput>> retType = new TypeReference<List<ListTypesOutput>>() {};
+        List<ListTypesOutput> res = caller.jsonrpcCall("KBaseRelationEngine.list_types", args, retType, true, false, jsonRpcContext, this.serviceVersion);
         return res.get(0);
     }
 

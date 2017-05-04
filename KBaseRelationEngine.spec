@@ -61,6 +61,7 @@ module KBaseRelationEngine {
 
     typedef structure {
         mapping<string, int> type_to_count;
+        int search_time;
     } SearchTypesOutput;
 
     funcdef search_types(SearchTypesInput params) 
@@ -70,7 +71,7 @@ module KBaseRelationEngine {
         boolean is_timestamp;
         boolean is_object_name;
         string key_name;
-        boolean ascending;
+        boolean descending;
     } SortingRule;
 
     typedef structure {
@@ -78,12 +79,24 @@ module KBaseRelationEngine {
         int count;
     } Pagination;
 
+    /*
+      ids_only - shortcut to mark all three skips as true.
+    */
+    typedef structure {
+        boolean ids_only;
+        boolean skip_info;
+        boolean skip_keys;
+        boolean skip_data;
+        list<string> data_includes;
+    } PostProcessing;
+
     typedef structure {
         string object_type;
         MatchFilter match_filter;
         list<SortingRule> sorting_rules;
         AccessFilter access_filter;
         Pagination pagination;
+        PostProcessing post_processing;
     } SearchObjectsInput;
 
     typedef structure {
@@ -101,17 +114,31 @@ module KBaseRelationEngine {
         list<SortingRule> sorting_rules;
         list<ObjectData> objects;
         int total;
+        int search_time;
     } SearchObjectsOutput;
 
     funcdef search_objects(SearchObjectsInput params)
         returns (SearchObjectsOutput) authentication required;
 
+    typedef structure {
+        list<GUID> guids;
+        PostProcessing post_processing;
+    } GetObjectsInput;
+
+    typedef structure {
+        list<ObjectData> objects;
+        int search_time;
+    } GetObjectsOutput;
+
+    funcdef get_objects(GetObjectsInput params)
+        returns (GetObjectsOutput) authentication required;
+
     /*
-        object_type - optional parameter; if not specified all types are described.
+        type_name - optional parameter; if not specified all types are described.
     */
     typedef structure {
-        string object_type;
-    } ListTypeKeysInput;
+        string type_name;
+    } ListTypesInput;
 
     typedef structure {
         string key_name;
@@ -119,10 +146,19 @@ module KBaseRelationEngine {
         string key_value_type;
     } KeyDescription;
 
+    /*
+      TODO: add more details like parent type, relations, primary key, ...
+    */
     typedef structure {
-        mapping<string, list<KeyDescription>> type_to_keys;
-    } ListTypeKeysOutput;
+        string type_name;
+        string type_ui_title;
+        list<KeyDescription> keys;
+    } TypeDescriptor;
 
-    funcdef list_type_keys(ListTypeKeysInput params)
-        returns (ListTypeKeysOutput);
+    typedef structure {
+        mapping<string, TypeDescriptor> types;
+    } ListTypesOutput;
+
+    funcdef list_types(ListTypesInput params)
+        returns (ListTypesOutput);
 };

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +19,14 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import kbaserelationengine.AccessFilter;
 import kbaserelationengine.MatchFilter;
+import kbaserelationengine.MatchValue;
+import kbaserelationengine.Pagination;
+import kbaserelationengine.PostProcessing;
+import kbaserelationengine.SearchObjectsInput;
+import kbaserelationengine.SearchObjectsOutput;
 import kbaserelationengine.SearchTypesInput;
 import kbaserelationengine.SearchTypesOutput;
+import kbaserelationengine.SortingRule;
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.AccessGroupProvider;
 import kbaserelationengine.events.AccessGroupStatus;
@@ -38,12 +45,14 @@ import kbaserelationengine.queue.ObjectStatusEventQueue;
 import kbaserelationengine.relations.DefaultRelationStorage;
 import kbaserelationengine.relations.RelationStorage;
 import kbaserelationengine.search.ElasticIndexingStorage;
+import kbaserelationengine.search.FoundHits;
 import kbaserelationengine.search.IndexingStorage;
 import kbaserelationengine.system.DefaultSystemStorage;
 import kbaserelationengine.system.ObjectTypeParsingRules;
 import kbaserelationengine.system.SystemStorage;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
+import us.kbase.common.service.UObject;
 import workspace.ObjectData;
 import workspace.SetPermissionsParams;
 import workspace.WorkspaceClient;
@@ -61,15 +70,17 @@ public class MainObjectProcessor {
     private IndexingStorage indexingStorage;
     private RelationStorage relationStorage;
     private LineLogger logger;
+    private Set<String> admins;
     
     public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, String mongoHost, 
             int mongoPort, String mongoDbName, HttpHost esHost, String esUser, String esPassword,
             String esIndexPrefix, File typesDir, File tempDir, boolean startLifecycleRunner,
-            LineLogger logger) throws IOException, ObjectParseException {
+            LineLogger logger, Set<String> admins) throws IOException, ObjectParseException {
         this.logger = logger;
         this.wsURL = wsURL;
         this.kbaseIndexerToken = kbaseIndexerToken;
         this.rootTempDir = tempDir;
+        this.admins = admins == null ? Collections.emptySet() : admins;
         MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(mongoHost, mongoPort, mongoDbName);
         eventStorage = storage;
         accessGroupProvider = storage;
@@ -328,13 +339,48 @@ public class MainObjectProcessor {
         return value == null ? null : new GUID(value);
     }
 
+    private kbaserelationengine.search.MatchValue toSearch(MatchValue mv, String source) {
+        if (mv.getValue() != null) {
+            return new kbaserelationengine.search.MatchValue(mv.getValue());
+        }
+        if (mv.getIntValue() != null) {
+            return new kbaserelationengine.search.MatchValue(toInteger(mv.getIntValue()));
+        }
+        if (mv.getDoubleValue() != null) {
+            return new kbaserelationengine.search.MatchValue(mv.getDoubleValue());
+        }
+        if (mv.getBoolValue() != null) {
+            return new kbaserelationengine.search.MatchValue(toBool(mv.getBoolValue()));
+        }
+        if (mv.getMinInt() != null || mv.getMaxInt() != null) {
+            return new kbaserelationengine.search.MatchValue(toInteger(mv.getMinInt()),
+                    toInteger(mv.getMaxInt()));
+        }
+        if (mv.getMinDate() != null || mv.getMaxDate() != null) {
+            return new kbaserelationengine.search.MatchValue(mv.getMinDate(), mv.getMaxDate());
+        }
+        if (mv.getMinDouble() != null || mv.getMaxDouble() != null) {
+            return new kbaserelationengine.search.MatchValue(mv.getMinDouble(), mv.getMaxDouble());
+        }
+        throw new IllegalStateException("Unsupported " + source + " filter: " + mv);
+    }
+    
     private kbaserelationengine.search.MatchFilter toSearch(MatchFilter mf) {
         kbaserelationengine.search.MatchFilter ret = 
                 new kbaserelationengine.search.MatchFilter()
                 .withFullTextInAll(mf.getFullTextInAll())
                 .withAccessGroupId(toInteger(mf.getAccessGroupId()))
                 .withObjectName(mf.getObjectName())
-                .withParentGuid(toGUID(mf.getParentGuid()));
+                .withParentGuid(toGUID(mf.getParentGuid()))
+                .withTimestamp(toSearch(mf.getTimestamp(), "timestamp"));
+        if (mf.getLookupInKeys() != null) {
+            Map<String, kbaserelationengine.search.MatchValue> keys =
+                    new LinkedHashMap<String, kbaserelationengine.search.MatchValue>();
+            for (String key : mf.getLookupInKeys().keySet()) {
+                keys.put(key, toSearch(mf.getLookupInKeys().get(key), key));
+            }
+            ret.withLookupInKeys(keys);
+        }
         return ret;
     }
 
@@ -344,16 +390,124 @@ public class MainObjectProcessor {
         return new kbaserelationengine.search.AccessFilter()
                 .withPublic(toBool(af.getWithPublic()))
                 .withAllHistory(toBool(af.getWithAllHistory()))
-                .withAccessGroups(new LinkedHashSet<>(accessGroupIds));
+                .withAccessGroups(new LinkedHashSet<>(accessGroupIds))
+                .withAdmin(admins.contains(user));
+    }
+    
+    private kbaserelationengine.search.SortingRule toSearch(SortingRule sr) {
+        if (sr == null) {
+            return null;
+        }
+        kbaserelationengine.search.SortingRule ret = new kbaserelationengine.search.SortingRule();
+        ret.isTimestamp = toBool(sr.getIsTimestamp());
+        ret.isObjectName = toBool(sr.getIsObjectName());
+        ret.keyName = sr.getKeyName();
+        ret.ascending = !toBool(sr.getDescending());
+        return ret;
+    }
+
+    private SortingRule fromSearch(kbaserelationengine.search.SortingRule sr) {
+        if (sr == null) {
+            return null;
+        }
+        SortingRule ret = new SortingRule();
+        if (sr.isTimestamp) {
+            ret.withIsTimestamp(1L);
+        } else if (sr.isObjectName) {
+            ret.withIsObjectName(1L);
+        } else {
+            ret.withKeyName(sr.keyName);
+        }
+        ret.withDescending(sr.ascending ? 0L : 1L);
+        return ret;
+    }
+
+    private kbaserelationengine.search.Pagination toSearch(Pagination pg) {
+        return pg == null ? null : new kbaserelationengine.search.Pagination(
+                toInteger(pg.getStart()), toInteger(pg.getCount()));
+    }
+
+    private Pagination fromSearch(kbaserelationengine.search.Pagination pg) {
+        return pg == null ? null : new Pagination().withStart((long)pg.start)
+                .withCount((long)pg.count);
+    }
+
+    private kbaserelationengine.search.PostProcessing toSearch(PostProcessing pp) {
+        kbaserelationengine.search.PostProcessing ret = 
+                new kbaserelationengine.search.PostProcessing();
+        if (pp == null) {
+            ret.objectInfo = true;
+            ret.objectData = true;
+            ret.objectKeys = true;
+        } else {
+            boolean idsOnly = toBool(pp.getIdsOnly());
+            ret.objectInfo = !(toBool(pp.getSkipInfo()) || idsOnly);
+            ret.objectData = !(toBool(pp.getSkipData()) || idsOnly);
+            ret.objectKeys = !(toBool(pp.getSkipKeys()) || idsOnly);
+        }
+        return ret;
+    }
+    
+    private kbaserelationengine.ObjectData fromSearch(kbaserelationengine.search.ObjectData od) {
+        kbaserelationengine.ObjectData ret = new kbaserelationengine.ObjectData();
+        ret.withGuid(od.guid.toString());
+        if (od.parentGuid != null) {
+            ret.withParentGuid(od.parentGuid.toString());
+        }
+        if (od.timestamp > 0) {
+            ret.withTimestamp(od.timestamp);
+        }
+        if (od.data != null) {
+            ret.withData(new UObject(od.data));
+        }
+        if (od.parentData != null) {
+            ret.withParentData(new UObject(od.parentData));
+        }
+        ret.withKeyProps(od.keyProps);
+        return ret;
     }
     
     public SearchTypesOutput searchTypes(SearchTypesInput params, String user) throws Exception {
-        MatchFilter mf = params.getMatchFilter();
-        kbaserelationengine.search.MatchFilter matchFilter = toSearch(mf);
-        AccessFilter af = params.getAccessFilter();
-        kbaserelationengine.search.AccessFilter accessFilter = toSearch(af, user);
+        long t1 = System.currentTimeMillis();
+        kbaserelationengine.search.MatchFilter matchFilter = toSearch(params.getMatchFilter());
+        kbaserelationengine.search.AccessFilter accessFilter = toSearch(params.getAccessFilter(),
+                user);
         Map<String, Integer> ret = indexingStorage.searchTypes(matchFilter, accessFilter);
         return new SearchTypesOutput().withTypeToCount(ret.keySet().stream().collect(
-                Collectors.toMap(Function.identity(), c -> (long)(int)ret.get(c))));
+                Collectors.toMap(Function.identity(), c -> (long)(int)ret.get(c))))
+                .withSearchTime(System.currentTimeMillis() - t1);
     }
+    
+    public SearchObjectsOutput searchObjects(SearchObjectsInput params, String user) 
+            throws Exception {
+        long t1 = System.currentTimeMillis();
+        kbaserelationengine.search.MatchFilter matchFilter = toSearch(params.getMatchFilter());
+        List<kbaserelationengine.search.SortingRule> sorting = null;
+        if (params.getSortingRules() != null) {
+            sorting = params.getSortingRules().stream().map(this::toSearch).collect(
+                    Collectors.toList());
+        }
+        kbaserelationengine.search.AccessFilter accessFilter = toSearch(params.getAccessFilter(),
+                user);
+        kbaserelationengine.search.Pagination pagination = toSearch(params.getPagination());
+        kbaserelationengine.search.PostProcessing postProcessing = 
+                toSearch(params.getPostProcessing());
+        FoundHits hits = indexingStorage.searchObjects(params.getObjectType(), matchFilter, 
+                sorting, accessFilter, pagination, postProcessing);
+        SearchObjectsOutput ret = new SearchObjectsOutput();
+        ret.withPagination(fromSearch(hits.pagination));
+        ret.withSortingRules(hits.sortingRules.stream().map(this::fromSearch).collect(
+                Collectors.toList()));
+        if (hits.objects == null) {
+            ret.withObjects(hits.guids.stream().map(guid -> new kbaserelationengine.ObjectData().
+                    withGuid(guid.toString())).collect(Collectors.toList()));
+        } else {
+            ret.withObjects(hits.objects.stream().map(this::fromSearch).collect(
+                    Collectors.toList()));
+        }
+        ret.withTotal((long)hits.total);
+        ret.withSearchTime(System.currentTimeMillis() - t1);
+        return ret;
+    }
+
 }

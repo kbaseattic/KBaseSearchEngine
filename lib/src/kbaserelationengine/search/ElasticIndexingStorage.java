@@ -27,7 +27,6 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.config.RequestConfig.Builder;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -682,10 +681,19 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public void unpublishObjects(Set<GUID> guids) throws IOException {
         unshareObjects(guids, PUBLIC_ACCESS_GROUP);
     }
+
+    public List<ObjectData> getObjectsByIds(Set<GUID> ids) throws IOException {
+        PostProcessing pp = new PostProcessing();
+        pp.objectInfo = true;
+        pp.objectData = true;
+        pp.objectKeys = true;
+        return getObjectsByIds(ids, pp);
+    }
     
     @SuppressWarnings({ "serial", "unchecked" })
     @Override
-    public List<ObjectData> getObjectsByIds(Set<GUID> ids) throws IOException {
+    public List<ObjectData> getObjectsByIds(Set<GUID> ids, PostProcessing pp) 
+            throws IOException {
         Map<String, Object> terms = new LinkedHashMap<String, Object>() {{
             put("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList()));
         }};
@@ -711,12 +719,26 @@ public class ElasticIndexingStorage implements IndexingStorage {
         List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
-            ObjectData item = new ObjectData();
-            item.guid = new GUID((String)obj.get("guid"));
+            ObjectData item = buildObjectData(obj, pp.objectInfo, pp.objectKeys, 
+                    pp.objectData, pp.objectDataIncludes);
+            ret.add(item);
+        }
+        return ret;
+    }
+
+    @SuppressWarnings("unchecked")
+    public ObjectData buildObjectData(Map<String, Object> obj, boolean info, boolean keys, 
+            boolean json, List<String> objectDataIncludes) {
+        // TODO: support sub-data selection based on objectDataIncludes
+        ObjectData item = new ObjectData();
+        item.guid = new GUID((String)obj.get("guid"));
+        if (info) {
             item.objectName = (String)obj.get("oname");
             Object dateProp = obj.get("timestamp");
             item.timestamp = (dateProp instanceof Long) ? (Long)dateProp : 
                 Long.parseLong(String.valueOf(dateProp));
+        }
+        if (json) {
             item.data = UObject.transformStringToObject((String)obj.get("ojson"), Object.class);
             String pjson = (String)obj.get("pjson");
             if (pjson != null) {
@@ -724,6 +746,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 item.parentGuid = new GUID(item.guid.getStorageCode(), item.guid.getAccessGroupId(),
                         item.guid.getAccessGroupObjectId(), item.guid.getVersion(), null, null);
             }
+        }
+        if (keys) {
             Map<String, String> keyProps = new LinkedHashMap<>();
             for (String key : obj.keySet()) {
                 if (key.startsWith("key.")) {
@@ -739,9 +763,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 }
             }
             item.keyProps = keyProps;
-            ret.add(item);
         }
-        return ret;
+        return item;
     }
     
     @SuppressWarnings({ "serial", "unchecked" })
@@ -792,13 +815,22 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @Override
-    public FoundIds searchIds(String objectType, MatchFilter matchFilter, 
+    public FoundHits searchIds(String objectType, MatchFilter matchFilter, 
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination) 
                     throws IOException {
-        return queryIds(objectType, prepareMustFilters(matchFilter, accessFilter.withAllHistory),
-                sorting, accessFilter, pagination);
+        return queryHits(objectType, prepareMustFilters(matchFilter, accessFilter.withAllHistory),
+                sorting, accessFilter, pagination, null);
     }
 
+    @Override
+    public FoundHits searchObjects(String objectType, MatchFilter matchFilter,
+            List<SortingRule> sorting, AccessFilter accessFilter,
+            Pagination pagination, PostProcessing postProcessing)
+            throws IOException {
+        return queryHits(objectType, prepareMustFilters(matchFilter, accessFilter.withAllHistory),
+                sorting, accessFilter, pagination, postProcessing);
+    }
+    
     public Set<GUID> searchIds(String objectType, MatchFilter matchFilter, 
             List<SortingRule> sorting, AccessFilter accessFilter) throws IOException {
         return searchIds(objectType, matchFilter, sorting, accessFilter, null).guids;
@@ -881,9 +913,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @SuppressWarnings({ "serial", "unchecked" })
-    public FoundIds queryIds(String objectType, List<Map<String, Object>> filters, 
-            List<SortingRule> sorting, AccessFilter accessFilter, Pagination pg) 
-                    throws IOException {
+    public FoundHits queryHits(String objectType, List<Map<String, Object>> filters, 
+            List<SortingRule> sorting, AccessFilter accessFilter, Pagination pg,
+            PostProcessing pp) throws IOException {
         Pagination pagination = pg == null ? new Pagination(0, 50) : pg;
         if (sorting == null || sorting.isEmpty()) {
             SortingRule sr = new SortingRule();
@@ -891,7 +923,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             sr.ascending = true;
             sorting = Arrays.asList(sr);
         }
-        FoundIds ret = new FoundIds();
+        FoundHits ret = new FoundHits();
         ret.pagination = pagination;
         ret.sortingRules = sorting;
         Map<String, Object> must2 = createAccessMustBlock(accessFilter);
@@ -910,10 +942,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }};
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
-            put("_source", Arrays.asList("guid"));
             put("from", pagination.start);
             put("size", pagination.count);
         }};
+        boolean loadObjects = pp != null && (pp.objectInfo || pp.objectData || pp.objectKeys);
+        if (!loadObjects) {
+            doc.put("_source", Arrays.asList("guid"));
+        }
         List<Object> sort = new ArrayList<>();
         doc.put("sort", sort);
         for (SortingRule sr : sorting) {
@@ -934,11 +969,18 @@ public class ElasticIndexingStorage implements IndexingStorage {
         ret.guids = new LinkedHashSet<>();
         Map<String, Object> hitMap = (Map<String, Object>)data.get("hits");
         ret.total = (Integer)hitMap.get("total");
+        if (loadObjects) {
+            ret.objects = new ArrayList<ObjectData>();
+        }
         List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
             String guidText = (String)obj.get("guid");
             ret.guids.add(new GUID(guidText));
+            if (loadObjects) {
+                ret.objects.add(buildObjectData(obj, pp.objectInfo, pp.objectKeys, 
+                    pp.objectData, pp.objectDataIncludes));
+            }
         }
         return ret;
     }

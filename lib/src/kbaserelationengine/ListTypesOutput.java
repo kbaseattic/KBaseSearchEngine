@@ -2,7 +2,6 @@
 package kbaserelationengine;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.annotation.Generated;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
@@ -13,33 +12,33 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
 /**
- * <p>Original spec-file type: ListTypeKeysOutput</p>
+ * <p>Original spec-file type: ListTypesOutput</p>
  * 
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "type_to_keys"
+    "types"
 })
-public class ListTypeKeysOutput {
+public class ListTypesOutput {
 
-    @JsonProperty("type_to_keys")
-    private Map<String, List<KeyDescription>> typeToKeys;
+    @JsonProperty("types")
+    private Map<String, TypeDescriptor> types;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
-    @JsonProperty("type_to_keys")
-    public Map<String, List<KeyDescription>> getTypeToKeys() {
-        return typeToKeys;
+    @JsonProperty("types")
+    public Map<String, TypeDescriptor> getTypes() {
+        return types;
     }
 
-    @JsonProperty("type_to_keys")
-    public void setTypeToKeys(Map<String, List<KeyDescription>> typeToKeys) {
-        this.typeToKeys = typeToKeys;
+    @JsonProperty("types")
+    public void setTypes(Map<String, TypeDescriptor> types) {
+        this.types = types;
     }
 
-    public ListTypeKeysOutput withTypeToKeys(Map<String, List<KeyDescription>> typeToKeys) {
-        this.typeToKeys = typeToKeys;
+    public ListTypesOutput withTypes(Map<String, TypeDescriptor> types) {
+        this.types = types;
         return this;
     }
 
@@ -55,7 +54,7 @@ public class ListTypeKeysOutput {
 
     @Override
     public java.lang.String toString() {
-        return ((((("ListTypeKeysOutput"+" [typeToKeys=")+ typeToKeys)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((("ListTypesOutput"+" [types=")+ types)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

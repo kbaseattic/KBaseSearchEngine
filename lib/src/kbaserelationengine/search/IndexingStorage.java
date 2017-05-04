@@ -38,12 +38,17 @@ public interface IndexingStorage {
 
     public void unpublishObjects(Set<GUID> guids) throws IOException;
 
-    public List<ObjectData> getObjectsByIds(Set<GUID> guids) throws IOException;
+    public List<ObjectData> getObjectsByIds(Set<GUID> guids, PostProcessing postProcessing) 
+            throws IOException;
 
     public Map<String, Integer> searchTypes(MatchFilter matchFilter,
             AccessFilter accessFilter) throws IOException;
 
-    public FoundIds searchIds(String objectType, MatchFilter matchFilter, 
+    public FoundHits searchIds(String objectType, MatchFilter matchFilter, 
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination) 
                     throws IOException;
+
+    public FoundHits searchObjects(String objectType, MatchFilter matchFilter, 
+            List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination,
+            PostProcessing postProcessing) throws IOException;
 }

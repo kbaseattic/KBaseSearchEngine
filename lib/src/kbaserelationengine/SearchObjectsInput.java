@@ -24,7 +24,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "match_filter",
     "sorting_rules",
     "access_filter",
-    "pagination"
+    "pagination",
+    "post_processing"
 })
 public class SearchObjectsInput {
 
@@ -53,6 +54,15 @@ public class SearchObjectsInput {
      */
     @JsonProperty("pagination")
     private Pagination pagination;
+    /**
+     * <p>Original spec-file type: PostProcessing</p>
+     * <pre>
+     * ids_only - shortcut to mark all three skips as true.
+     * </pre>
+     * 
+     */
+    @JsonProperty("post_processing")
+    private PostProcessing postProcessing;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("object_type")
@@ -160,6 +170,35 @@ public class SearchObjectsInput {
         return this;
     }
 
+    /**
+     * <p>Original spec-file type: PostProcessing</p>
+     * <pre>
+     * ids_only - shortcut to mark all three skips as true.
+     * </pre>
+     * 
+     */
+    @JsonProperty("post_processing")
+    public PostProcessing getPostProcessing() {
+        return postProcessing;
+    }
+
+    /**
+     * <p>Original spec-file type: PostProcessing</p>
+     * <pre>
+     * ids_only - shortcut to mark all three skips as true.
+     * </pre>
+     * 
+     */
+    @JsonProperty("post_processing")
+    public void setPostProcessing(PostProcessing postProcessing) {
+        this.postProcessing = postProcessing;
+    }
+
+    public SearchObjectsInput withPostProcessing(PostProcessing postProcessing) {
+        this.postProcessing = postProcessing;
+        return this;
+    }
+
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -172,7 +211,7 @@ public class SearchObjectsInput {
 
     @Override
     public String toString() {
-        return ((((((((((((("SearchObjectsInput"+" [objectType=")+ objectType)+", matchFilter=")+ matchFilter)+", sortingRules=")+ sortingRules)+", accessFilter=")+ accessFilter)+", pagination=")+ pagination)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((("SearchObjectsInput"+" [objectType=")+ objectType)+", matchFilter=")+ matchFilter)+", sortingRules=")+ sortingRules)+", accessFilter=")+ accessFilter)+", pagination=")+ pagination)+", postProcessing=")+ postProcessing)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

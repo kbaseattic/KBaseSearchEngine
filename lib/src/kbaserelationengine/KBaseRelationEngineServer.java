@@ -3,7 +3,6 @@ package kbaserelationengine;
 import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonServerMethod;
 import us.kbase.common.service.JsonServerServlet;
@@ -14,12 +13,15 @@ import us.kbase.common.service.RpcContext;
 
 import java.io.PrintWriter;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.http.HttpHost;
 
 import kbaserelationengine.main.LineLogger;
 import kbaserelationengine.main.MainObjectProcessor;
-
 //END_HEADER
 
 /**
@@ -32,7 +34,7 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
     private static final String version = "0.0.1";
     private static final String gitUrl = "https://github.com/kbaseapps/KBaseRelationEngine";
-    private static final String gitCommitHash = "a11727fe9b5d1c9216f5d672a29ca86803086f5f";
+    private static final String gitCommitHash = "3df38a259733db37d4acc4bdfcf8d41492ab9a57";
 
     //BEGIN_CLASS_HEADER
     private MainObjectProcessor mop = null;
@@ -59,6 +61,12 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         }
         String mongoDbName = config.get("mongo-database");
         String esIndexPrefix = config.get("elastic-namespace") + ".";
+        String adminsText = config.get("admins");
+        Set<String> admins = new LinkedHashSet<>();
+        if (adminsText != null) {
+            admins.addAll(Arrays.asList(adminsText.split(",")).stream().map(String::trim).collect(
+                    Collectors.toList()));
+        }
         File logFile = new File(tempDir, "log_" + System.currentTimeMillis() + ".txt");
         PrintWriter logPw = new PrintWriter(logFile);
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, mongoHost,
@@ -79,7 +87,7 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
                         error.printStackTrace(logPw);
                         logPw.flush();
                     }
-                });
+                }, admins);
         //END_CONSTRUCTOR
     }
 
@@ -133,17 +141,32 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
     }
 
     /**
-     * <p>Original spec-file function name: list_type_keys</p>
+     * <p>Original spec-file function name: get_objects</p>
      * <pre>
      * </pre>
-     * @param   params   instance of type {@link kbaserelationengine.ListTypeKeysInput ListTypeKeysInput}
-     * @return   instance of type {@link kbaserelationengine.ListTypeKeysOutput ListTypeKeysOutput}
+     * @param   params   instance of type {@link kbaserelationengine.GetObjectsInput GetObjectsInput}
+     * @return   instance of type {@link kbaserelationengine.GetObjectsOutput GetObjectsOutput}
      */
-    @JsonServerMethod(rpc = "KBaseRelationEngine.list_type_keys", async=true)
-    public ListTypeKeysOutput listTypeKeys(ListTypeKeysInput params, RpcContext jsonRpcContext) throws Exception {
-        ListTypeKeysOutput returnVal = null;
-        //BEGIN list_type_keys
-        //END list_type_keys
+    @JsonServerMethod(rpc = "KBaseRelationEngine.get_objects", async=true)
+    public GetObjectsOutput getObjects(GetObjectsInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
+        GetObjectsOutput returnVal = null;
+        //BEGIN get_objects
+        //END get_objects
+        return returnVal;
+    }
+
+    /**
+     * <p>Original spec-file function name: list_types</p>
+     * <pre>
+     * </pre>
+     * @param   params   instance of type {@link kbaserelationengine.ListTypesInput ListTypesInput}
+     * @return   instance of type {@link kbaserelationengine.ListTypesOutput ListTypesOutput}
+     */
+    @JsonServerMethod(rpc = "KBaseRelationEngine.list_types", async=true)
+    public ListTypesOutput listTypes(ListTypesInput params, RpcContext jsonRpcContext) throws Exception {
+        ListTypesOutput returnVal = null;
+        //BEGIN list_types
+        //END list_types
         return returnVal;
     }
     @JsonServerMethod(rpc = "KBaseRelationEngine.status")

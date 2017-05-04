@@ -20,6 +20,7 @@ import com.mongodb.MongoClient;
 
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
+import kbaserelationengine.main.LineLogger;
 import kbaserelationengine.main.MainObjectProcessor;
 import kbaserelationengine.parse.ObjectParser;
 import kbaserelationengine.search.AccessFilter;
@@ -33,7 +34,7 @@ import workspace.ListObjectsParams;
 import workspace.WorkspaceClient;
 
 public class PerformanceTester {
-    private static final boolean cleanup = true;
+    private static final boolean cleanup = false;
     
     private static AuthToken kbaseIndexerToken = null;
     private static URL wsUrl = null;
@@ -75,7 +76,7 @@ public class PerformanceTester {
         String esIndexPrefix = "performance.";
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, mongoHost,
                 mongoPort, mongoDbName, esHostPort, esUser, esPassword, esIndexPrefix, 
-                typesDir, tempDir, false, null);
+                typesDir, tempDir, false, null, null);
     }
     
     private static void deleteAllTestMongoDBs(String mongoHost, int mongoPort) {
@@ -110,9 +111,9 @@ public class PerformanceTester {
         String wsName = "ReferenceDataManager";
         WorkspaceClient wc = new WorkspaceClient(wsUrl, kbaseIndexerToken);
         wc.setIsInsecureHttpConnectionAllowed(true);
-        int blockPos = 10;
+        int blockPos = 20;
         int blockSize = 100;
-        for (int n = 0; n < 3; n++, blockPos++) {
+        for (int n = 0; n < 100; n++, blockPos++) {
             System.out.println("\nProcessing block #" + blockPos);
             int genomesInit = 0;
             try {

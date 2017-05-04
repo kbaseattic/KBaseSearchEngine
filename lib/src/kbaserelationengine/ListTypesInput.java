@@ -12,35 +12,35 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
 /**
- * <p>Original spec-file type: ListTypeKeysInput</p>
+ * <p>Original spec-file type: ListTypesInput</p>
  * <pre>
- * object_type - optional parameter; if not specified all types are described.
+ * type_name - optional parameter; if not specified all types are described.
  * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "object_type"
+    "type_name"
 })
-public class ListTypeKeysInput {
+public class ListTypesInput {
 
-    @JsonProperty("object_type")
-    private String objectType;
+    @JsonProperty("type_name")
+    private String typeName;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    @JsonProperty("object_type")
-    public String getObjectType() {
-        return objectType;
+    @JsonProperty("type_name")
+    public String getTypeName() {
+        return typeName;
     }
 
-    @JsonProperty("object_type")
-    public void setObjectType(String objectType) {
-        this.objectType = objectType;
+    @JsonProperty("type_name")
+    public void setTypeName(String typeName) {
+        this.typeName = typeName;
     }
 
-    public ListTypeKeysInput withObjectType(String objectType) {
-        this.objectType = objectType;
+    public ListTypesInput withTypeName(String typeName) {
+        this.typeName = typeName;
         return this;
     }
 
@@ -56,7 +56,7 @@ public class ListTypeKeysInput {
 
     @Override
     public String toString() {
-        return ((((("ListTypeKeysInput"+" [objectType=")+ objectType)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((("ListTypesInput"+" [typeName=")+ typeName)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

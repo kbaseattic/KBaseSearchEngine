@@ -74,7 +74,8 @@ class KBaseRelationEngine(object):
            true.), parameter "with_all_history" of type "boolean" (A boolean.
            0 = false, other = true.)
         :returns: instance of type "SearchTypesOutput" -> structure:
-           parameter "type_to_count" of mapping from String to Long
+           parameter "type_to_count" of mapping from String to Long,
+           parameter "search_time" of Long
         """
         return self._client.call_method(
             'KBaseRelationEngine.search_types',
@@ -106,7 +107,7 @@ class KBaseRelationEngine(object):
            list of type "SortingRule" -> structure: parameter "is_timestamp"
            of type "boolean" (A boolean. 0 = false, other = true.), parameter
            "is_object_name" of type "boolean" (A boolean. 0 = false, other =
-           true.), parameter "key_name" of String, parameter "ascending" of
+           true.), parameter "key_name" of String, parameter "descending" of
            type "boolean" (A boolean. 0 = false, other = true.), parameter
            "access_filter" of type "AccessFilter" -> structure: parameter
            "with_private" of type "boolean" (A boolean. 0 = false, other =
@@ -114,7 +115,14 @@ class KBaseRelationEngine(object):
            false, other = true.), parameter "with_all_history" of type
            "boolean" (A boolean. 0 = false, other = true.), parameter
            "pagination" of type "Pagination" -> structure: parameter "start"
-           of Long, parameter "count" of Long
+           of Long, parameter "count" of Long, parameter "post_processing" of
+           type "PostProcessing" (ids_only - shortcut to mark all three skips
+           as true.) -> structure: parameter "ids_only" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "skip_info" of type
+           "boolean" (A boolean. 0 = false, other = true.), parameter
+           "skip_keys" of type "boolean" (A boolean. 0 = false, other =
+           true.), parameter "skip_data" of type "boolean" (A boolean. 0 =
+           false, other = true.), parameter "data_includes" of list of String
         :returns: instance of type "SearchObjectsOutput" -> structure:
            parameter "pagination" of type "Pagination" -> structure:
            parameter "start" of Long, parameter "count" of Long, parameter
@@ -122,7 +130,7 @@ class KBaseRelationEngine(object):
            parameter "is_timestamp" of type "boolean" (A boolean. 0 = false,
            other = true.), parameter "is_object_name" of type "boolean" (A
            boolean. 0 = false, other = true.), parameter "key_name" of
-           String, parameter "ascending" of type "boolean" (A boolean. 0 =
+           String, parameter "descending" of type "boolean" (A boolean. 0 =
            false, other = true.), parameter "objects" of list of type
            "ObjectData" -> structure: parameter "guid" of type "GUID" (Global
            user identificator. It has structure like this:
@@ -133,25 +141,60 @@ class KBaseRelationEngine(object):
            parameter "object_name" of String, parameter "timestamp" of Long,
            parameter "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
-           to String, parameter "total" of Long
+           to String, parameter "total" of Long, parameter "search_time" of
+           Long
         """
         return self._client.call_method(
             'KBaseRelationEngine.search_objects',
             [params], self._service_ver, context)
 
-    def list_type_keys(self, params, context=None):
+    def get_objects(self, params, context=None):
         """
-        :param params: instance of type "ListTypeKeysInput" (object_type -
+        :param params: instance of type "GetObjectsInput" -> structure:
+           parameter "guids" of list of type "GUID" (Global user
+           identificator. It has structure like this:
+           <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
+           parameter "post_processing" of type "PostProcessing" (ids_only -
+           shortcut to mark all three skips as true.) -> structure: parameter
+           "ids_only" of type "boolean" (A boolean. 0 = false, other =
+           true.), parameter "skip_info" of type "boolean" (A boolean. 0 =
+           false, other = true.), parameter "skip_keys" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "skip_data" of type
+           "boolean" (A boolean. 0 = false, other = true.), parameter
+           "data_includes" of list of String
+        :returns: instance of type "GetObjectsOutput" -> structure: parameter
+           "objects" of list of type "ObjectData" -> structure: parameter
+           "guid" of type "GUID" (Global user identificator. It has structure
+           like this:
+           <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
+           parameter "parent_guid" of type "GUID" (Global user identificator.
+           It has structure like this:
+           <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
+           parameter "object_name" of String, parameter "timestamp" of Long,
+           parameter "parent_data" of unspecified object, parameter "data" of
+           unspecified object, parameter "key_props" of mapping from String
+           to String, parameter "search_time" of Long
+        """
+        return self._client.call_method(
+            'KBaseRelationEngine.get_objects',
+            [params], self._service_ver, context)
+
+    def list_types(self, params, context=None):
+        """
+        :param params: instance of type "ListTypesInput" (type_name -
            optional parameter; if not specified all types are described.) ->
-           structure: parameter "object_type" of String
-        :returns: instance of type "ListTypeKeysOutput" -> structure:
-           parameter "type_to_keys" of mapping from String to list of type
+           structure: parameter "type_name" of String
+        :returns: instance of type "ListTypesOutput" -> structure: parameter
+           "types" of mapping from String to type "TypeDescriptor" (TODO: add
+           more details like parent type, relations, primary key, ...) ->
+           structure: parameter "type_name" of String, parameter
+           "type_ui_title" of String, parameter "keys" of list of type
            "KeyDescription" -> structure: parameter "key_name" of String,
            parameter "key_ui_title" of String, parameter "key_value_type" of
            String
         """
         return self._client.call_method(
-            'KBaseRelationEngine.list_type_keys',
+            'KBaseRelationEngine.list_types',
             [params], self._service_ver, context)
 
     def status(self, context=None):

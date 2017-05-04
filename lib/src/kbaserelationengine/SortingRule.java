@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "is_timestamp",
     "is_object_name",
     "key_name",
-    "ascending"
+    "descending"
 })
 public class SortingRule {
 
@@ -32,8 +32,8 @@ public class SortingRule {
     private Long isObjectName;
     @JsonProperty("key_name")
     private String keyName;
-    @JsonProperty("ascending")
-    private Long ascending;
+    @JsonProperty("descending")
+    private Long descending;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("is_timestamp")
@@ -81,18 +81,18 @@ public class SortingRule {
         return this;
     }
 
-    @JsonProperty("ascending")
-    public Long getAscending() {
-        return ascending;
+    @JsonProperty("descending")
+    public Long getDescending() {
+        return descending;
     }
 
-    @JsonProperty("ascending")
-    public void setAscending(Long ascending) {
-        this.ascending = ascending;
+    @JsonProperty("descending")
+    public void setDescending(Long descending) {
+        this.descending = descending;
     }
 
-    public SortingRule withAscending(Long ascending) {
-        this.ascending = ascending;
+    public SortingRule withDescending(Long descending) {
+        this.descending = descending;
         return this;
     }
 
@@ -108,7 +108,7 @@ public class SortingRule {
 
     @Override
     public String toString() {
-        return ((((((((((("SortingRule"+" [isTimestamp=")+ isTimestamp)+", isObjectName=")+ isObjectName)+", keyName=")+ keyName)+", ascending=")+ ascending)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((("SortingRule"+" [isTimestamp=")+ isTimestamp)+", isObjectName=")+ isObjectName)+", keyName=")+ keyName)+", descending=")+ descending)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
