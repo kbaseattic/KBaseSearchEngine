@@ -12,6 +12,7 @@ import us.kbase.common.service.RpcContext;
 
 //BEGIN_HEADER
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.Arrays;
@@ -21,11 +22,15 @@ import java.util.stream.Collectors;
 
 import org.apache.http.HttpHost;
 
+import com.mongodb.MongoClient;
+
 import kbaserelationengine.main.LineLogger;
 import kbaserelationengine.main.MainObjectProcessor;
+import kbaserelationengine.search.ElasticIndexingStorage;
 
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.ConfigurableAuthService;
+
 //END_HEADER
 
 /**
@@ -43,6 +48,28 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
     //BEGIN_CLASS_HEADER
     private MainObjectProcessor mop = null;
     
+    private static void deleteMongoDb(String mongoHost, int mongoPort, String dbName) {
+        try (MongoClient mongoClient = new MongoClient(mongoHost, mongoPort)) {
+            System.out.println("Deleting Mongo database: " + dbName);
+            mongoClient.dropDatabase(dbName);
+        }
+    }
+    
+    private static void deleteAllElasticIndices(HttpHost esHostPort, String esUser,
+            String esPassword, String prefix) throws IOException {
+        ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort, null);
+        if (esUser != null) {
+            esStorage.setEsUser(esUser);
+            esStorage.setEsPassword(esPassword);
+        }
+        for (String indexName : esStorage.listIndeces()) {
+            if (indexName.startsWith(prefix)) {
+                System.out.println("Deleting Elastic index: " + indexName);
+                esStorage.deleteIndex(indexName);
+            }
+        }
+    }
+
     //END_CLASS_HEADER
 
     public KBaseRelationEngineServer() throws Exception {
@@ -77,6 +104,19 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         if (adminsText != null) {
             admins.addAll(Arrays.asList(adminsText.split(",")).stream().map(String::trim).collect(
                     Collectors.toList()));
+        }
+        String cleanDbs = config.get("clean-dbs");
+        if ("true".equals(cleanDbs)) {
+            try {
+                deleteMongoDb(mongoHost, mongoPort, mongoDbName);
+            } catch (Exception e) {
+                System.out.println("Error deleting Mongo database: " + e.getMessage());
+            }
+            try {
+                deleteAllElasticIndices(esHostPort, esUser, esPassword, esIndexPrefix);
+            } catch (Exception e) {
+                System.out.println("Error deleting Elastic index: " + e.getMessage());
+            }
         }
         File logFile = new File(tempDir, "log_" + System.currentTimeMillis() + ".txt");
         PrintWriter logPw = new PrintWriter(logFile);

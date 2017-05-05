@@ -151,9 +151,9 @@ public class MainObjectProcessor {
             @Override
             public void run() {
                 try {
-                    while (!Thread.currentThread().isInterrupted()) {
+                    for (int iter = 0; !Thread.currentThread().isInterrupted(); iter++) {
                         try {
-                            performOneTick();
+                            performOneTick(iter % 10 == 0);
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
@@ -197,12 +197,16 @@ public class MainObjectProcessor {
         throw new IllegalStateException("Failed to stop Lifecycle Runner");
     }
     
-    public void performOneTick()
+    public void performOneTick(boolean permissions)
             throws IOException, JsonClientException, ObjectParseException {
         Set<Long> excludeWsIds = Collections.emptySet();
         //Set<Long> excludeWsIds = new LinkedHashSet<>(Arrays.asList(10455L));
+        wsEventReconstructor.processWorkspaceObjects(15L, PresenceType.PRESENT);
         wsEventReconstructor.processWorkspaceObjects(AccessType.PRIVATE, PresenceType.PRESENT, 
                 excludeWsIds);
+        if (permissions) {
+            wsEventReconstructor.processWorkspacePermissions(AccessType.ALL, null);
+        }
         ObjectStatusEventIterator iter = queue.iterator("WS");
         while (iter.hasNext()) {
             ObjectStatusEvent ev = iter.next();
@@ -466,6 +470,7 @@ public class MainObjectProcessor {
         if (od.parentData != null) {
             ret.withParentData(new UObject(od.parentData));
         }
+        ret.withObjectName(od.objectName);
         ret.withKeyProps(od.keyProps);
         return ret;
     }
