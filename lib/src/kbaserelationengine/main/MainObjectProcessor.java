@@ -94,23 +94,23 @@ public class MainObjectProcessor {
                 public void objectStatusChanged(List<ObjectStatusEvent> events) 
                         throws IOException {
                     for (ObjectStatusEvent obj : events){
-                        logger.logInfo("[Reconstructor] " + obj);
+                        logger.logInfo("[Reconstructor] objectStatusChanged: " + obj);
                     }
                 }
                 @Override
                 public void groupStatusChanged(List<AccessGroupStatus> newStatuses)
                         throws IOException {
                     for (AccessGroupStatus obj : newStatuses){
-                        logger.logInfo("[Reconstructor] " + obj);
+                        logger.logInfo("[Reconstructor] groupStatusChanged: " + obj);
                     }
                 }
                 
                 @Override
                 public void groupPermissionsChanged(List<AccessGroupStatus> newStatuses)
                         throws IOException {
-                    for (AccessGroupStatus obj : newStatuses){
-                        logger.logInfo("[Reconstructor] " + obj);
-                    }
+                    /*for (AccessGroupStatus obj : newStatuses){
+                        logger.logInfo("[Reconstructor] groupPermissionsChanged: " + obj);
+                    }*/
                 }
             });
         }
