@@ -304,6 +304,13 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 	public void objectStatusChanged(List<ObjectStatusEvent> events) throws IOException {
 		//TODO bulk query
 		for(ObjectStatusEvent event: events){
+			
+			if(event.getAccessGroupId() == 15 
+					&& event.getStorageObjectType().equals("KBaseGenomes.Genome")){
+				continue;
+			}
+			
+			
 			store(event);		
 		}
 	}
