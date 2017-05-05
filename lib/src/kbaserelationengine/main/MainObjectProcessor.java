@@ -340,6 +340,9 @@ public class MainObjectProcessor {
     }
 
     private kbaserelationengine.search.MatchValue toSearch(MatchValue mv, String source) {
+        if (mv == null) {
+            return null;
+        }
         if (mv.getValue() != null) {
             return new kbaserelationengine.search.MatchValue(mv.getValue());
         }
