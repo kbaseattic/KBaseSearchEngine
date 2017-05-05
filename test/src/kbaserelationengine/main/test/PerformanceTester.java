@@ -34,7 +34,7 @@ import workspace.ListObjectsParams;
 import workspace.WorkspaceClient;
 
 public class PerformanceTester {
-    private static final boolean cleanup = false;
+    private static final boolean cleanup = true;
     
     private static AuthToken kbaseIndexerToken = null;
     private static URL wsUrl = null;
@@ -111,7 +111,7 @@ public class PerformanceTester {
         String wsName = "ReferenceDataManager";
         WorkspaceClient wc = new WorkspaceClient(wsUrl, kbaseIndexerToken);
         wc.setIsInsecureHttpConnectionAllowed(true);
-        int blockPos = 20;
+        int blockPos = 0;
         int blockSize = 100;
         for (int n = 0; n < 100; n++, blockPos++) {
             System.out.println("\nProcessing block #" + blockPos);
