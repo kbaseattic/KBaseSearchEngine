@@ -202,7 +202,7 @@ public class MainObjectProcessorTest {
         for (int i = 0; i < 10; i++) {
             System.out.println();
             long t1 = System.currentTimeMillis();
-            mop.performOneTick();
+            mop.performOneTick(false);
             System.out.println("FULL TICK TIME: " + (System.currentTimeMillis() - t1) + " ms.");
             Thread.sleep(1000);
         }
