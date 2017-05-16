@@ -124,7 +124,10 @@ public class ObjectTypeParsingRules {
             ret.setIndexingRules(new ArrayList<>());
             for (Map<String, Object> rulesObj : indexingRules) {
                 IndexingRules rules = new IndexingRules();
-                rules.setPath(new ObjectJsonPath((String)rulesObj.get("path")));
+                String path = (String)rulesObj.get("path");
+                if (path != null) {
+                    rules.setPath(new ObjectJsonPath(path));
+                }
                 Boolean fullText = (Boolean)rulesObj.get("full-text");
                 if (fullText != null) {
                     rules.setFullText(fullText);
@@ -136,6 +139,23 @@ public class ObjectTypeParsingRules {
                 if (fromParent != null) {
                     rules.setFromParent(fromParent);
                 }
+                Boolean derivedKey = (Boolean)rulesObj.get("derived-key");
+                if (derivedKey != null) {
+                    rules.setDerivedKey(derivedKey);
+                }
+                Boolean notIndexed = (Boolean)rulesObj.get("not-indexed");
+                if (notIndexed != null) {
+                    rules.setNotIndexed(notIndexed);
+                }
+                rules.setSourceKey((String)rulesObj.get("source-key"));
+                rules.setTargetObjectType((String)rulesObj.get("source-key"));
+                rules.setSubobjectIdKey((String)rulesObj.get("subobject-id-key"));
+                rules.setUiName((String)rulesObj.get("ui-name"));
+                Boolean uiHidden = (Boolean)rulesObj.get("ui-hidden");
+                if (uiHidden != null) {
+                    rules.setUiHidden(uiHidden);
+                }
+                rules.setUiLinkKey((String)rulesObj.get("ui-link-key"));
                 ret.getIndexingRules().add(rules);
             }
         }

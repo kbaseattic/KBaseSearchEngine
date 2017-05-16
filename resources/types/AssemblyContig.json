@@ -1,0 +1,29 @@
+{
+	"global-object-type": "AssemblyContig",
+	"storage-type": "WS",
+	"storage-object-type": "KBaseGenomeAnnotations.Assembly",
+	"inner-sub-type": "contig",
+	"path-to-sub-objects": "/contigs/*/",
+	"indexing-rules": [
+		{
+			"path": "contig_id",
+			"keyword-type": "string",
+			"ui-name": "ID"
+		},
+		{
+			"path": "description",
+			"full-text": true
+		},
+		{
+			"path": "gc_content",
+			"transform": "percent",
+			"keyword-type": "double",
+			"ui-name": "GC-content"
+		},
+		{
+			"path": "length",
+			"keyword-type": "integer"
+		}
+	],
+	"primary-key-path": "contig_id"
+}

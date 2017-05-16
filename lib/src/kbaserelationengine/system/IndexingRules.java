@@ -3,12 +3,20 @@ package kbaserelationengine.system;
 import kbaserelationengine.common.ObjectJsonPath;
 
 public class IndexingRules {
-    private ObjectJsonPath path;
+    private ObjectJsonPath path = null;
     private boolean fullText = false;
     private String keywordType = null;
     private String keyName = null;
     private String transform = null;
     private boolean fromParent = false;
+    private boolean derivedKey = false;
+    private boolean notIndexed = false;
+    private String sourceKey = null;
+    private String targetObjectType = null;
+    private String subobjectIdKey = null;
+    private String uiName = null;
+    private boolean uiHidden = false;
+    private String uiLinkKey = null;
     
     public ObjectJsonPath getPath() {
         return path;
@@ -56,5 +64,69 @@ public class IndexingRules {
     
     public void setFromParent(boolean fromParent) {
         this.fromParent = fromParent;
+    }
+    
+    public boolean isDerivedKey() {
+        return derivedKey;
+    }
+    
+    public void setDerivedKey(boolean derivedKey) {
+        this.derivedKey = derivedKey;
+    }
+    
+    public boolean isNotIndexed() {
+        return notIndexed;
+    }
+    
+    public void setNotIndexed(boolean notIndexed) {
+        this.notIndexed = notIndexed;
+    }
+    
+    public String getSourceKey() {
+        return sourceKey;
+    }
+    
+    public void setSourceKey(String sourceKey) {
+        this.sourceKey = sourceKey;
+    }
+    
+    public String getTargetObjectType() {
+        return targetObjectType;
+    }
+    
+    public void setTargetObjectType(String targetObjectType) {
+        this.targetObjectType = targetObjectType;
+    }
+    
+    public String getSubobjectIdKey() {
+        return subobjectIdKey;
+    }
+    
+    public void setSubobjectIdKey(String subobjectIdKey) {
+        this.subobjectIdKey = subobjectIdKey;
+    }
+    
+    public String getUiName() {
+        return uiName;
+    }
+    
+    public void setUiName(String uiName) {
+        this.uiName = uiName;
+    }
+    
+    public boolean isUiHidden() {
+        return uiHidden;
+    }
+    
+    public void setUiHidden(boolean uiHidden) {
+        this.uiHidden = uiHidden;
+    }
+    
+    public String getUiLinkKey() {
+        return uiLinkKey;
+    }
+    
+    public void setUiLinkKey(String uiLinkKey) {
+        this.uiLinkKey = uiLinkKey;
     }
 }

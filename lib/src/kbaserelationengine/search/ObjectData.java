@@ -8,6 +8,7 @@ public class ObjectData {
     public GUID guid;
     public GUID parentGuid;
     public String objectName;
+    public String type;
     public long timestamp;
     public Object parentData;
     public Object data;
@@ -16,8 +17,8 @@ public class ObjectData {
     @Override
     public String toString() {
         return "ObjectData [guid=" + guid + ", parentGuid=" + parentGuid
-                + ", objectName=" + objectName + ", timestamp=" + timestamp
-                + ", parentData=" + parentData + ", data=" + data
-                + ", keyProps=" + keyProps + "]";
+                + ", objectName=" + objectName + ", type=" + type
+                + ", timestamp=" + timestamp + ", parentData=" + parentData
+                + ", data=" + data + ", keyProps=" + keyProps + "]";
     }
 }

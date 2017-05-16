@@ -1,0 +1,313 @@
+package kbaserelationengine.parse;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+
+import kbaserelationengine.common.GUID;
+import kbaserelationengine.common.ObjectJsonPath;
+import kbaserelationengine.search.ObjectData;
+import kbaserelationengine.system.IndexingRules;
+import kbaserelationengine.system.ObjectTypeParsingRules;
+import us.kbase.common.service.UObject;
+
+public class KeywordParser {
+    
+    public static ParsedObject extractKeywords(String json, String parentJson, 
+            Map<String, String> metadata, List<IndexingRules> indexingRules, 
+            ObjectLookupProvider lookup) 
+                    throws IOException, ObjectParseException {
+        Map<String, InnerKeyValue> keywords = new LinkedHashMap<>();
+        ValueConsumer<List<IndexingRules>> consumer = new ValueConsumer<List<IndexingRules>>() {
+            @Override
+            public void addValue(List<IndexingRules> rulesList, Object value) throws IOException {
+                for (IndexingRules rule : rulesList) {
+                    processRule(rule, getKeyName(rule), value, keywords, lookup);
+                }
+            }
+        };
+        // Sub-objects
+        extractIndexingPart(json, false, indexingRules, consumer);
+        // Parent
+        if (parentJson != null) {
+            extractIndexingPart(parentJson, true, indexingRules, consumer);
+        }
+        Map<String, IndexingRules> ruleMap = indexingRules.stream().collect(
+                Collectors.toMap(rule -> getKeyName(rule), Function.identity()));
+        for (String key : ruleMap.keySet()) {
+            if (ruleMap.get(key).isDerivedKey()) {
+                processDerivedRule(ruleMap, key, keywords, lookup, new LinkedHashSet<>());
+            }
+        }
+        ParsedObject ret = new ParsedObject();
+        ret.json = json;
+        ret.keywords = keywords.entrySet().stream().filter(kv -> !kv.getValue().notIndexed)
+                .collect(Collectors.toMap(kv -> kv.getKey(), kv -> kv.getValue().values));
+        return ret;
+    }
+    
+    private static List<Object> processDerivedRule(Map<String, IndexingRules> ruleMap,
+            String key, Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup,
+            Set<String> keysWaitingInStack) throws IOException {
+        if (!ruleMap.containsKey(key)) {
+            throw new IllegalStateException("Unknown source-key in derived keywords: " + key);
+        }
+        if (keywords.containsKey(key)) {
+            return keywords.get(key).values;
+        }
+        if (keysWaitingInStack.contains(key)) {
+            throw new IllegalStateException("Circular dependency in derived keywords: " +
+                    keysWaitingInStack);
+        }
+        keysWaitingInStack.add(key);
+        IndexingRules rule = ruleMap.get(key);
+        String sourceKey = rule.getSourceKey();
+        if (sourceKey == null) {
+            throw new IllegalStateException("Source-key not defined for derived keyword: " + key);
+        }
+        List<Object> values = processDerivedRule(ruleMap, sourceKey, keywords, lookup, 
+                keysWaitingInStack);
+        if (rule.getSubobjectIdKey() != null) {
+            processDerivedRule(ruleMap, rule.getSubobjectIdKey(), keywords, lookup, 
+                    keysWaitingInStack);
+        }
+        for (Object value : values) {
+            processRule(rule, key, value, keywords, lookup);
+        }
+        keysWaitingInStack.remove(key);
+        return keywords.get(key).values;
+    }
+
+    private static void processRule(IndexingRules rule, String key, Object value,
+            Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup) throws IOException {
+        Object valueFinal = value;
+        InnerKeyValue values = keywords.get(key);
+        if (values == null) {
+            values = new InnerKeyValue();
+            values.values = new ArrayList<>();
+            keywords.put(key, values);
+        }
+        values.notIndexed = rule.isNotIndexed();
+        if (rule.getTransform() != null) {
+            valueFinal = transform(valueFinal, rule.getTransform(), rule, keywords,
+                    lookup);
+        }
+        addOrAddAll(valueFinal, values.values);
+    }
+    
+    private static String getKeyName(IndexingRules rules) {
+        return rules.getKeyName() != null ? rules.getKeyName():
+            rules.getPath().getPathItems()[0];
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void addOrAddAll(Object valueFinal, List<Object> values) {
+        if (valueFinal != null) {
+            if (valueFinal instanceof List) {
+                values.addAll((List<Object>)valueFinal);
+            } else {
+                values.add(valueFinal);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object transform(Object value, String transform, IndexingRules rule,
+            Map<String, InnerKeyValue> sourceKeywords, ObjectLookupProvider lookup)
+                    throws IOException {
+        String retProp = null;
+        if (transform.contains(".")) {
+            String[] parts = transform.split(Pattern.quote("."));
+            transform = parts[0];
+            retProp = parts[1];
+        }
+        switch (transform) {
+        case "location":
+            List<List<Object>> loc = (List<List<Object>>)value;
+            Map<String, Object> retLoc = new LinkedHashMap<>();
+            retLoc.put("contig_id", loc.get(0).get(0));
+            String strand = (String)loc.get(0).get(2);
+            retLoc.put("strand", strand);
+            int start = (Integer)loc.get(0).get(1);
+            int len = (Integer)loc.get(0).get(3);
+            retLoc.put("length", len);
+            retLoc.put("start", strand.equals("+") ? start : (start - len + 1));
+            retLoc.put("stop", strand.equals("+") ? (start + len - 1) : start);
+            if (retProp == null) {
+                return retLoc;
+            }
+            return retLoc.get(retProp);
+        case "values":
+            if (value == null) {
+                return null;
+            }
+            if (value instanceof List) {
+                List<Object> input = (List<Object>)value;
+                List<Object> ret = new ArrayList<>();
+                for (Object item : input) {
+                    addOrAddAll(transform(item, transform, rule, sourceKeywords, lookup), ret);
+                }
+                return ret;
+            }
+            if (value instanceof Map) {
+                Map<String, Object> input = (Map<String, Object>)value;
+                List<Object> ret = new ArrayList<>();
+                for (Object item : input.values()) {
+                    addOrAddAll(transform(item, transform, rule, sourceKeywords, lookup), ret);
+                }
+                return ret;
+            }
+            return String.valueOf(value);
+        case "string":
+            return String.valueOf(value);
+        case "integer":
+            return Integer.parseInt(String.valueOf(value));
+        case "guid":
+            String type = rule.getTargetObjectType();
+            if (type == null) {
+                throw new IllegalStateException("Target object type should be set for 'guid' " +
+                        "transform (" + getKeyName(rule) + ")");
+            }
+            ObjectTypeParsingRules typeDescr = lookup.getTypeDescriptor(type);
+            Set<String> refs = toStringSet(value);
+            if (typeDescr.getStorageType().equals("WS")) {
+                // Lets remove storage code prefix first:
+                refs = refs.stream().map(item -> item.startsWith("WS:")
+                        ? item.substring(3) : item).collect(Collectors.toSet());
+                refs = lookup.resolveWorkspaceRefs(refs);
+            }
+            Set<GUID> guids = new LinkedHashSet<>();
+            for (String ref : refs) {
+                String guidText = ref;
+                if (!guidText.startsWith(typeDescr.getStorageType() + ":")) {
+                    guidText = typeDescr.getStorageType() + ":" + guidText;
+                }
+                guids.add(new GUID(guidText));
+            }
+            Set<String> subIds = null;
+            if (rule.getSubobjectIdKey() != null) {
+                if (typeDescr.getInnerSubType() != null) {
+                    throw new IllegalStateException("Subobject GUID transform should correspond " +
+                            "to subobject type descriptor");
+                }
+                subIds = toStringSet(sourceKeywords.get(rule.getSubobjectIdKey()).values);
+                if (guids.size() != 1) {
+                    throw new IllegalStateException("In subobject IDs case source keyword " + 
+                            "should point to value with only one parent object reference");
+                }
+                GUID parentGuid = guids.iterator().next();
+                guids = new LinkedHashSet<>();
+                for (String subId : subIds) {
+                    guids.add(new GUID(typeDescr.getStorageType(), parentGuid.getAccessGroupId(),
+                            parentGuid.getAccessGroupObjectId(), parentGuid.getVersion(), 
+                            typeDescr.getInnerSubType(), subId));
+                }
+            }
+            Map<GUID, String> guidToType = lookup.getTypesForGuids(guids);
+            for (GUID guid : guids) {
+                if (!guidToType.containsKey(guid)) {
+                    throw new IllegalStateException("GUID " + guid + " not found");
+                }
+                String actualType = guidToType.get(guid);
+                if (!actualType.equals(type)) {
+                    throw new IllegalStateException("GUID " + guid + " has unexpected type: " + 
+                            actualType);
+                }
+            }
+            return guids.stream().map(GUID::toString).collect(Collectors.toList());
+        case "lookup":
+            if (retProp == null) {
+                throw new IllegalStateException("No sub-property defined for lookup transform");
+            }
+            Set<String> guidText = toStringSet(value);
+            Map<GUID, ObjectData> guidToObj = lookup.lookupObjectsByGuid(
+                    guidText.stream().map(GUID::new).collect(Collectors.toSet()));
+            List<Object> ret = new ArrayList<>();
+            for (ObjectData obj : guidToObj.values()) {
+                if (retProp.startsWith("key.")) {
+                    String key = retProp.substring(4);
+                    ret.add(obj.keyProps.get(key));
+                } else if (retProp.equals("oname")) {
+                    ret.add(obj.objectName);
+                }
+            }
+            return ret;
+        default:
+            throw new IllegalStateException("Unsupported transformation type: " + transform);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Set<String> toStringSet(Object value) {
+        Set<String> refs = new LinkedHashSet<>();
+        if (value instanceof List) {
+            for (Object obj : (List<Object>)value) {
+                refs.add(String.valueOf(obj));
+            }
+        } else {
+            refs.add(String.valueOf(value));
+        }
+        return refs;
+    }
+    
+    private static void extractIndexingPart(String json, boolean fromParent,
+            List<IndexingRules> indexingRules, ValueConsumer<List<IndexingRules>> consumer)
+            throws IOException, ObjectParseException, JsonParseException {
+        Map<ObjectJsonPath, List<IndexingRules>> pathToRules = new LinkedHashMap<>();
+        for (IndexingRules rules : indexingRules) {
+            if (rules.isDerivedKey()) {
+                continue;
+            }
+            if (rules.getPath() == null) {
+                throw new IllegalStateException("Path should be defined for non-derived " +
+                        "indexing rules");
+            }
+            if (rules.getSubobjectIdKey() != null) {
+                throw new IllegalStateException("Subobject ID key can only be set for derived " +
+                        "keywords: " + getKeyName(rules));
+            }
+            if (rules.isFromParent() != fromParent) {
+                continue;
+            }
+            if (rules.isFullText() || rules.getKeywordType() != null) {
+                List<IndexingRules> rulesList = pathToRules.get(rules.getPath());
+                if (rulesList == null) {
+                    rulesList = new ArrayList<>();
+                    pathToRules.put(rules.getPath(), rulesList);
+                }
+                rulesList.add(rules);
+            }
+        }
+        ValueCollectingNode<List<IndexingRules>> root = new ValueCollectingNode<>();
+        for (ObjectJsonPath path : pathToRules.keySet()) {
+            root.addPath(path, pathToRules.get(path));
+        }
+        ValueCollector<List<IndexingRules>> collector = new ValueCollector<List<IndexingRules>>();
+        try (JsonParser jp = UObject.getMapper().getFactory().createParser(json)) {
+            collector.mapKeys(root, jp, consumer);
+        }
+    }
+
+    public interface ObjectLookupProvider {
+        public Set<String> resolveWorkspaceRefs(Set<String> refs) throws IOException;
+        public Map<GUID, String> getTypesForGuids(Set<GUID> guids) throws IOException;
+        public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids) 
+                throws IOException;
+        public ObjectTypeParsingRules getTypeDescriptor(String type);
+    }
+
+    private static class InnerKeyValue {
+        boolean notIndexed;
+        List<Object> values;
+    }
+}

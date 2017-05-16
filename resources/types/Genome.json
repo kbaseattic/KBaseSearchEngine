@@ -23,6 +23,28 @@
 			"path": "features/{size}",
 			"keyword-type": "integer",
 			"key-name": "features"
+		},
+		{
+			"path": "assembly_ref",
+			"transform": "guid",
+			"target-object-type": "Assembly",
+			"keyword-type": "string",
+			"key-name": "assembly_guid",
+			"ui-hidden": true
+		},
+		{
+			"derived-key": true,
+			"transform": "lookup.oname",
+			"source-key": "assembly_guid",
+			"key-name": "assembly",
+			"ui-link-key": "assembly_guid"
+		},
+		{
+			"derived-key": true,
+			"transform": "lookup.key.contigs",
+			"source-key": "assembly_guid",
+			"keyword-type": "integer",
+			"key-name": "contigs"
 		}
 	]
 }

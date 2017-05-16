@@ -144,7 +144,9 @@ public class ObjectParser {
             if (rules.isFromParent()) {
                 continue;
             }
-            indexingPaths.add(rules.getPath());
+            if (rules.getPath() != null) {
+                indexingPaths.add(rules.getPath());
+            }
         }
         ObjectJsonPath pathToSubObjects = parsingRules.getPathToSubObjects() == null ?
                 new ObjectJsonPath("/") : parsingRules.getPathToSubObjects();

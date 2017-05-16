@@ -7,6 +7,7 @@ import java.util.Set;
 
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.parse.ObjectParseException;
+import kbaserelationengine.parse.ParsedObject;
 import kbaserelationengine.system.IndexingRules;
 
 public interface IndexingStorage {
@@ -19,15 +20,17 @@ public interface IndexingStorage {
      * @param indexingRules  indexing rules
      * @throws IOException
      */
-    public void indexObject(GUID guid, String objectType, String jsonValue, String objectName,
-            long timestamp, String parentJsonValue, Map<String, String> metadata, boolean isPublic,
+    public void indexObject(GUID guid, String objectType, ParsedObject obj, String objectName,
+            long timestamp, String parentJsonValue, boolean isPublic,
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException;
 
     public void indexObjects(String objectType, String objectName, long timestamp,
-            String parentJsonValue, Map<String, String> metadata, Map<GUID, String> idToJsonValues,
+            String parentJsonValue, Map<GUID, ParsedObject> idToObj,
             boolean isPublic, List<IndexingRules> indexingRules) 
                     throws IOException, ObjectParseException;
     
+    public Map<GUID, Boolean> checkParentGuids(Set<GUID> parentGuids) throws IOException;
+
     public void flushIndexing(String objectType) throws IOException;
     
     public void shareObjects(Set<GUID> guids, int accessGroupId) throws IOException;

@@ -38,8 +38,11 @@ import kbaserelationengine.events.reconstructor.WSStatusEventReconstructor;
 import kbaserelationengine.events.reconstructor.WSStatusEventReconstructorImpl;
 import kbaserelationengine.events.storage.MongoDBStatusEventStorage;
 import kbaserelationengine.events.storage.StatusEventStorage;
+import kbaserelationengine.parse.KeywordParser;
+import kbaserelationengine.parse.KeywordParser.ObjectLookupProvider;
 import kbaserelationengine.parse.ObjectParseException;
 import kbaserelationengine.parse.ObjectParser;
+import kbaserelationengine.parse.ParsedObject;
 import kbaserelationengine.queue.ObjectStatusEventIterator;
 import kbaserelationengine.queue.ObjectStatusEventQueue;
 import kbaserelationengine.relations.DefaultRelationStorage;
@@ -71,6 +74,7 @@ public class MainObjectProcessor {
     private RelationStorage relationStorage;
     private LineLogger logger;
     private Set<String> admins;
+    private ObjectLookupProvider indexLookup;
     
     public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, String mongoHost, 
             int mongoPort, String mongoDbName, HttpHost esHost, String esUser, String esPassword,
@@ -129,6 +133,31 @@ public class MainObjectProcessor {
         if (startLifecycleRunner) {
             startLifecycleRunner();
         }
+        indexLookup = new ObjectLookupProvider() {
+            
+            @Override
+            public Set<String> resolveWorkspaceRefs(Set<String> refs)
+                    throws IOException {
+                throw new IllegalStateException();
+            }
+            
+            @Override
+            public Map<GUID, kbaserelationengine.search.ObjectData> lookupObjectsByGuid(
+                    Set<GUID> guids) throws IOException {
+                throw new IllegalStateException();
+            }
+            
+            @Override
+            public Map<GUID, String> getTypesForGuids(Set<GUID> guids)
+                    throws IOException {
+                throw new IllegalStateException();
+            }
+            
+            @Override
+            public ObjectTypeParsingRules getTypeDescriptor(String type) {
+                throw new IllegalStateException();
+            }
+        };
     }
     
     private File getWsLoadTempDir() {
@@ -284,6 +313,14 @@ public class MainObjectProcessor {
                 }
                 Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, objRef, rule, 
                         systemStorage, relationStorage);
+                Map<GUID, ParsedObject> guidToObj = new LinkedHashMap<>();
+                for (GUID subGuid : guidToJson.keySet()) {
+                    String json = guidToJson.get(subGuid);
+                    Map<String, String> metadata = obj.getInfo().getE11();
+                    ParsedObject prsObj = KeywordParser.extractKeywords(json, parentJson, 
+                            metadata, rule.getIndexingRules(), indexLookup);
+                    guidToObj.put(subGuid, prsObj);
+                }
                 if (logger != null) {
                     logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", parsing " +
                             "time: " + (System.currentTimeMillis() - t2) + " ms.");
@@ -293,8 +330,7 @@ public class MainObjectProcessor {
                     timestamp = System.currentTimeMillis();
                 }
                 indexingStorage.indexObjects(rule.getGlobalObjectType(), obj.getInfo().getE2(), 
-                        timestamp, parentJson, obj.getInfo().getE11(), guidToJson, 
-                        false, rule.getIndexingRules());
+                        timestamp, parentJson, guidToObj, false, rule.getIndexingRules());
                 if (logger != null) {
                     logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", indexing " +
                             "time: " + (System.currentTimeMillis() - t3) + " ms.");

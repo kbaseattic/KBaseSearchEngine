@@ -1,0 +1,31 @@
+{
+	"global-object-type": "Assembly",
+	"storage-type": "WS",
+	"storage-object-type": "KBaseGenomeAnnotations.Assembly",
+	"indexing-rules": [
+		{
+			"path": "name",
+			"full-text": true
+		},
+		{
+			"path": "dna_size",
+			"keyword-type": "integer",
+			"ui-name": "DNA size"
+		},
+		{
+			"path": "gc_content",
+			"keyword-type": "integer",
+			"transform": "percent",
+			"ui-name": "GC-content"
+		},
+		{
+			"path": "external_source_id",
+			"full-text": true,
+			"ui-name": "External Source"
+		},
+		{
+			"path": "contigs/{size}",
+			"key-name": "contigs"
+		}
+	]
+}

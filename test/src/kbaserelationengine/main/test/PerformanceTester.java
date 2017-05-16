@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -20,7 +21,6 @@ import com.mongodb.MongoClient;
 
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
-import kbaserelationengine.main.LineLogger;
 import kbaserelationengine.main.MainObjectProcessor;
 import kbaserelationengine.parse.ObjectParser;
 import kbaserelationengine.search.AccessFilter;
@@ -106,6 +106,7 @@ public class PerformanceTester {
         }
     }
     
+    @Ignore
     @Test
     public void testPerformance() throws Exception {
         String wsName = "ReferenceDataManager";
@@ -171,5 +172,35 @@ public class PerformanceTester {
         t1 = System.currentTimeMillis() - t1;
         System.out.println("Search time: " + t1 + " ms., features found: " + 
                 typeToCount.get("GenomeFeature"));
+    }
+    
+    @Ignore
+    @Test
+    public void parseResultsFeatures() throws Exception {
+        List<String> lines =FileUtils.readLines(new File("test_local/performance.txt"));
+        lines = lines.stream().filter(l -> l.contains("Total") || l.contains("Search")).collect(
+                Collectors.toList());
+        for (int i = 0; i < lines.size() / 2; i++) {
+            String l1 = lines.get(i * 2);
+            l1 = l1.split(" ")[3].split("/")[1];
+            String l2 = lines.get(i * 2 + 1);
+            l2 = l2.split(" ")[2];
+            System.out.println(l1 + "\t" + l2);
+        }
+    }
+
+    @Ignore
+    @Test
+    public void parseResultsGenomes() throws Exception {
+        List<String> lines =FileUtils.readLines(new File("test_local/performance.txt"));
+        lines = lines.stream().filter(l -> l.contains("Processing time") || l.contains("Total")).collect(
+                Collectors.toList());
+        for (int i = 0; i < lines.size() / 2; i++) {
+            String l1 = lines.get(i * 2);
+            l1 = l1.split(" ")[2];
+            String l2 = lines.get(i * 2 + 1);
+            l2 = l2.split(" ")[3].split("/")[0];
+            System.out.println(l2 + "\t" + l1);
+        }
     }
 }

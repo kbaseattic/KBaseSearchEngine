@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.regex.Pattern;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.http.Header;
@@ -37,15 +37,9 @@ import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-
 import kbaserelationengine.common.GUID;
-import kbaserelationengine.common.ObjectJsonPath;
 import kbaserelationengine.parse.ObjectParseException;
-import kbaserelationengine.parse.ValueCollectingNode;
-import kbaserelationengine.parse.ValueCollector;
-import kbaserelationengine.parse.ValueConsumer;
+import kbaserelationengine.parse.ParsedObject;
 import kbaserelationengine.system.IndexingRules;
 import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.UObject;
@@ -139,16 +133,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @SuppressWarnings("serial")
     @Override
     public void indexObjects(String objectType, String objectName, long timestamp, 
-            String parentJsonValue, Map<String, String> metadata, Map<GUID, String> idToJsonValues,
+            String parentJsonValue, Map<GUID, ParsedObject> idToObj,
             boolean isPublic, List<IndexingRules> indexingRules) 
                     throws IOException, ObjectParseException {
-        if (idToJsonValues.size() == 0) {
+        if (idToObj.size() == 0) {
             return;
         }
         String indexName = checkIndex(objectType, indexingRules);
         Set<GUID> parentGuids = new LinkedHashSet<>();
         Map<GUID, GUID> guidToParentGuid = new LinkedHashMap<>();
-        for (GUID id : idToJsonValues.keySet()) {
+        for (GUID id : idToObj.keySet()) {
             GUID parentGuid = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
                     id.getAccessGroupObjectId(), id.getVersion(), null, null);
             parentGuids.add(parentGuid);
@@ -158,17 +152,21 @@ public class ElasticIndexingStorage implements IndexingStorage {
         try {
             PrintWriter pw = new PrintWriter(tempFile);
             Map<GUID, String> parentGuidToEsId = checkParentDoc(indexName, parentGuids, isPublic);
-            for (GUID id : idToJsonValues.keySet()) {
+            Map<GUID, String> esIds = lookupDocIds(indexName, idToObj.keySet());
+            for (GUID id : idToObj.keySet()) {
                 GUID parentGuid = guidToParentGuid.get(id);
                 String esParentId = parentGuidToEsId.get(parentGuid);
-                String json = idToJsonValues.get(id);
-                Map<String, Object> doc = convertObject(id, objectType, json, objectName, 
-                        timestamp, parentJsonValue, metadata, indexingRules);
+                ParsedObject obj = idToObj.get(id);
+                Map<String, Object> doc = convertObject(id, objectType, obj, objectName, 
+                        timestamp, parentJsonValue);
                 Map<String, Object> index = new LinkedHashMap<String, Object>() {{
                     put("_index", indexName);
                     put("_type", getDataTableName());
                     put("parent", esParentId);
                 }};
+                if (esIds.containsKey(id)) {
+                    index.put("_id", esIds.get(id));
+                }
                 Map<String, Object> header = new LinkedHashMap<String, Object>() {{
                     put("index", index);
                 }};
@@ -183,38 +181,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
         refreshIndex(indexName);
     }
     
-    private Map<String, Object> convertObject(GUID id, String objectType, String json, 
-            String objectName, long timestamp, String parentJson, Map<String, String> metadata,
-            List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
+    private Map<String, Object> convertObject(GUID id, String objectType, ParsedObject obj, 
+            String objectName, long timestamp, String parentJson) 
+                    throws IOException, ObjectParseException {
         Map<String, List<Object>> indexPart = new LinkedHashMap<>();
-        ValueConsumer<List<IndexingRules>> consumer = new ValueConsumer<List<IndexingRules>>() {
-            @Override
-            public void addValue(List<IndexingRules> rulesList, Object value) {
-                for (IndexingRules rules : rulesList) {
-                    Object valueFinal = value;
-                    String key;
-                    if (mergeTypes) {
-                        key = getKeyProperty("all");
-                    } else {
-                        key = getKeyProperty(getKeyName(rules));
-                    }
-                    List<Object> values = indexPart.get(key);
-                    if (values == null) {
-                        values = new ArrayList<>();
-                        indexPart.put(key, values);
-                    }
-                    if (rules.getTransform() != null) {
-                        valueFinal = transform(valueFinal, rules.getTransform());
-                    }
-                    addOrAddAll(valueFinal, values);
-                }
-            }
-        };
-        // Sub-objects
-        extractIndexingPart(json, false, indexingRules, consumer);
-        // Parent
-        if (parentJson != null) {
-            extractIndexingPart(parentJson, true, indexingRules, consumer);
+        for (String key : obj.keywords.keySet()) {
+            indexPart.put(getKeyProperty(key), obj.keywords.get(key));
         }
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.putAll(indexPart);
@@ -223,116 +195,29 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put("oname", objectName);
         doc.put("timestamp", timestamp);
         if (!skipFullJson) {
-            doc.put("ojson", json);
+            doc.put("ojson", obj.json);
             doc.put("pjson", parentJson);
         }
         return doc;
     }
 
-    @SuppressWarnings("unchecked")
-    private void addOrAddAll(Object valueFinal, List<Object> values) {
-        if (valueFinal != null) {
-            if (valueFinal instanceof List) {
-                values.addAll((List<Object>)valueFinal);
-            } else {
-                values.add(valueFinal);
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private Object transform(Object value, String transform) {
-        String retProp = null;
-        if (transform.contains(".")) {
-            String[] parts = transform.split(Pattern.quote("."));
-            transform = parts[0];
-            retProp = parts[1];
-        }
-        switch (transform) {
-        case "location":
-            List<List<Object>> loc = (List<List<Object>>)value;
-            Map<String, Object> retLoc = new LinkedHashMap<>();
-            retLoc.put("contig_id", loc.get(0).get(0));
-            String strand = (String)loc.get(0).get(2);
-            retLoc.put("strand", strand);
-            int start = (Integer)loc.get(0).get(1);
-            int len = (Integer)loc.get(0).get(3);
-            retLoc.put("length", len);
-            retLoc.put("start", strand.equals("+") ? start : (start - len + 1));
-            retLoc.put("stop", strand.equals("+") ? (start + len - 1) : start);
-            if (retProp == null) {
-                return retLoc;
-            }
-            return retLoc.get(retProp);
-        case "values":
-            if (value == null) {
-                return null;
-            }
-            if (value instanceof List) {
-                List<Object> input = (List<Object>)value;
-                List<Object> ret = new ArrayList<>();
-                for (Object item : input) {
-                    addOrAddAll(transform(item, transform), ret);
-                }
-                return ret;
-            }
-            if (value instanceof Map) {
-                Map<String, Object> input = (Map<String, Object>)value;
-                List<Object> ret = new ArrayList<>();
-                for (Object item : input.values()) {
-                    addOrAddAll(transform(item, transform), ret);
-                }
-                return ret;
-            }
-            return String.valueOf(value);
-        case "string":
-            return String.valueOf(value);
-        case "integer":
-            return Integer.parseInt(String.valueOf(value));
-        default:
-            throw new IllegalStateException("Unsupported transformation type: " + transform);
-        }
-    }
-
-    private void extractIndexingPart(String json, boolean fromParent,
-            List<IndexingRules> indexingRules, ValueConsumer<List<IndexingRules>> consumer)
-            throws IOException, ObjectParseException, JsonParseException {
-        Map<ObjectJsonPath, List<IndexingRules>> pathToRules = new LinkedHashMap<>();
-        for (IndexingRules rules : indexingRules) {
-            if (rules.isFromParent() != fromParent) {
-                continue;
-            }
-            if (rules.isFullText() || rules.getKeywordType() != null) {
-                List<IndexingRules> rulesList = pathToRules.get(rules.getPath());
-                if (rulesList == null) {
-                    rulesList = new ArrayList<>();
-                    pathToRules.put(rules.getPath(), rulesList);
-                }
-                rulesList.add(rules);
-            }
-        }
-        ValueCollectingNode<List<IndexingRules>> root = new ValueCollectingNode<>();
-        for (ObjectJsonPath path : pathToRules.keySet()) {
-            root.addPath(path, pathToRules.get(path));
-        }
-        ValueCollector<List<IndexingRules>> collector = new ValueCollector<List<IndexingRules>>();
-        try (JsonParser jp = UObject.getMapper().getFactory().createParser(json)) {
-            collector.mapKeys(root, jp, consumer);
-        }
-    }
-    
     @Override
-    public void indexObject(GUID id, String objectType, String json, String objectName,
-            long timestamp, String parentJsonValue, Map<String, String> metadata, boolean isPublic,
+    public void indexObject(GUID id, String objectType, ParsedObject obj, String objectName,
+            long timestamp, String parentJsonValue, boolean isPublic,
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
         String indexName = checkIndex(objectType, indexingRules);
         GUID parentGUID = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
                 id.getAccessGroupObjectId(), id.getVersion(), null, null);
         String esParentId = checkParentDoc(indexName, 
                 new HashSet<>(Arrays.asList(parentGUID)), isPublic).get(parentGUID);
-        Map<String, Object> doc = convertObject(id, objectType, json, objectName, timestamp, 
-                parentJsonValue, metadata, indexingRules);
-        makeRequest("POST", "/" + indexName + "/" + getDataTableName() + "/", doc, Arrays.asList(
+        Map<String, Object> doc = convertObject(id, objectType, obj, objectName, timestamp, 
+                parentJsonValue);
+        String esId = lookupDocIds(indexName, new HashSet<>(Arrays.asList(id))).get(id);
+        String requestUrl = "/" + indexName + "/" + getDataTableName() + "/";
+        if (esId != null) {
+            requestUrl += esId;
+        }
+        makeRequest("POST", requestUrl, doc, Arrays.asList(
                 new Tuple2<String, String>().withE1("parent").withE2(esParentId)));
         refreshIndex(indexName);
     }
@@ -342,6 +227,39 @@ public class ElasticIndexingStorage implements IndexingStorage {
         refreshIndex(getIndex(objectType));
     }
     
+    @SuppressWarnings({ "serial", "unchecked" })
+    private Map<GUID, String> lookupDocIds(String indexName, Set<GUID> guids) throws IOException {
+        Map<String, Object> terms = new LinkedHashMap<String, Object>() {{
+            put("guid", guids.stream().map(u -> u.toString()).collect(Collectors.toList()));
+        }};
+        Map<String, Object> filter = new LinkedHashMap<String, Object>() {{
+            put("terms", terms);
+        }};
+        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+            put("filter", Arrays.asList(filter));
+        }};
+        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+            put("bool", bool);
+        }};
+        Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
+            put("query", query);
+        }};
+        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
+        Response resp = makeRequest("GET", urlPath, doc);
+        Map<String, Object> data = UObject.getMapper().readValue(
+                resp.getEntity().getContent(), Map.class);
+        Map<GUID, String> ret = new LinkedHashMap<>();
+        Map<String, Object> hitMap = (Map<String, Object>)data.get("hits");
+        List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
+        for (Map<String, Object> hit : hitList) {
+            String id = (String)hit.get("_id");
+            Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
+            GUID guid = new GUID((String)obj.get("guid"));
+            ret.put(guid, id);
+        }
+        return ret;
+    }
+
     @SuppressWarnings({ "serial", "unchecked" })
     private Map<GUID, String> lookupParentDocIds(String indexName, Set<GUID> guids) throws IOException {
         Map<String, Object> terms = new LinkedHashMap<String, Object>() {{
@@ -486,6 +404,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }};
     }
 
+    @Override
+    public Map<GUID, Boolean> checkParentGuids(Set<GUID> guids) throws IOException {
+        Set<GUID> parentGUIDs = guids.stream().map(guid -> new GUID(guid.getStorageCode(), 
+                guid.getAccessGroupId(), guid.getAccessGroupObjectId(), guid.getVersion(), null, 
+                null)).collect(Collectors.toSet());
+        Map<GUID, String> map = lookupParentDocIds("_all", parentGUIDs);
+        return parentGUIDs.stream().collect(Collectors.toMap(Function.identity(), 
+                guid -> map.containsKey(guid)));
+    }
+    
     @SuppressWarnings("unchecked")
     public Map<GUID, String> checkParentDoc(String indexName, Set<GUID> parentGUIDs, 
             boolean isPublic) throws IOException {
@@ -734,6 +662,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         item.guid = new GUID((String)obj.get("guid"));
         if (info) {
             item.objectName = (String)obj.get("oname");
+            item.type = (String)obj.get("otype");
             Object dateProp = obj.get("timestamp");
             item.timestamp = (dateProp instanceof Long) ? (Long)dateProp : 
                 Long.parseLong(String.valueOf(dateProp));
