@@ -28,6 +28,7 @@
 			"path": "assembly_ref",
 			"transform": "guid",
 			"target-object-type": "Assembly",
+			"optional-default-value": [],
 			"keyword-type": "string",
 			"key-name": "assembly_guid",
 			"ui-hidden": true

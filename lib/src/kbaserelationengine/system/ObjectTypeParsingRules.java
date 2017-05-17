@@ -21,7 +21,7 @@ public class ObjectTypeParsingRules {
     private ObjectJsonPath pathToSubObjects;
     private List<IndexingRules> indexingRules;
     private ObjectJsonPath primaryKeyPath;
-    private Map<ObjectJsonPath, RelationRules> relationPathToRules;
+    private List<RelationRules> relationRules;
     
     public String getGlobalObjectType() {
         return globalObjectType;
@@ -79,13 +79,13 @@ public class ObjectTypeParsingRules {
         this.primaryKeyPath = primaryKeyPath;
     }
     
-    public Map<ObjectJsonPath, RelationRules> getRelationPathToRules() {
-        return relationPathToRules;
+    public List<RelationRules> getRelationRules() {
+        return relationRules;
     }
     
-    public void setRelationPathToRules(
-            Map<ObjectJsonPath, RelationRules> foreignKeyPathToLookupRules) {
-        this.relationPathToRules = foreignKeyPathToLookupRules;
+    public void setRelationRules(
+            List<RelationRules> foreignKeyLookupRules) {
+        this.relationRules = foreignKeyLookupRules;
     }
 
     public static ObjectTypeParsingRules fromFile(File file) 
@@ -150,6 +150,9 @@ public class ObjectTypeParsingRules {
                 rules.setSourceKey((String)rulesObj.get("source-key"));
                 rules.setTargetObjectType((String)rulesObj.get("source-key"));
                 rules.setSubobjectIdKey((String)rulesObj.get("subobject-id-key"));
+                rules.setConstantValue(rulesObj.get("constant-value"));
+                rules.setOptionalDefaultValue(rulesObj.get("optional-default-value"));
+                rules.setTargetObjectType((String)rulesObj.get("target-object-type"));
                 rules.setUiName((String)rulesObj.get("ui-name"));
                 Boolean uiHidden = (Boolean)rulesObj.get("ui-hidden");
                 if (uiHidden != null) {
@@ -162,17 +165,19 @@ public class ObjectTypeParsingRules {
         ret.setPrimaryKeyPath(getPath((String)obj.get("primary-key-path")));
         // Relations
         @SuppressWarnings("unchecked")
-        Map<String, Object> relationPathToRules = 
-                (Map<String, Object>)obj.get("relation-path-to-rules");
-        if (relationPathToRules != null) {
-            ret.setRelationPathToRules(new LinkedHashMap<>());
-            for (String key : relationPathToRules.keySet()) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> rulesObj = (Map<String, Object>)relationPathToRules.get(key);
+        List<Map<String, Object>> relationRules = 
+                (List<Map<String, Object>>)obj.get("relation-rules");
+        if (relationRules != null) {
+            ret.setRelationRules(new ArrayList<>());
+            for (Map<String, Object> rulesObj : relationRules) {
                 RelationRules rules = new RelationRules();
+                String pathText = (String)rulesObj.get("path");
+                if (pathText != null) {
+                    rules.setPath(new ObjectJsonPath(pathText));
+                }
                 rules.setTargetObjectType((String)rulesObj.get("target-object-type"));
                 rules.setRelationType((String)rulesObj.get("relation-type"));
-                ret.getRelationPathToRules().put(new ObjectJsonPath(key), rules);
+                ret.getRelationRules().add(rules);
             }
         }
         return ret;

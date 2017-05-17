@@ -68,68 +68,86 @@ public class SubObjectExtractor {
 		if (t == JsonToken.START_OBJECT) {	// we observe open of mapping/object in real json data
 			if (selection.hasChildren()) {	// we have some restrictions for this object in selection
 				// we will remove visited keys from selectedFields and check emptiness at object end
-				Set<String> selectedFields = new LinkedHashSet<String>(selection.getChildren().keySet());
-				boolean all = false;
-				SubObjectExtractionNode allChild = null;
-				if (selectedFields.contains("*")) {
-					all = true;
-					selectedFields.remove("*");
-					allChild = selection.getChildren().get("*");
-					if (selectedFields.size() > 0)
-						throw new ObjectParseException("Invalid selection: the selection path " +
-								"contains both '*' to select all fields and selection of " +
-								"specific fields (" + selectedFields + "), at: " + 
-								ObjectJsonPath.getPathText(path));
-				}
-				// process first token standing for start of object
-				if (!skipLvl) {
-				    JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());
-				}
-				while (true) {
-					t = jts.nextToken();
-					if (t == JsonToken.END_OBJECT) {
-					    if (!skipLvl) {
-					        JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());
-					    }
-						break;
-					}
-					if (t != JsonToken.FIELD_NAME)
-						throw new ObjectParseException("Error parsing json format " + 
-								t.asString() + ", at: " + ObjectJsonPath.getPathText(path));
-					String fieldName = jts.getText();
-					if (all || selectedFields.contains(fieldName)) {
-						// if we need all fields or the field is present in list of necessary fields 
-						// we process it and value following after that
-						if (!all)
-							selectedFields.remove(fieldName);
-						if (!skipLvl) {
-						    JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());
-						}
-						// read first token of value block in order to prepare state for recursive 
-						// extractFieldsWithOpenToken call
-						t = jts.nextToken();
-						// add field to the tail of path branch
-						path.add(fieldName);
-						// process value corresponding to this field recursively
-						extractFieldsWithOpenToken(jts, t, all ? allChild : 
-							selection.getChildren().get(fieldName), consumer, path, 
-							strictMaps, strictArrays, selection.isSkipLevel());
-						// remove field from tail of path branch
-						path.remove(path.size() - 1);
-					} else {
-						// otherwise we skip value following after field
-						t = jts.nextToken();
-						JsonTokenUtil.skipChildren(jts, t);
-					}
-				}
-				// let's check have we visited all selected fields in this map
-				// we will not visit them in real data and hence will not delete them from selection
-				if (strictMaps && !selectedFields.isEmpty()) {
-					String notFound = selectedFields.iterator().next();
-					throw new ObjectParseException("Invalid selection: data does not contain " +
-							"a field or key named '" + notFound + "', at: " + 
-					        getPathText(path, notFound));
-				}
+				Set<String> selectedFields = new LinkedHashSet<String>(
+				        selection.getChildren().keySet());
+                if (selectedFields.size() == 1 && selectedFields.contains("{size}")) {
+                    int size = 0;
+                    while (true) {
+                        t = jts.nextToken();
+                        if (t == JsonToken.END_OBJECT) {
+                            break;
+                        }
+                        if (t != JsonToken.FIELD_NAME)
+                            throw new ObjectParseException("Error parsing json format " + 
+                                    t.asString() + ", at: " + ObjectJsonPath.getPathText(path));
+                        t = jts.nextToken();
+                        JsonTokenUtil.skipChildren(jts, t);
+                        size++;
+                    }
+                    consumer.getOutput().writeNumber(size);
+                } else {
+                    boolean all = false;
+                    SubObjectExtractionNode allChild = null;
+                    if (selectedFields.contains("*")) {
+                        all = true;
+                        selectedFields.remove("*");
+                        allChild = selection.getChildren().get("*");
+                        if (selectedFields.size() > 0)
+                            throw new ObjectParseException("Invalid selection: the selection path " +
+                                    "contains both '*' to select all fields and selection of " +
+                                    "specific fields (" + selectedFields + "), at: " + 
+                                    ObjectJsonPath.getPathText(path));
+                    }
+                    // process first token standing for start of object
+                    if (!skipLvl) {
+                        JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());
+                    }
+                    while (true) {
+                        t = jts.nextToken();
+                        if (t == JsonToken.END_OBJECT) {
+                            if (!skipLvl) {
+                                JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());
+                            }
+                            break;
+                        }
+                        if (t != JsonToken.FIELD_NAME)
+                            throw new ObjectParseException("Error parsing json format " + 
+                                    t.asString() + ", at: " + ObjectJsonPath.getPathText(path));
+                        String fieldName = jts.getText();
+                        if (all || selectedFields.contains(fieldName)) {
+                            // if we need all fields or the field is present in list of necessary fields 
+                            // we process it and value following after that
+                            if (!all)
+                                selectedFields.remove(fieldName);
+                            if (!skipLvl) {
+                                JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());
+                            }
+                            // read first token of value block in order to prepare state for recursive 
+                            // extractFieldsWithOpenToken call
+                            t = jts.nextToken();
+                            // add field to the tail of path branch
+                            path.add(fieldName);
+                            // process value corresponding to this field recursively
+                            extractFieldsWithOpenToken(jts, t, all ? allChild : 
+                                selection.getChildren().get(fieldName), consumer, path, 
+                                strictMaps, strictArrays, selection.isSkipLevel());
+                            // remove field from tail of path branch
+                            path.remove(path.size() - 1);
+                        } else {
+                            // otherwise we skip value following after field
+                            t = jts.nextToken();
+                            JsonTokenUtil.skipChildren(jts, t);
+                        }
+                    }
+                    // let's check have we visited all selected fields in this map
+                    // we will not visit them in real data and hence will not delete them from selection
+                    if (strictMaps && !selectedFields.isEmpty()) {
+                        String notFound = selectedFields.iterator().next();
+                        throw new ObjectParseException("Invalid selection: data does not contain " +
+                                "a field or key named '" + notFound + "', at: " + 
+                                getPathText(path, notFound));
+                    }
+                }
 			} else {  // need all fields and values
 			    if (selection.isNeedAll()) {
 			        JsonTokenUtil.writeTokensFromCurrent(jts, t, consumer.getOutput());

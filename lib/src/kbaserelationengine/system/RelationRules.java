@@ -1,8 +1,19 @@
 package kbaserelationengine.system;
 
+import kbaserelationengine.common.ObjectJsonPath;
+
 public class RelationRules {
+    private ObjectJsonPath path;
     private String targetObjectType;
     private String relationType;
+    
+    public ObjectJsonPath getPath() {
+        return path;
+    }
+    
+    public void setPath(ObjectJsonPath path) {
+        this.path = path;
+    }
     
     public String getTargetObjectType() {
         return targetObjectType;
@@ -22,14 +33,15 @@ public class RelationRules {
 
     @Override
     public String toString() {
-        return "KeyLookupRules [targetObjectType=" + targetObjectType
-                + ", relationType=" + relationType + "]";
+        return "RelationRules [path=" + path + ", targetObjectType="
+                + targetObjectType + ", relationType=" + relationType + "]";
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
+        result = prime * result + ((path == null) ? 0 : path.hashCode());
         result = prime * result
                 + ((relationType == null) ? 0 : relationType.hashCode());
         result = prime * result + ((targetObjectType == null) ? 0
@@ -46,6 +58,11 @@ public class RelationRules {
         if (getClass() != obj.getClass())
             return false;
         RelationRules other = (RelationRules) obj;
+        if (path == null) {
+            if (other.path != null)
+                return false;
+        } else if (!path.equals(other.path))
+            return false;
         if (relationType == null) {
             if (other.relationType != null)
                 return false;
@@ -58,6 +75,5 @@ public class RelationRules {
             return false;
         return true;
     }
-    
-    
+
 }

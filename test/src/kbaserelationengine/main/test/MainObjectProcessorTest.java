@@ -114,10 +114,8 @@ public class MainObjectProcessorTest {
         }
     }
     
-    @Ignore
     @Test
     public void testGenomeManually() throws Exception {
-        //mop.performOneTick();
         ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", 20266, "2", 1, null, 
                 System.currentTimeMillis(), "KBaseGenomes.Genome", ObjectStatusEventType.CREATED, false);
         mop.processOneEvent(ev);
@@ -162,6 +160,7 @@ public class MainObjectProcessorTest {
         Assert.assertEquals(1, ids.size());
     }
     
+    @Ignore
     @Test
     public void testNarrativeManually() throws Exception {
         indexFewVersions(new ObjectStatusEvent("-1", "WS", 20266, "1", 7, null, 

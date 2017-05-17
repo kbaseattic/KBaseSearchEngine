@@ -14,8 +14,7 @@
 		},
 		{
 			"path": "gc_content",
-			"keyword-type": "integer",
-			"transform": "percent",
+			"keyword-type": "double",
 			"ui-name": "GC-content"
 		},
 		{
@@ -25,6 +24,7 @@
 		},
 		{
 			"path": "contigs/{size}",
+			"keyword-type": "integer",
 			"key-name": "contigs"
 		}
 	]

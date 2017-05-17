@@ -92,16 +92,17 @@ public class IdMapperTest {
             String pathToPrimary, String... foreignKeyPathToTypePairs) throws Exception {
         Map<String, String> data = new LinkedHashMap<String, String>();
         IdConsumer consumer = createStringMapConsumer(data);
-        Map<ObjectJsonPath, RelationRules> foreignKeyPathToType = new LinkedHashMap<>();
+        List<RelationRules> foreignKeyRules = new ArrayList<>();
         for (int i = 0; i < foreignKeyPathToTypePairs.length / 2; i++) {
             String idPath = foreignKeyPathToTypePairs[i * 2];
             String keyType = foreignKeyPathToTypePairs[i * 2 + 1];
             RelationRules keyRules = new RelationRules();
+            keyRules.setPath(new ObjectJsonPath(idPath));
             keyRules.setTargetObjectType(keyType);
-            foreignKeyPathToType.put(new ObjectJsonPath(idPath), keyRules);
+            foreignKeyRules.add(keyRules);
         }
         IdMapper.mapKeys(new ObjectJsonPath(pathToPrimary), 
-                foreignKeyPathToType, jp, consumer);
+                foreignKeyRules, jp, consumer);
         return data;
     }
     

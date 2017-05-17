@@ -138,24 +138,53 @@ public class MainObjectProcessor {
             @Override
             public Set<String> resolveWorkspaceRefs(Set<String> refs)
                     throws IOException {
-                throw new IllegalStateException();
+                System.out.println("ObjectLookupProvider.resolveWorkspaceRefs: " + refs);
+                return refs;
             }
             
             @Override
             public Map<GUID, kbaserelationengine.search.ObjectData> lookupObjectsByGuid(
                     Set<GUID> guids) throws IOException {
-                throw new IllegalStateException();
-            }
-            
-            @Override
-            public Map<GUID, String> getTypesForGuids(Set<GUID> guids)
-                    throws IOException {
-                throw new IllegalStateException();
+                Map<GUID, Boolean> map = indexingStorage.checkParentGuids(guids);
+                for (GUID parentGuid : map.keySet()) {
+                    if (!map.get(parentGuid)) {
+                        // We should index it
+                        System.out.println("Parent GUID not found: " + parentGuid);
+                    }
+                }
+                kbaserelationengine.search.PostProcessing pp = 
+                        new kbaserelationengine.search.PostProcessing();
+                pp.objectData = false;
+                pp.objectKeys = true;
+                pp.objectInfo = true;
+                List<kbaserelationengine.search.ObjectData> objList = 
+                        indexingStorage.getObjectsByIds(guids, pp);
+                return objList.stream().collect(Collectors.toMap(od -> od.guid, 
+                        Function.identity()));
             }
             
             @Override
             public ObjectTypeParsingRules getTypeDescriptor(String type) {
-                throw new IllegalStateException();
+                try {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
+                            new File("resources/types/" + type + ".json"), Map.class);
+                    return ObjectTypeParsingRules.fromObject(parsingRulesObj);
+                } catch (Exception ex) {
+                    throw new IllegalStateException(ex);
+                }
+            }
+            
+            @Override
+            public Map<GUID, String> getTypesForGuids(Set<GUID> guids) throws IOException {
+                kbaserelationengine.search.PostProcessing pp = 
+                        new kbaserelationengine.search.PostProcessing();
+                pp.objectData = false;
+                pp.objectKeys = false;
+                pp.objectInfo = true;
+                Map<GUID, String> ret = indexingStorage.getObjectsByIds(guids, pp).stream().collect(
+                        Collectors.toMap(od -> od.guid, od -> od.type));
+                return ret;
             }
         };
     }

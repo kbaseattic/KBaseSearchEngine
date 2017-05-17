@@ -14,6 +14,8 @@ public class IndexingRules {
     private String sourceKey = null;
     private String targetObjectType = null;
     private String subobjectIdKey = null;
+    private Object optionalDefaultValue = null;
+    private Object constantValue = null;
     private String uiName = null;
     private boolean uiHidden = false;
     private String uiLinkKey = null;
@@ -106,6 +108,22 @@ public class IndexingRules {
         this.subobjectIdKey = subobjectIdKey;
     }
     
+    public Object getConstantValue() {
+        return constantValue;
+    }
+    
+    public void setConstantValue(Object constantValue) {
+        this.constantValue = constantValue;
+    }
+    
+    public Object getOptionalDefaultValue() {
+        return optionalDefaultValue;
+    }
+    
+    public void setOptionalDefaultValue(Object optionalDefaultValue) {
+        this.optionalDefaultValue = optionalDefaultValue;
+    }
+    
     public String getUiName() {
         return uiName;
     }
@@ -129,4 +147,18 @@ public class IndexingRules {
     public void setUiLinkKey(String uiLinkKey) {
         this.uiLinkKey = uiLinkKey;
     }
+
+    @Override
+    public String toString() {
+        return "IndexingRules [path=" + path + ", fullText=" + fullText
+                + ", keywordType=" + keywordType + ", keyName=" + keyName
+                + ", transform=" + transform + ", fromParent=" + fromParent
+                + ", derivedKey=" + derivedKey + ", notIndexed=" + notIndexed
+                + ", sourceKey=" + sourceKey + ", targetObjectType="
+                + targetObjectType + ", subobjectIdKey=" + subobjectIdKey
+                + ", optionalDefaultValue=" + optionalDefaultValue
+                + ", constantValue=" + constantValue + ", uiName=" + uiName
+                + ", uiHidden=" + uiHidden + ", uiLinkKey=" + uiLinkKey + "]";
+    }
+    
 }

@@ -2,6 +2,7 @@ package kbaserelationengine.parse;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -45,6 +46,16 @@ public class KeywordParser {
         Map<String, IndexingRules> ruleMap = indexingRules.stream().collect(
                 Collectors.toMap(rule -> getKeyName(rule), Function.identity()));
         for (String key : ruleMap.keySet()) {
+            IndexingRules rule = ruleMap.get(key);
+            if (!rule.isDerivedKey()) {
+                // Let's check that not derived keywords are all set (with optional default values)
+                List<Object> values = keywords.containsKey(key) ? keywords.get(key).values : null;
+                if (isEmpty(values)) {
+                    processRule(rule, key, null, keywords, lookup);
+                }
+            }
+        }
+        for (String key : ruleMap.keySet()) {
             if (ruleMap.get(key).isDerivedKey()) {
                 processDerivedRule(ruleMap, key, keywords, lookup, new LinkedHashSet<>());
             }
@@ -69,11 +80,15 @@ public class KeywordParser {
             throw new IllegalStateException("Circular dependency in derived keywords: " +
                     keysWaitingInStack);
         }
-        keysWaitingInStack.add(key);
         IndexingRules rule = ruleMap.get(key);
+        if (!rule.isDerivedKey()) {
+            throw new IllegalStateException("Reference to not derived keyword with no value");
+        }
+        keysWaitingInStack.add(key);
         String sourceKey = rule.getSourceKey();
         if (sourceKey == null) {
-            throw new IllegalStateException("Source-key not defined for derived keyword: " + key);
+            throw new IllegalStateException("Source-key not defined for derived keyword: " + 
+                    rule);
         }
         List<Object> values = processDerivedRule(ruleMap, sourceKey, keywords, lookup, 
                 keysWaitingInStack);
@@ -85,12 +100,27 @@ public class KeywordParser {
             processRule(rule, key, value, keywords, lookup);
         }
         keysWaitingInStack.remove(key);
-        return keywords.get(key).values;
+        List<Object> ret = keywords.containsKey(key) ? keywords.get(key).values : new ArrayList<>();
+        if (isEmpty(ret) && rule.getOptionalDefaultValue() != null) {
+            addOrAddAll(rule.getOptionalDefaultValue(), ret);
+        }
+        return ret;
     }
 
+    private static boolean isEmpty(Object value) {
+        return value == null || (value instanceof List && ((List<?>)value).isEmpty());
+    }
+    
     private static void processRule(IndexingRules rule, String key, Object value,
             Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup) throws IOException {
         Object valueFinal = value;
+        if (valueFinal == null) {
+            if (rule.getOptionalDefaultValue() != null) {
+                valueFinal = rule.getOptionalDefaultValue();
+            } else {
+                valueFinal = Collections.EMPTY_LIST;
+            }
+        }
         InnerKeyValue values = keywords.get(key);
         if (values == null) {
             values = new InnerKeyValue();
@@ -127,9 +157,9 @@ public class KeywordParser {
                     throws IOException {
         String retProp = null;
         if (transform.contains(".")) {
-            String[] parts = transform.split(Pattern.quote("."));
-            transform = parts[0];
-            retProp = parts[1];
+            int dotPos = transform.indexOf('.');
+            retProp = transform.substring(dotPos + 1);
+            transform = transform.substring(0, dotPos);
         }
         switch (transform) {
         case "location":
@@ -176,7 +206,7 @@ public class KeywordParser {
             String type = rule.getTargetObjectType();
             if (type == null) {
                 throw new IllegalStateException("Target object type should be set for 'guid' " +
-                        "transform (" + getKeyName(rule) + ")");
+                        "transform: " + rule);
             }
             ObjectTypeParsingRules typeDescr = lookup.getTypeDescriptor(type);
             Set<String> refs = toStringSet(value);
@@ -196,9 +226,9 @@ public class KeywordParser {
             }
             Set<String> subIds = null;
             if (rule.getSubobjectIdKey() != null) {
-                if (typeDescr.getInnerSubType() != null) {
+                if (typeDescr.getInnerSubType() == null) {
                     throw new IllegalStateException("Subobject GUID transform should correspond " +
-                            "to subobject type descriptor");
+                            "to subobject type descriptor: " + rule);
                 }
                 subIds = toStringSet(sourceKeywords.get(rule.getSubobjectIdKey()).values);
                 if (guids.size() != 1) {

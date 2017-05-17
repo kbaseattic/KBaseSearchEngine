@@ -65,20 +65,27 @@ public class ElasticIndexingStorageTest {
             @Override
             public Set<String> resolveWorkspaceRefs(Set<String> refs)
                     throws IOException {
-                System.out.println("ObjectLookupProvider.resolveWorkspaceRefs: " + refs);
+                for (String ref : refs) {
+                    try {
+                        GUID pguid = new GUID("WS:" + ref);
+                        boolean indexed = indexStorage.checkParentGuids(new LinkedHashSet<>(
+                                Arrays.asList(pguid))).get(pguid);
+                        if (!indexed) {
+                            indexObject("Assembly", "assembly01", ref, "MyAssembly.1");
+                            indexObject("AssemblyContig", "assembly01", ref, "MyAssembly.1");
+                            Assert.assertTrue(indexStorage.checkParentGuids(new LinkedHashSet<>(
+                                    Arrays.asList(pguid))).get(pguid));
+                        }
+                    } catch (Exception ex) {
+                        throw new IllegalStateException(ex);
+                    }
+                }
                 return refs;
             }
             
             @Override
             public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids)
                     throws IOException {
-                Map<GUID, Boolean> map = indexStorage.checkParentGuids(guids);
-                for (GUID parentGuid : map.keySet()) {
-                    if (!map.get(parentGuid)) {
-                        // We should index it
-                        System.out.println("Parent GUID not found: " + parentGuid);
-                    }
-                }
                 List<ObjectData> objList = indexStorage.getObjectsByIds(guids);
                 return objList.stream().collect(Collectors.toMap(od -> od.guid, Function.identity()));
             }
@@ -134,7 +141,7 @@ public class ElasticIndexingStorageTest {
         return MatchFilter.create().withFullTextInAll(fullText);
     }
     
-    private void indexObject(GUID id, String objectType, String json, String objectName,
+    private static void indexObject(GUID id, String objectType, String json, String objectName,
             long timestamp, String parentJsonValue, Map<String, String> metadata, boolean isPublic,
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
         ParsedObject obj = KeywordParser.extractKeywords(json, parentJsonValue, metadata, 
@@ -144,33 +151,45 @@ public class ElasticIndexingStorageTest {
     }
     
     @SuppressWarnings("unchecked")
-    @Test
-    public void testSave() throws Exception {
+    private static void indexObject(String type, String jsonResource, String ref, String objName)
+            throws Exception {
         Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
-                new File("resources/types/GenomeFeature.json"), Map.class);
+                new File("resources/types/" + type + ".json"), Map.class);
         ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules.fromObject(parsingRulesObj);
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
         String parentJson = null;
-        try (JsonParser jts = SubObjectExtractorTest.getParsedJsonResource("genome01")) {
+        try (JsonParser jts = SubObjectExtractorTest.getParsedJsonResource(jsonResource)) {
             parentJson = ObjectParser.extractParentFragment(parsingRules, jts);
         }
-        try (JsonParser jts = SubObjectExtractorTest.getParsedJsonResource("genome01")) {
+        try (JsonParser jts = SubObjectExtractorTest.getParsedJsonResource(jsonResource)) {
             ObjectParser.extractSubObjects(parsingRules, subObjConsumer, jts);
         }
         for (ObjectJsonPath path : pathToJson.keySet()) {
             String subJson = pathToJson.get(path);
             SimpleIdConsumer idConsumer = new SimpleIdConsumer();
-            try (JsonParser subJts = UObject.getMapper().getFactory().createParser(subJson)) {
-                IdMapper.mapKeys(parsingRules.getPrimaryKeyPath(), 
-                        parsingRules.getRelationPathToRules(), subJts, idConsumer);
+            if (parsingRules.getPrimaryKeyPath() != null || parsingRules.getRelationRules() != null) {
+                try (JsonParser subJts = UObject.getMapper().getFactory().createParser(subJson)) {
+                    IdMapper.mapKeys(parsingRules.getPrimaryKeyPath(), 
+                            parsingRules.getRelationRules(), subJts, idConsumer);
+                }
             }
-            GUID id = ObjectParser.prepareGUID(parsingRules, "1/1/1", path, idConsumer);
+            GUID id = ObjectParser.prepareGUID(parsingRules, ref, path, idConsumer);
             indexObject(id, parsingRules.getGlobalObjectType(), subJson, 
-                    "MyGenome.1", System.currentTimeMillis(), parentJson, Collections.emptyMap(),
+                    objName, System.currentTimeMillis(), parentJson, Collections.emptyMap(),
                     false, parsingRules.getIndexingRules());
         }
-        //indexStorage.refreshIndex(indexStorage.getIndex(parsingRules.getGlobalObjectType()));
+
+    }
+    
+    private static ObjectData getIndexedObject(GUID guid) throws Exception {
+        return indexStorage.getObjectsByIds(new LinkedHashSet<>(Arrays.asList(guid))).get(0);
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testFeatures() throws Exception {
+        indexObject("GenomeFeature", "genome01", "1/1/1", "MyGenome.1");
         Map<String, Integer> typeToCount = indexStorage.searchTypes(ft("Rfah"), 
                 AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, typeToCount.size());
@@ -198,11 +217,19 @@ public class ElasticIndexingStorageTest {
         List<ObjectData> objList = indexStorage.getObjectsByIds(
                 new HashSet<>(Arrays.asList(id)));
         Assert.assertEquals(1, objList.size());
-        Map<String, Object> obj = (Map<String, Object>)objList.get(0).data;
+        ObjectData featureIndex = objList.get(0);
+        //System.out.println("GenomeFeature index: " + featureIndex);
+        Map<String, Object> obj = (Map<String, Object>)featureIndex.data;
         Assert.assertTrue(obj.containsKey("id"));
         Assert.assertTrue(obj.containsKey("location"));
         Assert.assertTrue(obj.containsKey("function"));
         Assert.assertTrue(obj.containsKey("type"));
+        Assert.assertEquals("NC_000913", featureIndex.keyProps.get("contig_id"));
+        String contigGuidText = featureIndex.keyProps.get("contig_guid");
+        Assert.assertNotNull(contigGuidText);
+        ObjectData contigIndex = getIndexedObject(new GUID(contigGuidText));
+        //System.out.println("AssemblyContig index: " + contigIndex);
+        Assert.assertEquals("NC_000913", "" + contigIndex.keyProps.get("contig_id"));
         // Search by keyword
         ids = indexStorage.searchIds(type, MatchFilter.create().withLookupInKey(
                 "ontology_terms", "SSO:000008186"), null,
@@ -212,35 +239,23 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals(expectedGUID, id);
     }
     
-    @SuppressWarnings("unchecked")
     @Test
     public void testGenome() throws Exception {
-        Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
-                new File("resources/types/Genome.json"), Map.class);
-        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules.fromObject(parsingRulesObj);
-        Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
-        SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
-        String parentJson = null;
-        try (JsonParser jts = SubObjectExtractorTest.getParsedJsonResource("genome01")) {
-            parentJson = ObjectParser.extractParentFragment(parsingRules, jts);
-        }
-        try (JsonParser jts = SubObjectExtractorTest.getParsedJsonResource("genome01")) {
-            ObjectParser.extractSubObjects(parsingRules, subObjConsumer, jts);
-        }
-        for (ObjectJsonPath path : pathToJson.keySet()) {
-            String subJson = pathToJson.get(path);
-            SimpleIdConsumer idConsumer = new SimpleIdConsumer();
-            GUID id = ObjectParser.prepareGUID(parsingRules, "2/1/1", path, idConsumer);
-            indexObject(id, parsingRules.getGlobalObjectType(), subJson, 
-                    "MyGenome.1", System.currentTimeMillis(), parentJson, Collections.emptyMap(),
-                    false, parsingRules.getIndexingRules());
-        }
+        indexObject("Genome", "genome01", "1/1/1", "MyGenome.1");
         Set<GUID> guids = indexStorage.searchIds("Genome", MatchFilter.create().withLookupInKey(
                 "features", new MatchValue(1, null)), null, AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, guids.size());
-        ObjectData found = indexStorage.getObjectsByIds(guids).get(0);
-        Assert.assertTrue(found.keyProps.containsKey("features"));
-        Assert.assertEquals("3", found.keyProps.get("features"));
+        ObjectData genomeIndex = indexStorage.getObjectsByIds(guids).get(0);
+        //System.out.println("Genome index: " + genomeIndex);
+        Assert.assertTrue(genomeIndex.keyProps.containsKey("features"));
+        Assert.assertEquals("3", "" + genomeIndex.keyProps.get("features"));
+        Assert.assertEquals("1", "" + genomeIndex.keyProps.get("contigs"));
+        Assert.assertEquals("MyAssembly.1", genomeIndex.keyProps.get("assembly"));
+        String assemblyGuidText = genomeIndex.keyProps.get("assembly_guid");
+        Assert.assertNotNull(assemblyGuidText);
+        ObjectData assemblyIndex = getIndexedObject(new GUID(assemblyGuidText));
+        //System.out.println("Assembly index: " + genomeIndex);
+        Assert.assertEquals("1", "" + assemblyIndex.keyProps.get("contigs"));
     }
     
     @Test

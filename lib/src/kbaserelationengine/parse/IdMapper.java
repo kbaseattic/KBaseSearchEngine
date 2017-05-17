@@ -1,7 +1,7 @@
 package kbaserelationengine.parse;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.List;
 
 import com.fasterxml.jackson.core.JsonParser;
 
@@ -28,13 +28,17 @@ public class IdMapper {
 	 * @throws ObjectParseException 
 	 */
 	public static void mapKeys(ObjectJsonPath pathToPrimary, 
-	        Map<ObjectJsonPath, RelationRules> foreignKeyRules, 
-	        JsonParser jts, IdConsumer consumer) throws IOException, ObjectParseException {
+	        List<RelationRules> foreignKeyRules, JsonParser jts, IdConsumer consumer) 
+	                throws IOException, ObjectParseException {
 		//if the selection is empty, we return without adding anything
 		ValueCollectingNode<IdMappingRules> root = new ValueCollectingNode<>();
 		root.addPath(pathToPrimary, new IdMappingRules(true));
-		for (ObjectJsonPath path: foreignKeyRules.keySet()) {
-		    root.addPath(path, new IdMappingRules(foreignKeyRules.get(path)));
+		if (foreignKeyRules != null) {
+		    for (RelationRules relRule: foreignKeyRules) {
+		        if (relRule.getPath() != null) {
+		            root.addPath(relRule.getPath(), new IdMappingRules(relRule));
+		        }
+		    }
 		}
 		new ValueCollector<IdMappingRules>().mapKeys(root, jts, consumer);
 	}

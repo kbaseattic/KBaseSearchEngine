@@ -16,7 +16,6 @@
 		},
 		{
 			"path": "gc_content",
-			"transform": "percent",
 			"keyword-type": "double",
 			"ui-name": "GC-content"
 		},
