@@ -152,9 +152,4 @@ public class ObjectParser {
                 new ObjectJsonPath("/") : parsingRules.getPathToSubObjects();
         SubObjectExtractor.extract(pathToSubObjects, indexingPaths, jts, subObjConsumer);
     }
-
-    public static String getRefFromObjectInfo(Tuple11<Long, String, String, String, 
-            Long, String, Long, String, String, Long, Map<String,String>> info) {
-        return info.getE7() + "/" + info.getE1() + "/" + info.getE5();
-    }
 }

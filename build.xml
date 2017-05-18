@@ -16,6 +16,7 @@
   <property name="scripts" location="scripts"/>
   <property name="web.xml" location="${scripts}/web.xml"/>
   <property name="exec.cmd.file" value="run_KBaseRelationEngine_async_job.sh"/>
+  <property name="exec.cmd.file2" value="run_KBaseRelationEngine_perform.sh"/>
   <property name="startup.cmd.file" value="start_server.sh"/>
 
   <fileset dir="${jars.dir}" id="lib">
@@ -111,6 +112,10 @@ commit=${git.commit}</echo>
 java -cp ${jar.absolute.path}:${lib.classpath} kbaserelationengine.KBaseRelationEngineServer $1 $2 $3
     </echo>
     <chmod file="${bin}/${exec.cmd.file}" perm="a+x"/>
+    <echo file="${bin}/${exec.cmd.file2}">#!/bin/bash
+java -Xmx2g -cp ${jar.absolute.path}:${lib.classpath} kbaserelationengine.main.test.PerformanceTester
+    </echo>
+    <chmod file="${bin}/${exec.cmd.file2}" perm="a+x"/>
   </target>
   
   <target name="test" description="run all tests">

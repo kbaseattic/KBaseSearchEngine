@@ -114,6 +114,22 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     private String checkIndex(String objectType, List<IndexingRules> indexingRules) 
             throws IOException {
+        return checkIndex(objectType, indexingRules, false);
+    }
+    
+    private String getAnyIndexPattern() {
+        return indexNamePrefix + "*";
+    }
+    
+    private String checkIndex(String objectType, List<IndexingRules> indexingRules,
+            boolean allowAnyType) throws IOException {
+        if (objectType == null) {
+            if (allowAnyType) {
+                return getAnyIndexPattern();
+            } else {
+                throw new IOException("Object type is required");
+            }
+        }
         String key = mergeTypes ? "all_types" : objectType;
         String ret = typeToIndex.get(key);
         if (ret == null) {
@@ -332,46 +348,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return ret;
     }
 
-    public Map<String, AccessInfo> lookupParentDocsByPrefix(GUID guid) throws IOException {
-        return lookupParentDocsByPrefix(null, guid);
-    }
-
-    @SuppressWarnings({ "serial", "unchecked" })
-    public Map<String, AccessInfo> lookupParentDocsByPrefix(String indexName,
-            GUID guid) throws IOException {
-        if (indexName == null) {
-            indexName = indexNamePrefix + "*";
-        }
-        String prefix = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
-                guid.getAccessGroupObjectId(), null, null, null).toString();
-        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
-            put("filter", Arrays.asList(
-                    createFilter("term", "prefix", prefix)
-                    ));
-        }};
-        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
-            put("bool", bool);
-        }};
-        Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
-            put("query", query);
-        }};
-        String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_search";
-        Response resp = makeRequest("GET", urlPath, doc);
-        Map<String, Object> data = UObject.getMapper().readValue(
-                resp.getEntity().getContent(), Map.class);
-        Map<String, AccessInfo> ret = new LinkedHashMap<>();
-        Map<String, Object> hitMap = (Map<String, Object>)data.get("hits");
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
-        for (Map<String, Object> hit : hitList) {
-            Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
-            String index = (String)hit.get("_index");
-            String type = (String)hit.get("_type");
-            String id = (String)hit.get("_id");
-            ret.put(index + "/" + type + "/" + id, AccessInfo.fromMap(obj));
-        }
-        return ret;
-    }
-
     @SuppressWarnings("serial")
     private Map<String, Object> createFilter(String queryType, String keyName, Object value) {
         Map<String, Object> term;
@@ -405,17 +381,20 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     @Override
-    public Map<GUID, Boolean> checkParentGuids(Set<GUID> guids) throws IOException {
+    public Map<GUID, Boolean> checkParentGuidsExist(String objectType, Set<GUID> guids) 
+            throws IOException {
         Set<GUID> parentGUIDs = guids.stream().map(guid -> new GUID(guid.getStorageCode(), 
                 guid.getAccessGroupId(), guid.getAccessGroupObjectId(), guid.getVersion(), null, 
                 null)).collect(Collectors.toSet());
-        Map<GUID, String> map = lookupParentDocIds("_all", parentGUIDs);
+        String indexName = checkIndex(objectType, null, true);
+        // In next operation map value may contain one of possible parents in case objectType==null
+        Map<GUID, String> map = lookupParentDocIds(indexName, parentGUIDs);
         return parentGUIDs.stream().collect(Collectors.toMap(Function.identity(), 
                 guid -> map.containsKey(guid)));
     }
     
     @SuppressWarnings("unchecked")
-    public Map<GUID, String> checkParentDoc(String indexName, Set<GUID> parentGUIDs, 
+    private Map<GUID, String> checkParentDoc(String indexName, Set<GUID> parentGUIDs, 
             boolean isPublic) throws IOException {
         boolean changed = false;
         Map<GUID, String> ret = lookupParentDocIds(indexName, parentGUIDs);
@@ -458,7 +437,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private boolean removeAccessGroupForOtherVersions(String indexName, GUID guid, 
             Integer... accessGroupIds) throws IOException {
         if (indexName == null) {
-            indexName = indexNamePrefix + "*";
+            indexName = getAnyIndexPattern();
         }
         String prefix = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), null, null, null).toString();
@@ -496,7 +475,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private boolean removeAccessGroupForVersion(String indexName, GUID guid, 
             int accessGroupId) throws IOException {
         if (indexName == null) {
-            indexName = indexNamePrefix + "*";
+            indexName = getAnyIndexPattern();
         }
         // Check that we work with other than physical access group this object exists in.
         boolean fromAllGroups = accessGroupId != guid.getAccessGroupId();
@@ -535,7 +514,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         // Here we try to update 'lastin' parameter in access parent. The idea is we need only one
         // version among other parent with the same prefix to contain any particular access group.
         if (indexName == null) {
-            indexName = indexNamePrefix + "*";
+            indexName = getAnyIndexPattern();
         }
         String prefix = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), null, null, null).toString();
@@ -890,7 +869,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 put(keyProp, sortOrder);
             }});
         }
-        String indexName = objectType == null ? (indexNamePrefix + "*") : getIndex(objectType);
+        String indexName = objectType == null ? getAnyIndexPattern() : getIndex(objectType);
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(

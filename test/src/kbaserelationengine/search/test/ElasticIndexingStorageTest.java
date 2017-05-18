@@ -68,12 +68,12 @@ public class ElasticIndexingStorageTest {
                 for (String ref : refs) {
                     try {
                         GUID pguid = new GUID("WS:" + ref);
-                        boolean indexed = indexStorage.checkParentGuids(new LinkedHashSet<>(
+                        boolean indexed = indexStorage.checkParentGuidsExist(null, new LinkedHashSet<>(
                                 Arrays.asList(pguid))).get(pguid);
                         if (!indexed) {
                             indexObject("Assembly", "assembly01", ref, "MyAssembly.1");
                             indexObject("AssemblyContig", "assembly01", ref, "MyAssembly.1");
-                            Assert.assertTrue(indexStorage.checkParentGuids(new LinkedHashSet<>(
+                            Assert.assertTrue(indexStorage.checkParentGuidsExist(null, new LinkedHashSet<>(
                                     Arrays.asList(pguid))).get(pguid));
                         }
                     } catch (Exception ex) {
@@ -144,8 +144,8 @@ public class ElasticIndexingStorageTest {
     private static void indexObject(GUID id, String objectType, String json, String objectName,
             long timestamp, String parentJsonValue, Map<String, String> metadata, boolean isPublic,
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
-        ParsedObject obj = KeywordParser.extractKeywords(json, parentJsonValue, metadata, 
-                indexingRules, objLookup);
+        ParsedObject obj = KeywordParser.extractKeywords(objectType, json, parentJsonValue, 
+                metadata, indexingRules, objLookup);
         indexStorage.indexObject(id, objectType, obj, objectName, timestamp, parentJsonValue, 
                 isPublic, indexingRules);
     }

@@ -29,7 +29,8 @@ public interface IndexingStorage {
             boolean isPublic, List<IndexingRules> indexingRules) 
                     throws IOException, ObjectParseException;
     
-    public Map<GUID, Boolean> checkParentGuids(Set<GUID> parentGuids) throws IOException;
+    public Map<GUID, Boolean> checkParentGuidsExist(String objectType, Set<GUID> parentGuids) 
+            throws IOException;
 
     public void flushIndexing(String objectType) throws IOException;
     

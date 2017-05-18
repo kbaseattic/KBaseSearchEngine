@@ -31,9 +31,11 @@ import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.AccessGroupProvider;
 import kbaserelationengine.events.AccessGroupStatus;
 import kbaserelationengine.events.ObjectStatusEvent;
+import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.events.StatusEventListener;
 import kbaserelationengine.events.reconstructor.AccessType;
 import kbaserelationengine.events.reconstructor.PresenceType;
+import kbaserelationengine.events.reconstructor.Util;
 import kbaserelationengine.events.reconstructor.WSStatusEventReconstructor;
 import kbaserelationengine.events.reconstructor.WSStatusEventReconstructorImpl;
 import kbaserelationengine.events.storage.MongoDBStatusEventStorage;
@@ -56,7 +58,9 @@ import kbaserelationengine.system.SystemStorage;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
+import workspace.GetObjectInfo3Params;
 import workspace.ObjectData;
+import workspace.ObjectSpecification;
 import workspace.SetPermissionsParams;
 import workspace.WorkspaceClient;
 
@@ -65,6 +69,7 @@ public class MainObjectProcessor {
     private AuthToken kbaseIndexerToken;
     private File rootTempDir;
     private WSStatusEventReconstructor wsEventReconstructor;
+    private WorkspaceClient wsClient;
     private StatusEventStorage eventStorage;
     private AccessGroupProvider accessGroupProvider;
     private ObjectStatusEventQueue queue;
@@ -74,7 +79,6 @@ public class MainObjectProcessor {
     private RelationStorage relationStorage;
     private LineLogger logger;
     private Set<String> admins;
-    private ObjectLookupProvider indexLookup;
     
     public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, String mongoHost, 
             int mongoPort, String mongoDbName, HttpHost esHost, String esUser, String esPassword,
@@ -90,6 +94,7 @@ public class MainObjectProcessor {
         accessGroupProvider = storage;
         WSStatusEventReconstructorImpl reconstructor = new WSStatusEventReconstructorImpl(
                 wsURL, kbaseIndexerToken, eventStorage);
+        wsClient = reconstructor.wsClient();
         wsEventReconstructor = reconstructor;
         reconstructor.registerListener(storage);
         if (logger != null) {
@@ -133,60 +138,6 @@ public class MainObjectProcessor {
         if (startLifecycleRunner) {
             startLifecycleRunner();
         }
-        indexLookup = new ObjectLookupProvider() {
-            
-            @Override
-            public Set<String> resolveWorkspaceRefs(Set<String> refs)
-                    throws IOException {
-                System.out.println("ObjectLookupProvider.resolveWorkspaceRefs: " + refs);
-                return refs;
-            }
-            
-            @Override
-            public Map<GUID, kbaserelationengine.search.ObjectData> lookupObjectsByGuid(
-                    Set<GUID> guids) throws IOException {
-                Map<GUID, Boolean> map = indexingStorage.checkParentGuids(guids);
-                for (GUID parentGuid : map.keySet()) {
-                    if (!map.get(parentGuid)) {
-                        // We should index it
-                        System.out.println("Parent GUID not found: " + parentGuid);
-                    }
-                }
-                kbaserelationengine.search.PostProcessing pp = 
-                        new kbaserelationengine.search.PostProcessing();
-                pp.objectData = false;
-                pp.objectKeys = true;
-                pp.objectInfo = true;
-                List<kbaserelationengine.search.ObjectData> objList = 
-                        indexingStorage.getObjectsByIds(guids, pp);
-                return objList.stream().collect(Collectors.toMap(od -> od.guid, 
-                        Function.identity()));
-            }
-            
-            @Override
-            public ObjectTypeParsingRules getTypeDescriptor(String type) {
-                try {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
-                            new File("resources/types/" + type + ".json"), Map.class);
-                    return ObjectTypeParsingRules.fromObject(parsingRulesObj);
-                } catch (Exception ex) {
-                    throw new IllegalStateException(ex);
-                }
-            }
-            
-            @Override
-            public Map<GUID, String> getTypesForGuids(Set<GUID> guids) throws IOException {
-                kbaserelationengine.search.PostProcessing pp = 
-                        new kbaserelationengine.search.PostProcessing();
-                pp.objectData = false;
-                pp.objectKeys = false;
-                pp.objectInfo = true;
-                Map<GUID, String> ret = indexingStorage.getObjectsByIds(guids, pp).stream().collect(
-                        Collectors.toMap(od -> od.guid, od -> od.type));
-                return ret;
-            }
-        };
     }
     
     private File getWsLoadTempDir() {
@@ -290,7 +241,8 @@ public class MainObjectProcessor {
             }
             iter.markAsVisitied(true);
             if (logger != null) {
-                logger.logInfo("[Indexer]   (total time: " + (System.currentTimeMillis() - time) + "ms.)");
+                logger.logInfo("[Indexer]   (total time: " + (System.currentTimeMillis() - time) +
+                        "ms.)");
             }
         }
     }
@@ -300,7 +252,21 @@ public class MainObjectProcessor {
         switch (ev.getEventType()) {
         case CREATED:
         case NEW_VERSION:
-            indexObject(ev.toGUID(), ev.getStorageObjectType(), ev.getTimestamp());
+            GUID pguid = ev.toGUID();
+            boolean indexed = indexingStorage.checkParentGuidsExist(null, new LinkedHashSet<>(
+                    Arrays.asList(pguid))).get(pguid);
+            if (indexed) {
+                logger.logInfo("[Indexer]   skipping " + pguid + " creation (already indexed)");
+                // TODO: we should fix public access for all sub-objects too !!!
+                if (ev.isGlobalAccessed()) {
+                    publish(pguid);
+                } else {
+                    unpublish(pguid);
+                }
+            } else {
+                indexObject(pguid, ev.getStorageObjectType(), ev.getTimestamp(),
+                        ev.isGlobalAccessed(), null);
+            }
             break;
         case DELETED:
             unshare(ev.toGUID(), ev.getAccessGroupId());
@@ -320,10 +286,14 @@ public class MainObjectProcessor {
         return systemStorage.listObjectTypesByStorageObjectType(storageObjectType) != null;
     }
     
-    public void indexObject(GUID guid, String storageObjectType, Long timestamp) 
-            throws IOException, JsonClientException, ObjectParseException {
+    public void indexObject(GUID guid, String storageObjectType, Long timestamp, boolean isPublic,
+            ObjectLookupProvider indexLookup) 
+                    throws IOException, JsonClientException, ObjectParseException {
         long t1 = System.currentTimeMillis();
         File tempFile = ObjectParser.prepareTempFile(getWsLoadTempDir());
+        if (indexLookup == null) {
+            indexLookup = new MOPLookupProvider();
+        }
         try {
             String objRef = guid.getAccessGroupId() + "/" + guid.getAccessGroupObjectId() + "/" +
                     guid.getVersion();
@@ -346,8 +316,8 @@ public class MainObjectProcessor {
                 for (GUID subGuid : guidToJson.keySet()) {
                     String json = guidToJson.get(subGuid);
                     Map<String, String> metadata = obj.getInfo().getE11();
-                    ParsedObject prsObj = KeywordParser.extractKeywords(json, parentJson, 
-                            metadata, rule.getIndexingRules(), indexLookup);
+                    ParsedObject prsObj = KeywordParser.extractKeywords(rule.getGlobalObjectType(),
+                            json, parentJson, metadata, rule.getIndexingRules(), indexLookup);
                     guidToObj.put(subGuid, prsObj);
                 }
                 if (logger != null) {
@@ -359,7 +329,7 @@ public class MainObjectProcessor {
                     timestamp = System.currentTimeMillis();
                 }
                 indexingStorage.indexObjects(rule.getGlobalObjectType(), obj.getInfo().getE2(), 
-                        timestamp, parentJson, guidToObj, false, rule.getIndexingRules());
+                        timestamp, parentJson, guidToObj, isPublic, rule.getIndexingRules());
                 if (logger != null) {
                     logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", indexing " +
                             "time: " + (System.currentTimeMillis() - t3) + " ms.");
@@ -377,7 +347,15 @@ public class MainObjectProcessor {
     public void unshare(GUID guid, int accessGroupId) throws IOException {
         indexingStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
     }
-    
+
+    public void publish(GUID guid) throws IOException {
+        indexingStorage.publishObjects(new LinkedHashSet<>(Arrays.asList(guid)));
+    }
+
+    public void unpublish(GUID guid) throws IOException {
+        indexingStorage.unpublishObjects(new LinkedHashSet<>(Arrays.asList(guid)));
+    }
+
     public void addWorkspaceToIndex(String wsNameOrId, AuthToken user)
             throws IOException, JsonClientException {
         WorkspaceClient wsClient = new WorkspaceClient(wsURL, user);
@@ -583,4 +561,128 @@ public class MainObjectProcessor {
         return ret;
     }
 
+    private class MOPLookupProvider implements ObjectLookupProvider {
+        private Map<String, String> refResolvingCache = new LinkedHashMap<>();
+        private Map<GUID, kbaserelationengine.search.ObjectData> objLookupCache =
+                new LinkedHashMap<>();
+        private Map<GUID, String> guidToTypeCache = new LinkedHashMap<>();
+        
+        @Override
+        public Set<String> resolveWorkspaceRefs(Set<String> refs)
+                throws IOException {
+            Set<String> ret = new LinkedHashSet<>();
+            Set<String> refsToResolve = new LinkedHashSet<>();
+            for (String ref : refs) {
+                if (refResolvingCache.containsKey(ref)) {
+                    ret.add(refResolvingCache.get(ref));
+                } else {
+                    refsToResolve.add(ref);
+                }
+            }
+            if (refsToResolve.size() > 0) {
+                try {
+                    List<ObjectSpecification> getInfoInput = refs.stream().map(
+                            ref -> new ObjectSpecification().withRef(ref)).collect(
+                                    Collectors.toList());
+                    List<ObjectStatusEvent> events = wsClient.getObjectInfo3(
+                            new GetObjectInfo3Params().withObjects(getInfoInput))
+                            .getInfos().stream().map(info -> new ObjectStatusEvent("", "WS", 
+                                    (int)(long)info.getE7(), "" +info.getE1(), 
+                                    (int)(long)info.getE5(), null, Util.DATE_PARSER.parseDateTime(
+                                            info.getE4()).getMillis(), info.getE3().split("-")[0],
+                                    ObjectStatusEventType.CREATED, false)).collect(
+                                            Collectors.toList());
+                    for (int pos = 0; pos < getInfoInput.size(); pos++) {
+                        String origRef = getInfoInput.get(pos).getRef();
+                        ObjectStatusEvent ev = events.get(pos);
+                        GUID pguid = ev.toGUID();
+                        String resolvedRef = pguid.getAccessGroupId() + "/" + 
+                                pguid.getAccessGroupObjectId() + "/" + pguid.getVersion();
+                        boolean indexed = indexingStorage.checkParentGuidsExist(null, 
+                                new LinkedHashSet<>(Arrays.asList(pguid))).get(pguid);
+                        if (!indexed) {
+                            indexObject(pguid, ev.getStorageObjectType(), ev.getTimestamp(), false,
+                                    this);
+                        }
+                        refResolvingCache.put(origRef, resolvedRef);
+                        ret.add(resolvedRef);
+                        if (!origRef.equals(resolvedRef)) {
+                            refResolvingCache.put(resolvedRef, resolvedRef);
+                        }
+                    }
+                } catch (IOException e) {
+                    throw e;
+                } catch (Exception ex) {
+                    throw new IOException(ex);
+                }
+            }
+            return ret;
+        }
+        
+        @Override
+        public Map<GUID, kbaserelationengine.search.ObjectData> lookupObjectsByGuid(
+                Set<GUID> guids) throws IOException {
+            Map<GUID, kbaserelationengine.search.ObjectData> ret = new LinkedHashMap<>();
+            Set<GUID> guidsToLoad = new LinkedHashSet<>();
+            for (GUID guid : guids) {
+                if (objLookupCache.containsKey(guid)) {
+                    ret.put(guid, objLookupCache.get(guid));
+                } else {
+                    guidsToLoad.add(guid);
+                }
+            }
+            if (guidsToLoad.size() > 0) {
+                kbaserelationengine.search.PostProcessing pp = 
+                        new kbaserelationengine.search.PostProcessing();
+                pp.objectData = false;
+                pp.objectKeys = true;
+                pp.objectInfo = true;
+                List<kbaserelationengine.search.ObjectData> objList = 
+                        indexingStorage.getObjectsByIds(guidsToLoad, pp);
+                Map<GUID, kbaserelationengine.search.ObjectData> loaded = 
+                        objList.stream().collect(Collectors.toMap(od -> od.guid, 
+                                Function.identity()));
+                objLookupCache.putAll(loaded);
+                ret.putAll(loaded);
+            }
+            return ret;
+        }
+        
+        @Override
+        public ObjectTypeParsingRules getTypeDescriptor(String type) {
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
+                        new File("resources/types/" + type + ".json"), Map.class);
+                return ObjectTypeParsingRules.fromObject(parsingRulesObj);
+            } catch (Exception ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+        
+        @Override
+        public Map<GUID, String> getTypesForGuids(Set<GUID> guids) throws IOException {
+            Map<GUID, String> ret = new LinkedHashMap<>();
+            Set<GUID> guidsToLoad = new LinkedHashSet<>();
+            for (GUID guid : guids) {
+                if (guidToTypeCache.containsKey(guid)) {
+                    ret.put(guid, guidToTypeCache.get(guid));
+                } else {
+                    guidsToLoad.add(guid);
+                }
+            }
+            if (guidsToLoad.size() > 0) {
+                kbaserelationengine.search.PostProcessing pp = 
+                        new kbaserelationengine.search.PostProcessing();
+                pp.objectData = false;
+                pp.objectKeys = false;
+                pp.objectInfo = true;
+                Map<GUID, String> loaded = indexingStorage.getObjectsByIds(guids, pp).stream()
+                        .collect(Collectors.toMap(od -> od.guid, od -> od.type));
+                guidToTypeCache.putAll(loaded);
+                ret.putAll(loaded);
+            }
+            return ret;
+        }
+    }
 }

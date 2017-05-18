@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -24,7 +23,7 @@ import us.kbase.common.service.UObject;
 
 public class KeywordParser {
     
-    public static ParsedObject extractKeywords(String json, String parentJson, 
+    public static ParsedObject extractKeywords(String type, String json, String parentJson, 
             Map<String, String> metadata, List<IndexingRules> indexingRules, 
             ObjectLookupProvider lookup) 
                     throws IOException, ObjectParseException {
@@ -33,7 +32,7 @@ public class KeywordParser {
             @Override
             public void addValue(List<IndexingRules> rulesList, Object value) throws IOException {
                 for (IndexingRules rule : rulesList) {
-                    processRule(rule, getKeyName(rule), value, keywords, lookup);
+                    processRule(type, rule, getKeyName(rule), value, keywords, lookup);
                 }
             }
         };
@@ -51,13 +50,13 @@ public class KeywordParser {
                 // Let's check that not derived keywords are all set (with optional default values)
                 List<Object> values = keywords.containsKey(key) ? keywords.get(key).values : null;
                 if (isEmpty(values)) {
-                    processRule(rule, key, null, keywords, lookup);
+                    processRule(type, rule, key, null, keywords, lookup);
                 }
             }
         }
         for (String key : ruleMap.keySet()) {
             if (ruleMap.get(key).isDerivedKey()) {
-                processDerivedRule(ruleMap, key, keywords, lookup, new LinkedHashSet<>());
+                processDerivedRule(type, ruleMap, key, keywords, lookup, new LinkedHashSet<>());
             }
         }
         ParsedObject ret = new ParsedObject();
@@ -67,37 +66,39 @@ public class KeywordParser {
         return ret;
     }
     
-    private static List<Object> processDerivedRule(Map<String, IndexingRules> ruleMap,
+    private static List<Object> processDerivedRule(String type, Map<String, IndexingRules> ruleMap,
             String key, Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup,
             Set<String> keysWaitingInStack) throws IOException {
         if (!ruleMap.containsKey(key)) {
-            throw new IllegalStateException("Unknown source-key in derived keywords: " + key);
+            throw new IllegalStateException("Unknown source-key in derived keywords: " + 
+                    type + "/" + key);
         }
         if (keywords.containsKey(key)) {
             return keywords.get(key).values;
         }
         if (keysWaitingInStack.contains(key)) {
             throw new IllegalStateException("Circular dependency in derived keywords: " +
-                    keysWaitingInStack);
+                    type + " / " + keysWaitingInStack);
         }
         IndexingRules rule = ruleMap.get(key);
         if (!rule.isDerivedKey()) {
-            throw new IllegalStateException("Reference to not derived keyword with no value");
+            throw new IllegalStateException("Reference to not derived keyword with no value: " +
+                    type + "/" + key);
         }
         keysWaitingInStack.add(key);
         String sourceKey = rule.getSourceKey();
         if (sourceKey == null) {
             throw new IllegalStateException("Source-key not defined for derived keyword: " + 
-                    rule);
+                    type + "/" + key);
         }
-        List<Object> values = processDerivedRule(ruleMap, sourceKey, keywords, lookup, 
+        List<Object> values = processDerivedRule(type, ruleMap, sourceKey, keywords, lookup, 
                 keysWaitingInStack);
         if (rule.getSubobjectIdKey() != null) {
-            processDerivedRule(ruleMap, rule.getSubobjectIdKey(), keywords, lookup, 
+            processDerivedRule(type, ruleMap, rule.getSubobjectIdKey(), keywords, lookup, 
                     keysWaitingInStack);
         }
         for (Object value : values) {
-            processRule(rule, key, value, keywords, lookup);
+            processRule(type, rule, key, value, keywords, lookup);
         }
         keysWaitingInStack.remove(key);
         List<Object> ret = keywords.containsKey(key) ? keywords.get(key).values : new ArrayList<>();
@@ -111,7 +112,7 @@ public class KeywordParser {
         return value == null || (value instanceof List && ((List<?>)value).isEmpty());
     }
     
-    private static void processRule(IndexingRules rule, String key, Object value,
+    private static void processRule(String type, IndexingRules rule, String key, Object value,
             Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup) throws IOException {
         Object valueFinal = value;
         if (valueFinal == null) {
@@ -129,8 +130,13 @@ public class KeywordParser {
         }
         values.notIndexed = rule.isNotIndexed();
         if (rule.getTransform() != null) {
-            valueFinal = transform(valueFinal, rule.getTransform(), rule, keywords,
-                    lookup);
+            try {
+                valueFinal = transform(valueFinal, rule.getTransform(), rule, keywords,
+                        lookup);
+            } catch (Exception ex) {
+                throw new IllegalStateException("Transformation error for keyword " + type + "/" +
+                        key + ": " + ex.getMessage(), ex);
+            }
         }
         addOrAddAll(valueFinal, values.values);
     }
@@ -206,7 +212,7 @@ public class KeywordParser {
             String type = rule.getTargetObjectType();
             if (type == null) {
                 throw new IllegalStateException("Target object type should be set for 'guid' " +
-                        "transform: " + rule);
+                        "transform");
             }
             ObjectTypeParsingRules typeDescr = lookup.getTypeDescriptor(type);
             Set<String> refs = toStringSet(value);
