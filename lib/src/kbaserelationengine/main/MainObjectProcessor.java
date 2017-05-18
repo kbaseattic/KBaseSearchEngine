@@ -58,6 +58,7 @@ import kbaserelationengine.system.SystemStorage;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
+import us.kbase.common.service.UnauthorizedException;
 import workspace.GetObjectInfo3Params;
 import workspace.ObjectData;
 import workspace.ObjectSpecification;
@@ -138,6 +139,31 @@ public class MainObjectProcessor {
         if (startLifecycleRunner) {
             startLifecycleRunner();
         }
+    }
+    
+    /**
+     * For tests only !!!
+     */
+    public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, 
+            HttpHost esHost, String esUser, String esPassword,
+            String esIndexPrefix, File typesDir, File tempDir) 
+                    throws IOException, ObjectParseException, UnauthorizedException {
+        this.wsURL = wsURL;
+        this.kbaseIndexerToken = kbaseIndexerToken;
+        this.rootTempDir = tempDir;
+        this.admins = Collections.emptySet();
+        wsClient = new WorkspaceClient(wsURL, kbaseIndexerToken);
+        wsClient.setIsInsecureHttpConnectionAllowed(true);         
+        systemStorage = new DefaultSystemStorage(wsURL, typesDir);
+        ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
+                getTempSubDir("esbulk"));
+        if (esUser != null) {
+            esStorage.setEsUser(esUser);
+            esStorage.setEsPassword(esPassword);
+        }
+        esStorage.setIndexNamePrefix(esIndexPrefix);
+        indexingStorage = esStorage;
+        relationStorage = new DefaultRelationStorage();
     }
     
     private File getWsLoadTempDir() {

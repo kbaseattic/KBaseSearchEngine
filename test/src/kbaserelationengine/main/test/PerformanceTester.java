@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -19,9 +18,6 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.mongodb.MongoClient;
-
-import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.main.LineLogger;
@@ -30,8 +26,6 @@ import kbaserelationengine.search.AccessFilter;
 import kbaserelationengine.search.ElasticIndexingStorage;
 import kbaserelationengine.search.MatchFilter;
 import kbaserelationengine.search.MatchValue;
-import kbaserelationengine.search.ObjectData;
-import kbaserelationengine.search.PostProcessing;
 import kbaserelationengine.system.WsUtil;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
@@ -44,8 +38,6 @@ public class PerformanceTester {
     private static final boolean cleanup = true;
     
     private static AuthToken kbaseIndexerToken = null;
-    private static String mongoHost = null;
-    private static int mongoPort = -1;
     private static String elasticHost = null;
     private static int elasticPort = -1;
     private static String esUser = null;
@@ -68,8 +60,6 @@ public class PerformanceTester {
                 .withAllowInsecureURLs("true".equals(authAllowInsecure)));
         String tokenStr = props.getProperty("secure.indexer_token");
         kbaseIndexerToken = authSrv.validateToken(tokenStr);
-        mongoHost = props.getProperty("secure.mongo_host");
-        mongoPort = Integer.parseInt(props.getProperty("secure.mongo_port"));
         elasticHost = props.getProperty("secure.elastic_host");
         elasticPort = Integer.parseInt(props.getProperty("secure.elastic_port"));
         esUser = props.getProperty("secure.elastic_user");
@@ -97,8 +87,6 @@ public class PerformanceTester {
         c.withKBaseAuthServerURL(new URL(authURL));
         ConfigurableAuthService auth = new ConfigurableAuthService(c);
         kbaseIndexerToken = auth.validateToken(tokenStr);
-        mongoHost = config.get("mongo-host");
-        mongoPort = Integer.parseInt(config.get("mongo-port"));
         elasticHost = config.get("elastic-host");
         elasticPort = Integer.parseInt(config.get("elastic-port"));
         esUser = config.get("elastic-user");
@@ -111,31 +99,16 @@ public class PerformanceTester {
     private static void prepareStep2() throws Exception {
         HttpHost esHostPort = new HttpHost(elasticHost, elasticPort);
         if (cleanup) {
-            deleteAllTestMongoDBs(mongoHost, mongoPort);
             deleteAllTestElasticIndices(esHostPort, esUser, esPassword);
         }
         File typesDir = new File("resources/types");
         if (!tempDir.exists()) {
             tempDir.mkdirs();
         }
-        String mongoDbName = "test_" + System.currentTimeMillis() + "_DataStatus";
         String esIndexPrefix = "performance.";
-        LineLogger logger = null;  // getDebugLogger();
-        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, mongoHost,
-                mongoPort, mongoDbName, esHostPort, esUser, esPassword, esIndexPrefix, 
-                typesDir, tempDir, false, logger, null);
-    }
-    
-    private static void deleteAllTestMongoDBs(String mongoHost, int mongoPort) {
-        try (MongoClient mongoClient = new MongoClient(mongoHost, mongoPort)) {
-            Iterable<String> it = mongoClient.listDatabaseNames();
-            for (String dbName : it) {
-                if (dbName.startsWith("test_")) {
-                    System.out.println("Deleting Mongo database: " + dbName);
-                    mongoClient.dropDatabase(dbName);
-                }
-            }
-        }
+        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken,
+                esHostPort, esUser, esPassword, esIndexPrefix, 
+                typesDir, tempDir);
     }
     
     private static void deleteAllTestElasticIndices(HttpHost esHostPort, String esUser,
@@ -153,15 +126,6 @@ public class PerformanceTester {
         }
     }
     
-    private static ObjectData getIndexedObject(GUID guid) throws Exception {
-        PostProcessing pp = new PostProcessing();
-        pp.objectInfo = true;
-        pp.objectKeys = true;
-        pp.objectData = true;
-        return mop.getIndexingStorage("*").getObjectsByIds(new LinkedHashSet<>(
-                Arrays.asList(guid)), pp).get(0);
-    }
-
     @Test
     public void testPerformance() throws Exception {
         String wsName = "ReferenceDataManager";
