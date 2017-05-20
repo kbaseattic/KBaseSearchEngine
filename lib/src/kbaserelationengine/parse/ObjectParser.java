@@ -22,7 +22,6 @@ import kbaserelationengine.system.ObjectTypeParsingRules;
 import kbaserelationengine.system.SystemStorage;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
-import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.UObject;
 import workspace.GetObjects2Params;
 import workspace.ObjectData;

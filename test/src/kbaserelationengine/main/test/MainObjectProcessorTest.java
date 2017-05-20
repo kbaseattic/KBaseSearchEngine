@@ -26,6 +26,7 @@ import kbaserelationengine.search.AccessFilter;
 import kbaserelationengine.search.ElasticIndexingStorage;
 import kbaserelationengine.search.MatchFilter;
 import kbaserelationengine.search.ObjectData;
+import kbaserelationengine.search.PostProcessing;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
@@ -114,15 +115,20 @@ public class MainObjectProcessorTest {
         }
     }
     
+    @Ignore
     @Test
     public void testGenomeManually() throws Exception {
         ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", 20266, "2", 1, null, 
                 System.currentTimeMillis(), "KBaseGenomes.Genome", ObjectStatusEventType.CREATED, false);
         mop.processOneEvent(ev);
+        PostProcessing pp = new PostProcessing();
+        pp.objectInfo = true;
+        pp.objectData = true;
+        pp.objectKeys = true;
         System.out.println("Genome: " + mop.getIndexingStorage("*").getObjectsByIds(
                 mop.getIndexingStorage("*").searchIds("Genome", 
                         MatchFilter.create().withFullTextInAll("test"), null, 
-                        AccessFilter.create().withAdmin(true), null).guids, null).get(0));
+                        AccessFilter.create().withAdmin(true), null).guids, pp).get(0));
         String query = "TrkA";
         Map<String, Integer> typeToCount = mop.getIndexingStorage("*").searchTypes(
                 MatchFilter.create().withFullTextInAll(query), 
@@ -136,7 +142,7 @@ public class MainObjectProcessorTest {
                 MatchFilter.create().withFullTextInAll(query), null, 
                 AccessFilter.create().withAdmin(true), null).guids;
         System.out.println("GUIDs found: " + guids);
-        ObjectData obj = mop.getIndexingStorage("*").getObjectsByIds(guids, null).get(0);
+        ObjectData obj = mop.getIndexingStorage("*").getObjectsByIds(guids, pp).get(0);
         System.out.println("Feature: " + obj);
     }
 
@@ -195,7 +201,6 @@ public class MainObjectProcessorTest {
         checkSearch(1, "SingleEndLibrary", "reads.2", 20266, false);
     }
     
-    @Ignore
     @Test
     public void testOneTick() throws Exception {
         for (int i = 0; i < 10; i++) {

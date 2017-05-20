@@ -63,7 +63,7 @@ public class ElasticIndexingStorageTest {
         objLookup = new ObjectLookupProvider() {
             
             @Override
-            public Set<String> resolveWorkspaceRefs(Set<String> refs)
+            public Set<String> resolveWorkspaceRefs(String callerRefPath, Set<String> refs)
                     throws IOException {
                 for (String ref : refs) {
                     try {
@@ -145,7 +145,7 @@ public class ElasticIndexingStorageTest {
             long timestamp, String parentJsonValue, Map<String, String> metadata, boolean isPublic,
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
         ParsedObject obj = KeywordParser.extractKeywords(objectType, json, parentJsonValue, 
-                metadata, indexingRules, objLookup);
+                metadata, indexingRules, objLookup, null);
         indexStorage.indexObject(id, objectType, obj, objectName, timestamp, parentJsonValue, 
                 isPublic, indexingRules);
     }

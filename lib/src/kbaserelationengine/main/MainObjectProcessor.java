@@ -209,6 +209,7 @@ public class MainObjectProcessor {
             e.getStackTrace()[0].toString();
         if (logger != null) {
             logger.logError("Error in Lifecycle runner: " + e + ", " + codePlace);
+            logger.logError(e);
         }
     }
     
@@ -291,7 +292,7 @@ public class MainObjectProcessor {
                 }
             } else {
                 indexObject(pguid, ev.getStorageObjectType(), ev.getTimestamp(),
-                        ev.isGlobalAccessed(), null);
+                        ev.isGlobalAccessed(), null, null);
             }
             break;
         case DELETED:
@@ -313,7 +314,7 @@ public class MainObjectProcessor {
     }
     
     public void indexObject(GUID guid, String storageObjectType, Long timestamp, boolean isPublic,
-            ObjectLookupProvider indexLookup) 
+            ObjectLookupProvider indexLookup, String callerRefPath) 
                     throws IOException, JsonClientException, ObjectParseException {
         long t1 = System.currentTimeMillis();
         File tempFile = ObjectParser.prepareTempFile(getWsLoadTempDir());
@@ -323,7 +324,10 @@ public class MainObjectProcessor {
         try {
             String objRef = guid.getAccessGroupId() + "/" + guid.getAccessGroupObjectId() + "/" +
                     guid.getVersion();
-            ObjectData obj = ObjectParser.loadObject(wsURL, tempFile, kbaseIndexerToken, objRef);
+            String nextCallerRefPath = (callerRefPath == null || callerRefPath.isEmpty() ? "" : 
+                (callerRefPath + ";")) + objRef;
+            ObjectData obj = ObjectParser.loadObject(wsURL, tempFile, kbaseIndexerToken, 
+                    nextCallerRefPath);
             if (logger != null) {
                 logger.logInfo("[Indexer]   " + guid + ", loading time: " + 
                         (System.currentTimeMillis() - t1) + " ms.");
@@ -343,7 +347,8 @@ public class MainObjectProcessor {
                     String json = guidToJson.get(subGuid);
                     Map<String, String> metadata = obj.getInfo().getE11();
                     ParsedObject prsObj = KeywordParser.extractKeywords(rule.getGlobalObjectType(),
-                            json, parentJson, metadata, rule.getIndexingRules(), indexLookup);
+                            json, parentJson, metadata, rule.getIndexingRules(), indexLookup, 
+                            nextCallerRefPath);
                     guidToObj.put(subGuid, prsObj);
                 }
                 if (logger != null) {
@@ -594,7 +599,7 @@ public class MainObjectProcessor {
         private Map<GUID, String> guidToTypeCache = new LinkedHashMap<>();
         
         @Override
-        public Set<String> resolveWorkspaceRefs(Set<String> refs)
+        public Set<String> resolveWorkspaceRefs(String callerRefPath, Set<String> refs)
                 throws IOException {
             Set<String> ret = new LinkedHashSet<>();
             Set<String> refsToResolve = new LinkedHashSet<>();
@@ -605,10 +610,12 @@ public class MainObjectProcessor {
                     refsToResolve.add(ref);
                 }
             }
+            String refPrefix = callerRefPath == null || callerRefPath.isEmpty() ? "" :
+                (callerRefPath + ";");
             if (refsToResolve.size() > 0) {
                 try {
                     List<ObjectSpecification> getInfoInput = refs.stream().map(
-                            ref -> new ObjectSpecification().withRef(ref)).collect(
+                            ref -> new ObjectSpecification().withRef(refPrefix + ref)).collect(
                                     Collectors.toList());
                     List<ObjectStatusEvent> events = wsClient.getObjectInfo3(
                             new GetObjectInfo3Params().withObjects(getInfoInput))
@@ -628,7 +635,7 @@ public class MainObjectProcessor {
                                 new LinkedHashSet<>(Arrays.asList(pguid))).get(pguid);
                         if (!indexed) {
                             indexObject(pguid, ev.getStorageObjectType(), ev.getTimestamp(), false,
-                                    this);
+                                    this, callerRefPath);
                         }
                         refResolvingCache.put(origRef, resolvedRef);
                         ret.add(resolvedRef);
@@ -677,11 +684,8 @@ public class MainObjectProcessor {
         @Override
         public ObjectTypeParsingRules getTypeDescriptor(String type) {
             try {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
-                        new File("resources/types/" + type + ".json"), Map.class);
-                return ObjectTypeParsingRules.fromObject(parsingRulesObj);
-            } catch (Exception ex) {
+                return systemStorage.getObjectType(type);
+            } catch (IOException ex) {
                 throw new IllegalStateException(ex);
             }
         }
