@@ -189,8 +189,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 }
                 pw.close();
                 makeBulkRequest("POST", indexName, tempFile);
-                int updated = updateLastVersionsInData(indexName, pguid, lastVersion);
-                System.out.println("ElasticSearchStorage.indexObjects: updated=" + updated);
+                updateLastVersionsInData(indexName, pguid, lastVersion);
             }
         } finally {
             tempFile.delete();
@@ -614,27 +613,22 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     @SuppressWarnings({ "serial", "unchecked" })
-    private boolean updateSharedInData(String indexName, GUID parentGUID,
-            boolean shared) throws IOException {
+    private boolean updateBooleanFieldInData(String indexName, GUID parentGUID,
+            String field, boolean value) throws IOException {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
         String prefix = new GUID(parentGUID.getStorageCode(), parentGUID.getAccessGroupId(),
                 parentGUID.getAccessGroupObjectId(), null, null, null).toString();
-        Map<String, Object> term = new LinkedHashMap<String, Object>() {{
-            put("prefix", prefix);
-        }};
-        Map<String, Object> filter = new LinkedHashMap<String, Object>() {{
-            put("term", term);
-        }};
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
-            put("filter", Arrays.asList(filter));
+            put("must", Arrays.asList(createFilter("term", "prefix", prefix),
+                    createFilter("term", "version", parentGUID.getVersion())));
         }};
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
         }};
         Map<String, Object> script = new LinkedHashMap<String, Object>() {{
-            put("inline", "ctx._source.shared = true;");
+            put("inline", "ctx._source." + field + " = " + value + ";");
         }};
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
@@ -656,7 +650,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 if (updateAccessGroupForVersions(indexName, guid, guid.getVersion(), accessGroupId)) {
                     needRefresh = true;
                 }
-                if (updateSharedInData(indexName, guid, true));
+                if (accessGroupId == PUBLIC_ACCESS_GROUP) {
+                    if (updateBooleanFieldInData(indexName, guid, "public", true)) {
+                        needRefresh = true;
+                    }
+                } else {
+                    if (updateBooleanFieldInData(indexName, guid, "shared", true)) {
+                        needRefresh = true;
+                    }
+                }
             }
             if (needRefresh) {
                 refreshIndex(indexName);
@@ -672,6 +674,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
             for (GUID guid : indexToGuids.get(indexName)) {
                 if (removeAccessGroupForVersion(indexName, guid, accessGroupId)) {
                     needRefresh = true;
+                }
+                if (accessGroupId == PUBLIC_ACCESS_GROUP) {
+                    if (updateBooleanFieldInData(indexName, guid, "public", false)) {
+                        needRefresh = true;
+                    }
                 }
             }
             if (needRefresh) {
@@ -776,19 +783,78 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return item;
     }
     
+    @SuppressWarnings("serial")
+    private Map<String, Object> createPublicShouldBlock(List<?> matchMustBlocks,
+            boolean withAllHistory) {
+        List<Object> must0List = new ArrayList<>();
+        must0List.add(createFilter("term", "public", true));
+        if (!withAllHistory) {
+            must0List.add(createFilter("term", "islast", true));
+        }
+        must0List.addAll(matchMustBlocks);
+        Map<String, Object> bool0 = new LinkedHashMap<String, Object>() {{
+            put("must", must0List);
+        }};
+        return new LinkedHashMap<String, Object>() {{
+            put("bool", bool0);
+        }};
+    }
+    
+    @SuppressWarnings("serial")
+    private Map<String, Object> createOwnerShouldBlock(List<?> matchMustBlocks,
+            AccessFilter accessFilter) {
+        List<Object> must1List = new ArrayList<>();
+        if (accessFilter.accessGroupIds != null && !accessFilter.isAdmin) {
+            must1List.add(createFilter("terms", "accgrp", accessFilter.accessGroupIds));
+        }
+        if (!accessFilter.withAllHistory) {
+            must1List.add(createFilter("term", "islast", true));
+        }
+        must1List.addAll(matchMustBlocks);
+        Map<String, Object> bool1 = new LinkedHashMap<String, Object>() {{
+            put("must", must1List);
+        }};
+        return new LinkedHashMap<String, Object>() {{
+            put("bool", bool1);
+        }};
+    }
+    
+    @SuppressWarnings("serial")
+    private Map<String, Object> createSharedShouldBlock(List<?> matchMustBlocks,
+            Map<String, Object> mustForShared) {
+        List<Object> must2List = new ArrayList<>(Arrays.asList(
+                createFilter("term", "shared", true), mustForShared));
+        must2List.addAll(matchMustBlocks);
+        Map<String, Object> bool2 = new LinkedHashMap<String, Object>() {{
+            put("must", must2List);
+        }};
+        return new LinkedHashMap<String, Object>() {{
+            put("bool", bool2);
+        }};
+    }
+    
     @SuppressWarnings({ "serial", "unchecked" })
     @Override
     public Map<String, Integer> searchTypes(MatchFilter matchFilter,
             AccessFilter accessFilter) throws IOException {
-        Map<String, Object> must2 = createAccessMustBlock(accessFilter);
-        if (must2 == null) {
+        Map<String, Object> mustForShared = createAccessMustBlock(accessFilter);
+        if (mustForShared == null) {
             return Collections.emptyMap();
         }
-        List<Object> mustList = new ArrayList<>(prepareMustFilters(matchFilter, 
-                accessFilter.withAllHistory));
-        mustList.add(must2);
+        List<Object> shouldList = new ArrayList<>();
+        // TODO: support for matchFilter.accessGroupId
+        List<Object> matchFilters = new ArrayList<>(prepareMatchFilters(matchFilter));
+        // Public block (we exclude it for admin because it's covered by owner block)
+        if (accessFilter.withPublic && !accessFilter.isAdmin) {
+            shouldList.add(createPublicShouldBlock(matchFilters, accessFilter.withAllHistory));
+        }
+        // Owner block
+        shouldList.add(createOwnerShouldBlock(matchFilters, accessFilter));
+        // Shared block
+        shouldList.add(createSharedShouldBlock(matchFilters, mustForShared));
+        // Rest of query
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
-            put("must", mustList);
+            put("should", shouldList);
         }};
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
@@ -827,7 +893,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public FoundHits searchIds(String objectType, MatchFilter matchFilter, 
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination) 
                     throws IOException {
-        return queryHits(objectType, prepareMustFilters(matchFilter, accessFilter.withAllHistory),
+        return queryHits(objectType, prepareMatchFilters(matchFilter),
                 sorting, accessFilter, pagination, null);
     }
 
@@ -836,7 +902,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             List<SortingRule> sorting, AccessFilter accessFilter,
             Pagination pagination, PostProcessing postProcessing)
             throws IOException {
-        return queryHits(objectType, prepareMustFilters(matchFilter, accessFilter.withAllHistory),
+        return queryHits(objectType, prepareMatchFilters(matchFilter),
                 sorting, accessFilter, pagination, postProcessing);
     }
     
@@ -845,16 +911,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return searchIds(objectType, matchFilter, sorting, accessFilter, null).guids;
     }
 
-    private List<Map<String, Object>> prepareMustFilters(MatchFilter matchFilter,
-            boolean withAllHistory) {
+    private List<Map<String, Object>> prepareMatchFilters(MatchFilter matchFilter) {
         List<Map<String, Object>> ret = new ArrayList<>();
         if (matchFilter.fullTextInAll != null) {
             ret.add(createFilter("match", "_all", matchFilter.fullTextInAll));
         }
-        if (matchFilter.accessGroupId != null) {
+        /*if (matchFilter.accessGroupId != null) {
             ret.add(createAccessMustBlock(new LinkedHashSet<>(Arrays.asList(
                     matchFilter.accessGroupId)), withAllHistory));
-        }
+        }*/
         if (matchFilter.objectName != null) {
             ret.add(createFilter("match", "oname", matchFilter.fullTextInAll));
         }
@@ -906,15 +971,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private Map<String, Object> createAccessMustBlock(Set<Integer> accessGroupIds, 
             boolean withAllHistory) {
         String groupListProp = withAllHistory ? "groups" : "lastin";
-        Map<String, Object> match2 = new LinkedHashMap<String, Object>() {{
+        Map<String, Object> match = new LinkedHashMap<String, Object>() {{
             put(groupListProp, accessGroupIds);
         }};
-        Map<String, Object> query2 = new LinkedHashMap<String, Object>() {{
-            put("terms", match2);
+        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+            put("terms", match);
         }};
         Map<String, Object> hasParent = new LinkedHashMap<String, Object>() {{
             put("parent_type", getAccessTableName());
-            put("query", query2);
+            put("query", query);
         }};
         return new LinkedHashMap<String, Object>() {{
             put("has_parent", hasParent);
@@ -922,7 +987,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @SuppressWarnings({ "serial", "unchecked" })
-    public FoundHits queryHits(String objectType, List<Map<String, Object>> filters, 
+    public FoundHits queryHits(String objectType, List<Map<String, Object>> matchFilters, 
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pg,
             PostProcessing pp) throws IOException {
         Pagination pagination = pg == null ? new Pagination(0, 50) : pg;
@@ -935,16 +1000,25 @@ public class ElasticIndexingStorage implements IndexingStorage {
         FoundHits ret = new FoundHits();
         ret.pagination = pagination;
         ret.sortingRules = sorting;
-        Map<String, Object> must2 = createAccessMustBlock(accessFilter);
-        if (must2 == null) {
+        Map<String, Object> mustForShared = createAccessMustBlock(accessFilter);
+        if (mustForShared == null) {
             ret.total = 0;
             ret.guids = Collections.emptySet();
             return ret;
         }
-        List<Object> mustList = new ArrayList<>(filters);
-        mustList.add(must2);
+        List<Object> shouldList = new ArrayList<>();
+        // TODO: support for matchFilter.accessGroupId
+        // Public block (we exclude it for admin because it's covered by owner block)
+        if (accessFilter.withPublic && !accessFilter.isAdmin) {
+            shouldList.add(createPublicShouldBlock(matchFilters, accessFilter.withAllHistory));
+        }
+        // Owner block
+        shouldList.add(createOwnerShouldBlock(matchFilters, accessFilter));
+        // Shared block
+        shouldList.add(createSharedShouldBlock(matchFilters, mustForShared));
+        // Rest of query
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
-            put("must", mustList);
+            put("should", shouldList);
         }};
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);

@@ -118,7 +118,6 @@ public class MainObjectProcessorTest {
         }
     }
     
-    @Ignore
     @Test
     public void testGenomeManually() throws Exception {
         ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", 20266, "2", 1, null, 
@@ -164,12 +163,15 @@ public class MainObjectProcessorTest {
                 MatchFilter.create().withFullTextInAll(query), null, 
                 AccessFilter.create().withAccessGroups(accessGroupId), null).guids;
         if (debugOutput) {
-            System.out.println("DEBUG: " + mop.getIndexingStorage("*").getObjectsByIds(ids, null));
+            PostProcessing pp = new PostProcessing();
+            pp.objectInfo = true;
+            pp.objectData = true;
+            pp.objectKeys = true;
+            System.out.println("DEBUG: " + mop.getIndexingStorage("*").getObjectsByIds(ids, pp));
         }
         Assert.assertEquals(1, ids.size());
     }
     
-    @Ignore
     @Test
     public void testNarrativeManually() throws Exception {
         indexFewVersions(new ObjectStatusEvent("-1", "WS", 20266, "1", 7, null, 
@@ -177,7 +179,7 @@ public class MainObjectProcessorTest {
                 ObjectStatusEventType.CREATED, false));
         checkSearch(1, "Narrative", "tree", 20266, false);
         checkSearch(1, "Narrative", "species", 20266, false);
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
+        /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
                 System.currentTimeMillis(), "KBaseNarrative.Narrative", 
                 ObjectStatusEventType.CREATED, false));
         checkSearch(1, "Narrative", "Catalog.migrate_module_to_new_git_url", 10455, false);
@@ -186,10 +188,9 @@ public class MainObjectProcessorTest {
                 System.currentTimeMillis(), "KBaseNarrative.Narrative", 
                 ObjectStatusEventType.CREATED, false));
         checkSearch(1, "Narrative", "weird text", 480, false);
-        checkSearch(1, "Narrative", "functionality", 480, false);
+        checkSearch(1, "Narrative", "functionality", 480, false);*/
     }
     
-    @Ignore
     @Test
     public void testReadsManually() throws Exception {
         indexFewVersions(new ObjectStatusEvent("-1", "WS", 20266, "5", 1, null, 
@@ -204,6 +205,7 @@ public class MainObjectProcessorTest {
         checkSearch(1, "SingleEndLibrary", "reads.2", 20266, false);
     }
     
+    @Ignore
     @Test
     public void testOneTick() throws Exception {
         for (int i = 0; i < 10; i++) {

@@ -1,12 +1,15 @@
 package kbaserelationengine.common;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import kbaserelationengine.parse.ObjectParseException;
 
@@ -164,4 +167,15 @@ public class JsonTokenUtil {
         }
     }
 
+    public static String prettyPrint(Object obj) {
+        try {
+            StringWriter ret = new StringWriter();
+            ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+            mapper.writeValue(ret, obj);
+            ret.close();
+            return ret.toString();
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
 }

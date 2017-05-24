@@ -306,8 +306,14 @@ public class ElasticIndexingStorageTest {
     
     private Set<GUID> lookupIdsByKey(String objType, String keyName, Object value, 
             AccessFilter af) throws IOException {
-        return indexStorage.searchIds(objType, MatchFilter.create().withLookupInKey(
+        Set<GUID> ret = indexStorage.searchIds(objType, MatchFilter.create().withLookupInKey(
                 keyName, new MatchValue(value)), null, af);
+        PostProcessing pp = new PostProcessing();
+        pp.objectInfo = true;
+        pp.objectData = true;
+        pp.objectKeys = true;
+        indexStorage.getObjectsByIds(ret, pp);
+        return ret;
     }
     
     @Test
@@ -332,7 +338,10 @@ public class ElasticIndexingStorageTest {
         indexStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(id1)), 11);
         AccessFilter af11 = AccessFilter.create().withAccessGroups(11);
         checkIdInSet(lookupIdsByKey(objType, "prop2", 123, af11), 1, id1);
+        checkIdInSet(lookupIdsByKey(objType, "prop2", 125, af10), 1, id3);
         Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 124, af11).size());
+        checkIdInSet(lookupIdsByKey(objType, "prop2", 124, 
+                AccessFilter.create().withAccessGroups(10).withAllHistory(true)), 1, id2);       
         Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 125, af11).size());
         indexStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(id2)), 11);
         Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 123, af11).size());
