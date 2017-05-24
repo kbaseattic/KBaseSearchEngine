@@ -268,15 +268,21 @@ public class ElasticIndexingStorageTest {
         GUID id11 = new GUID("WS:2/1/1");
         indexObject(id11, objType, "{\"prop1\":\"abc 123\"}", "obj.1", 0, null, null,
                 false, indexingRules);
+        checkIdInSet(indexStorage.searchIds(objType, ft("abc"), null, 
+                AccessFilter.create().withAccessGroups(2)), 1, id11);
         GUID id2 = new GUID("WS:2/2/1");
         indexObject(id2, objType, "{\"prop1\":\"abd\"}", "obj.2", 0, null, null,
                 false, indexingRules);
         GUID id3 = new GUID("WS:3/1/1");
         indexObject(id3, objType, "{\"prop1\":\"abc\"}", "obj.3", 0, null, null,
                 false, indexingRules);
+        checkIdInSet(indexStorage.searchIds(objType, ft("abc"), null, 
+                AccessFilter.create().withAccessGroups(2)), 1, id11);
         GUID id12 = new GUID("WS:2/1/2");
         indexObject(id12, objType, "{\"prop1\":\"abc 124\"}", "obj.1", 0, null, null,
                 false, indexingRules);
+        checkIdInSet(indexStorage.searchIds(objType, ft("abc"), null, 
+                AccessFilter.create().withAccessGroups(2)), 1, id12);
         GUID id13 = new GUID("WS:2/1/3");
         indexObject(id13, objType, "{\"prop1\":\"abc 125\"}", "obj.1", 0, null, null,
                 false, indexingRules);
@@ -395,7 +401,7 @@ public class ElasticIndexingStorageTest {
     }
     
     private static void checkIdInSet(Set<GUID> ids, int size, GUID id) {
-        Assert.assertEquals(size, ids.size());
+        Assert.assertEquals("Set contains: " + ids, size, ids.size());
         Assert.assertTrue("Set contains: " + ids, ids.contains(id));
     }
 }

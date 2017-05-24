@@ -25,7 +25,7 @@ public interface IndexingStorage {
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException;
 
     public void indexObjects(String objectType, String objectName, long timestamp,
-            String parentJsonValue, Map<GUID, ParsedObject> idToObj,
+            String parentJsonValue, GUID pguid, Map<GUID, ParsedObject> idToObj,
             boolean isPublic, List<IndexingRules> indexingRules) 
                     throws IOException, ObjectParseException;
     

@@ -146,11 +146,12 @@ public class MainObjectProcessor {
      */
     public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, 
             HttpHost esHost, String esUser, String esPassword,
-            String esIndexPrefix, File typesDir, File tempDir) 
+            String esIndexPrefix, File typesDir, File tempDir, LineLogger logger) 
                     throws IOException, ObjectParseException, UnauthorizedException {
         this.wsURL = wsURL;
         this.kbaseIndexerToken = kbaseIndexerToken;
         this.rootTempDir = tempDir;
+        this.logger = logger;
         this.admins = Collections.emptySet();
         wsClient = new WorkspaceClient(wsURL, kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true);         
@@ -329,8 +330,9 @@ public class MainObjectProcessor {
             ObjectData obj = ObjectParser.loadObject(wsURL, tempFile, kbaseIndexerToken, 
                     nextCallerRefPath);
             if (logger != null) {
-                logger.logInfo("[Indexer]   " + guid + ", loading time: " + 
-                        (System.currentTimeMillis() - t1) + " ms.");
+                long loadTime = System.currentTimeMillis() - t1;
+                logger.logInfo("[Indexer]   " + guid + ", loading time: " + loadTime + " ms.");
+                logger.timeStat(guid, loadTime, 0, 0);
             }
             List<ObjectTypeParsingRules> parsingRules = 
                     systemStorage.listObjectTypesByStorageObjectType(storageObjectType);
@@ -351,19 +353,22 @@ public class MainObjectProcessor {
                             nextCallerRefPath);
                     guidToObj.put(subGuid, prsObj);
                 }
+                long parsingTime = System.currentTimeMillis() - t2;
                 if (logger != null) {
                     logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", parsing " +
-                            "time: " + (System.currentTimeMillis() - t2) + " ms.");
+                            "time: " + parsingTime + " ms.");
                 }
                 long t3 = System.currentTimeMillis();
                 if (timestamp == null) {
                     timestamp = System.currentTimeMillis();
                 }
                 indexingStorage.indexObjects(rule.getGlobalObjectType(), obj.getInfo().getE2(), 
-                        timestamp, parentJson, guidToObj, isPublic, rule.getIndexingRules());
+                        timestamp, parentJson, guid, guidToObj, isPublic, rule.getIndexingRules());
                 if (logger != null) {
+                    long indexTime = System.currentTimeMillis() - t3;
                     logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", indexing " +
-                            "time: " + (System.currentTimeMillis() - t3) + " ms.");
+                            "time: " + indexTime + " ms.");
+                    logger.timeStat(guid, 0, parsingTime, indexTime);
                 }
             }
         } finally {

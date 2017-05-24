@@ -24,6 +24,7 @@ import org.apache.http.HttpHost;
 
 import com.mongodb.MongoClient;
 
+import kbaserelationengine.common.GUID;
 import kbaserelationengine.main.LineLogger;
 import kbaserelationengine.main.MainObjectProcessor;
 import kbaserelationengine.search.ElasticIndexingStorage;
@@ -137,6 +138,9 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
                     public void logError(Throwable error) {
                         error.printStackTrace(logPw);
                         logPw.flush();
+                    }
+                    @Override
+                    public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
                     }
                 }, admins);
         //END_CONSTRUCTOR

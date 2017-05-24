@@ -149,48 +149,49 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @SuppressWarnings("serial")
     @Override
     public void indexObjects(String objectType, String objectName, long timestamp, 
-            String parentJsonValue, Map<GUID, ParsedObject> idToObj,
+            String parentJsonValue, GUID pguid, Map<GUID, ParsedObject> idToObj,
             boolean isPublic, List<IndexingRules> indexingRules) 
                     throws IOException, ObjectParseException {
-        if (idToObj.size() == 0) {
-            return;
-        }
         String indexName = checkIndex(objectType, indexingRules);
-        Set<GUID> parentGuids = new LinkedHashSet<>();
-        Map<GUID, GUID> guidToParentGuid = new LinkedHashMap<>();
         for (GUID id : idToObj.keySet()) {
             GUID parentGuid = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
                     id.getAccessGroupObjectId(), id.getVersion(), null, null);
-            parentGuids.add(parentGuid);
-            guidToParentGuid.put(id, parentGuid);
+            if (!parentGuid.equals(pguid)) {
+                throw new IllegalStateException("Object GUID doesn't match parent GUID");
+            }
         }
         File tempFile = File.createTempFile("es_bulk_", ".json", tempDir);
         try {
             PrintWriter pw = new PrintWriter(tempFile);
-            Map<GUID, String> parentGuidToEsId = checkParentDoc(indexName, parentGuids, isPublic);
-            Map<GUID, String> esIds = lookupDocIds(indexName, idToObj.keySet());
-            for (GUID id : idToObj.keySet()) {
-                GUID parentGuid = guidToParentGuid.get(id);
-                String esParentId = parentGuidToEsId.get(parentGuid);
-                ParsedObject obj = idToObj.get(id);
-                Map<String, Object> doc = convertObject(id, objectType, obj, objectName, 
-                        timestamp, parentJsonValue);
-                Map<String, Object> index = new LinkedHashMap<String, Object>() {{
-                    put("_index", indexName);
-                    put("_type", getDataTableName());
-                    put("parent", esParentId);
-                }};
-                if (esIds.containsKey(id)) {
-                    index.put("_id", esIds.get(id));
+            int lastVersion = loadLastVersion(indexName, pguid, pguid.getVersion());
+            Map<GUID, String> parentGuidToEsId = checkParentDoc(indexName, new LinkedHashSet<>(
+                    Arrays.asList(pguid)), isPublic, lastVersion);
+            if (idToObj.size() > 0) {
+                Map<GUID, String> esIds = lookupDocIds(indexName, idToObj.keySet());
+                for (GUID id : idToObj.keySet()) {
+                    String esParentId = parentGuidToEsId.get(pguid);
+                    ParsedObject obj = idToObj.get(id);
+                    Map<String, Object> doc = convertObject(id, objectType, obj, objectName, 
+                            timestamp, parentJsonValue, isPublic, lastVersion);
+                    Map<String, Object> index = new LinkedHashMap<String, Object>() {{
+                        put("_index", indexName);
+                        put("_type", getDataTableName());
+                        put("parent", esParentId);
+                    }};
+                    if (esIds.containsKey(id)) {
+                        index.put("_id", esIds.get(id));
+                    }
+                    Map<String, Object> header = new LinkedHashMap<String, Object>() {{
+                        put("index", index);
+                    }};
+                    pw.println(UObject.transformObjectToString(header));
+                    pw.println(UObject.transformObjectToString(doc));
                 }
-                Map<String, Object> header = new LinkedHashMap<String, Object>() {{
-                    put("index", index);
-                }};
-                pw.println(UObject.transformObjectToString(header));
-                pw.println(UObject.transformObjectToString(doc));
+                pw.close();
+                makeBulkRequest("POST", indexName, tempFile);
+                int updated = updateLastVersionsInData(indexName, pguid, lastVersion);
+                System.out.println("ElasticSearchStorage.indexObjects: updated=" + updated);
             }
-            pw.close();
-            makeBulkRequest("POST", indexName, tempFile);
         } finally {
             tempFile.delete();
         }
@@ -198,8 +199,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     private Map<String, Object> convertObject(GUID id, String objectType, ParsedObject obj, 
-            String objectName, long timestamp, String parentJson) 
-                    throws IOException, ObjectParseException {
+            String objectName, long timestamp, String parentJson, boolean isPublic,
+            int lastVersion) throws IOException, ObjectParseException {
         Map<String, List<Object>> indexPart = new LinkedHashMap<>();
         for (String key : obj.keywords.keySet()) {
             indexPart.put(getKeyProperty(key), obj.keywords.get(key));
@@ -210,6 +211,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put("otype", objectType);
         doc.put("oname", objectName);
         doc.put("timestamp", timestamp);
+        doc.put("prefix", new GUID(id.getStorageCode(), id.getAccessGroupId(),
+                id.getAccessGroupObjectId(), null, null, null).toString());
+        doc.put("accgrp", id.getAccessGroupId());
+        doc.put("version", id.getVersion());
+        doc.put("islast", lastVersion == id.getVersion());
+        doc.put("public", isPublic);
+        doc.put("shared", false);
         if (!skipFullJson) {
             doc.put("ojson", obj.json);
             doc.put("pjson", parentJson);
@@ -224,10 +232,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
         String indexName = checkIndex(objectType, indexingRules);
         GUID parentGUID = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
                 id.getAccessGroupObjectId(), id.getVersion(), null, null);
-        String esParentId = checkParentDoc(indexName, 
-                new HashSet<>(Arrays.asList(parentGUID)), isPublic).get(parentGUID);
+        int lastVersion = loadLastVersion(indexName, id, id.getVersion());
+        if (lastVersion != id.getVersion()) {
+            System.out.println("ElasticSearchStorage.indexObject: unexpected versions: " +
+                    lastVersion + " != " + id.getVersion());
+        }
+        String esParentId = checkParentDoc(indexName, new HashSet<>(Arrays.asList(parentGUID)),
+                isPublic, lastVersion).get(parentGUID);
         Map<String, Object> doc = convertObject(id, objectType, obj, objectName, timestamp, 
-                parentJsonValue);
+                parentJsonValue, isPublic, lastVersion);
         String esId = lookupDocIds(indexName, new HashSet<>(Arrays.asList(id))).get(id);
         String requestUrl = "/" + indexName + "/" + getDataTableName() + "/";
         if (esId != null) {
@@ -235,6 +248,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         makeRequest("POST", requestUrl, doc, Arrays.asList(
                 new Tuple2<String, String>().withE1("parent").withE2(esParentId)));
+        updateLastVersionsInData(indexName, parentGUID, lastVersion);
         refreshIndex(indexName);
     }
     
@@ -310,9 +324,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     @SuppressWarnings({ "serial", "unchecked" })
-    public Map<String, Set<GUID>> groupIdsByIndex(Set<GUID> ids) throws IOException {
+    public Map<String, Set<GUID>> groupParentIdsByIndex(Set<GUID> ids) throws IOException {
+        Set<String> parentIds = new LinkedHashSet<>();
+        for (GUID guid : ids) {
+            parentIds.add(new GUID(guid.getStorageCode(), guid.getAccessGroupId(), 
+                    guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString());
+        }
         Map<String, Object> terms = new LinkedHashMap<String, Object>() {{
-            put("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList()));
+            put("pguid", parentIds);
         }};
         Map<String, Object> filter = new LinkedHashMap<String, Object>() {{
             put("terms", terms);
@@ -325,9 +344,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }};
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
-            put("_source", Arrays.asList("guid"));
+            put("_source", Arrays.asList("pguid"));
         }};
-        String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
+        String urlPath = "/" + indexNamePrefix + "*/" + getAccessTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
@@ -342,7 +361,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 ret.put(indexName, retSet);
             }
             Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
-            GUID guid = new GUID((String)obj.get("guid"));
+            GUID guid = new GUID((String)obj.get("pguid"));
             retSet.add(guid);
         }
         return ret;
@@ -393,9 +412,86 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 guid -> map.containsKey(guid)));
     }
     
+    @SuppressWarnings({ "serial", "unchecked" })
+    private Integer loadLastVersion(String reqIndexName, GUID parentGUID, 
+            Integer processedVersion) throws IOException {
+        if (reqIndexName == null) {
+            reqIndexName = getAnyIndexPattern();
+        }
+        String prefix = new GUID(parentGUID.getStorageCode(), parentGUID.getAccessGroupId(),
+                parentGUID.getAccessGroupObjectId(), null, null, null).toString();
+        Map<String, Object> term = new LinkedHashMap<String, Object>() {{
+            put("prefix", prefix);
+        }};
+        Map<String, Object> filter = new LinkedHashMap<String, Object>() {{
+            put("term", term);
+        }};
+        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+            put("filter", Arrays.asList(filter));
+        }};
+        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+            put("bool", bool);
+        }};
+        Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
+            put("query", query);
+        }};
+        String urlPath = "/" + reqIndexName + "/" + getAccessTableName() + "/_search";
+        Response resp = makeRequest("GET", urlPath, doc);
+        Map<String, Object> data = UObject.getMapper().readValue(
+                resp.getEntity().getContent(), Map.class);
+        Map<String, Object> hitMap = (Map<String, Object>)data.get("hits");
+        Integer ret = null;
+        List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
+        for (Map<String, Object> hit : hitList) {
+            Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
+            int version = (Integer)obj.get("version");
+            if (ret == null || ret < version) {
+                ret = version;
+            }
+        }
+        if (processedVersion != null && (ret == null || ret < processedVersion)) {
+            ret = processedVersion;
+        }
+        return ret;
+    }
+    
+    @SuppressWarnings({ "serial", "unchecked" })
+    private int updateLastVersionsInData(String indexName, GUID parentGUID,
+            int lastVersion) throws IOException {
+        if (indexName == null) {
+            indexName = getAnyIndexPattern();
+        }
+        String prefix = new GUID(parentGUID.getStorageCode(), parentGUID.getAccessGroupId(),
+                parentGUID.getAccessGroupObjectId(), null, null, null).toString();
+        Map<String, Object> term = new LinkedHashMap<String, Object>() {{
+            put("prefix", prefix);
+        }};
+        Map<String, Object> filter = new LinkedHashMap<String, Object>() {{
+            put("term", term);
+        }};
+        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+            put("filter", Arrays.asList(filter));
+        }};
+        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+            put("bool", bool);
+        }};
+        Map<String, Object> script = new LinkedHashMap<String, Object>() {{
+            put("inline", "ctx._source.islast = (ctx._source.version == " + lastVersion + ");");
+        }};
+        Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
+            put("query", query);
+            put("script", script);
+        }};
+        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_update_by_query";
+        Response resp = makeRequest("POST", urlPath, doc);
+        Map<String, Object> data = UObject.getMapper().readValue(
+                resp.getEntity().getContent(), Map.class);
+        return (Integer)data.get("updated");
+    }
+
     @SuppressWarnings("unchecked")
     private Map<GUID, String> checkParentDoc(String indexName, Set<GUID> parentGUIDs, 
-            boolean isPublic) throws IOException {
+            boolean isPublic, int lastVersion) throws IOException {
         boolean changed = false;
         Map<GUID, String> ret = lookupParentDocIds(indexName, parentGUIDs);
         for (GUID parentGUID : parentGUIDs) {
@@ -416,7 +512,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
             if (isPublic) {
                 accessGroupIds.add(PUBLIC_ACCESS_GROUP);
             }
-            doc.put("lastin", accessGroupIds);
+            Set<Integer> lastinGroupIds = parentGUID.getVersion() == lastVersion ? 
+                    accessGroupIds : Collections.emptySet();
+            doc.put("lastin", lastinGroupIds);
             doc.put("groups", accessGroupIds);
             Response resp = makeRequest("POST", "/" + indexName + "/" + getAccessTableName() + "/", 
                     doc);
@@ -424,7 +522,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     resp.getEntity().getContent(), Map.class);
             ret.put(parentGUID, (String)data.get("_id"));
             changed = true;
-            removeAccessGroupForOtherVersions(indexName, parentGUID, 
+            updateAccessGroupForVersions(indexName, parentGUID, lastVersion,
                     accessGroupIds.toArray(new Integer[accessGroupIds.size()]));
         }
         if (changed) {
@@ -434,17 +532,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @SuppressWarnings({ "serial", "unchecked" })
-    private boolean removeAccessGroupForOtherVersions(String indexName, GUID guid, 
-            Integer... accessGroupIds) throws IOException {
+    private boolean updateAccessGroupForVersions(String indexName, GUID guid,
+            int lastVersion, Integer... accessGroupIds) throws IOException {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
         String prefix = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), null, null, null).toString();
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
-            put("must", Arrays.asList(createFilter("term", "prefix", prefix),
-                    createFilter("terms", "lastin", accessGroupIds)));
-            put("must_not", Arrays.asList(createFilter("term", "version", guid.getVersion())));
+            put("must", Arrays.asList(createFilter("term", "prefix", prefix)));
         }};
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
@@ -453,7 +549,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
         for (int accessGroupId : accessGroupIds) {
             inline.append(""+ 
                     "if (ctx._source.lastin.indexOf(" + accessGroupId + ") >= 0) {\n" +
-                    "  ctx._source.lastin.remove(ctx._source.lastin.indexOf(" + accessGroupId + "));\n" +
+                    "  if (ctx._source.version != " + lastVersion + ") {\n" +
+                    "    ctx._source.lastin.remove(ctx._source.lastin.indexOf(" + accessGroupId + "));\n" +
+                    "  }\n" +
+                    "} else {\n" +
+                    "  if (ctx._source.version == " + lastVersion + ") {\n" +
+                    "    ctx._source.lastin.add(" + accessGroupId + ");\n" +
+                    "    if (ctx._source.groups.indexOf(" + accessGroupId + ") < 0) {\n" +
+                    "      ctx._source.groups.add(" + accessGroupId + ");\n" +
+                    "    }\n" +
+                    "  }\n" +
                     "}\n"
                     );
         }
@@ -509,35 +614,33 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     @SuppressWarnings({ "serial", "unchecked" })
-    private boolean addAccessGroupForVersion(String indexName, GUID guid, 
-            int accessGroupId) throws IOException {
-        // Here we try to update 'lastin' parameter in access parent. The idea is we need only one
-        // version among other parent with the same prefix to contain any particular access group.
+    private boolean updateSharedInData(String indexName, GUID parentGUID,
+            boolean shared) throws IOException {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
-        String prefix = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
-                guid.getAccessGroupObjectId(), null, null, null).toString();
+        String prefix = new GUID(parentGUID.getStorageCode(), parentGUID.getAccessGroupId(),
+                parentGUID.getAccessGroupObjectId(), null, null, null).toString();
+        Map<String, Object> term = new LinkedHashMap<String, Object>() {{
+            put("prefix", prefix);
+        }};
+        Map<String, Object> filter = new LinkedHashMap<String, Object>() {{
+            put("term", term);
+        }};
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
-            put("must", Arrays.asList(createFilter("term", "prefix", prefix),
-                    createFilter("term", "version", guid.getVersion())));
-            put("must_not", Arrays.asList(createFilter("term", "lastin", accessGroupId)));
+            put("filter", Arrays.asList(filter));
         }};
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
         }};
         Map<String, Object> script = new LinkedHashMap<String, Object>() {{
-            put("inline", "" + 
-                    "ctx._source.lastin.add(" + accessGroupId + "); " +
-                    "if (!ctx._source.groups.contains(" + accessGroupId + ")) {" +
-                    "  ctx._source.groups.add(" + accessGroupId + ");" + 
-                    "}");
+            put("inline", "ctx._source.shared = true;");
         }};
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
             put("script", script);
         }};
-        String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_update_by_query";
+        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_update_by_query";
         Response resp = makeRequest("POST", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
@@ -546,16 +649,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     @Override
     public void shareObjects(Set<GUID> guids, int accessGroupId) throws IOException {
-        Map<String, Set<GUID>> indexToGuids = groupIdsByIndex(guids);
+        Map<String, Set<GUID>> indexToGuids = groupParentIdsByIndex(guids);
         for (String indexName : indexToGuids.keySet()) {
             boolean needRefresh = false;
             for (GUID guid : indexToGuids.get(indexName)) {
-                if (addAccessGroupForVersion(indexName, guid, accessGroupId)) {
+                if (updateAccessGroupForVersions(indexName, guid, guid.getVersion(), accessGroupId)) {
                     needRefresh = true;
                 }
-                if (removeAccessGroupForOtherVersions(indexName, guid, accessGroupId)) {
-                    needRefresh = true;
-                }
+                if (updateSharedInData(indexName, guid, true));
             }
             if (needRefresh) {
                 refreshIndex(indexName);
@@ -565,7 +666,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     @Override
     public void unshareObjects(Set<GUID> guids, int accessGroupId) throws IOException {
-        Map<String, Set<GUID>> indexToGuids = groupIdsByIndex(guids);
+        Map<String, Set<GUID>> indexToGuids = groupParentIdsByIndex(guids);
         for (String indexName : indexToGuids.keySet()) {
             boolean needRefresh = false;
             for (GUID guid : indexToGuids.get(indexName)) {
@@ -1051,6 +1152,24 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }});
         props.put("timestamp", new LinkedHashMap<String, Object>() {{
             put("type", "date");
+        }});
+        props.put("prefix", new LinkedHashMap<String, Object>() {{
+            put("type", "keyword");
+        }});
+        props.put("accgrp", new LinkedHashMap<String, Object>() {{
+            put("type", "integer");
+        }});
+        props.put("version", new LinkedHashMap<String, Object>() {{
+            put("type", "integer");
+        }});
+        props.put("islast", new LinkedHashMap<String, Object>() {{
+            put("type", "boolean");
+        }});
+        props.put("public", new LinkedHashMap<String, Object>() {{
+            put("type", "boolean");
+        }});
+        props.put("shared", new LinkedHashMap<String, Object>() {{
+            put("type", "boolean");
         }});
         if (!skipFullJson) {
             props.put("ojson", new LinkedHashMap<String, Object>() {{

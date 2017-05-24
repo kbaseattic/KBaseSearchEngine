@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.main.LineLogger;
@@ -35,7 +37,8 @@ import workspace.WorkspaceClient;
 import workspace.WorkspaceIdentity;
 
 public class PerformanceTester {
-    private static final boolean cleanup = true;
+    private static final boolean cleanup = false;
+    private static final boolean debug = false;
     
     private static AuthToken kbaseIndexerToken = null;
     private static String elasticHost = null;
@@ -45,6 +48,7 @@ public class PerformanceTester {
     private static File tempDir = null;
     private static URL wsUrl = null;
     private static MainObjectProcessor mop = null;
+    private static List<long[]> timeStats = new ArrayList<>();
     
     @BeforeClass
     public static void prepare() throws Exception {
@@ -108,7 +112,30 @@ public class PerformanceTester {
         String esIndexPrefix = "performance.";
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken,
                 esHostPort, esUser, esPassword, esIndexPrefix, 
-                typesDir, tempDir);
+                typesDir, tempDir, new LineLogger() {
+            @Override
+            public void logInfo(String line) {
+                if (debug) {
+                    System.out.println(line);
+                }
+            }
+            @Override
+            public void logError(String line) {
+                if (debug) {
+                    System.err.println(line);
+                }
+            }
+            @Override
+            public void logError(Throwable error) {
+                if (debug) {
+                    error.printStackTrace();
+                }
+            }
+            @Override
+            public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
+                timeStats.add(new long[] {loadMs, parseMs, indexMs});
+            }
+        });
     }
     
     private static void deleteAllTestElasticIndices(HttpHost esHostPort, String esUser,
@@ -131,12 +158,14 @@ public class PerformanceTester {
         String wsName = "ReferenceDataManager";
         WorkspaceClient wc = new WorkspaceClient(wsUrl, kbaseIndexerToken);
         wc.setIsInsecureHttpConnectionAllowed(true);
-        int commonObjCount = (int)(long)wc.getWorkspaceInfo(new WorkspaceIdentity().withWorkspace(wsName)).getE5();
-        int blockPos = 0;
+        int commonObjCount = (int)(long)wc.getWorkspaceInfo(
+                new WorkspaceIdentity().withWorkspace(wsName)).getE5();
+        int blockPos = 463;
         int blockSize = 100;
         int blockCount = (commonObjCount + blockSize - 1) / blockSize;
         System.out.println("Number of blocks: " + blockCount);
         for (int n = 0; n < blockCount; n++, blockPos++) {
+            timeStats.clear();
             long minObjId = blockPos * blockSize + 1;
             long maxObjId = Math.min(commonObjCount, (blockPos + 1) * blockSize);
             if (minObjId > maxObjId) {
@@ -159,46 +188,33 @@ public class PerformanceTester {
                 String[] parts = ref.split("/");
                 int wsId = Integer.parseInt(parts[0]);
                 int version = Integer.parseInt(parts[2]);
-                ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", wsId, parts[1], version, null, 
-                        System.currentTimeMillis(), "KBaseGenomes.Genome", ObjectStatusEventType.CREATED, false);
+                ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", wsId, parts[1], version, 
+                        null, System.currentTimeMillis(), "KBaseGenomes.Genome", 
+                        ObjectStatusEventType.CREATED, true);
                 long t2 = System.currentTimeMillis();
                 try {
                     mop.processOneEvent(ev);
                     processTime += System.currentTimeMillis() - t2;
-                    /*System.out.println("Genome " + ev.toGUID() + ": time=" + (System.currentTimeMillis() - t2));
-                    ObjectData genomeIndex = getIndexedObject(ev.toGUID());
-                    String features = genomeIndex.keyProps.get("features");
-                    String assemblyGuidText = genomeIndex.keyProps.get("assembly_guid");
-                    ObjectData assemblyIndex = getIndexedObject(new GUID(assemblyGuidText));
-                    String contigs = assemblyIndex.keyProps.get("contigs");
-                    System.out.println("\tcontigs: " + contigs + ", features: " + features);*/
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     System.out.println("Error: " + ex.getMessage());
                 }
             }
             int genomes = countGenomes();
-            System.out.println("Processing time: " + (((double)processTime) / (genomes - genomesInit)) + 
-                    " ms. per genome (" + (genomes - genomesInit) + " genomes)");
+            double avgTime = ((double)processTime) / (genomes - genomesInit);
+            long loadTotalTime = 0;
+            long indexTotalTime = 0;
+            for (long[] statRow : timeStats) {
+                loadTotalTime += statRow[0];
+                indexTotalTime += statRow[2];
+            }
+            double loadTime = ((double)loadTotalTime) / (genomes - genomesInit);
+            double indexTime = ((double)indexTotalTime) / (genomes - genomesInit);
+            System.out.println("Processing time: " + avgTime + " ms. (load: " + loadTime + 
+                    ", index: " + indexTime + ") per genome (" + (genomes - genomesInit) + 
+                    " genomes)");
             testCommonStats();
         }
-    }
-    
-    public static LineLogger getDebugLogger() {
-        return new LineLogger() {
-            @Override
-            public void logInfo(String line) {
-                System.out.println(line);
-            }
-            @Override
-            public void logError(String line) {
-                System.err.println(line);
-            }
-            @Override
-            public void logError(Throwable error) {
-                error.printStackTrace();
-            }
-        };
     }
     
     private int countGenomes() throws Exception {
@@ -246,8 +262,8 @@ public class PerformanceTester {
     @Test
     public void parseResultsGenomes() throws Exception {
         List<String> lines =FileUtils.readLines(new File("test_local/performance.txt"));
-        lines = lines.stream().filter(l -> l.contains("Processing time") || l.contains("Total")).collect(
-                Collectors.toList());
+        lines = lines.stream().filter(l -> l.contains("Processing time") || l.contains("Total"))
+                .collect(Collectors.toList());
         for (int i = 0; i < lines.size() / 2; i++) {
             String l1 = lines.get(i * 2);
             l1 = l1.split(" ")[2];
@@ -256,4 +272,31 @@ public class PerformanceTester {
             System.out.println(l2 + "\t" + l1);
         }
     }
+
+    @Test
+    public void parseResultsAll() throws Exception {
+        List<String> lines =FileUtils.readLines(new File("test_local/performance_real.txt"));
+        lines = lines.stream().filter(l -> l.contains("Processing time") || l.contains("Total") ||
+                l.contains("Search")).collect(
+                Collectors.toList());
+        System.out.println("#Gnms\t#Cntgs\t#Feats\tLocIndx\tAvgIndx\tSearch\tFtFound");
+        double totalIndexTime = 0;
+        for (int i = 0; i < lines.size() / 3; i++) {
+            String[] l1 = lines.get(i * 3).replace('(', ' ').split(" ");
+            double indexTime = Double.parseDouble(l1[2]);
+            int blockSize = Integer.parseInt(l1[7]);
+            totalIndexTime += indexTime * blockSize;
+            String[] counts = lines.get(i * 3 + 1).split(" ")[3].split("/");
+            int genomes = Integer.parseInt(counts[0]);
+            String contigs = counts[1];
+            String features = counts[2];
+            String[] l3 = lines.get(i * 3 + 2).split(" ");
+            String searchTime = l3[2];
+            String featuresFound = l3[6];
+            System.out.println(genomes + "\t" + contigs + "\t" + features + "\t" + 
+                    (int)indexTime + "\t" + (int)(totalIndexTime / genomes) + "\t" + 
+                    searchTime + "\t" + featuresFound);
+        }
+    }
+
 }

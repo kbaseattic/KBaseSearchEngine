@@ -85,6 +85,9 @@ public class MainObjectProcessorTest {
                     public void logError(Throwable error) {
                         error.printStackTrace();
                     }
+                    @Override
+                    public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
+                    }
                 }, null);
     }
     
