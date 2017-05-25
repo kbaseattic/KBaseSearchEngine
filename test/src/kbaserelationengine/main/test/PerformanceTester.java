@@ -164,7 +164,7 @@ public class PerformanceTester {
         int blockSize = 100;
         int blockCount = (commonObjCount + blockSize - 1) / blockSize;
         System.out.println("Number of blocks: " + blockCount);
-        for (int n = 0; n < blockCount; n++, blockPos++) {
+        for (; blockPos < blockCount; blockPos++) {
             timeStats.clear();
             long minObjId = blockPos * blockSize + 1;
             long maxObjId = Math.min(commonObjCount, (blockPos + 1) * blockSize);
@@ -226,10 +226,11 @@ public class PerformanceTester {
     @Ignore
     @Test
     public void testCommonStats() throws Exception {
-        String query = "transporter";
+        String query = "Bacteria";
         int genomes = countGenomes();
         Map<String, Integer> typeAggr = mop.getIndexingStorage("*").searchTypes(
-                MatchFilter.create(), AccessFilter.create().withPublic(true).withAdmin(true));
+                MatchFilter.create(), AccessFilter.create().withPublic(true)
+                .withAccessGroups(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         Integer features = typeAggr.get("GenomeFeature");
         Integer contigs = typeAggr.get("AssemblyContig");
         System.out.println("Total genomes/contigs/features processed: " + genomes + "/" + 
@@ -237,7 +238,8 @@ public class PerformanceTester {
         long t1 = System.currentTimeMillis();
         Map<String, Integer> typeToCount = mop.getIndexingStorage("*").searchTypes(
                 MatchFilter.create().withFullTextInAll(query), 
-                AccessFilter.create().withPublic(true).withAdmin(true));
+                AccessFilter.create().withPublic(true)
+                .withAccessGroups(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         t1 = System.currentTimeMillis() - t1;
         System.out.println("Search time: " + t1 + " ms., features found: " + 
                 typeToCount.get("GenomeFeature"));

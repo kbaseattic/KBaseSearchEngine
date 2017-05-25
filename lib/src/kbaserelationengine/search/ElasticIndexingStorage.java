@@ -38,6 +38,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 
 import kbaserelationengine.common.GUID;
+import kbaserelationengine.common.JsonTokenUtil;
 import kbaserelationengine.parse.ObjectParseException;
 import kbaserelationengine.parse.ParsedObject;
 import kbaserelationengine.system.IndexingRules;
@@ -784,14 +785,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @SuppressWarnings("serial")
-    private Map<String, Object> createPublicShouldBlock(List<?> matchMustBlocks,
-            boolean withAllHistory) {
+    private Map<String, Object> createPublicShouldBlock(boolean withAllHistory) {
         List<Object> must0List = new ArrayList<>();
         must0List.add(createFilter("term", "public", true));
         if (!withAllHistory) {
             must0List.add(createFilter("term", "islast", true));
         }
-        must0List.addAll(matchMustBlocks);
         Map<String, Object> bool0 = new LinkedHashMap<String, Object>() {{
             put("must", must0List);
         }};
@@ -801,8 +800,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @SuppressWarnings("serial")
-    private Map<String, Object> createOwnerShouldBlock(List<?> matchMustBlocks,
-            AccessFilter accessFilter) {
+    private Map<String, Object> createOwnerShouldBlock(AccessFilter accessFilter) {
         List<Object> must1List = new ArrayList<>();
         if (accessFilter.accessGroupIds != null && !accessFilter.isAdmin) {
             must1List.add(createFilter("terms", "accgrp", accessFilter.accessGroupIds));
@@ -810,7 +808,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (!accessFilter.withAllHistory) {
             must1List.add(createFilter("term", "islast", true));
         }
-        must1List.addAll(matchMustBlocks);
         Map<String, Object> bool1 = new LinkedHashMap<String, Object>() {{
             put("must", must1List);
         }};
@@ -820,11 +817,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @SuppressWarnings("serial")
-    private Map<String, Object> createSharedShouldBlock(List<?> matchMustBlocks,
-            Map<String, Object> mustForShared) {
+    private Map<String, Object> createSharedShouldBlock(Map<String, Object> mustForShared) {
         List<Object> must2List = new ArrayList<>(Arrays.asList(
                 createFilter("term", "shared", true), mustForShared));
-        must2List.addAll(matchMustBlocks);
         Map<String, Object> bool2 = new LinkedHashMap<String, Object>() {{
             put("must", must2List);
         }};
@@ -846,15 +841,22 @@ public class ElasticIndexingStorage implements IndexingStorage {
         List<Object> matchFilters = new ArrayList<>(prepareMatchFilters(matchFilter));
         // Public block (we exclude it for admin because it's covered by owner block)
         if (accessFilter.withPublic && !accessFilter.isAdmin) {
-            shouldList.add(createPublicShouldBlock(matchFilters, accessFilter.withAllHistory));
+            shouldList.add(createPublicShouldBlock(accessFilter.withAllHistory));
         }
         // Owner block
-        shouldList.add(createOwnerShouldBlock(matchFilters, accessFilter));
+        shouldList.add(createOwnerShouldBlock(accessFilter));
         // Shared block
-        shouldList.add(createSharedShouldBlock(matchFilters, mustForShared));
+        shouldList.add(createSharedShouldBlock(mustForShared));
         // Rest of query
-        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+        Map<String, Object> filterBool = new LinkedHashMap<String, Object>() {{
             put("should", shouldList);
+        }};
+        Map<String, Object> filter = new LinkedHashMap<String, Object>() {{
+            put("bool", filterBool);
+        }};
+        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+            put("must", matchFilters);
+            put("filter", Arrays.asList(filter));
         }};
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
@@ -873,6 +875,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             put("aggregations", aggs);
             put("size", 0);
         }};
+        System.out.println("ElasticIndexingStorage.searchTypes: " + JsonTokenUtil.prettyPrint(doc));
         String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
@@ -1010,15 +1013,22 @@ public class ElasticIndexingStorage implements IndexingStorage {
         // TODO: support for matchFilter.accessGroupId
         // Public block (we exclude it for admin because it's covered by owner block)
         if (accessFilter.withPublic && !accessFilter.isAdmin) {
-            shouldList.add(createPublicShouldBlock(matchFilters, accessFilter.withAllHistory));
+            shouldList.add(createPublicShouldBlock(accessFilter.withAllHistory));
         }
         // Owner block
-        shouldList.add(createOwnerShouldBlock(matchFilters, accessFilter));
+        shouldList.add(createOwnerShouldBlock(accessFilter));
         // Shared block
-        shouldList.add(createSharedShouldBlock(matchFilters, mustForShared));
+        shouldList.add(createSharedShouldBlock(mustForShared));
         // Rest of query
-        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+        Map<String, Object> filterBool = new LinkedHashMap<String, Object>() {{
             put("should", shouldList);
+        }};
+        Map<String, Object> filter = new LinkedHashMap<String, Object>() {{
+            put("bool", filterBool);
+        }};
+        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+            put("must", matchFilters);
+            put("filter", Arrays.asList(filter));
         }};
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
