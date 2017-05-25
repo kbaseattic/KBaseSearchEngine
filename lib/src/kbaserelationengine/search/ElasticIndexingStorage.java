@@ -38,7 +38,6 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 
 import kbaserelationengine.common.GUID;
-import kbaserelationengine.common.JsonTokenUtil;
 import kbaserelationengine.parse.ObjectParseException;
 import kbaserelationengine.parse.ParsedObject;
 import kbaserelationengine.system.IndexingRules;
@@ -875,7 +874,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
             put("aggregations", aggs);
             put("size", 0);
         }};
-        System.out.println("ElasticIndexingStorage.searchTypes: " + JsonTokenUtil.prettyPrint(doc));
         String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
