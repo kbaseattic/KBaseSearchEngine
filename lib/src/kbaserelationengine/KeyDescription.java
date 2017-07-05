@@ -13,7 +13,15 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
  * <p>Original spec-file type: KeyDescription</p>
- * 
+ * <pre>
+ * Description of searchable type keyword. 
+ *     - key_value_type can be one of {'string', 'integer', 'double', 
+ *       'boolean'},
+ *     - hidden - if true then this keyword provides values for other
+ *       keywords (like in 'link_key') and is not supposed to be shown.
+ *     - link_key - optional field pointing to another keyword (which is
+ *       often hidden) providing GUID to build external URL to.
+ * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -21,7 +29,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonPropertyOrder({
     "key_name",
     "key_ui_title",
-    "key_value_type"
+    "key_value_type",
+    "hidden",
+    "link_key"
 })
 public class KeyDescription {
 
@@ -31,6 +41,10 @@ public class KeyDescription {
     private String keyUiTitle;
     @JsonProperty("key_value_type")
     private String keyValueType;
+    @JsonProperty("hidden")
+    private Long hidden;
+    @JsonProperty("link_key")
+    private String linkKey;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("key_name")
@@ -78,6 +92,36 @@ public class KeyDescription {
         return this;
     }
 
+    @JsonProperty("hidden")
+    public Long getHidden() {
+        return hidden;
+    }
+
+    @JsonProperty("hidden")
+    public void setHidden(Long hidden) {
+        this.hidden = hidden;
+    }
+
+    public KeyDescription withHidden(Long hidden) {
+        this.hidden = hidden;
+        return this;
+    }
+
+    @JsonProperty("link_key")
+    public String getLinkKey() {
+        return linkKey;
+    }
+
+    @JsonProperty("link_key")
+    public void setLinkKey(String linkKey) {
+        this.linkKey = linkKey;
+    }
+
+    public KeyDescription withLinkKey(String linkKey) {
+        this.linkKey = linkKey;
+        return this;
+    }
+
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -90,7 +134,7 @@ public class KeyDescription {
 
     @Override
     public String toString() {
-        return ((((((((("KeyDescription"+" [keyName=")+ keyName)+", keyUiTitle=")+ keyUiTitle)+", keyValueType=")+ keyValueType)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((("KeyDescription"+" [keyName=")+ keyName)+", keyUiTitle=")+ keyUiTitle)+", keyValueType=")+ keyValueType)+", hidden=")+ hidden)+", linkKey=")+ linkKey)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

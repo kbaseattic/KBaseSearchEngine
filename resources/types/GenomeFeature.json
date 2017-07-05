@@ -1,5 +1,6 @@
 {
 	"global-object-type": "GenomeFeature",
+	"ui-type-name": "Genome Feature",
 	"storage-type": "WS",
 	"storage-object-type": "KBaseGenomes.Genome",
 	"inner-sub-type": "feature",

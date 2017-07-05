@@ -13,7 +13,12 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
  * <p>Original spec-file type: SortingRule</p>
- * 
+ * <pre>
+ * Rule for sorting found results. 'key_name', 'is_timestamp' and
+ * 'is_object_name' are alternative way of defining what property
+ * if used for sorting. Default order is ascending (if 
+ * 'descending' field is not set).
+ * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)

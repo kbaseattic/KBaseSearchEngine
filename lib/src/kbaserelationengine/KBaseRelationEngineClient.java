@@ -163,26 +163,9 @@ public class KBaseRelationEngineClient {
     }
 
     /**
-     * <p>Original spec-file function name: add_workspace_to_index</p>
-     * <pre>
-     * This operation means that given workspace will be shared with
-     * system indexing user with write access. User calling this
-     * function should be owner of this workspace.
-     * </pre>
-     * @param   params   instance of type {@link kbaserelationengine.AddWorkspaceToIndexInput AddWorkspaceToIndexInput}
-     * @throws IOException if an IO exception occurs
-     * @throws JsonClientException if a JSON RPC exception occurs
-     */
-    public void addWorkspaceToIndex(AddWorkspaceToIndexInput params, RpcContext... jsonRpcContext) throws IOException, JsonClientException {
-        List<Object> args = new ArrayList<Object>();
-        args.add(params);
-        TypeReference<Object> retType = new TypeReference<Object>() {};
-        caller.jsonrpcCall("KBaseRelationEngine.add_workspace_to_index", args, retType, false, true, jsonRpcContext, this.serviceVersion);
-    }
-
-    /**
      * <p>Original spec-file function name: search_types</p>
      * <pre>
+     * Search for number of objects of each type matching constrains.
      * </pre>
      * @param   params   instance of type {@link kbaserelationengine.SearchTypesInput SearchTypesInput}
      * @return   instance of type {@link kbaserelationengine.SearchTypesOutput SearchTypesOutput}
@@ -200,6 +183,7 @@ public class KBaseRelationEngineClient {
     /**
      * <p>Original spec-file function name: search_objects</p>
      * <pre>
+     * Search for objects of particular type matching constrains.
      * </pre>
      * @param   params   instance of type {@link kbaserelationengine.SearchObjectsInput SearchObjectsInput}
      * @return   instance of type {@link kbaserelationengine.SearchObjectsOutput SearchObjectsOutput}
@@ -217,6 +201,7 @@ public class KBaseRelationEngineClient {
     /**
      * <p>Original spec-file function name: get_objects</p>
      * <pre>
+     * Retrieve objects by their GUIDs.
      * </pre>
      * @param   params   instance of type {@link kbaserelationengine.GetObjectsInput GetObjectsInput}
      * @return   instance of type {@link kbaserelationengine.GetObjectsOutput GetObjectsOutput}
@@ -234,6 +219,7 @@ public class KBaseRelationEngineClient {
     /**
      * <p>Original spec-file function name: list_types</p>
      * <pre>
+     * List registered searchable object types.
      * </pre>
      * @param   params   instance of type {@link kbaserelationengine.ListTypesInput ListTypesInput}
      * @return   instance of type {@link kbaserelationengine.ListTypesOutput ListTypesOutput}

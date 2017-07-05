@@ -14,7 +14,10 @@ import us.kbase.common.service.UObject;
 
 /**
  * <p>Original spec-file type: ObjectData</p>
- * 
+ * <pre>
+ * Properties of found object including metadata, raw data and
+ *     keywords.
+ * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)

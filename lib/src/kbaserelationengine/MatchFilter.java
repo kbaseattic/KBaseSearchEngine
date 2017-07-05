@@ -13,7 +13,12 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
  * <p>Original spec-file type: MatchFilter</p>
- * 
+ * <pre>
+ * Optional rules of defining constrains for object properties
+ * including values of keywords or metadata/system properties (like
+ * object name, creation time range) or full-text search in all
+ * properties.
+ * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -38,7 +43,15 @@ public class MatchFilter {
     private java.lang.String parentGuid;
     /**
      * <p>Original spec-file type: MatchValue</p>
-     * 
+     * <pre>
+     * Optional rules of defining constraints for values of particular
+     * term (keyword). Appropriate field depends on type of keyword.
+     * For instance in case of integer type 'int_value' should be used.
+     * In case of range constraint rather than single value 'min_*' 
+     * and 'max_*' fields should be used. You may omit one of ends of
+     * range to achieve '<=' or '>=' comparison. Ends are always
+     * included for range constrains.
+     * </pre>
      * 
      */
     @JsonProperty("timestamp")
@@ -109,7 +122,15 @@ public class MatchFilter {
 
     /**
      * <p>Original spec-file type: MatchValue</p>
-     * 
+     * <pre>
+     * Optional rules of defining constraints for values of particular
+     * term (keyword). Appropriate field depends on type of keyword.
+     * For instance in case of integer type 'int_value' should be used.
+     * In case of range constraint rather than single value 'min_*' 
+     * and 'max_*' fields should be used. You may omit one of ends of
+     * range to achieve '<=' or '>=' comparison. Ends are always
+     * included for range constrains.
+     * </pre>
      * 
      */
     @JsonProperty("timestamp")
@@ -119,7 +140,15 @@ public class MatchFilter {
 
     /**
      * <p>Original spec-file type: MatchValue</p>
-     * 
+     * <pre>
+     * Optional rules of defining constraints for values of particular
+     * term (keyword). Appropriate field depends on type of keyword.
+     * For instance in case of integer type 'int_value' should be used.
+     * In case of range constraint rather than single value 'min_*' 
+     * and 'max_*' fields should be used. You may omit one of ends of
+     * range to achieve '<=' or '>=' comparison. Ends are always
+     * included for range constrains.
+     * </pre>
      * 
      */
     @JsonProperty("timestamp")

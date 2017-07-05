@@ -14,7 +14,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
  * <p>Original spec-file type: GetObjectsOutput</p>
- * 
+ * <pre>
+ * Output results of get_objects method.
+ * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -991,7 +991,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public FoundHits queryHits(String objectType, List<Map<String, Object>> matchFilters, 
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pg,
             PostProcessing pp) throws IOException {
-        Pagination pagination = pg == null ? new Pagination(0, 50) : pg;
+        int pgStart = pg == null || pg.start == null ? 0 : pg.start;
+        int pgCount = pg == null || pg.count == null ? 50 : pg.count;
+        Pagination pagination = new Pagination(pgStart, pgCount);
         if (sorting == null || sorting.isEmpty()) {
             SortingRule sr = new SortingRule();
             sr.isTimestamp = true;

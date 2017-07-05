@@ -14,7 +14,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
  * <p>Original spec-file type: SearchObjectsInput</p>
- * 
+ * <pre>
+ * Input parameters for 'search_objects' method.
+ * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -33,7 +35,12 @@ public class SearchObjectsInput {
     private String objectType;
     /**
      * <p>Original spec-file type: MatchFilter</p>
-     * 
+     * <pre>
+     * Optional rules of defining constrains for object properties
+     * including values of keywords or metadata/system properties (like
+     * object name, creation time range) or full-text search in all
+     * properties.
+     * </pre>
      * 
      */
     @JsonProperty("match_filter")
@@ -42,14 +49,25 @@ public class SearchObjectsInput {
     private List<SortingRule> sortingRules;
     /**
      * <p>Original spec-file type: AccessFilter</p>
-     * 
+     * <pre>
+     * Optional rules of access constrains.
+     *   - with_private - include data found in workspaces not marked 
+     *       as public, default value is true,
+     *   - with_public - include data found in public workspaces,
+     *       default value is false,
+     *   - with_all_history - include all versions (last one and all
+     *       old versions) of objects matching constrains, default
+     *       value is false.
+     * </pre>
      * 
      */
     @JsonProperty("access_filter")
     private AccessFilter accessFilter;
     /**
      * <p>Original spec-file type: Pagination</p>
-     * 
+     * <pre>
+     * Pagination rules. Default values are: start = 0, count = 50.
+     * </pre>
      * 
      */
     @JsonProperty("pagination")
@@ -57,6 +75,14 @@ public class SearchObjectsInput {
     /**
      * <p>Original spec-file type: PostProcessing</p>
      * <pre>
+     * Rules for what to return about found objects.
+     * skip_info - do not include brief info for object ('guid,
+     *     'parent_guid', 'object_name' and 'timestamp' fields in
+     *     ObjectData structure),
+     * skip_keys - do not include keyword values for object 
+     *     ('key_props' field in ObjectData structure),
+     * skip_data - do not include raw data for object ('data' and 
+     *     'parent_data' fields in ObjectData structure),
      * ids_only - shortcut to mark all three skips as true.
      * </pre>
      * 
@@ -82,7 +108,12 @@ public class SearchObjectsInput {
 
     /**
      * <p>Original spec-file type: MatchFilter</p>
-     * 
+     * <pre>
+     * Optional rules of defining constrains for object properties
+     * including values of keywords or metadata/system properties (like
+     * object name, creation time range) or full-text search in all
+     * properties.
+     * </pre>
      * 
      */
     @JsonProperty("match_filter")
@@ -92,7 +123,12 @@ public class SearchObjectsInput {
 
     /**
      * <p>Original spec-file type: MatchFilter</p>
-     * 
+     * <pre>
+     * Optional rules of defining constrains for object properties
+     * including values of keywords or metadata/system properties (like
+     * object name, creation time range) or full-text search in all
+     * properties.
+     * </pre>
      * 
      */
     @JsonProperty("match_filter")
@@ -122,7 +158,16 @@ public class SearchObjectsInput {
 
     /**
      * <p>Original spec-file type: AccessFilter</p>
-     * 
+     * <pre>
+     * Optional rules of access constrains.
+     *   - with_private - include data found in workspaces not marked 
+     *       as public, default value is true,
+     *   - with_public - include data found in public workspaces,
+     *       default value is false,
+     *   - with_all_history - include all versions (last one and all
+     *       old versions) of objects matching constrains, default
+     *       value is false.
+     * </pre>
      * 
      */
     @JsonProperty("access_filter")
@@ -132,7 +177,16 @@ public class SearchObjectsInput {
 
     /**
      * <p>Original spec-file type: AccessFilter</p>
-     * 
+     * <pre>
+     * Optional rules of access constrains.
+     *   - with_private - include data found in workspaces not marked 
+     *       as public, default value is true,
+     *   - with_public - include data found in public workspaces,
+     *       default value is false,
+     *   - with_all_history - include all versions (last one and all
+     *       old versions) of objects matching constrains, default
+     *       value is false.
+     * </pre>
      * 
      */
     @JsonProperty("access_filter")
@@ -147,7 +201,9 @@ public class SearchObjectsInput {
 
     /**
      * <p>Original spec-file type: Pagination</p>
-     * 
+     * <pre>
+     * Pagination rules. Default values are: start = 0, count = 50.
+     * </pre>
      * 
      */
     @JsonProperty("pagination")
@@ -157,7 +213,9 @@ public class SearchObjectsInput {
 
     /**
      * <p>Original spec-file type: Pagination</p>
-     * 
+     * <pre>
+     * Pagination rules. Default values are: start = 0, count = 50.
+     * </pre>
      * 
      */
     @JsonProperty("pagination")
@@ -173,6 +231,14 @@ public class SearchObjectsInput {
     /**
      * <p>Original spec-file type: PostProcessing</p>
      * <pre>
+     * Rules for what to return about found objects.
+     * skip_info - do not include brief info for object ('guid,
+     *     'parent_guid', 'object_name' and 'timestamp' fields in
+     *     ObjectData structure),
+     * skip_keys - do not include keyword values for object 
+     *     ('key_props' field in ObjectData structure),
+     * skip_data - do not include raw data for object ('data' and 
+     *     'parent_data' fields in ObjectData structure),
      * ids_only - shortcut to mark all three skips as true.
      * </pre>
      * 
@@ -185,6 +251,14 @@ public class SearchObjectsInput {
     /**
      * <p>Original spec-file type: PostProcessing</p>
      * <pre>
+     * Rules for what to return about found objects.
+     * skip_info - do not include brief info for object ('guid,
+     *     'parent_guid', 'object_name' and 'timestamp' fields in
+     *     ObjectData structure),
+     * skip_keys - do not include keyword values for object 
+     *     ('key_props' field in ObjectData structure),
+     * skip_data - do not include raw data for object ('data' and 
+     *     'parent_data' fields in ObjectData structure),
      * ids_only - shortcut to mark all three skips as true.
      * </pre>
      * 

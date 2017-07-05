@@ -13,7 +13,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
  * <p>Original spec-file type: SearchTypesOutput</p>
- * 
+ * <pre>
+ * Output results of search_types method.
+ * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)

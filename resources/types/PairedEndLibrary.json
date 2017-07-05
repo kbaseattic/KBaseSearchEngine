@@ -1,5 +1,6 @@
 {
 	"global-object-type": "PairedEndLibrary",
+	"ui-type-name": "Paired End Library",
 	"storage-type": "WS",
 	"storage-object-type": "KBaseFile.PairedEndLibrary",
 	"indexing-rules": [

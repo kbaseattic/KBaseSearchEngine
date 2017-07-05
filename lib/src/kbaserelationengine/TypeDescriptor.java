@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 /**
  * <p>Original spec-file type: TypeDescriptor</p>
  * <pre>
+ * Description of searchable object type including details about keywords.
  * TODO: add more details like parent type, relations, primary key, ...
  * </pre>
  * 

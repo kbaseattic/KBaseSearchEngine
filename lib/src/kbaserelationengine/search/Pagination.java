@@ -1,10 +1,10 @@
 package kbaserelationengine.search;
 
 public class Pagination {
-    public int start;
-    public int count;
+    public Integer start;
+    public Integer count;
     
-    public Pagination(int start, int count) {
+    public Pagination(Integer start, Integer count) {
         this.start = start;
         this.count = count;
     }

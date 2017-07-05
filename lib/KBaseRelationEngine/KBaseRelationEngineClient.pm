@@ -108,94 +108,6 @@ sub new
 
 
 
-=head2 add_workspace_to_index
-
-  $obj->add_workspace_to_index($params)
-
-=over 4
-
-=item Parameter and return types
-
-=begin html
-
-<pre>
-$params is a KBaseRelationEngine.AddWorkspaceToIndexInput
-AddWorkspaceToIndexInput is a reference to a hash where the following keys are defined:
-	ws_name has a value which is a string
-	ws_id has a value which is an int
-
-</pre>
-
-=end html
-
-=begin text
-
-$params is a KBaseRelationEngine.AddWorkspaceToIndexInput
-AddWorkspaceToIndexInput is a reference to a hash where the following keys are defined:
-	ws_name has a value which is a string
-	ws_id has a value which is an int
-
-
-=end text
-
-=item Description
-
-This operation means that given workspace will be shared with
-system indexing user with write access. User calling this
-function should be owner of this workspace.
-
-=back
-
-=cut
-
- sub add_workspace_to_index
-{
-    my($self, @args) = @_;
-
-# Authentication: required
-
-    if ((my $n = @args) != 1)
-    {
-	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function add_workspace_to_index (received $n, expecting 1)");
-    }
-    {
-	my($params) = @args;
-
-	my @_bad_arguments;
-        (ref($params) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument 1 \"params\" (value was \"$params\")");
-        if (@_bad_arguments) {
-	    my $msg = "Invalid arguments passed to add_workspace_to_index:\n" . join("", map { "\t$_\n" } @_bad_arguments);
-	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
-								   method_name => 'add_workspace_to_index');
-	}
-    }
-
-    my $url = $self->{url};
-    my $result = $self->{client}->call($url, $self->{headers}, {
-	    method => "KBaseRelationEngine.add_workspace_to_index",
-	    params => \@args,
-    });
-    if ($result) {
-	if ($result->is_error) {
-	    Bio::KBase::Exceptions::JSONRPC->throw(error => $result->error_message,
-					       code => $result->content->{error}->{code},
-					       method_name => 'add_workspace_to_index',
-					       data => $result->content->{error}->{error} # JSON::RPC::ReturnObject only supports JSONRPC 1.1 or 1.O
-					      );
-	} else {
-	    return;
-	}
-    } else {
-        Bio::KBase::Exceptions::HTTP->throw(error => "Error invoking method add_workspace_to_index",
-					    status_line => $self->{client}->status_line,
-					    method_name => 'add_workspace_to_index',
-				       );
-    }
-}
- 
-
-
 =head2 search_types
 
   $return = $obj->search_types($params)
@@ -284,7 +196,7 @@ SearchTypesOutput is a reference to a hash where the following keys are defined:
 
 =item Description
 
-
+Search for number of objects of each type matching constrains.
 
 =back
 
@@ -484,7 +396,7 @@ ObjectData is a reference to a hash where the following keys are defined:
 
 =item Description
 
-
+Search for objects of particular type matching constrains.
 
 =back
 
@@ -610,7 +522,7 @@ ObjectData is a reference to a hash where the following keys are defined:
 
 =item Description
 
-
+Retrieve objects by their GUIDs.
 
 =back
 
@@ -689,6 +601,9 @@ KeyDescription is a reference to a hash where the following keys are defined:
 	key_name has a value which is a string
 	key_ui_title has a value which is a string
 	key_value_type has a value which is a string
+	hidden has a value which is a KBaseRelationEngine.boolean
+	link_key has a value which is a string
+boolean is an int
 
 </pre>
 
@@ -710,13 +625,16 @@ KeyDescription is a reference to a hash where the following keys are defined:
 	key_name has a value which is a string
 	key_ui_title has a value which is a string
 	key_value_type has a value which is a string
+	hidden has a value which is a KBaseRelationEngine.boolean
+	link_key has a value which is a string
+boolean is an int
 
 
 =end text
 
 =item Description
 
-
+List registered searchable object types.
 
 =back
 
@@ -920,42 +838,21 @@ a string
 
 
 
-=head2 AddWorkspaceToIndexInput
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-ws_name has a value which is a string
-ws_id has a value which is an int
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-ws_name has a value which is a string
-ws_id has a value which is an int
-
-
-=end text
-
-=back
-
-
-
 =head2 MatchValue
 
 =over 4
 
+
+
+=item Description
+
+Optional rules of defining constraints for values of particular
+term (keyword). Appropriate field depends on type of keyword.
+For instance in case of integer type 'int_value' should be used.
+In case of range constraint rather than single value 'min_*' 
+and 'max_*' fields should be used. You may omit one of ends of
+range to achieve '<=' or '>=' comparison. Ends are always
+included for range constrains.
 
 
 =item Definition
@@ -1006,6 +903,14 @@ max_double has a value which is a float
 
 
 
+=item Description
+
+Optional rules of defining constrains for object properties
+including values of keywords or metadata/system properties (like
+object name, creation time range) or full-text search in all
+properties.
+
+
 =item Definition
 
 =begin html
@@ -1046,6 +951,18 @@ lookupInKeys has a value which is a reference to a hash where the key is a strin
 
 
 
+=item Description
+
+Optional rules of access constrains.
+  - with_private - include data found in workspaces not marked 
+      as public, default value is true,
+  - with_public - include data found in public workspaces,
+      default value is false,
+  - with_all_history - include all versions (last one and all
+      old versions) of objects matching constrains, default
+      value is false.
+
+
 =item Definition
 
 =begin html
@@ -1080,6 +997,11 @@ with_all_history has a value which is a KBaseRelationEngine.boolean
 
 
 
+=item Description
+
+Input parameters for search_types method.
+
+
 =item Definition
 
 =begin html
@@ -1112,6 +1034,11 @@ access_filter has a value which is a KBaseRelationEngine.AccessFilter
 
 
 
+=item Description
+
+Output results of search_types method.
+
+
 =item Definition
 
 =begin html
@@ -1142,6 +1069,14 @@ search_time has a value which is an int
 
 =over 4
 
+
+
+=item Description
+
+Rule for sorting found results. 'key_name', 'is_timestamp' and
+'is_object_name' are alternative way of defining what property
+if used for sorting. Default order is ascending (if 
+'descending' field is not set).
 
 
 =item Definition
@@ -1180,6 +1115,11 @@ descending has a value which is a KBaseRelationEngine.boolean
 
 
 
+=item Description
+
+Pagination rules. Default values are: start = 0, count = 50.
+
+
 =item Definition
 
 =begin html
@@ -1214,6 +1154,14 @@ count has a value which is an int
 
 =item Description
 
+Rules for what to return about found objects.
+skip_info - do not include brief info for object ('guid,
+    'parent_guid', 'object_name' and 'timestamp' fields in
+    ObjectData structure),
+skip_keys - do not include keyword values for object 
+    ('key_props' field in ObjectData structure),
+skip_data - do not include raw data for object ('data' and 
+    'parent_data' fields in ObjectData structure),
 ids_only - shortcut to mark all three skips as true.
 
 
@@ -1255,6 +1203,11 @@ data_includes has a value which is a reference to a list where each element is a
 
 
 
+=item Description
+
+Input parameters for 'search_objects' method.
+
+
 =item Definition
 
 =begin html
@@ -1293,6 +1246,12 @@ post_processing has a value which is a KBaseRelationEngine.PostProcessing
 
 =over 4
 
+
+
+=item Description
+
+Properties of found object including metadata, raw data and
+    keywords.
 
 
 =item Definition
@@ -1337,6 +1296,15 @@ key_props has a value which is a reference to a hash where the key is a string a
 
 
 
+=item Description
+
+Output results for 'search_objects' method.
+'pagination' and 'sorting_rules' fields show actual input for
+    pagination and sorting.
+total - total number of found objects.
+search_time - common time in milliseconds spent.
+
+
 =item Definition
 
 =begin html
@@ -1375,6 +1343,11 @@ search_time has a value which is an int
 
 
 
+=item Description
+
+Input parameters for get_objects method.
+
+
 =item Definition
 
 =begin html
@@ -1405,6 +1378,11 @@ post_processing has a value which is a KBaseRelationEngine.PostProcessing
 
 =over 4
 
+
+
+=item Description
+
+Output results of get_objects method.
 
 
 =item Definition
@@ -1441,6 +1419,7 @@ search_time has a value which is an int
 
 =item Description
 
+Input parameters for list_types method.
 type_name - optional parameter; if not specified all types are described.
 
 
@@ -1474,6 +1453,17 @@ type_name has a value which is a string
 
 
 
+=item Description
+
+Description of searchable type keyword. 
+    - key_value_type can be one of {'string', 'integer', 'double', 
+      'boolean'},
+    - hidden - if true then this keyword provides values for other
+      keywords (like in 'link_key') and is not supposed to be shown.
+    - link_key - optional field pointing to another keyword (which is
+      often hidden) providing GUID to build external URL to.
+
+
 =item Definition
 
 =begin html
@@ -1483,6 +1473,8 @@ a reference to a hash where the following keys are defined:
 key_name has a value which is a string
 key_ui_title has a value which is a string
 key_value_type has a value which is a string
+hidden has a value which is a KBaseRelationEngine.boolean
+link_key has a value which is a string
 
 </pre>
 
@@ -1494,6 +1486,8 @@ a reference to a hash where the following keys are defined:
 key_name has a value which is a string
 key_ui_title has a value which is a string
 key_value_type has a value which is a string
+hidden has a value which is a KBaseRelationEngine.boolean
+link_key has a value which is a string
 
 
 =end text
@@ -1510,6 +1504,7 @@ key_value_type has a value which is a string
 
 =item Description
 
+Description of searchable object type including details about keywords.
 TODO: add more details like parent type, relations, primary key, ...
 
 
@@ -1545,6 +1540,11 @@ keys has a value which is a reference to a list where each element is a KBaseRel
 
 =over 4
 
+
+
+=item Description
+
+Output results of list_types method.
 
 
 =item Definition

@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,6 +14,7 @@ import us.kbase.common.service.UObject;
 
 public class ObjectTypeParsingRules {
     private String globalObjectType;
+    private String uiTypeName;
     private String storageType;
     private String storageObjectType;
     private String innerSubType;
@@ -29,6 +29,14 @@ public class ObjectTypeParsingRules {
     
     public void setGlobalObjectType(String globalObjectType) {
         this.globalObjectType = globalObjectType;
+    }
+    
+    public String getUiTypeName() {
+        return uiTypeName;
+    }
+    
+    public void setUiTypeName(String uiTypeName) {
+        this.uiTypeName = uiTypeName;
     }
     
     public String getStorageType() {
@@ -112,6 +120,7 @@ public class ObjectTypeParsingRules {
             throws ObjectParseException {
         ObjectTypeParsingRules ret = new ObjectTypeParsingRules();
         ret.setGlobalObjectType((String)obj.get("global-object-type"));
+        ret.setUiTypeName((String)obj.get("ui-type-name"));
         ret.setStorageType((String)obj.get("storage-type"));
         ret.setStorageObjectType((String)obj.get("storage-object-type"));
         ret.setInnerSubType((String)obj.get("inner-sub-type"));

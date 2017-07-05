@@ -14,7 +14,13 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
  * <p>Original spec-file type: SearchObjectsOutput</p>
- * 
+ * <pre>
+ * Output results for 'search_objects' method.
+ * 'pagination' and 'sorting_rules' fields show actual input for
+ *     pagination and sorting.
+ * total - total number of found objects.
+ * search_time - common time in milliseconds spent.
+ * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -30,7 +36,9 @@ public class SearchObjectsOutput {
 
     /**
      * <p>Original spec-file type: Pagination</p>
-     * 
+     * <pre>
+     * Pagination rules. Default values are: start = 0, count = 50.
+     * </pre>
      * 
      */
     @JsonProperty("pagination")
@@ -47,7 +55,9 @@ public class SearchObjectsOutput {
 
     /**
      * <p>Original spec-file type: Pagination</p>
-     * 
+     * <pre>
+     * Pagination rules. Default values are: start = 0, count = 50.
+     * </pre>
      * 
      */
     @JsonProperty("pagination")
@@ -57,7 +67,9 @@ public class SearchObjectsOutput {
 
     /**
      * <p>Original spec-file type: Pagination</p>
-     * 
+     * <pre>
+     * Pagination rules. Default values are: start = 0, count = 50.
+     * </pre>
      * 
      */
     @JsonProperty("pagination")

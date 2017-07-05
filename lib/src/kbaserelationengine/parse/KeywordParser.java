@@ -163,7 +163,7 @@ public class KeywordParser {
         addOrAddAll(valueFinal, values.values);
     }
     
-    private static String getKeyName(IndexingRules rules) {
+    public static String getKeyName(IndexingRules rules) {
         return rules.getKeyName() != null ? rules.getKeyName():
             rules.getPath().getPathItems()[0];
     }

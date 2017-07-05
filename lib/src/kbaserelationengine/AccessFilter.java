@@ -13,7 +13,16 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
  * <p>Original spec-file type: AccessFilter</p>
- * 
+ * <pre>
+ * Optional rules of access constrains.
+ *   - with_private - include data found in workspaces not marked 
+ *       as public, default value is true,
+ *   - with_public - include data found in public workspaces,
+ *       default value is false,
+ *   - with_all_history - include all versions (last one and all
+ *       old versions) of objects matching constrains, default
+ *       value is false.
+ * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)

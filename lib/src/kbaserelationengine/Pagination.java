@@ -13,7 +13,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
  * <p>Original spec-file type: Pagination</p>
- * 
+ * <pre>
+ * Pagination rules. Default values are: start = 0, count = 50.
+ * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)

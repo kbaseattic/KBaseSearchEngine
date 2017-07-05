@@ -3,7 +3,6 @@ package kbaserelationengine;
 import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonServerMethod;
 import us.kbase.common.service.JsonServerServlet;
@@ -31,7 +30,6 @@ import kbaserelationengine.search.ElasticIndexingStorage;
 
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.ConfigurableAuthService;
-
 //END_HEADER
 
 /**
@@ -44,7 +42,7 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
     private static final String version = "0.0.1";
     private static final String gitUrl = "https://github.com/kbaseapps/KBaseRelationEngine";
-    private static final String gitCommitHash = "3df38a259733db37d4acc4bdfcf8d41492ab9a57";
+    private static final String gitCommitHash = "e209e1a11909abaf3d2b498be49047b19e911643";
 
     //BEGIN_CLASS_HEADER
     private MainObjectProcessor mop = null;
@@ -70,7 +68,6 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
             }
         }
     }
-
     //END_CLASS_HEADER
 
     public KBaseRelationEngineServer() throws Exception {
@@ -147,26 +144,9 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
     }
 
     /**
-     * <p>Original spec-file function name: add_workspace_to_index</p>
-     * <pre>
-     * This operation means that given workspace will be shared with
-     * system indexing user with write access. User calling this
-     * function should be owner of this workspace.
-     * </pre>
-     * @param   params   instance of type {@link kbaserelationengine.AddWorkspaceToIndexInput AddWorkspaceToIndexInput}
-     */
-    @JsonServerMethod(rpc = "KBaseRelationEngine.add_workspace_to_index", async=true)
-    public void addWorkspaceToIndex(AddWorkspaceToIndexInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
-        //BEGIN add_workspace_to_index
-        String wsNameOrId = params.getWsName() != null ? params.getWsName() :
-            String.valueOf(params.getWsId());
-        mop.addWorkspaceToIndex(wsNameOrId, authPart);
-        //END add_workspace_to_index
-    }
-
-    /**
      * <p>Original spec-file function name: search_types</p>
      * <pre>
+     * Search for number of objects of each type matching constrains.
      * </pre>
      * @param   params   instance of type {@link kbaserelationengine.SearchTypesInput SearchTypesInput}
      * @return   instance of type {@link kbaserelationengine.SearchTypesOutput SearchTypesOutput}
@@ -183,6 +163,7 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
     /**
      * <p>Original spec-file function name: search_objects</p>
      * <pre>
+     * Search for objects of particular type matching constrains.
      * </pre>
      * @param   params   instance of type {@link kbaserelationengine.SearchObjectsInput SearchObjectsInput}
      * @return   instance of type {@link kbaserelationengine.SearchObjectsOutput SearchObjectsOutput}
@@ -199,6 +180,7 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
     /**
      * <p>Original spec-file function name: get_objects</p>
      * <pre>
+     * Retrieve objects by their GUIDs.
      * </pre>
      * @param   params   instance of type {@link kbaserelationengine.GetObjectsInput GetObjectsInput}
      * @return   instance of type {@link kbaserelationengine.GetObjectsOutput GetObjectsOutput}
@@ -207,6 +189,7 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
     public GetObjectsOutput getObjects(GetObjectsInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         GetObjectsOutput returnVal = null;
         //BEGIN get_objects
+        returnVal = mop.getObjects(params, authPart.getUserName());
         //END get_objects
         return returnVal;
     }
@@ -214,6 +197,7 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
     /**
      * <p>Original spec-file function name: list_types</p>
      * <pre>
+     * List registered searchable object types.
      * </pre>
      * @param   params   instance of type {@link kbaserelationengine.ListTypesInput ListTypesInput}
      * @return   instance of type {@link kbaserelationengine.ListTypesOutput ListTypesOutput}
@@ -222,6 +206,7 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
     public ListTypesOutput listTypes(ListTypesInput params, RpcContext jsonRpcContext) throws Exception {
         ListTypesOutput returnVal = null;
         //BEGIN list_types
+        returnVal = new ListTypesOutput().withTypes(mop.listTypes(params.getTypeName()));
         //END list_types
         return returnVal;
     }

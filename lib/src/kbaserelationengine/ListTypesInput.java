@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 /**
  * <p>Original spec-file type: ListTypesInput</p>
  * <pre>
+ * Input parameters for list_types method.
  * type_name - optional parameter; if not specified all types are described.
  * </pre>
  * 

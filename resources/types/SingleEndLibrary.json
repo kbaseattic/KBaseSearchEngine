@@ -1,5 +1,6 @@
 {
 	"global-object-type": "SingleEndLibrary",
+	"ui-type-name": "Single End Library",
 	"storage-type": "WS",
 	"storage-object-type": "KBaseFile.SingleEndLibrary",
 	"indexing-rules": [

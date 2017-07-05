@@ -3,6 +3,7 @@ package kbaserelationengine.main;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -18,6 +19,9 @@ import org.apache.http.HttpHost;
 import com.fasterxml.jackson.core.JsonParser;
 
 import kbaserelationengine.AccessFilter;
+import kbaserelationengine.GetObjectsInput;
+import kbaserelationengine.GetObjectsOutput;
+import kbaserelationengine.KeyDescription;
 import kbaserelationengine.MatchFilter;
 import kbaserelationengine.MatchValue;
 import kbaserelationengine.Pagination;
@@ -27,6 +31,7 @@ import kbaserelationengine.SearchObjectsOutput;
 import kbaserelationengine.SearchTypesInput;
 import kbaserelationengine.SearchTypesOutput;
 import kbaserelationengine.SortingRule;
+import kbaserelationengine.TypeDescriptor;
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.AccessGroupProvider;
 import kbaserelationengine.events.AccessGroupStatus;
@@ -53,6 +58,7 @@ import kbaserelationengine.search.ElasticIndexingStorage;
 import kbaserelationengine.search.FoundHits;
 import kbaserelationengine.search.IndexingStorage;
 import kbaserelationengine.system.DefaultSystemStorage;
+import kbaserelationengine.system.IndexingRules;
 import kbaserelationengine.system.ObjectTypeParsingRules;
 import kbaserelationengine.system.SystemStorage;
 import us.kbase.auth.AuthToken;
@@ -414,6 +420,13 @@ public class MainObjectProcessor {
         return value != null && value == 1L;
     }
 
+    private static boolean toBool(Long value, boolean defaultRet) {
+        if (value == null) {
+            return defaultRet;
+        }
+        return value == 1L;
+    }
+
     private static Integer toInteger(Long value) {
         return value == null ? null : (int)(long)value;
     }
@@ -472,7 +485,12 @@ public class MainObjectProcessor {
 
     private kbaserelationengine.search.AccessFilter toSearch(AccessFilter af, String user)
             throws IOException {
-        List<Integer> accessGroupIds = accessGroupProvider.findAccessGroupIds("WS", user);
+        List<Integer> accessGroupIds;
+        if (toBool(af.getWithPrivate(), true)) {
+            accessGroupIds = accessGroupProvider.findAccessGroupIds("WS", user);
+        } else {
+            accessGroupIds = Collections.emptyList();
+        }
         return new kbaserelationengine.search.AccessFilter()
                 .withPublic(toBool(af.getWithPublic()))
                 .withAllHistory(toBool(af.getWithAllHistory()))
@@ -597,6 +615,65 @@ public class MainObjectProcessor {
         return ret;
     }
 
+    public GetObjectsOutput getObjects(GetObjectsInput params, String user) throws Exception {
+        long t1 = System.currentTimeMillis();
+        Set<GUID> guids = new LinkedHashSet<>();
+        for (String guid : params.getGuids()) {
+            guids.add(new GUID(guid));
+        }
+        kbaserelationengine.search.PostProcessing postProcessing = 
+                toSearch(params.getPostProcessing());
+        List<kbaserelationengine.search.ObjectData> objs = indexingStorage.getObjectsByIds(
+                guids, postProcessing);
+        GetObjectsOutput ret = new GetObjectsOutput().withObjects(objs.stream()
+                .map(this::fromSearch).collect(Collectors.toList()));
+        ret.withSearchTime(System.currentTimeMillis() - t1);
+        return ret;
+    }
+    
+    public Map<String, TypeDescriptor> listTypes(String uniqueType) throws Exception {
+        Map<String, TypeDescriptor> ret = new LinkedHashMap<>();
+        for (ObjectTypeParsingRules otpr : systemStorage.listObjectTypes()) {
+            String typeName = otpr.getGlobalObjectType();
+            if (uniqueType != null && !uniqueType.equals(typeName)) {
+                continue;
+            }
+            String uiTypeName = otpr.getUiTypeName();
+            if (uiTypeName == null) {
+                uiTypeName = guessUIName(typeName);
+            }
+            List<KeyDescription> keys = new ArrayList<>();
+            for (IndexingRules ir : otpr.getIndexingRules()) {
+                if (ir.isNotIndexed()) {
+                    continue;
+                }
+                String keyName = KeywordParser.getKeyName(ir);
+                String uiKeyName = ir.getUiName();
+                if (uiKeyName == null) {
+                    uiKeyName = guessUIName(keyName);
+                }
+                String keyValueType = ir.getKeywordType();
+                if (keyValueType == null) {
+                    keyValueType = "string";
+                }
+                long hidden = ir.isUiHidden() ? 1L : 0L;
+                KeyDescription kd = new KeyDescription().withKeyName(keyName)
+                        .withKeyUiTitle(uiKeyName).withKeyValueType(keyValueType)
+                        .withKeyValueType(keyValueType).withHidden(hidden)
+                        .withLinkKey(ir.getUiLinkKey());
+                keys.add(kd);
+            }
+            TypeDescriptor td = new TypeDescriptor().withTypeName(typeName)
+                    .withTypeUiTitle(uiTypeName).withKeys(keys);
+            ret.put(typeName, td);
+        }
+        return ret;
+    }
+
+    private static String guessUIName(String id) {
+        return id.substring(0, 1).toUpperCase() + id.substring(1);
+    }
+    
     private class MOPLookupProvider implements ObjectLookupProvider {
         private Map<String, String> refResolvingCache = new LinkedHashMap<>();
         private Map<GUID, kbaserelationengine.search.ObjectData> objLookupCache =
