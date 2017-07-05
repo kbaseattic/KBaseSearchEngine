@@ -281,12 +281,18 @@ public class PerformanceTester {
         lines = lines.stream().filter(l -> l.contains("Processing time") || l.contains("Total") ||
                 l.contains("Search")).collect(
                 Collectors.toList());
-        System.out.println("#Gnms\t#Cntgs\t#Feats\tLocIndx\tAvgIndx\tSearch\tFtFound");
+        System.out.println("#Gnms\t#Cntgs\t#Feats\tIndex\tLoad\tSave\tAvgIdx\tSearch\tFtFound");
         double totalIndexTime = 0;
         for (int i = 0; i < lines.size() / 3; i++) {
-            String[] l1 = lines.get(i * 3).replace('(', ' ').split(" ");
+            String[] l1 = lines.get(i * 3).split(" ");
             double indexTime = Double.parseDouble(l1[2]);
-            int blockSize = Integer.parseInt(l1[7]);
+            int blockSizeTokenPos = l1.length == 12 ? 10 : 6;
+            int blockSize = Integer.parseInt(l1[blockSizeTokenPos].replace('(', ' ').trim());
+            if (blockSize == 0) {
+                continue;
+            }
+            double loadTime = l1.length == 12 ? Double.parseDouble(l1[5].replace(',', ' ').trim()) : -1;
+            double saveTime = l1.length == 12 ? Double.parseDouble(l1[7].replace(')', ' ').trim()) : -1;
             totalIndexTime += indexTime * blockSize;
             String[] counts = lines.get(i * 3 + 1).split(" ")[3].split("/");
             int genomes = Integer.parseInt(counts[0]);
@@ -296,8 +302,8 @@ public class PerformanceTester {
             String searchTime = l3[2];
             String featuresFound = l3[6];
             System.out.println(genomes + "\t" + contigs + "\t" + features + "\t" + 
-                    (int)indexTime + "\t" + (int)(totalIndexTime / genomes) + "\t" + 
-                    searchTime + "\t" + featuresFound);
+                    (int)indexTime + "\t" + (int)loadTime + "\t" + (int)saveTime + "\t" + 
+                    (int)(totalIndexTime / genomes) + "\t" + searchTime + "\t" + featuresFound);
         }
     }
 

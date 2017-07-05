@@ -1102,7 +1102,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return makeRequest("POST", "/" + indexName + "/_refresh", null);
     }
 
-    private Response makeRequest(String reqType, String urlPath, Map<String, ?> doc) 
+    public Response makeRequest(String reqType, String urlPath, Map<String, ?> doc) 
             throws IOException {
         return makeRequest(reqType, urlPath, doc, Collections.<String, String>emptyMap());
     }
@@ -1142,7 +1142,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return restClient;
     }
     
-    private Response makeBulkRequest(String reqType, String indexName, File jsonData) 
+    public Response makeBulkRequest(String reqType, String indexName, File jsonData) 
             throws IOException {
         RestClient restClient = getRestClient();
         try (InputStream is = new FileInputStream(jsonData)) {
@@ -1153,7 +1153,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
     }
     
-    private Response makeRequest(String reqType, String urlPath, Map<String, ?> doc, 
+    public Response makeRequest(String reqType, String urlPath, Map<String, ?> doc, 
             Map<String, String> attributes) throws IOException {
         try {
             HttpEntity body = doc == null ? null : 

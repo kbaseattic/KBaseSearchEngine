@@ -23,6 +23,8 @@ import us.kbase.common.service.JsonServerSyslog;
 import us.kbase.common.service.RpcContext;
 import us.kbase.common.service.UObject;
 import workspace.CreateWorkspaceParams;
+import workspace.GetObjects2Params;
+import workspace.ObjectSpecification;
 import workspace.ProvenanceAction;
 import workspace.WorkspaceClient;
 import workspace.WorkspaceIdentity;
@@ -40,6 +42,9 @@ public class KBaseRelationEngineServerTest {
     public static void init() throws Exception {
         // Config loading
         String configFilePath = System.getenv("KB_DEPLOYMENT_CONFIG");
+        if (configFilePath == null) {
+            configFilePath = System.getProperty("KB_DEPLOYMENT_CONFIG");
+        }
         File deploy = new File(configFilePath);
         Ini ini = new Ini(deploy);
         config = ini.get("KBaseRelationEngine");
@@ -49,7 +54,11 @@ public class KBaseRelationEngineServerTest {
         ConfigurableAuthService authService = new ConfigurableAuthService(
                 new AuthConfig().withKBaseAuthServerURL(new URL(authUrl))
                 .withAllowInsecureURLs("true".equals(authUrlInsecure)));
-        token = authService.validateToken(System.getenv("KB_AUTH_TOKEN"));
+        String tokenString = System.getenv("KB_AUTH_TOKEN");
+        if (tokenString == null) {
+            tokenString = System.getProperty("KB_AUTH_TOKEN");
+        }
+        token = authService.validateToken(tokenString);
         // Reading URLs from config
         wsClient = new WorkspaceClient(new URL(config.get("workspace-url")), token);
         wsClient.setIsInsecureHttpConnectionAllowed(true); // do we need this?
@@ -91,14 +100,8 @@ public class KBaseRelationEngineServerTest {
     
     @Test
     public void testYourMethod() throws Exception {
-        // Prepare test data using the appropriate uploader for that method (see the KBase function
-        // catalog for help, https://narrative.kbase.us/#catalog/functions)
-        //
-        // Run your method by
-        // YourRetType ret = impl.yourMethod(params, token);
-        //
-        // Check returned data with
-        // Assert.assertEquals(..., ret.getSomeProperty());
-        // ... or other JUnit methods.
+        //Map<String, Object> data = wsClient.getObjects2(new GetObjects2Params().withObjects(Arrays.asList(
+        //        new ObjectSpecification().withRef("?/?/?")))).getData().get(0).getData().asClassInstance(Map.class);
+        //System.out.println(data.keySet());
     }
 }
