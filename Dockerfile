@@ -22,6 +22,18 @@ RUN sudo apt-get install nano \
 	&& ln -s /usr/lib/jvm/java-8-openjdk-amd64 java \
 	&& ls -l
 
+# Need to think about how to get tests to run in TravisCI with different versions
+RUN cd /opt \
+	&& wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.0.tar.gz \
+	&& tar xfz elasticsearch-5.5.0.tar.gz \
+	&& ln -s elasticsearch-5.5.0 elasticsearch
+	
+	
+RUN cd /opt \
+	&& wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.6.12.tgz \
+    && tar xfz mongodb-linux-x86_64-2.6.12.tgz \
+    && ln -s mongodb-linux-x86_64-2.6.12 mongo
+
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 
 # -----------------------------------------
