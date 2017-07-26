@@ -12,6 +12,8 @@ import kbaserelationengine.queue.ObjectStatusEventQueue;
 public class ObjectStatusEventQueueTest {
 	ObjectStatusEventQueue queue;
 	
+	//TODO NOW Automate tests mg
+	
 	@Before
 	public void init(){
 //		ESObjectStatusEventStorage storage = new ESObjectStatusEventStorage(new HttpHost("localhost", 9200));

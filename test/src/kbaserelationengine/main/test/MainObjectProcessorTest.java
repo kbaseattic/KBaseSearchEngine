@@ -32,6 +32,9 @@ import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
 
 public class MainObjectProcessorTest {
+	
+	//TODO NOW Automate tests mg & es
+	
     private static final boolean cleanup = true;
     
     private static MainObjectProcessor mop = null;

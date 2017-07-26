@@ -45,6 +45,9 @@ import kbaserelationengine.system.ObjectTypeParsingRules;
 import us.kbase.common.service.UObject;
 
 public class ElasticIndexingStorageTest {
+    
+    //TODO NOW Automate tests es
+    
     public static final boolean cleanup = true;
     
     private static ElasticIndexingStorage indexStorage;
