@@ -129,6 +129,7 @@ java -Xmx2g -cp ${jar.absolute.path}:${lib.classpath} kbaserelationengine.main.t
         <fileset dir="${test.src}">
           <include name="kbaserelationengine/parse/test/**Test.java"/>
           <include name="kbaserelationengine/events/storage/MongoDBStatusEventStorageTest.java"/>
+          <include name="kbaserelationengine/queue/test/ObjectStatusEventQueueTest.java"/>
         </fileset>
       </batchtest>
     </junit>
