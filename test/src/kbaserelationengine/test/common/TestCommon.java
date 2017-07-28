@@ -21,6 +21,9 @@ public class TestCommon {
     public static final String MONGO_USE_WIRED_TIGER = "test.mongo.useWiredTiger";
     public static final String MONGO_USE_WIRED_TIGER_DEFAULT = "false";
     
+    public static final String ELASTICEXE = "test.elasticsearch.exe";
+    public static final String ELASTICEXE_DEFAULT = "/opt/elasticsearch/bin/elasticsearch";
+    
     public static final String TEST_TEMP_DIR = "test.temp.dir";
     public static final String TEST_TEMP_DIR_DEFAULT = "/kb/module/work/tmp/testtmp";
     public static final String KEEP_TEMP_DIR = "test.temp.dir.keep";
@@ -101,6 +104,11 @@ public class TestCommon {
         return getTestProperty(MONGOEXE, MONGOEXE_DEFAULT);
     }
     
+    public static boolean useWiredTigerEngine() {
+        return "true".equals(
+                getTestProperty(MONGO_USE_WIRED_TIGER, MONGO_USE_WIRED_TIGER_DEFAULT));
+    }
+
     public static String getTempDir() {
         return getTestProperty(TEST_TEMP_DIR, TEST_TEMP_DIR_DEFAULT);
     }
@@ -108,10 +116,9 @@ public class TestCommon {
     public static boolean getDeleteTempFiles() {
         return !"true".equals(getTestProperty(KEEP_TEMP_DIR, KEEP_TEMP_DIR_DEFAULT));
     }
-    
-    public static boolean useWiredTigerEngine() {
-        return "true".equals(
-                getTestProperty(MONGO_USE_WIRED_TIGER, MONGO_USE_WIRED_TIGER_DEFAULT));
+
+    public static String getElasticSearchExe() {
+        return getTestProperty(ELASTICEXE, ELASTICEXE_DEFAULT);
     }
     
 }

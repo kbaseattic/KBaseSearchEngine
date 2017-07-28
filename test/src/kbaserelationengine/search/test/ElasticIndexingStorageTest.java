@@ -2,6 +2,8 @@ package kbaserelationengine.search.test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -42,26 +44,27 @@ import kbaserelationengine.search.ObjectData;
 import kbaserelationengine.search.PostProcessing;
 import kbaserelationengine.system.IndexingRules;
 import kbaserelationengine.system.ObjectTypeParsingRules;
+import kbaserelationengine.test.common.TestCommon;
+import kbaserelationengine.test.controllers.elasticsearch.ElasticSearchController;
 import us.kbase.common.service.UObject;
 
 public class ElasticIndexingStorageTest {
     
-    //TODO NOW Automate tests es
-    
-    public static final boolean cleanup = true;
-    
     private static ElasticIndexingStorage indexStorage;
     private static File tempDir = null;
     private static ObjectLookupProvider objLookup;
+    private static ElasticSearchController es;
     
     @BeforeClass
     public static void prepare() throws Exception {
-        tempDir = new File("test_local/temp_files/esbulk");
+        final Path tdir = Paths.get(TestCommon.getTempDir());
+        tempDir = tdir.resolve("ElasticIndexingStorageTest").toFile();
+        FileUtils.deleteQuietly(tempDir);
+        es = new ElasticSearchController(TestCommon.getElasticSearchExe(), tdir);
         String indexNamePrefix = "test_" + System.currentTimeMillis() + ".";
         indexStorage = new ElasticIndexingStorage(
-                new HttpHost("localhost", 9200), tempDir);
+                new HttpHost("localhost", es.getServerPort()), tempDir);
         indexStorage.setIndexNamePrefix(indexNamePrefix);
-        cleanup();
         tempDir.mkdirs();
         objLookup = new ObjectLookupProvider() {
             
@@ -120,22 +123,10 @@ public class ElasticIndexingStorageTest {
     
     @AfterClass
     public static void teardown() throws Exception {
-        if (cleanup) {
-            cleanup();
+        if (es != null) {
+            es.destroy(TestCommon.getDeleteTempFiles());
         }
-    }
-    
-    private static void cleanup() throws Exception {
-        Set<String> indNames = indexStorage.listIndeces();
-        for (String index : indNames) {
-            if (!index.startsWith("test_")) {
-                System.out.println("Skipping Elasticsearch index: " + index);
-                continue;
-            }
-            System.out.println("Deleting Elasticsearch index: " + index);
-            indexStorage.deleteIndex(index);
-        }
-        if (tempDir != null && tempDir.exists()) {
+        if (tempDir != null && tempDir.exists() && TestCommon.getDeleteTempFiles()) {
             FileUtils.deleteQuietly(tempDir);
         }
     }
