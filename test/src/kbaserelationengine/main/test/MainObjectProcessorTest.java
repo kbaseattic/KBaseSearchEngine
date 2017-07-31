@@ -2,19 +2,24 @@ package kbaserelationengine.main.test;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
+import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import com.mongodb.MongoClient;
+import com.mongodb.client.MongoDatabase;
 
 import junit.framework.Assert;
 import kbaserelationengine.common.GUID;
@@ -23,25 +28,51 @@ import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.main.LineLogger;
 import kbaserelationengine.main.MainObjectProcessor;
 import kbaserelationengine.search.AccessFilter;
-import kbaserelationengine.search.ElasticIndexingStorage;
 import kbaserelationengine.search.MatchFilter;
 import kbaserelationengine.search.ObjectData;
 import kbaserelationengine.search.PostProcessing;
+import kbaserelationengine.test.common.TestCommon;
+import kbaserelationengine.test.controllers.elasticsearch.ElasticSearchController;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
+import us.kbase.common.test.controllers.mongo.MongoController;
 
 public class MainObjectProcessorTest {
 	
-	//TODO NOW Automate tests mg & es
+    //TODO NOW tests use hard coded workspace
+    //TODO NOW run workspace locally
 	
-    private static final boolean cleanup = true;
-    
     private static MainObjectProcessor mop = null;
+    private static MongoController mongo;
+    private static MongoClient mc;
+    private static MongoDatabase db;
+    
+    private static Path tempDir;
+    private static ElasticSearchController es;
     
     @BeforeClass
     public static void prepare() throws Exception {
-        File testCfg = new File("test_local/test.cfg");
+        // set up mongo
+        mongo = new MongoController(
+                TestCommon.getMongoExe(),
+                Paths.get(TestCommon.getTempDir()),
+                TestCommon.useWiredTigerEngine());
+        mc = new MongoClient("localhost:" + mongo.getServerPort());
+        final String dbName = "DataStatus";
+        db = mc.getDatabase(dbName);
+        
+        // set up elastic search
+        // should refactor to just use NIO at some point
+        tempDir = Paths.get(TestCommon.getTempDir()).resolve("MainObjectProcessorTest");
+        FileUtils.deleteQuietly(tempDir.toFile());
+        tempDir.toFile().mkdirs();
+        es = new ElasticSearchController(TestCommon.getElasticSearchExe(),
+                tempDir.resolve("ElasticSearchController"));
+        
+        // get other tests props
+        // TODO NOW add to test common
+        File testCfg = TestCommon.getConfigFilePath().toFile();
         Properties props = new Properties();
         try (InputStream is = new FileInputStream(testCfg)) {
             props.load(is);
@@ -53,29 +84,16 @@ public class MainObjectProcessorTest {
                 .withAllowInsecureURLs("true".equals(authAllowInsecure)));
         String tokenStr = props.getProperty("secure.indexer_token");
         AuthToken kbaseIndexerToken = authSrv.validateToken(tokenStr);
-        String mongoHost = props.getProperty("secure.mongo_host");
-        int mongoPort = Integer.parseInt(props.getProperty("secure.mongo_port"));
-        String elasticHost = props.getProperty("secure.elastic_host");
-        int elasticPort = Integer.parseInt(props.getProperty("secure.elastic_port"));
-        String esUser = props.getProperty("secure.elastic_user");
-        String esPassword = props.getProperty("secure.elastic_password");
-        HttpHost esHostPort = new HttpHost(elasticHost, elasticPort);
-        if (cleanup) {
-            deleteAllTestMongoDBs(mongoHost, mongoPort);
-            deleteAllTestElasticIndices(esHostPort, esUser, esPassword);
-        }
         String kbaseEndpoint = props.getProperty("kbase_endpoint");
         URL wsUrl = new URL(kbaseEndpoint + "/ws");
         File typesDir = new File("resources/types");
-        File tempDir = new File("test_local/temp_files");
-        if (!tempDir.exists()) {
-            tempDir.mkdirs();
-        }
-        String mongoDbName = "test_" + System.currentTimeMillis() + "_DataStatus";
+
         String esIndexPrefix = "test_" + System.currentTimeMillis() + ".";
-        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, mongoHost,
-                mongoPort, mongoDbName, esHostPort, esUser, esPassword, esIndexPrefix, 
-                typesDir, tempDir, false, new LineLogger() {
+        HttpHost esHostPort = new HttpHost("localhost", es.getServerPort());
+        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, "localhost",
+                mongo.getServerPort(), dbName, esHostPort, null, null, esIndexPrefix, 
+                typesDir, tempDir.resolve("MainObjectProcessor").toFile(), false,
+                new LineLogger() {
                     @Override
                     public void logInfo(String line) {
                         System.out.println(line);
@@ -94,31 +112,25 @@ public class MainObjectProcessorTest {
                 }, null);
     }
     
-    private static void deleteAllTestMongoDBs(String mongoHost, int mongoPort) {
-        try (MongoClient mongoClient = new MongoClient(mongoHost, mongoPort)) {
-            Iterable<String> it = mongoClient.listDatabaseNames();
-            for (String dbName : it) {
-                if (dbName.startsWith("test_")) {
-                    System.out.println("Deleting Mongo database: " + dbName);
-                    mongoClient.dropDatabase(dbName);
-                }
-            }
+    @AfterClass
+    public static void tearDownClass() throws Exception {
+        if (mc != null) {
+            mc.close();
+        }
+        if (mongo != null) {
+            mongo.destroy(TestCommon.getDeleteTempFiles());
+        }
+        if (es != null) {
+            es.destroy(TestCommon.getDeleteTempFiles());
+        }
+        if (tempDir != null && tempDir.toFile().exists() && TestCommon.getDeleteTempFiles()) {
+            FileUtils.deleteQuietly(tempDir.toFile());
         }
     }
     
-    private static void deleteAllTestElasticIndices(HttpHost esHostPort, String esUser,
-            String esPassword) throws IOException {
-        ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort, null);
-        if (esUser != null) {
-            esStorage.setEsUser(esUser);
-            esStorage.setEsPassword(esPassword);
-        }
-        for (String indexName : esStorage.listIndeces()) {
-            if (indexName.startsWith("test_")) {
-                System.out.println("Deleting Elastic index: " + indexName);
-                esStorage.deleteIndex(indexName);
-            }
-        }
+    @Before
+    public void init() throws Exception {
+        TestCommon.destroyDB(db);
     }
     
     @Test

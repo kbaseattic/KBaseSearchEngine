@@ -75,7 +75,7 @@ public class TestCommon {
         }
     }
 
-    private static Path getConfigFilePath() {
+    public static Path getConfigFilePath() {
         if (testConfigFilePath != null) {
             return testConfigFilePath;
         }
