@@ -1,6 +1,8 @@
 package kbaserelationengine.test.common;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -12,9 +14,14 @@ import org.bson.Document;
 
 import com.mongodb.client.MongoDatabase;
 
+import us.kbase.auth.AuthException;
+import us.kbase.auth.AuthToken;
+import us.kbase.auth.ConfigurableAuthService;
 import us.kbase.common.test.TestException;
 
 public class TestCommon {
+    
+    public static final String TYPES_REPO_DIR = "resources/types";
     
     public static final String MONGOEXE = "test.mongo.exe";
     public static final String MONGOEXE_DEFAULT = "/opt/mongo/bin/mongod";
@@ -23,6 +30,9 @@ public class TestCommon {
     
     public static final String ELASTICEXE = "test.elasticsearch.exe";
     public static final String ELASTICEXE_DEFAULT = "/opt/elasticsearch/bin/elasticsearch";
+    
+    public static final String AUTHSERV = "auth_service_url";
+    public static final String TEST_TOKEN = "test_token";
     
     public static final String TEST_TEMP_DIR = "test.temp.dir";
     public static final String TEST_TEMP_DIR_DEFAULT = "/kb/module/work/tmp/testtmp";
@@ -121,4 +131,29 @@ public class TestCommon {
         return getTestProperty(ELASTICEXE, ELASTICEXE_DEFAULT);
     }
     
+    public static URL getAuthUrl() {
+        return getURL(AUTHSERV);
+    }
+    
+    private static URL getURL(final String prop) {
+        try {
+            return new URL(getTestProperty(prop));
+        } catch (MalformedURLException e) {
+            throw new TestException("Property " + prop + " is not a valid url", e);
+        }
+    }
+    
+    public static String getToken() {
+        return getTestProperty(TEST_TOKEN);
+    }
+    
+    public static AuthToken getToken(
+            final ConfigurableAuthService auth) {
+        try {
+            return auth.validateToken(getToken());
+        } catch (AuthException | IOException e) {
+            throw new TestException(String.format(
+                    "Couldn't log in user with token : %s", e.getMessage()), e);
+        }
+    }
 }

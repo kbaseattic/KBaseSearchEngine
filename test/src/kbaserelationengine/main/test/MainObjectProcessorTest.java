@@ -70,26 +70,22 @@ public class MainObjectProcessorTest {
         es = new ElasticSearchController(TestCommon.getElasticSearchExe(),
                 tempDir.resolve("ElasticSearchController"));
         
-        // get other tests props
-        // TODO NOW add to test common
+        final ConfigurableAuthService authSrv = new ConfigurableAuthService(
+                new AuthConfig().withKBaseAuthServerURL(TestCommon.getAuthUrl()));
+        final AuthToken kbaseIndexerToken = TestCommon.getToken(authSrv);
+        final File typesDir = new File(TestCommon.TYPES_REPO_DIR);
+        
+        //TODO NoW remove when local ws running 
         File testCfg = TestCommon.getConfigFilePath().toFile();
         Properties props = new Properties();
         try (InputStream is = new FileInputStream(testCfg)) {
             props.load(is);
         }
-        URL authUrl = new URL(props.getProperty("auth_service_url"));
-        String authAllowInsecure = props.getProperty("auth_service_url_allow_insecure");
-        ConfigurableAuthService authSrv = new ConfigurableAuthService(
-                new AuthConfig().withKBaseAuthServerURL(authUrl)
-                .withAllowInsecureURLs("true".equals(authAllowInsecure)));
-        String tokenStr = props.getProperty("secure.indexer_token");
-        AuthToken kbaseIndexerToken = authSrv.validateToken(tokenStr);
         String kbaseEndpoint = props.getProperty("kbase_endpoint");
         URL wsUrl = new URL(kbaseEndpoint + "/ws");
-        File typesDir = new File("resources/types");
 
-        String esIndexPrefix = "test_" + System.currentTimeMillis() + ".";
-        HttpHost esHostPort = new HttpHost("localhost", es.getServerPort());
+        final String esIndexPrefix = "test_" + System.currentTimeMillis() + ".";
+        final HttpHost esHostPort = new HttpHost("localhost", es.getServerPort());
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, "localhost",
                 mongo.getServerPort(), dbName, esHostPort, null, null, esIndexPrefix, 
                 typesDir, tempDir.resolve("MainObjectProcessor").toFile(), false,
