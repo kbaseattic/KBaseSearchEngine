@@ -33,6 +33,9 @@ public class TestCommon {
     
     public static final String AUTHSERV = "auth_service_url";
     public static final String TEST_TOKEN = "test_token";
+    public static final String GLOBUS = "test.globus.url";
+    public static final String GLOBUS_DEFAULT =
+            "https://ci.kbase.us/services/auth/api/legacy/Globus";
     
     public static final String TEST_TEMP_DIR = "test.temp.dir";
     public static final String TEST_TEMP_DIR_DEFAULT = "/kb/module/work/tmp/testtmp";
@@ -132,12 +135,16 @@ public class TestCommon {
     }
     
     public static URL getAuthUrl() {
-        return getURL(AUTHSERV);
+        return getURL(AUTHSERV, null);
     }
     
-    private static URL getURL(final String prop) {
+    public static URL getGlobusURL() {
+        return getURL(GLOBUS, GLOBUS_DEFAULT);
+    }
+    
+    private static URL getURL(final String prop, final String default_) {
         try {
-            return new URL(getTestProperty(prop));
+            return new URL(getTestProperty(prop, default_));
         } catch (MalformedURLException e) {
             throw new TestException("Property " + prop + " is not a valid url", e);
         }
@@ -155,5 +162,13 @@ public class TestCommon {
             throw new TestException(String.format(
                     "Couldn't log in user with token : %s", e.getMessage()), e);
         }
+    }
+    
+    //useful for tests starting a server with GFS as the backend
+    public static void initializeGridFSWorkspaceDB(MongoDatabase db, String typedb) {
+        final Document doc = new Document("type_db", typedb)
+                .append("backend", "GridFS");
+        db.getCollection("settings").insertOne(doc);
+        System.out.println("Configured new GridFS backend.");
     }
 }
