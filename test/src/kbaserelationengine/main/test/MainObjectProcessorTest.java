@@ -1,13 +1,10 @@
 package kbaserelationengine.main.test;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
@@ -33,6 +30,7 @@ import kbaserelationengine.search.ObjectData;
 import kbaserelationengine.search.PostProcessing;
 import kbaserelationengine.test.common.TestCommon;
 import kbaserelationengine.test.controllers.elasticsearch.ElasticSearchController;
+import kbaserelationengine.test.controllers.workspace.WorkspaceController;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
@@ -41,18 +39,30 @@ import us.kbase.common.test.controllers.mongo.MongoController;
 public class MainObjectProcessorTest {
 	
     //TODO NOW tests use hard coded workspace
-    //TODO NOW run workspace locally
 	
     private static MainObjectProcessor mop = null;
     private static MongoController mongo;
     private static MongoClient mc;
     private static MongoDatabase db;
+    private static ElasticSearchController es;
+    private static WorkspaceController ws;
     
     private static Path tempDir;
-    private static ElasticSearchController es;
     
     @BeforeClass
     public static void prepare() throws Exception {
+        final URL authURL = TestCommon.getAuthUrl();
+        final URL authServiceRootURL;
+        if (authURL.toString().contains("api")) {
+            authServiceRootURL = new URL(authURL.toString().split("api")[0]);
+            System.out.println(String.format("Using %s as auth root URL", authServiceRootURL));
+        } else {
+            authServiceRootURL = authURL;
+        }
+        final ConfigurableAuthService authSrv = new ConfigurableAuthService(
+                new AuthConfig().withKBaseAuthServerURL(authURL));
+        final AuthToken kbaseIndexerToken = TestCommon.getToken(authSrv);
+
         // set up mongo
         mongo = new MongoController(
                 TestCommon.getMongoExe(),
@@ -70,19 +80,18 @@ public class MainObjectProcessorTest {
         es = new ElasticSearchController(TestCommon.getElasticSearchExe(),
                 tempDir.resolve("ElasticSearchController"));
         
-        final ConfigurableAuthService authSrv = new ConfigurableAuthService(
-                new AuthConfig().withKBaseAuthServerURL(TestCommon.getAuthUrl()));
-        final AuthToken kbaseIndexerToken = TestCommon.getToken(authSrv);
+        // set up Workspace
+        ws = new WorkspaceController(
+                "0.7.2-dev1",
+                Paths.get("/home/crusherofheads/localgit/jars"), //TODO NOW get from variable
+                "localhost:" + mongo.getServerPort(), "MOPTestWSDB",
+                    kbaseIndexerToken.getUserName(),
+                authServiceRootURL,
+                Paths.get(TestCommon.getTempDir()));
+        
         final File typesDir = new File(TestCommon.TYPES_REPO_DIR);
         
-        //TODO NoW remove when local ws running 
-        File testCfg = TestCommon.getConfigFilePath().toFile();
-        Properties props = new Properties();
-        try (InputStream is = new FileInputStream(testCfg)) {
-            props.load(is);
-        }
-        String kbaseEndpoint = props.getProperty("kbase_endpoint");
-        URL wsUrl = new URL(kbaseEndpoint + "/ws");
+        URL wsUrl = new URL("http://localhost:" + ws.getServerPort());
 
         final String esIndexPrefix = "test_" + System.currentTimeMillis() + ".";
         final HttpHost esHostPort = new HttpHost("localhost", es.getServerPort());
@@ -110,6 +119,9 @@ public class MainObjectProcessorTest {
     
     @AfterClass
     public static void tearDownClass() throws Exception {
+        if (ws != null) {
+            ws.destroy(TestCommon.getDeleteTempFiles());
+        }
         if (mc != null) {
             mc.close();
         }
