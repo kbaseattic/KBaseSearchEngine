@@ -68,7 +68,6 @@ import us.kbase.common.service.UnauthorizedException;
 import workspace.GetObjectInfo3Params;
 import workspace.ObjectData;
 import workspace.ObjectSpecification;
-import workspace.SetPermissionsParams;
 import workspace.WorkspaceClient;
 
 public class MainObjectProcessor {
@@ -398,20 +397,6 @@ public class MainObjectProcessor {
         indexingStorage.unpublishObjects(new LinkedHashSet<>(Arrays.asList(guid)));
     }
 
-    public void addWorkspaceToIndex(String wsNameOrId, AuthToken user)
-            throws IOException, JsonClientException {
-        WorkspaceClient wsClient = new WorkspaceClient(wsURL, user);
-        wsClient.setIsInsecureHttpConnectionAllowed(true); 
-        SetPermissionsParams params = new SetPermissionsParams();
-        try {
-            params.setId(Long.parseLong(wsNameOrId));
-        } catch (NumberFormatException e) {
-            params.setWorkspace(wsNameOrId);
-        }
-        wsClient.setPermissions(params.withUsers(
-                Arrays.asList(kbaseIndexerToken.getUserName())).withNewPermission("w"));
-    }
-    
     public IndexingStorage getIndexingStorage(String objectType) {
         return indexingStorage;
     }
