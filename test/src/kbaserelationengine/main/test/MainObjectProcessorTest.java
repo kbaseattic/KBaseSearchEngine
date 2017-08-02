@@ -98,7 +98,7 @@ public class MainObjectProcessorTest {
         
         // set up Workspace
         ws = new WorkspaceController(
-                "0.7.2-dev1",
+                TestCommon.getWorkspaceVersion(),
                 TestCommon.getJarsDir(),
                 "localhost:" + mongo.getServerPort(), "MOPTestWSDB",
                     kbaseIndexerToken.getUserName(),

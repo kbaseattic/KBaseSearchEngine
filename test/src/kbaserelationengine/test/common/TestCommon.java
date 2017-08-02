@@ -33,6 +33,8 @@ public class TestCommon {
     
     public static final String JARS_PATH = "test.jars.dir";
     public static final String JARS_PATH_DEFAULT = "/kb/deployment/lib/jars";
+    public static final String WS_VER = "test.workspace.ver";
+    public static final String WS_VER_DEFAULT = "0.7.2-dev1";
     
     public static final String AUTHSERV = "auth_service_url";
     public static final String TEST_TOKEN = "test_token";
@@ -139,6 +141,10 @@ public class TestCommon {
     
     public static Path getJarsDir() {
         return Paths.get(getTestProperty(JARS_PATH, JARS_PATH_DEFAULT));
+    }
+    
+    public static String getWorkspaceVersion() {
+        return getTestProperty(WS_VER, WS_VER_DEFAULT);
     }
     
     public static URL getAuthUrl() {
