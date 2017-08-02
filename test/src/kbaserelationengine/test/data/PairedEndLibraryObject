@@ -1,0 +1,39 @@
+{
+    "insert_size_std_dev": null, 
+    "lib1": {
+        "size": 2837, 
+        "type": "fq", 
+        "file": {
+            "url": "https://ci.kbase.us/services/shock-api", 
+            "file_name": "sample1se.fastq.gz", 
+            "remote_md5": "7e120da69023b01f0a1300ae2bcd1c33", 
+            "hid": "KBH_197049", 
+            "type": "shock", 
+            "id": "57c3989b-afe4-4a0d-90dd-e698d5919b64"
+        }, 
+        "encoding": "ascii"
+    }, 
+    "qual_max": 40.0, 
+    "read_length_stdev": 0.0, 
+    "qual_min": 2.0, 
+    "total_bases": 2500, 
+    "insert_size_mean": null, 
+    "qual_mean": 37.5537, 
+    "phred_type": "64", 
+    "read_count": 50, 
+    "number_of_duplicates": 0, 
+    "read_length_mean": 50.0, 
+    "sequencing_tech": "Illumina", 
+    "qual_stdev": 5.2006, 
+    "gc_content": 0.44, 
+    "read_orientation_outward": 0, 
+    "base_percentages": {
+        "A": 31.8286, 
+        "C": 19.6571, 
+        "T": 22.8571, 
+        "G": 24.3429, 
+        "N": 1.3143
+    }, 
+    "interleaved": 1, 
+    "single_genome": 1
+}

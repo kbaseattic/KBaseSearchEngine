@@ -1,20 +1,29 @@
 package kbaserelationengine.main.test;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
+import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoClient;
+import com.mongodb.client.MongoDatabase;
 
 import junit.framework.Assert;
 import kbaserelationengine.common.GUID;
@@ -23,56 +32,90 @@ import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.main.LineLogger;
 import kbaserelationengine.main.MainObjectProcessor;
 import kbaserelationengine.search.AccessFilter;
-import kbaserelationengine.search.ElasticIndexingStorage;
 import kbaserelationengine.search.MatchFilter;
 import kbaserelationengine.search.ObjectData;
 import kbaserelationengine.search.PostProcessing;
+import kbaserelationengine.test.common.TestCommon;
+import kbaserelationengine.test.controllers.elasticsearch.ElasticSearchController;
+import kbaserelationengine.test.controllers.workspace.WorkspaceController;
+import kbaserelationengine.test.data.TestDataLoader;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
+import us.kbase.common.service.JsonClientException;
+import us.kbase.common.service.UObject;
+import us.kbase.common.test.controllers.mongo.MongoController;
+import workspace.CreateWorkspaceParams;
+import workspace.ObjectSaveData;
+import workspace.RegisterTypespecParams;
+import workspace.SaveObjectsParams;
+import workspace.WorkspaceClient;
 
 public class MainObjectProcessorTest {
-    private static final boolean cleanup = true;
-    
+	
     private static MainObjectProcessor mop = null;
+    private static MongoController mongo;
+    private static MongoClient mc;
+    private static MongoDatabase db;
+    private static ElasticSearchController es;
+    private static WorkspaceController ws;
+    
+    private static int wsid;
+    
+    private static Path tempDir;
     
     @BeforeClass
     public static void prepare() throws Exception {
-        File testCfg = new File("test_local/test.cfg");
-        Properties props = new Properties();
-        try (InputStream is = new FileInputStream(testCfg)) {
-            props.load(is);
+        TestCommon.stfuLoggers();
+        final URL authURL = TestCommon.getAuthUrl();
+        final URL authServiceRootURL;
+        if (authURL.toString().contains("api")) {
+            authServiceRootURL = new URL(authURL.toString().split("api")[0]);
+            System.out.println(String.format("Using %s as auth root URL", authServiceRootURL));
+        } else {
+            authServiceRootURL = authURL;
         }
-        URL authUrl = new URL(props.getProperty("auth_service_url"));
-        String authAllowInsecure = props.getProperty("auth_service_url_allow_insecure");
-        ConfigurableAuthService authSrv = new ConfigurableAuthService(
-                new AuthConfig().withKBaseAuthServerURL(authUrl)
-                .withAllowInsecureURLs("true".equals(authAllowInsecure)));
-        String tokenStr = props.getProperty("secure.indexer_token");
-        AuthToken kbaseIndexerToken = authSrv.validateToken(tokenStr);
-        String mongoHost = props.getProperty("secure.mongo_host");
-        int mongoPort = Integer.parseInt(props.getProperty("secure.mongo_port"));
-        String elasticHost = props.getProperty("secure.elastic_host");
-        int elasticPort = Integer.parseInt(props.getProperty("secure.elastic_port"));
-        String esUser = props.getProperty("secure.elastic_user");
-        String esPassword = props.getProperty("secure.elastic_password");
-        HttpHost esHostPort = new HttpHost(elasticHost, elasticPort);
-        if (cleanup) {
-            deleteAllTestMongoDBs(mongoHost, mongoPort);
-            deleteAllTestElasticIndices(esHostPort, esUser, esPassword);
-        }
-        String kbaseEndpoint = props.getProperty("kbase_endpoint");
-        URL wsUrl = new URL(kbaseEndpoint + "/ws");
-        File typesDir = new File("resources/types");
-        File tempDir = new File("test_local/temp_files");
-        if (!tempDir.exists()) {
-            tempDir.mkdirs();
-        }
-        String mongoDbName = "test_" + System.currentTimeMillis() + "_DataStatus";
-        String esIndexPrefix = "test_" + System.currentTimeMillis() + ".";
-        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, mongoHost,
-                mongoPort, mongoDbName, esHostPort, esUser, esPassword, esIndexPrefix, 
-                typesDir, tempDir, false, new LineLogger() {
+        final ConfigurableAuthService authSrv = new ConfigurableAuthService(
+                new AuthConfig().withKBaseAuthServerURL(authURL));
+        final AuthToken kbaseIndexerToken = TestCommon.getToken(authSrv);
+
+        tempDir = Paths.get(TestCommon.getTempDir()).resolve("MainObjectProcessorTest");
+        // should refactor to just use NIO at some point
+        FileUtils.deleteQuietly(tempDir.toFile());
+        tempDir.toFile().mkdirs();
+
+        // set up mongo
+        mongo = new MongoController(
+                TestCommon.getMongoExe(),
+                tempDir,
+                TestCommon.useWiredTigerEngine());
+        mc = new MongoClient("localhost:" + mongo.getServerPort());
+        final String dbName = "DataStatus";
+        db = mc.getDatabase(dbName);
+        
+        // set up elastic search
+        es = new ElasticSearchController(TestCommon.getElasticSearchExe(), tempDir);
+        
+        // set up Workspace
+        ws = new WorkspaceController(
+                "0.7.2-dev1",
+                TestCommon.getJarsDir(),
+                "localhost:" + mongo.getServerPort(), "MOPTestWSDB",
+                    kbaseIndexerToken.getUserName(),
+                authServiceRootURL,
+                tempDir);
+        System.out.println("Started workspace on port " + ws.getServerPort());
+        
+        final File typesDir = new File(TestCommon.TYPES_REPO_DIR);
+        
+        URL wsUrl = new URL("http://localhost:" + ws.getServerPort());
+
+        final String esIndexPrefix = "test_" + System.currentTimeMillis() + ".";
+        final HttpHost esHostPort = new HttpHost("localhost", es.getServerPort());
+        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, "localhost",
+                mongo.getServerPort(), dbName, esHostPort, null, null, esIndexPrefix, 
+                typesDir, tempDir.resolve("MainObjectProcessor").toFile(), false,
+                new LineLogger() {
                     @Override
                     public void logInfo(String line) {
                         System.out.println(line);
@@ -89,38 +132,101 @@ public class MainObjectProcessorTest {
                     public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
                     }
                 }, null);
+        
+        wsid = (int) loadTestData(wsUrl, kbaseIndexerToken);
     }
     
-    private static void deleteAllTestMongoDBs(String mongoHost, int mongoPort) {
-        try (MongoClient mongoClient = new MongoClient(mongoHost, mongoPort)) {
-            Iterable<String> it = mongoClient.listDatabaseNames();
-            for (String dbName : it) {
-                if (dbName.startsWith("test_")) {
-                    System.out.println("Deleting Mongo database: " + dbName);
-                    mongoClient.dropDatabase(dbName);
-                }
-            }
+    private static long loadTestData(final URL wsUrl, final AuthToken adminToken)
+            throws IOException, JsonClientException {
+        final WorkspaceClient wc = new WorkspaceClient(wsUrl, adminToken);
+        wc.setIsInsecureHttpConnectionAllowed(true);
+        final long wsid = wc.createWorkspace(new CreateWorkspaceParams().withWorkspace("MOPTest"))
+                .getE1();
+        loadType(wc, "KBaseFile", "KBaseFile_ci_1477697265343",
+                Arrays.asList("SingleEndLibrary", "PairedEndLibrary"));
+        loadType(wc, "KBaseGenomeAnnotations", "KBaseGenomeAnnotations_ci_1471308269061",
+                Arrays.asList("Assembly"));
+        loadType(wc, "KBaseGenomes", "KBaseGenomes_ci_1482357978770", Arrays.asList("Genome"));
+        loadType(wc, "KBaseNarrative", "KBaseNarrative_ci_1436483557716",
+                Arrays.asList("Narrative"));
+        
+        loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject1");
+        loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject2");
+        loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject3");
+        loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject4");
+        loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject5");
+        
+        loadData(wc, wsid, "Assy", "KBaseGenomeAnnotations.Assembly-1.0", "AssemblyObject");
+        loadData(wc, wsid, "Genome", "KBaseGenomes.Genome-1.0", "GenomeObject");
+        loadData(wc, wsid, "Paired", "KBaseFile.PairedEndLibrary-1.0", "PairedEndLibraryObject");
+        loadData(wc, wsid, "reads.2", "KBaseFile.SingleEndLibrary-1.0", "SingleEndLibraryObject");
+        return wsid;
+    }
+
+    private static void loadData(
+            final WorkspaceClient wc,
+            final long wsid,
+            final String name,
+            final String type,
+            final String fileName)
+            throws JsonParseException, JsonMappingException, IOException, JsonClientException {
+        final String data = TestDataLoader.load(fileName);
+        final Object objdata = new ObjectMapper().readValue(data, Object.class);
+        wc.saveObjects(new SaveObjectsParams()
+                .withId(wsid)
+                .withObjects(Arrays.asList(new ObjectSaveData()
+                        .withData(new UObject(objdata))
+                        .withName(name)
+                        .withType(type))));
+    }
+
+    private static void loadType(
+            final WorkspaceClient wc,
+            final String module,
+            final String fileName,
+            final List<String> types)
+            throws IOException, JsonClientException {
+        final String typespec = TestDataLoader.load(fileName);
+        wc.requestModuleOwnership(module);
+        final Map<String, String> cmd = new HashMap<>();
+        cmd.put("command", "approveModRequest");
+        cmd.put("module", module);
+        wc.administer(new UObject(cmd));
+        wc.registerTypespec(new RegisterTypespecParams()
+                .withDryrun(0L)
+                .withSpec(typespec)
+                .withNewTypes(types));
+        wc.releaseModule(module);
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws Exception {
+        final boolean deleteTempFiles = TestCommon.getDeleteTempFiles();
+        if (ws != null) {
+            ws.destroy(deleteTempFiles);
+        }
+        if (mc != null) {
+            mc.close();
+        }
+        if (mongo != null) {
+            mongo.destroy(deleteTempFiles);
+        }
+        if (es != null) {
+            es.destroy(deleteTempFiles);
+        }
+        if (tempDir != null && tempDir.toFile().exists() && deleteTempFiles) {
+            FileUtils.deleteQuietly(tempDir.toFile());
         }
     }
     
-    private static void deleteAllTestElasticIndices(HttpHost esHostPort, String esUser,
-            String esPassword) throws IOException {
-        ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort, null);
-        if (esUser != null) {
-            esStorage.setEsUser(esUser);
-            esStorage.setEsPassword(esPassword);
-        }
-        for (String indexName : esStorage.listIndeces()) {
-            if (indexName.startsWith("test_")) {
-                System.out.println("Deleting Elastic index: " + indexName);
-                esStorage.deleteIndex(indexName);
-            }
-        }
+    @Before
+    public void init() throws Exception {
+        TestCommon.destroyDB(db);
     }
     
     @Test
     public void testGenomeManually() throws Exception {
-        ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", 20266, "2", 1, null, 
+        ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", wsid, "3", 1, null, 
                 System.currentTimeMillis(), "KBaseGenomes.Genome", ObjectStatusEventType.CREATED, false);
         mop.processOneEvent(ev);
         PostProcessing pp = new PostProcessing();
@@ -174,11 +280,11 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testNarrativeManually() throws Exception {
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", 20266, "1", 7, null, 
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "1", 5, null, 
                 System.currentTimeMillis(), "KBaseNarrative.Narrative", 
                 ObjectStatusEventType.CREATED, false));
-        checkSearch(1, "Narrative", "tree", 20266, false);
-        checkSearch(1, "Narrative", "species", 20266, false);
+        checkSearch(1, "Narrative", "tree", wsid, false);
+        checkSearch(1, "Narrative", "species", wsid, false);
         /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
                 System.currentTimeMillis(), "KBaseNarrative.Narrative", 
                 ObjectStatusEventType.CREATED, false));
@@ -193,16 +299,16 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testReadsManually() throws Exception {
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", 20266, "5", 1, null, 
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "4", 1, null, 
                 System.currentTimeMillis(), "KBaseFile.PairedEndLibrary", 
                 ObjectStatusEventType.CREATED, false));
-        checkSearch(1, "PairedEndLibrary", "Illumina", 20266, true);
-        checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", 20266, false);
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", 20266, "6", 1, null, 
+        checkSearch(1, "PairedEndLibrary", "Illumina", wsid, true);
+        checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "5", 1, null, 
                 System.currentTimeMillis(), "KBaseFile.SingleEndLibrary", 
                 ObjectStatusEventType.CREATED, false));
-        checkSearch(1, "SingleEndLibrary", "PacBio", 20266, true);
-        checkSearch(1, "SingleEndLibrary", "reads.2", 20266, false);
+        checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);
+        checkSearch(1, "SingleEndLibrary", "reads.2", wsid, false);
     }
     
     @Ignore

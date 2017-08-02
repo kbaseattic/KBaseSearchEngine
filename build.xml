@@ -128,6 +128,10 @@ java -Xmx2g -cp ${jar.absolute.path}:${lib.classpath} kbaserelationengine.main.t
       <batchtest>
         <fileset dir="${test.src}">
           <include name="kbaserelationengine/parse/test/**Test.java"/>
+          <include name="kbaserelationengine/events/storage/MongoDBStatusEventStorageTest.java"/>
+          <include name="kbaserelationengine/queue/test/ObjectStatusEventQueueTest.java"/>
+          <include name="kbaserelationengine/search/test/ElasticIndexingStorageTest.java"/>
+          <include name="kbaserelationengine/main/test/MainObjectProcessorTest.java"/>
         </fileset>
       </batchtest>
     </junit>

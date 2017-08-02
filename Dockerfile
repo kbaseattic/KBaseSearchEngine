@@ -22,6 +22,23 @@ RUN sudo apt-get install nano \
 	&& ln -s /usr/lib/jvm/java-8-openjdk-amd64 java \
 	&& ls -l
 
+# Need to think about how to get tests to run in TravisCI with different versions
+RUN cd /opt \
+	&& wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.0.tar.gz \
+	&& tar xfz elasticsearch-5.5.0.tar.gz \
+	&& ln -s elasticsearch-5.5.0 elasticsearch
+	
+	
+RUN cd /opt \
+	&& wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.6.12.tgz \
+	&& tar xfz mongodb-linux-x86_64-2.6.12.tgz \
+	&& ln -s mongodb-linux-x86_64-2.6.12 mongo
+
+# change mrcreosote -> kbase when PR is merged
+# remove altogether when jar is added to the base image
+RUN cd /kb/deployment/lib/jars/kbase/workspace \
+	&& wget https://github.com/MrCreosote/jars/raw/master/lib/jars/kbase/workspace/WorkspaceService-0.7.2-dev1.jar
+
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 
 # -----------------------------------------

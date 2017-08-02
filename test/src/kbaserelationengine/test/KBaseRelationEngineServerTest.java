@@ -30,6 +30,9 @@ import workspace.WorkspaceClient;
 import workspace.WorkspaceIdentity;
 
 public class KBaseRelationEngineServerTest {
+    
+    // there's no actual tests in here
+    
     private static AuthToken token = null;
     private static Map<String, String> config = null;
     private static WorkspaceClient wsClient = null;
