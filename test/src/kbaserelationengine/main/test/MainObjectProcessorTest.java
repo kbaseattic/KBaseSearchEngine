@@ -157,7 +157,6 @@ public class MainObjectProcessorTest {
         loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject5");
         
         loadData(wc, wsid, "Assy", "KBaseGenomeAnnotations.Assembly-1.0", "AssemblyObject");
-        //TODO NOW reduce Genome size
         loadData(wc, wsid, "Genome", "KBaseGenomes.Genome-1.0", "GenomeObject");
         loadData(wc, wsid, "Paired", "KBaseFile.PairedEndLibrary-1.0", "PairedEndLibraryObject");
         loadData(wc, wsid, "reads.2", "KBaseFile.SingleEndLibrary-1.0", "SingleEndLibraryObject");
