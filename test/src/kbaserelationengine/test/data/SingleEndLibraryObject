@@ -1,0 +1,35 @@
+{
+    "qual_max": 40.0, 
+    "read_length_stdev": 0.0, 
+    "lib": {
+        "size": 2837, 
+        "type": "fq", 
+        "file": {
+            "url": "https://ci.kbase.us/services/shock-api", 
+            "file_name": "sample1se.fastq.gz", 
+            "remote_md5": "3477c3858a22e8efb240aa30986233e4", 
+            "hid": "KBH_197050", 
+            "type": "shock", 
+            "id": "efca7d80-f474-4c97-acf0-d3751068d369"
+        }, 
+        "encoding": "ascii"
+    }, 
+    "total_bases": 2500, 
+    "qual_min": 2.0, 
+    "phred_type": "64", 
+    "read_count": 50, 
+    "base_percentages": {
+        "A": 31.8286, 
+        "C": 19.6571, 
+        "T": 22.8571, 
+        "G": 24.3429, 
+        "N": 1.3143
+    }, 
+    "qual_mean": 37.5537, 
+    "read_length_mean": 50.0, 
+    "sequencing_tech": "PacBio CLR", 
+    "qual_stdev": 5.2006, 
+    "gc_content": 0.44, 
+    "number_of_duplicates": 0, 
+    "single_genome": 1
+}

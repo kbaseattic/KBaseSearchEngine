@@ -19,6 +19,9 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
@@ -43,12 +46,12 @@ import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
 import us.kbase.common.test.controllers.mongo.MongoController;
 import workspace.CreateWorkspaceParams;
+import workspace.ObjectSaveData;
 import workspace.RegisterTypespecParams;
+import workspace.SaveObjectsParams;
 import workspace.WorkspaceClient;
 
 public class MainObjectProcessorTest {
-	
-    //TODO NOW tests use hard coded workspace
 	
     private static MainObjectProcessor mop = null;
     private static MongoController mongo;
@@ -75,22 +78,22 @@ public class MainObjectProcessorTest {
                 new AuthConfig().withKBaseAuthServerURL(authURL));
         final AuthToken kbaseIndexerToken = TestCommon.getToken(authSrv);
 
+        tempDir = Paths.get(TestCommon.getTempDir()).resolve("MainObjectProcessorTest");
+        // should refactor to just use NIO at some point
+        FileUtils.deleteQuietly(tempDir.toFile());
+        tempDir.toFile().mkdirs();
+
         // set up mongo
         mongo = new MongoController(
                 TestCommon.getMongoExe(),
-                Paths.get(TestCommon.getTempDir()),
+                tempDir,
                 TestCommon.useWiredTigerEngine());
         mc = new MongoClient("localhost:" + mongo.getServerPort());
         final String dbName = "DataStatus";
         db = mc.getDatabase(dbName);
         
         // set up elastic search
-        // should refactor to just use NIO at some point
-        tempDir = Paths.get(TestCommon.getTempDir()).resolve("MainObjectProcessorTest");
-        FileUtils.deleteQuietly(tempDir.toFile());
-        tempDir.toFile().mkdirs();
-        es = new ElasticSearchController(TestCommon.getElasticSearchExe(),
-                tempDir.resolve("ElasticSearchController"));
+        es = new ElasticSearchController(TestCommon.getElasticSearchExe(), tempDir);
         
         // set up Workspace
         ws = new WorkspaceController(
@@ -99,7 +102,8 @@ public class MainObjectProcessorTest {
                 "localhost:" + mongo.getServerPort(), "MOPTestWSDB",
                     kbaseIndexerToken.getUserName(),
                 authServiceRootURL,
-                Paths.get(TestCommon.getTempDir()));
+                tempDir);
+        System.out.println("Started workspace on port " + ws.getServerPort());
         
         final File typesDir = new File(TestCommon.TYPES_REPO_DIR);
         
@@ -139,11 +143,41 @@ public class MainObjectProcessorTest {
                 .getE1();
         loadType(wc, "KBaseFile", "KBaseFile_ci_1477697265343",
                 Arrays.asList("SingleEndLibrary", "PairedEndLibrary"));
+        loadType(wc, "KBaseGenomeAnnotations", "KBaseGenomeAnnotations_ci_1471308269061",
+                Arrays.asList("Assembly"));
         loadType(wc, "KBaseGenomes", "KBaseGenomes_ci_1482357978770", Arrays.asList("Genome"));
         loadType(wc, "KBaseNarrative", "KBaseNarrative_ci_1436483557716",
                 Arrays.asList("Narrative"));
-        //TODO NOW load data
+        
+        loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject1");
+        loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject2");
+        loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject3");
+        loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject4");
+        loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject5");
+        
+        loadData(wc, wsid, "Assy", "KBaseGenomeAnnotations.Assembly-1.0", "AssemblyObject");
+        //TODO NOW reduce Genome size
+        loadData(wc, wsid, "Genome", "KBaseGenomes.Genome-1.0", "GenomeObject");
+        loadData(wc, wsid, "Paired", "KBaseFile.PairedEndLibrary-1.0", "PairedEndLibraryObject");
+        loadData(wc, wsid, "reads.2", "KBaseFile.SingleEndLibrary-1.0", "SingleEndLibraryObject");
         return wsid;
+    }
+
+    private static void loadData(
+            final WorkspaceClient wc,
+            final long wsid,
+            final String name,
+            final String type,
+            final String fileName)
+            throws JsonParseException, JsonMappingException, IOException, JsonClientException {
+        final String data = TestDataLoader.load(fileName);
+        final Object objdata = new ObjectMapper().readValue(data, Object.class);
+        wc.saveObjects(new SaveObjectsParams()
+                .withId(wsid)
+                .withObjects(Arrays.asList(new ObjectSaveData()
+                        .withData(new UObject(objdata))
+                        .withName(name)
+                        .withType(type))));
     }
 
     private static void loadType(
@@ -192,7 +226,7 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testGenomeManually() throws Exception {
-        ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", wsid, "2", 1, null, 
+        ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", wsid, "3", 1, null, 
                 System.currentTimeMillis(), "KBaseGenomes.Genome", ObjectStatusEventType.CREATED, false);
         mop.processOneEvent(ev);
         PostProcessing pp = new PostProcessing();
@@ -246,7 +280,7 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testNarrativeManually() throws Exception {
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "1", 7, null, 
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "1", 5, null, 
                 System.currentTimeMillis(), "KBaseNarrative.Narrative", 
                 ObjectStatusEventType.CREATED, false));
         checkSearch(1, "Narrative", "tree", wsid, false);
@@ -265,12 +299,12 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testReadsManually() throws Exception {
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "5", 1, null, 
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "4", 1, null, 
                 System.currentTimeMillis(), "KBaseFile.PairedEndLibrary", 
                 ObjectStatusEventType.CREATED, false));
         checkSearch(1, "PairedEndLibrary", "Illumina", wsid, true);
-        checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", 20266, false);
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "6", 1, null, 
+        checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "5", 1, null, 
                 System.currentTimeMillis(), "KBaseFile.SingleEndLibrary", 
                 ObjectStatusEventType.CREATED, false));
         checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);

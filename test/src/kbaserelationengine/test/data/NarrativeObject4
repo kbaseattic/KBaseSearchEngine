@@ -1,0 +1,411 @@
+{
+    "nbformat_minor": 0, 
+    "nbformat": 4, 
+    "cells": [
+        {
+            "source": "## Welcome to KBase's Narrative Interface!\n\n**What's a Narrative?** Narratives are shareable, reproducible workflows that can include data, analysis steps, results, visualizations and commentary. [Learn more...]({{config.resources.docSite.base.url}}/narrative-guide)\n\n**Take the Tour:** Choose \"Narrative Tour\" from the \"Help\" menu above. The tour walks you through the user interface, pointing out various useful aspects of it.\n\n**Get Some Data:** Click the Add Data button in the Data Panel to search KBase data or upload your own. Mouse over a data object to add it to your Narrative. [Learn more...]({{config.resources.docSite.base.url}}/narrative-guide/explore-data)\n\n**Analyze It:** Use the Apps panel or the App Catalog to browse available analysis apps. Select an app to add it to your Narrative, fill in the fields, and click the \"play\" button to launch the app. [Learn more...]({{config.resources.docSite.base.url}}/narrative-guide/browse-apps-and-methods)\n\n**Save and Share Your Narrative:** Be sure to save your Narrative frequently. To let collaborators view your analysis steps and results, click the Share button. Or make your Narrative public and help expand the social web that KBase is building to make systems biology research more open, reproducible and collaborative. [Learn more...]({{config.resources.docSite.base.url}}/narrative-guide/share-narratives/)\n\n**Find Documentation:** For more information, please see the [Narrative Interface User Guide]({{config.resources.docSite.base.url}}/narrative-guide) or the [tutorials]({{config.resources.docSite.base.url}}/tutorials).\n\n**Questions? Bug reports?** [Contact us]({{config.resources.docSite.base.url}}/contact-us)!\n\n> Ready to begin adding to your Narrative? You can keep this Welcome cell or delete it by selecting \"Delete cell\" from the \"...\" menu in the top right corner of this cell.\n", 
+            "cell_type": "markdown", 
+            "metadata": {
+                "kbase": {
+                    "attributes": {
+                        "title": "Welcome to KBase's Narrative Interface!", 
+                        "icon": "paragraph"
+                    }, 
+                    "cellState": {
+                        "selected": false, 
+                        "showTitle": false
+                    }
+                }, 
+                "editable": true, 
+                "deletable": true
+            }
+        }, 
+        {
+            "execution_count": 1, 
+            "cell_type": "code", 
+            "source": "from biokbase.narrative.jobs.appmanager import AppManager\nAppManager().run_app(\n    \"SpeciesTreeBuilder/insert_set_of_genomes_into_species_tree\",\n    {\n        \"param0\": [\"20266/2/1\"],\n        \"param1\": 100,\n        \"treeID\": \"sptree.1\"\n    },\n    tag=\"release\",\n    version=\"0.0.6\",\n    cell_id=\"f2b4ce60-eb0e-45dc-b670-7b453af5f956\",\n    run_id=\"639f4aac-81f5-4ea6-8486-01841b491cb7\"\n)", 
+            "outputs": [], 
+            "metadata": {
+                "kbase": {
+                    "attributes": {
+                        "info": {
+                            "url": "/#appcatalog/app/SpeciesTreeBuilder/insert_set_of_genomes_into_species_tree/release", 
+                            "label": "more..."
+                        }, 
+                        "status": "new", 
+                        "subtitle": "Add one or more genomes to the KBase species tree.", 
+                        "created": "Fri, 28 Apr 2017 18:25:47 GMT", 
+                        "title": "Insert Genome Into Species Tree", 
+                        "lastLoaded": "Fri, 28 Apr 2017 18:25:47 GMT", 
+                        "id": "f2b4ce60-eb0e-45dc-b670-7b453af5f956"
+                    }, 
+                    "appCell": {
+                        "exec": {
+                            "jobState": {
+                                "status": [
+                                    "2017-04-28T18:26:09+0000", 
+                                    "started", 
+                                    "running", 
+                                    null, 
+                                    null, 
+                                    0, 
+                                    0
+                                ], 
+                                "cell_id": "f2b4ce60-eb0e-45dc-b670-7b453af5f956", 
+                                "awe_job_id": "90878e54-e60a-4ade-8cd0-73b12cc38572", 
+                                "run_id": "639f4aac-81f5-4ea6-8486-01841b491cb7", 
+                                "awe_job_state": "in-progress", 
+                                "creation_time": 1493403965920, 
+                                "job_id": "5903893de4b07afc46305bed", 
+                                "ujs_url": "https://ci.kbase.us/services/userandjobstate/", 
+                                "finished": 0, 
+                                "job_state": "in-progress", 
+                                "exec_start_time": 1493403971892
+                            }, 
+                            "log": [
+                                {
+                                    "timestamp": "2017-04-28T18:26:04.582Z", 
+                                    "data": {
+                                        "runId": "should be here"
+                                    }, 
+                                    "event": "execute-requested"
+                                }, 
+                                {
+                                    "timestamp": "2017-04-28T18:26:06.065Z", 
+                                    "data": {
+                                        "status": "launched_job"
+                                    }, 
+                                    "event": "launch-status"
+                                }, 
+                                {
+                                    "timestamp": "2017-04-28T18:26:06.378Z", 
+                                    "data": {
+                                        "jobState": {
+                                            "status": [
+                                                "2017-04-28T18:26:05+0000", 
+                                                "created", 
+                                                null, 
+                                                null, 
+                                                null, 
+                                                null, 
+                                                null
+                                            ], 
+                                            "cell_id": "f2b4ce60-eb0e-45dc-b670-7b453af5f956", 
+                                            "awe_job_id": "90878e54-e60a-4ade-8cd0-73b12cc38572", 
+                                            "run_id": "639f4aac-81f5-4ea6-8486-01841b491cb7", 
+                                            "awe_job_state": "queued", 
+                                            "creation_time": 1493403965920, 
+                                            "ujs_url": "https://ci.kbase.us/services/userandjobstate/", 
+                                            "finished": 0, 
+                                            "token_id": "9ab63236-f3cb-4487-91a0-01cd66f67ba7", 
+                                            "position": 2, 
+                                            "job_state": "queued", 
+                                            "job_id": "5903893de4b07afc46305bed"
+                                        }
+                                    }, 
+                                    "event": "job-status"
+                                }, 
+                                {
+                                    "timestamp": "2017-04-28T18:26:07.885Z", 
+                                    "data": {
+                                        "jobState": {
+                                            "status": [
+                                                "2017-04-28T18:26:05+0000", 
+                                                "created", 
+                                                null, 
+                                                null, 
+                                                null, 
+                                                null, 
+                                                null
+                                            ], 
+                                            "cell_id": "f2b4ce60-eb0e-45dc-b670-7b453af5f956", 
+                                            "awe_job_id": "90878e54-e60a-4ade-8cd0-73b12cc38572", 
+                                            "run_id": "639f4aac-81f5-4ea6-8486-01841b491cb7", 
+                                            "awe_job_state": "queued", 
+                                            "creation_time": 1493403965920, 
+                                            "ujs_url": "https://ci.kbase.us/services/userandjobstate/", 
+                                            "finished": 0, 
+                                            "position": 2, 
+                                            "job_state": "queued", 
+                                            "job_id": "5903893de4b07afc46305bed"
+                                        }
+                                    }, 
+                                    "event": "job-status"
+                                }, 
+                                {
+                                    "timestamp": "2017-04-28T18:26:17.022Z", 
+                                    "data": {
+                                        "jobState": {
+                                            "status": [
+                                                "2017-04-28T18:26:09+0000", 
+                                                "started", 
+                                                "running", 
+                                                null, 
+                                                null, 
+                                                0, 
+                                                0
+                                            ], 
+                                            "cell_id": "f2b4ce60-eb0e-45dc-b670-7b453af5f956", 
+                                            "awe_job_id": "90878e54-e60a-4ade-8cd0-73b12cc38572", 
+                                            "run_id": "639f4aac-81f5-4ea6-8486-01841b491cb7", 
+                                            "awe_job_state": "in-progress", 
+                                            "creation_time": 1493403965920, 
+                                            "job_id": "5903893de4b07afc46305bed", 
+                                            "ujs_url": "https://ci.kbase.us/services/userandjobstate/", 
+                                            "finished": 0, 
+                                            "job_state": "in-progress", 
+                                            "exec_start_time": 1493403971892
+                                        }
+                                    }, 
+                                    "event": "job-status"
+                                }
+                            ], 
+                            "jobStateUpdated": 1493404028227, 
+                            "launchState": {
+                                "event_at": "2017-04-28T18:26:05.928397Z", 
+                                "cell_id": "f2b4ce60-eb0e-45dc-b670-7b453af5f956", 
+                                "event": "launched_job", 
+                                "run_id": "639f4aac-81f5-4ea6-8486-01841b491cb7", 
+                                "job_id": "5903893de4b07afc46305bed"
+                            }
+                        }, 
+                        "app": {
+                            "version": "0.0.6", 
+                            "tag": "release", 
+                            "id": "SpeciesTreeBuilder/insert_set_of_genomes_into_species_tree", 
+                            "gitCommitHash": "1a93e25c80931ae48f41ba59b46f20fc578fbb8d", 
+                            "spec": {
+                                "info": {
+                                    "app_type": "app", 
+                                    "name": "Insert Genome Into Species Tree", 
+                                    "subtitle": "Add one or more genomes to the KBase species tree.", 
+                                    "output_types": [
+                                        "KBaseTrees.Tree"
+                                    ], 
+                                    "namespace": "SpeciesTreeBuilder", 
+                                    "tooltip": "Add one or more genomes to the KBase species tree.", 
+                                    "git_commit_hash": "1a93e25c80931ae48f41ba59b46f20fc578fbb8d", 
+                                    "input_types": [
+                                        "KBaseGenomeAnnotations.GenomeAnnotation", 
+                                        "KBaseGenomes.Genome"
+                                    ], 
+                                    "authors": [
+                                        "rsutormin"
+                                    ], 
+                                    "module_name": "SpeciesTreeBuilder", 
+                                    "ver": "0.0.6", 
+                                    "id": "SpeciesTreeBuilder/insert_set_of_genomes_into_species_tree", 
+                                    "categories": [
+                                        "active", 
+                                        "comparative_genomics"
+                                    ], 
+                                    "icon": {
+                                        "url": "img?method_id=SpeciesTreeBuilder/insert_set_of_genomes_into_species_tree&image_name=speciestree-purple.png&tag=release"
+                                    }
+                                }, 
+                                "parameters": [
+                                    {
+                                        "field_type": "text", 
+                                        "ui_name": "Genome", 
+                                        "allow_multiple": 1, 
+                                        "description": "Genome to be inserted into a phylogenetic species tree composed of closely related publicly available genomes", 
+                                        "text_options": {
+                                            "is_output_name": 0, 
+                                            "placeholder": "", 
+                                            "regex_constraint": [], 
+                                            "valid_ws_types": [
+                                                "KBaseGenomes.Genome", 
+                                                "KBaseGenomeAnnotations.GenomeAnnotation"
+                                            ]
+                                        }, 
+                                        "disabled": 0, 
+                                        "short_hint": "Genome to be inserted into a phylogenetic species tree", 
+                                        "default_values": [
+                                            ""
+                                        ], 
+                                        "ui_class": "input", 
+                                        "optional": 0, 
+                                        "id": "param0", 
+                                        "advanced": 0
+                                    }, 
+                                    {
+                                        "field_type": "text", 
+                                        "ui_name": "Neighbor public genome count", 
+                                        "allow_multiple": 0, 
+                                        "description": "Number of closest public genomes the tree will contain. (optional, default value is 100)", 
+                                        "text_options": {
+                                            "is_output_name": 0, 
+                                            "max_int": 200, 
+                                            "min_int": 1, 
+                                            "regex_constraint": [], 
+                                            "validate_as": "int", 
+                                            "placeholder": "", 
+                                            "valid_ws_types": []
+                                        }, 
+                                        "disabled": 0, 
+                                        "short_hint": "Number of closest public genomes the tree will contain. (optional, default value is 100)", 
+                                        "default_values": [
+                                            "100"
+                                        ], 
+                                        "ui_class": "parameter", 
+                                        "optional": 1, 
+                                        "id": "param1", 
+                                        "advanced": 0
+                                    }, 
+                                    {
+                                        "field_type": "text", 
+                                        "ui_name": "Output Tree", 
+                                        "allow_multiple": 0, 
+                                        "description": "The name of the output phylogenetic tree relating genomes available in KBase to your genome", 
+                                        "text_options": {
+                                            "is_output_name": 1, 
+                                            "placeholder": "", 
+                                            "regex_constraint": [], 
+                                            "valid_ws_types": [
+                                                "KBaseTrees.Tree"
+                                            ]
+                                        }, 
+                                        "disabled": 0, 
+                                        "short_hint": "Output species tree name", 
+                                        "default_values": [
+                                            ""
+                                        ], 
+                                        "ui_class": "output", 
+                                        "optional": 0, 
+                                        "id": "treeID", 
+                                        "advanced": 0
+                                    }
+                                ], 
+                                "job_id_output_field": "docker", 
+                                "fixed_parameters": [], 
+                                "behavior": {
+                                    "kb_service_method": "construct_species_tree", 
+                                    "kb_service_version": "1a93e25c80931ae48f41ba59b46f20fc578fbb8d", 
+                                    "kb_service_output_mapping": [
+                                        {
+                                            "target_property": "treeID", 
+                                            "input_parameter": "treeID"
+                                        }, 
+                                        {
+                                            "target_property": "workspaceID", 
+                                            "narrative_system_variable": "workspace"
+                                        }, 
+                                        {
+                                            "target_property": "height", 
+                                            "constant_value": "500px"
+                                        }, 
+                                        {
+                                            "target_property": "jobID", 
+                                            "service_method_output_path": []
+                                        }
+                                    ], 
+                                    "kb_service_url": "", 
+                                    "kb_service_name": "SpeciesTreeBuilder", 
+                                    "kb_service_input_mapping": [
+                                        {
+                                            "target_property": "new_genomes", 
+                                            "input_parameter": "param0", 
+                                            "target_type_transform": "list<ref>"
+                                        }, 
+                                        {
+                                            "target_property": "nearest_genome_count", 
+                                            "input_parameter": "param1", 
+                                            "target_type_transform": "int"
+                                        }, 
+                                        {
+                                            "target_property": "out_tree_id", 
+                                            "input_parameter": "treeID", 
+                                            "generated_value": {
+                                                "prefix": "sptree_"
+                                            }
+                                        }, 
+                                        {
+                                            "target_property": "out_workspace", 
+                                            "narrative_system_variable": "workspace"
+                                        }, 
+                                        {
+                                            "target_property": "use_ribosomal_s9_only", 
+                                            "constant_value": 0
+                                        }
+                                    ]
+                                }, 
+                                "widgets": {
+                                    "input": "null", 
+                                    "output": "kbaseTree"
+                                }
+                            }
+                        }, 
+                        "fsm": {
+                            "currentState": {
+                                "mode": "processing", 
+                                "stage": "running"
+                            }
+                        }, 
+                        "params": {
+                            "treeID": "sptree.1", 
+                            "param1": 100, 
+                            "param0": [
+                                "20266/2/1"
+                            ]
+                        }, 
+                        "user-settings": {
+                            "showCodeInputArea": false
+                        }, 
+                        "output": {
+                            "byJob": {}
+                        }
+                    }, 
+                    "type": "app"
+                }, 
+                "collapsed": true
+            }
+        }
+    ], 
+    "metadata": {
+        "kernelspec": {
+            "display_name": "Python 2", 
+            "name": "python2", 
+            "language": "python"
+        }, 
+        "kbase": {
+            "ws_name": "rsutormin:narrative_1493073762822", 
+            "job_ids": {
+                "job_usage": {
+                    "queue_time": 0, 
+                    "run_time": 0
+                }, 
+                "apps": [], 
+                "methods": []
+            }, 
+            "name": "Untitled", 
+            "creator": "rsutormin"
+        }, 
+        "language_info": {
+            "mimetype": "text/x-python", 
+            "nbconvert_exporter": "python", 
+            "name": "python", 
+            "file_extension": ".py", 
+            "version": "2.7.6", 
+            "pygments_lexer": "ipython2", 
+            "codemirror_mode": {
+                "version": 2, 
+                "name": "ipython"
+            }
+        }, 
+        "description": "", 
+        "format": "ipynb", 
+        "creator": "rsutormin", 
+        "data_dependencies": [], 
+        "ws_name": "rsutormin:narrative_1493073762822", 
+        "type": "KBaseNarrative.Narrative", 
+        "job_ids": {
+            "job_usage": {
+                "queue_time": 0, 
+                "run_time": 0
+            }, 
+            "apps": [], 
+            "methods": []
+        }, 
+        "name": "Romans Indexing Test1"
+    }
+}

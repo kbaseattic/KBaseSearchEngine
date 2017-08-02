@@ -31,7 +31,7 @@ module KBaseGenomes {
     typedef string Genome_ref;
     /*
 		Reference to an Assembly object in the workspace
-		REMOVED ANNOTATION
+		@id ws KBaseGenomeAnnotations.Assembly
 	*/
     typedef string Assembly_ref;
     

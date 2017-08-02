@@ -1,0 +1,33 @@
+{
+    "contigs": {
+        "gi|113968346|ref|NC_008321.1|": {
+            "description": "Shewanella sp. MR-4 chromosome, complete genome", 
+            "Ncount": 0, 
+            "name": "gi|113968346|ref|NC_008321.1|", 
+            "length": 4706287, 
+            "start_position": 79, 
+            "contig_id": "gi|113968346|ref|NC_008321.1|", 
+            "gc_content": 0.478944654246543, 
+            "is_circular": "Unknown", 
+            "num_bytes": 4773520, 
+            "md5": "195c42d0355197c662b2d2d3c269c50f"
+        }
+    }, 
+    "external_source": null, 
+    "name": "test_asmb.1", 
+    "assembly_id": "test_asmb.1", 
+    "notes": "Note MD5s are generated from uppercasing the sequences", 
+    "external_source_id": "NC_008321.fna", 
+    "fasta_handle_ref": "KBH_51332", 
+    "num_contigs": 1, 
+    "base_counts": {
+        "A": 1226120, 
+        "C": 1125714, 
+        "T": 1226116, 
+        "G": 1128337
+    }, 
+    "gc_content": 0.478944654246543, 
+    "type": "Unknown", 
+    "dna_size": 4706287, 
+    "md5": "c7654d453fe5fe9bd93584e12709e602"
+}

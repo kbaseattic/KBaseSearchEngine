@@ -1,0 +1,71 @@
+{
+    "nbformat_minor": 0, 
+    "nbformat": 4, 
+    "cells": [
+        {
+            "source": "## Welcome to KBase's Narrative Interface!\n\n**What's a Narrative?** Narratives are shareable, reproducible workflows that can include data, analysis steps, results, visualizations and commentary. [Learn more...]({{config.resources.docSite.base.url}}/narrative-guide)\n\n**Take the Tour:** Choose \"Narrative Tour\" from the \"Help\" menu above. The tour walks you through the user interface, pointing out various useful aspects of it.\n\n**Get Some Data:** Click the Add Data button in the Data Panel to search KBase data or upload your own. Mouse over a data object to add it to your Narrative. [Learn more...]({{config.resources.docSite.base.url}}/narrative-guide/explore-data)\n\n**Analyze It:** Use the Apps panel or the App Catalog to browse available analysis apps. Select an app to add it to your Narrative, fill in the fields, and click the \"play\" button to launch the app. [Learn more...]({{config.resources.docSite.base.url}}/narrative-guide/browse-apps-and-methods)\n\n**Save and Share Your Narrative:** Be sure to save your Narrative frequently. To let collaborators view your analysis steps and results, click the Share button. Or make your Narrative public and help expand the social web that KBase is building to make systems biology research more open, reproducible and collaborative. [Learn more...]({{config.resources.docSite.base.url}}/narrative-guide/share-narratives/)\n\n**Find Documentation:** For more information, please see the [Narrative Interface User Guide]({{config.resources.docSite.base.url}}/narrative-guide) or the [tutorials]({{config.resources.docSite.base.url}}/tutorials).\n\n**Questions? Bug reports?** [Contact us]({{config.resources.docSite.base.url}}/contact-us)!\n\n> Ready to begin adding to your Narrative? You can keep this Welcome cell or delete it by selecting \"Delete cell\" from the \"...\" menu in the top right corner of this cell.\n", 
+            "cell_type": "markdown", 
+            "metadata": {
+                "kbase": {
+                    "attributes": {
+                        "title": "Welcome to KBase's Narrative Interface!", 
+                        "icon": "paragraph"
+                    }, 
+                    "cellState": {
+                        "selected": true, 
+                        "showTitle": false
+                    }
+                }, 
+                "editable": true, 
+                "deletable": true
+            }
+        }
+    ], 
+    "metadata": {
+        "kernelspec": {
+            "display_name": "Python 2", 
+            "name": "python2", 
+            "language": "python"
+        }, 
+        "kbase": {
+            "ws_name": "rsutormin:narrative_1493073762822", 
+            "job_ids": {
+                "job_usage": {
+                    "queue_time": 0, 
+                    "run_time": 0
+                }, 
+                "apps": [], 
+                "methods": []
+            }, 
+            "name": "Untitled", 
+            "creator": "rsutormin"
+        }, 
+        "language_info": {
+            "mimetype": "text/x-python", 
+            "nbconvert_exporter": "python", 
+            "name": "python", 
+            "file_extension": ".py", 
+            "version": "2.7.6", 
+            "pygments_lexer": "ipython2", 
+            "codemirror_mode": {
+                "version": 2, 
+                "name": "ipython"
+            }
+        }, 
+        "description": "", 
+        "format": "ipynb", 
+        "creator": "rsutormin", 
+        "data_dependencies": [], 
+        "ws_name": "rsutormin:narrative_1493073762822", 
+        "type": "KBaseNarrative.Narrative", 
+        "job_ids": {
+            "job_usage": {
+                "queue_time": 0, 
+                "run_time": 0
+            }, 
+            "apps": [], 
+            "methods": []
+        }, 
+        "name": "Romans Indexing Test1"
+    }
+}
