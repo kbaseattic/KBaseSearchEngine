@@ -57,6 +57,7 @@ public class ElasticIndexingStorageTest {
     
     @BeforeClass
     public static void prepare() throws Exception {
+        TestCommon.stfuLoggers();
         final Path tdir = Paths.get(TestCommon.getTempDir());
         tempDir = tdir.resolve("ElasticIndexingStorageTest").toFile();
         FileUtils.deleteQuietly(tempDir);

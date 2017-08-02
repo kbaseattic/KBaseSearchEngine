@@ -25,6 +25,7 @@ public class MongoDBStatusEventStorageTest {
 
     @BeforeClass
     public static void setUpClass() throws Exception {
+        TestCommon.stfuLoggers();
         mongo = new MongoController(
                 TestCommon.getMongoExe(),
                 Paths.get(TestCommon.getTempDir()),

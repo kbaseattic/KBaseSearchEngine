@@ -94,9 +94,10 @@ public class WorkspaceController {
             final URL authRootURL,
             final String adminUser)
             throws IOException {
-        File iniFile = File.createTempFile("test", ".cfg", tempDir.toFile());
-        System.out.println("Created temporary config file: " + iniFile.getAbsolutePath());
-        Ini ini = new Ini();
+        final File iniFile = new File(tempDir.resolve("test.cfg").toString());
+        System.out.println("Created temporary workspace config file: " +
+                iniFile.getAbsolutePath());
+        final Ini ini = new Ini();
         Section ws = ini.add("Workspace");
         ws.add("mongodb-host", mongoHost);
         ws.add("mongodb-database", mongoDatabase);
@@ -107,7 +108,6 @@ public class WorkspaceController {
         ws.add("temp-dir", tempDir.resolve("temp_data"));
         ws.add("ignore-handle-service", "true");
         ini.store(iniFile);
-        iniFile.deleteOnExit();
         return iniFile.toPath();
     }
     
@@ -123,7 +123,7 @@ public class WorkspaceController {
             final BufferedReader br = new BufferedReader(r);
             String line;
             while ((line = br.readLine()) != null) {
-                final Path jarPath = jarsDir.resolve("lib/jars").resolve(line);
+                final Path jarPath = jarsDir.resolve(line);
                 if (jarPath.toString().contains("WorkspaceService") && Files.notExists(jarPath)) {
                     throw new TestException("WorkspaceService jar does not exist: " + jarPath);
                 }

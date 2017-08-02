@@ -66,6 +66,7 @@ public class MainObjectProcessorTest {
     
     @BeforeClass
     public static void prepare() throws Exception {
+        TestCommon.stfuLoggers();
         final URL authURL = TestCommon.getAuthUrl();
         final URL authServiceRootURL;
         if (authURL.toString().contains("api")) {
@@ -98,7 +99,7 @@ public class MainObjectProcessorTest {
         // set up Workspace
         ws = new WorkspaceController(
                 "0.7.2-dev1",
-                Paths.get("/home/crusherofheads/localgit/jars"), //TODO NOW get from variable
+                TestCommon.getJarsDir(),
                 "localhost:" + mongo.getServerPort(), "MOPTestWSDB",
                     kbaseIndexerToken.getUserName(),
                 authServiceRootURL,

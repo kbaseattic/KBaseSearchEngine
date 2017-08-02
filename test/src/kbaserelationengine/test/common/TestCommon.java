@@ -31,6 +31,9 @@ public class TestCommon {
     public static final String ELASTICEXE = "test.elasticsearch.exe";
     public static final String ELASTICEXE_DEFAULT = "/opt/elasticsearch/bin/elasticsearch";
     
+    public static final String JARS_PATH = "test.jars.dir";
+    public static final String JARS_PATH_DEFAULT = "/kb/deployment/lib/jars";
+    
     public static final String AUTHSERV = "auth_service_url";
     public static final String TEST_TOKEN = "test_token";
     public static final String GLOBUS = "test.globus.url";
@@ -134,6 +137,10 @@ public class TestCommon {
         return getTestProperty(ELASTICEXE, ELASTICEXE_DEFAULT);
     }
     
+    public static Path getJarsDir() {
+        return Paths.get(getTestProperty(JARS_PATH, JARS_PATH_DEFAULT));
+    }
+    
     public static URL getAuthUrl() {
         return getURL(AUTHSERV, null);
     }
@@ -164,11 +171,11 @@ public class TestCommon {
         }
     }
     
-    //useful for tests starting a server with GFS as the backend
-    public static void initializeGridFSWorkspaceDB(MongoDatabase db, String typedb) {
-        final Document doc = new Document("type_db", typedb)
-                .append("backend", "GridFS");
-        db.getCollection("settings").insertOne(doc);
-        System.out.println("Configured new GridFS backend.");
+    public static void stfuLoggers() {
+        java.util.logging.Logger.getLogger("com.mongodb")
+                .setLevel(java.util.logging.Level.OFF);
+        ((ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory
+                .getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME))
+                .setLevel(ch.qos.logback.classic.Level.OFF);
     }
 }
