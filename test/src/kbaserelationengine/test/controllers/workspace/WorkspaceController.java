@@ -113,8 +113,7 @@ public class WorkspaceController {
     
     private String loadVersion(final Path jarsDir, final String workspaceVersion)
             throws IOException {
-        final InputStream is = getClass().getResourceAsStream(
-                "version_" + workspaceVersion);
+        final InputStream is = getClass().getResourceAsStream("version_" + workspaceVersion);
         if (is == null) {
             throw new TestException("No workspace versions file version_" + workspaceVersion);
         }
@@ -123,11 +122,14 @@ public class WorkspaceController {
             final BufferedReader br = new BufferedReader(r);
             String line;
             while ((line = br.readLine()) != null) {
-                final Path jarPath = jarsDir.resolve(line);
-                if (jarPath.toString().contains("WorkspaceService") && Files.notExists(jarPath)) {
-                    throw new TestException("WorkspaceService jar does not exist: " + jarPath);
+                if (!line.trim().isEmpty()) {
+                    final Path jarPath = jarsDir.resolve(line);
+                    if (Files.notExists(jarPath)) {
+                        throw new TestException("Required jar does not exist: " + jarPath);
+                        
+                    }
+                    classpath.add(jarPath.toString());
                 }
-                classpath.add(jarPath.toString());
             }
         }
         return String.join(":", classpath);
