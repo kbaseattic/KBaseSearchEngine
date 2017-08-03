@@ -85,11 +85,36 @@ public class MainObjectProcessor {
     private RelationStorage relationStorage;
     private LineLogger logger;
     private Set<String> admins;
+    //TODO RECON remove when reconstructor is replaced by event feed
+    private final boolean runWorkspaceEventReconstructor;
     
-    public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, String mongoHost, 
-            int mongoPort, String mongoDbName, HttpHost esHost, String esUser, String esPassword,
-            String esIndexPrefix, File typesDir, File tempDir, boolean startLifecycleRunner,
-            LineLogger logger, Set<String> admins) throws IOException, ObjectParseException {
+    public MainObjectProcessor(
+            final URL wsURL,
+            final AuthToken kbaseIndexerToken,
+            final String mongoHost, 
+            final int mongoPort,
+            final String mongoDbName,
+            final HttpHost esHost,
+            final String esUser,
+            final String esPassword,
+            final String esIndexPrefix,
+            final File typesDir,
+            final File tempDir,
+            final boolean startLifecycleRunner,
+            final boolean runWorkspaceEventReconstructor,
+            final LineLogger logger,
+            final Set<String> admins)
+            throws IOException, ObjectParseException {
+        /* Some notes for the future - I'd probably change this to take an StatusEventStorage
+         * interface rather than constructing it itself. This allows easier swapping out of
+         * components and easier testing via component mocks.
+         * Same for IndexingStorage (now ElasticIndexingStorage) and SystemStorage.
+         * I'd also make an interface for retrieving data and pass in a mapping from
+         * storageCode to the interface, so allow indexing multiple data sources. 
+         * Currently it looks like only the WS is supported and adding other sources might be a 
+         * bit tricky.
+         */
+        this.runWorkspaceEventReconstructor = runWorkspaceEventReconstructor;
         this.logger = logger;
         this.wsURL = wsURL;
         this.kbaseIndexerToken = kbaseIndexerToken;
@@ -130,7 +155,7 @@ public class MainObjectProcessor {
             });
         }
         queue = new ObjectStatusEventQueue(eventStorage);
-        systemStorage = new DefaultSystemStorage(wsURL, typesDir);
+        systemStorage = new DefaultSystemStorage(typesDir);
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
                 getTempSubDir("esbulk"));
         if (esUser != null) {
@@ -153,6 +178,7 @@ public class MainObjectProcessor {
             HttpHost esHost, String esUser, String esPassword,
             String esIndexPrefix, File typesDir, File tempDir, LineLogger logger) 
                     throws IOException, ObjectParseException, UnauthorizedException {
+        this.runWorkspaceEventReconstructor = true;
         this.wsURL = wsURL;
         this.kbaseIndexerToken = kbaseIndexerToken;
         this.rootTempDir = tempDir;
@@ -160,7 +186,7 @@ public class MainObjectProcessor {
         this.admins = Collections.emptySet();
         wsClient = new WorkspaceClient(wsURL, kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true);         
-        systemStorage = new DefaultSystemStorage(wsURL, typesDir);
+        systemStorage = new DefaultSystemStorage(typesDir);
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
                 getTempSubDir("esbulk"));
         if (esUser != null) {
@@ -241,13 +267,15 @@ public class MainObjectProcessor {
     
     public void performOneTick(boolean permissions)
             throws IOException, JsonClientException, ObjectParseException {
-        Set<Long> excludeWsIds = Collections.emptySet();
-        //Set<Long> excludeWsIds = new LinkedHashSet<>(Arrays.asList(10455L));
-        wsEventReconstructor.processWorkspaceObjects(15L, PresenceType.PRESENT);
-        wsEventReconstructor.processWorkspaceObjects(AccessType.PRIVATE, PresenceType.PRESENT, 
-                excludeWsIds);
-        if (permissions) {
-            wsEventReconstructor.processWorkspacePermissions(AccessType.ALL, null);
+        if (runWorkspaceEventReconstructor) {
+            Set<Long> excludeWsIds = Collections.emptySet();
+            //Set<Long> excludeWsIds = new LinkedHashSet<>(Arrays.asList(10455L));
+            wsEventReconstructor.processWorkspaceObjects(15L, PresenceType.PRESENT);
+            wsEventReconstructor.processWorkspaceObjects(AccessType.PRIVATE, PresenceType.PRESENT, 
+                    excludeWsIds);
+            if (permissions) {
+                wsEventReconstructor.processWorkspacePermissions(AccessType.ALL, null);
+            }
         }
         ObjectStatusEventIterator iter = queue.iterator("WS");
         while (iter.hasNext()) {
@@ -332,6 +360,10 @@ public class MainObjectProcessor {
                     guid.getVersion();
             String nextCallerRefPath = (callerRefPath == null || callerRefPath.isEmpty() ? "" : 
                 (callerRefPath + ";")) + objRef;
+            /* ideally here you would select an implementation of a DataFetcher (or something)
+             * based on the storageCode that knows how to fetch the data you need based on the
+             * nextCallerRefPath
+             */
             ObjectData obj = ObjectParser.loadObject(wsURL, tempFile, kbaseIndexerToken, 
                     nextCallerRefPath);
             if (logger != null) {

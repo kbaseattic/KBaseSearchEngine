@@ -2,7 +2,6 @@ package kbaserelationengine.system;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -12,9 +11,16 @@ import kbaserelationengine.parse.ObjectParseException;
 import us.kbase.auth.AuthToken;
 
 public class DefaultSystemStorage implements SystemStorage {
+    
+    /* Not totally clear what this class is supposed to do other than handle the parsing rules
+     * files. It seems like it needs more functionality based on the unimplemented methods below
+     * but I'm not clear on what that functionality is supposed to be. It seems like this class
+     * should be focused on handling the parsing rules files and any other functionality should
+     * go in a different class.
+     */
     private List<ObjectTypeParsingRules> parsingRules;
     
-    public DefaultSystemStorage(URL workspaceUrl, File typesDir) 
+    public DefaultSystemStorage(File typesDir) 
             throws ObjectParseException, IOException {
         this.parsingRules = new ArrayList<>();
         for (File file : typesDir.listFiles()) {
