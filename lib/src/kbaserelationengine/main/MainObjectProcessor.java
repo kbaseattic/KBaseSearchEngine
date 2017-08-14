@@ -38,6 +38,8 @@ import kbaserelationengine.events.AccessGroupStatus;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.events.StatusEventListener;
+import kbaserelationengine.events.handler.EventHandler;
+import kbaserelationengine.events.handler.WorkspaceEventHandler;
 import kbaserelationengine.events.reconstructor.AccessType;
 import kbaserelationengine.events.reconstructor.PresenceType;
 import kbaserelationengine.events.reconstructor.Util;
@@ -277,37 +279,49 @@ public class MainObjectProcessor {
                 wsEventReconstructor.processWorkspacePermissions(AccessType.ALL, null);
             }
         }
+        // Seems like this shouldn't be source specific. It should handle all event sources.
         ObjectStatusEventIterator iter = queue.iterator("WS");
         while (iter.hasNext()) {
-            ObjectStatusEvent ev = iter.next();
-            if (!isStorageTypeSupported(ev.getStorageObjectType())) {
-                if (logger != null) {
-                    logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
-                            ev.getStorageObjectType() + ", " + ev.toGUID());
+            final ObjectStatusEvent preEvent = iter.next();
+            for (final ObjectStatusEvent ev: getEventHandler(preEvent).expand(preEvent)) {
+                if (!isStorageTypeSupported(ev.getStorageObjectType())) {
+                    if (logger != null) {
+                        logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
+                                ev.getStorageObjectType() + ", " + ev.toGUID());
+                    }
+                    iter.markAsVisitied(false);
+                    continue;
                 }
-                iter.markAsVisitied(false);
-                continue;
-            }
-            if (logger != null) {
-                logger.logInfo("[Indexer] processing " + ev.getEventType() + ", " + 
-                        ev.getStorageObjectType() + ", " + ev.toGUID() + "...");
-            }
-            long time = System.currentTimeMillis();
-            try {
-                processOneEvent(ev);
-            } catch (Exception e) {
-                logError(e);
-                iter.markAsVisitied(false);
-                continue;
-            }
-            iter.markAsVisitied(true);
-            if (logger != null) {
-                logger.logInfo("[Indexer]   (total time: " + (System.currentTimeMillis() - time) +
-                        "ms.)");
+                if (logger != null) {
+                    logger.logInfo("[Indexer] processing " + ev.getEventType() + ", " + 
+                            ev.getStorageObjectType() + ", " + ev.toGUID() + "...");
+                }
+                long time = System.currentTimeMillis();
+                try {
+                    processOneEvent(ev);
+                } catch (Exception e) {
+                    logError(e);
+                    iter.markAsVisitied(false);
+                    continue;
+                }
+                iter.markAsVisitied(true);
+                if (logger != null) {
+                    logger.logInfo("[Indexer]   (total time: " +
+                            (System.currentTimeMillis() - time) + "ms.)");
+                }
             }
         }
     }
     
+    private EventHandler getEventHandler(final ObjectStatusEvent ev) {
+        //TODO should pull from a hashmap of event type -> handler
+        if (!"WS".equals(ev.getStorageCode())) {
+            //TODO need to make this an error such that the event is not reprocessed
+            throw new IllegalStateException("Only WS events are currently supported");
+        }
+        return new WorkspaceEventHandler(wsClient);
+    }
+
     public void processOneEvent(ObjectStatusEvent ev) 
             throws IOException, JsonClientException, ObjectParseException {
         switch (ev.getEventType()) {
@@ -360,7 +374,7 @@ public class MainObjectProcessor {
                     guid.getVersion();
             String nextCallerRefPath = (callerRefPath == null || callerRefPath.isEmpty() ? "" : 
                 (callerRefPath + ";")) + objRef;
-            /* ideally here you would select an implementation of a DataFetcher (or something)
+            /* ideally here you would select an implementation of an EventHandler
              * based on the storageCode that knows how to fetch the data you need based on the
              * nextCallerRefPath
              */
