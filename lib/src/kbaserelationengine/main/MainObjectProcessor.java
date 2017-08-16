@@ -300,6 +300,8 @@ public class MainObjectProcessor {
                 try {
                     processOneEvent(ev);
                 } catch (Exception e) {
+                    //TODO NOW with event expansion, this doesn't really work right.
+                    // Will skip the sub event - really should retry a few times then fail the parent event.
                     logError(e);
                     iter.markAsVisitied(false);
                     continue;
@@ -314,9 +316,9 @@ public class MainObjectProcessor {
     }
     
     private EventHandler getEventHandler(final ObjectStatusEvent ev) {
-        //TODO should pull from a hashmap of event type -> handler
+        //TODO HANDLERS should pull from a hashmap of event type -> handler
         if (!"WS".equals(ev.getStorageCode())) {
-            //TODO need to make this an error such that the event is not reprocessed
+            //TODO EXP need to make this an error such that the event is not reprocessed
             throw new IllegalStateException("Only WS events are currently supported");
         }
         return new WorkspaceEventHandler(wsClient);

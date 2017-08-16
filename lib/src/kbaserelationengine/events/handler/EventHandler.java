@@ -4,6 +4,7 @@ import kbaserelationengine.events.ObjectStatusEvent;
 
 /** An interface for handling search events. The interface abstracts away event source specific
  * operations.
+ * Handlers are not guaranteed to be thread-safe.
  * @author gaprice@lbl.gov
  *
  */
