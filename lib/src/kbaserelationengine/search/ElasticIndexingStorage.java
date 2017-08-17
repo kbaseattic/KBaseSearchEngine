@@ -526,7 +526,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             ret.put(parentGUID, (String)data.get("_id"));
             changed = true;
             updateAccessGroupForVersions(indexName, parentGUID, lastVersion,
-                    accessGroupIds.toArray(new Integer[accessGroupIds.size()]));
+                    parentGUID.getAccessGroupId(), isPublic, true);
         }
         if (changed) {
             refreshIndex(indexName);
@@ -534,9 +534,33 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return ret;
     }
     
+    private static final String UPDATE_ACC_GRP_VERS_TEMPLATE =
+            "if (ctx._source.lastin.indexOf(params.%1$s) >= 0) {\n" +
+            "  if (ctx._source.version != params.lastver) {\n" +
+            "    ctx._source.lastin.remove(ctx._source.lastin.indexOf(params.%1$s));\n" +
+            "  }\n" +
+            "} else {\n" +
+            "  if (ctx._source.version == params.lastver) {\n" +
+            "    ctx._source.lastin.add(params.%1$s);\n" +
+            "    if (ctx._source.groups.indexOf(params.%1$s) < 0) {\n" +
+            "      ctx._source.groups.add(params.%1$s);\n" +
+            "    }\n" +
+            "  }\n" +
+            "}\n";
+    
+    /* calling this method with accessGroupId == null and both booleans false is an error. */
     @SuppressWarnings({ "serial", "unchecked" })
-    private boolean updateAccessGroupForVersions(String indexName, GUID guid,
-            int lastVersion, Integer... accessGroupIds) throws IOException {
+    private boolean updateAccessGroupForVersions(
+            String indexName,
+            final GUID guid,
+            final int lastVersion,
+            final Integer accessGroupId,
+            final boolean includePublicAccessID,
+            final boolean includeAdminAccessID)
+            throws IOException {
+        /* this method will cause at most 6 script compilations, which seems like a lot...
+         * Could make the script always the same and put in ifs but this should be ok for now.
+         */
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
@@ -548,26 +572,24 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
         }};
-        //TODO NOW fuck.
         StringBuilder inline = new StringBuilder();
-        for (int accessGroupId : accessGroupIds) {
-            inline.append(""+ 
-                    "if (ctx._source.lastin.indexOf(" + accessGroupId + ") >= 0) {\n" +
-                    "  if (ctx._source.version != " + lastVersion + ") {\n" +
-                    "    ctx._source.lastin.remove(ctx._source.lastin.indexOf(" + accessGroupId + "));\n" +
-                    "  }\n" +
-                    "} else {\n" +
-                    "  if (ctx._source.version == " + lastVersion + ") {\n" +
-                    "    ctx._source.lastin.add(" + accessGroupId + ");\n" +
-                    "    if (ctx._source.groups.indexOf(" + accessGroupId + ") < 0) {\n" +
-                    "      ctx._source.groups.add(" + accessGroupId + ");\n" +
-                    "    }\n" +
-                    "  }\n" +
-                    "}\n"
-                    );
+        final Map<String, Object> params = new HashMap<>();
+        params.put("lastver", lastVersion);
+        if (accessGroupId != null) {
+            inline.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "accgrp"));
+            params.put("accgrp", accessGroupId);
+        }
+        if (includePublicAccessID) {
+            inline.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "pubaccgrp"));
+            params.put("pubaccgrp", PUBLIC_ACCESS_GROUP);
+        }
+        if (includeAdminAccessID) {
+            inline.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "adminaccgrp"));
+            params.put("adminaccgrp", ADMIN_ACCESS_GROUP);
         }
         Map<String, Object> script = new LinkedHashMap<String, Object>() {{
             put("inline", inline.toString());
+            put("params", params);
         }};
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
@@ -659,7 +681,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
         for (String indexName : indexToGuids.keySet()) {
             boolean needRefresh = false;
             for (GUID guid : indexToGuids.get(indexName)) {
-                if (updateAccessGroupForVersions(indexName, guid, guid.getVersion(), accessGroupId)) {
+                if (updateAccessGroupForVersions(indexName, guid, guid.getVersion(), accessGroupId,
+                        false, false)) {
                     needRefresh = true;
                 }
                 if (accessGroupId == PUBLIC_ACCESS_GROUP) {
