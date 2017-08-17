@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -474,8 +475,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
         }};
+        final Map<String, Object> params = new HashMap<>();
+        params.put("lastver", lastVersion);
         Map<String, Object> script = new LinkedHashMap<String, Object>() {{
-            put("inline", "ctx._source.islast = (ctx._source.version == " + lastVersion + ");");
+            put("inline", "ctx._source.islast = (ctx._source.version == params.lastver);");
+            put("params", params);
         }};
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
@@ -544,6 +548,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
         }};
+        //TODO NOW fuck.
         StringBuilder inline = new StringBuilder();
         for (int accessGroupId : accessGroupIds) {
             inline.append(""+ 
@@ -592,14 +597,17 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
         }};
+        final HashMap<String, Object> params = new HashMap<>();
+        params.put("accgrp", accessGroupId);
         Map<String, Object> script = new LinkedHashMap<String, Object>() {{
             put("inline", "" + 
-                    "ctx._source.lastin.remove(ctx._source.lastin.indexOf(" + accessGroupId + ")); " +
+                    "ctx._source.lastin.remove(ctx._source.lastin.indexOf(params.accgrp)); " +
                     (fromAllGroups ? (
-                    "int pos = ctx._source.groups.indexOf(" + accessGroupId + "); " +
+                    "int pos = ctx._source.groups.indexOf(params.accgrp); " +
                     "if (pos >= 0) {" +
                     "  ctx._source.groups.remove(pos); " +
                     "}") : ""));
+            put("params", params);
         }};
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
@@ -627,8 +635,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
         }};
+        final Map<String, Object> params = new HashMap<>();
+        params.put("field", field);
+        params.put("value", value);
         Map<String, Object> script = new LinkedHashMap<String, Object>() {{
-            put("inline", "ctx._source." + field + " = " + value + ";");
+            put("inline", "ctx._source[params.field] = params.value;");
+            put("params", params);
         }};
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
