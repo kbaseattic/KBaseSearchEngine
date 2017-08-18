@@ -38,6 +38,8 @@ import kbaserelationengine.events.AccessGroupStatus;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.events.StatusEventListener;
+import kbaserelationengine.events.handler.EventHandler;
+import kbaserelationengine.events.handler.WorkspaceEventHandler;
 import kbaserelationengine.events.reconstructor.AccessType;
 import kbaserelationengine.events.reconstructor.PresenceType;
 import kbaserelationengine.events.reconstructor.Util;
@@ -85,11 +87,36 @@ public class MainObjectProcessor {
     private RelationStorage relationStorage;
     private LineLogger logger;
     private Set<String> admins;
+    //TODO RECON remove when reconstructor is replaced by event feed
+    private final boolean runWorkspaceEventReconstructor;
     
-    public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, String mongoHost, 
-            int mongoPort, String mongoDbName, HttpHost esHost, String esUser, String esPassword,
-            String esIndexPrefix, File typesDir, File tempDir, boolean startLifecycleRunner,
-            LineLogger logger, Set<String> admins) throws IOException, ObjectParseException {
+    public MainObjectProcessor(
+            final URL wsURL,
+            final AuthToken kbaseIndexerToken,
+            final String mongoHost, 
+            final int mongoPort,
+            final String mongoDbName,
+            final HttpHost esHost,
+            final String esUser,
+            final String esPassword,
+            final String esIndexPrefix,
+            final File typesDir,
+            final File tempDir,
+            final boolean startLifecycleRunner,
+            final boolean runWorkspaceEventReconstructor,
+            final LineLogger logger,
+            final Set<String> admins)
+            throws IOException, ObjectParseException {
+        /* Some notes for the future - I'd probably change this to take an StatusEventStorage
+         * interface rather than constructing it itself. This allows easier swapping out of
+         * components and easier testing via component mocks.
+         * Same for IndexingStorage (now ElasticIndexingStorage) and SystemStorage.
+         * I'd also make an interface for retrieving data and pass in a mapping from
+         * storageCode to the interface, so allow indexing multiple data sources. 
+         * Currently it looks like only the WS is supported and adding other sources might be a 
+         * bit tricky.
+         */
+        this.runWorkspaceEventReconstructor = runWorkspaceEventReconstructor;
         this.logger = logger;
         this.wsURL = wsURL;
         this.kbaseIndexerToken = kbaseIndexerToken;
@@ -130,7 +157,7 @@ public class MainObjectProcessor {
             });
         }
         queue = new ObjectStatusEventQueue(eventStorage);
-        systemStorage = new DefaultSystemStorage(wsURL, typesDir);
+        systemStorage = new DefaultSystemStorage(typesDir);
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
                 getTempSubDir("esbulk"));
         if (esUser != null) {
@@ -153,6 +180,7 @@ public class MainObjectProcessor {
             HttpHost esHost, String esUser, String esPassword,
             String esIndexPrefix, File typesDir, File tempDir, LineLogger logger) 
                     throws IOException, ObjectParseException, UnauthorizedException {
+        this.runWorkspaceEventReconstructor = true;
         this.wsURL = wsURL;
         this.kbaseIndexerToken = kbaseIndexerToken;
         this.rootTempDir = tempDir;
@@ -160,7 +188,7 @@ public class MainObjectProcessor {
         this.admins = Collections.emptySet();
         wsClient = new WorkspaceClient(wsURL, kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true);         
-        systemStorage = new DefaultSystemStorage(wsURL, typesDir);
+        systemStorage = new DefaultSystemStorage(typesDir);
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
                 getTempSubDir("esbulk"));
         if (esUser != null) {
@@ -241,45 +269,61 @@ public class MainObjectProcessor {
     
     public void performOneTick(boolean permissions)
             throws IOException, JsonClientException, ObjectParseException {
-        Set<Long> excludeWsIds = Collections.emptySet();
-        //Set<Long> excludeWsIds = new LinkedHashSet<>(Arrays.asList(10455L));
-        wsEventReconstructor.processWorkspaceObjects(15L, PresenceType.PRESENT);
-        wsEventReconstructor.processWorkspaceObjects(AccessType.PRIVATE, PresenceType.PRESENT, 
-                excludeWsIds);
-        if (permissions) {
-            wsEventReconstructor.processWorkspacePermissions(AccessType.ALL, null);
+        if (runWorkspaceEventReconstructor) {
+            Set<Long> excludeWsIds = Collections.emptySet();
+            //Set<Long> excludeWsIds = new LinkedHashSet<>(Arrays.asList(10455L));
+            wsEventReconstructor.processWorkspaceObjects(15L, PresenceType.PRESENT);
+            wsEventReconstructor.processWorkspaceObjects(AccessType.PRIVATE, PresenceType.PRESENT, 
+                    excludeWsIds);
+            if (permissions) {
+                wsEventReconstructor.processWorkspacePermissions(AccessType.ALL, null);
+            }
         }
+        // Seems like this shouldn't be source specific. It should handle all event sources.
         ObjectStatusEventIterator iter = queue.iterator("WS");
         while (iter.hasNext()) {
-            ObjectStatusEvent ev = iter.next();
-            if (!isStorageTypeSupported(ev.getStorageObjectType())) {
-                if (logger != null) {
-                    logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
-                            ev.getStorageObjectType() + ", " + ev.toGUID());
+            final ObjectStatusEvent preEvent = iter.next();
+            for (final ObjectStatusEvent ev: getEventHandler(preEvent).expand(preEvent)) {
+                if (!isStorageTypeSupported(ev.getStorageObjectType())) {
+                    if (logger != null) {
+                        logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
+                                ev.getStorageObjectType() + ", " + ev.toGUID());
+                    }
+                    iter.markAsVisitied(false);
+                    continue;
                 }
-                iter.markAsVisitied(false);
-                continue;
-            }
-            if (logger != null) {
-                logger.logInfo("[Indexer] processing " + ev.getEventType() + ", " + 
-                        ev.getStorageObjectType() + ", " + ev.toGUID() + "...");
-            }
-            long time = System.currentTimeMillis();
-            try {
-                processOneEvent(ev);
-            } catch (Exception e) {
-                logError(e);
-                iter.markAsVisitied(false);
-                continue;
-            }
-            iter.markAsVisitied(true);
-            if (logger != null) {
-                logger.logInfo("[Indexer]   (total time: " + (System.currentTimeMillis() - time) +
-                        "ms.)");
+                if (logger != null) {
+                    logger.logInfo("[Indexer] processing " + ev.getEventType() + ", " + 
+                            ev.getStorageObjectType() + ", " + ev.toGUID() + "...");
+                }
+                long time = System.currentTimeMillis();
+                try {
+                    processOneEvent(ev);
+                } catch (Exception e) {
+                    //TODO NOW with event expansion, this doesn't really work right.
+                    // Will skip the sub event - should follow one of 3 strategies - retry, turn off the event handler, or ignore the parent event
+                    logError(e);
+                    iter.markAsVisitied(false);
+                    continue;
+                }
+                iter.markAsVisitied(true);
+                if (logger != null) {
+                    logger.logInfo("[Indexer]   (total time: " +
+                            (System.currentTimeMillis() - time) + "ms.)");
+                }
             }
         }
     }
     
+    private EventHandler getEventHandler(final ObjectStatusEvent ev) {
+        //TODO HANDLERS should pull from a hashmap of event type -> handler
+        if (!"WS".equals(ev.getStorageCode())) {
+            //TODO EXP need to make this an error such that the event is not reprocessed
+            throw new IllegalStateException("Only WS events are currently supported");
+        }
+        return new WorkspaceEventHandler(wsClient);
+    }
+
     public void processOneEvent(ObjectStatusEvent ev) 
             throws IOException, JsonClientException, ObjectParseException {
         switch (ev.getEventType()) {
@@ -310,6 +354,9 @@ public class MainObjectProcessor {
         case UNSHARED:
             unshare(ev.toGUID(), ev.getTargetAccessGroupId());
             break;
+        case RENAME_ALL_VERSIONS:
+            //TODO NOW rename handler
+            break;
         default:
             throw new IllegalStateException("Unsupported event type: " + ev.getEventType());
         }
@@ -332,6 +379,10 @@ public class MainObjectProcessor {
                     guid.getVersion();
             String nextCallerRefPath = (callerRefPath == null || callerRefPath.isEmpty() ? "" : 
                 (callerRefPath + ";")) + objRef;
+            /* ideally here you would select an implementation of an EventHandler
+             * based on the storageCode that knows how to fetch the data you need based on the
+             * nextCallerRefPath
+             */
             ObjectData obj = ObjectParser.loadObject(wsURL, tempFile, kbaseIndexerToken, 
                     nextCallerRefPath);
             if (logger != null) {

@@ -120,7 +120,7 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         PrintWriter logPw = new PrintWriter(logFile);
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, mongoHost,
                 mongoPort, mongoDbName, esHostPort, esUser, esPassword, esIndexPrefix, 
-                typesDir, tempDir, true, new LineLogger() {
+                typesDir, tempDir, true, true, new LineLogger() {
                     @Override
                     public void logInfo(String line) {
                         logPw.println(line);

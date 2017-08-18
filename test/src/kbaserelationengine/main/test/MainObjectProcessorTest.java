@@ -114,7 +114,7 @@ public class MainObjectProcessorTest {
         final HttpHost esHostPort = new HttpHost("localhost", es.getServerPort());
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, "localhost",
                 mongo.getServerPort(), dbName, esHostPort, null, null, esIndexPrefix, 
-                typesDir, tempDir.resolve("MainObjectProcessor").toFile(), false,
+                typesDir, tempDir.resolve("MainObjectProcessor").toFile(), false, false,
                 new LineLogger() {
                     @Override
                     public void logInfo(String line) {
