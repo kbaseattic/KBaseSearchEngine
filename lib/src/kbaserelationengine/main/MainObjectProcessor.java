@@ -301,7 +301,7 @@ public class MainObjectProcessor {
                     processOneEvent(ev);
                 } catch (Exception e) {
                     //TODO NOW with event expansion, this doesn't really work right.
-                    // Will skip the sub event - really should retry a few times then fail the parent event.
+                    // Will skip the sub event - should follow one of 3 strategies - retry, turn off the event handler, or ignore the parent event
                     logError(e);
                     iter.markAsVisitied(false);
                     continue;
