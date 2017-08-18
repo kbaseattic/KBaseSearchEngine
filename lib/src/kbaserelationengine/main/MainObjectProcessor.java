@@ -354,6 +354,9 @@ public class MainObjectProcessor {
         case UNSHARED:
             unshare(ev.toGUID(), ev.getTargetAccessGroupId());
             break;
+        case RENAME_ALL_VERSIONS:
+            //TODO NOW rename handler
+            break;
         default:
             throw new IllegalStateException("Unsupported event type: " + ev.getEventType());
         }
