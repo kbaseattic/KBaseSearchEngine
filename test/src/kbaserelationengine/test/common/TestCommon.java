@@ -38,6 +38,7 @@ public class TestCommon {
     
     public static final String AUTHSERV = "auth_service_url";
     public static final String TEST_TOKEN = "test_token";
+    public static final String TEST_TOKEN2 = "test.token2";
     public static final String GLOBUS = "test.globus.url";
     public static final String GLOBUS_DEFAULT =
             "https://ci.kbase.us/services/auth/api/legacy/Globus";
@@ -171,6 +172,20 @@ public class TestCommon {
             final ConfigurableAuthService auth) {
         try {
             return auth.validateToken(getToken());
+        } catch (AuthException | IOException e) {
+            throw new TestException(String.format(
+                    "Couldn't log in user with token : %s", e.getMessage()), e);
+        }
+    }
+    
+    public static String getToken2() {
+        return getTestProperty(TEST_TOKEN2);
+    }
+    
+    public static AuthToken getToken2(
+            final ConfigurableAuthService auth) {
+        try {
+            return auth.validateToken(getToken2());
         } catch (AuthException | IOException e) {
             throw new TestException(String.format(
                     "Couldn't log in user with token : %s", e.getMessage()), e);

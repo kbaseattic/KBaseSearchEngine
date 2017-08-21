@@ -55,4 +55,10 @@ public interface IndexingStorage {
     public FoundHits searchObjects(String objectType, MatchFilter matchFilter, 
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination,
             PostProcessing postProcessing) throws IOException;
+
+    /** Change the name of all the versions of an object.
+     * @param object the GUID of the object. The version field is ignored.
+     * @param newName the new name of the object.
+     */
+    void setNameOnAllObjectVersions(GUID object, String newName);
 }

@@ -676,6 +676,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     @Override
+    public void setNameOnAllObjectVersions(final GUID object, final String newName) {
+        //TODO NOW fill in
+    }
+    
+    @Override
     public void shareObjects(Set<GUID> guids, int accessGroupId) throws IOException {
         Map<String, Set<GUID>> indexToGuids = groupParentIdsByIndex(guids);
         for (String indexName : indexToGuids.keySet()) {
