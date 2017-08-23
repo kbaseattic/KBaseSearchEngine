@@ -237,6 +237,7 @@ public class WorkspaceEventHandler implements EventHandler {
                 origEvent.getAccessGroupId(),
                 obj.getE1() + "",
                 Math.toIntExact(obj.getE5()), // vers are always ints
+                null, // no rename
                 null, // not a datapalette share
                 origEvent.getTimestamp(), //TODO NOW switch to object timestamp
                 obj.getE3().split("-")[0],
