@@ -6,6 +6,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -68,6 +69,7 @@ import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
 import workspace.GetObjectInfo3Params;
+import workspace.GetObjectInfo3Results;
 import workspace.ObjectData;
 import workspace.ObjectSpecification;
 import workspace.WorkspaceClient;
@@ -379,6 +381,7 @@ public class MainObjectProcessor {
                     guid.getVersion();
             String nextCallerRefPath = (callerRefPath == null || callerRefPath.isEmpty() ? "" : 
                 (callerRefPath + ";")) + objRef;
+            //TODO HANDLER move this into handler API
             /* ideally here you would select an implementation of an EventHandler
              * based on the storageCode that knows how to fetch the data you need based on the
              * nextCallerRefPath
@@ -735,8 +738,12 @@ public class MainObjectProcessor {
                     List<ObjectSpecification> getInfoInput = refs.stream().map(
                             ref -> new ObjectSpecification().withRef(refPrefix + ref)).collect(
                                     Collectors.toList());
-                    List<ObjectStatusEvent> events = wsClient.getObjectInfo3(
-                            new GetObjectInfo3Params().withObjects(getInfoInput))
+                    //TODO HANDLER move this to the handler api
+                    final Map<String, Object> command = new HashMap<>();
+                    command.put("command", "getObjectInfo");
+                    command.put("params", new GetObjectInfo3Params().withObjects(getInfoInput));
+                    List<ObjectStatusEvent> events = wsClient.administer(new UObject(command))
+                            .asClassInstance(GetObjectInfo3Results.class)
                             .getInfos().stream().map(info -> new ObjectStatusEvent("", "WS", 
                                     (int)(long)info.getE7(), "" +info.getE1(), 
                                     (int)(long)info.getE5(), null, Util.DATE_PARSER.parseDateTime(

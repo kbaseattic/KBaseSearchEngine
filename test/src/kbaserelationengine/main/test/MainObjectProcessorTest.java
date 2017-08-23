@@ -44,6 +44,7 @@ import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
+import us.kbase.common.test.TestException;
 import us.kbase.common.test.controllers.mongo.MongoController;
 import workspace.CreateWorkspaceParams;
 import workspace.ObjectSaveData;
@@ -77,7 +78,11 @@ public class MainObjectProcessorTest {
         }
         final ConfigurableAuthService authSrv = new ConfigurableAuthService(
                 new AuthConfig().withKBaseAuthServerURL(authURL));
-        final AuthToken kbaseIndexerToken = TestCommon.getToken(authSrv);
+        final AuthToken userToken = TestCommon.getToken(authSrv);
+        final AuthToken wsadmintoken = TestCommon.getToken2(authSrv);
+        if (userToken.getUserName().equals(wsadmintoken.getUserName())) {
+            throw new TestException("The test tokens are for the same user");
+        }
 
         tempDir = Paths.get(TestCommon.getTempDir()).resolve("MainObjectProcessorTest");
         // should refactor to just use NIO at some point
@@ -101,7 +106,7 @@ public class MainObjectProcessorTest {
                 TestCommon.getWorkspaceVersion(),
                 TestCommon.getJarsDir(),
                 "localhost:" + mongo.getServerPort(), "MOPTestWSDB",
-                    kbaseIndexerToken.getUserName(),
+                    wsadmintoken.getUserName(),
                 authServiceRootURL,
                 tempDir);
         System.out.println("Started workspace on port " + ws.getServerPort());
@@ -112,7 +117,7 @@ public class MainObjectProcessorTest {
 
         final String esIndexPrefix = "test_" + System.currentTimeMillis() + ".";
         final HttpHost esHostPort = new HttpHost("localhost", es.getServerPort());
-        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, "localhost",
+        mop = new MainObjectProcessor(wsUrl, wsadmintoken, "localhost",
                 mongo.getServerPort(), dbName, esHostPort, null, null, esIndexPrefix, 
                 typesDir, tempDir.resolve("MainObjectProcessor").toFile(), false, false,
                 new LineLogger() {
@@ -132,23 +137,16 @@ public class MainObjectProcessorTest {
                     public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
                     }
                 }, null);
-        
-        wsid = (int) loadTestData(wsUrl, kbaseIndexerToken);
+        loadTypes(wsUrl, wsadmintoken);
+        wsid = (int) loadTestData(wsUrl, userToken);
     }
     
-    private static long loadTestData(final URL wsUrl, final AuthToken adminToken)
+    private static long loadTestData(final URL wsUrl, final AuthToken usertoken)
             throws IOException, JsonClientException {
-        final WorkspaceClient wc = new WorkspaceClient(wsUrl, adminToken);
+        final WorkspaceClient wc = new WorkspaceClient(wsUrl, usertoken);
         wc.setIsInsecureHttpConnectionAllowed(true);
         final long wsid = wc.createWorkspace(new CreateWorkspaceParams().withWorkspace("MOPTest"))
                 .getE1();
-        loadType(wc, "KBaseFile", "KBaseFile_ci_1477697265343",
-                Arrays.asList("SingleEndLibrary", "PairedEndLibrary"));
-        loadType(wc, "KBaseGenomeAnnotations", "KBaseGenomeAnnotations_ci_1471308269061",
-                Arrays.asList("Assembly"));
-        loadType(wc, "KBaseGenomes", "KBaseGenomes_ci_1482357978770", Arrays.asList("Genome"));
-        loadType(wc, "KBaseNarrative", "KBaseNarrative_ci_1436483557716",
-                Arrays.asList("Narrative"));
         
         loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject1");
         loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject2");
@@ -161,6 +159,18 @@ public class MainObjectProcessorTest {
         loadData(wc, wsid, "Paired", "KBaseFile.PairedEndLibrary-1.0", "PairedEndLibraryObject");
         loadData(wc, wsid, "reads.2", "KBaseFile.SingleEndLibrary-1.0", "SingleEndLibraryObject");
         return wsid;
+    }
+    
+    private static void loadTypes(final URL wsURL, final AuthToken wsadmintoken) throws Exception {
+        final WorkspaceClient wc = new WorkspaceClient(wsURL, wsadmintoken);
+        wc.setIsInsecureHttpConnectionAllowed(true);
+        loadType(wc, "KBaseFile", "KBaseFile_ci_1477697265343",
+                Arrays.asList("SingleEndLibrary", "PairedEndLibrary"));
+        loadType(wc, "KBaseGenomeAnnotations", "KBaseGenomeAnnotations_ci_1471308269061",
+                Arrays.asList("Assembly"));
+        loadType(wc, "KBaseGenomes", "KBaseGenomes_ci_1482357978770", Arrays.asList("Genome"));
+        loadType(wc, "KBaseNarrative", "KBaseNarrative_ci_1436483557716",
+                Arrays.asList("Narrative"));
     }
 
     private static void loadData(
