@@ -1,6 +1,12 @@
 package kbaserelationengine.test.common;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -198,5 +204,17 @@ public class TestCommon {
         ((ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory
                 .getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME))
                 .setLevel(ch.qos.logback.classic.Level.OFF);
+    }
+    
+    public static void assertExceptionCorrect(
+            final Exception got,
+            final Exception expected) {
+        final StringWriter sw = new StringWriter();
+        got.printStackTrace(new PrintWriter(sw));
+        assertThat("incorrect exception. trace:\n" +
+                sw.toString(),
+                got.getLocalizedMessage(),
+                is(expected.getLocalizedMessage()));
+        assertThat("incorrect exception type", got, instanceOf(expected.getClass()));
     }
 }

@@ -284,6 +284,7 @@ public class MainObjectProcessor {
         // Seems like this shouldn't be source specific. It should handle all event sources.
         ObjectStatusEventIterator iter = queue.iterator("WS");
         while (iter.hasNext()) {
+            //TODO NOW markAsVisited is called for every sub event, which is pointless. It should be called only when all sub events are processed.
             final ObjectStatusEvent preEvent = iter.next();
             for (final ObjectStatusEvent ev: getEventHandler(preEvent).expand(preEvent)) {
                 if (!isStorageTypeSupported(ev.getStorageObjectType())) {
@@ -526,7 +527,7 @@ public class MainObjectProcessor {
             throws IOException {
         List<Integer> accessGroupIds;
         if (toBool(af.getWithPrivate(), true)) {
-            accessGroupIds = accessGroupProvider.findAccessGroupIds("WS", user);
+            accessGroupIds = accessGroupProvider.findAccessGroupIds(user);
         } else {
             accessGroupIds = Collections.emptyList();
         }
