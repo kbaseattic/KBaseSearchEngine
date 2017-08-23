@@ -34,11 +34,13 @@ import kbaserelationengine.SearchTypesOutput;
 import kbaserelationengine.SortingRule;
 import kbaserelationengine.TypeDescriptor;
 import kbaserelationengine.common.GUID;
+import kbaserelationengine.events.AccessGroupCache;
 import kbaserelationengine.events.AccessGroupProvider;
 import kbaserelationengine.events.AccessGroupStatus;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.events.StatusEventListener;
+import kbaserelationengine.events.WorkspaceAccessGroupProvider;
 import kbaserelationengine.events.handler.EventHandler;
 import kbaserelationengine.events.handler.WorkspaceEventHandler;
 import kbaserelationengine.events.reconstructor.AccessType;
@@ -126,10 +128,12 @@ public class MainObjectProcessor {
         this.admins = admins == null ? Collections.emptySet() : admins;
         MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(mongoHost, mongoPort, mongoDbName);
         eventStorage = storage;
-        accessGroupProvider = storage;
         WSStatusEventReconstructorImpl reconstructor = new WSStatusEventReconstructorImpl(
                 wsURL, kbaseIndexerToken, eventStorage);
         wsClient = reconstructor.wsClient();
+        // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
+        accessGroupProvider = new AccessGroupCache(new WorkspaceAccessGroupProvider(wsClient),
+                30, 50000 * 1000);
         wsEventReconstructor = reconstructor;
         reconstructor.registerListener(storage);
         if (logger != null) {
@@ -284,6 +288,7 @@ public class MainObjectProcessor {
         // Seems like this shouldn't be source specific. It should handle all event sources.
         ObjectStatusEventIterator iter = queue.iterator("WS");
         while (iter.hasNext()) {
+            //TODO NOW markAsVisited is called for every sub event, which is pointless. It should be called only when all sub events are processed.
             final ObjectStatusEvent preEvent = iter.next();
             for (final ObjectStatusEvent ev: getEventHandler(preEvent).expand(preEvent)) {
                 if (!isStorageTypeSupported(ev.getStorageObjectType())) {
@@ -526,7 +531,7 @@ public class MainObjectProcessor {
             throws IOException {
         List<Integer> accessGroupIds;
         if (toBool(af.getWithPrivate(), true)) {
-            accessGroupIds = accessGroupProvider.findAccessGroupIds("WS", user);
+            accessGroupIds = accessGroupProvider.findAccessGroupIds(user);
         } else {
             accessGroupIds = Collections.emptyList();
         }

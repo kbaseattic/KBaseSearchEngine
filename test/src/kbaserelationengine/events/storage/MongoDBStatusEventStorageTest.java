@@ -63,7 +63,7 @@ public class MongoDBStatusEventStorageTest {
 
     @Test
     public void test02() throws IOException {
-        System.out.println(  mdStorage.findAccessGroupIds("WS", "psnovichkov") );
+        System.out.println(  mdStorage.findAccessGroupIds("psnovichkov") );
     }
 
 
