@@ -40,6 +40,7 @@ import kbaserelationengine.events.AccessGroupStatus;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.events.StatusEventListener;
+import kbaserelationengine.events.WorkspaceAccessGroupProvider;
 import kbaserelationengine.events.handler.EventHandler;
 import kbaserelationengine.events.handler.WorkspaceEventHandler;
 import kbaserelationengine.events.reconstructor.AccessType;
@@ -127,11 +128,12 @@ public class MainObjectProcessor {
         this.admins = admins == null ? Collections.emptySet() : admins;
         MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(mongoHost, mongoPort, mongoDbName);
         eventStorage = storage;
-        // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
-        accessGroupProvider = new AccessGroupCache(storage, 30, 50000 * 1000);
         WSStatusEventReconstructorImpl reconstructor = new WSStatusEventReconstructorImpl(
                 wsURL, kbaseIndexerToken, eventStorage);
         wsClient = reconstructor.wsClient();
+        // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
+        accessGroupProvider = new AccessGroupCache(new WorkspaceAccessGroupProvider(wsClient),
+                30, 50000 * 1000);
         wsEventReconstructor = reconstructor;
         reconstructor.registerListener(storage);
         if (logger != null) {
