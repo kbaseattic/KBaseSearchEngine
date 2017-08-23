@@ -229,6 +229,7 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 					(Integer)dobj.get("accessGroupId"),
 					(String)dobj.get("accessGroupObjectId"),
 					(Integer)dobj.get("version"),
+					(String) dobj.get("newName"),
 					(Integer)dobj.get("targetAccessGroupId"),
 					(Long)dobj.get("timestamp"),
 					(String)dobj.get("storageObjectType"),

@@ -236,7 +236,7 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testGenomeManually() throws Exception {
-        ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", wsid, "3", 1, null, 
+        ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", wsid, "3", 1, null, null,
                 System.currentTimeMillis(), "KBaseGenomes.Genome", ObjectStatusEventType.CREATED, false);
         mop.processOneEvent(ev);
         PostProcessing pp = new PostProcessing();
@@ -267,7 +267,7 @@ public class MainObjectProcessorTest {
     private void indexFewVersions(ObjectStatusEvent ev) throws Exception {
         for (int i = Math.max(1, ev.getVersion() - 5); i <= ev.getVersion(); i++) {
             mop.processOneEvent(new ObjectStatusEvent(ev.getId(), ev.getStorageCode(), 
-                    ev.getAccessGroupId(), ev.getAccessGroupObjectId(), i, 
+                    ev.getAccessGroupId(), ev.getAccessGroupObjectId(), i, null,
                     ev.getTargetAccessGroupId(), ev.getTimestamp(), ev.getStorageObjectType(),
                     ev.getEventType(), ev.isGlobalAccessed()));
         }
@@ -290,7 +290,7 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testNarrativeManually() throws Exception {
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "1", 5, null, 
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "1", 5, null, null,
                 System.currentTimeMillis(), "KBaseNarrative.Narrative", 
                 ObjectStatusEventType.CREATED, false));
         checkSearch(1, "Narrative", "tree", wsid, false);
@@ -309,12 +309,12 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testReadsManually() throws Exception {
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "4", 1, null, 
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "4", 1, null, null,
                 System.currentTimeMillis(), "KBaseFile.PairedEndLibrary", 
                 ObjectStatusEventType.CREATED, false));
         checkSearch(1, "PairedEndLibrary", "Illumina", wsid, true);
         checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "5", 1, null, 
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "5", 1, null, null,
                 System.currentTimeMillis(), "KBaseFile.SingleEndLibrary", 
                 ObjectStatusEventType.CREATED, false));
         checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);

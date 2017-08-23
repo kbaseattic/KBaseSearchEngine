@@ -189,7 +189,7 @@ public class PerformanceTester {
                 int wsId = Integer.parseInt(parts[0]);
                 int version = Integer.parseInt(parts[2]);
                 ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", wsId, parts[1], version, 
-                        null, System.currentTimeMillis(), "KBaseGenomes.Genome", 
+                        null, null, System.currentTimeMillis(), "KBaseGenomes.Genome", 
                         ObjectStatusEventType.CREATED, true);
                 long t2 = System.currentTimeMillis();
                 try {

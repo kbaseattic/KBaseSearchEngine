@@ -59,6 +59,8 @@ public interface IndexingStorage {
     /** Change the name of all the versions of an object.
      * @param object the GUID of the object. The version field is ignored.
      * @param newName the new name of the object.
+     * @return the number of documents modified, including sub objects.
+     * @throws IOException if an IO error occurs when contacting the indexing storage.
      */
-    void setNameOnAllObjectVersions(GUID object, String newName);
+    int setNameOnAllObjectVersions(GUID object, String newName) throws IOException;
 }

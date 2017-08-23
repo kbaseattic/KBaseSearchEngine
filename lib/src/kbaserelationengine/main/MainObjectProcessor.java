@@ -291,17 +291,18 @@ public class MainObjectProcessor {
             //TODO NOW markAsVisited is called for every sub event, which is pointless. It should be called only when all sub events are processed.
             final ObjectStatusEvent preEvent = iter.next();
             for (final ObjectStatusEvent ev: getEventHandler(preEvent).expand(preEvent)) {
-                if (!isStorageTypeSupported(ev.getStorageObjectType())) {
+                final String type = ev.getStorageObjectType();
+                if (type != null && !isStorageTypeSupported(type)) {
                     if (logger != null) {
                         logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
-                                ev.getStorageObjectType() + ", " + ev.toGUID());
+                                type + ", " + ev.toGUID());
                     }
                     iter.markAsVisitied(false);
                     continue;
                 }
                 if (logger != null) {
                     logger.logInfo("[Indexer] processing " + ev.getEventType() + ", " + 
-                            ev.getStorageObjectType() + ", " + ev.toGUID() + "...");
+                            type + ", " + ev.toGUID() + "...");
                 }
                 long time = System.currentTimeMillis();
                 try {
@@ -362,7 +363,7 @@ public class MainObjectProcessor {
             unshare(ev.toGUID(), ev.getTargetAccessGroupId());
             break;
         case RENAME_ALL_VERSIONS:
-            //TODO NOW rename handler
+            renameAllVersions(ev.toGUID(), ev.getNewName());
             break;
         default:
             throw new IllegalStateException("Unsupported event type: " + ev.getEventType());
@@ -454,6 +455,10 @@ public class MainObjectProcessor {
 
     public void unpublish(GUID guid) throws IOException {
         indexingStorage.unpublishObjects(new LinkedHashSet<>(Arrays.asList(guid)));
+    }
+    
+    private void renameAllVersions(final GUID guid, final String newName) throws IOException {
+        indexingStorage.setNameOnAllObjectVersions(guid, newName);
     }
 
     public IndexingStorage getIndexingStorage(String objectType) {
@@ -751,8 +756,9 @@ public class MainObjectProcessor {
                             .asClassInstance(GetObjectInfo3Results.class)
                             .getInfos().stream().map(info -> new ObjectStatusEvent("", "WS", 
                                     (int)(long)info.getE7(), "" +info.getE1(), 
-                                    (int)(long)info.getE5(), null, Util.DATE_PARSER.parseDateTime(
-                                            info.getE4()).getMillis(), info.getE3().split("-")[0],
+                                    (int)(long)info.getE5(), null, null,
+                                    Util.DATE_PARSER.parseDateTime(info.getE4()).getMillis(),
+                                    info.getE3().split("-")[0],
                                     ObjectStatusEventType.CREATED, false)).collect(
                                             Collectors.toList());
                     for (int pos = 0; pos < getInfoInput.size(); pos++) {
