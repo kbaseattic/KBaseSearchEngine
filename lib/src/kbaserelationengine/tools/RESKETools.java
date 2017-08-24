@@ -7,9 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.slf4j.LoggerFactory;
@@ -20,6 +17,7 @@ import com.beust.jcommander.ParameterException;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import kbaserelationengine.tools.RESKEToolsConfig.RESKEToolsConfigException;
 
 /** Tools for working with RESKE.
  * @author gaprice@lbl.gov
@@ -89,9 +87,9 @@ public class RESKETools {
             usage(jc);
             return 0;
         }
-        final Map<String, String> cfg;
+        final RESKEToolsConfig cfg;
         try {
-            cfg = getConfig(a);
+            cfg = getConfig(a.configPath);
         } catch (NoSuchFileException e) {
             printError("No such file", e, a);
             return 1;
@@ -101,20 +99,28 @@ public class RESKETools {
         } catch (IOException e) {
             printError(e, a);
             return 1;
+        } catch (RESKEToolsConfigException e) {
+            printError("For config file " + a.configPath, e, a);
+            return 1;
         }
-        out.println(cfg);
-        return 0;
+        return runEventGenerator(cfg, a.ref, a.verbose);
     }
     
-    private Map<String, String> getConfig(final Args a) throws IOException {
-        final Path path = Paths.get(a.configPath);
+    private int runEventGenerator(
+            final RESKEToolsConfig cfg,
+            final String ref,
+            final boolean verbose) {
+        System.out.println(cfg);
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    private RESKEToolsConfig getConfig(final String configPath)
+            throws IOException, RESKEToolsConfigException {
+        final Path path = Paths.get(configPath);
         final Properties p = new Properties();
         p.load(Files.newInputStream(path));
-        final Map<String, String> cfg = new HashMap<>();
-        for (final Entry<Object, Object> e: p.entrySet()) {
-            cfg.put((String) e.getKey(), (String) e.getValue());
-        }
-        return cfg;
+        return RESKEToolsConfig.from(p);
     }
 
     private void usage(final JCommander jc) {
