@@ -679,12 +679,19 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public int setNameOnAllObjectVersions(final GUID object, final String newName)
             throws IOException {
+        return setFieldOnObjectForAllVersions(object, "oname", newName);
+    }
+    
+    private int setFieldOnObjectForAllVersions(
+            final GUID object,
+            final String field,
+            final Object value)
+            throws IOException {
         final String index = getAnyIndexPattern();
         final String prefix = toGUIDPrefix(object);
-        // probably should generalize the setting a field op into one script
         final Map<String, Object> script = ImmutableMap.of(
-                "inline", "ctx._source.oname = params.new_name",
-                "params", ImmutableMap.of("new_name", newName));
+                "inline", "ctx._source[params.field] = params.value",
+                "params", ImmutableMap.of("field", field, "value", value));
         final Map<String, Object> doc = ImmutableMap.of(
                 "query", createFilter("term", "prefix", prefix),
                 "script", script);
@@ -710,7 +717,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     if (updateBooleanFieldInData(indexName, guid, "public", true)) {
                         needRefresh = true;
                     }
-                } else {
+                } else if (accessGroupId != guid.getAccessGroupId()) {
                     if (updateBooleanFieldInData(indexName, guid, "shared", true)) {
                         needRefresh = true;
                     }
@@ -736,11 +743,31 @@ public class ElasticIndexingStorage implements IndexingStorage {
                         needRefresh = true;
                     }
                 }
+                //TODO NOW how is share bit unset?
             }
             if (needRefresh) {
                 refreshIndex(indexName);
             }
         }
+    }
+    
+    @Override
+    public void deleteAllVersions(final GUID guid) throws IOException {
+        final String indexName = getAnyIndexPattern();
+        final String prefix = toGUIDPrefix(guid);
+        final HashMap<String, Object> params = new HashMap<>();
+        params.put("accgrp", guid.getAccessGroupId());
+        final Map<String, Object> script = ImmutableMap.of(
+                "inline", "ctx._source.lastin.remove(ctx._source.lastin.indexOf(params.accgrp));",
+                "params", params);
+        final Map<String, Object> query = ImmutableMap.of("bool", ImmutableMap.of("must",
+                Arrays.asList(createFilter("term", "prefix", prefix),
+                        createFilter("term", "lastin", guid.getAccessGroupId()))));
+        final Map<String, Object> doc = ImmutableMap.of("query", query, "script", script);
+        final String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_update_by_query";
+        makeRequest("POST", urlPath, doc);
+        setFieldOnObjectForAllVersions(guid, "public", false);
+        //TODO NOW this doesn't handle removing public (-1) from the access doc because it can't know that's the right thing to do
     }
     
     @Override

@@ -66,7 +66,6 @@ public class WorkspaceEventHandler implements EventHandler {
         }
     }
 
-    //TODO NOW test this.
     private Iterable<ObjectStatusEvent> handleNewAccessGroup(final ObjectStatusEvent event) {
         return new Iterable<ObjectStatusEvent>() {
 
