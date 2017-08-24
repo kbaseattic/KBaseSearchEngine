@@ -19,7 +19,7 @@ import com.beust.jcommander.ParameterException;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
-import kbaserelationengine.tools.EventGenerator.EventGeneratorException;
+import kbaserelationengine.tools.WorkspaceEventGenerator.EventGeneratorException;
 import kbaserelationengine.tools.RESKEToolsConfig.RESKEToolsConfigException;
 
 /** Tools for working with RESKE.
@@ -107,7 +107,7 @@ public class RESKETools {
             final String ref,
             final boolean verbose) {
         try {
-            final EventGenerator gen = new EventGenerator.Builder(cfg)
+            final WorkspaceEventGenerator gen = new WorkspaceEventGenerator.Builder(cfg)
                     .withNullableRef(ref).build();
             gen.generateEvents();
             gen.destroy();

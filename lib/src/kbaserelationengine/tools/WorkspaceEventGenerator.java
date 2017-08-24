@@ -14,13 +14,16 @@ import com.mongodb.MongoException;
 import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoDatabase;
 
-public class EventGenerator {
+public class WorkspaceEventGenerator {
     
     private static final int WS_COMPATIBLE_SCHEMA = 1;
     private static final String WS_COL_CONFIG = "config";
     private static final String WS_KEY_SCHEMAVER = "schemaver";
     private static final String WS_KEY_IN_UPDATE = "inupdate";
 
+    //TODO EVENTGEN handle data palettes: 1) remove all sharing for ws 2) pull DP 3) add share events for all DP objects. RC still possible.
+    
+    //TODO NOW actually use these
     private final int ws;
     private final int obj;
     private final int ver;
@@ -30,7 +33,7 @@ public class EventGenerator {
     private final MongoClient wsClient;
     private final MongoDatabase wsDB;
     
-    private EventGenerator(
+    private WorkspaceEventGenerator(
             final RESKEToolsConfig cfg,
             final int ws,
             final int obj,
@@ -47,7 +50,7 @@ public class EventGenerator {
                 reskeClient = new MongoClient(new ServerAddress(cfg.getReskeMongoHost()), creds);
                 wsClient = reskeClient;
             } catch (MongoException e) {
-                throw convert(e);
+                throw convert(e, null);
             }
         } else {
             reskeClient = getClient(cfg.getReskeMongoHost(), cfg.getReskeMongoDB(),
@@ -59,17 +62,26 @@ public class EventGenerator {
         reskeDB = reskeClient.getDatabase(cfg.getReskeMongoDB());
         wsDB = wsClient.getDatabase(cfg.getWorkspaceMongoDB());
         checkWorkspaceSchema();
-        //TODO NOW check reske connection
+        checkReskeConnection();
     }
     
+    private void checkReskeConnection() throws EventGeneratorException {
+        try {
+            // collection may not exist yet so this is the best we can do
+            reskeDB.listCollectionNames();
+        } catch (MongoException e) {
+            throw convert(e, "RESKE");
+        }
+    }
+
     public void destroy() {
         reskeClient.close();
         wsClient.close();
     }
 
-    private EventGeneratorException convert(MongoException e) {
-        return new EventGeneratorException(
-                "Error connecting to database: " + e.getMessage(), e);
+    private EventGeneratorException convert(final MongoException e, final String db) {
+        return new EventGeneratorException(String.format("Error connecting to %sdatabase: ",
+                db == null ? "" : db + " ") + e.getMessage(), e);
     }
 
     private void checkWorkspaceSchema() throws EventGeneratorException {
@@ -88,7 +100,7 @@ public class EventGenerator {
                 throw new EventGeneratorException("Workspace schema is mid-update.");
             }
         } catch (MongoException e) {
-            throw convert(e);
+            throw convert(e, "workspace");
         }
     }
 
@@ -100,7 +112,7 @@ public class EventGenerator {
         try {
             return new MongoClient(new ServerAddress(host), getCred(db, user, pwd));
         } catch (MongoException e) {
-            throw convert(e);
+            throw convert(e, db);
         }
     }
 
@@ -169,8 +181,8 @@ public class EventGenerator {
             return -1;
         }
 
-        public EventGenerator build() throws EventGeneratorException {
-            return new EventGenerator(cfg, ws, obj, ver);
+        public WorkspaceEventGenerator build() throws EventGeneratorException {
+            return new WorkspaceEventGenerator(cfg, ws, obj, ver);
         }
         
     }
