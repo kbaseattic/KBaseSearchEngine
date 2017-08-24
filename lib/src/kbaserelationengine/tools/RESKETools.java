@@ -1,5 +1,7 @@
 package kbaserelationengine.tools;
 
+import static kbaserelationengine.tools.Utils.nonNull;
+
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.AccessDeniedException;
@@ -17,6 +19,7 @@ import com.beust.jcommander.ParameterException;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import kbaserelationengine.tools.EventGenerator.EventGeneratorException;
 import kbaserelationengine.tools.RESKEToolsConfig.RESKEToolsConfigException;
 
 /** Tools for working with RESKE.
@@ -31,7 +34,6 @@ public class RESKETools {
      * @param args the program arguments.
      */
     public static void main(String[] args) {
-        // these lines are only tested manually, so don't make changes without testing manually.
         System.exit(new RESKETools(args, System.out, System.err).execute());
     }
     
@@ -58,12 +60,6 @@ public class RESKETools {
         quietLogger();
     }
     
-    private static void nonNull(final Object o, final String message) {
-        if (o == null) {
-            throw new NullPointerException(message);
-        }
-    }
-    
     private void quietLogger() {
         ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME))
                 .setLevel(Level.OFF);
@@ -80,7 +76,7 @@ public class RESKETools {
         try {
             jc.parse(args);
         } catch (ParameterException e) {
-            printError(e, a);
+            printError(e, a.verbose);
             return 1;
         }
         if (a.help) {
@@ -91,16 +87,16 @@ public class RESKETools {
         try {
             cfg = getConfig(a.configPath);
         } catch (NoSuchFileException e) {
-            printError("No such file", e, a);
+            printError("No such file", e, a.verbose);
             return 1;
         } catch (AccessDeniedException e) {
-            printError("Access denied", e, a);
+            printError("Access denied", e, a.verbose);
             return 1;
         } catch (IOException e) {
-            printError(e, a);
+            printError(e, a.verbose);
             return 1;
         } catch (RESKEToolsConfigException e) {
-            printError("For config file " + a.configPath, e, a);
+            printError("For config file " + a.configPath, e, a.verbose);
             return 1;
         }
         return runEventGenerator(cfg, a.ref, a.verbose);
@@ -110,8 +106,15 @@ public class RESKETools {
             final RESKEToolsConfig cfg,
             final String ref,
             final boolean verbose) {
-        System.out.println(cfg);
-        // TODO Auto-generated method stub
+        try {
+            final EventGenerator gen = new EventGenerator.Builder(cfg)
+                    .withNullableRef(ref).build();
+            gen.generateEvents();
+            gen.destroy();
+        } catch (EventGeneratorException e) {
+            printError(e, verbose);
+            return 1;
+        }
         return 0;
     }
 
@@ -129,16 +132,16 @@ public class RESKETools {
         out.println(sb.toString());
     }
     
-    private void printError(final Throwable e, final Args a) {
-        printError("Error", e, a);
+    private void printError(final Throwable e, final boolean verbose) {
+        printError("Error", e, verbose);
     }
     
     private void printError(
             final String msg,
             final Throwable e,
-            final Args a) {
+            final boolean verbose) {
         err.println(msg + ": " + e.getMessage());
-        if (a.verbose) {
+        if (verbose) {
             e.printStackTrace(err);
         }
     }
