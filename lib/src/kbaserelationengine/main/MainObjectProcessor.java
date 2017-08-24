@@ -356,6 +356,12 @@ public class MainObjectProcessor {
         case DELETED:
             unshare(ev.toGUID(), ev.getAccessGroupId());
             break;
+        case DELETE_ALL_VERSIONS:
+            unshareAllVersions(ev.toGUID());
+            break;
+        case UNDELETE_ALL_VERSIONS:
+            shareAllVersions(ev.toGUID());
+            break;
         case SHARED:
             share(ev.toGUID(), ev.getTargetAccessGroupId());
             break;
@@ -444,9 +450,18 @@ public class MainObjectProcessor {
     public void share(GUID guid, int accessGroupId) throws IOException {
         indexingStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
     }
+    
+    public void shareAllVersions(final GUID guid) throws IOException {
+//        indexingStorage.shareAllVersions(guid);
+        //TODO NOW fill in
+    }
 
     public void unshare(GUID guid, int accessGroupId) throws IOException {
         indexingStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
+    }
+
+    public void unshareAllVersions(final GUID guid) throws IOException {
+        indexingStorage.deleteAllVersions(guid);
     }
 
     public void publish(GUID guid) throws IOException {

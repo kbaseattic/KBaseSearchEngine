@@ -10,5 +10,7 @@ public enum ObjectStatusEventType {
 	UNPUBLISHED,
 	NEW_ALL_VERSIONS,
 	RENAME_ALL_VERSIONS,
-	COPY_ACCESS_GROUP; //TODO ACL need to add the access group details to mongo (maybe)
+	DELETE_ALL_VERSIONS,
+	UNDELETE_ALL_VERSIONS,
+	COPY_ACCESS_GROUP;
 }

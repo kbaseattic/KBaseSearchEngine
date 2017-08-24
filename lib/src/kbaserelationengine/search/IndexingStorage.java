@@ -63,4 +63,11 @@ public interface IndexingStorage {
      * @throws IOException if an IO error occurs when contacting the indexing storage.
      */
     int setNameOnAllObjectVersions(GUID object, String newName) throws IOException;
+
+    /** Delete all versions of an object from its access group. The object may still be
+     * accessible via other access groups.
+     * @param guid the object to delete.
+     * @throws IOException if an IO error occurs when contacting the indexing storage.
+     */
+    void deleteAllVersions(GUID guid) throws IOException;
 }
