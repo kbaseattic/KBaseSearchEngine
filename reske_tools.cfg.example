@@ -5,3 +5,5 @@ workspace-mongo-pwd=
 
 reske-mongo-host=
 reske-mongo-db=
+
+workspace-id-blacklist=

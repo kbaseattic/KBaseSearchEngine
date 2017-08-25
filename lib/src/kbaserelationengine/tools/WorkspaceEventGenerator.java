@@ -1,14 +1,18 @@
 package kbaserelationengine.tools;
 
 import static kbaserelationengine.tools.Utils.nonNull;
+import static kbaserelationengine.tools.Utils.noNulls;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.bson.Document;
 
@@ -71,18 +75,21 @@ public class WorkspaceEventGenerator {
     private final StatusEventStorage storage;
     private final MongoDatabase wsDB;
     private final PrintStream logtarget;
+    private final Set<Integer> wsBlackList;
     
     private WorkspaceEventGenerator(
             final RESKEToolsConfig cfg,
             final int ws,
             final int obj,
             final int ver,
-            final PrintStream logtarget)
+            final PrintStream logtarget,
+            final List<Integer> wsBlackList)
             throws EventGeneratorException {
         this.ws = ws;
         this.obj = obj;
         this.ver = ver;
         this.logtarget = logtarget;
+        this.wsBlackList = Collections.unmodifiableSet(new HashSet<>(wsBlackList));
         if (cfg.getReskeMongoHost().equals(cfg.getWorkspaceMongoHost())) {
             final List<MongoCredential> creds = new LinkedList<>();
             addCred(cfg.getReskeMongoDB(), cfg.getReskeMongoUser(), cfg.getReskeMongoPwd(), creds);
@@ -177,7 +184,9 @@ public class WorkspaceEventGenerator {
                         .find().sort(new Document(WS_KEY_WS_ID, 1));
                 for (final Document ws: cur) {
                     final int wsid = Math.toIntExact(ws.getLong(WS_KEY_WS_ID));
-                    if (ws.getBoolean(WS_KEY_WS_DEL)) {
+                    if (wsBlackList.contains(wsid)) {
+                        log("Skipping blacklisted workspace " + wsid);
+                    } else if (ws.getBoolean(WS_KEY_WS_DEL)) {
                         log("Skipping deleted workspace " + wsid);
                     } else {
                         processWorkspace(wsid);
@@ -330,6 +339,7 @@ public class WorkspaceEventGenerator {
         private int obj = -1;
         private int ver = -1;
         private PrintStream logtarget;
+        private List<Integer> wsBlackList = new LinkedList<>();
         
         public Builder(final RESKEToolsConfig cfg, final PrintStream logtarget) {
             nonNull(cfg, "cfg");
@@ -367,10 +377,17 @@ public class WorkspaceEventGenerator {
             return -1;
         }
 
-        public WorkspaceEventGenerator build() throws EventGeneratorException {
-            return new WorkspaceEventGenerator(cfg, ws, obj, ver, logtarget);
+        public Builder withWorkspaceBlacklist(List<Integer> wsBlackList) {
+            nonNull(wsBlackList, "wsBlackList");
+            noNulls(wsBlackList, "null event in wsBlackList");
+            this.wsBlackList = wsBlackList;
+            return this;
         }
-        
+
+        public WorkspaceEventGenerator build() throws EventGeneratorException {
+            return new WorkspaceEventGenerator(cfg, ws, obj, ver, logtarget, wsBlackList);
+        }
+
     }
     
     @SuppressWarnings("serial")
