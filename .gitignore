@@ -2,3 +2,5 @@ test_local
 sdk.cfg
 bin
 /temp_test/
+/dist/
+/reske_tools.cfg

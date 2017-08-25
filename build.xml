@@ -17,6 +17,7 @@
   <property name="web.xml" location="${scripts}/web.xml"/>
   <property name="exec.cmd.file" value="run_KBaseRelationEngine_async_job.sh"/>
   <property name="exec.cmd.file2" value="run_KBaseRelationEngine_perform.sh"/>
+  <property name="exec.cmd.reske_tools" value="reske_tools.sh"/>
   <property name="startup.cmd.file" value="start_server.sh"/>
 
   <fileset dir="${jars.dir}" id="lib">
@@ -39,6 +40,7 @@
     <include name="apache_commons/commons-logging-1.1.1.jar"/>
     <include name="apache_commons/commons-io-2.4.jar"/>
     <include name="google/guava-18.0.jar"/>
+    <include name="jcommander/jcommander-1.48.jar"/>
     <!-- mockito and dependencies -->
     <include name="mockito/mockito-core-2.7.10.jar"/>
     <include name="bytebuddy/byte-buddy-1.6.8.jar"/>
@@ -76,9 +78,13 @@
 branch=${git.branch}
 commit=${git.commit}</echo>
     <!-- Compile class files-->
-    <javac destdir="${classes}" includeantruntime="false"
-            target="1.8" source="1.8" debug="true"
-            classpathref="compile.classpath" compiler="modern">
+    <javac destdir="${classes}"
+        includeantruntime="false"
+        target="1.8"
+        source="1.8"
+        debug="true"
+        classpathref="compile.classpath"
+        compiler="modern">
       <src refid="src.path"/>
     </javac>
     <!-- Copy resource files-->
@@ -110,7 +116,9 @@ commit=${git.commit}</echo>
     <copy file="${dist}/${war.file}" tofile="${scripts}/webapps/root.war"/>
   </target>
 
-  <target name="build-executable-script" description="create command-line script">
+  <target name="build-executable-script"
+      depends="compile"
+      description="create command-line script">
     <mkdir dir="${bin}"/>
     <property name="jar.absolute.path" location="${dist}/${jar.file}"/>
     <pathconvert targetos="unix" property="lib.classpath" refid="compile.classpath"/>
@@ -122,8 +130,12 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbaserelationengine.KBaseRelation
 java -Xmx2g -cp ${jar.absolute.path}:${lib.classpath} kbaserelationengine.main.test.PerformanceTester
     </echo>
     <chmod file="${bin}/${exec.cmd.file2}" perm="a+x"/>
+    <echo file="${bin}/${exec.cmd.reske_tools}">#!/bin/sh
+java -cp ${jar.absolute.path}:${lib.classpath} kbaserelationengine.tools.RESKETools $@
+    </echo>
+    <chmod file="${bin}/${exec.cmd.reske_tools}" perm="a+x"/>
   </target>
-  
+	
   <target name="test" description="run all tests">
     <junit printsummary="yes" haltonfailure="yes" fork="true">
       <classpath>
