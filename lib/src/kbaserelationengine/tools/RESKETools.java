@@ -99,15 +99,16 @@ public class RESKETools {
             printError("For config file " + a.configPath, e, a.verbose);
             return 1;
         }
-        return runEventGenerator(cfg, a.ref, a.verbose);
+        return runEventGenerator(cfg, out, a.ref, a.verbose);
     }
     
     private int runEventGenerator(
             final RESKEToolsConfig cfg,
+            final PrintStream logtarget,
             final String ref,
             final boolean verbose) {
         try {
-            final WorkspaceEventGenerator gen = new WorkspaceEventGenerator.Builder(cfg)
+            final WorkspaceEventGenerator gen = new WorkspaceEventGenerator.Builder(cfg, logtarget)
                     .withNullableRef(ref).build();
             gen.generateEvents();
             gen.destroy();
