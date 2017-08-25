@@ -6,4 +6,5 @@ workspace-mongo-pwd=
 reske-mongo-host=
 reske-mongo-db=
 
+# a comma delimited list of integer workspace ids to ignore.
 workspace-id-blacklist=
