@@ -2,6 +2,7 @@ package kbaserelationengine.events.storage;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -47,17 +48,17 @@ public class MongoDBStatusEventStorageTest {
     @Before
     public void init() throws Exception {
         TestCommon.destroyDB(db);
-        mdStorage  = new MongoDBStatusEventStorage("localhost", mongo.getServerPort());
+        mdStorage  = new MongoDBStatusEventStorage(db);
     }
 
     //@Test
     public void test01() throws IOException {
         AccessGroupStatus gs;
 
-        gs = new AccessGroupStatus(null, "WS", 10, 123L,false,false, new String[]{"u1", "u2"});
+        gs = new AccessGroupStatus(null, "WS", 10, 123L,false,false, Arrays.asList("u1", "u2"));
         mdStorage.store(gs);
 
-        gs = new AccessGroupStatus(null, "WS", 11, 123L, false,false, new String[]{"u1", "u50"});
+        gs = new AccessGroupStatus(null, "WS", 11, 123L, false,false, Arrays.asList("u1", "u50"));
         mdStorage.store(gs);
     }
 

@@ -2,6 +2,7 @@ package kbaserelationengine.tools;
 
 import static kbaserelationengine.tools.Utils.nonNull;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.time.Instant;
 import java.util.HashMap;
@@ -20,7 +21,10 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 
+import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
+import kbaserelationengine.events.storage.MongoDBStatusEventStorage;
+import kbaserelationengine.events.storage.StatusEventStorage;
 
 /** Generates events from the workspace and inserts them into the RESKE queue.
  * 
@@ -63,9 +67,8 @@ public class WorkspaceEventGenerator {
     private final int ver;
     
     private final MongoClient reskeClient;
-    private final MongoDatabase reskeDB;
     private final MongoClient wsClient;
-//    private final StatusEventStorage storage;
+    private final StatusEventStorage storage;
     private final MongoDatabase wsDB;
     private final PrintStream logtarget;
     
@@ -98,21 +101,11 @@ public class WorkspaceEventGenerator {
                     cfg.getWorkspaceMongoUser(), cfg.getWorkspaceMongoPwd());
             
         }
-        reskeDB = reskeClient.getDatabase(cfg.getReskeMongoDB());
+        storage = new MongoDBStatusEventStorage(reskeClient.getDatabase(cfg.getReskeMongoDB()));
         wsDB = wsClient.getDatabase(cfg.getWorkspaceMongoDB());
         checkWorkspaceSchema();
-        checkReskeConnection();
     }
     
-    private void checkReskeConnection() throws EventGeneratorException {
-        try {
-            // collection may not exist yet so this is the best we can do
-            reskeDB.listCollectionNames();
-        } catch (MongoException e) {
-            throw convert(e, "RESKE");
-        }
-    }
-
     public void destroy() {
         reskeClient.close();
         wsClient.close();
@@ -226,23 +219,28 @@ public class WorkspaceEventGenerator {
         }
     }
 
-    private void generateEvent(final int wsid, final boolean pub, final Document ver) {
-        //TODO NOW use StatusEventStorage
+    private void generateEvent(final int wsid, final boolean pub, final Document ver)
+            throws EventGeneratorException {
         final int objid = Math.toIntExact(ver.getLong(WS_KEY_OBJ_ID));
         final int vernum = ver.getInteger(WS_KEY_VER);
         final String type = ver.getString(WS_KEY_TYPE).split("-")[0];
-        reskeDB.getCollection("ObjectStatusEvents").insertOne(new Document()
-                .append("storageCode", "WS")
-                .append("accessGroupId", wsid)
-                .append("accessGroupObjectId", objid)
-                .append("version", vernum)
-                .append("targetAccessGroupId", null)
-                .append("timestamp", ver.getDate(WS_KEY_SAVEDATE))
-                .append("eventType", ObjectStatusEventType.NEW_VERSION.toString())
-                .append("storageObjectType", type)
-                .append("isGlobalAccessed", pub)
-                .append("indexed", false)
-                .append("processed", false));
+        try {
+            storage.store(new ObjectStatusEvent(
+                    null, // no mongo id
+                    "WS",
+                    wsid,
+                    objid + "",
+                    vernum,
+                    null,
+                    null,
+                    ver.getDate(WS_KEY_SAVEDATE).getTime(),
+                    type,
+                    ObjectStatusEventType.NEW_VERSION,
+                    pub));
+        } catch (IOException e) {
+            throw new EventGeneratorException("Error saving event to RESKE db: " + e.getMessage(),
+                    e);
+        }
         log(String.format("Generated event %s/%s/%s %s", wsid, objid, vernum, type));
     }
 

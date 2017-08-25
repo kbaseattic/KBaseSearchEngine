@@ -12,11 +12,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.joda.time.ReadableInstant;
 
 import kbaserelationengine.events.AccessGroupStatus;
 import kbaserelationengine.events.ObjectStatusEvent;
@@ -364,7 +363,6 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
 			// Get full list of users who can access this workspace
 			WorkspaceIdentity params = new WorkspaceIdentity().withId((long)ws.wsId);
 	    	Map<String, String> usersMap = wsClient.getPermissions(params);
-			String[] users = usersMap.keySet().toArray(new String[usersMap.size()]);
 			
 			AccessGroupStatus ag = new AccessGroupStatus(
 					ws.ag != null ? ws.ag.getId() : null, 
@@ -373,7 +371,7 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
 					ws.timestamp, 
 					ws.isPrivate,
 					ws.isDeleted, 
-					users);
+					new LinkedList<>(usersMap.keySet()));
 			accessGroupStates.add(ag);			
 		}
 	}	
