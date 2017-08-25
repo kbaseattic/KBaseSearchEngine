@@ -66,7 +66,6 @@ public class WorkspaceEventGenerator {
     //TODO EVENTGEN handle data palettes: 1) remove all sharing for ws 2) pull DP 3) add share events for all DP objects. RC still possible.
     
     private final int ws;
-    //TODO NOW actually use these
     private final int obj;
     private final int ver;
     
@@ -201,8 +200,15 @@ public class WorkspaceEventGenerator {
     
     private void processWorkspace(final int wsid) throws EventGeneratorException {
         final boolean pub = isPub(wsid);
+        final Document query = new Document(WS_KEY_WS_ID, wsid);
+        if (obj > 0) {
+            query.append(WS_KEY_OBJ_ID, obj);
+        }
+        if (ver > 0) {
+            query.append(WS_KEY_VER, ver);
+        }
         final MongoCursor<Document> vercur = wsDB.getCollection(WS_COL_VERS)
-                .find(new Document(WS_KEY_WS_ID, wsid))
+                .find(query)
                 .sort(new Document(WS_KEY_WS_ID, 1)
                         .append(WS_KEY_OBJ_ID, 1)
                         .append(WS_KEY_VER, -1)).iterator();
