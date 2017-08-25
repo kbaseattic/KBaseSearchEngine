@@ -3,17 +3,22 @@ package kbaserelationengine.events.handler;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple11;
+import us.kbase.common.service.UObject;
 import workspace.GetObjectInfo3Params;
+import workspace.GetObjectInfo3Results;
 import workspace.ListObjectsParams;
 import workspace.ObjectIdentity;
 import workspace.ObjectSpecification;
@@ -25,13 +30,17 @@ import workspace.WorkspaceClient;
  */
 public class WorkspaceEventHandler implements EventHandler {
     
-    //TODO JAVADOC
     //TODO TEST will need to mock the ws client
 
     /** The storage code for workspace events. */
     public static final String STORAGE_CODE = "WS";
     
     private static final int WS_BATCH_SIZE = 10_000;
+    
+    private static final TypeReference<List<Tuple11<Long, String, String, String,
+            Long, String, Long, String, String, Long, Map<String, String>>>> OBJ_TYPEREF =
+                    new TypeReference<List<Tuple11<Long, String, String, String,
+                        Long, String, Long, String, String, Long, Map<String, String>>>>() {};
     
     private final WorkspaceClient ws;
     
@@ -44,6 +53,10 @@ public class WorkspaceEventHandler implements EventHandler {
 
     @Override
     public Iterable<ObjectStatusEvent> expand(final ObjectStatusEvent event) {
+        if (!STORAGE_CODE.equals(event.getStorageCode())) {
+            throw new IllegalArgumentException("This handler only accepts "
+                    + STORAGE_CODE + "events");
+        }
         if (ObjectStatusEventType.NEW_ALL_VERSIONS.equals(event.getEventType())) {
             return handleNewAllVersions(event);
         } else if (ObjectStatusEventType.COPY_ACCESS_GROUP.equals(event.getEventType())) {
@@ -53,7 +66,6 @@ public class WorkspaceEventHandler implements EventHandler {
         }
     }
 
-    //TODO NOW test this.
     private Iterable<ObjectStatusEvent> handleNewAccessGroup(final ObjectStatusEvent event) {
         return new Iterable<ObjectStatusEvent>() {
 
@@ -102,13 +114,16 @@ public class WorkspaceEventHandler implements EventHandler {
             // ws asc, obj id asc, ver dec
             
             final ArrayList<ObjectStatusEvent> events;
+            final Map<String, Object> command = new HashMap<>();
+            command.put("command", "listObjects");
+            command.put("params", new ListObjectsParams()
+                    .withIds(Arrays.asList((long) accessGroupId))
+                    .withMinObjectID((long) processedObjs + 1)
+                    .withShowHidden(1L)
+                    .withShowAllVersions(1L));
             try {
-                events = buildEvents(sourceEvent,
-                        ws.listObjects(new ListObjectsParams()
-                                .withIds(Arrays.asList((long) accessGroupId))
-                                .withMinObjectID((long) processedObjs + 1)
-                                .withShowHidden(1L)
-                                .withShowAllVersions(1L)));
+                events = buildEvents(sourceEvent, ws.administer(new UObject(command))
+                        .asClassInstance(OBJ_TYPEREF));
             } catch (JsonClientException | IOException e) {
                 //TODO EXP some of these exceptions should be retries, some should shut down the event loop until the issue can be fixed (e.g. bad token, ws down), some should ignore the event (ws deleted)
                 throw new IllegalStateException("Error contacting workspace: " + e.getMessage(),
@@ -161,10 +176,12 @@ public class WorkspaceEventHandler implements EventHandler {
                         .withObjid(objectID)
                         .withVer((long) ver));
             }
+            final Map<String, Object> command = new HashMap<>();
+            command.put("command", "getObjectInfo");
+            command.put("params", new GetObjectInfo3Params().withObjects(objs));
             try {
-                queue.addAll(buildEvents(sourceEvent,
-                        ws.getObjectInfo3(new GetObjectInfo3Params()
-                                .withObjects(objs)).getInfos()));
+                queue.addAll(buildEvents(sourceEvent, ws.administer(new UObject(command))
+                        .asClassInstance(GetObjectInfo3Results.class).getInfos()));
             } catch (JsonClientException | IOException e) {
                 //TODO EXP some of these exceptions should be retries, some should shut down the event loop until the issue can be fixed (e.g. bad token, ws down), some should ignore the event (ws deleted)
                 throw new IllegalStateException("Error contacting workspace: " + e.getMessage(),
@@ -182,11 +199,14 @@ public class WorkspaceEventHandler implements EventHandler {
             throw new IllegalStateException("Illegal workspace object id: " +
                     event.getAccessGroupObjectId());
         }
+        final Map<String, Object> command = new HashMap<>();
+        command.put("command", "getObjectHistory");
+        command.put("params", new ObjectIdentity()
+                .withWsid((long) event.getAccessGroupId())
+                .withObjid(objid));
         try {
-            return buildEvents(event, 
-                    ws.getObjectHistory(new ObjectIdentity()
-                            .withWsid((long) event.getAccessGroupId())
-                            .withObjid(objid)));
+            return buildEvents(event, ws.administer(new UObject(command))
+                    .asClassInstance(OBJ_TYPEREF));
         } catch (JsonClientException | IOException e) {
             //TODO EXP some of these exceptions should be retries, some should shut down the event loop until the issue can be fixed (e.g. bad token, ws down), some should cause the event to be ignored (deleted object)
             throw new IllegalStateException("Error contacting workspace: " + e.getMessage(),
@@ -216,6 +236,7 @@ public class WorkspaceEventHandler implements EventHandler {
                 origEvent.getAccessGroupId(),
                 obj.getE1() + "",
                 Math.toIntExact(obj.getE5()), // vers are always ints
+                null, // no rename
                 null, // not a datapalette share
                 origEvent.getTimestamp(), //TODO NOW switch to object timestamp
                 obj.getE3().split("-")[0],

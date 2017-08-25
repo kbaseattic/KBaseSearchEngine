@@ -59,4 +59,19 @@ public interface IndexingStorage {
     public FoundHits searchObjects(String objectType, MatchFilter matchFilter, 
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination,
             PostProcessing postProcessing) throws IOException;
+
+    /** Change the name of all the versions of an object.
+     * @param object the GUID of the object. The version field is ignored.
+     * @param newName the new name of the object.
+     * @return the number of documents modified, including sub objects.
+     * @throws IOException if an IO error occurs when contacting the indexing storage.
+     */
+    int setNameOnAllObjectVersions(GUID object, String newName) throws IOException;
+
+    /** Delete all versions of an object from its access group. The object may still be
+     * accessible via other access groups.
+     * @param guid the object to delete.
+     * @throws IOException if an IO error occurs when contacting the indexing storage.
+     */
+    void deleteAllVersions(GUID guid) throws IOException;
 }

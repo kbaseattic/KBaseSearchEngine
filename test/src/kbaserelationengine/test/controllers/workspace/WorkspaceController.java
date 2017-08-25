@@ -85,7 +85,7 @@ public class WorkspaceController {
         env.put("KB_DEPLOYMENT_CONFIG", deployCfg.toString());
         
         workspace = servpb.start();
-        Thread.sleep(2000); //wait for server to start up
+        Thread.sleep(5000); //wait for server to start up
     }
 
     private Path createDeployCfg(

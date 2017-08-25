@@ -1,6 +1,12 @@
 package kbaserelationengine.test.common;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -38,6 +44,7 @@ public class TestCommon {
     
     public static final String AUTHSERV = "auth_service_url";
     public static final String TEST_TOKEN = "test_token";
+    public static final String TEST_TOKEN2 = "test.token2";
     public static final String GLOBUS = "test.globus.url";
     public static final String GLOBUS_DEFAULT =
             "https://ci.kbase.us/services/auth/api/legacy/Globus";
@@ -177,11 +184,37 @@ public class TestCommon {
         }
     }
     
+    public static String getToken2() {
+        return getTestProperty(TEST_TOKEN2);
+    }
+    
+    public static AuthToken getToken2(
+            final ConfigurableAuthService auth) {
+        try {
+            return auth.validateToken(getToken2());
+        } catch (AuthException | IOException e) {
+            throw new TestException(String.format(
+                    "Couldn't log in user with token : %s", e.getMessage()), e);
+        }
+    }
+    
     public static void stfuLoggers() {
         java.util.logging.Logger.getLogger("com.mongodb")
                 .setLevel(java.util.logging.Level.OFF);
         ((ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory
                 .getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME))
                 .setLevel(ch.qos.logback.classic.Level.OFF);
+    }
+    
+    public static void assertExceptionCorrect(
+            final Exception got,
+            final Exception expected) {
+        final StringWriter sw = new StringWriter();
+        got.printStackTrace(new PrintWriter(sw));
+        assertThat("incorrect exception. trace:\n" +
+                sw.toString(),
+                got.getLocalizedMessage(),
+                is(expected.getLocalizedMessage()));
+        assertThat("incorrect exception type", got, instanceOf(expected.getClass()));
     }
 }

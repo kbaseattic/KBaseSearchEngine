@@ -136,6 +136,7 @@ public class WSTest {
     				row.getE1().toString(),  
     				row.getE5().intValue(), 
     				null,
+    				null,
     				Util.DATE_PARSER.parseDateTime(row.getE4()).getMillis(),
     				row.getE3().split("-")[0],    		
     				ObjectStatusEventType.CREATED, false);    	

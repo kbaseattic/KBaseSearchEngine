@@ -20,7 +20,7 @@ module KBaseRelationEngine {
       In case of range constraint rather than single value 'min_*' 
       and 'max_*' fields should be used. You may omit one of ends of
       range to achieve '<=' or '>=' comparison. Ends are always
-      included for range constrains.
+      included for range constraints.
     */
     typedef structure {
         string value;

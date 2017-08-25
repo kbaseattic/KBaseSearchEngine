@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
 import workspace.GetObjects2Params;
+import workspace.GetObjects2Results;
 import workspace.ObjectData;
 import workspace.ObjectSpecification;
 import workspace.WorkspaceClient;
@@ -44,8 +46,12 @@ public class ObjectParser {
         wc.setIsInsecureHttpConnectionAllowed(true);
         wc.setStreamingModeOn(true);
         wc._setFileForNextRpcResponse(tempFile);
-        return wc.getObjects2(new GetObjects2Params().withObjects(
-                Arrays.asList(new ObjectSpecification().withRef(objRef)))).getData().get(0);
+        final Map<String, Object> command = new HashMap<>();
+        command.put("command", "getObjects");
+        command.put("params", new GetObjects2Params().withObjects(
+                Arrays.asList(new ObjectSpecification().withRef(objRef))));
+        return wc.administer(new UObject(command)).asClassInstance(GetObjects2Results.class)
+                .getData().get(0);
     }
     
     public static Map<GUID, String> parseSubObjects(ObjectData obj, String objRef, 

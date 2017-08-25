@@ -38,6 +38,8 @@ import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 
+import com.google.common.collect.ImmutableMap;
+
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.parse.ObjectParseException;
 import kbaserelationengine.parse.ParsedObject;
@@ -211,8 +213,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put("otype", objectType);
         doc.put("oname", objectName);
         doc.put("timestamp", timestamp);
-        doc.put("prefix", new GUID(id.getStorageCode(), id.getAccessGroupId(),
-                id.getAccessGroupObjectId(), null, null, null).toString());
+        doc.put("prefix", toGUIDPrefix(id));
         doc.put("accgrp", id.getAccessGroupId());
         doc.put("version", id.getVersion());
         doc.put("islast", lastVersion == id.getVersion());
@@ -418,8 +419,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (reqIndexName == null) {
             reqIndexName = getAnyIndexPattern();
         }
-        String prefix = new GUID(parentGUID.getStorageCode(), parentGUID.getAccessGroupId(),
-                parentGUID.getAccessGroupObjectId(), null, null, null).toString();
+        String prefix = toGUIDPrefix(parentGUID);
         Map<String, Object> term = new LinkedHashMap<String, Object>() {{
             put("prefix", prefix);
         }};
@@ -461,8 +461,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
-        String prefix = new GUID(parentGUID.getStorageCode(), parentGUID.getAccessGroupId(),
-                parentGUID.getAccessGroupObjectId(), null, null, null).toString();
+        String prefix = toGUIDPrefix(parentGUID);
         Map<String, Object> term = new LinkedHashMap<String, Object>() {{
             put("prefix", prefix);
         }};
@@ -501,8 +500,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             if (ret.containsKey(parentGUID)) {
                 continue;
             }
-            String prefix = new GUID(parentGUID.getStorageCode(), parentGUID.getAccessGroupId(),
-                    parentGUID.getAccessGroupObjectId(), null, null, null).toString();
+            String prefix = toGUIDPrefix(parentGUID);
             Map<String, Object> doc = new LinkedHashMap<>();
             doc.put("pguid", parentGUID.toString());
             doc.put("prefix", prefix);
@@ -568,8 +566,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
-        String prefix = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
-                guid.getAccessGroupObjectId(), null, null, null).toString();
+        String prefix = toGUIDPrefix(guid);
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
             put("must", Arrays.asList(createFilter("term", "prefix", prefix)));
         }};
@@ -655,8 +652,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
-        String prefix = new GUID(parentGUID.getStorageCode(), parentGUID.getAccessGroupId(),
-                parentGUID.getAccessGroupObjectId(), null, null, null).toString();
+        String prefix = toGUIDPrefix(parentGUID);
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
             put("must", Arrays.asList(createFilter("term", "prefix", prefix),
                     createFilter("term", "version", parentGUID.getVersion())));
@@ -682,6 +678,38 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return (Integer)data.get("updated") > 0;
     }
 
+    private String toGUIDPrefix(GUID parentGUID) {
+        return new GUID(parentGUID.getStorageCode(), parentGUID.getAccessGroupId(),
+                parentGUID.getAccessGroupObjectId(), null, null, null).toString();
+    }
+
+    @Override
+    public int setNameOnAllObjectVersions(final GUID object, final String newName)
+            throws IOException {
+        return setFieldOnObjectForAllVersions(object, "oname", newName);
+    }
+    
+    private int setFieldOnObjectForAllVersions(
+            final GUID object,
+            final String field,
+            final Object value)
+            throws IOException {
+        final String index = getAnyIndexPattern();
+        final String prefix = toGUIDPrefix(object);
+        final Map<String, Object> script = ImmutableMap.of(
+                "inline", "ctx._source[params.field] = params.value",
+                "params", ImmutableMap.of("field", field, "value", value));
+        final Map<String, Object> doc = ImmutableMap.of(
+                "query", createFilter("term", "prefix", prefix),
+                "script", script);
+        final String urlPath = "/" + index + "/" + getDataTableName() + "/_update_by_query";
+        final Response resp = makeRequest("POST", urlPath, doc);
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> data = UObject.getMapper().readValue(
+                resp.getEntity().getContent(), Map.class);
+        return (int) data.get("updated");
+    }
+    
     @Override
     public void shareObjects(Set<GUID> guids, int accessGroupId, 
             boolean isExternalPublicGroup) throws IOException {
@@ -698,7 +726,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     if (updateBooleanFieldInData(indexName, guid, "public", true)) {
                         needRefresh = true;
                     }
-                } else {
+                } else if (accessGroupId != guid.getAccessGroupId()) {
                     if (updateBooleanFieldInData(indexName, guid, "shared", true)) {
                         needRefresh = true;
                     }
@@ -738,11 +766,31 @@ public class ElasticIndexingStorage implements IndexingStorage {
                         needRefresh = true;
                     }
                 }
+                //TODO NOW how is share bit unset?
             }
             if (needRefresh) {
                 refreshIndex(indexName);
             }
         }
+    }
+    
+    @Override
+    public void deleteAllVersions(final GUID guid) throws IOException {
+        final String indexName = getAnyIndexPattern();
+        final String prefix = toGUIDPrefix(guid);
+        final HashMap<String, Object> params = new HashMap<>();
+        params.put("accgrp", guid.getAccessGroupId());
+        final Map<String, Object> script = ImmutableMap.of(
+                "inline", "ctx._source.lastin.remove(ctx._source.lastin.indexOf(params.accgrp));",
+                "params", params);
+        final Map<String, Object> query = ImmutableMap.of("bool", ImmutableMap.of("must",
+                Arrays.asList(createFilter("term", "prefix", prefix),
+                        createFilter("term", "lastin", guid.getAccessGroupId()))));
+        final Map<String, Object> doc = ImmutableMap.of("query", query, "script", script);
+        final String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_update_by_query";
+        makeRequest("POST", urlPath, doc);
+        setFieldOnObjectForAllVersions(guid, "public", false);
+        //TODO NOW this doesn't handle removing public (-1) from the access doc because it can't know that's the right thing to do
     }
     
     @Override

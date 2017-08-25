@@ -87,12 +87,10 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 	}
 	
 	@Override
-	public List<Integer> findAccessGroupIds(String storageCode, String user){
+	public List<Integer> findAccessGroupIds(String user){
 		BasicDBList queryItems = new BasicDBList();
 		queryItems.add(new BasicDBObject("users", user));
-		if(storageCode != null){
-			queryItems.add(new BasicDBObject("storageCode", storageCode));			
-		}
+		queryItems.add(new BasicDBObject("storageCode", "WS"));
 		BasicDBObject query = new BasicDBObject("$and", queryItems);	
 		DBCursor cursor = collection(COLLECTION_GROUP_STATUS).find(query);
 				
@@ -231,6 +229,7 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 					(Integer)dobj.get("accessGroupId"),
 					(String)dobj.get("accessGroupObjectId"),
 					(Integer)dobj.get("version"),
+					(String) dobj.get("newName"),
 					(Integer)dobj.get("targetAccessGroupId"),
 					(Long)dobj.get("timestamp"),
 					(String)dobj.get("storageObjectType"),

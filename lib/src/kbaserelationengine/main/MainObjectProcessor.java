@@ -6,6 +6,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -33,11 +34,13 @@ import kbaserelationengine.SearchTypesOutput;
 import kbaserelationengine.SortingRule;
 import kbaserelationengine.TypeDescriptor;
 import kbaserelationengine.common.GUID;
+import kbaserelationengine.events.AccessGroupCache;
 import kbaserelationengine.events.AccessGroupProvider;
 import kbaserelationengine.events.AccessGroupStatus;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.events.StatusEventListener;
+import kbaserelationengine.events.WorkspaceAccessGroupProvider;
 import kbaserelationengine.events.handler.EventHandler;
 import kbaserelationengine.events.handler.WorkspaceEventHandler;
 import kbaserelationengine.events.reconstructor.AccessType;
@@ -68,6 +71,7 @@ import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
 import workspace.GetObjectInfo3Params;
+import workspace.GetObjectInfo3Results;
 import workspace.ObjectData;
 import workspace.ObjectSpecification;
 import workspace.WorkspaceClient;
@@ -124,10 +128,12 @@ public class MainObjectProcessor {
         this.admins = admins == null ? Collections.emptySet() : admins;
         MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(mongoHost, mongoPort, mongoDbName);
         eventStorage = storage;
-        accessGroupProvider = storage;
         WSStatusEventReconstructorImpl reconstructor = new WSStatusEventReconstructorImpl(
                 wsURL, kbaseIndexerToken, eventStorage);
         wsClient = reconstructor.wsClient();
+        // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
+        accessGroupProvider = new AccessGroupCache(new WorkspaceAccessGroupProvider(wsClient),
+                30, 50000 * 1000);
         wsEventReconstructor = reconstructor;
         reconstructor.registerListener(storage);
         if (logger != null) {
@@ -282,19 +288,21 @@ public class MainObjectProcessor {
         // Seems like this shouldn't be source specific. It should handle all event sources.
         ObjectStatusEventIterator iter = queue.iterator("WS");
         while (iter.hasNext()) {
+            //TODO NOW markAsVisited is called for every sub event, which is pointless. It should be called only when all sub events are processed.
             final ObjectStatusEvent preEvent = iter.next();
             for (final ObjectStatusEvent ev: getEventHandler(preEvent).expand(preEvent)) {
-                if (!isStorageTypeSupported(ev.getStorageObjectType())) {
+                final String type = ev.getStorageObjectType();
+                if (type != null && !isStorageTypeSupported(type)) {
                     if (logger != null) {
                         logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
-                                ev.getStorageObjectType() + ", " + ev.toGUID());
+                                type + ", " + ev.toGUID());
                     }
                     iter.markAsVisitied(false);
                     continue;
                 }
                 if (logger != null) {
                     logger.logInfo("[Indexer] processing " + ev.getEventType() + ", " + 
-                            ev.getStorageObjectType() + ", " + ev.toGUID() + "...");
+                            type + ", " + ev.toGUID() + "...");
                 }
                 long time = System.currentTimeMillis();
                 try {
@@ -348,6 +356,12 @@ public class MainObjectProcessor {
         case DELETED:
             unshare(ev.toGUID(), ev.getAccessGroupId());
             break;
+        case DELETE_ALL_VERSIONS:
+            unshareAllVersions(ev.toGUID());
+            break;
+        case UNDELETE_ALL_VERSIONS:
+            shareAllVersions(ev.toGUID());
+            break;
         case SHARED:
             share(ev.toGUID(), ev.getTargetAccessGroupId());
             break;
@@ -355,7 +369,7 @@ public class MainObjectProcessor {
             unshare(ev.toGUID(), ev.getTargetAccessGroupId());
             break;
         case RENAME_ALL_VERSIONS:
-            //TODO NOW rename handler
+            renameAllVersions(ev.toGUID(), ev.getNewName());
             break;
         default:
             throw new IllegalStateException("Unsupported event type: " + ev.getEventType());
@@ -379,6 +393,7 @@ public class MainObjectProcessor {
                     guid.getVersion();
             String nextCallerRefPath = (callerRefPath == null || callerRefPath.isEmpty() ? "" : 
                 (callerRefPath + ";")) + objRef;
+            //TODO HANDLER move this into handler API
             /* ideally here you would select an implementation of an EventHandler
              * based on the storageCode that knows how to fetch the data you need based on the
              * nextCallerRefPath
@@ -436,9 +451,18 @@ public class MainObjectProcessor {
         indexingStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId, 
                 false);
     }
+    
+    public void shareAllVersions(final GUID guid) throws IOException {
+//        indexingStorage.shareAllVersions(guid);
+        //TODO NOW fill in
+    }
 
     public void unshare(GUID guid, int accessGroupId) throws IOException {
         indexingStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
+    }
+
+    public void unshareAllVersions(final GUID guid) throws IOException {
+        indexingStorage.deleteAllVersions(guid);
     }
 
     public void publish(GUID guid) throws IOException {
@@ -447,6 +471,10 @@ public class MainObjectProcessor {
 
     public void unpublish(GUID guid) throws IOException {
         indexingStorage.unpublishObjects(new LinkedHashSet<>(Arrays.asList(guid)));
+    }
+    
+    private void renameAllVersions(final GUID guid, final String newName) throws IOException {
+        indexingStorage.setNameOnAllObjectVersions(guid, newName);
     }
 
     public IndexingStorage getIndexingStorage(String objectType) {
@@ -524,7 +552,7 @@ public class MainObjectProcessor {
             throws IOException {
         List<Integer> accessGroupIds;
         if (toBool(af.getWithPrivate(), true)) {
-            accessGroupIds = accessGroupProvider.findAccessGroupIds("WS", user);
+            accessGroupIds = accessGroupProvider.findAccessGroupIds(user);
         } else {
             accessGroupIds = Collections.emptyList();
         }
@@ -736,12 +764,17 @@ public class MainObjectProcessor {
                     List<ObjectSpecification> getInfoInput = refs.stream().map(
                             ref -> new ObjectSpecification().withRef(refPrefix + ref)).collect(
                                     Collectors.toList());
-                    List<ObjectStatusEvent> events = wsClient.getObjectInfo3(
-                            new GetObjectInfo3Params().withObjects(getInfoInput))
+                    //TODO HANDLER move this to the handler api
+                    final Map<String, Object> command = new HashMap<>();
+                    command.put("command", "getObjectInfo");
+                    command.put("params", new GetObjectInfo3Params().withObjects(getInfoInput));
+                    List<ObjectStatusEvent> events = wsClient.administer(new UObject(command))
+                            .asClassInstance(GetObjectInfo3Results.class)
                             .getInfos().stream().map(info -> new ObjectStatusEvent("", "WS", 
                                     (int)(long)info.getE7(), "" +info.getE1(), 
-                                    (int)(long)info.getE5(), null, Util.DATE_PARSER.parseDateTime(
-                                            info.getE4()).getMillis(), info.getE3().split("-")[0],
+                                    (int)(long)info.getE5(), null, null,
+                                    Util.DATE_PARSER.parseDateTime(info.getE4()).getMillis(),
+                                    info.getE3().split("-")[0],
                                     ObjectStatusEventType.CREATED, false)).collect(
                                             Collectors.toList());
                     for (int pos = 0; pos < getInfoInput.size(); pos++) {
