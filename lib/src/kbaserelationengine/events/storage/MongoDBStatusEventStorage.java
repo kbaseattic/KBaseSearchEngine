@@ -149,8 +149,6 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 		collection(COLLECTION_GROUP_STATUS).update(query, dobj, false, false);				
 	}
 	
-	
-	
 	@Override
 	public void store(ObjectStatusEvent obj) throws IOException {
 		DBObject dobj = new BasicDBObject();		
@@ -163,6 +161,7 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 		dobj.put("eventType", obj.getEventType().toString());
 		dobj.put("storageObjectType", obj.getStorageObjectType());
 		dobj.put("isGlobalAccessed", obj.isGlobalAccessed());
+		dobj.put("newName", obj.getNewName());
 		dobj.put("indexed", false);
 		dobj.put("processed", false);		
 		collection(COLLECTION_OBJECT_STATUS_EVENTS).insert(dobj);				
