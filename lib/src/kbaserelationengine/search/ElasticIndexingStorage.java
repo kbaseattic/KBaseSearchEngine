@@ -519,6 +519,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     accessGroupIds : Collections.emptySet();
             doc.put("lastin", lastinGroupIds);
             doc.put("groups", accessGroupIds);
+            doc.put("extpub", new ArrayList<Integer>());
             Response resp = makeRequest("POST", "/" + indexName + "/" + getAccessTableName() + "/", 
                     doc);
             Map<String, Object> data = UObject.getMapper().readValue(
@@ -538,6 +539,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
             "if (ctx._source.lastin.indexOf(params.%1$s) >= 0) {\n" +
             "  if (ctx._source.version != params.lastver) {\n" +
             "    ctx._source.lastin.remove(ctx._source.lastin.indexOf(params.%1$s));\n" +
+            "    if (ctx._source.extpub.indexOf(params.%1$s) >= 0) {\n" + 
+            "      ctx._source.extpub.remove(ctx._source.extpub.indexOf(params.%1$s));\n" +
+            "    }\n" +
             "  }\n" +
             "} else {\n" +
             "  if (ctx._source.version == params.lastver) {\n" +
@@ -623,12 +627,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
         params.put("accgrp", accessGroupId);
         Map<String, Object> script = new LinkedHashMap<String, Object>() {{
             put("inline", "" + 
-                    "ctx._source.lastin.remove(ctx._source.lastin.indexOf(params.accgrp)); " +
+                    "ctx._source.lastin.remove(ctx._source.lastin.indexOf(params.accgrp));\n" +
+                    "if (ctx._source.extpub.indexOf(params.accgrp) >= 0) {\n" + 
+                    "  ctx._source.extpub.remove(ctx._source.extpub.indexOf(params.accgrp));\n" +
+                    "}\n" +
                     (fromAllGroups ? (
-                    "int pos = ctx._source.groups.indexOf(params.accgrp); " +
-                    "if (pos >= 0) {" +
-                    "  ctx._source.groups.remove(pos); " +
-                    "}") : ""));
+                    "int pos = ctx._source.groups.indexOf(params.accgrp);\n" +
+                    "if (pos >= 0) {\n" +
+                    "  ctx._source.groups.remove(pos);\n" +
+                    "}\n") : ""));
             put("params", params);
         }};
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
@@ -676,9 +683,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     @Override
-    public void shareObjects(Set<GUID> guids, int accessGroupId) throws IOException {
+    public void shareObjects(Set<GUID> guids, int accessGroupId, 
+            boolean isExternalPublicGroup) throws IOException {
         Map<String, Set<GUID>> indexToGuids = groupParentIdsByIndex(guids);
         for (String indexName : indexToGuids.keySet()) {
+            Set<GUID> toAddExtPub = new LinkedHashSet<GUID>();
             boolean needRefresh = false;
             for (GUID guid : indexToGuids.get(indexName)) {
                 if (updateAccessGroupForVersions(indexName, guid, guid.getVersion(), accessGroupId,
@@ -693,10 +702,24 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     if (updateBooleanFieldInData(indexName, guid, "shared", true)) {
                         needRefresh = true;
                     }
+                    if (isExternalPublicGroup) {
+                        toAddExtPub.add(guid);
+                    }
                 }
             }
             if (needRefresh) {
                 refreshIndex(indexName);
+            }
+            if (!toAddExtPub.isEmpty()) {
+                needRefresh = false;
+                for (GUID guid : indexToGuids.get(indexName)) {
+                    if (addExtPubForVersion(indexName, guid, accessGroupId)) {
+                        needRefresh = true;
+                    }
+                }
+                if (needRefresh) {
+                    refreshIndex(indexName);
+                }
             }
         }
     }
@@ -724,7 +747,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     @Override
     public void publishObjects(Set<GUID> guids) throws IOException {
-        shareObjects(guids, PUBLIC_ACCESS_GROUP);
+        shareObjects(guids, PUBLIC_ACCESS_GROUP, false);
     }
     
     @Override
@@ -732,6 +755,104 @@ public class ElasticIndexingStorage implements IndexingStorage {
         unshareObjects(guids, PUBLIC_ACCESS_GROUP);
     }
 
+    @SuppressWarnings({ "serial", "unchecked" })
+    private boolean addExtPubForVersion(String indexName, GUID guid, 
+            int accessGroupId) throws IOException {
+        if (indexName == null) {
+            indexName = getAnyIndexPattern();
+        }
+        // Check that we work with other than physical access group this object exists in.
+        String pguid = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
+                guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString();
+        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+            put("must", Arrays.asList(createFilter("term", "pguid", pguid)));
+        }};
+        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+            put("bool", bool);
+        }};
+        final HashMap<String, Object> params = new HashMap<>();
+        params.put("accgrp", accessGroupId);
+        Map<String, Object> script = new LinkedHashMap<String, Object>() {{
+            put("inline", "" + 
+                    "if (ctx._source.extpub.indexOf(params.accgrp) < 0) {\n" + 
+                    "  ctx._source.extpub.add(params.accgrp);\n" +
+                    "}\n");
+            put("params", params);
+        }};
+        Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
+            put("query", query);
+            put("script", script);
+        }};
+        String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_update_by_query";
+        Response resp = makeRequest("POST", urlPath, doc);
+        Map<String, Object> data = UObject.getMapper().readValue(
+                resp.getEntity().getContent(), Map.class);
+        return (Integer)data.get("updated") > 0;
+    }
+
+    @Override
+    public void publishObjectsExternally(Set<GUID> guids, int accessGroupId) throws IOException {
+        Map<String, Set<GUID>> indexToGuids = groupParentIdsByIndex(guids);
+        for (String indexName : indexToGuids.keySet()) {
+            boolean needRefresh = false;
+            for (GUID guid : indexToGuids.get(indexName)) {
+            }
+            if (needRefresh) {
+                refreshIndex(indexName);
+            }
+        }
+    }
+
+    @SuppressWarnings({ "serial", "unchecked" })
+    private boolean removeExtPubForVersion(String indexName, GUID guid, 
+            int accessGroupId) throws IOException {
+        if (indexName == null) {
+            indexName = getAnyIndexPattern();
+        }
+        // Check that we work with other than physical access group this object exists in.
+        String pguid = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
+                guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString();
+        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+            put("must", Arrays.asList(createFilter("term", "pguid", pguid),
+                    createFilter("term", "extpub", accessGroupId)));
+        }};
+        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+            put("bool", bool);
+        }};
+        final HashMap<String, Object> params = new HashMap<>();
+        params.put("accgrp", accessGroupId);
+        Map<String, Object> script = new LinkedHashMap<String, Object>() {{
+            put("inline", "" + 
+                    "ctx._source.extpub.remove(ctx._source.extpub.indexOf(params.accgrp));\n");
+            put("params", params);
+        }};
+        Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
+            put("query", query);
+            put("script", script);
+        }};
+        String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_update_by_query";
+        Response resp = makeRequest("POST", urlPath, doc);
+        Map<String, Object> data = UObject.getMapper().readValue(
+                resp.getEntity().getContent(), Map.class);
+        return (Integer)data.get("updated") > 0;
+    }
+
+    @Override
+    public void unpublishObjectsExternally(Set<GUID> guids, int accessGroupId) throws IOException {
+        Map<String, Set<GUID>> indexToGuids = groupParentIdsByIndex(guids);
+        for (String indexName : indexToGuids.keySet()) {
+            boolean needRefresh = false;
+            for (GUID guid : indexToGuids.get(indexName)) {
+                if (removeExtPubForVersion(indexName, guid, accessGroupId)) {
+                    needRefresh = true;
+                }
+            }
+            if (needRefresh) {
+                refreshIndex(indexName);
+            }
+        }
+    }
+    
     public List<ObjectData> getObjectsByIds(Set<GUID> ids) throws IOException {
         PostProcessing pp = new PostProcessing();
         pp.objectInfo = true;
@@ -1240,6 +1361,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
             put("type", "integer");
         }});
         props.put("groups", new LinkedHashMap<String, Object>() {{
+            put("type", "integer");
+        }});
+        // List of external workspaces containing DataPalette pointing to this object
+        props.put("extpub", new LinkedHashMap<String, Object>() {{
             put("type", "integer");
         }});
     }
