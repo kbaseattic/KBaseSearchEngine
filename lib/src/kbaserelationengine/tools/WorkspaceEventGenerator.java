@@ -198,7 +198,7 @@ public class WorkspaceEventGenerator {
                         .append(WS_KEY_OBJ_ID, 1)
                         .append(WS_KEY_VER, -1)).iterator();
 
-        Versions vers = new Versions(vercur, 10000); //TODO NOW test versions
+        Versions vers = new Versions(vercur, 10000);
         while (!vers.isEmpty()) {
             processVers(wsid, vers, pub);
             vers = new Versions(vercur, 10000);
