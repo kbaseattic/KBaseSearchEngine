@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Properties;
 
 import org.slf4j.LoggerFactory;
@@ -99,17 +100,20 @@ public class RESKETools {
             printError("For config file " + a.configPath, e, a.verbose);
             return 1;
         }
-        return runEventGenerator(cfg, out, a.ref, a.verbose);
+        final List<Integer> wsBlackList = a.wsBlacklist == null || a.wsBlacklist.isEmpty() ?
+                cfg.getWorkspaceBlackList() : a.wsBlacklist;
+        return runEventGenerator(cfg, out, a.ref, a.verbose, wsBlackList);
     }
     
     private int runEventGenerator(
             final RESKEToolsConfig cfg,
             final PrintStream logtarget,
             final String ref,
-            final boolean verbose) {
+            final boolean verbose,
+            final List<Integer> wsBlackList) {
         try {
             final WorkspaceEventGenerator gen = new WorkspaceEventGenerator.Builder(cfg, logtarget)
-                    .withNullableRef(ref).build();
+                    .withNullableRef(ref).withWorkspaceBlacklist(wsBlackList).build();
             gen.generateEvents();
             gen.destroy();
         } catch (EventGeneratorException e) {
@@ -166,6 +170,11 @@ public class RESKETools {
                 "in all workspaces will be submitted to RESKE. A specific workspace, object, or " +
                 "object version can be specified by providing some or all of the ref.")
         private String ref;
+        
+        @Parameter(names = {"-b", "--ws-blacklist"}, description =
+                "A comma delimited list of workspace ids to ignore. Setting this option " +
+                "overrides the blacklist in the config file.")
+        private List<Integer> wsBlacklist;
         
     }
 }

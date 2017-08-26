@@ -49,8 +49,7 @@ public class ObjectStatusEventQueueTest {
     public void init(){
         TestCommon.destroyDB(db);
         //ESObjectStatusEventStorage storage = new ESObjectStatusEventStorage(new HttpHost("localhost", 9200));
-        MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(
-                "localhost", mongo.getServerPort());
+        MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(db);
 
         queue = new ObjectStatusEventQueue(storage);
     }
