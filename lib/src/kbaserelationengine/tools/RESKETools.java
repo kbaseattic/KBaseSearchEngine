@@ -100,17 +100,26 @@ public class RESKETools {
             printError("For config file " + a.configPath, e, a.verbose);
             return 1;
         }
-        final List<Integer> wsBlackList = a.wsBlacklist == null || a.wsBlacklist.isEmpty() ?
-                cfg.getWorkspaceBlackList() : a.wsBlacklist;
-        return runEventGenerator(cfg, out, a.ref, a.verbose, wsBlackList);
+        return runEventGenerator(cfg, out, a.ref, a.verbose,
+                getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()));
     }
     
+    private List<WorkspaceIdentifier> getWsBlackList(
+            final List<String> args,
+            final List<WorkspaceIdentifier> config) {
+        if (args == null || args.isEmpty()) {
+            return config;
+        } else {
+            return RESKEToolsConfig.toWorkspaceIdentifiers(args);
+        }
+    }
+
     private int runEventGenerator(
             final RESKEToolsConfig cfg,
             final PrintStream logtarget,
             final String ref,
             final boolean verbose,
-            final List<Integer> wsBlackList) {
+            final List<WorkspaceIdentifier> wsBlackList) {
         try {
             final WorkspaceEventGenerator gen = new WorkspaceEventGenerator.Builder(cfg, logtarget)
                     .withNullableRef(ref).withWorkspaceBlacklist(wsBlackList).build();
@@ -172,9 +181,9 @@ public class RESKETools {
         private String ref;
         
         @Parameter(names = {"-b", "--ws-blacklist"}, description =
-                "A comma delimited list of workspace ids to ignore. Setting this option " +
-                "overrides the blacklist in the config file.")
-        private List<Integer> wsBlacklist;
+                "A comma delimited list of workspace ids or names to ignore. Setting this " +
+                "option overrides the blacklist in the config file.")
+        private List<String> wsBlacklist;
         
     }
 }
