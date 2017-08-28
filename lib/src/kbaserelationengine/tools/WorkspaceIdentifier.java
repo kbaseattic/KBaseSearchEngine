@@ -1,6 +1,9 @@
 package kbaserelationengine.tools;
 
+import static kbaserelationengine.tools.Utils.nonNull;
+
 import com.google.common.base.Optional;
+
 
 public class WorkspaceIdentifier {
     
@@ -8,7 +11,8 @@ public class WorkspaceIdentifier {
     private final Optional<Integer> id;
     
     public WorkspaceIdentifier(final String name) {
-        this.name = Optional.of(name);
+        nonNull(name, "name");
+        this.name = Optional.of(name.trim());
         if (name.isEmpty()) {
             throw new IllegalArgumentException("Workspace names must have at least one character");
         }
@@ -16,6 +20,9 @@ public class WorkspaceIdentifier {
     }
     
     public WorkspaceIdentifier(final int id) {
+        if (id < 1) {
+            throw new IllegalArgumentException("Workspace ids must be > 0");
+        }
         this.name = null;
         this.id = Optional.of(id);
     }

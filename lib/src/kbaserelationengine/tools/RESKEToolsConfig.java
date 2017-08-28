@@ -25,6 +25,7 @@ public class RESKEToolsConfig {
     private static final String RESKE_MONGO_PWD = "reske-mongo-pwd";
     
     private static final String WS_ID_BLACKLIST = "workspace-blacklist";
+    private static final String WS_TYPES_LIST = "workspace-types";
 
     private final String reskeMongoHost;
     private final String reskeMongoDB;
@@ -35,6 +36,7 @@ public class RESKEToolsConfig {
     private final Optional<String> workspaceMongoUser;
     private final Optional<char[]> workspaceMongoPwd;
     private final List<WorkspaceIdentifier> workspaceBlackList;
+    private final List<String> workspaceTypes;
 
     
     private RESKEToolsConfig(
@@ -46,9 +48,11 @@ public class RESKEToolsConfig {
             final String workspaceMongoDB,
             final String workspaceMongoUser,
             String workspaceMongoPwd,
-            final List<WorkspaceIdentifier> list)
+            final List<WorkspaceIdentifier> workspaceBlackList,
+            final List<String> workspaceTypes)
             throws RESKEToolsConfigException {
-        this.workspaceBlackList = Collections.unmodifiableList(list);
+        this.workspaceBlackList = Collections.unmodifiableList(workspaceBlackList);
+        this.workspaceTypes = Collections.unmodifiableList(workspaceTypes);
         this.reskeMongoHost = reskeMongoHost;
         this.reskeMongoDB = reskeMongoDB;
         if (reskeMongoUser == null ^ reskeMongoPwd == null) { // xor
@@ -112,6 +116,10 @@ public class RESKEToolsConfig {
     public List<WorkspaceIdentifier> getWorkspaceBlackList() {
         return workspaceBlackList;
     }
+    
+    public List<String> getWorkspaceTypes() {
+        return workspaceTypes;
+    }
 
     public static RESKEToolsConfig from(final Properties p) throws RESKEToolsConfigException {
         final Map<String, String> cfg = new HashMap<>();
@@ -132,9 +140,25 @@ public class RESKEToolsConfig {
                 getString(WS_MONGO_DB, cfg, true),
                 getString(WS_MONGO_USER, cfg),
                 getString(WS_MONGO_PWD, cfg),
-                getWSIDList(WS_ID_BLACKLIST, cfg));
+                getWSIDList(WS_ID_BLACKLIST, cfg),
+                getStringList(WS_TYPES_LIST, cfg));
     }
     
+    private static List<String> getStringList(
+            final String configparam,
+            final Map<String, String> cfg) {
+        final String stringlist = cfg.get(configparam);
+        final List<String> ret = new LinkedList<>();
+        if (stringlist != null && !stringlist.isEmpty()) {
+            for (final String s: stringlist.split(",")) {
+                if (!s.trim().isEmpty()) {
+                    ret.add(s);
+                }
+            }
+        }
+        return ret;
+    }
+
     private static List<WorkspaceIdentifier> getWSIDList(
             final String configparam,
             final Map<String, String> cfg) throws RESKEToolsConfigException {
@@ -150,10 +174,12 @@ public class RESKEToolsConfig {
     public static List<WorkspaceIdentifier> toWorkspaceIdentifiers(final List<String> wsids) {
         final List<WorkspaceIdentifier> ret = new LinkedList<>();
         for (final String id: wsids) {
-            try {
-                ret.add(new WorkspaceIdentifier(Integer.parseInt(id.trim())));
-            } catch (NumberFormatException e) {
-                ret.add(new WorkspaceIdentifier(id));
+            if (id != null && !id.trim().isEmpty()) {
+                try {
+                    ret.add(new WorkspaceIdentifier(Integer.parseInt(id.trim())));
+                } catch (NumberFormatException e) {
+                    ret.add(new WorkspaceIdentifier(id));
+                }
             }
         }
         return ret;

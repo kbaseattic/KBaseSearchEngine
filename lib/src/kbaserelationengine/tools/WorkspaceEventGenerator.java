@@ -14,6 +14,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.bson.Document;
 
@@ -35,6 +36,9 @@ import kbaserelationengine.events.storage.StatusEventStorage;
  * 
  * Due to technical issues, interfaces directly with the workspace DB instead of going through
  * the workspace library classes, which would be preferred in general.
+ * 
+ * Generates events based on the RESKE prototype event handler in the workspace, so if that
+ * changes this code will likely need to change.
  * 
  * @author gaprice@lbl.gov
  *
@@ -77,6 +81,7 @@ public class WorkspaceEventGenerator {
     private final MongoDatabase wsDB;
     private final PrintStream logtarget;
     private final Set<WorkspaceIdentifier> wsBlackList;
+    private List<Pattern> wsTypes;
     
     private WorkspaceEventGenerator(
             final RESKEToolsConfig cfg,
@@ -84,13 +89,15 @@ public class WorkspaceEventGenerator {
             final int obj,
             final int ver,
             final PrintStream logtarget,
-            final Collection<WorkspaceIdentifier> wsBlackList)
+            final Collection<WorkspaceIdentifier> wsBlackList,
+            final Collection<String> wsTypes)
             throws EventGeneratorException {
         this.ws = ws;
         this.obj = obj;
         this.ver = ver;
         this.logtarget = logtarget;
         this.wsBlackList = Collections.unmodifiableSet(new HashSet<>(wsBlackList));
+        this.wsTypes = processTypes(wsTypes);
         if (cfg.getReskeMongoHost().equals(cfg.getWorkspaceMongoHost())) {
             final List<MongoCredential> creds = new LinkedList<>();
             addCred(cfg.getReskeMongoDB(), cfg.getReskeMongoUser(), cfg.getReskeMongoPwd(), creds);
@@ -114,6 +121,15 @@ public class WorkspaceEventGenerator {
         checkWorkspaceSchema();
     }
     
+    private List<Pattern> processTypes(final Collection<String> wsTypes) {
+        final List<Pattern> ret = new LinkedList<>();
+        for (final String t: wsTypes) {
+            // always do a prefix regex so mongo can use indexes
+            ret.add(Pattern.compile("^" + Pattern.quote(t.trim()))); // set up mongo regex
+        }
+        return ret;
+    }
+
     public void destroy() {
         reskeClient.close();
         wsClient.close();
@@ -211,6 +227,9 @@ public class WorkspaceEventGenerator {
         }
         if (ver > 0) {
             query.append(WS_KEY_VER, ver);
+        }
+        if (!wsTypes.isEmpty()) {
+            query.append(WS_KEY_TYPE, new Document("$in", wsTypes));
         }
         final MongoCursor<Document> vercur = wsDB.getCollection(WS_COL_VERS)
                 .find(query)
@@ -351,6 +370,7 @@ public class WorkspaceEventGenerator {
         private int ver = -1;
         private PrintStream logtarget;
         private Collection<WorkspaceIdentifier> wsBlackList = new LinkedList<>();
+        private Collection<String> wsTypes = new LinkedList<>();
         
         public Builder(final RESKEToolsConfig cfg, final PrintStream logtarget) {
             nonNull(cfg, "cfg");
@@ -390,13 +410,21 @@ public class WorkspaceEventGenerator {
 
         public Builder withWorkspaceBlacklist(final Collection<WorkspaceIdentifier> wsBlackList) {
             nonNull(wsBlackList, "wsBlackList");
-            noNulls(wsBlackList, "null event in wsBlackList");
+            noNulls(wsBlackList, "null item in wsBlackList");
             this.wsBlackList = wsBlackList;
             return this;
         }
 
+        public Builder withWorkspaceTypes(final Collection<String> wsTypes) {
+            nonNull(wsTypes, "wsTypes");
+            noNulls(wsTypes, "null item in wsTypes");
+            // todo check no whitespace only chars
+            this.wsTypes  = wsTypes;
+            return this;
+        }
+
         public WorkspaceEventGenerator build() throws EventGeneratorException {
-            return new WorkspaceEventGenerator(cfg, ws, obj, ver, logtarget, wsBlackList);
+            return new WorkspaceEventGenerator(cfg, ws, obj, ver, logtarget, wsBlackList, wsTypes);
         }
 
     }
