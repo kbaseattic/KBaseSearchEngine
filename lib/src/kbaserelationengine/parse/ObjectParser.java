@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.common.ObjectJsonPath;
+import kbaserelationengine.events.handler.WorkspaceEventHandler;
 import kbaserelationengine.relations.Relation;
 import kbaserelationengine.relations.RelationStorage;
 import kbaserelationengine.system.RelationRules;
@@ -40,8 +41,12 @@ public class ObjectParser {
         return tempFile;
     }
 
-    public static ObjectData loadObject(URL wsUrl, File tempFile, AuthToken token,
-            String objRef) throws IOException, JsonClientException {
+    public static ObjectData loadObject(
+            final URL wsUrl,
+            final File tempFile,
+            final AuthToken token,
+            final List<GUID> objectRefPath)
+            throws IOException, JsonClientException {
         WorkspaceClient wc = new WorkspaceClient(wsUrl, token);
         wc.setIsInsecureHttpConnectionAllowed(true);
         wc.setStreamingModeOn(true);
@@ -49,12 +54,13 @@ public class ObjectParser {
         final Map<String, Object> command = new HashMap<>();
         command.put("command", "getObjects");
         command.put("params", new GetObjects2Params().withObjects(
-                Arrays.asList(new ObjectSpecification().withRef(objRef))));
+                Arrays.asList(new ObjectSpecification().withRef(
+                        WorkspaceEventHandler.toWSRefPath(objectRefPath)))));
         return wc.administer(new UObject(command)).asClassInstance(GetObjects2Results.class)
                 .getData().get(0);
     }
     
-    public static Map<GUID, String> parseSubObjects(ObjectData obj, String objRef, 
+    public static Map<GUID, String> parseSubObjects(ObjectData obj, GUID guid, 
             ObjectTypeParsingRules parsingRules, SystemStorage system,
             RelationStorage relationStorage) throws IOException, ObjectParseException {
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
@@ -73,8 +79,8 @@ public class ObjectParser {
                             parsingRules.getRelationRules(), subJts, idConsumer);
                 }
             }
-            GUID id = prepareGUID(parsingRules, objRef, path, idConsumer);
-            guidToJson.put(id, subJson);
+            GUID subid = prepareGUID(parsingRules, guid, path, idConsumer);
+            guidToJson.put(subid, subJson);
             //storeRelations(parsingRules, system, relationStorage, idConsumer, id);
         }
         return guidToJson;
@@ -101,22 +107,17 @@ public class ObjectParser {
     }
 
     public static GUID prepareGUID(ObjectTypeParsingRules parsingRules,
-            String resolvedRef, ObjectJsonPath path,
+            GUID guid, ObjectJsonPath path,
             SimpleIdConsumer idConsumer) {
-        String storageType = parsingRules.getStorageType();
-        if (storageType == null) {
-            storageType = "WS";
-        }
-        String textId = storageType + ":" + resolvedRef;
+        String innerSubType = null;
+        String innerID = null;
         if (parsingRules.getPathToSubObjects() != null) {
-            String innerTextId = idConsumer.getPrimaryKey() == null ? path.toString() : 
-                ("/" + String.valueOf(idConsumer.getPrimaryKey()));
-            String innerSubType = parsingRules.getInnerSubType() == null ? "_" : 
+            innerID = idConsumer.getPrimaryKey() == null ? path.toString() : 
+                String.valueOf(idConsumer.getPrimaryKey());
+            innerSubType = parsingRules.getInnerSubType() == null ? "_" : 
                 parsingRules.getInnerSubType();
-            textId += ":" + innerSubType + innerTextId;
         }
-        GUID id = new GUID(textId);
-        return id;
+        return new GUID(guid, innerSubType, innerID);
     }
     
     public static String extractParentFragment(ObjectTypeParsingRules parsingRules,

@@ -12,6 +12,7 @@ import java.util.NoSuchElementException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
 import us.kbase.common.service.JsonClientException;
@@ -242,6 +243,19 @@ public class WorkspaceEventHandler implements EventHandler {
                 obj.getE3().split("-")[0],
                 ObjectStatusEventType.NEW_VERSION,
                 origEvent.isGlobalAccessed());
+    }
+    
+    public static String toWSRefPath(final List<GUID> objectRefPath) {
+        final List<String> refpath = new LinkedList<>();
+        for (final GUID g: objectRefPath) {
+            if (!g.getStorageCode().equals("WS")) {
+                throw new IllegalArgumentException(String.format(
+                        "GUID %s is not a workspace object", g));
+            }
+            refpath.add(g.getAccessGroupId() + "/" + g.getAccessGroupObjectId() + "/" +
+                    g.getVersion());
+        }
+        return String.join(";", refpath);
     }
 
 }
