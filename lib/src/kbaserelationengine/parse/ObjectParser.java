@@ -2,10 +2,7 @@ package kbaserelationengine.parse;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,21 +12,14 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.common.ObjectJsonPath;
-import kbaserelationengine.events.handler.WorkspaceEventHandler;
+import kbaserelationengine.events.handler.SourceData;
 import kbaserelationengine.relations.Relation;
 import kbaserelationengine.relations.RelationStorage;
 import kbaserelationengine.system.RelationRules;
 import kbaserelationengine.system.IndexingRules;
 import kbaserelationengine.system.ObjectTypeParsingRules;
 import kbaserelationengine.system.SystemStorage;
-import us.kbase.auth.AuthToken;
-import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
-import workspace.GetObjects2Params;
-import workspace.GetObjects2Results;
-import workspace.ObjectData;
-import workspace.ObjectSpecification;
-import workspace.WorkspaceClient;
 
 public class ObjectParser {
     
@@ -41,28 +31,13 @@ public class ObjectParser {
         return tempFile;
     }
 
-    public static ObjectData loadObject(
-            final URL wsUrl,
-            final File tempFile,
-            final AuthToken token,
-            final List<GUID> objectRefPath)
-            throws IOException, JsonClientException {
-        WorkspaceClient wc = new WorkspaceClient(wsUrl, token);
-        wc.setIsInsecureHttpConnectionAllowed(true);
-        wc.setStreamingModeOn(true);
-        wc._setFileForNextRpcResponse(tempFile);
-        final Map<String, Object> command = new HashMap<>();
-        command.put("command", "getObjects");
-        command.put("params", new GetObjects2Params().withObjects(
-                Arrays.asList(new ObjectSpecification().withRef(
-                        WorkspaceEventHandler.toWSRefPath(objectRefPath)))));
-        return wc.administer(new UObject(command)).asClassInstance(GetObjects2Results.class)
-                .getData().get(0);
-    }
-    
-    public static Map<GUID, String> parseSubObjects(ObjectData obj, GUID guid, 
-            ObjectTypeParsingRules parsingRules, SystemStorage system,
-            RelationStorage relationStorage) throws IOException, ObjectParseException {
+    public static Map<GUID, String> parseSubObjects(
+            final SourceData obj,
+            final GUID guid, 
+            final ObjectTypeParsingRules parsingRules,
+            final SystemStorage system,
+            final RelationStorage relationStorage)
+            throws IOException, ObjectParseException {
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
         try (JsonParser jts = obj.getData().getPlacedStream()) {

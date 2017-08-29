@@ -1,6 +1,7 @@
 package kbaserelationengine.events.handler;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -20,7 +21,10 @@ import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.UObject;
 import workspace.GetObjectInfo3Params;
 import workspace.GetObjectInfo3Results;
+import workspace.GetObjects2Params;
+import workspace.GetObjects2Results;
 import workspace.ListObjectsParams;
+import workspace.ObjectData;
 import workspace.ObjectIdentity;
 import workspace.ObjectSpecification;
 import workspace.WorkspaceClient;
@@ -31,7 +35,7 @@ import workspace.WorkspaceClient;
  */
 public class WorkspaceEventHandler implements EventHandler {
     
-    //TODO TEST will need to mock the ws client
+    //TODO TEST
 
     /** The storage code for workspace events. */
     public static final String STORAGE_CODE = "WS";
@@ -50,6 +54,42 @@ public class WorkspaceEventHandler implements EventHandler {
      */
     public WorkspaceEventHandler(final WorkspaceClient wsClient) {
         ws = wsClient;
+    }
+    
+    @Override
+    public SourceData load(final GUID guid, final Path file) {
+        return load(Arrays.asList(guid), file);
+    }
+
+    @Override
+    public SourceData load(final List<GUID> guids, final Path file) {
+        // create a new client since we're setting a file for the next response
+        final WorkspaceClient wc;
+        try {
+            wc = new WorkspaceClient(ws.getURL(), ws.getToken());
+        } catch (IOException |JsonClientException e) {
+            //TODO EXP some of these exceptions should be retries, some should shut down the event loop until the issue can be fixed (e.g. bad token, ws down), some should ignore the event (ws deleted)
+            throw new IllegalStateException("Error contacting workspace: " + e.getMessage(), e);
+        }
+        // ideally copy this from the original client, but not accessible
+        wc.setIsInsecureHttpConnectionAllowed(true);
+        wc.setStreamingModeOn(true);
+        // this should be implemented as a threadlocal in the client
+        wc._setFileForNextRpcResponse(file.toFile());
+        final Map<String, Object> command = new HashMap<>();
+        command.put("command", "getObjects");
+        command.put("params", new GetObjects2Params().withObjects(
+                Arrays.asList(new ObjectSpecification().withRef(toWSRefPath(guids)))));
+        final ObjectData ret;
+        try {
+            ret = wc.administer(new UObject(command))
+                    .asClassInstance(GetObjects2Results.class)
+                    .getData().get(0);
+        } catch (IOException |JsonClientException e) {
+            //TODO EXP some of these exceptions should be retries, some should shut down the event loop until the issue can be fixed (e.g. bad token, ws down), some should ignore the event (ws deleted)
+            throw new IllegalStateException("Error contacting workspace: " + e.getMessage(), e);
+        }
+        return SourceData.getBuilder(ret.getData(), ret.getInfo().getE2()).build();
     }
 
     @Override

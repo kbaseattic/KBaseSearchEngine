@@ -43,6 +43,7 @@ import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.events.StatusEventListener;
 import kbaserelationengine.events.WorkspaceAccessGroupProvider;
 import kbaserelationengine.events.handler.EventHandler;
+import kbaserelationengine.events.handler.SourceData;
 import kbaserelationengine.events.handler.WorkspaceEventHandler;
 import kbaserelationengine.events.reconstructor.AccessType;
 import kbaserelationengine.events.reconstructor.PresenceType;
@@ -73,13 +74,10 @@ import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
 import workspace.GetObjectInfo3Params;
 import workspace.GetObjectInfo3Results;
-import workspace.ObjectData;
 import workspace.ObjectSpecification;
 import workspace.WorkspaceClient;
 
 public class MainObjectProcessor {
-    private URL wsURL;
-    private AuthToken kbaseIndexerToken;
     private File rootTempDir;
     private WSStatusEventReconstructor wsEventReconstructor;
     private WorkspaceClient wsClient;
@@ -123,8 +121,6 @@ public class MainObjectProcessor {
          */
         this.runWorkspaceEventReconstructor = runWorkspaceEventReconstructor;
         this.logger = logger;
-        this.wsURL = wsURL;
-        this.kbaseIndexerToken = kbaseIndexerToken;
         this.rootTempDir = tempDir;
         this.admins = admins == null ? Collections.emptySet() : admins;
         MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(mongoHost, mongoPort, mongoDbName);
@@ -188,8 +184,6 @@ public class MainObjectProcessor {
             String esIndexPrefix, File typesDir, File tempDir, LineLogger logger) 
                     throws IOException, ObjectParseException, UnauthorizedException {
         this.runWorkspaceEventReconstructor = true;
-        this.wsURL = wsURL;
-        this.kbaseIndexerToken = kbaseIndexerToken;
         this.rootTempDir = tempDir;
         this.logger = logger;
         this.admins = Collections.emptySet();
@@ -321,8 +315,16 @@ public class MainObjectProcessor {
     }
     
     private EventHandler getEventHandler(final ObjectStatusEvent ev) {
+        return getEventHandler(ev.getStorageCode());
+    }
+    
+    private EventHandler getEventHandler(final GUID guid) {
+        return getEventHandler(guid.getStorageCode());
+    }
+    
+    private EventHandler getEventHandler(final String storageCode) {
         //TODO HANDLERS should pull from a hashmap of event type -> handler
-        if (!"WS".equals(ev.getStorageCode())) {
+        if (!"WS".equals(storageCode)) {
             //TODO EXP need to make this an error such that the event is not reprocessed
             throw new IllegalStateException("Only WS events are currently supported");
         }
@@ -387,13 +389,8 @@ public class MainObjectProcessor {
         }
         try {
             objectRefPath.add(guid);
-            //TODO HANDLER move this into handler API
-            /* ideally here you would select an implementation of an EventHandler
-             * based on the storageCode that knows how to fetch the data you need based on the
-             * nextCallerRefPath
-             */
-            ObjectData obj = ObjectParser.loadObject(wsURL, tempFile, kbaseIndexerToken, 
-                    objectRefPath);
+            final EventHandler handler = getEventHandler(guid);
+            final SourceData obj = handler.load(objectRefPath, tempFile.toPath());
             if (logger != null) {
                 long loadTime = System.currentTimeMillis() - t1;
                 logger.logInfo("[Indexer]   " + guid + ", loading time: " + loadTime + " ms.");
@@ -426,7 +423,7 @@ public class MainObjectProcessor {
                 if (timestamp == null) {
                     timestamp = System.currentTimeMillis();
                 }
-                indexingStorage.indexObjects(rule.getGlobalObjectType(), obj.getInfo().getE2(), 
+                indexingStorage.indexObjects(rule.getGlobalObjectType(), obj.getName(), 
                         timestamp, parentJson, guid, guidToObj, isPublic, rule.getIndexingRules());
                 if (logger != null) {
                     long indexTime = System.currentTimeMillis() - t3;
