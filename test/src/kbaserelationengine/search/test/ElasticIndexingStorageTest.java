@@ -25,6 +25,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import junit.framework.Assert;
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.common.ObjectJsonPath;
+import kbaserelationengine.events.handler.SourceData;
 import kbaserelationengine.parse.IdMapper;
 import kbaserelationengine.parse.KeywordParser;
 import kbaserelationengine.parse.KeywordParser.ObjectLookupProvider;
@@ -140,7 +141,8 @@ public class ElasticIndexingStorageTest {
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
         ParsedObject obj = KeywordParser.extractKeywords(objectType, json, parentJsonValue, 
                 indexingRules, objLookup, null);
-        indexStorage.indexObject(id, objectType, obj, objectName, timestamp, parentJsonValue, 
+        final SourceData data = SourceData.getBuilder(new UObject(json), objectName).build();
+        indexStorage.indexObject(id, objectType, obj, data, timestamp, parentJsonValue, 
                 isPublic, indexingRules);
     }
     

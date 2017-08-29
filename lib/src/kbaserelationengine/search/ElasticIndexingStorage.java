@@ -41,6 +41,7 @@ import org.elasticsearch.client.RestClientBuilder;
 import com.google.common.collect.ImmutableMap;
 
 import kbaserelationengine.common.GUID;
+import kbaserelationengine.events.handler.SourceData;
 import kbaserelationengine.parse.ObjectParseException;
 import kbaserelationengine.parse.ParsedObject;
 import kbaserelationengine.system.IndexingRules;
@@ -151,7 +152,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     @SuppressWarnings("serial")
     @Override
-    public void indexObjects(String objectType, String objectName, long timestamp, 
+    public void indexObjects(String objectType, SourceData data, long timestamp, 
             String parentJsonValue, GUID pguid, Map<GUID, ParsedObject> idToObj,
             boolean isPublic, List<IndexingRules> indexingRules) 
                     throws IOException, ObjectParseException {
@@ -174,7 +175,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 for (GUID id : idToObj.keySet()) {
                     String esParentId = parentGuidToEsId.get(pguid);
                     ParsedObject obj = idToObj.get(id);
-                    Map<String, Object> doc = convertObject(id, objectType, obj, objectName, 
+                    Map<String, Object> doc = convertObject(id, objectType, obj, data, 
                             timestamp, parentJsonValue, isPublic, lastVersion);
                     Map<String, Object> index = new LinkedHashMap<String, Object>() {{
                         put("_index", indexName);
@@ -200,9 +201,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
         refreshIndex(indexName);
     }
     
-    private Map<String, Object> convertObject(GUID id, String objectType, ParsedObject obj, 
-            String objectName, long timestamp, String parentJson, boolean isPublic,
-            int lastVersion) throws IOException, ObjectParseException {
+    private Map<String, Object> convertObject(
+            final GUID id,
+            final String objectType,
+            final ParsedObject obj, 
+            final SourceData data,
+            final long timestamp,
+            final String parentJson,
+            final boolean isPublic,
+            final int lastVersion)
+            throws IOException, ObjectParseException {
         Map<String, List<Object>> indexPart = new LinkedHashMap<>();
         for (String key : obj.keywords.keySet()) {
             indexPart.put(getKeyProperty(key), obj.keywords.get(key));
@@ -211,7 +219,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.putAll(indexPart);
         doc.put("guid", id.toString());
         doc.put("otype", objectType);
-        doc.put("oname", objectName);
+        doc.put("oname", data.getName());
         doc.put("timestamp", timestamp);
         doc.put("prefix", toGUIDPrefix(id));
         doc.put("accgrp", id.getAccessGroupId());
@@ -227,7 +235,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     @Override
-    public void indexObject(GUID id, String objectType, ParsedObject obj, String objectName,
+    public void indexObject(GUID id, String objectType, ParsedObject obj, SourceData data,
             long timestamp, String parentJsonValue, boolean isPublic,
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
         String indexName = checkIndex(objectType, indexingRules);
@@ -240,7 +248,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         String esParentId = checkParentDoc(indexName, new HashSet<>(Arrays.asList(parentGUID)),
                 isPublic, lastVersion).get(parentGUID);
-        Map<String, Object> doc = convertObject(id, objectType, obj, objectName, timestamp, 
+        Map<String, Object> doc = convertObject(id, objectType, obj, data, timestamp, 
                 parentJsonValue, isPublic, lastVersion);
         String esId = lookupDocIds(indexName, new HashSet<>(Arrays.asList(id))).get(id);
         String requestUrl = "/" + indexName + "/" + getDataTableName() + "/";

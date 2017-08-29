@@ -423,7 +423,7 @@ public class MainObjectProcessor {
                 if (timestamp == null) {
                     timestamp = System.currentTimeMillis();
                 }
-                indexingStorage.indexObjects(rule.getGlobalObjectType(), obj.getName(), 
+                indexingStorage.indexObjects(rule.getGlobalObjectType(), obj,
                         timestamp, parentJson, guid, guidToObj, isPublic, rule.getIndexingRules());
                 if (logger != null) {
                     long indexTime = System.currentTimeMillis() - t3;
