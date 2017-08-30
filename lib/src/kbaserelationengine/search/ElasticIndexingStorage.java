@@ -219,7 +219,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.putAll(indexPart);
         doc.put("guid", id.toString());
         doc.put("otype", objectType);
+
         doc.put("oname", data.getName());
+        doc.put("creator", data.getCreator());
+        doc.put("copier", data.getCopier());
+        doc.put("prv_mod", data.getModule());
+        doc.put("prv_meth", data.getMethod());
+        doc.put("prv_ver", data.getVersion());
+        doc.put("prv_cmt", data.getCommitHash());
+        
         doc.put("timestamp", timestamp);
         doc.put("prefix", toGUIDPrefix(id));
         doc.put("accgrp", id.getAccessGroupId());
