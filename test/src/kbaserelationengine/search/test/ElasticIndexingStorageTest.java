@@ -427,7 +427,7 @@ public class ElasticIndexingStorageTest {
         ir.setKeywordType("integer");
         List<IndexingRules> indexingRules = Arrays.asList(ir);
         GUID id1 = new GUID("WS:30/1/1");
-        indexObject(id1, objType, "{\"prop4\": 123}", "obj.1", 0, null, null,
+        indexObject(id1, objType, "{\"prop4\": 123}", "obj.1", 0, null,
                 false, indexingRules);
         AccessFilter af30 = AccessFilter.create().withAccessGroups(30);
         checkIdInSet(lookupIdsByKey(objType, "prop4", 123, af30), 1, id1);
