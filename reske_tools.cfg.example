@@ -1,0 +1,14 @@
+workspace-mongo-host=
+workspace-mongo-db=
+workspace-mongo-user=
+workspace-mongo-pwd=
+
+reske-mongo-host=
+reske-mongo-db=
+
+# a comma delimited list of workspace ids or names to ignore.
+workspace-blacklist=
+
+# a comma delimited list of types to process. A prefix of the type name of any length greater
+# than 1 may be provided.
+workspace-types=
