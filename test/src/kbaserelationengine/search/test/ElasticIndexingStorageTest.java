@@ -378,6 +378,8 @@ public class ElasticIndexingStorageTest {
                 false, indexingRules);
         indexObject(id2, objType, "{\"prop3\": \"public gggg\"}", "obj.2", 0, null, null,
                 true, indexingRules);
+        Assert.assertEquals(0, lookupIdsByKey(objType, "prop3", "private", 
+                AccessFilter.create().withPublic(true)).size());
         checkIdInSet(lookupIdsByKey(objType, "prop3", "private", 
                 AccessFilter.create().withAccessGroups(20).withPublic(true)), 1, id1);
         Assert.assertEquals(0, lookupIdsByKey(objType, "prop3", "private", 
@@ -407,6 +409,10 @@ public class ElasticIndexingStorageTest {
                 AccessFilter.create().withAccessGroups(21).withPublic(true)).size());
     }
     
+    private static Set<GUID> asSet(GUID... guids) {
+        return new LinkedHashSet<>(Arrays.asList(guids));
+    }
+    
     private static void checkIdInSet(Set<GUID> ids, int size, GUID id) {
         Assert.assertEquals("Set contains: " + ids, size, ids.size());
         Assert.assertTrue("Set contains: " + ids, ids.contains(id));
@@ -418,15 +424,33 @@ public class ElasticIndexingStorageTest {
         IndexingRules ir = new IndexingRules();
         ir.setPath(new ObjectJsonPath("prop4"));
         ir.setKeywordType("integer");
-        List<IndexingRules> indexingRules= Arrays.asList(ir);
+        List<IndexingRules> indexingRules = Arrays.asList(ir);
         GUID id1 = new GUID("WS:30/1/1");
         indexObject(id1, objType, "{\"prop4\": 123}", "obj.1", 0, null, null,
                 false, indexingRules);
         AccessFilter af30 = AccessFilter.create().withAccessGroups(30);
         checkIdInSet(lookupIdsByKey(objType, "prop4", 123, af30), 1, id1);
+        AccessFilter afPub = AccessFilter.create().withPublic(true);
+        Assert.assertEquals(0, lookupIdsByKey(objType, "prop4", 123, afPub).size());
+        // Let's share object id1 with PUBLIC workspace 31
         indexStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(id1)), 31, true);
-        AccessFilter af31 = AccessFilter.create().withAccessGroups(31);
-        checkIdInSet(lookupIdsByKey(objType, "prop4", 123, af31), 1, id1);
-
+        // Should be publicly visible
+        checkIdInSet(lookupIdsByKey(objType, "prop4", 123, afPub), 1, id1);
+        // Let's check that unshare (with no call to unpublishObjectsExternally is enough
+        indexStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(id1)), 31);
+        // Should NOT be publicly visible
+        Assert.assertEquals(0, lookupIdsByKey(objType, "prop4", 123, afPub).size());
+        // Let's share object id1 with NOT public workspace 31
+        indexStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(id1)), 31, false);
+        // Should NOT be publicly visible
+        Assert.assertEquals(0, lookupIdsByKey(objType, "prop4", 123, afPub).size());
+        // Now let's declare workspace 31 PUBLIC
+        indexStorage.publishObjectsExternally(asSet(id1), 31);
+        // Should be publicly visible
+        checkIdInSet(lookupIdsByKey(objType, "prop4", 123, afPub), 1, id1);
+        // Now let's declare workspace 31 NOT public
+        indexStorage.unpublishObjectsExternally(asSet(id1), 31);
+        // Should NOT be publicly visible
+        Assert.assertEquals(0, lookupIdsByKey(objType, "prop4", 123, afPub).size());
     }
 }

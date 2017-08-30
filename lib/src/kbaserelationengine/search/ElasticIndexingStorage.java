@@ -844,6 +844,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
         for (String indexName : indexToGuids.keySet()) {
             boolean needRefresh = false;
             for (GUID guid : indexToGuids.get(indexName)) {
+                if (addExtPubForVersion(indexName, guid, accessGroupId)) {
+                    needRefresh = true;
+                }
             }
             if (needRefresh) {
                 refreshIndex(indexName);
@@ -1005,8 +1008,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @SuppressWarnings("serial")
     private Map<String, Object> createOwnerShouldBlock(AccessFilter accessFilter) {
         List<Object> must1List = new ArrayList<>();
-        if (accessFilter.accessGroupIds != null && !accessFilter.isAdmin) {
-            must1List.add(createFilter("terms", "accgrp", accessFilter.accessGroupIds));
+        if (!accessFilter.isAdmin) {
+            Set<Integer> accGroups = accessFilter.accessGroupIds;
+            if (accGroups == null) {
+                accGroups = Collections.emptySet();
+            }
+            must1List.add(createFilter("terms", "accgrp", accGroups));
         }
         if (!accessFilter.withAllHistory) {
             must1List.add(createFilter("term", "islast", true));
@@ -1169,18 +1176,36 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (accessGroupIds.isEmpty()) {
             return null;
         }
-        return createAccessMustBlock(accessGroupIds, accessFilter.withAllHistory);
+        return createAccessMustBlock(accessGroupIds, accessFilter.withAllHistory,
+                accessFilter.withPublic);
     }
     
     @SuppressWarnings("serial")
     private Map<String, Object> createAccessMustBlock(Set<Integer> accessGroupIds, 
-            boolean withAllHistory) {
+            boolean withAllHistory, boolean withPublic) {
+        List<Object> should = new ArrayList<>();
         String groupListProp = withAllHistory ? "groups" : "lastin";
         Map<String, Object> match = new LinkedHashMap<String, Object>() {{
             put(groupListProp, accessGroupIds);
         }};
-        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+        should.add(new LinkedHashMap<String, Object>() {{
             put("terms", match);
+        }});
+        if (withPublic) {
+            // Case of public workspaces containing DataPalette referencing to given object 
+            Map<String, Object> exists = new LinkedHashMap<String, Object>() {{
+                put("field", "extpub");
+            }};
+            should.add(new LinkedHashMap<String, Object>() {{
+                put("exists", exists);
+            }});
+        }
+        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+            put("should", should);
+        }};
+        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+            //put("terms", match);
+            put("bool", bool);
         }};
         Map<String, Object> hasParent = new LinkedHashMap<String, Object>() {{
             put("parent_type", getAccessTableName());
