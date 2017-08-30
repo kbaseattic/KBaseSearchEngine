@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import kbaserelationengine.common.GUID;
+import kbaserelationengine.events.handler.SourceData;
 import kbaserelationengine.parse.ObjectParseException;
 import kbaserelationengine.parse.ParsedObject;
 import kbaserelationengine.system.IndexingRules;
@@ -20,11 +21,11 @@ public interface IndexingStorage {
      * @param indexingRules  indexing rules
      * @throws IOException
      */
-    public void indexObject(GUID guid, String objectType, ParsedObject obj, String objectName,
+    public void indexObject(GUID guid, String objectType, ParsedObject obj, SourceData objectName,
             long timestamp, String parentJsonValue, boolean isPublic,
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException;
 
-    public void indexObjects(String objectType, String objectName, long timestamp,
+    public void indexObjects(String objectType, SourceData obj, long timestamp,
             String parentJsonValue, GUID pguid, Map<GUID, ParsedObject> idToObj,
             boolean isPublic, List<IndexingRules> indexingRules) 
                     throws IOException, ObjectParseException;

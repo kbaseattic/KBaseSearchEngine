@@ -23,8 +23,8 @@ import us.kbase.common.service.UObject;
 public class KeywordParser {
     
     public static ParsedObject extractKeywords(String type, String json, String parentJson, 
-            Map<String, String> metadata, List<IndexingRules> indexingRules, 
-            ObjectLookupProvider lookup, String callerRefPath) 
+            List<IndexingRules> indexingRules, 
+            ObjectLookupProvider lookup, List<GUID> objectRefPath) 
                     throws IOException, ObjectParseException {
         Map<String, InnerKeyValue> keywords = new LinkedHashMap<>();
         ValueConsumer<List<IndexingRules>> consumer = new ValueConsumer<List<IndexingRules>>() {
@@ -32,7 +32,7 @@ public class KeywordParser {
             public void addValue(List<IndexingRules> rulesList, Object value) throws IOException {
                 for (IndexingRules rule : rulesList) {
                     processRule(type, rule, getKeyName(rule), value, keywords, lookup, 
-                            callerRefPath);
+                            objectRefPath);
                 }
             }
         };
@@ -51,7 +51,7 @@ public class KeywordParser {
                     List<Object> values = keywords.containsKey(key) ? keywords.get(key).values : 
                         null;
                     if (isEmpty(values)) {
-                        processRule(type, rule, key, null, keywords, lookup, callerRefPath);
+                        processRule(type, rule, key, null, keywords, lookup, objectRefPath);
                     }
                 }
             }
@@ -60,7 +60,7 @@ public class KeywordParser {
             for (IndexingRules rule : ruleMap.get(key)) {
                 if (rule.isDerivedKey()) {
                     processDerivedRule(type, key, rule, ruleMap, keywords, lookup, 
-                            new LinkedHashSet<>(), callerRefPath);
+                            new LinkedHashSet<>(), objectRefPath);
                 }
             }
         }
@@ -74,7 +74,7 @@ public class KeywordParser {
     private static List<Object> processDerivedRule(String type, 
             Map<String, List<IndexingRules>> ruleMap, String key, 
             Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup, 
-            Set<String> keysWaitingInStack, String callerRefPath) throws IOException {
+            Set<String> keysWaitingInStack, List<GUID> callerRefPath) throws IOException {
         if (!ruleMap.containsKey(key)) {
             throw new IllegalStateException("Unknown source-key in derived keywords: " + 
                     type + "/" + key);
@@ -89,7 +89,7 @@ public class KeywordParser {
     
     private static List<Object> processDerivedRule(String type, String key, IndexingRules rule,
             Map<String, List<IndexingRules>> ruleMap, Map<String, InnerKeyValue> keywords, 
-            ObjectLookupProvider lookup, Set<String> keysWaitingInStack, String callerRefPath)
+            ObjectLookupProvider lookup, Set<String> keysWaitingInStack, List<GUID> objectRefPath)
                     throws IOException {
         if (!ruleMap.containsKey(key) || rule == null) {
             throw new IllegalStateException("Unknown source-key in derived keywords: " + 
@@ -113,13 +113,13 @@ public class KeywordParser {
                     type + "/" + key);
         }
         List<Object> values = processDerivedRule(type, ruleMap, sourceKey, keywords, lookup, 
-                keysWaitingInStack, callerRefPath);
+                keysWaitingInStack, objectRefPath);
         if (rule.getSubobjectIdKey() != null) {
             processDerivedRule(type, ruleMap, rule.getSubobjectIdKey(), keywords, lookup, 
-                    keysWaitingInStack, callerRefPath);
+                    keysWaitingInStack, objectRefPath);
         }
         for (Object value : values) {
-            processRule(type, rule, key, value, keywords, lookup, callerRefPath);
+            processRule(type, rule, key, value, keywords, lookup, objectRefPath);
         }
         keysWaitingInStack.remove(key);
         List<Object> ret = keywords.containsKey(key) ? keywords.get(key).values : new ArrayList<>();
@@ -134,8 +134,9 @@ public class KeywordParser {
     }
     
     private static void processRule(String type, IndexingRules rule, String key, Object value,
-            Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup, String callerRefPath)
-                    throws IOException {
+            Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup,
+            List<GUID> objectRefPath)
+            throws IOException {
         Object valueFinal = value;
         if (valueFinal == null) {
             if (rule.getOptionalDefaultValue() != null) {
@@ -154,7 +155,7 @@ public class KeywordParser {
         if (rule.getTransform() != null) {
             try {
                 valueFinal = transform(valueFinal, rule.getTransform(), rule, keywords,
-                        lookup, callerRefPath);
+                        lookup, objectRefPath);
             } catch (Exception ex) {
                 throw new IllegalStateException("Transformation error for keyword " + type + "/" +
                         key + ": " + ex.getMessage(), ex);
@@ -182,7 +183,7 @@ public class KeywordParser {
     @SuppressWarnings("unchecked")
     private static Object transform(Object value, String transform, IndexingRules rule,
             Map<String, InnerKeyValue> sourceKeywords, ObjectLookupProvider lookup,
-            String callerRefPath) throws IOException {
+            List<GUID> objectRefPath) throws IOException {
         String retProp = null;
         if (transform.contains(".")) {
             int dotPos = transform.indexOf('.');
@@ -214,7 +215,7 @@ public class KeywordParser {
                 List<Object> ret = new ArrayList<>();
                 for (Object item : input) {
                     addOrAddAll(transform(item, transform, rule, sourceKeywords, lookup, 
-                            callerRefPath), ret);
+                            objectRefPath), ret);
                 }
                 return ret;
             }
@@ -223,7 +224,7 @@ public class KeywordParser {
                 List<Object> ret = new ArrayList<>();
                 for (Object item : input.values()) {
                     addOrAddAll(transform(item, transform, rule, sourceKeywords, lookup,
-                            callerRefPath), ret);
+                            objectRefPath), ret);
                 }
                 return ret;
             }
@@ -244,7 +245,7 @@ public class KeywordParser {
                 // Lets remove storage code prefix first:
                 refs = refs.stream().map(item -> item.startsWith("WS:")
                         ? item.substring(3) : item).collect(Collectors.toSet());
-                refs = lookup.resolveWorkspaceRefs(callerRefPath, refs);
+                refs = lookup.resolveWorkspaceRefs(objectRefPath, refs);
             }
             Set<GUID> guids = new LinkedHashSet<>();
             for (String ref : refs) {
@@ -359,7 +360,7 @@ public class KeywordParser {
     }
 
     public interface ObjectLookupProvider {
-        public Set<String> resolveWorkspaceRefs(String callerRefPath, Set<String> refs) 
+        public Set<String> resolveWorkspaceRefs(List<GUID> objectRefPath, Set<String> refs) 
                 throws IOException;
         public Map<GUID, String> getTypesForGuids(Set<GUID> guids) throws IOException;
         public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids) 

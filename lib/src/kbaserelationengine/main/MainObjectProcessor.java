@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +45,7 @@ import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.events.StatusEventListener;
 import kbaserelationengine.events.WorkspaceAccessGroupProvider;
 import kbaserelationengine.events.handler.EventHandler;
+import kbaserelationengine.events.handler.SourceData;
 import kbaserelationengine.events.handler.WorkspaceEventHandler;
 import kbaserelationengine.events.reconstructor.AccessType;
 import kbaserelationengine.events.reconstructor.PresenceType;
@@ -74,13 +76,10 @@ import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
 import workspace.GetObjectInfo3Params;
 import workspace.GetObjectInfo3Results;
-import workspace.ObjectData;
 import workspace.ObjectSpecification;
 import workspace.WorkspaceClient;
 
 public class MainObjectProcessor {
-    private URL wsURL;
-    private AuthToken kbaseIndexerToken;
     private File rootTempDir;
     private WSStatusEventReconstructor wsEventReconstructor;
     private WorkspaceClient wsClient;
@@ -124,8 +123,6 @@ public class MainObjectProcessor {
          */
         this.runWorkspaceEventReconstructor = runWorkspaceEventReconstructor;
         this.logger = logger;
-        this.wsURL = wsURL;
-        this.kbaseIndexerToken = kbaseIndexerToken;
         this.rootTempDir = tempDir;
         this.admins = admins == null ? Collections.emptySet() : admins;
         //TODO NOW mongo auth
@@ -194,8 +191,6 @@ public class MainObjectProcessor {
             String esIndexPrefix, File typesDir, File tempDir, LineLogger logger) 
                     throws IOException, ObjectParseException, UnauthorizedException {
         this.runWorkspaceEventReconstructor = true;
-        this.wsURL = wsURL;
-        this.kbaseIndexerToken = kbaseIndexerToken;
         this.rootTempDir = tempDir;
         this.logger = logger;
         this.admins = Collections.emptySet();
@@ -211,10 +206,6 @@ public class MainObjectProcessor {
         esStorage.setIndexNamePrefix(esIndexPrefix);
         indexingStorage = esStorage;
         relationStorage = new DefaultRelationStorage();
-    }
-    
-    private File getWsLoadTempDir() {
-        return getTempSubDir("wsload");
     }
     
     private File getTempSubDir(String subName) {
@@ -331,8 +322,16 @@ public class MainObjectProcessor {
     }
     
     private EventHandler getEventHandler(final ObjectStatusEvent ev) {
+        return getEventHandler(ev.getStorageCode());
+    }
+    
+    private EventHandler getEventHandler(final GUID guid) {
+        return getEventHandler(guid.getStorageCode());
+    }
+    
+    private EventHandler getEventHandler(final String storageCode) {
         //TODO HANDLERS should pull from a hashmap of event type -> handler
-        if (!"WS".equals(ev.getStorageCode())) {
+        if (!"WS".equals(storageCode)) {
             //TODO EXP need to make this an error such that the event is not reprocessed
             throw new IllegalStateException("Only WS events are currently supported");
         }
@@ -357,7 +356,7 @@ public class MainObjectProcessor {
                 }
             } else {
                 indexObject(pguid, ev.getStorageObjectType(), ev.getTimestamp(),
-                        ev.isGlobalAccessed(), null, null);
+                        ev.isGlobalAccessed(), null, new LinkedList<>());
             }
             break;
         case DELETED:
@@ -387,26 +386,18 @@ public class MainObjectProcessor {
         return systemStorage.listObjectTypesByStorageObjectType(storageObjectType) != null;
     }
     
-    public void indexObject(GUID guid, String storageObjectType, Long timestamp, boolean isPublic,
-            ObjectLookupProvider indexLookup, String callerRefPath) 
+    private void indexObject(GUID guid, String storageObjectType, Long timestamp, boolean isPublic,
+            ObjectLookupProvider indexLookup, List<GUID> objectRefPath) 
                     throws IOException, JsonClientException, ObjectParseException {
         long t1 = System.currentTimeMillis();
-        File tempFile = ObjectParser.prepareTempFile(getWsLoadTempDir());
+        File tempFile = ObjectParser.prepareTempFile(getTempSubDir(guid.getStorageCode()));
         if (indexLookup == null) {
             indexLookup = new MOPLookupProvider();
         }
         try {
-            String objRef = guid.getAccessGroupId() + "/" + guid.getAccessGroupObjectId() + "/" +
-                    guid.getVersion();
-            String nextCallerRefPath = (callerRefPath == null || callerRefPath.isEmpty() ? "" : 
-                (callerRefPath + ";")) + objRef;
-            //TODO HANDLER move this into handler API
-            /* ideally here you would select an implementation of an EventHandler
-             * based on the storageCode that knows how to fetch the data you need based on the
-             * nextCallerRefPath
-             */
-            ObjectData obj = ObjectParser.loadObject(wsURL, tempFile, kbaseIndexerToken, 
-                    nextCallerRefPath);
+            objectRefPath.add(guid);
+            final EventHandler handler = getEventHandler(guid);
+            final SourceData obj = handler.load(objectRefPath, tempFile.toPath());
             if (logger != null) {
                 long loadTime = System.currentTimeMillis() - t1;
                 logger.logInfo("[Indexer]   " + guid + ", loading time: " + loadTime + " ms.");
@@ -420,15 +411,14 @@ public class MainObjectProcessor {
                 try (JsonParser jts = obj.getData().getPlacedStream()) {
                     parentJson = ObjectParser.extractParentFragment(rule, jts);
                 }
-                Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, objRef, rule, 
+                Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, guid, rule, 
                         systemStorage, relationStorage);
                 Map<GUID, ParsedObject> guidToObj = new LinkedHashMap<>();
                 for (GUID subGuid : guidToJson.keySet()) {
                     String json = guidToJson.get(subGuid);
-                    Map<String, String> metadata = obj.getInfo().getE11();
                     ParsedObject prsObj = KeywordParser.extractKeywords(rule.getGlobalObjectType(),
-                            json, parentJson, metadata, rule.getIndexingRules(), indexLookup, 
-                            nextCallerRefPath);
+                            json, parentJson, rule.getIndexingRules(), indexLookup, 
+                            objectRefPath);
                     guidToObj.put(subGuid, prsObj);
                 }
                 long parsingTime = System.currentTimeMillis() - t2;
@@ -440,7 +430,7 @@ public class MainObjectProcessor {
                 if (timestamp == null) {
                     timestamp = System.currentTimeMillis();
                 }
-                indexingStorage.indexObjects(rule.getGlobalObjectType(), obj.getInfo().getE2(), 
+                indexingStorage.indexObjects(rule.getGlobalObjectType(), obj,
                         timestamp, parentJson, guid, guidToObj, isPublic, rule.getIndexingRules());
                 if (logger != null) {
                     long indexTime = System.currentTimeMillis() - t3;
@@ -752,7 +742,7 @@ public class MainObjectProcessor {
         private Map<GUID, String> guidToTypeCache = new LinkedHashMap<>();
         
         @Override
-        public Set<String> resolveWorkspaceRefs(String callerRefPath, Set<String> refs)
+        public Set<String> resolveWorkspaceRefs(List<GUID> callerRefPath, Set<String> refs)
                 throws IOException {
             Set<String> ret = new LinkedHashSet<>();
             Set<String> refsToResolve = new LinkedHashSet<>();
@@ -764,7 +754,7 @@ public class MainObjectProcessor {
                 }
             }
             String refPrefix = callerRefPath == null || callerRefPath.isEmpty() ? "" :
-                (callerRefPath + ";");
+                WorkspaceEventHandler.toWSRefPath(callerRefPath) + ";";
             if (refsToResolve.size() > 0) {
                 try {
                     List<ObjectSpecification> getInfoInput = refs.stream().map(

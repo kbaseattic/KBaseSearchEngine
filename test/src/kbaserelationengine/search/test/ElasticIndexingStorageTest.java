@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -26,6 +25,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import junit.framework.Assert;
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.common.ObjectJsonPath;
+import kbaserelationengine.events.handler.SourceData;
 import kbaserelationengine.parse.IdMapper;
 import kbaserelationengine.parse.KeywordParser;
 import kbaserelationengine.parse.KeywordParser.ObjectLookupProvider;
@@ -70,7 +70,7 @@ public class ElasticIndexingStorageTest {
         objLookup = new ObjectLookupProvider() {
             
             @Override
-            public Set<String> resolveWorkspaceRefs(String callerRefPath, Set<String> refs)
+            public Set<String> resolveWorkspaceRefs(List<GUID> callerRefPath, Set<String> refs)
                     throws IOException {
                 for (String ref : refs) {
                     try {
@@ -78,8 +78,8 @@ public class ElasticIndexingStorageTest {
                         boolean indexed = indexStorage.checkParentGuidsExist(null, new LinkedHashSet<>(
                                 Arrays.asList(pguid))).get(pguid);
                         if (!indexed) {
-                            indexObject("Assembly", "assembly01", ref, "MyAssembly.1");
-                            indexObject("AssemblyContig", "assembly01", ref, "MyAssembly.1");
+                            indexObject("Assembly", "assembly01", pguid, "MyAssembly.1");
+                            indexObject("AssemblyContig", "assembly01", pguid, "MyAssembly.1");
                             Assert.assertTrue(indexStorage.checkParentGuidsExist(null, new LinkedHashSet<>(
                                     Arrays.asList(pguid))).get(pguid));
                         }
@@ -137,16 +137,17 @@ public class ElasticIndexingStorageTest {
     }
     
     private static void indexObject(GUID id, String objectType, String json, String objectName,
-            long timestamp, String parentJsonValue, Map<String, String> metadata, boolean isPublic,
+            long timestamp, String parentJsonValue, boolean isPublic,
             List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
         ParsedObject obj = KeywordParser.extractKeywords(objectType, json, parentJsonValue, 
-                metadata, indexingRules, objLookup, null);
-        indexStorage.indexObject(id, objectType, obj, objectName, timestamp, parentJsonValue, 
+                indexingRules, objLookup, null);
+        final SourceData data = SourceData.getBuilder(new UObject(json), objectName).build();
+        indexStorage.indexObject(id, objectType, obj, data, timestamp, parentJsonValue, 
                 isPublic, indexingRules);
     }
     
     @SuppressWarnings("unchecked")
-    private static void indexObject(String type, String jsonResource, String ref, String objName)
+    private static void indexObject(String type, String jsonResource, GUID ref, String objName)
             throws Exception {
         Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
                 new File("resources/types/" + type + ".json"), Map.class);
@@ -171,7 +172,7 @@ public class ElasticIndexingStorageTest {
             }
             GUID id = ObjectParser.prepareGUID(parsingRules, ref, path, idConsumer);
             indexObject(id, parsingRules.getGlobalObjectType(), subJson, 
-                    objName, System.currentTimeMillis(), parentJson, Collections.emptyMap(),
+                    objName, System.currentTimeMillis(), parentJson,
                     false, parsingRules.getIndexingRules());
         }
 
@@ -184,7 +185,7 @@ public class ElasticIndexingStorageTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testFeatures() throws Exception {
-        indexObject("GenomeFeature", "genome01", "1/1/1", "MyGenome.1");
+        indexObject("GenomeFeature", "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
         Map<String, Integer> typeToCount = indexStorage.searchTypes(ft("Rfah"), 
                 AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, typeToCount.size());
@@ -236,7 +237,7 @@ public class ElasticIndexingStorageTest {
     
     @Test
     public void testGenome() throws Exception {
-        indexObject("Genome", "genome01", "1/1/1", "MyGenome.1");
+        indexObject("Genome", "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
         Set<GUID> guids = indexStorage.searchIds("Genome", MatchFilter.create().withLookupInKey(
                 "features", new MatchValue(1, null)), null, AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, guids.size());
@@ -261,25 +262,25 @@ public class ElasticIndexingStorageTest {
         ir.setFullText(true);
         List<IndexingRules> indexingRules= Arrays.asList(ir);
         GUID id11 = new GUID("WS:2/1/1");
-        indexObject(id11, objType, "{\"prop1\":\"abc 123\"}", "obj.1", 0, null, null,
+        indexObject(id11, objType, "{\"prop1\":\"abc 123\"}", "obj.1", 0, null,
                 false, indexingRules);
         checkIdInSet(indexStorage.searchIds(objType, ft("abc"), null, 
                 AccessFilter.create().withAccessGroups(2)), 1, id11);
         GUID id2 = new GUID("WS:2/2/1");
-        indexObject(id2, objType, "{\"prop1\":\"abd\"}", "obj.2", 0, null, null,
+        indexObject(id2, objType, "{\"prop1\":\"abd\"}", "obj.2", 0, null,
                 false, indexingRules);
         GUID id3 = new GUID("WS:3/1/1");
-        indexObject(id3, objType, "{\"prop1\":\"abc\"}", "obj.3", 0, null, null,
+        indexObject(id3, objType, "{\"prop1\":\"abc\"}", "obj.3", 0, null,
                 false, indexingRules);
         checkIdInSet(indexStorage.searchIds(objType, ft("abc"), null, 
                 AccessFilter.create().withAccessGroups(2)), 1, id11);
         GUID id12 = new GUID("WS:2/1/2");
-        indexObject(id12, objType, "{\"prop1\":\"abc 124\"}", "obj.1", 0, null, null,
+        indexObject(id12, objType, "{\"prop1\":\"abc 124\"}", "obj.1", 0, null,
                 false, indexingRules);
         checkIdInSet(indexStorage.searchIds(objType, ft("abc"), null, 
                 AccessFilter.create().withAccessGroups(2)), 1, id12);
         GUID id13 = new GUID("WS:2/1/3");
-        indexObject(id13, objType, "{\"prop1\":\"abc 125\"}", "obj.1", 0, null, null,
+        indexObject(id13, objType, "{\"prop1\":\"abc 125\"}", "obj.1", 0, null,
                 false, indexingRules);
         //indexStorage.refreshIndex(indexStorage.getIndex(objType));
         checkIdInSet(indexStorage.searchIds(objType, ft("abc"), null, 
@@ -319,13 +320,13 @@ public class ElasticIndexingStorageTest {
         ir.setKeywordType("integer");
         List<IndexingRules> indexingRules= Arrays.asList(ir);
         GUID id1 = new GUID("WS:10/1/1");
-        indexObject(id1, objType, "{\"prop2\": 123}", "obj.1", 0, null, null,
+        indexObject(id1, objType, "{\"prop2\": 123}", "obj.1", 0, null,
                 false, indexingRules);
         GUID id2 = new GUID("WS:10/1/2");
-        indexObject(id2, objType, "{\"prop2\": 124}", "obj.1", 0, null, null,
+        indexObject(id2, objType, "{\"prop2\": 124}", "obj.1", 0, null,
                 false, indexingRules);
         GUID id3 = new GUID("WS:10/1/3");
-        indexObject(id3, objType, "{\"prop2\": 125}", "obj.1", 0, null, null,
+        indexObject(id3, objType, "{\"prop2\": 125}", "obj.1", 0, null,
                 false, indexingRules);
         AccessFilter af10 = AccessFilter.create().withAccessGroups(10);
         Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 123, af10).size());
@@ -371,9 +372,9 @@ public class ElasticIndexingStorageTest {
         List<IndexingRules> indexingRules= Arrays.asList(ir);
         GUID id1 = new GUID("WS:20/1/1");
         GUID id2 = new GUID("WS:20/2/1");
-        indexObject(id1, objType, "{\"prop3\": \"private gggg\"}", "obj.1", 0, null, null,
+        indexObject(id1, objType, "{\"prop3\": \"private gggg\"}", "obj.1", 0, null,
                 false, indexingRules);
-        indexObject(id2, objType, "{\"prop3\": \"public gggg\"}", "obj.2", 0, null, null,
+        indexObject(id2, objType, "{\"prop3\": \"public gggg\"}", "obj.2", 0, null,
                 true, indexingRules);
         checkIdInSet(lookupIdsByKey(objType, "prop3", "private", 
                 AccessFilter.create().withAccessGroups(20).withPublic(true)), 1, id1);
