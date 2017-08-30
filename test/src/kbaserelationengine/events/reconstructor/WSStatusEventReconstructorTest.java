@@ -10,6 +10,8 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.mongodb.MongoClient;
+
 import kbaserelationengine.events.AccessGroupStatus;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.StatusEventListener;
@@ -27,7 +29,10 @@ public class WSStatusEventReconstructorTest {
 	@Before
 	public void init() throws MalformedURLException{
         fakeStorage = new FakeStatusStorage();
-        mdStorage  = new MongoDBStatusEventStorage("localhost", 27017);
+        @SuppressWarnings("resource")
+        final MongoClient mongoClient = new MongoClient("localhost");
+        mdStorage  = new MongoDBStatusEventStorage(mongoClient
+                .getDatabase("reske_test_db"));
 
         StatusEventStorage storage = mdStorage;
         

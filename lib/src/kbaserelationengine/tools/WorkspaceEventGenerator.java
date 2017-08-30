@@ -1,13 +1,20 @@
 package kbaserelationengine.tools;
 
 import static kbaserelationengine.tools.Utils.nonNull;
+import static kbaserelationengine.tools.Utils.noNulls;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.bson.Document;
 
@@ -20,12 +27,18 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 
+import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
+import kbaserelationengine.events.storage.MongoDBStatusEventStorage;
+import kbaserelationengine.events.storage.StatusEventStorage;
 
 /** Generates events from the workspace and inserts them into the RESKE queue.
  * 
  * Due to technical issues, interfaces directly with the workspace DB instead of going through
  * the workspace library classes, which would be preferred in general.
+ * 
+ * Generates events based on the RESKE prototype event handler in the workspace, so if that
+ * changes this code will likely need to change.
  * 
  * @author gaprice@lbl.gov
  *
@@ -41,6 +54,7 @@ public class WorkspaceEventGenerator {
     private static final String WS_PUB_USER = "*";
     private static final int WS_PUB_PERM = 10;
     private static final String WS_KEY_WS_ID = "ws";
+    private static final String WS_KEY_WS_NAME = "name";
     private static final String WS_KEY_OBJ_ID = "id";
     private static final String WS_KEY_VER = "ver";
     private static final String WS_KEY_TYPE = "type";
@@ -58,28 +72,32 @@ public class WorkspaceEventGenerator {
     //TODO EVENTGEN handle data palettes: 1) remove all sharing for ws 2) pull DP 3) add share events for all DP objects. RC still possible.
     
     private final int ws;
-    //TODO NOW actually use these
     private final int obj;
     private final int ver;
     
     private final MongoClient reskeClient;
-    private final MongoDatabase reskeDB;
     private final MongoClient wsClient;
-//    private final StatusEventStorage storage;
+    private final StatusEventStorage storage;
     private final MongoDatabase wsDB;
     private final PrintStream logtarget;
+    private final Set<WorkspaceIdentifier> wsBlackList;
+    private List<Pattern> wsTypes;
     
     private WorkspaceEventGenerator(
             final RESKEToolsConfig cfg,
             final int ws,
             final int obj,
             final int ver,
-            final PrintStream logtarget)
+            final PrintStream logtarget,
+            final Collection<WorkspaceIdentifier> wsBlackList,
+            final Collection<String> wsTypes)
             throws EventGeneratorException {
         this.ws = ws;
         this.obj = obj;
         this.ver = ver;
         this.logtarget = logtarget;
+        this.wsBlackList = Collections.unmodifiableSet(new HashSet<>(wsBlackList));
+        this.wsTypes = processTypes(wsTypes);
         if (cfg.getReskeMongoHost().equals(cfg.getWorkspaceMongoHost())) {
             final List<MongoCredential> creds = new LinkedList<>();
             addCred(cfg.getReskeMongoDB(), cfg.getReskeMongoUser(), cfg.getReskeMongoPwd(), creds);
@@ -98,19 +116,18 @@ public class WorkspaceEventGenerator {
                     cfg.getWorkspaceMongoUser(), cfg.getWorkspaceMongoPwd());
             
         }
-        reskeDB = reskeClient.getDatabase(cfg.getReskeMongoDB());
+        storage = new MongoDBStatusEventStorage(reskeClient.getDatabase(cfg.getReskeMongoDB()));
         wsDB = wsClient.getDatabase(cfg.getWorkspaceMongoDB());
         checkWorkspaceSchema();
-        checkReskeConnection();
     }
     
-    private void checkReskeConnection() throws EventGeneratorException {
-        try {
-            // collection may not exist yet so this is the best we can do
-            reskeDB.listCollectionNames();
-        } catch (MongoException e) {
-            throw convert(e, "RESKE");
+    private List<Pattern> processTypes(final Collection<String> wsTypes) {
+        final List<Pattern> ret = new LinkedList<>();
+        for (final String t: wsTypes) {
+            // always do a prefix regex so mongo can use indexes
+            ret.add(Pattern.compile("^" + Pattern.quote(t.trim()))); // set up mongo regex
         }
+        return ret;
     }
 
     public void destroy() {
@@ -183,11 +200,16 @@ public class WorkspaceEventGenerator {
                 final FindIterable<Document> cur = wsDB.getCollection(WS_COL_WORKSPACES)
                         .find().sort(new Document(WS_KEY_WS_ID, 1));
                 for (final Document ws: cur) {
-                    final int wsid = Math.toIntExact(ws.getLong(WS_KEY_WS_ID));
-                    if (ws.getBoolean(WS_KEY_WS_DEL)) {
-                        log("Skipping deleted workspace " + wsid);
+                    final int id = Math.toIntExact(ws.getLong(WS_KEY_WS_ID));
+                    final String wsname = ws.getString(WS_KEY_WS_NAME);
+                    if (wsBlackList.contains(new WorkspaceIdentifier(id)) ||
+                            wsBlackList.contains(new WorkspaceIdentifier(wsname))) {
+                        log(String.format("Skipping blacklisted workspace %s (%s)",
+                                wsname, id));
+                    } else if (ws.getBoolean(WS_KEY_WS_DEL)) {
+                        log(String.format("Skipping deleted workspace %s (%s)", id, wsname));
                     } else {
-                        processWorkspace(wsid);
+                        processWorkspace(id);
                     }
                 }
             } catch (MongoException e) {
@@ -199,13 +221,23 @@ public class WorkspaceEventGenerator {
     
     private void processWorkspace(final int wsid) throws EventGeneratorException {
         final boolean pub = isPub(wsid);
+        final Document query = new Document(WS_KEY_WS_ID, wsid);
+        if (obj > 0) {
+            query.append(WS_KEY_OBJ_ID, obj);
+        }
+        if (ver > 0) {
+            query.append(WS_KEY_VER, ver);
+        }
+        if (!wsTypes.isEmpty()) {
+            query.append(WS_KEY_TYPE, new Document("$in", wsTypes));
+        }
         final MongoCursor<Document> vercur = wsDB.getCollection(WS_COL_VERS)
-                .find(new Document(WS_KEY_WS_ID, wsid))
+                .find(query)
                 .sort(new Document(WS_KEY_WS_ID, 1)
                         .append(WS_KEY_OBJ_ID, 1)
                         .append(WS_KEY_VER, -1)).iterator();
 
-        Versions vers = new Versions(vercur, 10000); //TODO NOW test versions
+        Versions vers = new Versions(vercur, 10000);
         while (!vers.isEmpty()) {
             processVers(wsid, vers, pub);
             vers = new Versions(vercur, 10000);
@@ -226,23 +258,28 @@ public class WorkspaceEventGenerator {
         }
     }
 
-    private void generateEvent(final int wsid, final boolean pub, final Document ver) {
-        //TODO NOW use StatusEventStorage
+    private void generateEvent(final int wsid, final boolean pub, final Document ver)
+            throws EventGeneratorException {
         final int objid = Math.toIntExact(ver.getLong(WS_KEY_OBJ_ID));
         final int vernum = ver.getInteger(WS_KEY_VER);
         final String type = ver.getString(WS_KEY_TYPE).split("-")[0];
-        reskeDB.getCollection("ObjectStatusEvents").insertOne(new Document()
-                .append("storageCode", "WS")
-                .append("accessGroupId", wsid)
-                .append("accessGroupObjectId", objid)
-                .append("version", vernum)
-                .append("targetAccessGroupId", null)
-                .append("timestamp", ver.getDate(WS_KEY_SAVEDATE))
-                .append("eventType", ObjectStatusEventType.NEW_VERSION.toString())
-                .append("storageObjectType", type)
-                .append("isGlobalAccessed", pub)
-                .append("indexed", false)
-                .append("processed", false));
+        try {
+            storage.store(new ObjectStatusEvent(
+                    null, // no mongo id
+                    "WS",
+                    wsid,
+                    objid + "",
+                    vernum,
+                    null,
+                    null,
+                    ver.getDate(WS_KEY_SAVEDATE).getTime(),
+                    type,
+                    ObjectStatusEventType.NEW_VERSION,
+                    pub));
+        } catch (IOException e) {
+            throw new EventGeneratorException("Error saving event to RESKE db: " + e.getMessage(),
+                    e);
+        }
         log(String.format("Generated event %s/%s/%s %s", wsid, objid, vernum, type));
     }
 
@@ -332,6 +369,8 @@ public class WorkspaceEventGenerator {
         private int obj = -1;
         private int ver = -1;
         private PrintStream logtarget;
+        private Collection<WorkspaceIdentifier> wsBlackList = new LinkedList<>();
+        private Collection<String> wsTypes = new LinkedList<>();
         
         public Builder(final RESKEToolsConfig cfg, final PrintStream logtarget) {
             nonNull(cfg, "cfg");
@@ -369,10 +408,25 @@ public class WorkspaceEventGenerator {
             return -1;
         }
 
-        public WorkspaceEventGenerator build() throws EventGeneratorException {
-            return new WorkspaceEventGenerator(cfg, ws, obj, ver, logtarget);
+        public Builder withWorkspaceBlacklist(final Collection<WorkspaceIdentifier> wsBlackList) {
+            nonNull(wsBlackList, "wsBlackList");
+            noNulls(wsBlackList, "null item in wsBlackList");
+            this.wsBlackList = wsBlackList;
+            return this;
         }
-        
+
+        public Builder withWorkspaceTypes(final Collection<String> wsTypes) {
+            nonNull(wsTypes, "wsTypes");
+            noNulls(wsTypes, "null item in wsTypes");
+            // todo check no whitespace only chars
+            this.wsTypes  = wsTypes;
+            return this;
+        }
+
+        public WorkspaceEventGenerator build() throws EventGeneratorException {
+            return new WorkspaceEventGenerator(cfg, ws, obj, ver, logtarget, wsBlackList, wsTypes);
+        }
+
     }
     
     @SuppressWarnings("serial")

@@ -1,6 +1,6 @@
 package kbaserelationengine.events;
 
-import java.util.Arrays;
+import java.util.List;
 
 public class AccessGroupStatus implements Comparable<AccessGroupStatus>{
 	private String _id;
@@ -9,9 +9,16 @@ public class AccessGroupStatus implements Comparable<AccessGroupStatus>{
     private Long timestamp;
     private Boolean isPrivate;
     private Boolean isDeleted;
-    private String[] users;
+    private List<String> users;
     
-	public AccessGroupStatus(String _id, String storageCode, Integer accessGroupId, Long timestamp, Boolean isPrivate, Boolean isDeleted,String[] users) {
+	public AccessGroupStatus(
+	        final String _id,
+	        final String storageCode,
+	        final Integer accessGroupId,
+	        final Long timestamp,
+	        final Boolean isPrivate,
+	        final Boolean isDeleted,
+	        final List<String> users) {
 		super();
 		this._id = _id;
 		this.storageCode = storageCode;
@@ -32,7 +39,7 @@ public class AccessGroupStatus implements Comparable<AccessGroupStatus>{
 				+ " ,timestamp=" + timestamp
 				+ " ,isPrivate=" + isPrivate
 				+ " ,isDeleted=" + isDeleted
-				+ " ,users=" + Arrays.toString(users) 
+				+ " ,users=" + users 
 				+ "}";
 	}
 	
@@ -60,7 +67,7 @@ public class AccessGroupStatus implements Comparable<AccessGroupStatus>{
 		return isDeleted;
 	}
 
-	public String[] getUsers() {
+	public List<String> getUsers() {
 		return users;
 	}
 

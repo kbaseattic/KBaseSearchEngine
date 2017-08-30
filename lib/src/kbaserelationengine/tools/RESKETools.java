@@ -9,6 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Properties;
 
 import org.slf4j.LoggerFactory;
@@ -22,7 +24,9 @@ import ch.qos.logback.classic.Logger;
 import kbaserelationengine.tools.WorkspaceEventGenerator.EventGeneratorException;
 import kbaserelationengine.tools.RESKEToolsConfig.RESKEToolsConfigException;
 
-/** Tools for working with RESKE.
+/** Tools for working with RESKE. Note that this CLI is designed against the RESKE prototype
+ * event listener in the workspace service, and may need changes if the event listener is changed
+ * or removed.
  * @author gaprice@lbl.gov
  *
  */
@@ -99,17 +103,51 @@ public class RESKETools {
             printError("For config file " + a.configPath, e, a.verbose);
             return 1;
         }
-        return runEventGenerator(cfg, out, a.ref, a.verbose);
+        return runEventGenerator(cfg, out, a.ref, a.verbose,
+                getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()),
+                getWsTypes(a.wsTypes, cfg.getWorkspaceTypes()));
     }
     
+    private List<String> getWsTypes(
+            List<String> args,
+            final List<String> config) {
+        if (args == null) {
+            args = new LinkedList<>();
+        }
+        for (final String t: args) {
+            if (t.trim().isEmpty()) {
+                args.remove(t);
+            }
+        }
+        if (args.isEmpty()) {
+            return config;
+        } else {
+            return args;
+        }
+    }
+
+    private List<WorkspaceIdentifier> getWsBlackList(
+            final List<String> args,
+            final List<WorkspaceIdentifier> config) {
+        if (args == null || args.isEmpty()) {
+            return config;
+        } else {
+            return RESKEToolsConfig.toWorkspaceIdentifiers(args);
+        }
+    }
+
     private int runEventGenerator(
             final RESKEToolsConfig cfg,
             final PrintStream logtarget,
             final String ref,
-            final boolean verbose) {
+            final boolean verbose,
+            final List<WorkspaceIdentifier> wsBlackList,
+            final List<String> wsTypes) {
         try {
             final WorkspaceEventGenerator gen = new WorkspaceEventGenerator.Builder(cfg, logtarget)
-                    .withNullableRef(ref).build();
+                    .withNullableRef(ref)
+                    .withWorkspaceBlacklist(wsBlackList)
+                    .withWorkspaceTypes(wsTypes).build();
             gen.generateEvents();
             gen.destroy();
         } catch (EventGeneratorException e) {
@@ -166,6 +204,17 @@ public class RESKETools {
                 "in all workspaces will be submitted to RESKE. A specific workspace, object, or " +
                 "object version can be specified by providing some or all of the ref.")
         private String ref;
+        
+        @Parameter(names = {"-b", "--ws-blacklist"}, description =
+                "A comma delimited list of workspace ids or names to ignore. Setting this " +
+                "option overrides the blacklist in the config file.")
+        private List<String> wsBlacklist;
+        
+        @Parameter(names = {"-t", "--ws-types"}, description =
+                "A comma delimited list of workspace types to process. A prefix for each type " +
+                "name may be provided. Setting this " +
+                "option overrides the type list in the config file.")
+        private List<String> wsTypes;
         
     }
 }

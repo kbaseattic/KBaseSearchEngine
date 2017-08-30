@@ -18,6 +18,8 @@ import java.util.stream.Collectors;
 import org.apache.http.HttpHost;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.mongodb.MongoClient;
+import com.mongodb.ServerAddress;
 
 import kbaserelationengine.AccessFilter;
 import kbaserelationengine.GetObjectsInput;
@@ -126,7 +128,12 @@ public class MainObjectProcessor {
         this.kbaseIndexerToken = kbaseIndexerToken;
         this.rootTempDir = tempDir;
         this.admins = admins == null ? Collections.emptySet() : admins;
-        MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(mongoHost, mongoPort, mongoDbName);
+        //TODO NOW mongo auth
+        @SuppressWarnings("resource") // can't close it or the connection shuts down
+        // may need a shut down listener to ensure the client shuts down, but probably unnecessary
+        final MongoClient cli = new MongoClient(new ServerAddress(mongoHost + ":" + mongoPort));
+        MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(
+                cli.getDatabase(mongoDbName));
         eventStorage = storage;
         WSStatusEventReconstructorImpl reconstructor = new WSStatusEventReconstructorImpl(
                 wsURL, kbaseIndexerToken, eventStorage);

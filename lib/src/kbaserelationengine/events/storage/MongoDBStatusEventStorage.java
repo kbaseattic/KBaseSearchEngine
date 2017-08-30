@@ -2,16 +2,18 @@ package kbaserelationengine.events.storage;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
+import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.UpdateOptions;
 
 import kbaserelationengine.events.AccessGroupProvider;
 import kbaserelationengine.events.AccessGroupStatus;
@@ -20,27 +22,14 @@ import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.events.StatusEventListener;
 
 public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEventStorage, StatusEventListener{
-	private static final String DEFAULT_DB_NAME = "DataStatus";
 	private static final String COLLECTION_GROUP_STATUS = "GroupStatus";
 	private static final String COLLECTION_OBJECT_STATUS_EVENTS = "ObjectStatusEvents";
 	
-	private String host;
-	private int port;
-	private String dbName;
-	private MongoClient mongoClient;
+	private MongoDatabase db;
 
-	public MongoDBStatusEventStorage(String host, int port){
-	    this(host, port, DEFAULT_DB_NAME);
+	public MongoDBStatusEventStorage(final MongoDatabase db){
+	    this.db = db;
 	}
-	
-	public MongoDBStatusEventStorage(String host, int port, String dbName){
-		this.host = host;
-		this.port = port;
-		this.dbName = dbName;
-		mongoClient = new MongoClient(this.host, this.port);
-	}
-	
-
 
 	@Override
 	public void createStorage() throws IOException {
@@ -52,24 +41,23 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 		// TODO Auto-generated method stub
 	}
 
-	private DBCollection collection(String name){
-		return  mongoClient.getDB(dbName).getCollection(name);
+	private MongoCollection<Document> collection(String name){
+		return db.getCollection(name);
 	}
 		
 	@Override	
 	public List<AccessGroupStatus> findAccessGroups(String storageCode){
-		BasicDBObject query = new BasicDBObject();
+		final Document query = new Document();
 		if(storageCode != null){
 			query.append("storageCode", storageCode);			
 		}	
-		DBCursor cursor = collection(COLLECTION_GROUP_STATUS).find(query);
+		FindIterable<Document> cursor = collection(COLLECTION_GROUP_STATUS).find(query);
 		
-		List<AccessGroupStatus> gss = new ArrayList<AccessGroupStatus>();		
-		while(cursor.hasNext()){
-			DBObject dobj = cursor.next();
+		List<AccessGroupStatus> gss = new ArrayList<AccessGroupStatus>();
+		for (final Document dobj: cursor) {
 			
-			BasicDBList usersList = (BasicDBList) dobj.get("users");
-			String[] users = usersList.<String>toArray(new String[usersList.size()]);
+			@SuppressWarnings("unchecked")
+            List<String> users = (List<String>) dobj.get("users");
 			
 			gss.add(new AccessGroupStatus(
 					dobj.get("_id").toString(), 
@@ -81,7 +69,6 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 					users
 			));
 		}
-		cursor.close();
 		
 		return gss;
 	}
@@ -92,17 +79,17 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 		queryItems.add(new BasicDBObject("users", user));
 		queryItems.add(new BasicDBObject("storageCode", "WS"));
 		BasicDBObject query = new BasicDBObject("$and", queryItems);	
-		DBCursor cursor = collection(COLLECTION_GROUP_STATUS).find(query);
+		FindIterable<Document> cursor = collection(COLLECTION_GROUP_STATUS).find(query);
 				
 		List<Integer> groupIds = new ArrayList<Integer>();
-		while(cursor.hasNext()){
-			groupIds.add(( Integer) cursor.next().get("accessGroupId"));
+		for (final Document d: cursor) {
+			groupIds.add(d.getInteger("accessGroupId"));
 		}
 		return groupIds;
 	}
 	
 	public void store(AccessGroupStatus obj) throws IOException {
-		DBObject dobj = new BasicDBObject();		
+		final Document dobj = new Document();
 		dobj.put("storageCode", obj.getStorageCode());
 		dobj.put("accessGroupId", obj.getAccessGroupId());
 		dobj.put("timestamp", obj.getTimestamp());
@@ -111,14 +98,15 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 		dobj.put("users", obj.getUsers());
 		
 		ObjectId objId = obj.getId() != null ?  new ObjectId(obj.getId() ) : new ObjectId();
-		BasicDBObject query = new BasicDBObject("_id",  objId );
+		final Document query = new Document("_id",  objId );
 		
 //		BasicDBList queryItems = new BasicDBList();
 //		queryItems.add(new BasicDBObject("storageCode", obj.getStorageCode()));			
 //		queryItems.add(new BasicDBObject("accessGroupId", obj.getAccessGroupId()));
 //		BasicDBObject query = new BasicDBObject("$and", queryItems);
 		
-		collection(COLLECTION_GROUP_STATUS).update(query, dobj, true, false);				
+		collection(COLLECTION_GROUP_STATUS).updateOne(
+		        query, dobj, new UpdateOptions().upsert(true));
 	}	
 	
 	private void updateGroupPrivelages(AccessGroupStatus obj) {
@@ -133,9 +121,9 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 //		dobj.put("users", obj.getUsers());
 		
 		// Update only info about privacy and users
-		BasicDBObject dobj = new BasicDBObject();
-		dobj.append("$set", new BasicDBObject("isPrivate", obj.isPrivate()));		
-		dobj.append("$set", new BasicDBObject("users", obj.getUsers()));		
+		final Document dobj = new Document();
+		dobj.append("$set", new Document("isPrivate", obj.isPrivate()));
+		dobj.append("$set", new Document("users", obj.getUsers()));
 		
 		
 //		ObjectId objId = obj.getId() != null ?  new ObjectId(obj.getId() ) : new ObjectId();
@@ -146,12 +134,12 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 //		queryItems.add(new BasicDBObject("accessGroupId", obj.getAccessGroupId()));
 //		BasicDBObject query = new BasicDBObject("$and", queryItems);
 		
-		collection(COLLECTION_GROUP_STATUS).update(query, dobj, false, false);				
+		collection(COLLECTION_GROUP_STATUS).updateOne(query, dobj);
 	}
 	
 	@Override
 	public void store(ObjectStatusEvent obj) throws IOException {
-		DBObject dobj = new BasicDBObject();		
+		final Document dobj = new Document();
 		dobj.put("storageCode", obj.getStorageCode());
 		dobj.put("accessGroupId", obj.getAccessGroupId());
 		dobj.put("accessGroupObjectId", obj.getAccessGroupObjectId().toString());
@@ -164,64 +152,63 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 		dobj.put("newName", obj.getNewName());
 		dobj.put("indexed", false);
 		dobj.put("processed", false);		
-		collection(COLLECTION_OBJECT_STATUS_EVENTS).insert(dobj);				
+		collection(COLLECTION_OBJECT_STATUS_EVENTS).insertOne(dobj);
 	}
 
 	@Override
 	public void markAsProcessed(ObjectStatusEvent row, boolean isIndexed) throws IOException {
-		BasicDBObject doc = new BasicDBObject().append("$set", 
-				new BasicDBObject()
+		final Document doc = new Document().append("$set", 
+				new Document()
 					.append("processed", true)
 					.append("indexed", isIndexed)
 					
 		);
 
-		BasicDBObject query = new BasicDBObject("_id", new ObjectId(row.getId() ) );
-		collection(COLLECTION_OBJECT_STATUS_EVENTS).update(query, doc);
+		final Document query = new Document("_id", new ObjectId(row.getId() ) );
+		collection(COLLECTION_OBJECT_STATUS_EVENTS).updateOne(query, doc);
 	}
 
 	@Override
 	public void markAsNonprocessed(String storageCode, String storageObjectType) throws IOException {
-		BasicDBObject doc = new BasicDBObject().append("$set", 
-				new BasicDBObject()
+		final Document doc = new Document().append("$set", 
+				new Document()
 					.append("processed", false)
 					.append("indexed", false)
 					
 		);
 
-		BasicDBList queryItems = new BasicDBList();		
+		final List<Document> queryItems = new LinkedList<>();		
 		if(storageCode != null){
 			
-			queryItems.add(new BasicDBObject("storageCode", storageCode));			
+			queryItems.add(new Document("storageCode", storageCode));			
 		}
 		if(storageObjectType != null){
-			queryItems.add(new BasicDBObject("storageObjectType", storageObjectType));
+			queryItems.add(new Document("storageObjectType", storageObjectType));
 		}
 		BasicDBObject query = new BasicDBObject("$and", queryItems);
 		
-		collection(COLLECTION_OBJECT_STATUS_EVENTS).updateMulti(query, doc);		
+		collection(COLLECTION_OBJECT_STATUS_EVENTS).updateMany(query, doc);
 	}
 
 	@Override
 	public int count(String storageCode, boolean processed) throws IOException {
 		
-		BasicDBList queryItems = new BasicDBList();
-		queryItems.add(new BasicDBObject("processed", processed));
+		final List<Document> queryItems = new LinkedList<>();
+		queryItems.add(new Document("processed", processed));
 		if(storageCode != null){
 			
-			queryItems.add(new BasicDBObject("storageCode", storageCode));			
+			queryItems.add(new Document("storageCode", storageCode));			
 		}
-		BasicDBObject query = new BasicDBObject("$and", queryItems);
+		final Document query = new Document("$and", queryItems);
 		
 		return (int) collection(COLLECTION_OBJECT_STATUS_EVENTS).count(query);
 	}
 
-	private List<ObjectStatusEvent> find(BasicDBObject query, int skip, int limit) throws IOException {
+	private List<ObjectStatusEvent> find(Document query, int skip, int limit) throws IOException {
 		List<ObjectStatusEvent> events = new ArrayList<ObjectStatusEvent>();
 		
-		DBCursor cursor = collection(COLLECTION_OBJECT_STATUS_EVENTS).find(query).skip(skip).limit(limit);		
-		while(cursor.hasNext()){
-			DBObject dobj = cursor.next();
+		FindIterable<Document> cursor = collection(COLLECTION_OBJECT_STATUS_EVENTS).find(query).skip(skip).limit(limit);
+		for (final Document dobj: cursor) {
 			ObjectStatusEvent event = new ObjectStatusEvent(
 					dobj.get("_id").toString(),
 					(String)dobj.get("storageCode"),
@@ -238,28 +225,27 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 					);
 			events.add(event);
 		}	
-		cursor.close();
 		return events;
 
 	}
 	
 	@Override
 	public List<ObjectStatusEvent> find(String storageCode, boolean processed, int maxSize) throws IOException {
-		BasicDBList queryItems = new BasicDBList();
-		queryItems.add(new BasicDBObject("processed", processed));
+		final List<Document> queryItems = new LinkedList<>();
+		queryItems.add(new Document("processed", processed));
 		if(storageCode != null){
-			queryItems.add(new BasicDBObject("storageCode", storageCode));			
+			queryItems.add(new Document("storageCode", storageCode));			
 		}
-		BasicDBObject query = new BasicDBObject("$and", queryItems);
+		final Document query = new Document("$and", queryItems);
 		
 	
 		return find(query, 0, maxSize);
 	}
 
 	class _Cursor extends ObjectStatusCursor{
-		BasicDBObject query;
+		final Document query;
 
-		public _Cursor(String cursorId, int pageSize, String timeAlive, BasicDBObject query) {
+		public _Cursor(String cursorId, int pageSize, String timeAlive, Document query) {
 			super(cursorId, pageSize, timeAlive);
 			this.query = query;
 		}
@@ -269,12 +255,12 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 	public ObjectStatusCursor cursor(String storageCode, boolean processed, int pageSize, String timeAlive)
 			throws IOException {
 		
-		BasicDBList queryItems = new BasicDBList();
-		queryItems.add(new BasicDBObject("processed", processed));
+		final List<Document> queryItems = new LinkedList<>();
+		queryItems.add(new Document("processed", processed));
 		if(storageCode != null){
-			queryItems.add(new BasicDBObject("storageCode", storageCode));			
+			queryItems.add(new Document("storageCode", storageCode));			
 		}
-		BasicDBObject query = new BasicDBObject("$and", queryItems);
+		final Document query = new Document("$and", queryItems);
 		
 		_Cursor cursor = new _Cursor(null, pageSize, timeAlive, query);
 		nextPage(cursor, 0);

@@ -1,6 +1,10 @@
 package kbaserelationengine.tools;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -19,6 +23,9 @@ public class RESKEToolsConfig {
     private static final String RESKE_MONGO_DB = "reske-mongo-db";
     private static final String RESKE_MONGO_USER = "reske-mongo-user";
     private static final String RESKE_MONGO_PWD = "reske-mongo-pwd";
+    
+    private static final String WS_ID_BLACKLIST = "workspace-blacklist";
+    private static final String WS_TYPES_LIST = "workspace-types";
 
     private final String reskeMongoHost;
     private final String reskeMongoDB;
@@ -28,6 +35,8 @@ public class RESKEToolsConfig {
     private final String workspaceMongoDB;
     private final Optional<String> workspaceMongoUser;
     private final Optional<char[]> workspaceMongoPwd;
+    private final List<WorkspaceIdentifier> workspaceBlackList;
+    private final List<String> workspaceTypes;
 
     
     private RESKEToolsConfig(
@@ -38,8 +47,12 @@ public class RESKEToolsConfig {
             final String workspaceMongoHost,
             final String workspaceMongoDB,
             final String workspaceMongoUser,
-            String workspaceMongoPwd)
+            String workspaceMongoPwd,
+            final List<WorkspaceIdentifier> workspaceBlackList,
+            final List<String> workspaceTypes)
             throws RESKEToolsConfigException {
+        this.workspaceBlackList = Collections.unmodifiableList(workspaceBlackList);
+        this.workspaceTypes = Collections.unmodifiableList(workspaceTypes);
         this.reskeMongoHost = reskeMongoHost;
         this.reskeMongoDB = reskeMongoDB;
         if (reskeMongoUser == null ^ reskeMongoPwd == null) { // xor
@@ -100,6 +113,14 @@ public class RESKEToolsConfig {
         return workspaceMongoPwd;
     }
 
+    public List<WorkspaceIdentifier> getWorkspaceBlackList() {
+        return workspaceBlackList;
+    }
+    
+    public List<String> getWorkspaceTypes() {
+        return workspaceTypes;
+    }
+
     public static RESKEToolsConfig from(final Properties p) throws RESKEToolsConfigException {
         final Map<String, String> cfg = new HashMap<>();
         for (final Entry<Object, Object> e: p.entrySet()) {
@@ -118,9 +139,52 @@ public class RESKEToolsConfig {
                 getString(WS_MONGO_HOST, cfg, true),
                 getString(WS_MONGO_DB, cfg, true),
                 getString(WS_MONGO_USER, cfg),
-                getString(WS_MONGO_PWD, cfg));
+                getString(WS_MONGO_PWD, cfg),
+                getWSIDList(WS_ID_BLACKLIST, cfg),
+                getStringList(WS_TYPES_LIST, cfg));
     }
     
+    private static List<String> getStringList(
+            final String configparam,
+            final Map<String, String> cfg) {
+        final String stringlist = cfg.get(configparam);
+        final List<String> ret = new LinkedList<>();
+        if (stringlist != null && !stringlist.isEmpty()) {
+            for (final String s: stringlist.split(",")) {
+                if (!s.trim().isEmpty()) {
+                    ret.add(s);
+                }
+            }
+        }
+        return ret;
+    }
+
+    private static List<WorkspaceIdentifier> getWSIDList(
+            final String configparam,
+            final Map<String, String> cfg) throws RESKEToolsConfigException {
+        final String wsIdBlacklist = cfg.get(configparam);
+        if (wsIdBlacklist != null && !wsIdBlacklist.isEmpty()) {
+            final List<String> wsids = Arrays.asList(wsIdBlacklist.split(","));
+            return toWorkspaceIdentifiers(wsids);
+        } else {
+            return new LinkedList<>();
+        }
+    }
+
+    public static List<WorkspaceIdentifier> toWorkspaceIdentifiers(final List<String> wsids) {
+        final List<WorkspaceIdentifier> ret = new LinkedList<>();
+        for (final String id: wsids) {
+            if (id != null && !id.trim().isEmpty()) {
+                try {
+                    ret.add(new WorkspaceIdentifier(Integer.parseInt(id.trim())));
+                } catch (NumberFormatException e) {
+                    ret.add(new WorkspaceIdentifier(id));
+                }
+            }
+        }
+        return ret;
+    }
+
     // returns null if no string
     private static String getString(
             final String paramName,
@@ -173,6 +237,8 @@ public class RESKEToolsConfig {
         builder.append(workspaceMongoUser);
         builder.append(", workspaceMongoPwd=");
         builder.append(workspaceMongoPwd);
+        builder.append(", workspaceBlackList=");
+        builder.append(workspaceBlackList);
         builder.append("]");
         return builder.toString();
     }
