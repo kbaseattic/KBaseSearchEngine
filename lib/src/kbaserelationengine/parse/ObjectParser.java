@@ -2,10 +2,7 @@ package kbaserelationengine.parse;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,20 +12,14 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.common.ObjectJsonPath;
+import kbaserelationengine.events.handler.SourceData;
 import kbaserelationengine.relations.Relation;
 import kbaserelationengine.relations.RelationStorage;
 import kbaserelationengine.system.RelationRules;
 import kbaserelationengine.system.IndexingRules;
 import kbaserelationengine.system.ObjectTypeParsingRules;
 import kbaserelationengine.system.SystemStorage;
-import us.kbase.auth.AuthToken;
-import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
-import workspace.GetObjects2Params;
-import workspace.GetObjects2Results;
-import workspace.ObjectData;
-import workspace.ObjectSpecification;
-import workspace.WorkspaceClient;
 
 public class ObjectParser {
     
@@ -40,23 +31,13 @@ public class ObjectParser {
         return tempFile;
     }
 
-    public static ObjectData loadObject(URL wsUrl, File tempFile, AuthToken token,
-            String objRef) throws IOException, JsonClientException {
-        WorkspaceClient wc = new WorkspaceClient(wsUrl, token);
-        wc.setIsInsecureHttpConnectionAllowed(true);
-        wc.setStreamingModeOn(true);
-        wc._setFileForNextRpcResponse(tempFile);
-        final Map<String, Object> command = new HashMap<>();
-        command.put("command", "getObjects");
-        command.put("params", new GetObjects2Params().withObjects(
-                Arrays.asList(new ObjectSpecification().withRef(objRef))));
-        return wc.administer(new UObject(command)).asClassInstance(GetObjects2Results.class)
-                .getData().get(0);
-    }
-    
-    public static Map<GUID, String> parseSubObjects(ObjectData obj, String objRef, 
-            ObjectTypeParsingRules parsingRules, SystemStorage system,
-            RelationStorage relationStorage) throws IOException, ObjectParseException {
+    public static Map<GUID, String> parseSubObjects(
+            final SourceData obj,
+            final GUID guid, 
+            final ObjectTypeParsingRules parsingRules,
+            final SystemStorage system,
+            final RelationStorage relationStorage)
+            throws IOException, ObjectParseException {
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
         try (JsonParser jts = obj.getData().getPlacedStream()) {
@@ -73,8 +54,8 @@ public class ObjectParser {
                             parsingRules.getRelationRules(), subJts, idConsumer);
                 }
             }
-            GUID id = prepareGUID(parsingRules, objRef, path, idConsumer);
-            guidToJson.put(id, subJson);
+            GUID subid = prepareGUID(parsingRules, guid, path, idConsumer);
+            guidToJson.put(subid, subJson);
             //storeRelations(parsingRules, system, relationStorage, idConsumer, id);
         }
         return guidToJson;
@@ -101,22 +82,17 @@ public class ObjectParser {
     }
 
     public static GUID prepareGUID(ObjectTypeParsingRules parsingRules,
-            String resolvedRef, ObjectJsonPath path,
+            GUID guid, ObjectJsonPath path,
             SimpleIdConsumer idConsumer) {
-        String storageType = parsingRules.getStorageType();
-        if (storageType == null) {
-            storageType = "WS";
-        }
-        String textId = storageType + ":" + resolvedRef;
+        String innerSubType = null;
+        String innerID = null;
         if (parsingRules.getPathToSubObjects() != null) {
-            String innerTextId = idConsumer.getPrimaryKey() == null ? path.toString() : 
-                ("/" + String.valueOf(idConsumer.getPrimaryKey()));
-            String innerSubType = parsingRules.getInnerSubType() == null ? "_" : 
+            innerID = idConsumer.getPrimaryKey() == null ? path.toString() : 
+                String.valueOf(idConsumer.getPrimaryKey());
+            innerSubType = parsingRules.getInnerSubType() == null ? "_" : 
                 parsingRules.getInnerSubType();
-            textId += ":" + innerSubType + innerTextId;
         }
-        GUID id = new GUID(textId);
-        return id;
+        return new GUID(guid, innerSubType, innerID);
     }
     
     public static String extractParentFragment(ObjectTypeParsingRules parsingRules,

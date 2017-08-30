@@ -22,6 +22,15 @@ public class GUID {
         this.subObjectId = subObjectId;
     }
     
+    public GUID(final GUID parentGUID, final String subObjectType, final String subObjectID) {
+        storageCode = parentGUID.getStorageCode();
+        accessGroupId = parentGUID.getAccessGroupId();
+        accessGroupObjectId = parentGUID.getAccessGroupObjectId();
+        version = parentGUID.getVersion();
+        this.subObjectType = subObjectType;
+        this.subObjectId = subObjectID;
+    }
+    
     public String getStorageCode() {
         return storageCode;
     }
