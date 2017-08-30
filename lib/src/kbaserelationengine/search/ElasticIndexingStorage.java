@@ -1333,6 +1333,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         props.put("oname", new LinkedHashMap<String, Object>() {{
             put("type", "text");
         }});
+        final Map<String, Object> keyword = ImmutableMap.of("type", "keyword");
+        props.put("creator", keyword);
+        props.put("copier", keyword);
+        props.put("prv_mod", keyword);
+        props.put("prv_meth", keyword);
+        props.put("prv_ver", keyword);
+        props.put("prv_cmt", keyword);
         props.put("timestamp", new LinkedHashMap<String, Object>() {{
             put("type", "date");
         }});
