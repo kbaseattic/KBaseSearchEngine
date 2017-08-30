@@ -230,6 +230,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         
         doc.put("timestamp", timestamp);
         doc.put("prefix", toGUIDPrefix(id));
+        doc.put("str_cde", id.getStorageCode());
         doc.put("accgrp", id.getAccessGroupId());
         doc.put("version", id.getVersion());
         doc.put("islast", lastVersion == id.getVersion());
@@ -1346,6 +1347,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         props.put("prefix", new LinkedHashMap<String, Object>() {{
             put("type", "keyword");
         }});
+        props.put("str_cde", keyword);
         props.put("accgrp", new LinkedHashMap<String, Object>() {{
             put("type", "integer");
         }});
