@@ -1383,11 +1383,22 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     public Response deleteIndex(String indexName) throws IOException {
-        return makeRequest("DElETE", "/" + indexName, null);
+        return makeRequest("DELETE", "/" + indexName, null);
     }
     
     public Response refreshIndex(String indexName) throws IOException {
         return makeRequest("POST", "/" + indexName + "/_refresh", null);
+    }
+    
+    /** Refresh the elasticsearch index, where the index prefix is set by
+     * {@link #setIndexNamePrefix(String)}. Primarily used for testing.
+     * @param typeName the name of the type.
+     * @return the response from the ElasticSearch server.
+     * @throws IOException if an IO error occurs.
+     */
+    public Response refreshIndexByType(final String typeName)
+            throws IOException {
+        return refreshIndex((indexNamePrefix + typeName).toLowerCase());
     }
 
     public Response makeRequest(String reqType, String urlPath, Map<String, ?> doc) 
