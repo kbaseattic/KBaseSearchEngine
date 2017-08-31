@@ -26,12 +26,12 @@
 	<classpathentry kind="lib" path="lib/jars/apache_commons/http/httpcore-4.4.5.jar"/>
 	<classpathentry kind="lib" path="lib/jars/mongodb/mongo-java-driver-3.4.2.jar"/>
 	<classpathentry kind="lib" path="lib/jars/apache_commons/commons-codec-1.10.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/slf4j/slf4j-api-1.7.25.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/google/guava-18.0.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/mockito/mockito-core-2.7.10.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/bytebuddy/byte-buddy-1.6.8.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/bytebuddy/byte-buddy-agent-1.6.8.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/objenesis/objenesis-2.5.1.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/jcommander/jcommander-1.48.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/slf4j/slf4j-api-1.7.25.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/google/guava-18.0.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/mockito/mockito-core-2.7.10.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/bytebuddy/byte-buddy-1.6.8.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/bytebuddy/byte-buddy-agent-1.6.8.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/objenesis/objenesis-2.5.1.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/jcommander/jcommander-1.48.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -1,5 +1,9 @@
 package kbaserelationengine.tools;
 
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
 import java.util.Collection;
 
 public class Utils {
@@ -25,5 +29,9 @@ public class Utils {
         if (o == null) {
             throw new NullPointerException(message);
         }
+    }
+
+    public static String jsonToPretty(Object obj) throws IOException {
+        return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(obj);
     }
 }

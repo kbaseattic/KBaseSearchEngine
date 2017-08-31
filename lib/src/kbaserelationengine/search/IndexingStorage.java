@@ -35,13 +35,17 @@ public interface IndexingStorage {
 
     public void flushIndexing(String objectType) throws IOException;
     
-    public void shareObjects(Set<GUID> guids, int accessGroupId) throws IOException;
+    public void shareObjects(Set<GUID> guids, int accessGroupId, boolean isPublicGroup) throws IOException;
 
     public void unshareObjects(Set<GUID> guids, int accessGroupId) throws IOException;
 
     public void publishObjects(Set<GUID> guids) throws IOException;
 
     public void unpublishObjects(Set<GUID> guids) throws IOException;
+
+    public void publishObjectsExternally(Set<GUID> guids, int accessGroupId) throws IOException;
+
+    public void unpublishObjectsExternally(Set<GUID> guids, int accessGroupId) throws IOException;
 
     public List<ObjectData> getObjectsByIds(Set<GUID> guids, PostProcessing postProcessing) 
             throws IOException;
