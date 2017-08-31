@@ -445,7 +445,8 @@ public class MainObjectProcessor {
     }
     
     public void share(GUID guid, int accessGroupId) throws IOException {
-        indexingStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
+        indexingStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId, 
+                false);
     }
     
     public void shareAllVersions(final GUID guid) throws IOException {

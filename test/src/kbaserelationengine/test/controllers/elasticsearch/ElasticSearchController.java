@@ -5,14 +5,19 @@ import static us.kbase.common.test.controllers.ControllerCommon.findFreePort;
 import static us.kbase.common.test.controllers.ControllerCommon.makeTempDirs;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import org.apache.commons.io.FileUtils;
+
+import us.kbase.common.service.UObject;
 
 
 /** Q&D Utility to run a ElasticSearch server for the purposes of testing from
@@ -34,6 +39,8 @@ public class ElasticSearchController {
     
     private final Process es;
     private final int port;
+    private Exception startupError = null;
+
 
     public ElasticSearchController(
             final String elasticSearchExe,
@@ -55,7 +62,27 @@ public class ElasticSearchController {
                 .redirectOutput(tempDir.resolve("es.log").toFile());
         
         es = servpb.start();
-        Thread.sleep(15000); //wait for server to start up
+        for (int i = 0; i < 40; i++) {
+            Thread.sleep(1000); //wait for server to start up
+            try (InputStream is = new URL("http://localhost:" + port).openStream()) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> data = UObject.getMapper().readValue(is, Map.class);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> verMap = (Map<String, Object>)data.get("version");
+                String version = verMap == null ? null : (String)verMap.get("number");
+                if (version == null) {
+                    System.out.println("WARNING! Couldn't extract version of Elastic: " + data);
+                } else {
+                    if (!version.startsWith("5.")) {
+                        System.out.println("WARNING! Your Elastic version is not default: " + version);
+                    }
+                }
+                startupError = null;
+                break;
+            } catch (Exception e) {
+                startupError = e;
+            }
+        }
     }
 
     public int getServerPort() {
@@ -64,6 +91,10 @@ public class ElasticSearchController {
     
     public Path getTempDir() {
         return tempDir;
+    }
+    
+    public Exception getStartupError() {
+        return startupError;
     }
     
     public void destroy(boolean deleteTempFiles) throws IOException {
@@ -77,8 +108,8 @@ public class ElasticSearchController {
 
     public static void main(String[] args) throws Exception {
         ElasticSearchController ac = new ElasticSearchController(
-                "/kb/runtime/bin/mongod",
-                Paths.get("workspacetesttemp"));
+                "/Users/rsutormin/Programs/elastic/bin/elasticsearch",
+                Paths.get("test_local/manual"));
         System.out.println(ac.getServerPort());
         System.out.println(ac.getTempDir());
         Scanner reader = new Scanner(System.in);
