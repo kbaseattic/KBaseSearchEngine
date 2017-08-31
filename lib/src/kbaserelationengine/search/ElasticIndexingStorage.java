@@ -625,7 +625,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
-        // Check that we work with other than physical access group this object exists in.
+        // This flag shows that we work with other than physical access group this object exists in.
         boolean fromAllGroups = accessGroupId != guid.getAccessGroupId();
         String pguid = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString();
@@ -822,10 +822,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @SuppressWarnings({ "serial", "unchecked" })
     private boolean addExtPubForVersion(String indexName, GUID guid, 
             int accessGroupId) throws IOException {
+        // Check that we work with other than physical access group this object exists in.
+        if (accessGroupId == guid.getAccessGroupId()) {
+            throw new IllegalStateException("Access group should be external");
+        }
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
-        // Check that we work with other than physical access group this object exists in.
         String pguid = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString();
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
@@ -873,10 +876,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @SuppressWarnings({ "serial", "unchecked" })
     private boolean removeExtPubForVersion(String indexName, GUID guid, 
             int accessGroupId) throws IOException {
+        // Check that we work with other than physical access group this object exists in.
+        if (accessGroupId == guid.getAccessGroupId()) {
+            throw new IllegalStateException("Access group should be external");
+        }
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
-        // Check that we work with other than physical access group this object exists in.
         String pguid = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString();
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
