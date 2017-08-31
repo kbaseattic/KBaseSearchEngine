@@ -75,4 +75,10 @@ public interface IndexingStorage {
      * @throws IOException if an IO error occurs when contacting the indexing storage.
      */
     void deleteAllVersions(GUID guid) throws IOException;
+
+    /** Delete all versions of an object from its access group.
+     * @param guid the object to delete.
+     * @throws IOException if an IO error occurs when contacting the indexing storage.
+     */
+    public void undeleteAllVersions(GUID guid) throws IOException;
 }

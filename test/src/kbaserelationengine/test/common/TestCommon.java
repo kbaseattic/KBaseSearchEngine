@@ -12,9 +12,12 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.bson.Document;
 
@@ -216,5 +219,10 @@ public class TestCommon {
                 got.getLocalizedMessage(),
                 is(expected.getLocalizedMessage()));
         assertThat("incorrect exception type", got, instanceOf(expected.getClass()));
+    }
+    
+    @SafeVarargs
+    public static <T> Set<T> set(T... objects) {
+        return new HashSet<T>(Arrays.asList(objects));
     }
 }

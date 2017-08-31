@@ -703,21 +703,29 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public int setNameOnAllObjectVersions(final GUID object, final String newName)
             throws IOException {
-        return setFieldOnObjectForAllVersions(object, "oname", newName);
+        return setFieldOnObject(object, "oname", newName, true);
     }
     
-    private int setFieldOnObjectForAllVersions(
+    /* expects that GUID does not have sub object info */
+    // TODO allow providing index name for optimization
+    private int setFieldOnObject(
             final GUID object,
             final String field,
-            final Object value)
+            final Object value,
+            final boolean allVersions)
             throws IOException {
         final String index = getAnyIndexPattern();
-        final String prefix = toGUIDPrefix(object);
+        final Map<String, Object> query;
+        if (allVersions) {
+            query = createFilter("term", "prefix", toGUIDPrefix(object));
+        } else {
+            query = createFilter("term", "guid", object.toString());
+        }
         final Map<String, Object> script = ImmutableMap.of(
                 "inline", "ctx._source[params.field] = params.value",
                 "params", ImmutableMap.of("field", field, "value", value));
         final Map<String, Object> doc = ImmutableMap.of(
-                "query", createFilter("term", "prefix", prefix),
+                "query", query,
                 "script", script);
         final String urlPath = "/" + index + "/" + getDataTableName() + "/_update_by_query";
         final Response resp = makeRequest("POST", urlPath, doc);
@@ -793,21 +801,42 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     @Override
     public void deleteAllVersions(final GUID guid) throws IOException {
+        // could optimize later by making LLV return the index name
+        final Integer ver = loadLastVersion(null, guid, null);
+        if (ver == null) {
+            //TODO NOW throw exception? means a delete event occurred when there were no objects
+            return;
+        }
         final String indexName = getAnyIndexPattern();
-        final String prefix = toGUIDPrefix(guid);
-        final HashMap<String, Object> params = new HashMap<>();
-        params.put("accgrp", guid.getAccessGroupId());
-        final Map<String, Object> script = ImmutableMap.of(
-                "inline", "ctx._source.lastin.remove(ctx._source.lastin.indexOf(params.accgrp));",
-                "params", params);
-        final Map<String, Object> query = ImmutableMap.of("bool", ImmutableMap.of("must",
-                Arrays.asList(createFilter("term", "prefix", prefix),
-                        createFilter("term", "lastin", guid.getAccessGroupId()))));
-        final Map<String, Object> doc = ImmutableMap.of("query", query, "script", script);
-        final String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_update_by_query";
-        makeRequest("POST", urlPath, doc);
-        setFieldOnObjectForAllVersions(guid, "public", false);
+        setFieldOnObject(withVersion(guid, ver), "islast", false, false);
+        // -3 is a hack to always remove access groups
+        updateAccessGroupForVersions(indexName, guid, -3, guid.getAccessGroupId(), false, false);
+        /* changing the public field doesn't make a ton of sense - the object is still in a public
+         * workspace. 
+         * TODO NOW add a deleted flag, use that instead.
+         */
+//        setFieldOnObjectForAllVersions(guid, "public", false);
         //TODO NOW this doesn't handle removing public (-1) from the access doc because it can't know that's the right thing to do
+        //TODO NOW admin access group id has same problem as public access group id
+    }
+    
+    @Override
+    public void undeleteAllVersions(final GUID guid) throws IOException {
+        // could optimize later by making LLV return the index name
+        final Integer ver = loadLastVersion(null, guid, null);
+        if (ver == null) {
+            //TODO NOW throw exception? means an undelete event occurred when there were no objects
+            return;
+        }
+        updateLastVersionsInData(null, guid, ver);
+        updateAccessGroupForVersions(null, guid, ver, guid.getAccessGroupId(), false, true);
+        // TODO NOW remove deleted flag from delete all versions
+        
+    }
+    
+    private GUID withVersion(final GUID guid, int ver) {
+        return new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
+                guid.getAccessGroupObjectId(), ver, null, null);
     }
     
     @Override
@@ -1354,11 +1383,22 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     public Response deleteIndex(String indexName) throws IOException {
-        return makeRequest("DElETE", "/" + indexName, null);
+        return makeRequest("DELETE", "/" + indexName, null);
     }
     
     public Response refreshIndex(String indexName) throws IOException {
         return makeRequest("POST", "/" + indexName + "/_refresh", null);
+    }
+    
+    /** Refresh the elasticsearch index, where the index prefix is set by
+     * {@link #setIndexNamePrefix(String)}. Primarily used for testing.
+     * @param typeName the name of the type.
+     * @return the response from the ElasticSearch server.
+     * @throws IOException if an IO error occurs.
+     */
+    public Response refreshIndexByType(final String typeName)
+            throws IOException {
+        return refreshIndex((indexNamePrefix + typeName).toLowerCase());
     }
 
     public Response makeRequest(String reqType, String urlPath, Map<String, ?> doc) 

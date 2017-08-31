@@ -450,8 +450,7 @@ public class MainObjectProcessor {
     }
     
     public void shareAllVersions(final GUID guid) throws IOException {
-//        indexingStorage.shareAllVersions(guid);
-        //TODO NOW fill in
+        indexingStorage.undeleteAllVersions(guid);
     }
 
     public void unshare(GUID guid, int accessGroupId) throws IOException {

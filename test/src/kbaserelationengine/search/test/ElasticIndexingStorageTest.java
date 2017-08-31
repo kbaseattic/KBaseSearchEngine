@@ -1,5 +1,9 @@
 package kbaserelationengine.search.test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static kbaserelationengine.test.common.TestCommon.set;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -454,4 +458,51 @@ public class ElasticIndexingStorageTest {
         // Should NOT be publicly visible
         Assert.assertEquals(0, lookupIdsByKey(objType, "prop4", 123, afPub).size());
     }
+    
+    @Test
+    public void testDeleteUndelete() throws Exception {
+        String objType = "DelUndel";
+        IndexingRules ir = new IndexingRules();
+        ir.setPath(new ObjectJsonPath("myprop"));
+        ir.setFullText(true);
+        List<IndexingRules> indexingRules= Arrays.asList(ir);
+        GUID id1 = new GUID("WS:100/2/1");
+        GUID id2 = new GUID("WS:100/2/2");
+        indexObject(id1, objType, "{\"myprop\": \"some stuff\"}", "myobj", 0, null,
+                false, indexingRules);
+        indexObject(id2, objType, "{\"myprop\": \"some other stuff\"}", "myobj", 0, null,
+                false, indexingRules);
+        
+        final AccessFilter filter = AccessFilter.create().withAccessGroups(100);
+        final AccessFilter filterAllVers = AccessFilter.create().withAccessGroups(100)
+                .withAllHistory(true);
+
+        // check ids show up before delete
+        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+                filter), is(set(id2)));
+        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+                filterAllVers), is(set(id1, id2)));
+        
+        // check ids show up correctly after delete
+        indexStorage.deleteAllVersions(id1);
+        indexStorage.refreshIndexByType(objType);
+        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+                filter), is(set()));
+        //TODO NOW these should probaby not show up
+        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+                filterAllVers), is(set(id1, id2)));
+        
+        // check ids restored after undelete
+        indexStorage.undeleteAllVersions(id1);
+        indexStorage.refreshIndexByType(objType);
+        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+                filter), is(set(id2)));
+        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+                filterAllVers), is(set(id1, id2)));
+        
+        /* This doesn't actually test that the access group id is removed from the access
+         * doc AFAIK, but I don't think that matters.
+         */
+    }
+
 }
