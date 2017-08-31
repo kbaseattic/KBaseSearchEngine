@@ -1215,7 +1215,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
             put("terms", match);
         }});
         if (withPublic) {
-            // Case of public workspaces containing DataPalette referencing to given object 
+            // Case of public workspaces containing DataPalette referencing to given object
+            // We basically check how many public workspaces (external comparing to home 
+            // workspace of given object) have DataPalettes referencing given object (and 
+            // version). If this number is 0 then object+version is not visible as public 
+            // through DataPalettes. If it's >0 (which is the same as existence of keywords 
+            // in 'extpub') then it's visible.
             Map<String, Object> exists = new LinkedHashMap<String, Object>() {{
                 put("field", "extpub");
             }};
@@ -1460,6 +1465,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
             put("type", "integer");
         }});
         // List of external workspaces containing DataPalette pointing to this object
+        // This is the way to check how many public workspaces (external comparing to 
+        // home workspace of an object) have DataPalettes referencing given object (and 
+        // version). If this number is 0 then object+version is not visible as public 
+        // through DataPalettes. If it's >0 (which is the same as existence of keywords 
+        // in 'extpub') then it's visible.
         props.put("extpub", new LinkedHashMap<String, Object>() {{
             put("type", "integer");
         }});
