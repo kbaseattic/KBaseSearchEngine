@@ -848,6 +848,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public void unpublishObjects(Set<GUID> guids) throws IOException {
         unshareObjects(guids, PUBLIC_ACCESS_GROUP);
     }
+    
+    @Override
+    public void publishAllVersions(final GUID guid) throws IOException {
+        setFieldOnObject(guid, "public", true, true);
+    }
+    
+    @Override
+    public void unpublishAllVersions(final GUID guid) throws IOException {
+        setFieldOnObject(guid, "public", false, true);
+    }
 
     @SuppressWarnings({ "serial", "unchecked" })
     private boolean addExtPubForVersion(String indexName, GUID guid, 
