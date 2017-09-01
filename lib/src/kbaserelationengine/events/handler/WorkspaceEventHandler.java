@@ -135,9 +135,64 @@ public class WorkspaceEventHandler implements EventHandler {
             return handleNewAllVersions(event);
         } else if (ObjectStatusEventType.COPY_ACCESS_GROUP.equals(event.getEventType())) {
             return handleNewAccessGroup(event);
+        } else if (ObjectStatusEventType.DELETE_ACCESS_GROUP.equals(event.getEventType())) {
+        	return handleDeletedAccessGroup(event);
         } else {
             return Arrays.asList(event);
         }
+    }
+
+    private Iterable<ObjectStatusEvent> handleDeletedAccessGroup(final ObjectStatusEvent event) {
+        
+        return new Iterable<ObjectStatusEvent>() {
+
+            @Override
+            public Iterator<ObjectStatusEvent> iterator() {
+                return new StupidDeletedWorkspaceIterator(event);
+            }
+            
+        };
+    }
+    
+    /* This is not efficient, but allows parallelizing events by decomposing the event
+     * to per object events. That means the parallelization can run on a per object basis.
+     * Workspace deletions should be rare anyway.
+     */
+    private static class StupidDeletedWorkspaceIterator implements Iterator<ObjectStatusEvent> {
+
+        private final ObjectStatusEvent event;
+        private final long maxObjectID;
+        private long counter = 0;
+        
+        public StupidDeletedWorkspaceIterator(final ObjectStatusEvent event) {
+            this.event = event;
+            maxObjectID = Long.parseLong(event.getAccessGroupObjectId());
+        }
+
+        @Override
+        public boolean hasNext() {
+            return counter < maxObjectID;
+        }
+
+        @Override
+        public ObjectStatusEvent next() {
+            if (counter >= maxObjectID) {
+                throw new NoSuchElementException();
+            }
+            return new ObjectStatusEvent(
+                    null, // no mongo id
+                    STORAGE_CODE,
+                    event.getAccessGroupId(),
+                    ++counter + "",
+                    null, // no ver
+                    null, // no rename
+                    null, // not a datapalette share
+                    event.getTimestamp(),
+                    null, // no type
+                    ObjectStatusEventType.DELETE_ALL_VERSIONS,
+                    null); // no global access rule
+        }
+        
     }
 
     private Iterable<ObjectStatusEvent> handleNewAccessGroup(final ObjectStatusEvent event) {

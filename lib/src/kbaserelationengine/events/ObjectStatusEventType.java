@@ -12,5 +12,6 @@ public enum ObjectStatusEventType {
 	RENAME_ALL_VERSIONS,
 	DELETE_ALL_VERSIONS,
 	UNDELETE_ALL_VERSIONS,
+	DELETE_ACCESS_GROUP, //TODO NOW need to remove access group from all access docs
 	COPY_ACCESS_GROUP;
 }
