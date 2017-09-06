@@ -377,6 +377,12 @@ public class MainObjectProcessor {
         case RENAME_ALL_VERSIONS:
             renameAllVersions(ev.toGUID(), ev.getNewName());
             break;
+        case PUBLISH_ALL_VERSIONS:
+            publishAllVersions(ev.toGUID());
+            break;
+        case UNPUBLISH_ALL_VERSIONS:
+            unpublishAllVersions(ev.toGUID());
+            break;
         default:
             throw new IllegalStateException("Unsupported event type: " + ev.getEventType());
         }
@@ -464,9 +470,19 @@ public class MainObjectProcessor {
     public void publish(GUID guid) throws IOException {
         indexingStorage.publishObjects(new LinkedHashSet<>(Arrays.asList(guid)));
     }
+    
+    public void publishAllVersions(final GUID guid) throws IOException {
+        indexingStorage.publishAllVersions(guid);
+        //TODO DP need to handle objects in datapalette
+    }
 
     public void unpublish(GUID guid) throws IOException {
         indexingStorage.unpublishObjects(new LinkedHashSet<>(Arrays.asList(guid)));
+    }
+    
+    public void unpublishAllVersions(final GUID guid) throws IOException {
+        indexingStorage.unpublishAllVersions(guid);
+        //TODO DP need to handle objects in datapalette
     }
     
     private void renameAllVersions(final GUID guid, final String newName) throws IOException {

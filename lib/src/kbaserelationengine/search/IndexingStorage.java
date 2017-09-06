@@ -80,5 +80,17 @@ public interface IndexingStorage {
      * @param guid the object to delete.
      * @throws IOException if an IO error occurs when contacting the indexing storage.
      */
-    public void undeleteAllVersions(GUID guid) throws IOException;
+    void undeleteAllVersions(GUID guid) throws IOException;
+
+    /** Set all versions of an object to public.
+     * @param guid the object to publish.
+     * @throws IOException if an IO error occurs when contacting the indexing storage.
+     */
+    void publishAllVersions(GUID guid) throws IOException;
+
+    /** Make all versions of an object private.
+     * @param guid the object to make private.
+     * @throws IOException if an IO error occurs when contacting the indexing storage.
+     */
+    void unpublishAllVersions(GUID guid) throws IOException;
 }

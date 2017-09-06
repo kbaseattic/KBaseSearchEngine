@@ -504,5 +504,49 @@ public class ElasticIndexingStorageTest {
          * doc AFAIK, but I don't think that matters.
          */
     }
+    
+    @Test
+    public void testPublishAllVersions() throws Exception {
+        // tests the all versions method for setting objects public / non-public.
+        String objType = "PublishAllVersions";
+        IndexingRules ir = new IndexingRules();
+        ir.setPath(new ObjectJsonPath("myprop"));
+        ir.setFullText(true);
+        List<IndexingRules> indexingRules= Arrays.asList(ir);
+        GUID id1 = new GUID("WS:200/2/1");
+        GUID id2 = new GUID("WS:200/2/2");
+        indexObject(id1, objType, "{\"myprop\": \"some stuff\"}", "myobj", 0, null,
+                false, indexingRules);
+        indexObject(id2, objType, "{\"myprop\": \"some other stuff\"}", "myobj", 0, null,
+                false, indexingRules);
+        
+        final AccessFilter filter = AccessFilter.create()
+                .withAllHistory(true).withPublic(false);
+        final AccessFilter filterPublic = AccessFilter.create()
+                .withAllHistory(true).withPublic(true);
+
+        // check ids show up before publish
+        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+                filter), is(set()));
+        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+                filterPublic), is(set()));
+        
+        // check ids show up correctly after publish
+        indexStorage.publishAllVersions(id1);
+        indexStorage.refreshIndexByType(objType);
+        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+                filter), is(set()));
+        //TODO NOW these should probaby not show up
+        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+                filterPublic), is(set(id1, id2)));
+        
+        // check ids hidden after unpublish
+        indexStorage.unpublishAllVersions(id1);
+        indexStorage.refreshIndexByType(objType);
+        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+                filter), is(set()));
+        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+                filterPublic), is(set()));
+    }
 
 }

@@ -41,6 +41,7 @@ public class ElasticSearchController {
     private final int port;
     private Exception startupError = null;
 
+    //TODO TEST set location of indexes to temp dir so they can be cleaned up
 
     public ElasticSearchController(
             final String elasticSearchExe,
