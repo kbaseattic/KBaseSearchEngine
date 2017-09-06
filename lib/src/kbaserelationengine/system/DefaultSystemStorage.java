@@ -3,12 +3,10 @@ package kbaserelationengine.system;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
-import kbaserelationengine.common.GUID;
 import kbaserelationengine.parse.ObjectParseException;
-import us.kbase.auth.AuthToken;
 
 public class DefaultSystemStorage implements SystemStorage {
     
@@ -49,40 +47,15 @@ public class DefaultSystemStorage implements SystemStorage {
     @Override
     public List<ObjectTypeParsingRules> listObjectTypesByStorageObjectType(
             String storageObjectType) throws IOException {
-        List<ObjectTypeParsingRules> ret = null;
+        final List<ObjectTypeParsingRules> ret = new LinkedList<>();
         for (ObjectTypeParsingRules rule : parsingRules) {
             if (rule.getStorageObjectType() == null) {
                 continue;
             }
             if (rule.getStorageObjectType().equals(storageObjectType)) {
-                if (ret == null) {
-                    ret = new ArrayList<>();
-                }
                 ret.add(rule);
             }
         }
         return ret;
-    }
-    
-    @Override
-    public String getTypeForObjectId(GUID id) throws IOException {
-        throw new IllegalStateException("Method is not supported yet");
-    }
-    
-    @Override
-    public Set<GUID> normalizeObjectIds(Set<Object> typedIds, String type)
-            throws IOException {
-        throw new IllegalStateException("Method is not supported yet");
-    }
-    
-    @Override
-    public Set<GUID> collapseVersions(Set<GUID> ids) throws IOException {
-        throw new IllegalStateException("Method is not supported yet");
-    }
-    
-    @Override
-    public Set<GUID> filterObjectIdsForUser(String user, AuthToken userToken,
-            Set<GUID> ids) throws IOException {
-        throw new IllegalStateException("Method is not supported yet");
     }
 }

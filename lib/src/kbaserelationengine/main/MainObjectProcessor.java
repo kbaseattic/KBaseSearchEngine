@@ -389,7 +389,7 @@ public class MainObjectProcessor {
     }
 
     public boolean isStorageTypeSupported(String storageObjectType) throws IOException {
-        return systemStorage.listObjectTypesByStorageObjectType(storageObjectType) != null;
+        return !systemStorage.listObjectTypesByStorageObjectType(storageObjectType).isEmpty();
     }
     
     private void indexObject(GUID guid, String storageObjectType, Long timestamp, boolean isPublic,

@@ -6,16 +6,13 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonParser;
 
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.common.ObjectJsonPath;
 import kbaserelationengine.events.handler.SourceData;
-import kbaserelationengine.relations.Relation;
 import kbaserelationengine.relations.RelationStorage;
-import kbaserelationengine.system.RelationRules;
 import kbaserelationengine.system.IndexingRules;
 import kbaserelationengine.system.ObjectTypeParsingRules;
 import kbaserelationengine.system.SystemStorage;
@@ -59,26 +56,6 @@ public class ObjectParser {
             //storeRelations(parsingRules, system, relationStorage, idConsumer, id);
         }
         return guidToJson;
-    }
-
-    public static void storeRelations(ObjectTypeParsingRules parsingRules,
-            SystemStorage system, RelationStorage relationStorage,
-            SimpleIdConsumer idConsumer, GUID id) throws IOException {
-        for (RelationRules lookupRules : idConsumer.getRulesToForeignKeys().keySet()) {
-            Set<Object> foreignIds = idConsumer.getRulesToForeignKeys().get(lookupRules);
-            Set<GUID> normedIds = system.normalizeObjectIds(foreignIds, 
-                    lookupRules.getTargetObjectType());
-            List<Relation> links = new ArrayList<>();
-            for (GUID id2 : normedIds) {
-                Relation link = new Relation();
-                link.setId1(id);
-                link.setType1(parsingRules.getGlobalObjectType());
-                link.setId2(id2);
-                link.setType2(lookupRules.getTargetObjectType());
-                link.setLinkType(lookupRules.getRelationType());
-            }
-            relationStorage.addRelations(links);
-        }
     }
 
     public static GUID prepareGUID(ObjectTypeParsingRules parsingRules,
