@@ -69,6 +69,7 @@ import kbaserelationengine.search.IndexingStorage;
 import kbaserelationengine.system.DefaultSystemStorage;
 import kbaserelationengine.system.IndexingRules;
 import kbaserelationengine.system.ObjectTypeParsingRules;
+import kbaserelationengine.system.StorageObjectType;
 import kbaserelationengine.system.SystemStorage;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
@@ -289,7 +290,7 @@ public class MainObjectProcessor {
             //TODO NOW markAsVisited is called for every sub event, which is pointless. It should be called only when all sub events are processed.
             final ObjectStatusEvent preEvent = iter.next();
             for (final ObjectStatusEvent ev: getEventHandler(preEvent).expand(preEvent)) {
-                final String type = ev.getStorageObjectType();
+                final StorageObjectType type = ev.getStorageObjectType();
                 if (type != null && !isStorageTypeSupported(type)) {
                     if (logger != null) {
                         logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
@@ -388,13 +389,19 @@ public class MainObjectProcessor {
         }
     }
 
-    public boolean isStorageTypeSupported(String storageObjectType) throws IOException {
+    public boolean isStorageTypeSupported(final StorageObjectType storageObjectType)
+            throws IOException {
         return !systemStorage.listObjectTypesByStorageObjectType(storageObjectType).isEmpty();
     }
     
-    private void indexObject(GUID guid, String storageObjectType, Long timestamp, boolean isPublic,
-            ObjectLookupProvider indexLookup, List<GUID> objectRefPath) 
-                    throws IOException, JsonClientException, ObjectParseException {
+    private void indexObject(
+            final GUID guid,
+            final StorageObjectType storageObjectType,
+            Long timestamp,
+            final boolean isPublic,
+            ObjectLookupProvider indexLookup,
+            final List<GUID> objectRefPath) 
+            throws IOException, JsonClientException, ObjectParseException {
         long t1 = System.currentTimeMillis();
         File tempFile = ObjectParser.prepareTempFile(getTempSubDir(guid.getStorageCode()));
         if (indexLookup == null) {
@@ -782,11 +789,11 @@ public class MainObjectProcessor {
                     command.put("params", new GetObjectInfo3Params().withObjects(getInfoInput));
                     List<ObjectStatusEvent> events = wsClient.administer(new UObject(command))
                             .asClassInstance(GetObjectInfo3Results.class)
-                            .getInfos().stream().map(info -> new ObjectStatusEvent("", "WS", 
+                            .getInfos().stream().map(info -> new ObjectStatusEvent("", "WS",
                                     (int)(long)info.getE7(), "" +info.getE1(), 
                                     (int)(long)info.getE5(), null, null,
                                     Util.DATE_PARSER.parseDateTime(info.getE4()).getMillis(),
-                                    info.getE3().split("-")[0],
+                                    new StorageObjectType("WS", info.getE3().split("-")[0]),
                                     ObjectStatusEventType.CREATED, false)).collect(
                                             Collectors.toList());
                     for (int pos = 0; pos < getInfoInput.size(); pos++) {

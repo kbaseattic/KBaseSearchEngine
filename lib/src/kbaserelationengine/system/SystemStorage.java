@@ -9,6 +9,6 @@ public interface SystemStorage {
 
     List<ObjectTypeParsingRules> listObjectTypes() throws IOException;
     
-    List<ObjectTypeParsingRules> listObjectTypesByStorageObjectType(String storageObjectType)
-            throws IOException;
+    List<ObjectTypeParsingRules> listObjectTypesByStorageObjectType(
+            StorageObjectType storageObjectType) throws IOException;
 }

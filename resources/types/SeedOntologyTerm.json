@@ -1,6 +1,7 @@
 {
 	"global-object-type": "SeedOntologyTerm",
 	"storage-type": "SeedOntologyDataSource",
+	"storage-object-type": "fake",
 	"primary-key-path": "id",
 	"indexing-rules": [
 		{

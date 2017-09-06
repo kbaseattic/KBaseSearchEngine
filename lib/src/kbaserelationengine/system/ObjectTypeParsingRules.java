@@ -10,13 +10,13 @@ import java.util.Map;
 
 import kbaserelationengine.common.ObjectJsonPath;
 import kbaserelationengine.parse.ObjectParseException;
+import kbaserelationengine.tools.Utils;
 import us.kbase.common.service.UObject;
 
 public class ObjectTypeParsingRules {
     private String globalObjectType;
     private String uiTypeName;
-    private String storageType;
-    private String storageObjectType;
+    private StorageObjectType storageObjectType;
     private String innerSubType;
     private ObjectJsonPath pathToSubObjects;
     private List<IndexingRules> indexingRules;
@@ -39,19 +39,11 @@ public class ObjectTypeParsingRules {
         this.uiTypeName = uiTypeName;
     }
     
-    public String getStorageType() {
-        return storageType;
-    }
-    
-    public void setStorageType(String storageType) {
-        this.storageType = storageType;
-    }
-    
-    public String getStorageObjectType() {
+    public StorageObjectType getStorageObjectType() {
         return storageObjectType;
     }
     
-    public void setStorageObjectType(String storageObjectType) {
+    public void setStorageObjectType(StorageObjectType storageObjectType) {
         this.storageObjectType = storageObjectType;
     }
     
@@ -96,33 +88,44 @@ public class ObjectTypeParsingRules {
         this.relationRules = foreignKeyLookupRules;
     }
 
-    public static ObjectTypeParsingRules fromFile(File file) 
+    public static ObjectTypeParsingRules fromFile(final File file) 
             throws ObjectParseException, IOException {
-        try (InputStream is = new FileInputStream(file)) {
-            return fromStream(is);
+        try (final InputStream is = new FileInputStream(file)) {
+            return fromStream(is, file.toString());
         }
     }
 
     public static ObjectTypeParsingRules fromJson(String json) throws ObjectParseException {
         @SuppressWarnings("unchecked")
         Map<String, Object> obj = UObject.transformStringToObject(json, Map.class);
-        return fromObject(obj);
+        return fromObject(obj, "json");
     }
 
-    public static ObjectTypeParsingRules fromStream(InputStream is) 
+    public static ObjectTypeParsingRules fromStream(InputStream is, String sourceInfo) 
             throws IOException, ObjectParseException {
         @SuppressWarnings("unchecked")
         Map<String, Object> obj = UObject.getMapper().readValue(is, Map.class);
-        return fromObject(obj);
+        return fromObject(obj, sourceInfo);
     }
 
-    public static ObjectTypeParsingRules fromObject(Map<String, Object> obj) 
+    public static ObjectTypeParsingRules fromObject(
+            final Map<String, Object> obj,
+            final String sourceInfo) 
             throws ObjectParseException {
         ObjectTypeParsingRules ret = new ObjectTypeParsingRules();
         ret.setGlobalObjectType((String)obj.get("global-object-type"));
         ret.setUiTypeName((String)obj.get("ui-type-name"));
-        ret.setStorageType((String)obj.get("storage-type"));
-        ret.setStorageObjectType((String)obj.get("storage-object-type"));
+        final String storageCode = (String)obj.get("storage-type");
+        final String type = (String)obj.get("storage-object-type");
+        if (Utils.isNullOrEmpty(storageCode)) {
+            throw new ObjectParseException(getMissingKeyParseMessage(
+                    "storage-type", sourceInfo));
+        }
+        if (Utils.isNullOrEmpty(type)) {
+            throw new ObjectParseException(getMissingKeyParseMessage(
+                    "storage-object-type", sourceInfo));
+        }
+        ret.setStorageObjectType(new StorageObjectType(storageCode, type));
         ret.setInnerSubType((String)obj.get("inner-sub-type"));
         ret.setPathToSubObjects(getPath((String)obj.get("path-to-sub-objects")));
         // Indexing
@@ -192,6 +195,11 @@ public class ObjectTypeParsingRules {
         return ret;
     }
     
+    private static String getMissingKeyParseMessage(final String key, final String sourceInfo) {
+        return String.format("Missing key %s.%s", key, Utils.isNullOrEmpty(sourceInfo) ?
+                "" : "Source : " + sourceInfo);
+    }
+
     private static ObjectJsonPath getPath(String path) throws ObjectParseException {
         return path == null ? null : new ObjectJsonPath(path);
     }

@@ -31,6 +31,7 @@ import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.events.storage.MongoDBStatusEventStorage;
 import kbaserelationengine.events.storage.StatusEventStorage;
+import kbaserelationengine.system.StorageObjectType;
 
 /** Generates events from the workspace and inserts them into the RESKE queue.
  * 
@@ -273,7 +274,7 @@ public class WorkspaceEventGenerator {
                     null,
                     null,
                     ver.getDate(WS_KEY_SAVEDATE).getTime(),
-                    type,
+                    new StorageObjectType("WS", type),
                     ObjectStatusEventType.NEW_VERSION,
                     pub));
         } catch (IOException e) {

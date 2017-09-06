@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
+import kbaserelationengine.system.StorageObjectType;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple9;
@@ -412,7 +413,7 @@ public class WorkspaceEventHandler implements EventHandler {
                 null, // no rename
                 null, // not a datapalette share
                 origEvent.getTimestamp(), //TODO NOW switch to object timestamp
-                obj.getE3().split("-")[0],
+                new StorageObjectType(STORAGE_CODE, obj.getE3().split("-")[0]),
                 ObjectStatusEventType.NEW_VERSION,
                 origEvent.isGlobalAccessed());
     }

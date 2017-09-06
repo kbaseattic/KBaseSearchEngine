@@ -279,6 +279,7 @@ public class ElasticPayloadAnanlyzerTester {
         return ret.toString();
     }
     
+    @SuppressWarnings("unused")
     private static int loadData(File input, int blockSize, int blockPos, 
             Map<String, Object> header, PrintWriter pw, List<List<Integer>> firstRow) throws Exception {
         int blockStart = blockPos * blockSize;

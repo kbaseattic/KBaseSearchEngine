@@ -21,9 +21,10 @@ types:
     # A more complex mapping that takes versions of the storage object type into account.
     KBaseGenome.Genome:
         # Specify the default search type to use if a specific version of the storage object type
-        # does not match any of the specified versions. If a default is also not specified, the
-        # object will not be indexed. Even with a default type, objects may fail to index if the
-        # new object type version is not backwards compatible with the default version.
+        # does not match any of the specified versions or is not provided. If a default is not
+        # specified, the object will not be indexed. Even with a default type, objects may fail
+        # to index if the new object type version is not backwards compatible with the default 
+        # version.
         default: Genome3
         # specify versions of the storage type and how they map to the search types.
         versions:

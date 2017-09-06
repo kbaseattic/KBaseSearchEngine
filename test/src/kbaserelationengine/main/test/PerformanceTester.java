@@ -28,6 +28,7 @@ import kbaserelationengine.search.AccessFilter;
 import kbaserelationengine.search.ElasticIndexingStorage;
 import kbaserelationengine.search.MatchFilter;
 import kbaserelationengine.search.MatchValue;
+import kbaserelationengine.system.StorageObjectType;
 import kbaserelationengine.system.WsUtil;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
@@ -188,9 +189,18 @@ public class PerformanceTester {
                 String[] parts = ref.split("/");
                 int wsId = Integer.parseInt(parts[0]);
                 int version = Integer.parseInt(parts[2]);
-                ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", wsId, parts[1], version, 
-                        null, null, System.currentTimeMillis(), "KBaseGenomes.Genome", 
-                        ObjectStatusEventType.CREATED, true);
+                ObjectStatusEvent ev = new ObjectStatusEvent(
+                        "-1",
+                        "WS",
+                        wsId,
+                        parts[1],
+                        version, 
+                        null,
+                        null,
+                        System.currentTimeMillis(),
+                        new StorageObjectType("WS", "KBaseGenomes.Genome"),
+                        ObjectStatusEventType.CREATED,
+                        true);
                 long t2 = System.currentTimeMillis();
                 try {
                     mop.processOneEvent(ev);

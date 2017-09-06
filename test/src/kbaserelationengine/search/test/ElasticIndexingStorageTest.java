@@ -110,7 +110,7 @@ public class ElasticIndexingStorageTest {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
                             new File("resources/types/" + type + ".json"), Map.class);
-                    return ObjectTypeParsingRules.fromObject(parsingRulesObj);
+                    return ObjectTypeParsingRules.fromObject(parsingRulesObj, "test");
                 } catch (Exception ex) {
                     throw new IllegalStateException(ex);
                 }
@@ -158,7 +158,8 @@ public class ElasticIndexingStorageTest {
             throws Exception {
         Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
                 new File("resources/types/" + type + ".json"), Map.class);
-        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules.fromObject(parsingRulesObj);
+        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules
+                .fromObject(parsingRulesObj, "test");
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
         String parentJson = null;

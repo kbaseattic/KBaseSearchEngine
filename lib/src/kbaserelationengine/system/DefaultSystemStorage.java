@@ -46,7 +46,7 @@ public class DefaultSystemStorage implements SystemStorage {
     
     @Override
     public List<ObjectTypeParsingRules> listObjectTypesByStorageObjectType(
-            String storageObjectType) throws IOException {
+            final StorageObjectType storageObjectType) throws IOException {
         final List<ObjectTypeParsingRules> ret = new LinkedList<>();
         for (ObjectTypeParsingRules rule : parsingRules) {
             if (rule.getStorageObjectType() == null) {

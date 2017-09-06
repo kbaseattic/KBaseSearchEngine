@@ -35,6 +35,7 @@ import kbaserelationengine.search.AccessFilter;
 import kbaserelationengine.search.MatchFilter;
 import kbaserelationengine.search.ObjectData;
 import kbaserelationengine.search.PostProcessing;
+import kbaserelationengine.system.StorageObjectType;
 import kbaserelationengine.test.common.TestCommon;
 import kbaserelationengine.test.controllers.elasticsearch.ElasticSearchController;
 import kbaserelationengine.test.controllers.workspace.WorkspaceController;
@@ -236,8 +237,18 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testGenomeManually() throws Exception {
-        ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", wsid, "3", 1, null, null,
-                System.currentTimeMillis(), "KBaseGenomes.Genome", ObjectStatusEventType.CREATED, false);
+        ObjectStatusEvent ev = new ObjectStatusEvent(
+                "-1",
+                "WS",
+                wsid,
+                "3",
+                1,
+                null,
+                null,
+                System.currentTimeMillis(),
+                new StorageObjectType("WS", "KBaseGenomes.Genome"),
+                ObjectStatusEventType.CREATED,
+                false);
         mop.processOneEvent(ev);
         PostProcessing pp = new PostProcessing();
         pp.objectInfo = true;
@@ -290,9 +301,18 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testNarrativeManually() throws Exception {
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "1", 5, null, null,
-                System.currentTimeMillis(), "KBaseNarrative.Narrative", 
-                ObjectStatusEventType.CREATED, false));
+        indexFewVersions(new ObjectStatusEvent(
+                "-1",
+                "WS",
+                wsid,
+                "1",
+                5,
+                null,
+                null,
+                System.currentTimeMillis(),
+                new StorageObjectType("WS", "KBaseNarrative.Narrative"),
+                ObjectStatusEventType.CREATED,
+                false));
         checkSearch(1, "Narrative", "tree", wsid, false);
         checkSearch(1, "Narrative", "species", wsid, false);
         /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
@@ -309,14 +329,32 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testReadsManually() throws Exception {
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "4", 1, null, null,
-                System.currentTimeMillis(), "KBaseFile.PairedEndLibrary", 
-                ObjectStatusEventType.CREATED, false));
+        indexFewVersions(new ObjectStatusEvent(
+                "-1",
+                "WS",
+                wsid,
+                "4",
+                1,
+                null,
+                null,
+                System.currentTimeMillis(),
+                new StorageObjectType("WS", "KBaseFile.PairedEndLibrary"),
+                ObjectStatusEventType.CREATED,
+                false));
         checkSearch(1, "PairedEndLibrary", "Illumina", wsid, true);
         checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "5", 1, null, null,
-                System.currentTimeMillis(), "KBaseFile.SingleEndLibrary", 
-                ObjectStatusEventType.CREATED, false));
+        indexFewVersions(new ObjectStatusEvent(
+                "-1",
+                "WS", 
+                wsid,
+                "5",
+                1,
+                null,
+                null,
+                System.currentTimeMillis(),
+                new StorageObjectType("WS", "KBaseFile.SingleEndLibrary"),
+                ObjectStatusEventType.CREATED,
+                false));
         checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);
         checkSearch(1, "SingleEndLibrary", "reads.2", wsid, false);
     }

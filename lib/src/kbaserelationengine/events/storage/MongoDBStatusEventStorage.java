@@ -8,6 +8,7 @@ import java.util.List;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
+import com.google.common.base.Optional;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.FindIterable;
@@ -20,6 +21,7 @@ import kbaserelationengine.events.AccessGroupStatus;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.events.StatusEventListener;
+import kbaserelationengine.system.StorageObjectType;
 
 public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEventStorage, StatusEventListener{
 	private static final String COLLECTION_GROUP_STATUS = "GroupStatus";
@@ -147,7 +149,9 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 		dobj.put("targetAccessGroupId", obj.getTargetAccessGroupId());
 		dobj.put("timestamp", obj.getTimestamp());
 		dobj.put("eventType", obj.getEventType().toString());
-		dobj.put("storageObjectType", obj.getStorageObjectType());
+		dobj.put("storageObjectType", obj.getStorageObjectType().getType());
+		final Optional<Integer> version = obj.getStorageObjectType().getVersion();
+        dobj.put("storageObjectTypeVersion", version.isPresent() ? version.get() : null);
 		dobj.put("isGlobalAccessed", obj.isGlobalAccessed());
 		dobj.put("newName", obj.getNewName());
 		dobj.put("indexed", false);
@@ -204,30 +208,35 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 		return (int) collection(COLLECTION_OBJECT_STATUS_EVENTS).count(query);
 	}
 
-	private List<ObjectStatusEvent> find(Document query, int skip, int limit) throws IOException {
-		List<ObjectStatusEvent> events = new ArrayList<ObjectStatusEvent>();
-		
-		FindIterable<Document> cursor = collection(COLLECTION_OBJECT_STATUS_EVENTS).find(query).skip(skip).limit(limit);
-		for (final Document dobj: cursor) {
-			ObjectStatusEvent event = new ObjectStatusEvent(
-					dobj.get("_id").toString(),
-					(String)dobj.get("storageCode"),
-					(Integer)dobj.get("accessGroupId"),
-					(String)dobj.get("accessGroupObjectId"),
-					(Integer)dobj.get("version"),
-					(String) dobj.get("newName"),
-					(Integer)dobj.get("targetAccessGroupId"),
-					(Long)dobj.get("timestamp"),
-					(String)dobj.get("storageObjectType"),
-					ObjectStatusEventType.valueOf((String)dobj.get("eventType")),
-					(Boolean)dobj.get("isGlobalAccessed")
-					
-					);
-			events.add(event);
-		}	
-		return events;
+    private List<ObjectStatusEvent> find(Document query, int skip, int limit) throws IOException {
+            List<ObjectStatusEvent> events = new ArrayList<ObjectStatusEvent>();
 
-	}
+    FindIterable<Document> cursor = collection(COLLECTION_OBJECT_STATUS_EVENTS).find(query).skip(skip).limit(limit);
+        for (final Document dobj: cursor) {
+            final String storageCode = (String)dobj.get("storageCode");
+            final String type = (String)dobj.get("storageObjectType");
+            final Integer ver = (Integer) dobj.get("storageObjectTypeVersion");
+            final StorageObjectType sot = type == null ? null :
+                StorageObjectType.fromNullableVersion(storageCode, type, ver);
+            ObjectStatusEvent event = new ObjectStatusEvent(
+                    dobj.get("_id").toString(),
+                    storageCode,
+                    (Integer)dobj.get("accessGroupId"),
+                    (String)dobj.get("accessGroupObjectId"),
+                    (Integer)dobj.get("version"),
+                    (String) dobj.get("newName"),
+                    (Integer)dobj.get("targetAccessGroupId"),
+                    (Long)dobj.get("timestamp"),
+                    sot,
+                    ObjectStatusEventType.valueOf((String)dobj.get("eventType")),
+                    (Boolean)dobj.get("isGlobalAccessed")
+
+                    );
+            events.add(event);
+        }
+        return events;
+
+    }
 	
 	@Override
 	public List<ObjectStatusEvent> find(String storageCode, boolean processed, int maxSize) throws IOException {

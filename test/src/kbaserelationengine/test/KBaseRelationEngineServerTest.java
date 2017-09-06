@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Map;
 
-import junit.framework.Assert;
 
 import org.ini4j.Ini;
 import org.junit.AfterClass;
@@ -23,8 +22,6 @@ import us.kbase.common.service.JsonServerSyslog;
 import us.kbase.common.service.RpcContext;
 import us.kbase.common.service.UObject;
 import workspace.CreateWorkspaceParams;
-import workspace.GetObjects2Params;
-import workspace.ObjectSpecification;
 import workspace.ProvenanceAction;
 import workspace.WorkspaceClient;
 import workspace.WorkspaceIdentity;
@@ -37,8 +34,11 @@ public class KBaseRelationEngineServerTest {
     private static Map<String, String> config = null;
     private static WorkspaceClient wsClient = null;
     private static String wsName = null;
+    @SuppressWarnings("unused")
     private static KBaseRelationEngineServer impl = null;
+    @SuppressWarnings("unused")
     private static Path scratch;
+    @SuppressWarnings("unused")
     private static URL callbackURL;
     
     @BeforeClass
@@ -74,6 +74,7 @@ public class KBaseRelationEngineServerTest {
         impl = new KBaseRelationEngineServer();
     }
     
+    @SuppressWarnings("unused")
     private static String getWsName() throws Exception {
         if (wsName == null) {
             long suffix = System.currentTimeMillis();
@@ -83,6 +84,7 @@ public class KBaseRelationEngineServerTest {
         return wsName;
     }
     
+    @SuppressWarnings("unused")
     private static RpcContext getContext() {
         return new RpcContext().withProvenance(Arrays.asList(new ProvenanceAction()
             .withService("KBaseRelationEngine").withMethod("please_never_use_it_in_production")
