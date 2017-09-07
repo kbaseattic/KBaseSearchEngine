@@ -4,8 +4,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -24,6 +28,7 @@ import kbaserelationengine.tools.Utils;
 public class YAMLTypeMappingParser implements TypeMappingParser {
     
     //TODO TEST
+    // there's got to be some code to validate the structure of arbitrary java objects, have a look around
     
     private static final String TYPES_PATH = "/types";
     
@@ -43,13 +48,13 @@ public class YAMLTypeMappingParser implements TypeMappingParser {
         @SuppressWarnings("unchecked")
         final Map<String, Object> data = (Map<String, Object>) predata;
         final String storageCode = getString(
-                data, "storage-type", "storage-type", sourceInfo, true);
+                data, "storage-type", "storage-type", sourceInfo);
         final Map<String, Object> types = getStringMap(
-                data, "types", TYPES_PATH, sourceInfo, true);
+                data, "types", TYPES_PATH, sourceInfo);
         final Set<TypeMapping> ret = new HashSet<>();
         for (final String key: types.keySet()) {
             final Map<String, Object> typeinfo = getStringMap(
-                    types, key, TYPES_PATH + "/" + key, sourceInfo, true);
+                    types, key, TYPES_PATH + "/" + key, sourceInfo);
             ret.add(processType(storageCode, key, typeinfo, sourceInfo));
         }
         return ret;
@@ -64,28 +69,29 @@ public class YAMLTypeMappingParser implements TypeMappingParser {
         final TypeMapping.Builder b = TypeMapping.getBuilder(storageCode, type)
                 .withNullableSourceInfo(sourceInfo);
         String pathPrefix = TYPES_PATH + "/" + type + "/";
-        final String searchType = getString(
-                typeinfo, "type", pathPrefix + "type", sourceInfo, false);
-        if (searchType != null) {
-            return b.withNullableDefaultSearchType(searchType).build();
+        final List<String> searchTypes = getStringList(
+                typeinfo, "types", pathPrefix + "type", sourceInfo, false);
+        if (!searchTypes.isEmpty()) {
+            for (final String s: searchTypes) {
+                b.withNullableDefaultSearchType(s);
+            }
+            return b.build();
         }
-        final String default_ = getString(
+        final List<String> default_ = getStringList(
                 typeinfo, "default", pathPrefix + "default", sourceInfo, false);
-        if (default_ != null) {
-            b.withNullableDefaultSearchType(default_);
-        }
+        default_.stream().forEach(i -> b.withNullableDefaultSearchType(i));
         final String verPathPrefix = pathPrefix + "versions";
         final Map<Integer, Object> versions = getIntMap(
-                typeinfo, "versions", verPathPrefix, sourceInfo, false);
+                typeinfo, "versions", verPathPrefix, sourceInfo);
         for (final Integer v: versions.keySet()) {
             final String verpath = verPathPrefix + "/" + v;
             if (v < 0) {
                 throw new TypeParseException(String.format(
                         "Version less than 0 at %s.%s", verpath, fmt(sourceInfo)));
             }
-            final String searchVerType = getString(
+            final List<String> searchVerType = getStringList(
                     versions, v, verpath, sourceInfo, true);
-            b.withVersion(v, searchVerType);
+            searchVerType.stream().forEach(i -> b.withVersion(v, i));
         }
         if (!b.buildReady()) {
             throw new TypeParseException(String.format(
@@ -94,20 +100,64 @@ public class YAMLTypeMappingParser implements TypeMappingParser {
         return b.build();
     }
 
+    private List<String> getStringList(
+            final Map<?, Object> map,
+            final Object key,
+            final String path,
+            final String sourceInfo,
+            final boolean required) throws TypeParseException {
+        final Object value = map.get(key);
+        if (value == null) {
+            if (required) {
+                throw new TypeParseException("Missing value at " + path + "." + fmt(sourceInfo));
+            } else {
+                return Collections.emptyList();
+            }
+        }
+        if (value instanceof String) {
+            if (Utils.isNullOrEmpty((String) value)) {
+                if (required) {
+                    throw new TypeParseException(
+                            "Missing value at " + path + "." + fmt(sourceInfo));
+                }
+                return Collections.emptyList();
+            }
+            return Arrays.asList((String) value);
+        }
+        if (value instanceof List) {
+            @SuppressWarnings("unchecked")
+            final List<Object> value2 = (List<Object>) value;
+            final List<String> ret = new LinkedList<>();
+            int count = 0;
+            for (final Object o: value2) {
+                if (o == null || !(o instanceof String) || Utils.isNullOrEmpty((String) o)) {
+                    throw new TypeParseException(String.format(
+                            "Expected non-whitespace string, got [%s] at %s.%s",
+                            o, path + "/" + count, fmt(sourceInfo)));
+                }
+                ret.add((String) o);
+                count++;
+            }
+            return ret;
+        }
+        throw new TypeParseException(String.format(
+                "Expected list or string, got %s at %s.%s", value, path, fmt(sourceInfo)));
+    }
+
     private String fmt(final String sourceInfo) {
         return sourceInfo.isEmpty() ? "" : " Source: " + sourceInfo;
     }
 
+    // never required
     private Map<Integer, Object> getIntMap(
             final Map<String, Object> map,
             final String key,
             final String path,
-            final String sourceInfo,
-            final boolean required)
+            final String sourceInfo)
             throws TypeParseException {
         final Object value = map.get(key);
-        if (value == null && required) {
-            throw new TypeParseException("Missing value at " + path + "." + fmt(sourceInfo));
+        if (value == null) {
+            return Collections.emptyMap();
         }
         if (!(value instanceof Map)) {
             throw new TypeParseException(
@@ -127,16 +177,16 @@ public class YAMLTypeMappingParser implements TypeMappingParser {
         return ret;
     }
     
+    // always required.
     // could probably use generics here, but f it. C&P FTW
     private Map<String, Object> getStringMap(
             final Map<String, Object> map,
             final String key,
             final String path,
-            final String sourceInfo,
-            final boolean required)
+            final String sourceInfo)
             throws TypeParseException {
         final Object value = map.get(key);
-        if (value == null && required) {
+        if (value == null) {
             throw new TypeParseException("Missing value at " + path + "." + fmt(sourceInfo));
         }
         if (!(value instanceof Map)) {
@@ -157,30 +207,26 @@ public class YAMLTypeMappingParser implements TypeMappingParser {
         return ret;
     }
 
+    // always required
     private String getString(
             final Map<?, Object> map,
             final Object key,
             final String path,
-            final String sourceInfo,
-            final boolean required)
+            final String sourceInfo)
             throws TypeParseException {
         final Object value = map.get(key);
-        if (value == null && required) {
+        if (value == null) {
             throw new TypeParseException("Missing value at " + path + "." + fmt(sourceInfo));
         }
-        if (value != null && !(value instanceof String)) {
+        if (!(value instanceof String)) {
             throw new TypeParseException(
                     String.format("Expected string, got %s at %s.%s",
                             value, path, fmt(sourceInfo)));
         }
-        String value2 = (String) value;
-        if (Utils.isNullOrEmpty(value2)) {
-            if (required) {
-                throw new TypeParseException("Missing value at " + path + "." + fmt(sourceInfo));
-            }
-            value2 = null;
+        if (Utils.isNullOrEmpty((String) value)) {
+            throw new TypeParseException("Missing value at " + path + "." + fmt(sourceInfo));
         }
-        return value2;
+        return (String) value;
     }
     
     public static void main(final String[] args) throws FileNotFoundException, TypeParseException {

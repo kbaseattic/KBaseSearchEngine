@@ -15,21 +15,21 @@ storage-type: WS
 
 # specify the types included in this mapping file.
 types:
-    # A simple mapping that is a 1:1 map from the storage object type to the search type.
+    # A simple mapping that is a map from the storage object type to the search type(s).
     KBaseGenomeAnnotations.Assembly:
-        # if type is present any other fields are ignored.
-        type: Assembly
+        # if types is present any other fields are ignored.
+        types: [Assembly]
     # A more complex mapping that takes versions of the storage object type into account.
     KBaseGenome.Genome:
-        # Specify the default search type to use if a specific version of the storage object type
-        # does not match any of the specified versions or is not provided. If a default is not
+        # Specify the default search type(s) to use if a specific version of the storage object
+        # type does not match any of the specified versions or is not provided. If a default is not
         # specified, the object will not be indexed. Even with a default type, objects may fail
         # to index if the new object type version is not backwards compatible with the default 
         # version.
-        default: Genome3
+        default: [Genome3, GenomeFeature2]
         # specify versions of the storage type and how they map to the search types.
         versions:
-            1: Genome1
+            1: [Genome1, GenomeFeature1]
             2: Genome1
-            3: Genome2
-            4: Genome3
+            3: [Genome2, GenomeFeature2]
+            4: [Genome3, GenomeFeature2]
