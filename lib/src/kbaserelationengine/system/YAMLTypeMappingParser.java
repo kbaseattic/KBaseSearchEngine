@@ -93,7 +93,7 @@ public class YAMLTypeMappingParser implements TypeMappingParser {
                     versions, v, verpath, sourceInfo, true);
             searchVerType.stream().forEach(i -> b.withVersion(v, i));
         }
-        if (!b.buildReady()) {
+        if (!b.isBuildReady()) {
             throw new TypeParseException(String.format(
                     "No type mappings provided at %s.%s", pathPrefix, fmt(sourceInfo)));
         }

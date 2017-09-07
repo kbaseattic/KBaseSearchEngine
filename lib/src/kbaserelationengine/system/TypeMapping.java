@@ -244,7 +244,7 @@ public class TypeMapping {
          * search type or at least one version mapping as been added to the build. 
          * @return true if the builder is ready to build.
          */
-        public boolean buildReady() {
+        public boolean isBuildReady() {
             return !defaultSearchTypes.isEmpty() || !versions.isEmpty();
         }
         
@@ -252,7 +252,7 @@ public class TypeMapping {
          * @return the type mapping.
          */
         public TypeMapping build() {
-            if (!buildReady()) {
+            if (!isBuildReady()) {
                 throw new IllegalStateException("No type mappings were supplied");
             }
             return new TypeMapping(
