@@ -12,6 +12,9 @@ import kbaserelationengine.parse.ObjectParseException;
 
 public class DefaultSystemStorage implements SystemStorage {
     
+    //TODO JAVADOC
+    //TODO TEST
+    
     private List<ObjectTypeParsingRules> parsingRules;
     
     public DefaultSystemStorage(final Path typesDir) 
@@ -25,7 +28,6 @@ public class DefaultSystemStorage implements SystemStorage {
         }
     }
     
-    //TODO TEST
     public DefaultSystemStorage(
             final Path typesDir,
             final Path mappingsDir,
@@ -55,9 +57,6 @@ public class DefaultSystemStorage implements SystemStorage {
             final StorageObjectType storageObjectType) throws IOException {
         final List<ObjectTypeParsingRules> ret = new LinkedList<>();
         for (ObjectTypeParsingRules rule : parsingRules) {
-            if (rule.getStorageObjectType() == null) {
-                continue;
-            }
             if (rule.getStorageObjectType().equals(storageObjectType)) {
                 ret.add(rule);
             }

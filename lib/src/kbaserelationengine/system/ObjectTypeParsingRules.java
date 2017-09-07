@@ -14,6 +14,10 @@ import kbaserelationengine.tools.Utils;
 import us.kbase.common.service.UObject;
 
 public class ObjectTypeParsingRules {
+    
+    //TODO TEST
+    //TODO CODE make fields final and use builder instead of setters
+    
     private String globalObjectType;
     private String uiTypeName;
     private StorageObjectType storageObjectType;
@@ -27,7 +31,7 @@ public class ObjectTypeParsingRules {
         return globalObjectType;
     }
     
-    public void setGlobalObjectType(String globalObjectType) {
+    private void setGlobalObjectType(String globalObjectType) {
         this.globalObjectType = globalObjectType;
     }
     
@@ -35,15 +39,16 @@ public class ObjectTypeParsingRules {
         return uiTypeName;
     }
     
-    public void setUiTypeName(String uiTypeName) {
+    private void setUiTypeName(String uiTypeName) {
         this.uiTypeName = uiTypeName;
     }
     
+    // cannot be null
     public StorageObjectType getStorageObjectType() {
         return storageObjectType;
     }
     
-    public void setStorageObjectType(StorageObjectType storageObjectType) {
+    private void setStorageObjectType(StorageObjectType storageObjectType) {
         this.storageObjectType = storageObjectType;
     }
     
@@ -51,7 +56,7 @@ public class ObjectTypeParsingRules {
         return innerSubType;
     }
     
-    public void setInnerSubType(String innerSubType) {
+    private void setInnerSubType(String innerSubType) {
         this.innerSubType = innerSubType;
     }
     
@@ -59,7 +64,7 @@ public class ObjectTypeParsingRules {
         return pathToSubObjects;
     }
     
-    public void setPathToSubObjects(ObjectJsonPath pathToSubObjects) {
+    private void setPathToSubObjects(ObjectJsonPath pathToSubObjects) {
         this.pathToSubObjects = pathToSubObjects;
     }
 
@@ -67,7 +72,7 @@ public class ObjectTypeParsingRules {
         return indexingRules;
     }
     
-    public void setIndexingRules(List<IndexingRules> indexingRules) {
+    private void setIndexingRules(List<IndexingRules> indexingRules) {
         this.indexingRules = indexingRules;
     }
     
@@ -75,7 +80,7 @@ public class ObjectTypeParsingRules {
         return primaryKeyPath;
     }
     
-    public void setPrimaryKeyPath(ObjectJsonPath primaryKeyPath) {
+    private void setPrimaryKeyPath(ObjectJsonPath primaryKeyPath) {
         this.primaryKeyPath = primaryKeyPath;
     }
     
@@ -83,7 +88,7 @@ public class ObjectTypeParsingRules {
         return relationRules;
     }
     
-    public void setRelationRules(
+    private void setRelationRules(
             List<RelationRules> foreignKeyLookupRules) {
         this.relationRules = foreignKeyLookupRules;
     }
