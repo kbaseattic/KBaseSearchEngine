@@ -293,14 +293,14 @@ public class MainObjectProcessor {
                 if (type != null && !isStorageTypeSupported(type)) {
                     if (logger != null) {
                         logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
-                                type + ", " + ev.toGUID());
+                                toLogString(type) + ev.toGUID());
                     }
                     iter.markAsVisitied(false);
                     continue;
                 }
                 if (logger != null) {
                     logger.logInfo("[Indexer] processing " + ev.getEventType() + ", " + 
-                            type + ", " + ev.toGUID() + "...");
+                            toLogString(type) + ev.toGUID() + "...");
                 }
                 long time = System.currentTimeMillis();
                 try {
@@ -321,6 +321,22 @@ public class MainObjectProcessor {
         }
     }
     
+    private String toLogString(final StorageObjectType type) {
+        if (type == null) {
+            return "";
+        }
+        final StringBuilder sb = new StringBuilder();
+        sb.append(type.getStorageCode());
+        sb.append(":");
+        sb.append(type.getType());
+        if (type.getVersion().isPresent()) {
+            sb.append("-");
+            sb.append(type.getVersion().get());
+        }
+        sb.append(", ");
+        return sb.toString();
+    }
+
     private EventHandler getEventHandler(final ObjectStatusEvent ev) {
         return getEventHandler(ev.getStorageCode());
     }

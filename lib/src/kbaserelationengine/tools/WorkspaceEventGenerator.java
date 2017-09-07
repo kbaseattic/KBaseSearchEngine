@@ -266,7 +266,7 @@ public class WorkspaceEventGenerator {
         final int vernum = ver.getInteger(WS_KEY_VER);
         final String[] typeString = ver.getString(WS_KEY_TYPE).split("-");
         final String type = typeString[0];
-        final int typever = Integer.parseInt(typeString[1].split(".")[0]);
+        final int typever = Integer.parseInt(typeString[1].split("\\.")[0]);
         try {
             storage.store(new ObjectStatusEvent(
                     null, // no mongo id
