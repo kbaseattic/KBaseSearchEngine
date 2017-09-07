@@ -118,34 +118,35 @@ public class MainObjectProcessorTest {
         
         final Path typesDir = Paths.get(TestCommon.TYPES_REPO_DIR);
         final Path mappingsDir = Paths.get(TestCommon.TYPE_MAP_REPO_DIR);
-        final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
-                "yaml", new YAMLTypeMappingParser());
-        final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers);
         
         URL wsUrl = new URL("http://localhost:" + ws.getServerPort());
 
         final String esIndexPrefix = "test_" + System.currentTimeMillis() + ".";
         final HttpHost esHostPort = new HttpHost("localhost", es.getServerPort());
+        final LineLogger logger = new LineLogger() {
+            @Override
+            public void logInfo(String line) {
+                System.out.println(line);
+            }
+            @Override
+            public void logError(String line) {
+                System.err.println(line);
+            }
+            @Override
+            public void logError(Throwable error) {
+                error.printStackTrace();
+            }
+            @Override
+            public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
+            }
+        };
+        final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
+                "yaml", new YAMLTypeMappingParser());
+        final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers, logger);
         mop = new MainObjectProcessor(wsUrl, wsadmintoken, "localhost",
                 mongo.getServerPort(), dbName, esHostPort, null, null, esIndexPrefix, 
                 ss, tempDir.resolve("MainObjectProcessor").toFile(), false, false,
-                new LineLogger() {
-                    @Override
-                    public void logInfo(String line) {
-                        System.out.println(line);
-                    }
-                    @Override
-                    public void logError(String line) {
-                        System.err.println(line);
-                    }
-                    @Override
-                    public void logError(Throwable error) {
-                        error.printStackTrace();
-                    }
-                    @Override
-                    public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
-                    }
-                }, null);
+                logger, null);
         loadTypes(wsUrl, wsadmintoken);
         wsid = (int) loadTestData(wsUrl, userToken);
     }

@@ -11,8 +11,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-import kbaserelationengine.parse.ObjectParseException;
-
 public class JsonTokenUtil {
 
     /**
@@ -66,7 +64,7 @@ public class JsonTokenUtil {
      * we read field token before processing value block.
      */
     public static void writeTokensFromCurrent(final JsonParser jts, final JsonToken current,
-            final JsonGenerator jgen) throws IOException, ObjectParseException {
+            final JsonGenerator jgen) throws IOException {
         JsonToken t = current;
         writeCurrentToken(jts, t, jgen);
         if (t == JsonToken.START_OBJECT) {
@@ -99,7 +97,7 @@ public class JsonTokenUtil {
      * Method processes (writes into output token stream - jts) only one token.
      */
     public static JsonToken writeCurrentToken(JsonParser jts, JsonToken current, 
-            JsonGenerator jgen) throws IOException, ObjectParseException {
+            JsonGenerator jgen) throws IOException {
         JsonToken t = current;
         if (t == JsonToken.START_ARRAY) {
             jgen.writeStartArray();

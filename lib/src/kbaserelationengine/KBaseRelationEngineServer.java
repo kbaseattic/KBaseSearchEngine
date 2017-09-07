@@ -98,9 +98,6 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         HttpHost esHostPort = new HttpHost(elasticHost, elasticPort);
         final Path typesDir = Paths.get(config.get("types-dir"));
         final Path mappingsDir = Paths.get(config.get("type-mappings-dir"));
-        final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
-                "yaml", new YAMLTypeMappingParser());
-        final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers);
         File tempDir = new File(config.get("scratch"));
         if (!tempDir.exists()) {
             tempDir.mkdirs();
@@ -128,28 +125,32 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         }
         File logFile = new File(tempDir, "log_" + System.currentTimeMillis() + ".txt");
         PrintWriter logPw = new PrintWriter(logFile);
+        final LineLogger logger = new LineLogger() {
+            @Override
+            public void logInfo(String line) {
+                logPw.println(line);
+                logPw.flush();
+            }
+            @Override
+            public void logError(String line) {
+                logPw.println(line);
+                logPw.flush();
+            }
+            @Override
+            public void logError(Throwable error) {
+                error.printStackTrace(logPw);
+                logPw.flush();
+            }
+            @Override
+            public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
+            }
+        };
+        final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
+                "yaml", new YAMLTypeMappingParser());
+        final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers, logger);
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, mongoHost,
                 mongoPort, mongoDbName, esHostPort, esUser, esPassword, esIndexPrefix, 
-                ss, tempDir, true, true, new LineLogger() {
-                    @Override
-                    public void logInfo(String line) {
-                        logPw.println(line);
-                        logPw.flush();
-                    }
-                    @Override
-                    public void logError(String line) {
-                        logPw.println(line);
-                        logPw.flush();
-                    }
-                    @Override
-                    public void logError(Throwable error) {
-                        error.printStackTrace(logPw);
-                        logPw.flush();
-                    }
-                    @Override
-                    public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
-                    }
-                }, admins);
+                ss, tempDir, true, true, logger, admins);
         //END_CONSTRUCTOR
     }
 

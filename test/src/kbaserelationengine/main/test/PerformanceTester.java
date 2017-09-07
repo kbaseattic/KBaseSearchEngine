@@ -116,16 +116,11 @@ public class PerformanceTester {
         }
         final Path typesDir = Paths.get("resources/types");
         final Path mappingsDir = Paths.get("resources/typemappings");
-        final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
-                "yaml", new YAMLTypeMappingParser());
-        final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers);
         if (!tempDir.exists()) {
             tempDir.mkdirs();
         }
         String esIndexPrefix = "performance.";
-        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken,
-                esHostPort, esUser, esPassword, esIndexPrefix, 
-                ss, tempDir, new LineLogger() {
+        final LineLogger logger = new LineLogger() {
             @Override
             public void logInfo(String line) {
                 if (debug) {
@@ -148,7 +143,13 @@ public class PerformanceTester {
             public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
                 timeStats.add(new long[] {loadMs, parseMs, indexMs});
             }
-        });
+        };
+        final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
+                "yaml", new YAMLTypeMappingParser());
+        final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers, logger);
+        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken,
+                esHostPort, esUser, esPassword, esIndexPrefix, 
+                ss, tempDir, logger);
     }
     
     private static void deleteAllTestElasticIndices(HttpHost esHostPort, String esUser,

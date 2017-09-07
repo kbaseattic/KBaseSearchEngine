@@ -1,6 +1,8 @@
 package kbaserelationengine.system;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -10,6 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.FilenameUtils;
+
+import kbaserelationengine.main.LineLogger;
 import kbaserelationengine.parse.ObjectParseException;
 
 public class DefaultSystemStorage implements SystemStorage {
@@ -20,24 +25,37 @@ public class DefaultSystemStorage implements SystemStorage {
     private final Map<String, ObjectTypeParsingRules> searchTypes = new HashMap<>();
     private final Map<CodeAndType, TypeMapping> storageTypes;
     
-    private Map<CodeAndType, TypeMapping> processTypesDir(final Path typesDir)
-            throws IOException, ObjectParseException {
+    private Map<CodeAndType, TypeMapping> processTypesDir(
+            final Path typesDir,
+            final LineLogger logger)
+            throws IOException, ObjectParseException, TypeParseException {
+        final Map<String, Path> typeToFile = new HashMap<>();
         final Map<CodeAndType, TypeMapping.Builder> storageTypes = new HashMap<>(); 
         // this is gross, but works. https://stackoverflow.com/a/20130475/643675
         for (Path file : (Iterable<Path>) Files.list(typesDir)::iterator) {
             if (Files.isRegularFile(file) && file.toString().endsWith(".json")) {
                 final ObjectTypeParsingRules type = ObjectTypeParsingRules.fromFile(file.toFile());
-                searchTypes.put(type.getGlobalObjectType(), type);
-                final CodeAndType cnt = new CodeAndType(
-                        type.getStorageObjectType().getStorageCode(),
-                        type.getStorageObjectType().getType());
+                final String searchType = type.getGlobalObjectType();
+                if (typeToFile.containsKey(searchType)) {
+                    throw new TypeParseException(String.format(
+                            "Multiple definitions for the same search type %s in files %s and %s",
+                            searchType, file, typeToFile.get(searchType)));
+                }
+                typeToFile.put(searchType, file);
+                searchTypes.put(searchType, type);
+                final CodeAndType cnt = new CodeAndType(type);
                 if (!storageTypes.containsKey(cnt)) {
                     storageTypes.put(cnt, TypeMapping.getBuilder(cnt.storageCode, cnt.storageType)
-                            .withNullableDefaultSearchType(type.getGlobalObjectType()));
+                            .withNullableDefaultSearchType(searchType)
+                            .withNullableSourceInfo(file.toString()));
                 } else {
-                    storageTypes.get(cnt)
-                            .withNullableDefaultSearchType(type.getGlobalObjectType());
+                    storageTypes.get(cnt).withNullableDefaultSearchType(searchType);
                 }
+                logger.logInfo(String.format("Processed type tranformation file with storage " +
+                        "code %s, storage type %s and search type %s: %s",
+                        cnt.storageCode, cnt.storageType, searchType, file));
+            } else {
+                logger.logInfo("Skipping file in type tranformation directory: " + file);
             }
         }
         final Map<CodeAndType, TypeMapping> ret = new HashMap<>();
@@ -49,9 +67,14 @@ public class DefaultSystemStorage implements SystemStorage {
         private final String storageCode;
         private final String storageType;
         
-        private CodeAndType(String storageCode, String storageType) {
+        private CodeAndType(final String storageCode, final String storageType) {
             this.storageCode = storageCode;
             this.storageType = storageType;
+        }
+        
+        private CodeAndType(final ObjectTypeParsingRules type) {
+            this.storageCode = type.getStorageObjectType().getStorageCode();
+            this.storageType = type.getStorageObjectType().getType();
         }
 
         @Override
@@ -111,12 +134,63 @@ public class DefaultSystemStorage implements SystemStorage {
     public DefaultSystemStorage(
             final Path typesDir,
             final Path mappingsDir,
-            final Map<String, TypeMappingParser> parsers)
-            throws IOException, ObjectParseException {
-        storageTypes = processTypesDir(typesDir);
-        // TODO NOW Auto-generated constructor stub
+            final Map<String, TypeMappingParser> parsers,
+            final LineLogger logger)
+            throws IOException, ObjectParseException, TypeParseException {
+        storageTypes = processTypesDir(typesDir, logger);
+        final Map<CodeAndType, TypeMapping> mappings = processMappingsDir(
+                mappingsDir, parsers, logger);
+        for (final CodeAndType cnt: mappings.keySet()) {
+            if (storageTypes.containsKey(cnt)) {
+                logger.logInfo(String.format(
+                        "Overriding type mapping for storage code %s and storage type %s from " +
+                        "type transformation file with definition from type mapping file %s",
+                        cnt.storageCode, cnt.storageType,
+                        mappings.get(cnt).getSourceInfo().get()));
+            }
+            storageTypes.put(cnt, mappings.get(cnt));
+        }
     }
     
+    private Map<CodeAndType, TypeMapping> processMappingsDir(
+            final Path mappingsDir,
+            final Map<String, TypeMappingParser> parsers,
+            final LineLogger logger)
+            throws IOException, TypeParseException {
+        final Map<CodeAndType, TypeMapping> ret = new HashMap<>();
+        // this is gross, but works. https://stackoverflow.com/a/20130475/643675
+        for (Path file : (Iterable<Path>) Files.list(mappingsDir)::iterator) {
+            if (Files.isRegularFile(file)) {
+                final String ext = FilenameUtils.getExtension(file.toString());
+                final TypeMappingParser parser = parsers.get(ext);
+                if (parser != null) {
+                    final Set<TypeMapping> mappings;
+                    try (final InputStream is = Files.newInputStream(file)) {
+                        mappings = parser.parse(new BufferedInputStream(is), file.toString());
+                    }
+                    for (final TypeMapping map: mappings) {
+                        final CodeAndType cnt = new CodeAndType(
+                                map.getStorageCode(), map.getStorageType());
+                        if (ret.containsKey(cnt)) {
+                            throw new TypeParseException(String.format(
+                                    "Type collision for type %s in storage %s. " +
+                                    "Type is specified in both files %s and %s.",
+                                    cnt.storageType, cnt.storageCode,
+                                    ret.get(cnt).getSourceInfo().get(),
+                                    map.getSourceInfo().get()));
+                        }
+                        ret.put(cnt, map);
+                    }
+                } else {
+                    logger.logInfo("Skipping file in type mapping directory: " + file);
+                }
+            } else {
+                logger.logInfo("Skipping file in type mapping directory: " + file);
+            }
+        }
+        return ret;
+    }
+
     @Override
     public List<ObjectTypeParsingRules> listObjectTypes() throws IOException {
         return new LinkedList<>(searchTypes.values());
