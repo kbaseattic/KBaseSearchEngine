@@ -17,6 +17,7 @@ storage-type: WS
 types:
     # A simple mapping that is a 1:1 map from the storage object type to the search type.
     KBaseGenomeAnnotations.Assembly:
+        # if type is present any other fields are ignored.
         type: Assembly
     # A more complex mapping that takes versions of the storage object type into account.
     KBaseGenome.Genome:

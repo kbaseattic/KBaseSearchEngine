@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -106,7 +108,7 @@ public class PerformanceTester {
         if (cleanup) {
             deleteAllTestElasticIndices(esHostPort, esUser, esPassword);
         }
-        File typesDir = new File("resources/types");
+        Path typesDir = Paths.get("resources/types");
         if (!tempDir.exists()) {
             tempDir.mkdirs();
         }

@@ -1,6 +1,5 @@
 package kbaserelationengine.main.test;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -112,7 +111,7 @@ public class MainObjectProcessorTest {
                 tempDir);
         System.out.println("Started workspace on port " + ws.getServerPort());
         
-        final File typesDir = new File(TestCommon.TYPES_REPO_DIR);
+        final Path typesDir = Paths.get(TestCommon.TYPES_REPO_DIR);
         
         URL wsUrl = new URL("http://localhost:" + ws.getServerPort());
 

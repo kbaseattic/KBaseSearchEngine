@@ -3,6 +3,7 @@ package kbaserelationengine.main;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -106,7 +107,7 @@ public class MainObjectProcessor {
             final String esUser,
             final String esPassword,
             final String esIndexPrefix,
-            final File typesDir,
+            final Path typesDir,
             final File tempDir,
             final boolean startLifecycleRunner,
             final boolean runWorkspaceEventReconstructor,
@@ -189,7 +190,7 @@ public class MainObjectProcessor {
      */
     public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, 
             HttpHost esHost, String esUser, String esPassword,
-            String esIndexPrefix, File typesDir, File tempDir, LineLogger logger) 
+            String esIndexPrefix, Path typesDir, File tempDir, LineLogger logger) 
                     throws IOException, ObjectParseException, UnauthorizedException {
         this.runWorkspaceEventReconstructor = true;
         this.rootTempDir = tempDir;

@@ -14,6 +14,8 @@ import us.kbase.common.service.RpcContext;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -90,7 +92,7 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         String esUser = config.get("elastic-user");
         String esPassword = config.get("elastic-password");
         HttpHost esHostPort = new HttpHost(elasticHost, elasticPort);
-        File typesDir = new File(config.get("types-dir"));
+        Path typesDir = Paths.get(config.get("types-dir"));
         File tempDir = new File(config.get("scratch"));
         if (!tempDir.exists()) {
             tempDir.mkdirs();

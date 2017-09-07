@@ -1,31 +1,37 @@
 package kbaserelationengine.system;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import kbaserelationengine.parse.ObjectParseException;
 
 public class DefaultSystemStorage implements SystemStorage {
     
-    /* Not totally clear what this class is supposed to do other than handle the parsing rules
-     * files. It seems like it needs more functionality based on the unimplemented methods below
-     * but I'm not clear on what that functionality is supposed to be. It seems like this class
-     * should be focused on handling the parsing rules files and any other functionality should
-     * go in a different class.
-     */
     private List<ObjectTypeParsingRules> parsingRules;
     
-    public DefaultSystemStorage(File typesDir) 
+    public DefaultSystemStorage(final Path typesDir) 
             throws ObjectParseException, IOException {
         this.parsingRules = new ArrayList<>();
-        for (File file : typesDir.listFiles()) {
-            if (file.isFile() && file.getName().endsWith(".json")) {
-                parsingRules.add(ObjectTypeParsingRules.fromFile(file));
+        // this is gross, but works. https://stackoverflow.com/a/20130475/643675
+        for (Path file : (Iterable<Path>) Files.list(typesDir)::iterator) {
+            if (Files.isRegularFile(file) && file.toString().endsWith(".json")) {
+                parsingRules.add(ObjectTypeParsingRules.fromFile(file.toFile()));
             }
         }
+    }
+    
+    //TODO TEST
+    public DefaultSystemStorage(
+            final Path typesDir,
+            final Path mappingsDir,
+            final Map<String, TypeMappingParser> parsers) {
+        
+        // TODO NOW Auto-generated constructor stub
     }
     
     @Override
