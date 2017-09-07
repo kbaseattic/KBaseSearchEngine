@@ -4,11 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -53,46 +50,48 @@ public class YAMLTypeMappingParser implements TypeMappingParser {
         for (final String key: types.keySet()) {
             final Map<String, Object> typeinfo = getStringMap(
                     types, key, TYPES_PATH + "/" + key, sourceInfo, true);
-            ret.addAll(processType(storageCode, key, typeinfo, sourceInfo));
+            ret.add(processType(storageCode, key, typeinfo, sourceInfo));
         }
         return ret;
     }
 
-    private List<TypeMapping> processType(
+    private TypeMapping processType(
             final String storageCode,
             final String type,
             final Map<String, Object> typeinfo,
             final String sourceInfo)
             throws TypeParseException {
+        final TypeMapping.Builder b = TypeMapping.getBuilder(storageCode, type)
+                .withNullableSourceInfo(sourceInfo);
         String pathPrefix = TYPES_PATH + "/" + type + "/";
         final String searchType = getString(
                 typeinfo, "type", pathPrefix + "type", sourceInfo, false);
         if (searchType != null) {
-            return Arrays.asList(new TypeMapping(
-                    new StorageObjectType(storageCode, type), searchType, sourceInfo, false));
+            return b.withNullableDefaultSearchType(searchType).build();
         }
-        final List<TypeMapping> ret = new LinkedList<>();
         final String default_ = getString(
                 typeinfo, "default", pathPrefix + "default", sourceInfo, false);
         if (default_ != null) {
-            ret.add(new TypeMapping(
-                    new StorageObjectType(storageCode, type), default_, sourceInfo, true));
+            b.withNullableDefaultSearchType(default_);
         }
-        pathPrefix = pathPrefix + "versions";
+        final String verPathPrefix = pathPrefix + "versions";
         final Map<Integer, Object> versions = getIntMap(
-                typeinfo, "versions", pathPrefix, sourceInfo, false);
+                typeinfo, "versions", verPathPrefix, sourceInfo, false);
         for (final Integer v: versions.keySet()) {
-            final String verpath = pathPrefix + "/" + v;
+            final String verpath = verPathPrefix + "/" + v;
             if (v < 0) {
                 throw new TypeParseException(String.format(
                         "Version less than 0 at %s.%s", verpath, fmt(sourceInfo)));
             }
             final String searchVerType = getString(
                     versions, v, verpath, sourceInfo, true);
-            ret.add(new TypeMapping(new StorageObjectType(storageCode, type, v),
-                    searchVerType, sourceInfo, false));
+            b.withVersion(v, searchVerType);
         }
-        return ret;
+        if (!b.buildReady()) {
+            throw new TypeParseException(String.format(
+                    "No type mappings provided at %s.%s", pathPrefix, fmt(sourceInfo)));
+        }
+        return b.build();
     }
 
     private String fmt(final String sourceInfo) {
