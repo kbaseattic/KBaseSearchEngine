@@ -71,6 +71,7 @@ public class WorkspaceEventGenerator {
     //TODO EVENTGEN optimize by not pulling unneeded fields from db
 
     //TODO EVENTGEN handle data palettes: 1) remove all sharing for ws 2) pull DP 3) add share events for all DP objects. RC still possible.
+    //TODO TEST
     
     private final int ws;
     private final int obj;
@@ -263,7 +264,9 @@ public class WorkspaceEventGenerator {
             throws EventGeneratorException {
         final int objid = Math.toIntExact(ver.getLong(WS_KEY_OBJ_ID));
         final int vernum = ver.getInteger(WS_KEY_VER);
-        final String type = ver.getString(WS_KEY_TYPE).split("-")[0];
+        final String[] typeString = ver.getString(WS_KEY_TYPE).split("-");
+        final String type = typeString[0];
+        final int typever = Integer.parseInt(typeString[1].split(".")[0]);
         try {
             storage.store(new ObjectStatusEvent(
                     null, // no mongo id
@@ -274,14 +277,14 @@ public class WorkspaceEventGenerator {
                     null,
                     null,
                     ver.getDate(WS_KEY_SAVEDATE).getTime(),
-                    new StorageObjectType("WS", type),
+                    new StorageObjectType("WS", type, typever),
                     ObjectStatusEventType.NEW_VERSION,
                     pub));
         } catch (IOException e) {
             throw new EventGeneratorException("Error saving event to RESKE db: " + e.getMessage(),
                     e);
         }
-        log(String.format("Generated event %s/%s/%s %s", wsid, objid, vernum, type));
+        log(String.format("Generated event %s/%s/%s %s-%s", wsid, objid, vernum, type, typever));
     }
 
     private Map<Integer, Document> getObjects(
