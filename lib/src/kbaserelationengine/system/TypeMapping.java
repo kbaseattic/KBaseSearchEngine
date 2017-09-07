@@ -66,16 +66,17 @@ public class TypeMapping {
         return sourceInfo;
     }
     
-    /** Get the search types for a particular version. If no version is available, pass null in
+    /** Get the search types for a particular version. If no version is available, pass absent in
      * its place.
-     * @param version the version number, or null if there is no version.
+     * @param version the version number, or absent if there is no version.
      * @return the mapped search types, or an empty set if no search type mapping is available.
      */
-    public Set<String> getSearchTypes(final Integer version) {
-        if (version != null & version < 0) {
+    public Set<String> getSearchTypes(final Optional<Integer> version) {
+        Utils.nonNull(version, "version");
+        if (version.isPresent() && version.get() < 0) {
             throw new IllegalArgumentException("version must be at least 0");
         }
-        if (!versions.containsKey(version)) {
+        if (!version.isPresent() || !versions.containsKey(version.get())) {
             return defaultSearchTypes;
         } else {
             return versions.get(version);
