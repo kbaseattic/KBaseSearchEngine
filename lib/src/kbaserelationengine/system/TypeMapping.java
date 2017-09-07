@@ -79,7 +79,7 @@ public class TypeMapping {
         if (!version.isPresent() || !versions.containsKey(version.get())) {
             return defaultSearchTypes;
         } else {
-            return versions.get(version);
+            return versions.get(version.get());
         }
     }
     

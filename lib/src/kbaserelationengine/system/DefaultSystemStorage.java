@@ -22,6 +22,8 @@ public class DefaultSystemStorage implements SystemStorage {
     //TODO JAVADOC
     //TODO TEST
     
+    private static final String TYPE_STORAGE = "[Type storage]";
+    
     private final Map<String, ObjectTypeParsingRules> searchTypes = new HashMap<>();
     private final Map<CodeAndType, TypeMapping> storageTypes;
     
@@ -51,11 +53,12 @@ public class DefaultSystemStorage implements SystemStorage {
                 } else {
                     storageTypes.get(cnt).withNullableDefaultSearchType(searchType);
                 }
-                logger.logInfo(String.format("Processed type tranformation file with storage " +
+                logger.logInfo(String.format("%s Processed type tranformation file with storage " +
                         "code %s, storage type %s and search type %s: %s",
-                        cnt.storageCode, cnt.storageType, searchType, file));
+                        TYPE_STORAGE, cnt.storageCode, cnt.storageType, searchType, file));
             } else {
-                logger.logInfo("Skipping file in type tranformation directory: " + file);
+                logger.logInfo(TYPE_STORAGE + " Skipping file in type tranformation directory: " +
+                        file);
             }
         }
         final Map<CodeAndType, TypeMapping> ret = new HashMap<>();
@@ -143,9 +146,9 @@ public class DefaultSystemStorage implements SystemStorage {
         for (final CodeAndType cnt: mappings.keySet()) {
             if (storageTypes.containsKey(cnt)) {
                 logger.logInfo(String.format(
-                        "Overriding type mapping for storage code %s and storage type %s from " +
-                        "type transformation file with definition from type mapping file %s",
-                        cnt.storageCode, cnt.storageType,
+                        "%s Overriding type mapping for storage code %s and storage type %s " +
+                        "from type transformation file with definition from type mapping file %s",
+                        TYPE_STORAGE, cnt.storageCode, cnt.storageType,
                         mappings.get(cnt).getSourceInfo().get()));
             }
             storageTypes.put(cnt, mappings.get(cnt));
@@ -191,10 +194,11 @@ public class DefaultSystemStorage implements SystemStorage {
                         ret.put(cnt, map);
                     }
                 } else {
-                    logger.logInfo("Skipping file in type mapping directory: " + file);
+                    logger.logInfo(TYPE_STORAGE + " Skipping file in type mapping directory: " +
+                            file);
                 }
             } else {
-                logger.logInfo("Skipping entry in type mapping directory: " + file);
+                logger.logInfo(TYPE_STORAGE + "Skipping entry in type mapping directory: " + file);
             }
         }
         return ret;
