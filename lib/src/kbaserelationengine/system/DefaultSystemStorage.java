@@ -179,13 +179,22 @@ public class DefaultSystemStorage implements SystemStorage {
                                     ret.get(cnt).getSourceInfo().get(),
                                     map.getSourceInfo().get()));
                         }
+                        for (final String searchType: map.getSearchTypes()) {
+                            if (!searchTypes.containsKey(searchType)) {
+                                throw new TypeParseException(String.format(
+                                        "The search type %s specified in source code/type %s/%s " +
+                                        "does not have an equivalent tranform type. File: %s",
+                                        searchType, cnt.storageCode, cnt.storageType,
+                                        map.getSourceInfo().get()));
+                            }
+                        }
                         ret.put(cnt, map);
                     }
                 } else {
                     logger.logInfo("Skipping file in type mapping directory: " + file);
                 }
             } else {
-                logger.logInfo("Skipping file in type mapping directory: " + file);
+                logger.logInfo("Skipping entry in type mapping directory: " + file);
             }
         }
         return ret;

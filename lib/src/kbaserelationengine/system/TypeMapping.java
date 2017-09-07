@@ -82,6 +82,17 @@ public class TypeMapping {
             return versions.get(version);
         }
     }
+    
+    /** Returns a set of all the search types in this mapping, including the default types and
+     * the version specific types.
+     * @return all the types in this mapping.
+     */
+    public Set<String> getSearchTypes() {
+        final Set<String> ret = new HashSet<>();
+        ret.addAll(defaultSearchTypes);
+        versions.values().stream().forEach(s -> ret.addAll(s));
+        return ret;
+    }
 
     @Override
     public String toString() {
