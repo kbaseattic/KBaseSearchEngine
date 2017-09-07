@@ -23,13 +23,17 @@ import java.util.stream.Collectors;
 
 import org.apache.http.HttpHost;
 
+import com.google.common.collect.ImmutableMap;
 import com.mongodb.MongoClient;
 
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.main.LineLogger;
 import kbaserelationengine.main.MainObjectProcessor;
 import kbaserelationengine.search.ElasticIndexingStorage;
-
+import kbaserelationengine.system.DefaultSystemStorage;
+import kbaserelationengine.system.SystemStorage;
+import kbaserelationengine.system.TypeMappingParser;
+import kbaserelationengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.ConfigurableAuthService;
 //END_HEADER
@@ -92,7 +96,11 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         String esUser = config.get("elastic-user");
         String esPassword = config.get("elastic-password");
         HttpHost esHostPort = new HttpHost(elasticHost, elasticPort);
-        Path typesDir = Paths.get(config.get("types-dir"));
+        final Path typesDir = Paths.get(config.get("types-dir"));
+        final Path mappingsDir = Paths.get(config.get("type-mappings-dir"));
+        final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
+                "yaml", new YAMLTypeMappingParser());
+        final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers);
         File tempDir = new File(config.get("scratch"));
         if (!tempDir.exists()) {
             tempDir.mkdirs();
@@ -122,7 +130,7 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         PrintWriter logPw = new PrintWriter(logFile);
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, mongoHost,
                 mongoPort, mongoDbName, esHostPort, esUser, esPassword, esIndexPrefix, 
-                typesDir, tempDir, true, true, new LineLogger() {
+                ss, tempDir, true, true, new LineLogger() {
                     @Override
                     public void logInfo(String line) {
                         logPw.println(line);

@@ -31,6 +31,7 @@ import us.kbase.common.test.TestException;
 public class TestCommon {
     
     public static final String TYPES_REPO_DIR = "resources/types";
+    public static final String TYPE_MAP_REPO_DIR = "resources/typemappings";
     
     public static final String MONGOEXE = "test.mongo.exe";
     public static final String MONGOEXE_DEFAULT = "/opt/mongo/bin/mongod";

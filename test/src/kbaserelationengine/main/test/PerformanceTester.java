@@ -21,6 +21,8 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableMap;
+
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
@@ -30,8 +32,12 @@ import kbaserelationengine.search.AccessFilter;
 import kbaserelationengine.search.ElasticIndexingStorage;
 import kbaserelationengine.search.MatchFilter;
 import kbaserelationengine.search.MatchValue;
+import kbaserelationengine.system.DefaultSystemStorage;
 import kbaserelationengine.system.StorageObjectType;
+import kbaserelationengine.system.SystemStorage;
+import kbaserelationengine.system.TypeMappingParser;
 import kbaserelationengine.system.WsUtil;
+import kbaserelationengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
@@ -108,14 +114,18 @@ public class PerformanceTester {
         if (cleanup) {
             deleteAllTestElasticIndices(esHostPort, esUser, esPassword);
         }
-        Path typesDir = Paths.get("resources/types");
+        final Path typesDir = Paths.get("resources/types");
+        final Path mappingsDir = Paths.get("resources/typemappings");
+        final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
+                "yaml", new YAMLTypeMappingParser());
+        final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers);
         if (!tempDir.exists()) {
             tempDir.mkdirs();
         }
         String esIndexPrefix = "performance.";
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken,
                 esHostPort, esUser, esPassword, esIndexPrefix, 
-                typesDir, tempDir, new LineLogger() {
+                ss, tempDir, new LineLogger() {
             @Override
             public void logInfo(String line) {
                 if (debug) {

@@ -20,11 +20,6 @@ public class DefaultSystemStorage implements SystemStorage {
     private final Map<String, ObjectTypeParsingRules> searchTypes = new HashMap<>();
     private final Map<CodeAndType, TypeMapping> storageTypes;
     
-    public DefaultSystemStorage(final Path typesDir) 
-            throws ObjectParseException, IOException {
-        storageTypes = processTypesDir(typesDir);
-    }
-
     private Map<CodeAndType, TypeMapping> processTypesDir(final Path typesDir)
             throws IOException, ObjectParseException {
         final Map<CodeAndType, TypeMapping.Builder> storageTypes = new HashMap<>(); 

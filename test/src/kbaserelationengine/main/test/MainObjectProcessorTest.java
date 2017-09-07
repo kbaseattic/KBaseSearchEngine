@@ -21,6 +21,7 @@ import org.junit.Test;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
@@ -34,7 +35,11 @@ import kbaserelationengine.search.AccessFilter;
 import kbaserelationengine.search.MatchFilter;
 import kbaserelationengine.search.ObjectData;
 import kbaserelationengine.search.PostProcessing;
+import kbaserelationengine.system.DefaultSystemStorage;
 import kbaserelationengine.system.StorageObjectType;
+import kbaserelationengine.system.SystemStorage;
+import kbaserelationengine.system.TypeMappingParser;
+import kbaserelationengine.system.YAMLTypeMappingParser;
 import kbaserelationengine.test.common.TestCommon;
 import kbaserelationengine.test.controllers.elasticsearch.ElasticSearchController;
 import kbaserelationengine.test.controllers.workspace.WorkspaceController;
@@ -112,6 +117,10 @@ public class MainObjectProcessorTest {
         System.out.println("Started workspace on port " + ws.getServerPort());
         
         final Path typesDir = Paths.get(TestCommon.TYPES_REPO_DIR);
+        final Path mappingsDir = Paths.get(TestCommon.TYPE_MAP_REPO_DIR);
+        final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
+                "yaml", new YAMLTypeMappingParser());
+        final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers);
         
         URL wsUrl = new URL("http://localhost:" + ws.getServerPort());
 
@@ -119,7 +128,7 @@ public class MainObjectProcessorTest {
         final HttpHost esHostPort = new HttpHost("localhost", es.getServerPort());
         mop = new MainObjectProcessor(wsUrl, wsadmintoken, "localhost",
                 mongo.getServerPort(), dbName, esHostPort, null, null, esIndexPrefix, 
-                typesDir, tempDir.resolve("MainObjectProcessor").toFile(), false, false,
+                ss, tempDir.resolve("MainObjectProcessor").toFile(), false, false,
                 new LineLogger() {
                     @Override
                     public void logInfo(String line) {

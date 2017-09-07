@@ -3,7 +3,6 @@ package kbaserelationengine.main;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -67,7 +66,6 @@ import kbaserelationengine.relations.RelationStorage;
 import kbaserelationengine.search.ElasticIndexingStorage;
 import kbaserelationengine.search.FoundHits;
 import kbaserelationengine.search.IndexingStorage;
-import kbaserelationengine.system.DefaultSystemStorage;
 import kbaserelationengine.system.IndexingRules;
 import kbaserelationengine.system.ObjectTypeParsingRules;
 import kbaserelationengine.system.StorageObjectType;
@@ -89,7 +87,7 @@ public class MainObjectProcessor {
     private AccessGroupProvider accessGroupProvider;
     private ObjectStatusEventQueue queue;
     private Thread mainRunner;
-    private SystemStorage systemStorage;
+    private final SystemStorage systemStorage;
     private IndexingStorage indexingStorage;
     private RelationStorage relationStorage;
     private LineLogger logger;
@@ -107,7 +105,7 @@ public class MainObjectProcessor {
             final String esUser,
             final String esPassword,
             final String esIndexPrefix,
-            final Path typesDir,
+            final SystemStorage systemStorage,
             final File tempDir,
             final boolean startLifecycleRunner,
             final boolean runWorkspaceEventReconstructor,
@@ -169,7 +167,7 @@ public class MainObjectProcessor {
             });
         }
         queue = new ObjectStatusEventQueue(eventStorage);
-        systemStorage = new DefaultSystemStorage(typesDir);
+        this.systemStorage = systemStorage;
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
                 getTempSubDir("esbulk"));
         if (esUser != null) {
@@ -190,7 +188,7 @@ public class MainObjectProcessor {
      */
     public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, 
             HttpHost esHost, String esUser, String esPassword,
-            String esIndexPrefix, Path typesDir, File tempDir, LineLogger logger) 
+            String esIndexPrefix, SystemStorage systemStorage, File tempDir, LineLogger logger) 
                     throws IOException, ObjectParseException, UnauthorizedException {
         this.runWorkspaceEventReconstructor = true;
         this.rootTempDir = tempDir;
@@ -198,7 +196,7 @@ public class MainObjectProcessor {
         this.admins = Collections.emptySet();
         wsClient = new WorkspaceClient(wsURL, kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true);         
-        systemStorage = new DefaultSystemStorage(typesDir);
+        this.systemStorage = systemStorage;
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
                 getTempSubDir("esbulk"));
         if (esUser != null) {
