@@ -21,7 +21,7 @@ file(s) (in the `source-type` and `source-object-type` fields). In particular, t
 files are aware of the source type version while the transformation files are not.
 
 Mapping files also allow using the same set of transformation files for multiple environments
-where the source types may not have equivalent names, and providing environment-specific mapping
+where the source types may not have equivalent names by providing environment-specific mapping
 files. 
 
 There is an example mapping file in `resources/typemappings` that explains the structure and
