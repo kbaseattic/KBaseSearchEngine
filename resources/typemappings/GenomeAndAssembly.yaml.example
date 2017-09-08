@@ -13,7 +13,8 @@
 # specify the storage type (e.g. the source of the data)
 storage-type: WS
 
-# specify the types included in this mapping file.
+# specify the types included in this mapping file. The search types given must match with
+# the global-object-type key in the type transformation file.
 types:
     # A simple mapping that is a map from the storage object type to the search type(s).
     KBaseGenomeAnnotations.Assembly:

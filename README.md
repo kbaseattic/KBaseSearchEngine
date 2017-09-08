@@ -17,7 +17,7 @@ TODO documentation of the transformation spec.
 
 Type mappings are optional `yaml` files that specify how to map data source types to search types.
 If provided for a source type, they override the mapping provided in the type transformation
-file(s) (in the `source-type` and `source-object-type` fields. In particular, the mapping
+file(s) (in the `source-type` and `source-object-type` fields). In particular, the mapping
 files are aware of the source type version while the transformation files are not.
 
 Mapping files also allow using the same set of transformation files for multiple environments
