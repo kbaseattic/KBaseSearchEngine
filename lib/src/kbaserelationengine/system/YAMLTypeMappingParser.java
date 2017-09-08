@@ -37,7 +37,7 @@ public class YAMLTypeMappingParser implements TypeMappingParser {
             throws TypeParseException {
         Utils.nonNull(input, "input");
         if (Utils.isNullOrEmpty(sourceInfo)) {
-            sourceInfo = "";
+            sourceInfo = null;
         }
         final Yaml yaml = new Yaml(new SafeConstructor()); // not thread safe
         final Object predata = yaml.load(input);
@@ -145,7 +145,8 @@ public class YAMLTypeMappingParser implements TypeMappingParser {
     }
 
     private String fmt(final String sourceInfo) {
-        return sourceInfo.isEmpty() ? "" : " Source: " + sourceInfo;
+        return sourceInfo == null ? "" : 
+            sourceInfo.trim().isEmpty() ? "" : " Source: " + sourceInfo;
     }
 
     // never required
