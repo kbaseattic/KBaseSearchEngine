@@ -16,6 +16,7 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -23,6 +24,7 @@ import org.apache.http.HttpHost;
 import org.slf4j.LoggerFactory;
 
 import com.mongodb.MongoClient;
+import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoDatabase;
 
@@ -74,17 +76,28 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         }
     }
     
+    // can't close mongo client or the connection shuts down
+    // may need a shut down listener to ensure the client shuts down, but probably unnecessary
+    @SuppressWarnings("resource")
     private MongoDatabase getMongoDB(
             final String host,
             final String dbname,
             final String user,
             final String pwd) {
-        // can't close it or the connection shuts down
-        // may need a shut down listener to ensure the client shuts down, but probably unnecessary
-        @SuppressWarnings("resource")
-        //TODO NOW mongo auth
-        final MongoClient cli = new MongoClient(new ServerAddress(host));
-        return cli.getDatabase(dbname);
+        final MongoClient cli;
+        if (user != null && !user.trim().isEmpty()) {
+            if (pwd == null || pwd.trim().isEmpty()) {
+                throw new IllegalArgumentException("Must provide mongo pwd if providing user");
+            }
+            final List<MongoCredential> creds = Arrays.asList(MongoCredential.createCredential(
+                    user, dbname, pwd.toCharArray()));
+            // unclear if and when it's safe to clear the password
+            cli = new MongoClient(new ServerAddress(host), creds);
+        } else {
+            cli = new MongoClient(new ServerAddress(host));
+        }
+        final MongoDatabase database = cli.getDatabase(dbname);
+        return database;
     }
     
     private void quietLoggers() {
