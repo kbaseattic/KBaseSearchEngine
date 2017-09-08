@@ -20,9 +20,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.http.HttpHost;
+import org.slf4j.LoggerFactory;
 
 import com.mongodb.MongoClient;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.main.LineLogger;
 import kbaserelationengine.main.MainObjectProcessor;
@@ -68,11 +71,17 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
             }
         }
     }
+    
+    private void quietLoggers() {
+        ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME))
+                .setLevel(Level.INFO);
+    }
     //END_CLASS_HEADER
 
     public KBaseRelationEngineServer() throws Exception {
         super("KBaseRelationEngine");
         //BEGIN_CONSTRUCTOR
+        quietLoggers();
         URL wsUrl = new URL(config.get("workspace-url"));
         String tokenStr = config.get("indexer-token");
         final String authURL = getAuthUrlFromConfig(config);
