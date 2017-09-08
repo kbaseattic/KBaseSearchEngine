@@ -35,8 +35,7 @@ public class ObjectParser {
             final SourceData obj,
             final GUID guid, 
             final ObjectTypeParsingRules parsingRules,
-            final SystemStorage system,
-            final RelationStorage relationStorage)
+            final SystemStorage system)
             throws IOException, ObjectParseException {
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);

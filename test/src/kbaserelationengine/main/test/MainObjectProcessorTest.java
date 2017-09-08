@@ -117,8 +117,8 @@ public class MainObjectProcessorTest {
 
         final String esIndexPrefix = "test_" + System.currentTimeMillis() + ".";
         final HttpHost esHostPort = new HttpHost("localhost", es.getServerPort());
-        mop = new MainObjectProcessor(wsUrl, wsadmintoken, "localhost",
-                mongo.getServerPort(), dbName, esHostPort, null, null, esIndexPrefix, 
+        mop = new MainObjectProcessor(wsUrl, wsadmintoken, db,
+                esHostPort, null, null, esIndexPrefix, 
                 typesDir, tempDir.resolve("MainObjectProcessor").toFile(), false, false,
                 new LineLogger() {
                     @Override

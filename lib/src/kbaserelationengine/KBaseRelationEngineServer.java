@@ -23,6 +23,8 @@ import org.apache.http.HttpHost;
 import org.slf4j.LoggerFactory;
 
 import com.mongodb.MongoClient;
+import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoDatabase;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -72,6 +74,19 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         }
     }
     
+    private MongoDatabase getMongoDB(
+            final String host,
+            final String dbname,
+            final String user,
+            final String pwd) {
+        // can't close it or the connection shuts down
+        // may need a shut down listener to ensure the client shuts down, but probably unnecessary
+        @SuppressWarnings("resource")
+        //TODO NOW mongo auth
+        final MongoClient cli = new MongoClient(new ServerAddress(host));
+        return cli.getDatabase(dbname);
+    }
+    
     private void quietLoggers() {
         ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME))
                 .setLevel(Level.INFO);
@@ -92,8 +107,13 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         c.withKBaseAuthServerURL(new URL(authURL));
         ConfigurableAuthService auth = new ConfigurableAuthService(c);
         AuthToken kbaseIndexerToken = auth.validateToken(tokenStr);
-        String mongoHost = config.get("mongo-host");
-        int mongoPort = Integer.parseInt(config.get("mongo-port"));
+        final String mongoHost = config.get("mongo-host");
+        final int mongoPort = Integer.parseInt(config.get("mongo-port"));
+        final String mongoDbName = config.get("mongo-database");
+        final String mongoUser = config.get("mongo-user");
+        final String mongoPwd = config.get("mongo-pwd");
+        final MongoDatabase db = getMongoDB(
+                mongoHost + ":" + mongoPort, mongoDbName, mongoUser, mongoPwd);
         String elasticHost = config.get("elastic-host");
         int elasticPort = Integer.parseInt(config.get("elastic-port"));
         String esUser = config.get("elastic-user");
@@ -104,7 +124,6 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         if (!tempDir.exists()) {
             tempDir.mkdirs();
         }
-        String mongoDbName = config.get("mongo-database");
         String esIndexPrefix = config.get("elastic-namespace") + ".";
         String adminsText = config.get("admins");
         Set<String> admins = new LinkedHashSet<>();
@@ -127,8 +146,8 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         }
         File logFile = new File(tempDir, "log_" + System.currentTimeMillis() + ".txt");
         PrintWriter logPw = new PrintWriter(logFile);
-        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, mongoHost,
-                mongoPort, mongoDbName, esHostPort, esUser, esPassword, esIndexPrefix, 
+        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, db,
+                esHostPort, esUser, esPassword, esIndexPrefix, 
                 typesDir, tempDir, true, true, new LineLogger() {
                     @Override
                     public void logInfo(String line) {
