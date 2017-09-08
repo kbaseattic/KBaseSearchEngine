@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,6 +21,8 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableMap;
+
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
@@ -28,7 +32,12 @@ import kbaserelationengine.search.AccessFilter;
 import kbaserelationengine.search.ElasticIndexingStorage;
 import kbaserelationengine.search.MatchFilter;
 import kbaserelationengine.search.MatchValue;
+import kbaserelationengine.system.DefaultSystemStorage;
+import kbaserelationengine.system.StorageObjectType;
+import kbaserelationengine.system.SystemStorage;
+import kbaserelationengine.system.TypeMappingParser;
 import kbaserelationengine.system.WsUtil;
+import kbaserelationengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
@@ -105,14 +114,13 @@ public class PerformanceTester {
         if (cleanup) {
             deleteAllTestElasticIndices(esHostPort, esUser, esPassword);
         }
-        File typesDir = new File("resources/types");
+        final Path typesDir = Paths.get("resources/types");
+        final Path mappingsDir = Paths.get("resources/typemappings");
         if (!tempDir.exists()) {
             tempDir.mkdirs();
         }
         String esIndexPrefix = "performance.";
-        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken,
-                esHostPort, esUser, esPassword, esIndexPrefix, 
-                typesDir, tempDir, new LineLogger() {
+        final LineLogger logger = new LineLogger() {
             @Override
             public void logInfo(String line) {
                 if (debug) {
@@ -135,7 +143,13 @@ public class PerformanceTester {
             public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
                 timeStats.add(new long[] {loadMs, parseMs, indexMs});
             }
-        });
+        };
+        final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
+                "yaml", new YAMLTypeMappingParser());
+        final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers, logger);
+        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken,
+                esHostPort, esUser, esPassword, esIndexPrefix, 
+                ss, tempDir, logger);
     }
     
     private static void deleteAllTestElasticIndices(HttpHost esHostPort, String esUser,
@@ -188,9 +202,18 @@ public class PerformanceTester {
                 String[] parts = ref.split("/");
                 int wsId = Integer.parseInt(parts[0]);
                 int version = Integer.parseInt(parts[2]);
-                ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", wsId, parts[1], version, 
-                        null, null, System.currentTimeMillis(), "KBaseGenomes.Genome", 
-                        ObjectStatusEventType.CREATED, true);
+                ObjectStatusEvent ev = new ObjectStatusEvent(
+                        "-1",
+                        "WS",
+                        wsId,
+                        parts[1],
+                        version, 
+                        null,
+                        null,
+                        System.currentTimeMillis(),
+                        new StorageObjectType("WS", "KBaseGenomes.Genome"),
+                        ObjectStatusEventType.CREATED,
+                        true);
                 long t2 = System.currentTimeMillis();
                 try {
                     mop.processOneEvent(ev);

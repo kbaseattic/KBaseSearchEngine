@@ -23,6 +23,7 @@ import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.events.StatusEventListener;
 import kbaserelationengine.events.StatusEventTrigger;
 import kbaserelationengine.events.storage.StatusEventStorage;
+import kbaserelationengine.system.StorageObjectType;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple11;
@@ -362,7 +363,8 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
 			}
 			// Get full list of users who can access this workspace
 			WorkspaceIdentity params = new WorkspaceIdentity().withId((long)ws.wsId);
-	    	Map<String, String> usersMap = wsClient.getPermissions(params);
+	    	@SuppressWarnings("deprecation")
+            Map<String, String> usersMap = wsClient.getPermissions(params);
 			
 			AccessGroupStatus ag = new AccessGroupStatus(
 					ws.ag != null ? ws.ag.getId() : null, 
@@ -423,7 +425,7 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
 		
     	for(Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>> row: rows){    		
 
-    		String storageObjectType = row.getE3().split("-")[0];
+    		StorageObjectType storageObjectType = new StorageObjectType(WS_STORAGE_CODE, row.getE3().split("-")[0]);
     		if( excludeDataPallete && storageObjectType.equals(DATA_PALETTE_TYPE) ) continue;
     		
     		ObjectStatusEvent event = new ObjectStatusEvent(
@@ -484,7 +486,7 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
         					null,
         					(int)dp.wsId,
         					dp.timestamp,        					
-        					DATA_PALETTE_TYPE,
+        					new StorageObjectType(WS_STORAGE_CODE, DATA_PALETTE_TYPE),
         					ObjectStatusEventType.SHARED,
         					!ws.isPrivate);
         				events.add(event);
@@ -509,7 +511,7 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
     					null,
     					(int)dp.wsId,
     					dp.timestamp,        					
-    					DATA_PALETTE_TYPE,
+    					new StorageObjectType(WS_STORAGE_CODE, DATA_PALETTE_TYPE),
     					ObjectStatusEventType.UNSHARED,
     					!ws.isPrivate);
     			events.add(event);        		

@@ -9,13 +9,12 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.productivity.java.syslog4j.util.SyslogUtility;
 
 import kbaserelationengine.events.ObjectStatusEvent;
 import kbaserelationengine.events.ObjectStatusEventType;
 import kbaserelationengine.events.reconstructor.Util;
 import kbaserelationengine.events.reconstructor.WSStatusEventReconstructorImpl;
-import kbaserelationengine.events.reconstructor.WorkspaceDescriptor;
+import kbaserelationengine.system.StorageObjectType;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple11;
@@ -138,7 +137,7 @@ public class WSTest {
     				null,
     				null,
     				Util.DATE_PARSER.parseDateTime(row.getE4()).getMillis(),
-    				row.getE3().split("-")[0],    		
+    				new StorageObjectType("WS", row.getE3().split("-")[0]),
     				ObjectStatusEventType.CREATED, false);    	
     		objs.add(obj);
     	}

@@ -241,7 +241,7 @@ public class KeywordParser {
             }
             ObjectTypeParsingRules typeDescr = lookup.getTypeDescriptor(type);
             Set<String> refs = toStringSet(value);
-            if (typeDescr.getStorageType().equals("WS")) {
+            if (typeDescr.getStorageObjectType().getStorageCode().equals("WS")) {
                 // Lets remove storage code prefix first:
                 refs = refs.stream().map(item -> item.startsWith("WS:")
                         ? item.substring(3) : item).collect(Collectors.toSet());
@@ -250,8 +250,9 @@ public class KeywordParser {
             Set<GUID> guids = new LinkedHashSet<>();
             for (String ref : refs) {
                 String guidText = ref;
-                if (!guidText.startsWith(typeDescr.getStorageType() + ":")) {
-                    guidText = typeDescr.getStorageType() + ":" + guidText;
+                if (!guidText.startsWith(
+                        typeDescr.getStorageObjectType().getStorageCode() + ":")) {
+                    guidText = typeDescr.getStorageObjectType().getStorageCode() + ":" + guidText;
                 }
                 guids.add(new GUID(guidText));
             }
@@ -269,7 +270,8 @@ public class KeywordParser {
                 GUID parentGuid = guids.iterator().next();
                 guids = new LinkedHashSet<>();
                 for (String subId : subIds) {
-                    guids.add(new GUID(typeDescr.getStorageType(), parentGuid.getAccessGroupId(),
+                    guids.add(new GUID(typeDescr.getStorageObjectType().getStorageCode(),
+                            parentGuid.getAccessGroupId(),
                             parentGuid.getAccessGroupObjectId(), parentGuid.getVersion(), 
                             typeDescr.getInnerSubType(), subId));
                 }

@@ -30,8 +30,30 @@ public class Utils {
             throw new NullPointerException(message);
         }
     }
+    
+    /** Throws an IllegalArgumentException if the string is null or consists only of whitespace.
+     * @param s the string in question.
+     * @param message the message for the exception.
+     * @throws IllegalArgumentException if the string is null or empty.
+     */
+    public static void notNullOrEmpty(
+            final String s,
+            final String message) {
+        if (s == null || s.trim().isEmpty()) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    /** Returns true if the string is null or whitespace only.
+     * @param s the string in question.
+     * @return returns true if the string is null or empty, false otherwise.
+     */
+    public static boolean isNullOrEmpty(final String s) {
+        return s == null || s.trim().isEmpty();
+    }
 
     public static String jsonToPretty(Object obj) throws IOException {
         return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(obj);
     }
+
 }

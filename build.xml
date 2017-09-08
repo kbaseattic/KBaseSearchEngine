@@ -41,6 +41,7 @@
     <include name="apache_commons/commons-io-2.4.jar"/>
     <include name="google/guava-18.0.jar"/>
     <include name="jcommander/jcommander-1.48.jar"/>
+    <include name="snakeyaml/snakeyaml-1.18.jar"/>
     <!-- mockito and dependencies -->
     <include name="mockito/mockito-core-2.7.10.jar"/>
     <include name="bytebuddy/byte-buddy-1.6.8.jar"/>
