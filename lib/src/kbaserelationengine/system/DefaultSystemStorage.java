@@ -1,88 +1,237 @@
 package kbaserelationengine.system;
 
-import java.io.File;
+import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import kbaserelationengine.common.GUID;
+import org.apache.commons.io.FilenameUtils;
+
+import kbaserelationengine.main.LineLogger;
 import kbaserelationengine.parse.ObjectParseException;
-import us.kbase.auth.AuthToken;
 
 public class DefaultSystemStorage implements SystemStorage {
     
-    /* Not totally clear what this class is supposed to do other than handle the parsing rules
-     * files. It seems like it needs more functionality based on the unimplemented methods below
-     * but I'm not clear on what that functionality is supposed to be. It seems like this class
-     * should be focused on handling the parsing rules files and any other functionality should
-     * go in a different class.
-     */
-    private List<ObjectTypeParsingRules> parsingRules;
+    //TODO JAVADOC
+    //TODO TEST
     
-    public DefaultSystemStorage(File typesDir) 
-            throws ObjectParseException, IOException {
-        this.parsingRules = new ArrayList<>();
-        for (File file : typesDir.listFiles()) {
-            if (file.isFile() && file.getName().endsWith(".json")) {
-                parsingRules.add(ObjectTypeParsingRules.fromFile(file));
-            }
-        }
-    }
+    private static final String TYPE_STORAGE = "[Type storage]";
     
-    @Override
-    public List<ObjectTypeParsingRules> listObjectTypes() throws IOException {
-        return parsingRules;
-    }
+    private final Map<String, ObjectTypeParsingRules> searchTypes = new HashMap<>();
+    private final Map<CodeAndType, TypeMapping> storageTypes;
     
-    @Override
-    public ObjectTypeParsingRules getObjectType(String type)
-            throws IOException {
-        for (ObjectTypeParsingRules rule : parsingRules) {
-            if (rule.getGlobalObjectType().equals(type)) {
-                return rule;
-            }
-        }
-        return null;
-    }
-    
-    @Override
-    public List<ObjectTypeParsingRules> listObjectTypesByStorageObjectType(
-            String storageObjectType) throws IOException {
-        List<ObjectTypeParsingRules> ret = null;
-        for (ObjectTypeParsingRules rule : parsingRules) {
-            if (rule.getStorageObjectType() == null) {
-                continue;
-            }
-            if (rule.getStorageObjectType().equals(storageObjectType)) {
-                if (ret == null) {
-                    ret = new ArrayList<>();
+    private Map<CodeAndType, TypeMapping> processTypesDir(
+            final Path typesDir,
+            final LineLogger logger)
+            throws IOException, ObjectParseException, TypeParseException {
+        final Map<String, Path> typeToFile = new HashMap<>();
+        final Map<CodeAndType, TypeMapping.Builder> storageTypes = new HashMap<>(); 
+        // this is gross, but works. https://stackoverflow.com/a/20130475/643675
+        for (Path file : (Iterable<Path>) Files.list(typesDir)::iterator) {
+            if (Files.isRegularFile(file) && file.toString().endsWith(".json")) {
+                final ObjectTypeParsingRules type = ObjectTypeParsingRules.fromFile(file.toFile());
+                final String searchType = type.getGlobalObjectType();
+                if (typeToFile.containsKey(searchType)) {
+                    throw new TypeParseException(String.format(
+                            "Multiple definitions for the same search type %s in files %s and %s",
+                            searchType, file, typeToFile.get(searchType)));
                 }
-                ret.add(rule);
+                typeToFile.put(searchType, file);
+                searchTypes.put(searchType, type);
+                final CodeAndType cnt = new CodeAndType(type);
+                if (!storageTypes.containsKey(cnt)) {
+                    storageTypes.put(cnt, TypeMapping.getBuilder(cnt.storageCode, cnt.storageType)
+                            .withNullableDefaultSearchType(searchType)
+                            .withNullableSourceInfo(file.toString()));
+                } else {
+                    storageTypes.get(cnt).withNullableDefaultSearchType(searchType);
+                }
+                logger.logInfo(String.format("%s Processed type tranformation file with storage " +
+                        "code %s, storage type %s and search type %s: %s",
+                        TYPE_STORAGE, cnt.storageCode, cnt.storageType, searchType, file));
+            } else {
+                logger.logInfo(TYPE_STORAGE + " Skipping file in type tranformation directory: " +
+                        file);
+            }
+        }
+        final Map<CodeAndType, TypeMapping> ret = new HashMap<>();
+        storageTypes.keySet().stream().forEach(k -> ret.put(k, storageTypes.get(k).build()));
+        return ret;
+    }
+    
+    private static class CodeAndType {
+        private final String storageCode;
+        private final String storageType;
+        
+        private CodeAndType(final String storageCode, final String storageType) {
+            this.storageCode = storageCode;
+            this.storageType = storageType;
+        }
+        
+        private CodeAndType(final ObjectTypeParsingRules type) {
+            this.storageCode = type.getStorageObjectType().getStorageCode();
+            this.storageType = type.getStorageObjectType().getType();
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("CodeAndType [storageCode=");
+            builder.append(storageCode);
+            builder.append(", storageType=");
+            builder.append(storageType);
+            builder.append("]");
+            return builder.toString();
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result
+                    + ((storageCode == null) ? 0 : storageCode.hashCode());
+            result = prime * result
+                    + ((storageType == null) ? 0 : storageType.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            CodeAndType other = (CodeAndType) obj;
+            if (storageCode == null) {
+                if (other.storageCode != null) {
+                    return false;
+                }
+            } else if (!storageCode.equals(other.storageCode)) {
+                return false;
+            }
+            if (storageType == null) {
+                if (other.storageType != null) {
+                    return false;
+                }
+            } else if (!storageType.equals(other.storageType)) {
+                return false;
+            }
+            return true;
+        }
+        
+        
+    }
+    
+    public DefaultSystemStorage(
+            final Path typesDir,
+            final Path mappingsDir,
+            final Map<String, TypeMappingParser> parsers,
+            final LineLogger logger)
+            throws IOException, ObjectParseException, TypeParseException {
+        storageTypes = processTypesDir(typesDir, logger);
+        final Map<CodeAndType, TypeMapping> mappings = processMappingsDir(
+                mappingsDir, parsers, logger);
+        for (final CodeAndType cnt: mappings.keySet()) {
+            if (storageTypes.containsKey(cnt)) {
+                logger.logInfo(String.format(
+                        "%s Overriding type mapping for storage code %s and storage type %s " +
+                        "from type transformation file with definition from type mapping file %s",
+                        TYPE_STORAGE, cnt.storageCode, cnt.storageType,
+                        mappings.get(cnt).getSourceInfo().get()));
+            }
+            storageTypes.put(cnt, mappings.get(cnt));
+        }
+    }
+    
+    private Map<CodeAndType, TypeMapping> processMappingsDir(
+            final Path mappingsDir,
+            final Map<String, TypeMappingParser> parsers,
+            final LineLogger logger)
+            throws IOException, TypeParseException {
+        final Map<CodeAndType, TypeMapping> ret = new HashMap<>();
+        // this is gross, but works. https://stackoverflow.com/a/20130475/643675
+        for (Path file : (Iterable<Path>) Files.list(mappingsDir)::iterator) {
+            if (Files.isRegularFile(file)) {
+                final String ext = FilenameUtils.getExtension(file.toString());
+                final TypeMappingParser parser = parsers.get(ext);
+                if (parser != null) {
+                    final Set<TypeMapping> mappings;
+                    try (final InputStream is = Files.newInputStream(file)) {
+                        mappings = parser.parse(new BufferedInputStream(is), file.toString());
+                    }
+                    for (final TypeMapping map: mappings) {
+                        final CodeAndType cnt = new CodeAndType(
+                                map.getStorageCode(), map.getStorageType());
+                        if (ret.containsKey(cnt)) {
+                            throw new TypeParseException(String.format(
+                                    "Type collision for type %s in storage %s. " +
+                                    "Type is specified in both files %s and %s.",
+                                    cnt.storageType, cnt.storageCode,
+                                    ret.get(cnt).getSourceInfo().get(),
+                                    map.getSourceInfo().get()));
+                        }
+                        for (final String searchType: map.getSearchTypes()) {
+                            if (!searchTypes.containsKey(searchType)) {
+                                throw new TypeParseException(String.format(
+                                        "The search type %s specified in source code/type %s/%s " +
+                                        "does not have an equivalent tranform type. File: %s",
+                                        searchType, cnt.storageCode, cnt.storageType,
+                                        map.getSourceInfo().get()));
+                            }
+                        }
+                        ret.put(cnt, map);
+                    }
+                } else {
+                    logger.logInfo(TYPE_STORAGE + " Skipping file in type mapping directory: " +
+                            file);
+                }
+            } else {
+                logger.logInfo(TYPE_STORAGE + "Skipping entry in type mapping directory: " + file);
             }
         }
         return ret;
     }
-    
+
     @Override
-    public String getTypeForObjectId(GUID id) throws IOException {
-        throw new IllegalStateException("Method is not supported yet");
+    public List<ObjectTypeParsingRules> listObjectTypes() throws IOException {
+        return new LinkedList<>(searchTypes.values());
     }
     
     @Override
-    public Set<GUID> normalizeObjectIds(Set<Object> typedIds, String type)
+    public ObjectTypeParsingRules getObjectType(final String type)
             throws IOException {
-        throw new IllegalStateException("Method is not supported yet");
+        if (searchTypes.containsKey(type)) {
+            return searchTypes.get(type);
+        } else {
+            return null;
+        }
     }
     
     @Override
-    public Set<GUID> collapseVersions(Set<GUID> ids) throws IOException {
-        throw new IllegalStateException("Method is not supported yet");
-    }
-    
-    @Override
-    public Set<GUID> filterObjectIdsForUser(String user, AuthToken userToken,
-            Set<GUID> ids) throws IOException {
-        throw new IllegalStateException("Method is not supported yet");
+    public List<ObjectTypeParsingRules> listObjectTypesByStorageObjectType(
+            final StorageObjectType storageObjectType) {
+        final TypeMapping mapping = storageTypes.get(
+                new CodeAndType(storageObjectType.getStorageCode(), storageObjectType.getType()));
+        if (mapping == null) {
+            return Collections.emptyList();
+        }
+        final Set<String> types = mapping.getSearchTypes(storageObjectType.getVersion());
+        final List<ObjectTypeParsingRules> ret = new LinkedList<>();
+        for (final String t: types) {
+            ret.add(searchTypes.get(t));
+        }
+        return ret;
     }
 }

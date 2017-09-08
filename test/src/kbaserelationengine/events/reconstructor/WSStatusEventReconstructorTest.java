@@ -42,6 +42,7 @@ public class WSStatusEventReconstructorTest {
         reconstructor = new WSStatusEventReconstructorImpl(wsURL, token , storage);
         
         // Register listeners
+        @SuppressWarnings("unused")
         StatusEventListener listener;         
         listener = new StatusEventListener(){
 

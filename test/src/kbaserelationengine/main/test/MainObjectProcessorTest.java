@@ -1,6 +1,5 @@
 package kbaserelationengine.main.test;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -22,6 +21,7 @@ import org.junit.Test;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
@@ -35,6 +35,11 @@ import kbaserelationengine.search.AccessFilter;
 import kbaserelationengine.search.MatchFilter;
 import kbaserelationengine.search.ObjectData;
 import kbaserelationengine.search.PostProcessing;
+import kbaserelationengine.system.DefaultSystemStorage;
+import kbaserelationengine.system.StorageObjectType;
+import kbaserelationengine.system.SystemStorage;
+import kbaserelationengine.system.TypeMappingParser;
+import kbaserelationengine.system.YAMLTypeMappingParser;
 import kbaserelationengine.test.common.TestCommon;
 import kbaserelationengine.test.controllers.elasticsearch.ElasticSearchController;
 import kbaserelationengine.test.controllers.workspace.WorkspaceController;
@@ -111,32 +116,37 @@ public class MainObjectProcessorTest {
                 tempDir);
         System.out.println("Started workspace on port " + ws.getServerPort());
         
-        final File typesDir = new File(TestCommon.TYPES_REPO_DIR);
+        final Path typesDir = Paths.get(TestCommon.TYPES_REPO_DIR);
+        final Path mappingsDir = Paths.get(TestCommon.TYPE_MAP_REPO_DIR);
         
         URL wsUrl = new URL("http://localhost:" + ws.getServerPort());
 
         final String esIndexPrefix = "test_" + System.currentTimeMillis() + ".";
         final HttpHost esHostPort = new HttpHost("localhost", es.getServerPort());
+        final LineLogger logger = new LineLogger() {
+            @Override
+            public void logInfo(String line) {
+                System.out.println(line);
+            }
+            @Override
+            public void logError(String line) {
+                System.err.println(line);
+            }
+            @Override
+            public void logError(Throwable error) {
+                error.printStackTrace();
+            }
+            @Override
+            public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
+            }
+        };
+        final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
+                "yaml", new YAMLTypeMappingParser());
+        final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers, logger);
         mop = new MainObjectProcessor(wsUrl, wsadmintoken, db,
                 esHostPort, null, null, esIndexPrefix, 
-                typesDir, tempDir.resolve("MainObjectProcessor").toFile(), false, false,
-                new LineLogger() {
-                    @Override
-                    public void logInfo(String line) {
-                        System.out.println(line);
-                    }
-                    @Override
-                    public void logError(String line) {
-                        System.err.println(line);
-                    }
-                    @Override
-                    public void logError(Throwable error) {
-                        error.printStackTrace();
-                    }
-                    @Override
-                    public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
-                    }
-                }, null);
+                ss, tempDir.resolve("MainObjectProcessor").toFile(), false, false,
+                logger, null);
         loadTypes(wsUrl, wsadmintoken);
         wsid = (int) loadTestData(wsUrl, userToken);
     }
@@ -236,8 +246,18 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testGenomeManually() throws Exception {
-        ObjectStatusEvent ev = new ObjectStatusEvent("-1", "WS", wsid, "3", 1, null, null,
-                System.currentTimeMillis(), "KBaseGenomes.Genome", ObjectStatusEventType.CREATED, false);
+        ObjectStatusEvent ev = new ObjectStatusEvent(
+                "-1",
+                "WS",
+                wsid,
+                "3",
+                1,
+                null,
+                null,
+                System.currentTimeMillis(),
+                new StorageObjectType("WS", "KBaseGenomes.Genome"),
+                ObjectStatusEventType.CREATED,
+                false);
         mop.processOneEvent(ev);
         PostProcessing pp = new PostProcessing();
         pp.objectInfo = true;
@@ -290,9 +310,18 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testNarrativeManually() throws Exception {
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "1", 5, null, null,
-                System.currentTimeMillis(), "KBaseNarrative.Narrative", 
-                ObjectStatusEventType.CREATED, false));
+        indexFewVersions(new ObjectStatusEvent(
+                "-1",
+                "WS",
+                wsid,
+                "1",
+                5,
+                null,
+                null,
+                System.currentTimeMillis(),
+                new StorageObjectType("WS", "KBaseNarrative.Narrative"),
+                ObjectStatusEventType.CREATED,
+                false));
         checkSearch(1, "Narrative", "tree", wsid, false);
         checkSearch(1, "Narrative", "species", wsid, false);
         /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
@@ -309,14 +338,32 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testReadsManually() throws Exception {
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "4", 1, null, null,
-                System.currentTimeMillis(), "KBaseFile.PairedEndLibrary", 
-                ObjectStatusEventType.CREATED, false));
+        indexFewVersions(new ObjectStatusEvent(
+                "-1",
+                "WS",
+                wsid,
+                "4",
+                1,
+                null,
+                null,
+                System.currentTimeMillis(),
+                new StorageObjectType("WS", "KBaseFile.PairedEndLibrary"),
+                ObjectStatusEventType.CREATED,
+                false));
         checkSearch(1, "PairedEndLibrary", "Illumina", wsid, true);
         checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", wsid, "5", 1, null, null,
-                System.currentTimeMillis(), "KBaseFile.SingleEndLibrary", 
-                ObjectStatusEventType.CREATED, false));
+        indexFewVersions(new ObjectStatusEvent(
+                "-1",
+                "WS", 
+                wsid,
+                "5",
+                1,
+                null,
+                null,
+                System.currentTimeMillis(),
+                new StorageObjectType("WS", "KBaseFile.SingleEndLibrary"),
+                ObjectStatusEventType.CREATED,
+                false));
         checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);
         checkSearch(1, "SingleEndLibrary", "reads.2", wsid, false);
     }

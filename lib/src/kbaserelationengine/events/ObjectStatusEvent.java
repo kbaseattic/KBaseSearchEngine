@@ -1,6 +1,7 @@
 package kbaserelationengine.events;
 
 import kbaserelationengine.common.GUID;
+import kbaserelationengine.system.StorageObjectType;
 
 public class ObjectStatusEvent {
     private final String _id;
@@ -10,12 +11,16 @@ public class ObjectStatusEvent {
     private final Integer version;
     private final Integer targetAccessGroupId;
     private final Long timestamp;
-    private final String storageObjectType;
+    private final StorageObjectType storageObjectType;
     private final ObjectStatusEventType eventType;
     private final Boolean isGlobalAccessed;
     private final String newName;
 
 
+    //TODO BUILDER
+    //TODO JAVADOC
+    //TODO TEST
+    
     public ObjectStatusEvent(
             final String _id,
             final String storageCode,
@@ -25,11 +30,16 @@ public class ObjectStatusEvent {
             final String newName,
             final Integer targetAccessGroupId,
             final Long timestamp,
-            final String storageObjectType,
+            final StorageObjectType storageObjectType,
             final ObjectStatusEventType eventType,
             final Boolean isGlobalAccessed) {
         super();
         this._id = _id;
+        if (storageObjectType != null && storageCode != null &&
+                !storageObjectType.getStorageCode().equals(storageCode)) {
+            throw new IllegalArgumentException(
+                    "Specified mismatched storage code and storage type");
+        }
         this.storageCode = storageCode;
         this.accessGroupId = accessGroupId;
         this.accessGroupObjectId = accessGroupObjectId;
@@ -42,8 +52,6 @@ public class ObjectStatusEvent {
         this.newName = newName;
     }
     
-    
-
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -74,7 +82,7 @@ public class ObjectStatusEvent {
     }
 
     public GUID toGUID(){
-        return new GUID(storageCode, accessGroupId, accessGroupObjectId, version, null, null);
+        return new GUID(getStorageCode(), accessGroupId, accessGroupObjectId, version, null, null);
     }
 
     public String getId() {
@@ -82,7 +90,7 @@ public class ObjectStatusEvent {
     }
 
     public String getStorageCode() {
-        return storageCode;
+        return storageObjectType == null ? storageCode : storageObjectType.getStorageCode();
     }
 
 
@@ -90,18 +98,15 @@ public class ObjectStatusEvent {
         return accessGroupId;
     }
 
-
     public String getAccessGroupObjectId() {
         return accessGroupObjectId;
     }
-
 
     public Integer getVersion() {
         return version;
     }
 
-
-    public String getStorageObjectType() {
+    public StorageObjectType getStorageObjectType() {
         return storageObjectType;
     }
 
@@ -124,6 +129,5 @@ public class ObjectStatusEvent {
     public String getNewName() {
         return newName;
     }
-
 
 }

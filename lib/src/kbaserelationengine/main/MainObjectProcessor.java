@@ -62,9 +62,9 @@ import kbaserelationengine.queue.ObjectStatusEventQueue;
 import kbaserelationengine.search.ElasticIndexingStorage;
 import kbaserelationengine.search.FoundHits;
 import kbaserelationengine.search.IndexingStorage;
-import kbaserelationengine.system.DefaultSystemStorage;
 import kbaserelationengine.system.IndexingRules;
 import kbaserelationengine.system.ObjectTypeParsingRules;
+import kbaserelationengine.system.StorageObjectType;
 import kbaserelationengine.system.SystemStorage;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
@@ -82,7 +82,7 @@ public class MainObjectProcessor {
     private AccessGroupProvider accessGroupProvider;
     private ObjectStatusEventQueue queue;
     private Thread mainRunner;
-    private SystemStorage systemStorage;
+    private final SystemStorage systemStorage;
     private IndexingStorage indexingStorage;
     private LineLogger logger;
     private Set<String> admins;
@@ -97,7 +97,7 @@ public class MainObjectProcessor {
             final String esUser,
             final String esPassword,
             final String esIndexPrefix,
-            final File typesDir,
+            final SystemStorage systemStorage,
             final File tempDir,
             final boolean startLifecycleRunner,
             final boolean runWorkspaceEventReconstructor,
@@ -154,7 +154,7 @@ public class MainObjectProcessor {
             });
         }
         queue = new ObjectStatusEventQueue(storage);
-        systemStorage = new DefaultSystemStorage(typesDir);
+        this.systemStorage = systemStorage;
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
                 getTempSubDir("esbulk"));
         if (esUser != null) {
@@ -174,7 +174,7 @@ public class MainObjectProcessor {
      */
     public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, 
             HttpHost esHost, String esUser, String esPassword,
-            String esIndexPrefix, File typesDir, File tempDir, LineLogger logger) 
+            String esIndexPrefix, SystemStorage systemStorage, File tempDir, LineLogger logger) 
                     throws IOException, ObjectParseException, UnauthorizedException {
         this.runWorkspaceEventReconstructor = true;
         this.rootTempDir = tempDir;
@@ -182,7 +182,7 @@ public class MainObjectProcessor {
         this.admins = Collections.emptySet();
         wsClient = new WorkspaceClient(wsURL, kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true);         
-        systemStorage = new DefaultSystemStorage(typesDir);
+        this.systemStorage = systemStorage;
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
                 getTempSubDir("esbulk"));
         if (esUser != null) {
@@ -274,18 +274,18 @@ public class MainObjectProcessor {
             //TODO NOW markAsVisited is called for every sub event, which is pointless. It should be called only when all sub events are processed.
             final ObjectStatusEvent preEvent = iter.next();
             for (final ObjectStatusEvent ev: getEventHandler(preEvent).expand(preEvent)) {
-                final String type = ev.getStorageObjectType();
+                final StorageObjectType type = ev.getStorageObjectType();
                 if (type != null && !isStorageTypeSupported(type)) {
                     if (logger != null) {
                         logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
-                                type + ", " + ev.toGUID());
+                                toLogString(type) + ev.toGUID());
                     }
                     iter.markAsVisitied(false);
                     continue;
                 }
                 if (logger != null) {
                     logger.logInfo("[Indexer] processing " + ev.getEventType() + ", " + 
-                            type + ", " + ev.toGUID() + "...");
+                            toLogString(type) + ev.toGUID() + "...");
                 }
                 long time = System.currentTimeMillis();
                 try {
@@ -306,6 +306,22 @@ public class MainObjectProcessor {
         }
     }
     
+    private String toLogString(final StorageObjectType type) {
+        if (type == null) {
+            return "";
+        }
+        final StringBuilder sb = new StringBuilder();
+        sb.append(type.getStorageCode());
+        sb.append(":");
+        sb.append(type.getType());
+        if (type.getVersion().isPresent()) {
+            sb.append("-");
+            sb.append(type.getVersion().get());
+        }
+        sb.append(", ");
+        return sb.toString();
+    }
+
     private EventHandler getEventHandler(final ObjectStatusEvent ev) {
         return getEventHandler(ev.getStorageCode());
     }
@@ -373,13 +389,19 @@ public class MainObjectProcessor {
         }
     }
 
-    public boolean isStorageTypeSupported(String storageObjectType) throws IOException {
-        return systemStorage.listObjectTypesByStorageObjectType(storageObjectType) != null;
+    public boolean isStorageTypeSupported(final StorageObjectType storageObjectType)
+            throws IOException {
+        return !systemStorage.listObjectTypesByStorageObjectType(storageObjectType).isEmpty();
     }
     
-    private void indexObject(GUID guid, String storageObjectType, Long timestamp, boolean isPublic,
-            ObjectLookupProvider indexLookup, List<GUID> objectRefPath) 
-                    throws IOException, JsonClientException, ObjectParseException {
+    private void indexObject(
+            final GUID guid,
+            final StorageObjectType storageObjectType,
+            Long timestamp,
+            final boolean isPublic,
+            ObjectLookupProvider indexLookup,
+            final List<GUID> objectRefPath) 
+            throws IOException, JsonClientException, ObjectParseException {
         long t1 = System.currentTimeMillis();
         File tempFile = ObjectParser.prepareTempFile(getTempSubDir(guid.getStorageCode()));
         if (indexLookup == null) {
@@ -767,11 +789,13 @@ public class MainObjectProcessor {
                     command.put("params", new GetObjectInfo3Params().withObjects(getInfoInput));
                     List<ObjectStatusEvent> events = wsClient.administer(new UObject(command))
                             .asClassInstance(GetObjectInfo3Results.class)
-                            .getInfos().stream().map(info -> new ObjectStatusEvent("", "WS", 
+                            .getInfos().stream().map(info -> new ObjectStatusEvent("", "WS",
                                     (int)(long)info.getE7(), "" +info.getE1(), 
                                     (int)(long)info.getE5(), null, null,
                                     Util.DATE_PARSER.parseDateTime(info.getE4()).getMillis(),
-                                    info.getE3().split("-")[0],
+                                    new StorageObjectType("WS", info.getE3().split("-")[0],
+                                            Integer.parseInt(
+                                                    info.getE3().split("-")[1].split("\\.")[0])),
                                     ObjectStatusEventType.CREATED, false)).collect(
                                             Collectors.toList());
                     for (int pos = 0; pos < getInfoInput.size(); pos++) {

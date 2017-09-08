@@ -14,6 +14,8 @@ import us.kbase.common.service.RpcContext;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 import org.apache.http.HttpHost;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableMap;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
@@ -34,7 +37,10 @@ import kbaserelationengine.common.GUID;
 import kbaserelationengine.main.LineLogger;
 import kbaserelationengine.main.MainObjectProcessor;
 import kbaserelationengine.search.ElasticIndexingStorage;
-
+import kbaserelationengine.system.DefaultSystemStorage;
+import kbaserelationengine.system.SystemStorage;
+import kbaserelationengine.system.TypeMappingParser;
+import kbaserelationengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.ConfigurableAuthService;
 //END_HEADER
@@ -132,7 +138,8 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         String esUser = config.get("elastic-user");
         String esPassword = config.get("elastic-password");
         HttpHost esHostPort = new HttpHost(elasticHost, elasticPort);
-        File typesDir = new File(config.get("types-dir"));
+        final Path typesDir = Paths.get(config.get("types-dir"));
+        final Path mappingsDir = Paths.get(config.get("type-mappings-dir"));
         File tempDir = new File(config.get("scratch"));
         if (!tempDir.exists()) {
             tempDir.mkdirs();
@@ -159,28 +166,32 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         }
         File logFile = new File(tempDir, "log_" + System.currentTimeMillis() + ".txt");
         PrintWriter logPw = new PrintWriter(logFile);
+        final LineLogger logger = new LineLogger() {
+            @Override
+            public void logInfo(String line) {
+                logPw.println(line);
+                logPw.flush();
+            }
+            @Override
+            public void logError(String line) {
+                logPw.println(line);
+                logPw.flush();
+            }
+            @Override
+            public void logError(Throwable error) {
+                error.printStackTrace(logPw);
+                logPw.flush();
+            }
+            @Override
+            public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
+            }
+        };
+        final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
+                "yaml", new YAMLTypeMappingParser());
+        final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers, logger);
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, db,
                 esHostPort, esUser, esPassword, esIndexPrefix, 
-                typesDir, tempDir, true, true, new LineLogger() {
-                    @Override
-                    public void logInfo(String line) {
-                        logPw.println(line);
-                        logPw.flush();
-                    }
-                    @Override
-                    public void logError(String line) {
-                        logPw.println(line);
-                        logPw.flush();
-                    }
-                    @Override
-                    public void logError(Throwable error) {
-                        error.printStackTrace(logPw);
-                        logPw.flush();
-                    }
-                    @Override
-                    public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
-                    }
-                }, admins);
+                ss, tempDir, true, true, logger, admins);
         //END_CONSTRUCTOR
     }
 
