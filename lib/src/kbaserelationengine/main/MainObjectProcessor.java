@@ -808,7 +808,9 @@ public class MainObjectProcessor {
                                     (int)(long)info.getE7(), "" +info.getE1(), 
                                     (int)(long)info.getE5(), null, null,
                                     Util.DATE_PARSER.parseDateTime(info.getE4()).getMillis(),
-                                    new StorageObjectType("WS", info.getE3().split("-")[0]),
+                                    new StorageObjectType("WS", info.getE3().split("-")[0],
+                                            Integer.parseInt(
+                                                    info.getE3().split("-")[1].split("\\.")[0])),
                                     ObjectStatusEventType.CREATED, false)).collect(
                                             Collectors.toList());
                     for (int pos = 0; pos < getInfoInput.size(); pos++) {
