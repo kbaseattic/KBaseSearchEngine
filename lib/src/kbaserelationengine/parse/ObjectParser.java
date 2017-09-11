@@ -12,7 +12,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.common.ObjectJsonPath;
 import kbaserelationengine.events.handler.SourceData;
-import kbaserelationengine.relations.RelationStorage;
 import kbaserelationengine.system.IndexingRules;
 import kbaserelationengine.system.ObjectTypeParsingRules;
 import kbaserelationengine.system.SystemStorage;
@@ -32,8 +31,7 @@ public class ObjectParser {
             final SourceData obj,
             final GUID guid, 
             final ObjectTypeParsingRules parsingRules,
-            final SystemStorage system,
-            final RelationStorage relationStorage)
+            final SystemStorage system)
             throws IOException, ObjectParseException {
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);

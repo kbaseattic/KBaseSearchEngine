@@ -19,8 +19,7 @@ import java.util.stream.Collectors;
 import org.apache.http.HttpHost;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.mongodb.MongoClient;
-import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoDatabase;
 
 import kbaserelationengine.AccessFilter;
 import kbaserelationengine.GetObjectsInput;
@@ -53,7 +52,6 @@ import kbaserelationengine.events.reconstructor.Util;
 import kbaserelationengine.events.reconstructor.WSStatusEventReconstructor;
 import kbaserelationengine.events.reconstructor.WSStatusEventReconstructorImpl;
 import kbaserelationengine.events.storage.MongoDBStatusEventStorage;
-import kbaserelationengine.events.storage.StatusEventStorage;
 import kbaserelationengine.parse.KeywordParser;
 import kbaserelationengine.parse.KeywordParser.ObjectLookupProvider;
 import kbaserelationengine.parse.ObjectParseException;
@@ -61,8 +59,6 @@ import kbaserelationengine.parse.ObjectParser;
 import kbaserelationengine.parse.ParsedObject;
 import kbaserelationengine.queue.ObjectStatusEventIterator;
 import kbaserelationengine.queue.ObjectStatusEventQueue;
-import kbaserelationengine.relations.DefaultRelationStorage;
-import kbaserelationengine.relations.RelationStorage;
 import kbaserelationengine.search.ElasticIndexingStorage;
 import kbaserelationengine.search.FoundHits;
 import kbaserelationengine.search.IndexingStorage;
@@ -83,13 +79,11 @@ public class MainObjectProcessor {
     private File rootTempDir;
     private WSStatusEventReconstructor wsEventReconstructor;
     private WorkspaceClient wsClient;
-    private StatusEventStorage eventStorage;
     private AccessGroupProvider accessGroupProvider;
     private ObjectStatusEventQueue queue;
     private Thread mainRunner;
     private final SystemStorage systemStorage;
     private IndexingStorage indexingStorage;
-    private RelationStorage relationStorage;
     private LineLogger logger;
     private Set<String> admins;
     //TODO RECON remove when reconstructor is replaced by event feed
@@ -98,9 +92,7 @@ public class MainObjectProcessor {
     public MainObjectProcessor(
             final URL wsURL,
             final AuthToken kbaseIndexerToken,
-            final String mongoHost, 
-            final int mongoPort,
-            final String mongoDbName,
+            final MongoDatabase db,
             final HttpHost esHost,
             final String esUser,
             final String esPassword,
@@ -125,15 +117,10 @@ public class MainObjectProcessor {
         this.logger = logger;
         this.rootTempDir = tempDir;
         this.admins = admins == null ? Collections.emptySet() : admins;
-        //TODO NOW mongo auth
-        @SuppressWarnings("resource") // can't close it or the connection shuts down
-        // may need a shut down listener to ensure the client shuts down, but probably unnecessary
-        final MongoClient cli = new MongoClient(new ServerAddress(mongoHost + ":" + mongoPort));
-        MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(
-                cli.getDatabase(mongoDbName));
-        eventStorage = storage;
+        
+        MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(db);
         WSStatusEventReconstructorImpl reconstructor = new WSStatusEventReconstructorImpl(
-                wsURL, kbaseIndexerToken, eventStorage);
+                wsURL, kbaseIndexerToken, storage);
         wsClient = reconstructor.wsClient();
         // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
         accessGroupProvider = new AccessGroupCache(new WorkspaceAccessGroupProvider(wsClient),
@@ -166,7 +153,7 @@ public class MainObjectProcessor {
                 }
             });
         }
-        queue = new ObjectStatusEventQueue(eventStorage);
+        queue = new ObjectStatusEventQueue(storage);
         this.systemStorage = systemStorage;
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
                 getTempSubDir("esbulk"));
@@ -176,7 +163,6 @@ public class MainObjectProcessor {
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
         indexingStorage = esStorage;
-        relationStorage = new DefaultRelationStorage();
         // We switch this flag off in tests 
         if (startLifecycleRunner) {
             startLifecycleRunner();
@@ -205,7 +191,6 @@ public class MainObjectProcessor {
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
         indexingStorage = esStorage;
-        relationStorage = new DefaultRelationStorage();
     }
     
     private File getTempSubDir(String subName) {
@@ -440,7 +425,7 @@ public class MainObjectProcessor {
                     parentJson = ObjectParser.extractParentFragment(rule, jts);
                 }
                 Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, guid, rule, 
-                        systemStorage, relationStorage);
+                        systemStorage);
                 Map<GUID, ParsedObject> guidToObj = new LinkedHashMap<>();
                 for (GUID subGuid : guidToJson.keySet()) {
                     String json = guidToJson.get(subGuid);

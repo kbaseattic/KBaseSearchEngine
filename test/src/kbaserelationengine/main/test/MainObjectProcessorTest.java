@@ -143,8 +143,8 @@ public class MainObjectProcessorTest {
         final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
                 "yaml", new YAMLTypeMappingParser());
         final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers, logger);
-        mop = new MainObjectProcessor(wsUrl, wsadmintoken, "localhost",
-                mongo.getServerPort(), dbName, esHostPort, null, null, esIndexPrefix, 
+        mop = new MainObjectProcessor(wsUrl, wsadmintoken, db,
+                esHostPort, null, null, esIndexPrefix, 
                 ss, tempDir.resolve("MainObjectProcessor").toFile(), false, false,
                 logger, null);
         loadTypes(wsUrl, wsadmintoken);
