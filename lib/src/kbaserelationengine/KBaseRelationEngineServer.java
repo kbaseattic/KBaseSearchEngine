@@ -18,14 +18,21 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.http.HttpHost;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableMap;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoDatabase;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.main.LineLogger;
 import kbaserelationengine.main.MainObjectProcessor;
@@ -74,11 +81,41 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
             }
         }
     }
+    
+    // can't close mongo client or the connection shuts down
+    // may need a shut down listener to ensure the client shuts down, but probably unnecessary
+    @SuppressWarnings("resource")
+    private MongoDatabase getMongoDB(
+            final String host,
+            final String dbname,
+            final String user,
+            final String pwd) {
+        final MongoClient cli;
+        if (user != null && !user.trim().isEmpty()) {
+            if (pwd == null || pwd.trim().isEmpty()) {
+                throw new IllegalArgumentException("Must provide mongo pwd if providing user");
+            }
+            final List<MongoCredential> creds = Arrays.asList(MongoCredential.createCredential(
+                    user, dbname, pwd.toCharArray()));
+            // unclear if and when it's safe to clear the password
+            cli = new MongoClient(new ServerAddress(host), creds);
+        } else {
+            cli = new MongoClient(new ServerAddress(host));
+        }
+        final MongoDatabase database = cli.getDatabase(dbname);
+        return database;
+    }
+    
+    private void quietLoggers() {
+        ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME))
+                .setLevel(Level.INFO);
+    }
     //END_CLASS_HEADER
 
     public KBaseRelationEngineServer() throws Exception {
         super("KBaseRelationEngine");
         //BEGIN_CONSTRUCTOR
+        quietLoggers();
         URL wsUrl = new URL(config.get("workspace-url"));
         String tokenStr = config.get("indexer-token");
         final String authURL = getAuthUrlFromConfig(config);
@@ -89,8 +126,13 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         c.withKBaseAuthServerURL(new URL(authURL));
         ConfigurableAuthService auth = new ConfigurableAuthService(c);
         AuthToken kbaseIndexerToken = auth.validateToken(tokenStr);
-        String mongoHost = config.get("mongo-host");
-        int mongoPort = Integer.parseInt(config.get("mongo-port"));
+        final String mongoHost = config.get("mongo-host");
+        final int mongoPort = Integer.parseInt(config.get("mongo-port"));
+        final String mongoDbName = config.get("mongo-database");
+        final String mongoUser = config.get("mongo-user");
+        final String mongoPwd = config.get("mongo-pwd");
+        final MongoDatabase db = getMongoDB(
+                mongoHost + ":" + mongoPort, mongoDbName, mongoUser, mongoPwd);
         String elasticHost = config.get("elastic-host");
         int elasticPort = Integer.parseInt(config.get("elastic-port"));
         String esUser = config.get("elastic-user");
@@ -102,7 +144,6 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         if (!tempDir.exists()) {
             tempDir.mkdirs();
         }
-        String mongoDbName = config.get("mongo-database");
         String esIndexPrefix = config.get("elastic-namespace") + ".";
         String adminsText = config.get("admins");
         Set<String> admins = new LinkedHashSet<>();
@@ -148,8 +189,8 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
                 "yaml", new YAMLTypeMappingParser());
         final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers, logger);
-        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, mongoHost,
-                mongoPort, mongoDbName, esHostPort, esUser, esPassword, esIndexPrefix, 
+        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, db,
+                esHostPort, esUser, esPassword, esIndexPrefix, 
                 ss, tempDir, true, true, logger, admins);
         //END_CONSTRUCTOR
     }
