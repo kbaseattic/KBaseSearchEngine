@@ -1027,6 +1027,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
         item.guid = new GUID((String)obj.get("guid"));
         if (info) {
             item.objectName = (String)obj.get(OBJ_NAME);
+            item.creator = (String) obj.get(OBJ_CREATOR);
+            item.copier = (String) obj.get(OBJ_COPIER);
+            item.module = (String) obj.get(OBJ_PROV_MODULE);
+            item.method = (String) obj.get(OBJ_PROV_METHOD);
+            item.moduleVersion = (String) obj.get(OBJ_PROV_MODULE_VERSION);
+            item.commitHash = (String) obj.get(OBJ_PROV_COMMIT_HASH);
             item.type = (String)obj.get("otype");
             Object dateProp = obj.get("timestamp");
             item.timestamp = (dateProp instanceof Long) ? (Long)dateProp : 
