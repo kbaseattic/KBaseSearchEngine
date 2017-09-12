@@ -17,6 +17,12 @@ import us.kbase.common.service.UObject;
  * <pre>
  * Properties of found object including metadata, raw data and
  *     keywords.
+ *     
+ * mapping<string, string> object_props - general properties for all objects. This mapping
+ *     contains the keys 'creator', 'copied', 'module', 'method', 'module_ver', and 'commit' -
+ *     respectively the user that originally created the object, the user that copied this
+ *     incarnation of the object, and the module and method used to create the object and
+ *     their version and version control commit hash.
  * </pre>
  * 
  */
@@ -29,7 +35,8 @@ import us.kbase.common.service.UObject;
     "timestamp",
     "parent_data",
     "data",
-    "key_props"
+    "key_props",
+    "object_props"
 })
 public class ObjectData {
 
@@ -47,6 +54,8 @@ public class ObjectData {
     private UObject data;
     @JsonProperty("key_props")
     private Map<String, String> keyProps;
+    @JsonProperty("object_props")
+    private Map<String, String> objectProps;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("guid")
@@ -154,6 +163,21 @@ public class ObjectData {
         return this;
     }
 
+    @JsonProperty("object_props")
+    public Map<String, String> getObjectProps() {
+        return objectProps;
+    }
+
+    @JsonProperty("object_props")
+    public void setObjectProps(Map<String, String> objectProps) {
+        this.objectProps = objectProps;
+    }
+
+    public ObjectData withObjectProps(Map<String, String> objectProps) {
+        this.objectProps = objectProps;
+        return this;
+    }
+
     @JsonAnyGetter
     public Map<java.lang.String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -166,7 +190,7 @@ public class ObjectData {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((("ObjectData"+" [guid=")+ guid)+", parentGuid=")+ parentGuid)+", objectName=")+ objectName)+", timestamp=")+ timestamp)+", parentData=")+ parentData)+", data=")+ data)+", keyProps=")+ keyProps)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((("ObjectData"+" [guid=")+ guid)+", parentGuid=")+ parentGuid)+", objectName=")+ objectName)+", timestamp=")+ timestamp)+", parentData=")+ parentData)+", data=")+ data)+", keyProps=")+ keyProps)+", objectProps=")+ objectProps)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

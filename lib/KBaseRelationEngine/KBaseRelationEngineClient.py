@@ -53,7 +53,7 @@ class KBaseRelationEngine(object):
            constraint rather than single value 'min_*' and 'max_*' fields
            should be used. You may omit one of ends of range to achieve '<='
            or '>=' comparison. Ends are always included for range
-           constrains.) -> structure: parameter "value" of String, parameter
+           constraints.) -> structure: parameter "value" of String, parameter
            "int_value" of Long, parameter "double_value" of Double, parameter
            "bool_value" of type "boolean" (A boolean. 0 = false, other =
            true.), parameter "min_int" of Long, parameter "max_int" of Long,
@@ -66,10 +66,10 @@ class KBaseRelationEngine(object):
            be used. In case of range constraint rather than single value
            'min_*' and 'max_*' fields should be used. You may omit one of
            ends of range to achieve '<=' or '>=' comparison. Ends are always
-           included for range constrains.) -> structure: parameter "value" of
-           String, parameter "int_value" of Long, parameter "double_value" of
-           Double, parameter "bool_value" of type "boolean" (A boolean. 0 =
-           false, other = true.), parameter "min_int" of Long, parameter
+           included for range constraints.) -> structure: parameter "value"
+           of String, parameter "int_value" of Long, parameter "double_value"
+           of Double, parameter "bool_value" of type "boolean" (A boolean. 0
+           = false, other = true.), parameter "min_int" of Long, parameter
            "max_int" of Long, parameter "min_date" of Long, parameter
            "max_date" of Long, parameter "min_double" of Double, parameter
            "max_double" of Double, parameter "access_filter" of type
@@ -112,7 +112,7 @@ class KBaseRelationEngine(object):
            constraint rather than single value 'min_*' and 'max_*' fields
            should be used. You may omit one of ends of range to achieve '<='
            or '>=' comparison. Ends are always included for range
-           constrains.) -> structure: parameter "value" of String, parameter
+           constraints.) -> structure: parameter "value" of String, parameter
            "int_value" of Long, parameter "double_value" of Double, parameter
            "bool_value" of type "boolean" (A boolean. 0 = false, other =
            true.), parameter "min_int" of Long, parameter "max_int" of Long,
@@ -125,10 +125,10 @@ class KBaseRelationEngine(object):
            be used. In case of range constraint rather than single value
            'min_*' and 'max_*' fields should be used. You may omit one of
            ends of range to achieve '<=' or '>=' comparison. Ends are always
-           included for range constrains.) -> structure: parameter "value" of
-           String, parameter "int_value" of Long, parameter "double_value" of
-           Double, parameter "bool_value" of type "boolean" (A boolean. 0 =
-           false, other = true.), parameter "min_int" of Long, parameter
+           included for range constraints.) -> structure: parameter "value"
+           of String, parameter "int_value" of Long, parameter "double_value"
+           of Double, parameter "bool_value" of type "boolean" (A boolean. 0
+           = false, other = true.), parameter "min_int" of Long, parameter
            "max_int" of Long, parameter "min_date" of Long, parameter
            "max_date" of Long, parameter "min_double" of Double, parameter
            "max_double" of Double, parameter "sorting_rules" of list of type
@@ -185,7 +185,13 @@ class KBaseRelationEngine(object):
            true.), parameter "key_name" of String, parameter "descending" of
            type "boolean" (A boolean. 0 = false, other = true.), parameter
            "objects" of list of type "ObjectData" (Properties of found object
-           including metadata, raw data and keywords.) -> structure:
+           including metadata, raw data and keywords. mapping<string, string>
+           object_props - general properties for all objects. This mapping
+           contains the keys 'creator', 'copied', 'module', 'method',
+           'module_ver', and 'commit' - respectively the user that originally
+           created the object, the user that copied this incarnation of the
+           object, and the module and method used to create the object and
+           their version and version control commit hash.) -> structure:
            parameter "guid" of type "GUID" (Global user identificator. It has
            structure like this:
            <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
@@ -195,8 +201,8 @@ class KBaseRelationEngine(object):
            parameter "object_name" of String, parameter "timestamp" of Long,
            parameter "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
-           to String, parameter "total" of Long, parameter "search_time" of
-           Long
+           to String, parameter "object_props" of mapping from String to
+           String, parameter "total" of Long, parameter "search_time" of Long
         """
         return self._client.call_method(
             'KBaseRelationEngine.search_objects',
@@ -226,16 +232,23 @@ class KBaseRelationEngine(object):
         :returns: instance of type "GetObjectsOutput" (Output results of
            get_objects method.) -> structure: parameter "objects" of list of
            type "ObjectData" (Properties of found object including metadata,
-           raw data and keywords.) -> structure: parameter "guid" of type
-           "GUID" (Global user identificator. It has structure like this:
-           <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
+           raw data and keywords. mapping<string, string> object_props -
+           general properties for all objects. This mapping contains the keys
+           'creator', 'copied', 'module', 'method', 'module_ver', and
+           'commit' - respectively the user that originally created the
+           object, the user that copied this incarnation of the object, and
+           the module and method used to create the object and their version
+           and version control commit hash.) -> structure: parameter "guid"
+           of type "GUID" (Global user identificator. It has structure like
+           this: <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            parameter "parent_guid" of type "GUID" (Global user identificator.
            It has structure like this:
            <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            parameter "object_name" of String, parameter "timestamp" of Long,
            parameter "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
-           to String, parameter "search_time" of Long
+           to String, parameter "object_props" of mapping from String to
+           String, parameter "search_time" of Long
         """
         return self._client.call_method(
             'KBaseRelationEngine.get_objects',

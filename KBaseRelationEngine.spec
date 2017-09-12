@@ -143,6 +143,12 @@ module KBaseRelationEngine {
     /*
       Properties of found object including metadata, raw data and
           keywords.
+          
+      mapping<string, string> object_props - general properties for all objects. This mapping
+          contains the keys 'creator', 'copied', 'module', 'method', 'module_ver', and 'commit' -
+          respectively the user that originally created the object, the user that copied this
+          incarnation of the object, and the module and method used to create the object and
+          their version and version control commit hash.
     */
     typedef structure {
         GUID guid;
@@ -152,6 +158,7 @@ module KBaseRelationEngine {
         UnspecifiedObject parent_data;
         UnspecifiedObject data;
         mapping<string, string> key_props;
+        mapping<string, string> object_props;
     } ObjectData;
 
     /*

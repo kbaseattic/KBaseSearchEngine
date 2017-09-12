@@ -32,6 +32,7 @@ compile:
 		--java \
 		--javasrv \
 		--javapackage .;
+	env KB_SDK_COMPILE_REPORT_FILE="" kb-sdk compile --html $(SPEC_FILE);
 
 build:
 	$(ANT) war -Djars.dir=$(JARS_DIR)

@@ -322,6 +322,7 @@ ObjectData is a reference to a hash where the following keys are defined:
 	parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
+	object_props has a value which is a reference to a hash where the key is a string and the value is a string
 
 </pre>
 
@@ -390,6 +391,7 @@ ObjectData is a reference to a hash where the following keys are defined:
 	parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
+	object_props has a value which is a reference to a hash where the key is a string and the value is a string
 
 
 =end text
@@ -485,6 +487,7 @@ ObjectData is a reference to a hash where the following keys are defined:
 	parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
+	object_props has a value which is a reference to a hash where the key is a string and the value is a string
 
 </pre>
 
@@ -516,6 +519,7 @@ ObjectData is a reference to a hash where the following keys are defined:
 	parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
+	object_props has a value which is a reference to a hash where the key is a string and the value is a string
 
 
 =end text
@@ -852,7 +856,7 @@ For instance in case of integer type 'int_value' should be used.
 In case of range constraint rather than single value 'min_*' 
 and 'max_*' fields should be used. You may omit one of ends of
 range to achieve '<=' or '>=' comparison. Ends are always
-included for range constrains.
+included for range constraints.
 
 
 =item Definition
@@ -1252,6 +1256,12 @@ post_processing has a value which is a KBaseRelationEngine.PostProcessing
 
 Properties of found object including metadata, raw data and
     keywords.
+    
+mapping<string, string> object_props - general properties for all objects. This mapping
+    contains the keys 'creator', 'copied', 'module', 'method', 'module_ver', and 'commit' -
+    respectively the user that originally created the object, the user that copied this
+    incarnation of the object, and the module and method used to create the object and
+    their version and version control commit hash.
 
 
 =item Definition
@@ -1267,6 +1277,7 @@ timestamp has a value which is an int
 parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 data has a value which is an UnspecifiedObject, which can hold any non-null object
 key_props has a value which is a reference to a hash where the key is a string and the value is a string
+object_props has a value which is a reference to a hash where the key is a string and the value is a string
 
 </pre>
 
@@ -1282,6 +1293,7 @@ timestamp has a value which is an int
 parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 data has a value which is an UnspecifiedObject, which can hold any non-null object
 key_props has a value which is a reference to a hash where the key is a string and the value is a string
+object_props has a value which is a reference to a hash where the key is a string and the value is a string
 
 
 =end text
