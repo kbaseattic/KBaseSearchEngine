@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -714,17 +715,25 @@ public class MainObjectProcessor {
         return ret;
     }
 
-    public GetObjectsOutput getObjects(GetObjectsInput params, String user) throws Exception {
-        long t1 = System.currentTimeMillis();
-        Set<GUID> guids = new LinkedHashSet<>();
-        for (String guid : params.getGuids()) {
-            guids.add(new GUID(guid));
+    public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
+            throws Exception {
+        final long t1 = System.currentTimeMillis();
+        final Set<Integer> accessGroupIDs =
+                new HashSet<>(accessGroupProvider.findAccessGroupIds(user));
+        final Set<GUID> guids = new LinkedHashSet<>();
+        for (final String guid : params.getGuids()) {
+            final GUID g = new GUID(guid);
+            //TODO DP this is a quick fix for now, doesn't take data palettes into account
+            if (accessGroupIDs.contains(g.getAccessGroupId())) {
+                // don't throw an error, just don't return data
+                guids.add(g);
+            }
         }
-        kbaserelationengine.search.PostProcessing postProcessing = 
+        final kbaserelationengine.search.PostProcessing postProcessing = 
                 toSearch(params.getPostProcessing());
-        List<kbaserelationengine.search.ObjectData> objs = indexingStorage.getObjectsByIds(
+        final List<kbaserelationengine.search.ObjectData> objs = indexingStorage.getObjectsByIds(
                 guids, postProcessing);
-        GetObjectsOutput ret = new GetObjectsOutput().withObjects(objs.stream()
+        final GetObjectsOutput ret = new GetObjectsOutput().withObjects(objs.stream()
                 .map(this::fromSearch).collect(Collectors.toList()));
         ret.withSearchTime(System.currentTimeMillis() - t1);
         return ret;

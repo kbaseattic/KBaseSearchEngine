@@ -21,7 +21,7 @@ import kbaserelationengine.tools.Utils;
 
 /** A type mapping parser for YAML formatted input with a specific document structure.
  * 
- * TODO documentation of the structure.
+ * TODO DOCS documentation of the file structure.
  * @author gaprice@lbl.gov
  *
  */
