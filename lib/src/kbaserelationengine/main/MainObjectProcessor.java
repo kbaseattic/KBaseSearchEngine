@@ -27,6 +27,7 @@ import kbaserelationengine.GetObjectsOutput;
 import kbaserelationengine.KeyDescription;
 import kbaserelationengine.MatchFilter;
 import kbaserelationengine.MatchValue;
+import kbaserelationengine.ObjectData;
 import kbaserelationengine.Pagination;
 import kbaserelationengine.PostProcessing;
 import kbaserelationengine.SearchObjectsInput;
@@ -636,9 +637,11 @@ public class MainObjectProcessor {
         return ret;
     }
     
-    private kbaserelationengine.ObjectData fromSearch(kbaserelationengine.search.ObjectData od) {
-        kbaserelationengine.ObjectData ret = new kbaserelationengine.ObjectData();
+    private kbaserelationengine.ObjectData fromSearch(
+            final kbaserelationengine.search.ObjectData od) {
+        final kbaserelationengine.ObjectData ret = new kbaserelationengine.ObjectData();
         ret.withGuid(od.guid.toString());
+        ret.withObjectProps(new HashMap<>());
         if (od.parentGuid != null) {
             ret.withParentGuid(od.parentGuid.toString());
         }
@@ -653,9 +656,21 @@ public class MainObjectProcessor {
         }
         ret.withObjectName(od.objectName);
         ret.withKeyProps(od.keyProps);
+        addObjectProp(ret, od.creator, "creator");
+        addObjectProp(ret, od.copier, "copied");
+        addObjectProp(ret, od.module, "module");
+        addObjectProp(ret, od.method, "method");
+        addObjectProp(ret, od.moduleVersion, "module_ver");
+        addObjectProp(ret, od.commitHash, "commmit");
         return ret;
     }
     
+    private void addObjectProp(final ObjectData ret, final String prop, final String propkey) {
+        if (prop != null) {
+            ret.getObjectProps().put(propkey, prop);
+        }
+    }
+
     public SearchTypesOutput searchTypes(SearchTypesInput params, String user) throws Exception {
         long t1 = System.currentTimeMillis();
         kbaserelationengine.search.MatchFilter matchFilter = toSearch(params.getMatchFilter());
