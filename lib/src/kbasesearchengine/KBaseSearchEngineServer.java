@@ -1,4 +1,4 @@
-package kbaserelationengine;
+package kbasesearchengine;
 
 import java.io.File;
 import java.util.LinkedHashMap;
@@ -46,16 +46,16 @@ import us.kbase.auth.ConfigurableAuthService;
 //END_HEADER
 
 /**
- * <p>Original spec-file module name: KBaseRelationEngine</p>
+ * <p>Original spec-file module name: KBaseSearchEngine</p>
  * <pre>
  * A KBase module: KBaseRelationEngine
  * </pre>
  */
-public class KBaseRelationEngineServer extends JsonServerServlet {
+public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
-    private static final String version = "0.0.1";
-    private static final String gitUrl = "https://github.com/kbaseapps/KBaseRelationEngine";
-    private static final String gitCommitHash = "e209e1a11909abaf3d2b498be49047b19e911643";
+    private static final String version = "";
+    private static final String gitUrl = "";
+    private static final String gitCommitHash = "";
 
     //BEGIN_CLASS_HEADER
     private MainObjectProcessor mop = null;
@@ -112,8 +112,8 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
     }
     //END_CLASS_HEADER
 
-    public KBaseRelationEngineServer() throws Exception {
-        super("KBaseRelationEngine");
+    public KBaseSearchEngineServer() throws Exception {
+        super("KBaseSearchEngine");
         //BEGIN_CONSTRUCTOR
         quietLoggers();
         URL wsUrl = new URL(config.get("workspace-url"));
@@ -200,10 +200,10 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
      * <pre>
      * Search for number of objects of each type matching constrains.
      * </pre>
-     * @param   params   instance of type {@link kbaserelationengine.SearchTypesInput SearchTypesInput}
-     * @return   instance of type {@link kbaserelationengine.SearchTypesOutput SearchTypesOutput}
+     * @param   params   instance of type {@link kbasesearchengine.SearchTypesInput SearchTypesInput}
+     * @return   instance of type {@link kbasesearchengine.SearchTypesOutput SearchTypesOutput}
      */
-    @JsonServerMethod(rpc = "KBaseRelationEngine.search_types", async=true)
+    @JsonServerMethod(rpc = "KBaseSearchEngine.search_types", async=true)
     public SearchTypesOutput searchTypes(SearchTypesInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         SearchTypesOutput returnVal = null;
         //BEGIN search_types
@@ -217,10 +217,10 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
      * <pre>
      * Search for objects of particular type matching constrains.
      * </pre>
-     * @param   params   instance of type {@link kbaserelationengine.SearchObjectsInput SearchObjectsInput}
-     * @return   instance of type {@link kbaserelationengine.SearchObjectsOutput SearchObjectsOutput}
+     * @param   params   instance of type {@link kbasesearchengine.SearchObjectsInput SearchObjectsInput}
+     * @return   instance of type {@link kbasesearchengine.SearchObjectsOutput SearchObjectsOutput}
      */
-    @JsonServerMethod(rpc = "KBaseRelationEngine.search_objects", async=true)
+    @JsonServerMethod(rpc = "KBaseSearchEngine.search_objects", async=true)
     public SearchObjectsOutput searchObjects(SearchObjectsInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         SearchObjectsOutput returnVal = null;
         //BEGIN search_objects
@@ -234,10 +234,10 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
      * <pre>
      * Retrieve objects by their GUIDs.
      * </pre>
-     * @param   params   instance of type {@link kbaserelationengine.GetObjectsInput GetObjectsInput}
-     * @return   instance of type {@link kbaserelationengine.GetObjectsOutput GetObjectsOutput}
+     * @param   params   instance of type {@link kbasesearchengine.GetObjectsInput GetObjectsInput}
+     * @return   instance of type {@link kbasesearchengine.GetObjectsOutput GetObjectsOutput}
      */
-    @JsonServerMethod(rpc = "KBaseRelationEngine.get_objects", async=true)
+    @JsonServerMethod(rpc = "KBaseSearchEngine.get_objects", async=true)
     public GetObjectsOutput getObjects(GetObjectsInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         GetObjectsOutput returnVal = null;
         //BEGIN get_objects
@@ -251,10 +251,10 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
      * <pre>
      * List registered searchable object types.
      * </pre>
-     * @param   params   instance of type {@link kbaserelationengine.ListTypesInput ListTypesInput}
-     * @return   instance of type {@link kbaserelationengine.ListTypesOutput ListTypesOutput}
+     * @param   params   instance of type {@link kbasesearchengine.ListTypesInput ListTypesInput}
+     * @return   instance of type {@link kbasesearchengine.ListTypesOutput ListTypesOutput}
      */
-    @JsonServerMethod(rpc = "KBaseRelationEngine.list_types", async=true)
+    @JsonServerMethod(rpc = "KBaseSearchEngine.list_types", async=true)
     public ListTypesOutput listTypes(ListTypesInput params, RpcContext jsonRpcContext) throws Exception {
         ListTypesOutput returnVal = null;
         //BEGIN list_types
@@ -262,7 +262,7 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
         //END list_types
         return returnVal;
     }
-    @JsonServerMethod(rpc = "KBaseRelationEngine.status")
+    @JsonServerMethod(rpc = "KBaseSearchEngine.status")
     public Map<String, Object> status() {
         Map<String, Object> returnVal = null;
         //BEGIN_STATUS
@@ -278,11 +278,11 @@ public class KBaseRelationEngineServer extends JsonServerServlet {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 1) {
-            new KBaseRelationEngineServer().startupServer(Integer.parseInt(args[0]));
+            new KBaseSearchEngineServer().startupServer(Integer.parseInt(args[0]));
         } else if (args.length == 3) {
             JsonServerSyslog.setStaticUseSyslog(false);
             JsonServerSyslog.setStaticMlogFile(args[1] + ".log");
-            new KBaseRelationEngineServer().processRpcCall(new File(args[0]), new File(args[1]), args[2]);
+            new KBaseSearchEngineServer().processRpcCall(new File(args[0]), new File(args[1]), args[2]);
         } else {
             System.out.println("Usage: <program> <server_port>");
             System.out.println("   or: <program> <context_json_file> <output_json_file> <token>");

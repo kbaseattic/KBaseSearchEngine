@@ -1,5 +1,5 @@
 
-package kbaserelationengine;
+package kbasesearchengine;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -55,9 +55,9 @@ public class MatchFilter {
      * 
      */
     @JsonProperty("timestamp")
-    private kbaserelationengine.MatchValue timestamp;
+    private kbasesearchengine.MatchValue timestamp;
     @JsonProperty("lookupInKeys")
-    private Map<String, kbaserelationengine.MatchValue> lookupInKeys;
+    private Map<String, kbasesearchengine.MatchValue> lookupInKeys;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("full_text_in_all")
@@ -134,7 +134,7 @@ public class MatchFilter {
      * 
      */
     @JsonProperty("timestamp")
-    public kbaserelationengine.MatchValue getTimestamp() {
+    public kbasesearchengine.MatchValue getTimestamp() {
         return timestamp;
     }
 
@@ -152,26 +152,26 @@ public class MatchFilter {
      * 
      */
     @JsonProperty("timestamp")
-    public void setTimestamp(kbaserelationengine.MatchValue timestamp) {
+    public void setTimestamp(kbasesearchengine.MatchValue timestamp) {
         this.timestamp = timestamp;
     }
 
-    public MatchFilter withTimestamp(kbaserelationengine.MatchValue timestamp) {
+    public MatchFilter withTimestamp(kbasesearchengine.MatchValue timestamp) {
         this.timestamp = timestamp;
         return this;
     }
 
     @JsonProperty("lookupInKeys")
-    public Map<String, kbaserelationengine.MatchValue> getLookupInKeys() {
+    public Map<String, kbasesearchengine.MatchValue> getLookupInKeys() {
         return lookupInKeys;
     }
 
     @JsonProperty("lookupInKeys")
-    public void setLookupInKeys(Map<String, kbaserelationengine.MatchValue> lookupInKeys) {
+    public void setLookupInKeys(Map<String, kbasesearchengine.MatchValue> lookupInKeys) {
         this.lookupInKeys = lookupInKeys;
     }
 
-    public MatchFilter withLookupInKeys(Map<String, kbaserelationengine.MatchValue> lookupInKeys) {
+    public MatchFilter withLookupInKeys(Map<String, kbasesearchengine.MatchValue> lookupInKeys) {
         this.lookupInKeys = lookupInKeys;
         return this;
     }

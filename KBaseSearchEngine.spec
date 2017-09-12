@@ -2,7 +2,7 @@
 A KBase module: KBaseRelationEngine
 */
 
-module KBaseRelationEngine {
+module KBaseSearchEngine {
 
     /* A boolean. 0 = false, other = true. */
     typedef int boolean;

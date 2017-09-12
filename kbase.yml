@@ -1,5 +1,5 @@
 module-name:
-    KBaseRelationEngine
+    KBaseSearchEngine
 
 module-description:
     A KBase module
