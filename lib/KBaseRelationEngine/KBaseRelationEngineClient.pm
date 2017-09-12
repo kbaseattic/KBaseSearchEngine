@@ -1261,7 +1261,8 @@ mapping<string, string> object_props - general properties for all objects. This 
     contains the keys 'creator', 'copied', 'module', 'method', 'module_ver', and 'commit' -
     respectively the user that originally created the object, the user that copied this
     incarnation of the object, and the module and method used to create the object and
-    their version and version control commit hash.
+    their version and version control commit hash. Not all keys may be present; if not
+    their values were not available in the search data.
 
 
 =item Definition

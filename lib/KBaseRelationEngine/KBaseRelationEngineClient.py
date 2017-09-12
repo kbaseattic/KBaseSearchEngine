@@ -191,9 +191,10 @@ class KBaseRelationEngine(object):
            'module_ver', and 'commit' - respectively the user that originally
            created the object, the user that copied this incarnation of the
            object, and the module and method used to create the object and
-           their version and version control commit hash.) -> structure:
-           parameter "guid" of type "GUID" (Global user identificator. It has
-           structure like this:
+           their version and version control commit hash. Not all keys may be
+           present; if not their values were not available in the search
+           data.) -> structure: parameter "guid" of type "GUID" (Global user
+           identificator. It has structure like this:
            <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            parameter "parent_guid" of type "GUID" (Global user identificator.
            It has structure like this:
@@ -238,9 +239,11 @@ class KBaseRelationEngine(object):
            'commit' - respectively the user that originally created the
            object, the user that copied this incarnation of the object, and
            the module and method used to create the object and their version
-           and version control commit hash.) -> structure: parameter "guid"
-           of type "GUID" (Global user identificator. It has structure like
-           this: <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
+           and version control commit hash. Not all keys may be present; if
+           not their values were not available in the search data.) ->
+           structure: parameter "guid" of type "GUID" (Global user
+           identificator. It has structure like this:
+           <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            parameter "parent_guid" of type "GUID" (Global user identificator.
            It has structure like this:
            <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
