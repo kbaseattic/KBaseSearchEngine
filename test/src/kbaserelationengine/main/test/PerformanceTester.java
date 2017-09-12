@@ -212,7 +212,7 @@ public class PerformanceTester {
                         null,
                         System.currentTimeMillis(),
                         new StorageObjectType("WS", "KBaseGenomes.Genome"),
-                        ObjectStatusEventType.CREATED,
+                        ObjectStatusEventType.NEW_VERSION,
                         true);
                 long t2 = System.currentTimeMillis();
                 try {

@@ -1,7 +1,6 @@
 package kbaserelationengine.events;
 
 public enum ObjectStatusEventType {
-	CREATED,
 	NEW_VERSION,
 	DELETED,
 	SHARED,
@@ -17,5 +16,5 @@ public enum ObjectStatusEventType {
 	DELETE_ALL_VERSIONS,
 	UNDELETE_ALL_VERSIONS,
 	DELETE_ACCESS_GROUP, //TODO NOW need to remove access group from all access docs
-	COPY_ACCESS_GROUP;
+	COPY_ACCESS_GROUP; // TODO NOW need to handle data palette
 }

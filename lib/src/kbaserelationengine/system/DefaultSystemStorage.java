@@ -22,7 +22,7 @@ public class DefaultSystemStorage implements SystemStorage {
     //TODO JAVADOC
     //TODO TEST
     
-    private static final String TYPE_STORAGE = "[Type storage]";
+    private static final String TYPE_STORAGE = "[TypeStorage]";
     
     private final Map<String, ObjectTypeParsingRules> searchTypes = new HashMap<>();
     private final Map<CodeAndType, TypeMapping> storageTypes;

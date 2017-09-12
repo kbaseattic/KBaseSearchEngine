@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -27,6 +28,7 @@ import kbaserelationengine.GetObjectsOutput;
 import kbaserelationengine.KeyDescription;
 import kbaserelationengine.MatchFilter;
 import kbaserelationengine.MatchValue;
+import kbaserelationengine.ObjectData;
 import kbaserelationengine.Pagination;
 import kbaserelationengine.PostProcessing;
 import kbaserelationengine.SearchObjectsInput;
@@ -342,7 +344,6 @@ public class MainObjectProcessor {
     public void processOneEvent(ObjectStatusEvent ev) 
             throws IOException, JsonClientException, ObjectParseException {
         switch (ev.getEventType()) {
-        case CREATED:
         case NEW_VERSION:
             GUID pguid = ev.toGUID();
             boolean indexed = indexingStorage.checkParentGuidsExist(null, new LinkedHashSet<>(
@@ -636,9 +637,11 @@ public class MainObjectProcessor {
         return ret;
     }
     
-    private kbaserelationengine.ObjectData fromSearch(kbaserelationengine.search.ObjectData od) {
-        kbaserelationengine.ObjectData ret = new kbaserelationengine.ObjectData();
+    private kbaserelationengine.ObjectData fromSearch(
+            final kbaserelationengine.search.ObjectData od) {
+        final kbaserelationengine.ObjectData ret = new kbaserelationengine.ObjectData();
         ret.withGuid(od.guid.toString());
+        ret.withObjectProps(new HashMap<>());
         if (od.parentGuid != null) {
             ret.withParentGuid(od.parentGuid.toString());
         }
@@ -653,9 +656,21 @@ public class MainObjectProcessor {
         }
         ret.withObjectName(od.objectName);
         ret.withKeyProps(od.keyProps);
+        addObjectProp(ret, od.creator, "creator");
+        addObjectProp(ret, od.copier, "copied");
+        addObjectProp(ret, od.module, "module");
+        addObjectProp(ret, od.method, "method");
+        addObjectProp(ret, od.moduleVersion, "module_ver");
+        addObjectProp(ret, od.commitHash, "commmit");
         return ret;
     }
     
+    private void addObjectProp(final ObjectData ret, final String prop, final String propkey) {
+        if (prop != null) {
+            ret.getObjectProps().put(propkey, prop);
+        }
+    }
+
     public SearchTypesOutput searchTypes(SearchTypesInput params, String user) throws Exception {
         long t1 = System.currentTimeMillis();
         kbaserelationengine.search.MatchFilter matchFilter = toSearch(params.getMatchFilter());
@@ -699,17 +714,25 @@ public class MainObjectProcessor {
         return ret;
     }
 
-    public GetObjectsOutput getObjects(GetObjectsInput params, String user) throws Exception {
-        long t1 = System.currentTimeMillis();
-        Set<GUID> guids = new LinkedHashSet<>();
-        for (String guid : params.getGuids()) {
-            guids.add(new GUID(guid));
+    public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
+            throws Exception {
+        final long t1 = System.currentTimeMillis();
+        final Set<Integer> accessGroupIDs =
+                new HashSet<>(accessGroupProvider.findAccessGroupIds(user));
+        final Set<GUID> guids = new LinkedHashSet<>();
+        for (final String guid : params.getGuids()) {
+            final GUID g = new GUID(guid);
+            //TODO DP this is a quick fix for now, doesn't take data palettes into account
+            if (accessGroupIDs.contains(g.getAccessGroupId())) {
+                // don't throw an error, just don't return data
+                guids.add(g);
+            }
         }
-        kbaserelationengine.search.PostProcessing postProcessing = 
+        final kbaserelationengine.search.PostProcessing postProcessing = 
                 toSearch(params.getPostProcessing());
-        List<kbaserelationengine.search.ObjectData> objs = indexingStorage.getObjectsByIds(
+        final List<kbaserelationengine.search.ObjectData> objs = indexingStorage.getObjectsByIds(
                 guids, postProcessing);
-        GetObjectsOutput ret = new GetObjectsOutput().withObjects(objs.stream()
+        final GetObjectsOutput ret = new GetObjectsOutput().withObjects(objs.stream()
                 .map(this::fromSearch).collect(Collectors.toList()));
         ret.withSearchTime(System.currentTimeMillis() - t1);
         return ret;
@@ -796,7 +819,7 @@ public class MainObjectProcessor {
                                     new StorageObjectType("WS", info.getE3().split("-")[0],
                                             Integer.parseInt(
                                                     info.getE3().split("-")[1].split("\\.")[0])),
-                                    ObjectStatusEventType.CREATED, false)).collect(
+                                    ObjectStatusEventType.NEW_VERSION, false)).collect(
                                             Collectors.toList());
                     for (int pos = 0; pos < getInfoInput.size(); pos++) {
                         String origRef = getInfoInput.get(pos).getRef();

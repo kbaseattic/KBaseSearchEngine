@@ -138,7 +138,7 @@ public class WSTest {
     				null,
     				Util.DATE_PARSER.parseDateTime(row.getE4()).getMillis(),
     				new StorageObjectType("WS", row.getE3().split("-")[0]),
-    				ObjectStatusEventType.CREATED, false);    	
+    				ObjectStatusEventType.NEW_VERSION, false);    	
     		objs.add(obj);
     	}
     		

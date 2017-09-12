@@ -49,6 +49,15 @@ import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.UObject;
 
 public class ElasticIndexingStorage implements IndexingStorage {
+
+    private static final String OBJ_PROV_COMMIT_HASH = "prv_cmt";
+    private static final String OBJ_PROV_MODULE_VERSION = "prv_ver";
+    private static final String OBJ_PROV_METHOD = "prv_meth";
+    private static final String OBJ_PROV_MODULE = "prv_mod";
+    private static final String OBJ_COPIER = "copier";
+    private static final String OBJ_CREATOR = "creator";
+    private static final String OBJ_NAME = "oname";
+
     private HttpHost esHost;
     private String esUser;
     private String esPassword;
@@ -220,13 +229,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put("guid", id.toString());
         doc.put("otype", objectType);
 
-        doc.put("oname", data.getName());
-        doc.put("creator", data.getCreator());
-        doc.put("copier", data.getCopier());
-        doc.put("prv_mod", data.getModule());
-        doc.put("prv_meth", data.getMethod());
-        doc.put("prv_ver", data.getVersion());
-        doc.put("prv_cmt", data.getCommitHash());
+        doc.put(OBJ_NAME, data.getName());
+        doc.put(OBJ_CREATOR, data.getCreator());
+        doc.put(OBJ_COPIER, data.getCopier());
+        doc.put(OBJ_PROV_MODULE, data.getModule());
+        doc.put(OBJ_PROV_METHOD, data.getMethod());
+        doc.put(OBJ_PROV_MODULE_VERSION, data.getVersion());
+        doc.put(OBJ_PROV_COMMIT_HASH, data.getCommitHash());
         
         doc.put("timestamp", timestamp);
         doc.put("prefix", toGUIDPrefix(id));
@@ -703,7 +712,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public int setNameOnAllObjectVersions(final GUID object, final String newName)
             throws IOException {
-        return setFieldOnObject(object, "oname", newName, true);
+        return setFieldOnObject(object, OBJ_NAME, newName, true);
     }
     
     /* expects that GUID does not have sub object info */
@@ -1011,13 +1020,19 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     @SuppressWarnings("unchecked")
-    public ObjectData buildObjectData(Map<String, Object> obj, boolean info, boolean keys, 
+    private ObjectData buildObjectData(Map<String, Object> obj, boolean info, boolean keys, 
             boolean json, List<String> objectDataIncludes) {
         // TODO: support sub-data selection based on objectDataIncludes
         ObjectData item = new ObjectData();
         item.guid = new GUID((String)obj.get("guid"));
         if (info) {
-            item.objectName = (String)obj.get("oname");
+            item.objectName = (String)obj.get(OBJ_NAME);
+            item.creator = (String) obj.get(OBJ_CREATOR);
+            item.copier = (String) obj.get(OBJ_COPIER);
+            item.module = (String) obj.get(OBJ_PROV_MODULE);
+            item.method = (String) obj.get(OBJ_PROV_METHOD);
+            item.moduleVersion = (String) obj.get(OBJ_PROV_MODULE_VERSION);
+            item.commitHash = (String) obj.get(OBJ_PROV_COMMIT_HASH);
             item.type = (String)obj.get("otype");
             Object dateProp = obj.get("timestamp");
             item.timestamp = (dateProp instanceof Long) ? (Long)dateProp : 
@@ -1195,7 +1210,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     matchFilter.accessGroupId)), withAllHistory));
         }*/
         if (matchFilter.objectName != null) {
-            ret.add(createFilter("match", "oname", matchFilter.fullTextInAll));
+            ret.add(createFilter("match", OBJ_NAME, matchFilter.fullTextInAll));
         }
         if (matchFilter.lookupInKeys != null) {
             for (String keyName : matchFilter.lookupInKeys.keySet()) {
@@ -1284,7 +1299,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @SuppressWarnings({ "serial", "unchecked" })
-    public FoundHits queryHits(String objectType, List<Map<String, Object>> matchFilters, 
+    private FoundHits queryHits(String objectType, List<Map<String, Object>> matchFilters, 
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pg,
             PostProcessing pp) throws IOException {
         int pgStart = pg == null || pg.start == null ? 0 : pg.start;
@@ -1341,7 +1356,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         List<Object> sort = new ArrayList<>();
         doc.put("sort", sort);
         for (SortingRule sr : sorting) {
-            String keyProp = sr.isTimestamp ? "timestamp" : (sr.isObjectName ? "oname" : 
+            String keyProp = sr.isTimestamp ? "timestamp" : (sr.isObjectName ? OBJ_NAME : 
                 getKeyProperty(sr.keyName));
             Map<String, Object> sortOrder = new LinkedHashMap<String, Object>() {{
                 put("order", sr.ascending ? "asc" : "desc");
@@ -1547,16 +1562,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
         props.put("otype", new LinkedHashMap<String, Object>() {{
             put("type", "keyword");
         }});
-        props.put("oname", new LinkedHashMap<String, Object>() {{
+        props.put(OBJ_NAME, new LinkedHashMap<String, Object>() {{
             put("type", "text");
         }});
         final Map<String, Object> keyword = ImmutableMap.of("type", "keyword");
-        props.put("creator", keyword);
-        props.put("copier", keyword);
-        props.put("prv_mod", keyword);
-        props.put("prv_meth", keyword);
-        props.put("prv_ver", keyword);
-        props.put("prv_cmt", keyword);
+        props.put(OBJ_CREATOR, keyword);
+        props.put(OBJ_COPIER, keyword);
+        props.put(OBJ_PROV_MODULE, keyword);
+        props.put(OBJ_PROV_METHOD, keyword);
+        props.put(OBJ_PROV_MODULE_VERSION, keyword);
+        props.put(OBJ_PROV_COMMIT_HASH, keyword);
         props.put("timestamp", new LinkedHashMap<String, Object>() {{
             put("type", "date");
         }});
