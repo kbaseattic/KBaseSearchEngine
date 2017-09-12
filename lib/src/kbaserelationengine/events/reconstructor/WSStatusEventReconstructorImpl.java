@@ -282,7 +282,7 @@ public class WSStatusEventReconstructorImpl implements WSStatusEventReconstructo
     	rows = wsClient.listObjects(params);
     	
     	objectStatusEventsBuffer.clear();
-    	buildEvents(ws, rows, ObjectStatusEventType.CREATED, objectStatusEventsBuffer, true);		
+    	buildEvents(ws, rows, ObjectStatusEventType.NEW_VERSION, objectStatusEventsBuffer, true);		
     	objectStatusChanged(objectStatusEventsBuffer);
 	}
 	

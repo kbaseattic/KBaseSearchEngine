@@ -344,7 +344,6 @@ public class MainObjectProcessor {
     public void processOneEvent(ObjectStatusEvent ev) 
             throws IOException, JsonClientException, ObjectParseException {
         switch (ev.getEventType()) {
-        case CREATED:
         case NEW_VERSION:
             GUID pguid = ev.toGUID();
             boolean indexed = indexingStorage.checkParentGuidsExist(null, new LinkedHashSet<>(
@@ -820,7 +819,7 @@ public class MainObjectProcessor {
                                     new StorageObjectType("WS", info.getE3().split("-")[0],
                                             Integer.parseInt(
                                                     info.getE3().split("-")[1].split("\\.")[0])),
-                                    ObjectStatusEventType.CREATED, false)).collect(
+                                    ObjectStatusEventType.NEW_VERSION, false)).collect(
                                             Collectors.toList());
                     for (int pos = 0; pos < getInfoInput.size(); pos++) {
                         String origRef = getInfoInput.get(pos).getRef();

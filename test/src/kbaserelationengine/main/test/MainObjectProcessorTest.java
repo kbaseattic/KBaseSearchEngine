@@ -256,7 +256,7 @@ public class MainObjectProcessorTest {
                 null,
                 System.currentTimeMillis(),
                 new StorageObjectType("WS", "KBaseGenomes.Genome"),
-                ObjectStatusEventType.CREATED,
+                ObjectStatusEventType.NEW_VERSION,
                 false);
         mop.processOneEvent(ev);
         PostProcessing pp = new PostProcessing();
@@ -320,7 +320,7 @@ public class MainObjectProcessorTest {
                 null,
                 System.currentTimeMillis(),
                 new StorageObjectType("WS", "KBaseNarrative.Narrative"),
-                ObjectStatusEventType.CREATED,
+                ObjectStatusEventType.NEW_VERSION,
                 false));
         checkSearch(1, "Narrative", "tree", wsid, false);
         checkSearch(1, "Narrative", "species", wsid, false);
@@ -348,7 +348,7 @@ public class MainObjectProcessorTest {
                 null,
                 System.currentTimeMillis(),
                 new StorageObjectType("WS", "KBaseFile.PairedEndLibrary"),
-                ObjectStatusEventType.CREATED,
+                ObjectStatusEventType.NEW_VERSION,
                 false));
         checkSearch(1, "PairedEndLibrary", "Illumina", wsid, true);
         checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
@@ -362,7 +362,7 @@ public class MainObjectProcessorTest {
                 null,
                 System.currentTimeMillis(),
                 new StorageObjectType("WS", "KBaseFile.SingleEndLibrary"),
-                ObjectStatusEventType.CREATED,
+                ObjectStatusEventType.NEW_VERSION,
                 false));
         checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);
         checkSearch(1, "SingleEndLibrary", "reads.2", wsid, false);
