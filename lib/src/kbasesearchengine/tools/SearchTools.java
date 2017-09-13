@@ -21,10 +21,10 @@ import com.beust.jcommander.ParameterException;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
-import kbasesearchengine.tools.SearchToolsConfig.RESKEToolsConfigException;
+import kbasesearchengine.tools.SearchToolsConfig.SearchToolsConfigException;
 import kbasesearchengine.tools.WorkspaceEventGenerator.EventGeneratorException;
 
-/** Tools for working with RESKE. Note that this CLI is designed against the RESKE prototype
+/** Tools for working with Search. Note that this CLI is designed against the search prototype
  * event listener in the workspace service, and may need changes if the event listener is changed
  * or removed.
  * @author gaprice@lbl.gov
@@ -32,7 +32,7 @@ import kbasesearchengine.tools.WorkspaceEventGenerator.EventGeneratorException;
  */
 public class SearchTools {
     
-    private static final String NAME = "reske_tools";
+    private static final String NAME = "search_tools";
 
     /** Runs the CLI.
      * @param args the program arguments.
@@ -99,7 +99,7 @@ public class SearchTools {
         } catch (IOException e) {
             printError(e, a.verbose);
             return 1;
-        } catch (RESKEToolsConfigException e) {
+        } catch (SearchToolsConfigException e) {
             printError("For config file " + a.configPath, e, a.verbose);
             return 1;
         }
@@ -158,7 +158,7 @@ public class SearchTools {
     }
 
     private SearchToolsConfig getConfig(final String configPath)
-            throws IOException, RESKEToolsConfigException {
+            throws IOException, SearchToolsConfigException {
         final Path path = Paths.get(configPath);
         final Properties p = new Properties();
         p.load(Files.newInputStream(path));
@@ -195,13 +195,13 @@ public class SearchTools {
         private boolean verbose;
         
         @Parameter(names = {"-c", "--config"}, required = true,
-                description = "Path to the RESKE tools config file " +
-                        "(example file is reske_tools.cfg.example).")
+                description = "Path to the search tools config file " +
+                        "(example file is search_tools.cfg.example).")
         private String configPath;
         
         @Parameter(names = {"-r", "--ref"}, description = "A workspace style (e.g. 1/2/3) ref. " +
                 "Only absolute refs are accepted. If omitted, creation events for all objects " +
-                "in all workspaces will be submitted to RESKE. A specific workspace, object, or " +
+                "in all workspaces will be submitted to search. A specific workspace, object, or " +
                 "object version can be specified by providing some or all of the ref.")
         private String ref;
         

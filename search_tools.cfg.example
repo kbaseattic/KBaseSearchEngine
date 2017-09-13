@@ -3,8 +3,10 @@ workspace-mongo-db=
 workspace-mongo-user=
 workspace-mongo-pwd=
 
-reske-mongo-host=
-reske-mongo-db=
+search-mongo-host=
+search-mongo-db=
+search-mongo-user=
+search-mongo-pwd=
 
 # a comma delimited list of workspace ids or names to ignore.
 workspace-blacklist=
