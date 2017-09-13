@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.DateTimeFormatterBuilder;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import kbasesearchengine.common.GUID;
@@ -39,6 +43,13 @@ import workspace.WorkspaceIdentity;
  *
  */
 public class WorkspaceEventHandler implements EventHandler {
+    
+    public final static DateTimeFormatter DATE_PARSER =
+            new DateTimeFormatterBuilder()
+                .append(DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss"))
+                .appendOptional(DateTimeFormat.forPattern(".SSS").getParser())
+                .append(DateTimeFormat.forPattern("Z"))
+                .toFormatter(); 
     
     //TODO TEST
 

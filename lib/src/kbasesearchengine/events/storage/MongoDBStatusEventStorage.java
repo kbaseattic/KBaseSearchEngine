@@ -9,23 +9,18 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import com.google.common.base.Optional;
-import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.UpdateOptions;
 
-import kbasesearchengine.events.AccessGroupProvider;
-import kbasesearchengine.events.AccessGroupStatus;
 import kbasesearchengine.events.ObjectStatusEvent;
 import kbasesearchengine.events.ObjectStatusEventType;
-import kbasesearchengine.events.StatusEventListener;
 import kbasesearchengine.system.StorageObjectType;
 
-public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEventStorage, StatusEventListener{
-	private static final String COLLECTION_GROUP_STATUS = "GroupStatus";
-	private static final String COLLECTION_OBJECT_STATUS_EVENTS = "ObjectStatusEvents";
+public class MongoDBStatusEventStorage implements StatusEventStorage {
+
+    private static final String COLLECTION_OBJECT_STATUS_EVENTS = "ObjectStatusEvents";
 	
 	private MongoDatabase db;
 
@@ -47,98 +42,6 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 		return db.getCollection(name);
 	}
 		
-	@Override	
-	public List<AccessGroupStatus> findAccessGroups(String storageCode){
-		final Document query = new Document();
-		if(storageCode != null){
-			query.append("storageCode", storageCode);			
-		}	
-		FindIterable<Document> cursor = collection(COLLECTION_GROUP_STATUS).find(query);
-		
-		List<AccessGroupStatus> gss = new ArrayList<AccessGroupStatus>();
-		for (final Document dobj: cursor) {
-			
-			@SuppressWarnings("unchecked")
-            List<String> users = (List<String>) dobj.get("users");
-			
-			gss.add(new AccessGroupStatus(
-					dobj.get("_id").toString(), 
-					(String)dobj.get("storageCode"), 
-					(Integer) dobj.get("accessGroupId"), 
-					(Long)dobj.get("timestamp"),
-					(Boolean)dobj.get("isPrivate"),
-					(Boolean)dobj.get("isDeleted"),
-					users
-			));
-		}
-		
-		return gss;
-	}
-	
-	@Override
-	public List<Integer> findAccessGroupIds(String user){
-		BasicDBList queryItems = new BasicDBList();
-		queryItems.add(new BasicDBObject("users", user));
-		queryItems.add(new BasicDBObject("storageCode", "WS"));
-		BasicDBObject query = new BasicDBObject("$and", queryItems);	
-		FindIterable<Document> cursor = collection(COLLECTION_GROUP_STATUS).find(query);
-				
-		List<Integer> groupIds = new ArrayList<Integer>();
-		for (final Document d: cursor) {
-			groupIds.add(d.getInteger("accessGroupId"));
-		}
-		return groupIds;
-	}
-	
-	public void store(AccessGroupStatus obj) throws IOException {
-		final Document dobj = new Document();
-		dobj.put("storageCode", obj.getStorageCode());
-		dobj.put("accessGroupId", obj.getAccessGroupId());
-		dobj.put("timestamp", obj.getTimestamp());
-		dobj.put("isPrivate", obj.isPrivate());
-		dobj.put("isDeleted", obj.isDeleted());
-		dobj.put("users", obj.getUsers());
-		
-		ObjectId objId = obj.getId() != null ?  new ObjectId(obj.getId() ) : new ObjectId();
-		final Document query = new Document("_id",  objId );
-		
-//		BasicDBList queryItems = new BasicDBList();
-//		queryItems.add(new BasicDBObject("storageCode", obj.getStorageCode()));			
-//		queryItems.add(new BasicDBObject("accessGroupId", obj.getAccessGroupId()));
-//		BasicDBObject query = new BasicDBObject("$and", queryItems);
-		
-		collection(COLLECTION_GROUP_STATUS).updateOne(
-		        query, dobj, new UpdateOptions().upsert(true));
-	}	
-	
-	private void updateGroupPrivelages(AccessGroupStatus obj) {
-				
-		
-//		DBObject dobj = new BasicDBObject();		
-//		dobj.put("storageCode", obj.getStorageCode());
-//		dobj.put("accessGroupId", obj.getAccessGroupId());
-//		dobj.put("timestamp", obj.getTimestamp());
-//		dobj.put("isDeleted", obj.isDeleted());
-//		dobj.put("isPrivate", obj.isPrivate());
-//		dobj.put("users", obj.getUsers());
-		
-		// Update only info about privacy and users
-		final Document dobj = new Document();
-		dobj.append("$set", new Document("isPrivate", obj.isPrivate()));
-		dobj.append("$set", new Document("users", obj.getUsers()));
-		
-		
-//		ObjectId objId = obj.getId() != null ?  new ObjectId(obj.getId() ) : new ObjectId();
-		BasicDBObject query = new BasicDBObject("_id",  new ObjectId(obj.getId() ) );
-		
-//		BasicDBList queryItems = new BasicDBList();
-//		queryItems.add(new BasicDBObject("storageCode", obj.getStorageCode()));			
-//		queryItems.add(new BasicDBObject("accessGroupId", obj.getAccessGroupId()));
-//		BasicDBObject query = new BasicDBObject("$and", queryItems);
-		
-		collection(COLLECTION_GROUP_STATUS).updateOne(query, dobj);
-	}
-	
 	@Override
 	public void store(ObjectStatusEvent obj) throws IOException {
 		final Document dobj = new Document();
@@ -151,7 +54,7 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 		dobj.put("eventType", obj.getEventType().toString());
 		dobj.put("storageObjectType", obj.getStorageObjectType().getType());
 		final Optional<Integer> version = obj.getStorageObjectType().getVersion();
-        dobj.put("storageObjectTypeVersion", version.isPresent() ? version.get() : null);
+		dobj.put("storageObjectTypeVersion", version.isPresent() ? version.get() : null);
 		dobj.put("isGlobalAccessed", obj.isGlobalAccessed());
 		dobj.put("newName", obj.getNewName());
 		dobj.put("indexed", false);
@@ -293,35 +196,4 @@ public class MongoDBStatusEventStorage implements AccessGroupProvider, StatusEve
 		return new ArrayList<ObjectStatusEvent>();
 	}
 
-	@Override
-	public void objectStatusChanged(List<ObjectStatusEvent> events) throws IOException {
-		//TODO bulk query
-		for(ObjectStatusEvent event: events){
-			
-			if(event.getAccessGroupId() == 15 
-					&& event.getStorageObjectType().equals("KBaseGenomes.Genome")){
-				continue;
-			}
-			
-			
-			store(event);		
-		}
-	}
-
-	@Override
-	public void groupPermissionsChanged(List<AccessGroupStatus> newStatuses) throws IOException {
-		//TODO bulk query
-		for(AccessGroupStatus newStatus: newStatuses){
-			updateGroupPrivelages(newStatus);
-		}
-	}
-
-
-	@Override
-	public void groupStatusChanged(List<AccessGroupStatus> newStatuses) throws IOException {
-		//TODO bulk query
-		for(AccessGroupStatus newStatus: newStatuses){
-			store(newStatus);				
-		}		
-	}	
 }
