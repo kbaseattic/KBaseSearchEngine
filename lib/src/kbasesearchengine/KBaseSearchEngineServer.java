@@ -33,14 +33,14 @@ import com.mongodb.client.MongoDatabase;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
-import kbaserelationengine.common.GUID;
-import kbaserelationengine.main.LineLogger;
-import kbaserelationengine.main.MainObjectProcessor;
-import kbaserelationengine.search.ElasticIndexingStorage;
-import kbaserelationengine.system.DefaultSystemStorage;
-import kbaserelationengine.system.SystemStorage;
-import kbaserelationengine.system.TypeMappingParser;
-import kbaserelationengine.system.YAMLTypeMappingParser;
+import kbasesearchengine.common.GUID;
+import kbasesearchengine.main.LineLogger;
+import kbasesearchengine.main.MainObjectProcessor;
+import kbasesearchengine.search.ElasticIndexingStorage;
+import kbasesearchengine.system.DefaultSystemStorage;
+import kbasesearchengine.system.SystemStorage;
+import kbasesearchengine.system.TypeMappingParser;
+import kbasesearchengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.ConfigurableAuthService;
 //END_HEADER
