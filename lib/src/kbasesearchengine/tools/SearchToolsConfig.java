@@ -19,18 +19,18 @@ public class SearchToolsConfig {
     private static final String WS_MONGO_USER = "workspace-mongo-user";
     private static final String WS_MONGO_PWD = "workspace-mongo-pwd";
     
-    private static final String RESKE_MONGO_HOST = "reske-mongo-host";
-    private static final String RESKE_MONGO_DB = "reske-mongo-db";
-    private static final String RESKE_MONGO_USER = "reske-mongo-user";
-    private static final String RESKE_MONGO_PWD = "reske-mongo-pwd";
+    private static final String SEARCH_MONGO_HOST = "search-mongo-host";
+    private static final String SEARCH_MONGO_DB = "search-mongo-db";
+    private static final String SEARCH_MONGO_USER = "search-mongo-user";
+    private static final String SEARCH_MONGO_PWD = "search-mongo-pwd";
     
     private static final String WS_ID_BLACKLIST = "workspace-blacklist";
     private static final String WS_TYPES_LIST = "workspace-types";
 
-    private final String reskeMongoHost;
-    private final String reskeMongoDB;
-    private final Optional<String> reskeMongoUser;
-    private final Optional<char[]> reskeMongoPwd;
+    private final String searchMongoHost;
+    private final String searchMongoDB;
+    private final Optional<String> searchMongoUser;
+    private final Optional<char[]> searchMongoPwd;
     private final String workspaceMongoHost;
     private final String workspaceMongoDB;
     private final Optional<String> workspaceMongoUser;
@@ -40,37 +40,37 @@ public class SearchToolsConfig {
 
     
     private SearchToolsConfig(
-            final String reskeMongoHost,
-            final String reskeMongoDB,
-            final String reskeMongoUser,
-            String reskeMongoPwd,
+            final String searchMongoHost,
+            final String searchMongoDB,
+            final String searchMongoUser,
+            String searchMongoPwd,
             final String workspaceMongoHost,
             final String workspaceMongoDB,
             final String workspaceMongoUser,
             String workspaceMongoPwd,
             final List<WorkspaceIdentifier> workspaceBlackList,
             final List<String> workspaceTypes)
-            throws RESKEToolsConfigException {
+            throws SearchToolsConfigException {
         this.workspaceBlackList = Collections.unmodifiableList(workspaceBlackList);
         this.workspaceTypes = Collections.unmodifiableList(workspaceTypes);
-        this.reskeMongoHost = reskeMongoHost;
-        this.reskeMongoDB = reskeMongoDB;
-        if (reskeMongoUser == null ^ reskeMongoPwd == null) { // xor
-            reskeMongoPwd = null; // gc
-            throw new RESKEToolsConfigException(String.format(
+        this.searchMongoHost = searchMongoHost;
+        this.searchMongoDB = searchMongoDB;
+        if (searchMongoUser == null ^ searchMongoPwd == null) { // xor
+            searchMongoPwd = null; // gc
+            throw new SearchToolsConfigException(String.format(
                     "Must provide both %s and %s params in config " +
                     " if MongoDB authentication is to be used",
-                    RESKE_MONGO_USER, RESKE_MONGO_PWD));
+                    SEARCH_MONGO_USER, SEARCH_MONGO_PWD));
         }
-        this.reskeMongoUser = Optional.fromNullable(reskeMongoUser);
-        this.reskeMongoPwd = Optional.fromNullable(reskeMongoPwd == null ?
-                null :reskeMongoPwd.toCharArray());
-        reskeMongoPwd = null;
+        this.searchMongoUser = Optional.fromNullable(searchMongoUser);
+        this.searchMongoPwd = Optional.fromNullable(searchMongoPwd == null ?
+                null :searchMongoPwd.toCharArray());
+        searchMongoPwd = null;
         this.workspaceMongoHost = workspaceMongoHost;
         this.workspaceMongoDB = workspaceMongoDB;
         if (workspaceMongoUser == null ^ workspaceMongoPwd == null) { // xor
             workspaceMongoPwd = null; // gc
-            throw new RESKEToolsConfigException(String.format(
+            throw new SearchToolsConfigException(String.format(
                     "Must provide both %s and %s params in config " +
                     " if MongoDB authentication is to be used",
                     WS_MONGO_USER, WS_MONGO_PWD));
@@ -81,20 +81,20 @@ public class SearchToolsConfig {
         workspaceMongoPwd = null; //gc
     }
 
-    public String getReskeMongoHost() {
-        return reskeMongoHost;
+    public String getSearchMongoHost() {
+        return searchMongoHost;
     }
 
-    public String getReskeMongoDB() {
-        return reskeMongoDB;
+    public String getSearchMongoDB() {
+        return searchMongoDB;
     }
 
-    public Optional<String> getReskeMongoUser() {
-        return reskeMongoUser;
+    public Optional<String> getSearchMongoUser() {
+        return searchMongoUser;
     }
 
-    public Optional<char[]> getReskeMongoPwd() {
-        return reskeMongoPwd;
+    public Optional<char[]> getSearchMongoPwd() {
+        return searchMongoPwd;
     }
 
     public String getWorkspaceMongoHost() {
@@ -121,7 +121,7 @@ public class SearchToolsConfig {
         return workspaceTypes;
     }
 
-    public static SearchToolsConfig from(final Properties p) throws RESKEToolsConfigException {
+    public static SearchToolsConfig from(final Properties p) throws SearchToolsConfigException {
         final Map<String, String> cfg = new HashMap<>();
         for (final Entry<Object, Object> e: p.entrySet()) {
             cfg.put((String) e.getKey(), (String) e.getValue());
@@ -130,12 +130,12 @@ public class SearchToolsConfig {
     }
 
     public static SearchToolsConfig from(final Map<String, String> cfg)
-            throws RESKEToolsConfigException {
+            throws SearchToolsConfigException {
         return new SearchToolsConfig(
-                getString(RESKE_MONGO_HOST, cfg, true),
-                getString(RESKE_MONGO_DB, cfg, true),
-                getString(RESKE_MONGO_USER, cfg),
-                getString(RESKE_MONGO_PWD, cfg),
+                getString(SEARCH_MONGO_HOST, cfg, true),
+                getString(SEARCH_MONGO_DB, cfg, true),
+                getString(SEARCH_MONGO_USER, cfg),
+                getString(SEARCH_MONGO_PWD, cfg),
                 getString(WS_MONGO_HOST, cfg, true),
                 getString(WS_MONGO_DB, cfg, true),
                 getString(WS_MONGO_USER, cfg),
@@ -161,7 +161,7 @@ public class SearchToolsConfig {
 
     private static List<WorkspaceIdentifier> getWSIDList(
             final String configparam,
-            final Map<String, String> cfg) throws RESKEToolsConfigException {
+            final Map<String, String> cfg) throws SearchToolsConfigException {
         final String wsIdBlacklist = cfg.get(configparam);
         if (wsIdBlacklist != null && !wsIdBlacklist.isEmpty()) {
             final List<String> wsids = Arrays.asList(wsIdBlacklist.split(","));
@@ -189,7 +189,7 @@ public class SearchToolsConfig {
     private static String getString(
             final String paramName,
             final Map<String, String> config)
-            throws RESKEToolsConfigException {
+            throws SearchToolsConfigException {
         return getString(paramName, config, false);
     }
     
@@ -197,12 +197,12 @@ public class SearchToolsConfig {
             final String paramName,
             final Map<String, String> config,
             final boolean except)
-            throws RESKEToolsConfigException {
+            throws SearchToolsConfigException {
         final String s = config.get(paramName);
         if (s != null && !s.trim().isEmpty()) {
             return s.trim();
         } else if (except) {
-            throw new RESKEToolsConfigException(String.format(
+            throw new SearchToolsConfigException(String.format(
                     "Required parameter %s not provided in configuration", paramName));
         } else {
             return null;
@@ -210,9 +210,9 @@ public class SearchToolsConfig {
     }
     
     @SuppressWarnings("serial")
-    public static class RESKEToolsConfigException extends Exception {
+    public static class SearchToolsConfigException extends Exception {
         
-        public RESKEToolsConfigException(final String message) {
+        public SearchToolsConfigException(final String message) {
             super(message);
         }
         
@@ -221,14 +221,14 @@ public class SearchToolsConfig {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("RESKEToolsConfig [reskeMongoHost=");
-        builder.append(reskeMongoHost);
-        builder.append(", reskeMongoDB=");
-        builder.append(reskeMongoDB);
-        builder.append(", reskeMongoUser=");
-        builder.append(reskeMongoUser);
-        builder.append(", reskeMongoPwd=");
-        builder.append(reskeMongoPwd);
+        builder.append("SearchToolsConfig [searchMongoHost=");
+        builder.append(searchMongoHost);
+        builder.append(", searchMongoDB=");
+        builder.append(searchMongoDB);
+        builder.append(", searchMongoUser=");
+        builder.append(searchMongoUser);
+        builder.append(", searchMongoPwd=");
+        builder.append(searchMongoPwd);
         builder.append(", workspaceMongoHost=");
         builder.append(workspaceMongoHost);
         builder.append(", workspaceMongoDB=");
@@ -239,6 +239,8 @@ public class SearchToolsConfig {
         builder.append(workspaceMongoPwd);
         builder.append(", workspaceBlackList=");
         builder.append(workspaceBlackList);
+        builder.append(", workspaceTypes=");
+        builder.append(workspaceTypes);
         builder.append("]");
         return builder.toString();
     }

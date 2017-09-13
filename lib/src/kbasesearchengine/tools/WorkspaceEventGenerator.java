@@ -33,12 +33,12 @@ import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.system.StorageObjectType;
 
-/** Generates events from the workspace and inserts them into the RESKE queue.
+/** Generates events from the workspace and inserts them into the search queue.
  * 
  * Due to technical issues, interfaces directly with the workspace DB instead of going through
  * the workspace library classes, which would be preferred in general.
  * 
- * Generates events based on the RESKE prototype event handler in the workspace, so if that
+ * Generates events based on the search prototype event handler in the workspace, so if that
  * changes this code will likely need to change.
  * 
  * @author gaprice@lbl.gov
@@ -77,7 +77,7 @@ public class WorkspaceEventGenerator {
     private final int obj;
     private final int ver;
     
-    private final MongoClient reskeClient;
+    private final MongoClient searchClient;
     private final MongoClient wsClient;
     private final StatusEventStorage storage;
     private final MongoDatabase wsDB;
@@ -100,25 +100,26 @@ public class WorkspaceEventGenerator {
         this.logtarget = logtarget;
         this.wsBlackList = Collections.unmodifiableSet(new HashSet<>(wsBlackList));
         this.wsTypes = processTypes(wsTypes);
-        if (cfg.getReskeMongoHost().equals(cfg.getWorkspaceMongoHost())) {
+        if (cfg.getSearchMongoHost().equals(cfg.getWorkspaceMongoHost())) {
             final List<MongoCredential> creds = new LinkedList<>();
-            addCred(cfg.getReskeMongoDB(), cfg.getReskeMongoUser(), cfg.getReskeMongoPwd(), creds);
+            addCred(cfg.getSearchMongoDB(), cfg.getSearchMongoUser(),
+                    cfg.getSearchMongoPwd(), creds);
             addCred(cfg.getWorkspaceMongoDB(), cfg.getWorkspaceMongoUser(),
-                        cfg.getWorkspaceMongoPwd(), creds);
+                    cfg.getWorkspaceMongoPwd(), creds);
             try {
-                reskeClient = new MongoClient(new ServerAddress(cfg.getReskeMongoHost()), creds);
-                wsClient = reskeClient;
+                searchClient = new MongoClient(new ServerAddress(cfg.getSearchMongoHost()), creds);
+                wsClient = searchClient;
             } catch (MongoException e) {
                 throw convert(e, null);
             }
         } else {
-            reskeClient = getClient(cfg.getReskeMongoHost(), cfg.getReskeMongoDB(),
-                    cfg.getReskeMongoUser(), cfg.getReskeMongoPwd());
+            searchClient = getClient(cfg.getSearchMongoHost(), cfg.getSearchMongoDB(),
+                    cfg.getSearchMongoUser(), cfg.getSearchMongoPwd());
             wsClient = getClient(cfg.getWorkspaceMongoHost(), cfg.getWorkspaceMongoDB(),
                     cfg.getWorkspaceMongoUser(), cfg.getWorkspaceMongoPwd());
             
         }
-        storage = new MongoDBStatusEventStorage(reskeClient.getDatabase(cfg.getReskeMongoDB()));
+        storage = new MongoDBStatusEventStorage(searchClient.getDatabase(cfg.getSearchMongoDB()));
         wsDB = wsClient.getDatabase(cfg.getWorkspaceMongoDB());
         checkWorkspaceSchema();
     }
@@ -133,7 +134,7 @@ public class WorkspaceEventGenerator {
     }
 
     public void destroy() {
-        reskeClient.close();
+        searchClient.close();
         wsClient.close();
     }
 
