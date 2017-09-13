@@ -8,7 +8,14 @@ MAINTAINER KBase Developer
 
 # RUN apt-get update
 
-RUN sudo apt-get install nano \
+# update jars
+RUN cd /kb/dev_container/modules/jars \
+	&& git pull \
+	&& . /kb/dev_container/user-env.sh \
+	&& make deploy \
+	&& echo docker is annoying 1
+
+RUN apt-get install nano \
 	&& add-apt-repository ppa:openjdk-r/ppa \
 	&& sudo apt-get update \
 	&& sudo apt-get -y install openjdk-8-jdk \
@@ -33,11 +40,6 @@ RUN cd /opt \
 	&& wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.6.12.tgz \
 	&& tar xfz mongodb-linux-x86_64-2.6.12.tgz \
 	&& ln -s mongodb-linux-x86_64-2.6.12 mongo
-
-# change mrcreosote -> kbase when PR is merged
-# remove altogether when jar is added to the base image
-RUN cd /kb/deployment/lib/jars/kbase/workspace \
-	&& wget https://github.com/MrCreosote/jars/raw/master/lib/jars/kbase/workspace/WorkspaceService-0.7.2-dev1.jar
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 
