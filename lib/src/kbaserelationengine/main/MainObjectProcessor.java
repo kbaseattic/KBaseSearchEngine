@@ -22,21 +22,21 @@ import org.apache.http.HttpHost;
 import com.fasterxml.jackson.core.JsonParser;
 import com.mongodb.client.MongoDatabase;
 
-import kbaserelationengine.AccessFilter;
-import kbaserelationengine.GetObjectsInput;
-import kbaserelationengine.GetObjectsOutput;
-import kbaserelationengine.KeyDescription;
-import kbaserelationengine.MatchFilter;
-import kbaserelationengine.MatchValue;
-import kbaserelationengine.ObjectData;
-import kbaserelationengine.Pagination;
-import kbaserelationengine.PostProcessing;
-import kbaserelationengine.SearchObjectsInput;
-import kbaserelationengine.SearchObjectsOutput;
-import kbaserelationengine.SearchTypesInput;
-import kbaserelationengine.SearchTypesOutput;
-import kbaserelationengine.SortingRule;
-import kbaserelationengine.TypeDescriptor;
+import kbasesearchengine.AccessFilter;
+import kbasesearchengine.GetObjectsInput;
+import kbasesearchengine.GetObjectsOutput;
+import kbasesearchengine.KeyDescription;
+import kbasesearchengine.MatchFilter;
+import kbasesearchengine.MatchValue;
+import kbasesearchengine.ObjectData;
+import kbasesearchengine.Pagination;
+import kbasesearchengine.PostProcessing;
+import kbasesearchengine.SearchObjectsInput;
+import kbasesearchengine.SearchObjectsOutput;
+import kbasesearchengine.SearchTypesInput;
+import kbasesearchengine.SearchTypesOutput;
+import kbasesearchengine.SortingRule;
+import kbasesearchengine.TypeDescriptor;
 import kbaserelationengine.common.GUID;
 import kbaserelationengine.events.AccessGroupCache;
 import kbaserelationengine.events.AccessGroupProvider;
@@ -637,9 +637,9 @@ public class MainObjectProcessor {
         return ret;
     }
     
-    private kbaserelationengine.ObjectData fromSearch(
+    private kbasesearchengine.ObjectData fromSearch(
             final kbaserelationengine.search.ObjectData od) {
-        final kbaserelationengine.ObjectData ret = new kbaserelationengine.ObjectData();
+        final kbasesearchengine.ObjectData ret = new kbasesearchengine.ObjectData();
         ret.withGuid(od.guid.toString());
         ret.withObjectProps(new HashMap<>());
         if (od.parentGuid != null) {
@@ -703,7 +703,7 @@ public class MainObjectProcessor {
         ret.withSortingRules(hits.sortingRules.stream().map(this::fromSearch).collect(
                 Collectors.toList()));
         if (hits.objects == null) {
-            ret.withObjects(hits.guids.stream().map(guid -> new kbaserelationengine.ObjectData().
+            ret.withObjects(hits.guids.stream().map(guid -> new kbasesearchengine.ObjectData().
                     withGuid(guid.toString())).collect(Collectors.toList()));
         } else {
             ret.withObjects(hits.objects.stream().map(this::fromSearch).collect(

@@ -89,7 +89,7 @@ public class PerformanceTester {
                 System.getenv(KB_DEP) : System.getProperty(KB_DEP);
         final File deploy = new File(file);
         final Ini ini = new Ini(deploy);
-        Map<String, String> config = ini.get("KBaseRelationEngine");
+        Map<String, String> config = ini.get("KBaseSearchEngine");
         wsUrl = new URL(config.get("workspace-url"));
         String tokenStr = config.get("indexer-token");
         final String authURL = config.get("auth-service-url");

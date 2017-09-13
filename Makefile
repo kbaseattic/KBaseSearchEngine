@@ -1,7 +1,7 @@
-SERVICE = kbaserelationengine
-SERVICE_CAPS = KBaseRelationEngine
-SPEC_FILE = KBaseRelationEngine.spec
-URL = https://kbase.us/services/kbaserelationengine
+SERVICE = kbasesearchengine
+SERVICE_CAPS = KBaseSearchEngine
+SPEC_FILE = KBaseSearchEngine.spec
+URL = https://kbase.us/services/kbasesearchengine
 DIR = $(shell pwd)
 LIB_DIR = lib
 SCRIPTS_DIR = scripts

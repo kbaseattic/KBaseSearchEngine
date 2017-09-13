@@ -1,5 +1,5 @@
 
-package kbaserelationengine;
+package kbasesearchengine;
 
 import java.util.HashMap;
 import java.util.Map;

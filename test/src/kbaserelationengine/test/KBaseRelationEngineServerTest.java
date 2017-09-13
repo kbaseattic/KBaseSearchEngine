@@ -14,7 +14,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import kbaserelationengine.KBaseRelationEngineServer;
+import kbasesearchengine.KBaseSearchEngineServer;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
@@ -35,7 +35,7 @@ public class KBaseRelationEngineServerTest {
     private static WorkspaceClient wsClient = null;
     private static String wsName = null;
     @SuppressWarnings("unused")
-    private static KBaseRelationEngineServer impl = null;
+    private static KBaseSearchEngineServer impl = null;
     @SuppressWarnings("unused")
     private static Path scratch;
     @SuppressWarnings("unused")
@@ -50,7 +50,7 @@ public class KBaseRelationEngineServerTest {
         }
         File deploy = new File(configFilePath);
         Ini ini = new Ini(deploy);
-        config = ini.get("KBaseRelationEngine");
+        config = ini.get("KBaseSearchEngine");
         // Token validation
         String authUrl = config.get("auth-service-url");
         String authUrlInsecure = config.get("auth-service-url-allow-insecure");
@@ -71,14 +71,14 @@ public class KBaseRelationEngineServerTest {
         JsonServerSyslog.setStaticUseSyslog(false);
         JsonServerSyslog.setStaticMlogFile(new File(config.get("scratch"), "test.log")
             .getAbsolutePath());
-        impl = new KBaseRelationEngineServer();
+        impl = new KBaseSearchEngineServer();
     }
     
     @SuppressWarnings("unused")
     private static String getWsName() throws Exception {
         if (wsName == null) {
             long suffix = System.currentTimeMillis();
-            wsName = "test_KBaseRelationEngine_" + suffix;
+            wsName = "test_KBaseSearchEngine_" + suffix;
             wsClient.createWorkspace(new CreateWorkspaceParams().withWorkspace(wsName));
         }
         return wsName;
@@ -87,7 +87,7 @@ public class KBaseRelationEngineServerTest {
     @SuppressWarnings("unused")
     private static RpcContext getContext() {
         return new RpcContext().withProvenance(Arrays.asList(new ProvenanceAction()
-            .withService("KBaseRelationEngine").withMethod("please_never_use_it_in_production")
+            .withService("KBaseSearchEngine").withMethod("please_never_use_it_in_production")
             .withMethodParams(new ArrayList<UObject>())));
     }
     

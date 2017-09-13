@@ -1,4 +1,4 @@
-package kbaserelationengine;
+package kbasesearchengine;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.File;
@@ -14,12 +14,12 @@ import us.kbase.common.service.RpcContext;
 import us.kbase.common.service.UnauthorizedException;
 
 /**
- * <p>Original spec-file module name: KBaseRelationEngine</p>
+ * <p>Original spec-file module name: KBaseSearchEngine</p>
  * <pre>
  * A KBase module: KBaseRelationEngine
  * </pre>
  */
-public class KBaseRelationEngineClient {
+public class KBaseSearchEngineClient {
     private JsonClientCaller caller;
     private String serviceVersion = null;
 
@@ -27,7 +27,7 @@ public class KBaseRelationEngineClient {
     /** Constructs a client with a custom URL and no user credentials.
      * @param url the URL of the service.
      */
-    public KBaseRelationEngineClient(URL url) {
+    public KBaseSearchEngineClient(URL url) {
         caller = new JsonClientCaller(url);
     }
     /** Constructs a client with a custom URL.
@@ -37,7 +37,7 @@ public class KBaseRelationEngineClient {
      * @throws IOException if an IOException occurs when checking the token's
      * validity.
      */
-    public KBaseRelationEngineClient(URL url, AuthToken token) throws UnauthorizedException, IOException {
+    public KBaseSearchEngineClient(URL url, AuthToken token) throws UnauthorizedException, IOException {
         caller = new JsonClientCaller(url, token);
     }
 
@@ -49,7 +49,7 @@ public class KBaseRelationEngineClient {
      * @throws IOException if an IOException occurs when checking the user's
      * credentials.
      */
-    public KBaseRelationEngineClient(URL url, String user, String password) throws UnauthorizedException, IOException {
+    public KBaseSearchEngineClient(URL url, String user, String password) throws UnauthorizedException, IOException {
         caller = new JsonClientCaller(url, user, password);
     }
 
@@ -63,7 +63,7 @@ public class KBaseRelationEngineClient {
      * @throws IOException if an IOException occurs when checking the user's
      * credentials.
      */
-    public KBaseRelationEngineClient(URL url, String user, String password, URL auth) throws UnauthorizedException, IOException {
+    public KBaseSearchEngineClient(URL url, String user, String password, URL auth) throws UnauthorizedException, IOException {
         caller = new JsonClientCaller(url, user, password, auth);
     }
 
@@ -167,8 +167,8 @@ public class KBaseRelationEngineClient {
      * <pre>
      * Search for number of objects of each type matching constrains.
      * </pre>
-     * @param   params   instance of type {@link kbaserelationengine.SearchTypesInput SearchTypesInput}
-     * @return   instance of type {@link kbaserelationengine.SearchTypesOutput SearchTypesOutput}
+     * @param   params   instance of type {@link kbasesearchengine.SearchTypesInput SearchTypesInput}
+     * @return   instance of type {@link kbasesearchengine.SearchTypesOutput SearchTypesOutput}
      * @throws IOException if an IO exception occurs
      * @throws JsonClientException if a JSON RPC exception occurs
      */
@@ -176,7 +176,7 @@ public class KBaseRelationEngineClient {
         List<Object> args = new ArrayList<Object>();
         args.add(params);
         TypeReference<List<SearchTypesOutput>> retType = new TypeReference<List<SearchTypesOutput>>() {};
-        List<SearchTypesOutput> res = caller.jsonrpcCall("KBaseRelationEngine.search_types", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        List<SearchTypesOutput> res = caller.jsonrpcCall("KBaseSearchEngine.search_types", args, retType, true, true, jsonRpcContext, this.serviceVersion);
         return res.get(0);
     }
 
@@ -185,8 +185,8 @@ public class KBaseRelationEngineClient {
      * <pre>
      * Search for objects of particular type matching constrains.
      * </pre>
-     * @param   params   instance of type {@link kbaserelationengine.SearchObjectsInput SearchObjectsInput}
-     * @return   instance of type {@link kbaserelationengine.SearchObjectsOutput SearchObjectsOutput}
+     * @param   params   instance of type {@link kbasesearchengine.SearchObjectsInput SearchObjectsInput}
+     * @return   instance of type {@link kbasesearchengine.SearchObjectsOutput SearchObjectsOutput}
      * @throws IOException if an IO exception occurs
      * @throws JsonClientException if a JSON RPC exception occurs
      */
@@ -194,7 +194,7 @@ public class KBaseRelationEngineClient {
         List<Object> args = new ArrayList<Object>();
         args.add(params);
         TypeReference<List<SearchObjectsOutput>> retType = new TypeReference<List<SearchObjectsOutput>>() {};
-        List<SearchObjectsOutput> res = caller.jsonrpcCall("KBaseRelationEngine.search_objects", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        List<SearchObjectsOutput> res = caller.jsonrpcCall("KBaseSearchEngine.search_objects", args, retType, true, true, jsonRpcContext, this.serviceVersion);
         return res.get(0);
     }
 
@@ -203,8 +203,8 @@ public class KBaseRelationEngineClient {
      * <pre>
      * Retrieve objects by their GUIDs.
      * </pre>
-     * @param   params   instance of type {@link kbaserelationengine.GetObjectsInput GetObjectsInput}
-     * @return   instance of type {@link kbaserelationengine.GetObjectsOutput GetObjectsOutput}
+     * @param   params   instance of type {@link kbasesearchengine.GetObjectsInput GetObjectsInput}
+     * @return   instance of type {@link kbasesearchengine.GetObjectsOutput GetObjectsOutput}
      * @throws IOException if an IO exception occurs
      * @throws JsonClientException if a JSON RPC exception occurs
      */
@@ -212,7 +212,7 @@ public class KBaseRelationEngineClient {
         List<Object> args = new ArrayList<Object>();
         args.add(params);
         TypeReference<List<GetObjectsOutput>> retType = new TypeReference<List<GetObjectsOutput>>() {};
-        List<GetObjectsOutput> res = caller.jsonrpcCall("KBaseRelationEngine.get_objects", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        List<GetObjectsOutput> res = caller.jsonrpcCall("KBaseSearchEngine.get_objects", args, retType, true, true, jsonRpcContext, this.serviceVersion);
         return res.get(0);
     }
 
@@ -221,8 +221,8 @@ public class KBaseRelationEngineClient {
      * <pre>
      * List registered searchable object types.
      * </pre>
-     * @param   params   instance of type {@link kbaserelationengine.ListTypesInput ListTypesInput}
-     * @return   instance of type {@link kbaserelationengine.ListTypesOutput ListTypesOutput}
+     * @param   params   instance of type {@link kbasesearchengine.ListTypesInput ListTypesInput}
+     * @return   instance of type {@link kbasesearchengine.ListTypesOutput ListTypesOutput}
      * @throws IOException if an IO exception occurs
      * @throws JsonClientException if a JSON RPC exception occurs
      */
@@ -230,14 +230,14 @@ public class KBaseRelationEngineClient {
         List<Object> args = new ArrayList<Object>();
         args.add(params);
         TypeReference<List<ListTypesOutput>> retType = new TypeReference<List<ListTypesOutput>>() {};
-        List<ListTypesOutput> res = caller.jsonrpcCall("KBaseRelationEngine.list_types", args, retType, true, false, jsonRpcContext, this.serviceVersion);
+        List<ListTypesOutput> res = caller.jsonrpcCall("KBaseSearchEngine.list_types", args, retType, true, false, jsonRpcContext, this.serviceVersion);
         return res.get(0);
     }
 
     public Map<String, Object> status(RpcContext... jsonRpcContext) throws IOException, JsonClientException {
         List<Object> args = new ArrayList<Object>();
         TypeReference<List<Map<String, Object>>> retType = new TypeReference<List<Map<String, Object>>>() {};
-        List<Map<String, Object>> res = caller.jsonrpcCall("KBaseRelationEngine.status", args, retType, true, false, jsonRpcContext, this.serviceVersion);
+        List<Map<String, Object>> res = caller.jsonrpcCall("KBaseSearchEngine.status", args, retType, true, false, jsonRpcContext, this.serviceVersion);
         return res.get(0);
     }
 }
