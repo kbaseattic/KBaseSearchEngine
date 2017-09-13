@@ -10,13 +10,13 @@
   <property name="dist" location="dist"/>
   <property name="classes" location="classes"/>
   <property name="bin" location="bin"/>
-  <property name="jar.file" value="KBaseRelationEngine.jar"/>
+  <property name="jar.file" value="KBaseSearchEngine.jar"/>
   <property name="jars.dir" value="/kb/deployment/lib/jars"/>
-  <property name="war.file" value="KBaseRelationEngine.war"/>
+  <property name="war.file" value="KBaseSearchEngine.war"/>
   <property name="scripts" location="scripts"/>
   <property name="web.xml" location="${scripts}/web.xml"/>
-  <property name="exec.cmd.file" value="run_KBaseRelationEngine_async_job.sh"/>
-  <property name="exec.cmd.file2" value="run_KBaseRelationEngine_perform.sh"/>
+  <property name="exec.cmd.file" value="run_KBaseSearchEngine_async_job.sh"/>
+  <property name="exec.cmd.file2" value="run_KBaseSearchEngine_perform.sh"/>
   <property name="exec.cmd.search_tools" value="search_tools.sh"/>
   <property name="startup.cmd.file" value="start_server.sh"/>
 
@@ -124,15 +124,15 @@ commit=${git.commit}</echo>
     <property name="jar.absolute.path" location="${dist}/${jar.file}"/>
     <pathconvert targetos="unix" property="lib.classpath" refid="compile.classpath"/>
     <echo file="${bin}/${exec.cmd.file}">#!/bin/bash
-java -cp ${jar.absolute.path}:${lib.classpath} kbaserelationengine.KBaseRelationEngineServer $1 $2 $3
+java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.KBaseSearchEngineServer $1 $2 $3
     </echo>
     <chmod file="${bin}/${exec.cmd.file}" perm="a+x"/>
     <echo file="${bin}/${exec.cmd.file2}">#!/bin/bash
-java -Xmx2g -cp ${jar.absolute.path}:${lib.classpath} kbaserelationengine.main.test.PerformanceTester
+java -Xmx2g -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.main.test.PerformanceTester
     </echo>
     <chmod file="${bin}/${exec.cmd.file2}" perm="a+x"/>
     <echo file="${bin}/${exec.cmd.search_tools}">#!/bin/sh
-java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.RESKETools $@
+java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchTools $@
     </echo>
     <chmod file="${bin}/${exec.cmd.search_tools}" perm="a+x"/>
   </target>
