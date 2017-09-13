@@ -35,9 +35,9 @@ import kbasesearchengine.search.AccessFilter;
 import kbasesearchengine.search.MatchFilter;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
-import kbasesearchengine.system.DefaultSystemStorage;
+import kbasesearchengine.system.TypeFileStorage;
 import kbasesearchengine.system.StorageObjectType;
-import kbasesearchengine.system.SystemStorage;
+import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.system.TypeMappingParser;
 import kbasesearchengine.system.YAMLTypeMappingParser;
 import kbasesearchengine.test.common.TestCommon;
@@ -142,7 +142,7 @@ public class MainObjectProcessorTest {
         };
         final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
                 "yaml", new YAMLTypeMappingParser());
-        final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers, logger);
+        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
         mop = new MainObjectProcessor(wsUrl, wsadmintoken, db,
                 esHostPort, null, null, esIndexPrefix, 
                 ss, tempDir.resolve("MainObjectProcessor").toFile(), false,

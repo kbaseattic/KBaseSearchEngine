@@ -60,7 +60,7 @@ import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.StorageObjectType;
-import kbasesearchengine.system.SystemStorage;
+import kbasesearchengine.system.TypeStorage;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
@@ -76,7 +76,7 @@ public class MainObjectProcessor {
     private AccessGroupProvider accessGroupProvider;
     private ObjectStatusEventQueue queue;
     private Thread mainRunner;
-    private final SystemStorage systemStorage;
+    private final TypeStorage typeStorage;
     private IndexingStorage indexingStorage;
     private LineLogger logger;
     private Set<String> admins;
@@ -89,7 +89,7 @@ public class MainObjectProcessor {
             final String esUser,
             final String esPassword,
             final String esIndexPrefix,
-            final SystemStorage systemStorage,
+            final TypeStorage typeStorage,
             final File tempDir,
             final boolean startLifecycleRunner,
             final LineLogger logger,
@@ -115,7 +115,7 @@ public class MainObjectProcessor {
         accessGroupProvider = new AccessGroupCache(new WorkspaceAccessGroupProvider(wsClient),
                 30, 50000 * 1000);
         queue = new ObjectStatusEventQueue(storage);
-        this.systemStorage = systemStorage;
+        this.typeStorage = typeStorage;
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
                 getTempSubDir("esbulk"));
         if (esUser != null) {
@@ -133,16 +133,23 @@ public class MainObjectProcessor {
     /**
      * For tests only !!!
      */
-    public MainObjectProcessor(URL wsURL, AuthToken kbaseIndexerToken, 
-            HttpHost esHost, String esUser, String esPassword,
-            String esIndexPrefix, SystemStorage systemStorage, File tempDir, LineLogger logger) 
-                    throws IOException, ObjectParseException, UnauthorizedException {
+    public MainObjectProcessor(
+            final URL wsURL,
+            final AuthToken kbaseIndexerToken, 
+            final HttpHost esHost,
+            final String esUser,
+            final String esPassword,
+            final String esIndexPrefix,
+            final TypeStorage typeStorage,
+            final File tempDir,
+            final LineLogger logger) 
+            throws IOException, ObjectParseException, UnauthorizedException {
         this.rootTempDir = tempDir;
         this.logger = logger;
         this.admins = Collections.emptySet();
         wsClient = new WorkspaceClient(wsURL, kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true);
-        this.systemStorage = systemStorage;
+        this.typeStorage = typeStorage;
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
                 getTempSubDir("esbulk"));
         if (esUser != null) {
@@ -340,7 +347,7 @@ public class MainObjectProcessor {
 
     public boolean isStorageTypeSupported(final StorageObjectType storageObjectType)
             throws IOException {
-        return !systemStorage.listObjectTypesByStorageObjectType(storageObjectType).isEmpty();
+        return !typeStorage.listObjectTypesByStorageObjectType(storageObjectType).isEmpty();
     }
     
     private void indexObject(
@@ -366,15 +373,14 @@ public class MainObjectProcessor {
                 logger.timeStat(guid, loadTime, 0, 0);
             }
             List<ObjectTypeParsingRules> parsingRules = 
-                    systemStorage.listObjectTypesByStorageObjectType(storageObjectType);
+                    typeStorage.listObjectTypesByStorageObjectType(storageObjectType);
             for (ObjectTypeParsingRules rule : parsingRules) {
                 long t2 = System.currentTimeMillis();
                 String parentJson = null;
                 try (JsonParser jts = obj.getData().getPlacedStream()) {
                     parentJson = ObjectParser.extractParentFragment(rule, jts);
                 }
-                Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, guid, rule, 
-                        systemStorage);
+                Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, guid, rule);
                 Map<GUID, ParsedObject> guidToObj = new LinkedHashMap<>();
                 for (GUID subGuid : guidToJson.keySet()) {
                     String json = guidToJson.get(subGuid);
@@ -688,7 +694,7 @@ public class MainObjectProcessor {
     
     public Map<String, TypeDescriptor> listTypes(String uniqueType) throws Exception {
         Map<String, TypeDescriptor> ret = new LinkedHashMap<>();
-        for (ObjectTypeParsingRules otpr : systemStorage.listObjectTypes()) {
+        for (ObjectTypeParsingRules otpr : typeStorage.listObjectTypes()) {
             String typeName = otpr.getGlobalObjectType();
             if (uniqueType != null && !uniqueType.equals(typeName)) {
                 continue;
@@ -829,7 +835,7 @@ public class MainObjectProcessor {
         @Override
         public ObjectTypeParsingRules getTypeDescriptor(String type) {
             try {
-                return systemStorage.getObjectType(type);
+                return typeStorage.getObjectType(type);
             } catch (IOException ex) {
                 throw new IllegalStateException(ex);
             }

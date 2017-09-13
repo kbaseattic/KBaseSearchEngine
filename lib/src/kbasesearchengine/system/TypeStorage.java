@@ -3,7 +3,7 @@ package kbasesearchengine.system;
 import java.io.IOException;
 import java.util.List;
 
-public interface SystemStorage {
+public interface TypeStorage {
     
     ObjectTypeParsingRules getObjectType(String type) throws IOException;
 
