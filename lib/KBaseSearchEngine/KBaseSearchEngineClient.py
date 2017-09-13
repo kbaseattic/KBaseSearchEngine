@@ -17,7 +17,7 @@ except:
     from baseclient import BaseClient as _BaseClient  # @Reimport
 
 
-class KBaseRelationEngine(object):
+class KBaseSearchEngine(object):
 
     def __init__(
             self, url=None, timeout=30 * 60, user_id=None,
@@ -88,7 +88,7 @@ class KBaseRelationEngine(object):
            mapping from String to Long, parameter "search_time" of Long
         """
         return self._client.call_method(
-            'KBaseRelationEngine.search_types',
+            'KBaseSearchEngine.search_types',
             [params], self._service_ver, context)
 
     def search_objects(self, params, context=None):
@@ -206,7 +206,7 @@ class KBaseRelationEngine(object):
            String, parameter "total" of Long, parameter "search_time" of Long
         """
         return self._client.call_method(
-            'KBaseRelationEngine.search_objects',
+            'KBaseSearchEngine.search_objects',
             [params], self._service_ver, context)
 
     def get_objects(self, params, context=None):
@@ -254,7 +254,7 @@ class KBaseRelationEngine(object):
            String, parameter "search_time" of Long
         """
         return self._client.call_method(
-            'KBaseRelationEngine.get_objects',
+            'KBaseSearchEngine.get_objects',
             [params], self._service_ver, context)
 
     def list_types(self, params, context=None):
@@ -283,9 +283,9 @@ class KBaseRelationEngine(object):
            = true.), parameter "link_key" of String
         """
         return self._client.call_method(
-            'KBaseRelationEngine.list_types',
+            'KBaseSearchEngine.list_types',
             [params], self._service_ver, context)
 
     def status(self, context=None):
-        return self._client.call_method('KBaseRelationEngine.status',
+        return self._client.call_method('KBaseSearchEngine.status',
                                         [], self._service_ver, context)

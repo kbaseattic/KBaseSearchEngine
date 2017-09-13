@@ -21,7 +21,7 @@ import com.beust.jcommander.ParameterException;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
-import kbasesearchengine.tools.RESKEToolsConfig.RESKEToolsConfigException;
+import kbasesearchengine.tools.SearchToolsConfig.RESKEToolsConfigException;
 import kbasesearchengine.tools.WorkspaceEventGenerator.EventGeneratorException;
 
 /** Tools for working with RESKE. Note that this CLI is designed against the RESKE prototype
@@ -30,7 +30,7 @@ import kbasesearchengine.tools.WorkspaceEventGenerator.EventGeneratorException;
  * @author gaprice@lbl.gov
  *
  */
-public class RESKETools {
+public class SearchTools {
     
     private static final String NAME = "reske_tools";
 
@@ -38,7 +38,7 @@ public class RESKETools {
      * @param args the program arguments.
      */
     public static void main(String[] args) {
-        System.exit(new RESKETools(args, System.out, System.err).execute());
+        System.exit(new SearchTools(args, System.out, System.err).execute());
     }
     
     private final String[] args;
@@ -51,7 +51,7 @@ public class RESKETools {
      * @param out the out printstream.
      * @param err the error printstream.
      */
-    public RESKETools(
+    public SearchTools(
             final String[] args,
             final PrintStream out,
             final PrintStream err) {
@@ -87,7 +87,7 @@ public class RESKETools {
             usage(jc);
             return 0;
         }
-        final RESKEToolsConfig cfg;
+        final SearchToolsConfig cfg;
         try {
             cfg = getConfig(a.configPath);
         } catch (NoSuchFileException e) {
@@ -132,12 +132,12 @@ public class RESKETools {
         if (args == null || args.isEmpty()) {
             return config;
         } else {
-            return RESKEToolsConfig.toWorkspaceIdentifiers(args);
+            return SearchToolsConfig.toWorkspaceIdentifiers(args);
         }
     }
 
     private int runEventGenerator(
-            final RESKEToolsConfig cfg,
+            final SearchToolsConfig cfg,
             final PrintStream logtarget,
             final String ref,
             final boolean verbose,
@@ -157,12 +157,12 @@ public class RESKETools {
         return 0;
     }
 
-    private RESKEToolsConfig getConfig(final String configPath)
+    private SearchToolsConfig getConfig(final String configPath)
             throws IOException, RESKEToolsConfigException {
         final Path path = Paths.get(configPath);
         final Properties p = new Properties();
         p.load(Files.newInputStream(path));
-        return RESKEToolsConfig.from(p);
+        return SearchToolsConfig.from(p);
     }
 
     private void usage(final JCommander jc) {

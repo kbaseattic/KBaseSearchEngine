@@ -86,7 +86,7 @@ public class WorkspaceEventGenerator {
     private List<Pattern> wsTypes;
     
     private WorkspaceEventGenerator(
-            final RESKEToolsConfig cfg,
+            final SearchToolsConfig cfg,
             final int ws,
             final int obj,
             final int ver,
@@ -368,7 +368,7 @@ public class WorkspaceEventGenerator {
 
     public static class Builder {
         
-        private final RESKEToolsConfig cfg;
+        private final SearchToolsConfig cfg;
         private int ws = -1;
         private int obj = -1;
         private int ver = -1;
@@ -376,7 +376,7 @@ public class WorkspaceEventGenerator {
         private Collection<WorkspaceIdentifier> wsBlackList = new LinkedList<>();
         private Collection<String> wsTypes = new LinkedList<>();
         
-        public Builder(final RESKEToolsConfig cfg, final PrintStream logtarget) {
+        public Builder(final SearchToolsConfig cfg, final PrintStream logtarget) {
             nonNull(cfg, "cfg");
             nonNull(logtarget, "logtarget");
             this.cfg = cfg;

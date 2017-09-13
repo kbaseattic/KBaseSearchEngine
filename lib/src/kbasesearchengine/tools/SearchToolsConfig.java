@@ -12,7 +12,7 @@ import java.util.Properties;
 
 import com.google.common.base.Optional;
 
-public class RESKEToolsConfig {
+public class SearchToolsConfig {
     
     private static final String WS_MONGO_HOST = "workspace-mongo-host";
     private static final String WS_MONGO_DB = "workspace-mongo-db";
@@ -39,7 +39,7 @@ public class RESKEToolsConfig {
     private final List<String> workspaceTypes;
 
     
-    private RESKEToolsConfig(
+    private SearchToolsConfig(
             final String reskeMongoHost,
             final String reskeMongoDB,
             final String reskeMongoUser,
@@ -121,7 +121,7 @@ public class RESKEToolsConfig {
         return workspaceTypes;
     }
 
-    public static RESKEToolsConfig from(final Properties p) throws RESKEToolsConfigException {
+    public static SearchToolsConfig from(final Properties p) throws RESKEToolsConfigException {
         final Map<String, String> cfg = new HashMap<>();
         for (final Entry<Object, Object> e: p.entrySet()) {
             cfg.put((String) e.getKey(), (String) e.getValue());
@@ -129,9 +129,9 @@ public class RESKEToolsConfig {
         return from(cfg);
     }
 
-    public static RESKEToolsConfig from(final Map<String, String> cfg)
+    public static SearchToolsConfig from(final Map<String, String> cfg)
             throws RESKEToolsConfigException {
-        return new RESKEToolsConfig(
+        return new SearchToolsConfig(
                 getString(RESKE_MONGO_HOST, cfg, true),
                 getString(RESKE_MONGO_DB, cfg, true),
                 getString(RESKE_MONGO_USER, cfg),
