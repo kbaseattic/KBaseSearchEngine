@@ -191,7 +191,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers, logger);
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, db,
                 esHostPort, esUser, esPassword, esIndexPrefix, 
-                ss, tempDir, true, true, logger, admins);
+                ss, tempDir, true, logger, admins);
         //END_CONSTRUCTOR
     }
 

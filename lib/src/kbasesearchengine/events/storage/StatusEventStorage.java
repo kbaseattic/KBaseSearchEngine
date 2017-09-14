@@ -3,7 +3,6 @@ package kbasesearchengine.events.storage;
 import java.io.IOException;
 import java.util.List;
 
-import kbasesearchengine.events.AccessGroupStatus;
 import kbasesearchengine.events.ObjectStatusEvent;
 
 public interface StatusEventStorage {
@@ -29,8 +28,5 @@ public interface StatusEventStorage {
 	public boolean nextPage(ObjectStatusCursor cursor, int nRemovedItems) throws IOException;
 	
 	public List<ObjectStatusEvent> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds) throws IOException;
-
-	
-	public List<AccessGroupStatus> findAccessGroups(String storageCode) throws IOException;
 		
 }

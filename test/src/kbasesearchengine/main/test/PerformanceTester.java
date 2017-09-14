@@ -36,7 +36,6 @@ import kbasesearchengine.system.DefaultSystemStorage;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.SystemStorage;
 import kbasesearchengine.system.TypeMappingParser;
-import kbasesearchengine.system.WsUtil;
 import kbasesearchengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;

@@ -145,7 +145,7 @@ public class MainObjectProcessorTest {
         final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers, logger);
         mop = new MainObjectProcessor(wsUrl, wsadmintoken, db,
                 esHostPort, null, null, esIndexPrefix, 
-                ss, tempDir.resolve("MainObjectProcessor").toFile(), false, false,
+                ss, tempDir.resolve("MainObjectProcessor").toFile(), false,
                 logger, null);
         loadTypes(wsUrl, wsadmintoken);
         wsid = (int) loadTestData(wsUrl, userToken);

@@ -1,4 +1,4 @@
-package kbasesearchengine.system;
+package kbasesearchengine.main.test;
 
 import java.util.Map;
 

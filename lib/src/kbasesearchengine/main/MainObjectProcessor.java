@@ -40,19 +40,12 @@ import kbasesearchengine.TypeDescriptor;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.AccessGroupCache;
 import kbasesearchengine.events.AccessGroupProvider;
-import kbasesearchengine.events.AccessGroupStatus;
 import kbasesearchengine.events.ObjectStatusEvent;
 import kbasesearchengine.events.ObjectStatusEventType;
-import kbasesearchengine.events.StatusEventListener;
 import kbasesearchengine.events.WorkspaceAccessGroupProvider;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
-import kbasesearchengine.events.reconstructor.AccessType;
-import kbasesearchengine.events.reconstructor.PresenceType;
-import kbasesearchengine.events.reconstructor.Util;
-import kbasesearchengine.events.reconstructor.WSStatusEventReconstructor;
-import kbasesearchengine.events.reconstructor.WSStatusEventReconstructorImpl;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.parse.KeywordParser;
 import kbasesearchengine.parse.ObjectParseException;
@@ -79,7 +72,6 @@ import workspace.WorkspaceClient;
 
 public class MainObjectProcessor {
     private File rootTempDir;
-    private WSStatusEventReconstructor wsEventReconstructor;
     private WorkspaceClient wsClient;
     private AccessGroupProvider accessGroupProvider;
     private ObjectStatusEventQueue queue;
@@ -88,8 +80,6 @@ public class MainObjectProcessor {
     private IndexingStorage indexingStorage;
     private LineLogger logger;
     private Set<String> admins;
-    //TODO RECON remove when reconstructor is replaced by event feed
-    private final boolean runWorkspaceEventReconstructor;
     
     public MainObjectProcessor(
             final URL wsURL,
@@ -102,10 +92,9 @@ public class MainObjectProcessor {
             final SystemStorage systemStorage,
             final File tempDir,
             final boolean startLifecycleRunner,
-            final boolean runWorkspaceEventReconstructor,
             final LineLogger logger,
             final Set<String> admins)
-            throws IOException, ObjectParseException {
+            throws IOException, ObjectParseException, UnauthorizedException {
         /* Some notes for the future - I'd probably change this to take an StatusEventStorage
          * interface rather than constructing it itself. This allows easier swapping out of
          * components and easier testing via component mocks.
@@ -115,46 +104,16 @@ public class MainObjectProcessor {
          * Currently it looks like only the WS is supported and adding other sources might be a 
          * bit tricky.
          */
-        this.runWorkspaceEventReconstructor = runWorkspaceEventReconstructor;
         this.logger = logger;
         this.rootTempDir = tempDir;
         this.admins = admins == null ? Collections.emptySet() : admins;
         
         MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(db);
-        WSStatusEventReconstructorImpl reconstructor = new WSStatusEventReconstructorImpl(
-                wsURL, kbaseIndexerToken, storage);
-        wsClient = reconstructor.wsClient();
+        wsClient = new WorkspaceClient(wsURL, kbaseIndexerToken);
+        wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
         // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
         accessGroupProvider = new AccessGroupCache(new WorkspaceAccessGroupProvider(wsClient),
                 30, 50000 * 1000);
-        wsEventReconstructor = reconstructor;
-        reconstructor.registerListener(storage);
-        if (logger != null) {
-            reconstructor.registerListener(new StatusEventListener() {
-                @Override
-                public void objectStatusChanged(List<ObjectStatusEvent> events) 
-                        throws IOException {
-                    for (ObjectStatusEvent obj : events){
-                        logger.logInfo("[Reconstructor] objectStatusChanged: " + obj);
-                    }
-                }
-                @Override
-                public void groupStatusChanged(List<AccessGroupStatus> newStatuses)
-                        throws IOException {
-                    for (AccessGroupStatus obj : newStatuses){
-                        logger.logInfo("[Reconstructor] groupStatusChanged: " + obj);
-                    }
-                }
-                
-                @Override
-                public void groupPermissionsChanged(List<AccessGroupStatus> newStatuses)
-                        throws IOException {
-                    /*for (AccessGroupStatus obj : newStatuses){
-                        logger.logInfo("[Reconstructor] groupPermissionsChanged: " + obj);
-                    }*/
-                }
-            });
-        }
         queue = new ObjectStatusEventQueue(storage);
         this.systemStorage = systemStorage;
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
@@ -178,12 +137,11 @@ public class MainObjectProcessor {
             HttpHost esHost, String esUser, String esPassword,
             String esIndexPrefix, SystemStorage systemStorage, File tempDir, LineLogger logger) 
                     throws IOException, ObjectParseException, UnauthorizedException {
-        this.runWorkspaceEventReconstructor = true;
         this.rootTempDir = tempDir;
         this.logger = logger;
         this.admins = Collections.emptySet();
         wsClient = new WorkspaceClient(wsURL, kbaseIndexerToken);
-        wsClient.setIsInsecureHttpConnectionAllowed(true);         
+        wsClient.setIsInsecureHttpConnectionAllowed(true);
         this.systemStorage = systemStorage;
         ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
                 getTempSubDir("esbulk"));
@@ -260,16 +218,6 @@ public class MainObjectProcessor {
     
     public void performOneTick(boolean permissions)
             throws IOException, JsonClientException, ObjectParseException {
-        if (runWorkspaceEventReconstructor) {
-            Set<Long> excludeWsIds = Collections.emptySet();
-            //Set<Long> excludeWsIds = new LinkedHashSet<>(Arrays.asList(10455L));
-            wsEventReconstructor.processWorkspaceObjects(15L, PresenceType.PRESENT);
-            wsEventReconstructor.processWorkspaceObjects(AccessType.PRIVATE, PresenceType.PRESENT, 
-                    excludeWsIds);
-            if (permissions) {
-                wsEventReconstructor.processWorkspacePermissions(AccessType.ALL, null);
-            }
-        }
         // Seems like this shouldn't be source specific. It should handle all event sources.
         ObjectStatusEventIterator iter = queue.iterator("WS");
         while (iter.hasNext()) {
@@ -815,7 +763,8 @@ public class MainObjectProcessor {
                             .getInfos().stream().map(info -> new ObjectStatusEvent("", "WS",
                                     (int)(long)info.getE7(), "" +info.getE1(), 
                                     (int)(long)info.getE5(), null, null,
-                                    Util.DATE_PARSER.parseDateTime(info.getE4()).getMillis(),
+                                    WorkspaceEventHandler.DATE_PARSER.parseDateTime(
+                                            info.getE4()).getMillis(),
                                     new StorageObjectType("WS", info.getE3().split("-")[0],
                                             Integer.parseInt(
                                                     info.getE3().split("-")[1].split("\\.")[0])),
