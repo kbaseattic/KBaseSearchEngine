@@ -5,11 +5,14 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -44,7 +47,7 @@ import workspace.WorkspaceIdentity;
  */
 public class WorkspaceEventHandler implements EventHandler {
     
-    public final static DateTimeFormatter DATE_PARSER =
+    private final static DateTimeFormatter DATE_PARSER =
             new DateTimeFormatterBuilder()
                 .append(DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss"))
                 .appendOptional(DateTimeFormat.forPattern(".SSS").getParser())
@@ -144,6 +147,66 @@ public class WorkspaceEventHandler implements EventHandler {
         return b.build();
     }
     
+    @Override
+    public Map<String, String> buildReferencePaths(
+            final List<GUID> refpath,
+            final Set<String> refs) {
+        final String refPrefix = buildRefPrefix(refpath);
+        return refs.stream().collect(Collectors.toMap(r -> r, r -> refPrefix + r));
+    }
+    
+    @Override
+    public Set<ResolvedReference> resolveReferences(
+            final List<GUID> refpath,
+            final Set<String> refs) {
+        //TODO CODE may need to split into batches 
+        final String refPrefix = buildRefPrefix(refpath);
+        
+        final List<String> orderedRefs = new ArrayList<>(refs);
+        
+        List<ObjectSpecification> getInfoInput = orderedRefs.stream().map(
+                ref -> new ObjectSpecification().withRef(refPrefix + ref)).collect(
+                        Collectors.toList());
+        final Map<String, Object> command = new HashMap<>();
+        command.put("command", "getObjectInfo");
+        command.put("params", new GetObjectInfo3Params().withObjects(getInfoInput));
+        
+        GetObjectInfo3Results res;
+        try {
+            res = ws.administer(new UObject(command)).asClassInstance(GetObjectInfo3Results.class);
+        } catch (JsonClientException | IOException e) {
+            //TODO EXP some of these exceptions should be retries, some should shut down the event loop until the issue can be fixed (e.g. bad token, ws down), some should ignore the event (ws deleted)
+            throw new IllegalStateException("Error contacting workspace: " + e.getMessage(),
+                    e);
+        }
+        final Set<ResolvedReference> ret = new HashSet<>();
+        for (int i = 0; i < orderedRefs.size(); i++) {
+            ret.add(createResolvedReference(orderedRefs.get(i), res.getInfos().get(i)));
+        }
+        return ret;
+    }
+
+    private String buildRefPrefix(final List<GUID> refpath) {
+        return refpath == null || refpath.isEmpty() ? "" :
+            WorkspaceEventHandler.toWSRefPath(refpath) + ";";
+    }
+    
+    private ResolvedReference createResolvedReference(
+            final String ref,
+            final Tuple11<Long, String, String, String, Long, String, Long, String, String,
+                    Long, Map<String, String>> obj) {
+        return new ResolvedReference(
+                ref,
+                obj.getE7() + "/" + obj.getE1() + "/" + obj.getE5(),
+                new GUID(STORAGE_CODE, Math.toIntExact(obj.getE7()), obj.getE1() + "",
+                        Math.toIntExact(obj.getE5()), null, null),
+                new StorageObjectType(STORAGE_CODE, obj.getE3().split("-")[0],
+                      Integer.parseInt(
+                              obj.getE3().split("-")[1].split("\\.")[0])),
+                DATE_PARSER.parseDateTime(
+                      obj.getE4()).getMillis());
+    }
+
     @Override
     public Iterable<ObjectStatusEvent> expand(final ObjectStatusEvent event) {
         if (!STORAGE_CODE.equals(event.getStorageCode())) {
@@ -430,7 +493,7 @@ public class WorkspaceEventHandler implements EventHandler {
                 origEvent.isGlobalAccessed());
     }
     
-    public static String toWSRefPath(final List<GUID> objectRefPath) {
+    private static String toWSRefPath(final List<GUID> objectRefPath) {
         final List<String> refpath = new LinkedList<>();
         for (final GUID g: objectRefPath) {
             if (!g.getStorageCode().equals("WS")) {

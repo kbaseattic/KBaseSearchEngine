@@ -2,6 +2,8 @@ package kbasesearchengine.events.handler;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.ObjectStatusEvent;
@@ -24,7 +26,6 @@ public interface EventHandler {
      */
     Iterable<ObjectStatusEvent> expand(ObjectStatusEvent event);
     
-    
     /** The equivalent of {@link #load(List, Path) load(Arrays.asList(guid), tempfile)}
      * @param guid the globally unique ID of the source object to load.
      * @param file a file in which to store the object's data, which is expected to exist.
@@ -41,4 +42,19 @@ public interface EventHandler {
      * @return the object's source data.
      */
     SourceData load(List<GUID> guids, Path file);
+
+    /** Build a set of reference paths from a path to the current object and the references found
+     * in the current object.
+     * @param refpath a reference path to the current object.
+     * @param refs a set of references in the current object.
+     * @return a mapping of the references to their full path.
+     */
+    Map<String, String> buildReferencePaths(List<GUID> refpath, Set<String> refs);
+
+    /** Resolve a set of references in an object.
+     * @param refpath the reference path to the current object.
+     * @param refs the references in the current object to process.
+     * @return a set of resolved references.
+     */
+    Set<ResolvedReference> resolveReferences(List<GUID> refpath, Set<String> refs);
 }
