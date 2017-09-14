@@ -15,6 +15,12 @@ import kbasesearchengine.events.ObjectStatusEvent;
  *
  */
 public interface EventHandler {
+    
+    /** Get the storage code for the storage implementation with which this event handler is
+     * associated.
+     * @return the storage code.
+     */
+    String getStorageCode();
 
     /** Expands an event into multiple sub events. Returns the input event in a single item
      * Iterable if the event requires no expansion.

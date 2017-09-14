@@ -77,6 +77,7 @@ public class MainObjectProcessor {
     private IndexingStorage indexingStorage;
     private LineLogger logger;
     private Set<String> admins;
+    private Map<String, EventHandler> eventHandlers = new HashMap<>();
     
     public MainObjectProcessor(
             final URL wsURL,
@@ -108,6 +109,9 @@ public class MainObjectProcessor {
         MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(db);
         wsClient = new WorkspaceClient(wsURL, kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
+        
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(wsClient);
+        eventHandlers.put(weh.getStorageCode(), weh);
         // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
         accessGroupProvider = new AccessGroupCache(new WorkspaceAccessGroupProvider(wsClient),
                 30, 50000 * 1000);
@@ -285,12 +289,12 @@ public class MainObjectProcessor {
     }
     
     private EventHandler getEventHandler(final String storageCode) {
-        //TODO HANDLERS should pull from a hashmap of event type -> handler
-        if (!"WS".equals(storageCode)) {
+        if (!eventHandlers.containsKey(storageCode)) {
             //TODO EXP need to make this an error such that the event is not reprocessed
-            throw new IllegalStateException("Only WS events are currently supported");
+            throw new IllegalArgumentException(String.format(
+                    "No event handler for storage code %s is registered", storageCode));
         }
-        return new WorkspaceEventHandler(wsClient);
+        return eventHandlers.get(storageCode);
     }
 
     public void processOneEvent(ObjectStatusEvent ev) 

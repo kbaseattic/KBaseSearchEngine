@@ -81,6 +81,11 @@ public class WorkspaceEventHandler implements EventHandler {
     }
     
     @Override
+    public String getStorageCode() {
+        return STORAGE_CODE;
+    }
+    
+    @Override
     public SourceData load(final GUID guid, final Path file) {
         return load(Arrays.asList(guid), file);
     }
