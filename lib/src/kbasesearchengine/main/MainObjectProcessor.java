@@ -2,7 +2,6 @@ package kbasesearchengine.main;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,10 +16,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.apache.http.HttpHost;
-
 import com.fasterxml.jackson.core.JsonParser;
-import com.mongodb.client.MongoDatabase;
 
 import kbasesearchengine.AccessFilter;
 import kbasesearchengine.GetObjectsInput;
@@ -38,15 +34,12 @@ import kbasesearchengine.SearchTypesOutput;
 import kbasesearchengine.SortingRule;
 import kbasesearchengine.TypeDescriptor;
 import kbasesearchengine.common.GUID;
-import kbasesearchengine.events.AccessGroupCache;
 import kbasesearchengine.events.AccessGroupProvider;
 import kbasesearchengine.events.ObjectStatusEvent;
-import kbasesearchengine.events.WorkspaceAccessGroupProvider;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.events.handler.SourceData;
-import kbasesearchengine.events.handler.WorkspaceEventHandler;
-import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
+import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.parse.KeywordParser;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.parse.ObjectParser;
@@ -54,39 +47,32 @@ import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
 import kbasesearchengine.queue.ObjectStatusEventIterator;
 import kbasesearchengine.queue.ObjectStatusEventQueue;
-import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.FoundHits;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
-import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
-import workspace.WorkspaceClient;
 
 public class MainObjectProcessor {
-    private File rootTempDir;
-    private WorkspaceClient wsClient;
-    private AccessGroupProvider accessGroupProvider;
-    private ObjectStatusEventQueue queue;
+    private final File rootTempDir;
+    private final AccessGroupProvider accessGroupProvider;
+    private final ObjectStatusEventQueue queue;
     private Thread mainRunner;
     private final TypeStorage typeStorage;
-    private IndexingStorage indexingStorage;
-    private LineLogger logger;
-    private Set<String> admins;
-    private Map<String, EventHandler> eventHandlers = new HashMap<>();
+    private final IndexingStorage indexingStorage;
+    private final LineLogger logger;
+    private final Set<String> admins;
+    private final Map<String, EventHandler> eventHandlers = new HashMap<>();
     
     public MainObjectProcessor(
-            final URL wsURL,
-            final AuthToken kbaseIndexerToken,
-            final MongoDatabase db,
-            final HttpHost esHost,
-            final String esUser,
-            final String esPassword,
-            final String esIndexPrefix,
+            final AccessGroupProvider accessGroupProvider,
+            final List<EventHandler> eventHandlers,
+            final StatusEventStorage storage,
+            final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,
             final boolean startLifecycleRunner,
@@ -106,25 +92,12 @@ public class MainObjectProcessor {
         this.rootTempDir = tempDir;
         this.admins = admins == null ? Collections.emptySet() : admins;
         
-        MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(db);
-        wsClient = new WorkspaceClient(wsURL, kbaseIndexerToken);
-        wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
-        
-        final WorkspaceEventHandler weh = new WorkspaceEventHandler(wsClient);
-        eventHandlers.put(weh.getStorageCode(), weh);
+        eventHandlers.stream().forEach(eh -> this.eventHandlers.put(eh.getStorageCode(), eh));
         // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
-        accessGroupProvider = new AccessGroupCache(new WorkspaceAccessGroupProvider(wsClient),
-                30, 50000 * 1000);
+        this.accessGroupProvider = accessGroupProvider;
         queue = new ObjectStatusEventQueue(storage);
         this.typeStorage = typeStorage;
-        ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
-                getTempSubDir("esbulk"));
-        if (esUser != null) {
-            esStorage.setEsUser(esUser);
-            esStorage.setEsPassword(esPassword);
-        }
-        esStorage.setIndexNamePrefix(esIndexPrefix);
-        indexingStorage = esStorage;
+        this.indexingStorage = indexingStorage;
         // We switch this flag off in tests 
         if (startLifecycleRunner) {
             startLifecycleRunner();
@@ -135,33 +108,25 @@ public class MainObjectProcessor {
      * For tests only !!!
      */
     public MainObjectProcessor(
-            final URL wsURL,
-            final AuthToken kbaseIndexerToken, 
-            final HttpHost esHost,
-            final String esUser,
-            final String esPassword,
-            final String esIndexPrefix,
+            final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,
             final LineLogger logger) 
             throws IOException, ObjectParseException, UnauthorizedException {
+        this.accessGroupProvider = null;
+        this.queue = null;
         this.rootTempDir = tempDir;
         this.logger = logger;
         this.admins = Collections.emptySet();
-        wsClient = new WorkspaceClient(wsURL, kbaseIndexerToken);
-        wsClient.setIsInsecureHttpConnectionAllowed(true);
         this.typeStorage = typeStorage;
-        ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHost, 
-                getTempSubDir("esbulk"));
-        if (esUser != null) {
-            esStorage.setEsUser(esUser);
-            esStorage.setEsPassword(esPassword);
-        }
-        esStorage.setIndexNamePrefix(esIndexPrefix);
-        indexingStorage = esStorage;
+        this.indexingStorage = indexingStorage;
     }
     
-    private File getTempSubDir(String subName) {
+    private File getTempSubDir(final String subName) {
+        return getTempSubDir(rootTempDir, subName);
+    }
+    
+    public static File getTempSubDir(final File rootTempDir, String subName) {
         File ret = new File(rootTempDir, subName);
         if (!ret.exists()) {
             ret.mkdirs();
