@@ -14,7 +14,6 @@ import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
-import kbasesearchengine.system.SystemStorage;
 import us.kbase.common.service.UObject;
 
 public class ObjectParser {
@@ -30,8 +29,7 @@ public class ObjectParser {
     public static Map<GUID, String> parseSubObjects(
             final SourceData obj,
             final GUID guid, 
-            final ObjectTypeParsingRules parsingRules,
-            final SystemStorage system)
+            final ObjectTypeParsingRules parsingRules)
             throws IOException, ObjectParseException {
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
@@ -51,7 +49,6 @@ public class ObjectParser {
             }
             GUID subid = prepareGUID(parsingRules, guid, path, idConsumer);
             guidToJson.put(subid, subJson);
-            //storeRelations(parsingRules, system, relationStorage, idConsumer, id);
         }
         return guidToJson;
     }

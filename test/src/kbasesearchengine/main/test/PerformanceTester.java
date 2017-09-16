@@ -32,9 +32,9 @@ import kbasesearchengine.search.AccessFilter;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.MatchFilter;
 import kbasesearchengine.search.MatchValue;
-import kbasesearchengine.system.DefaultSystemStorage;
+import kbasesearchengine.system.TypeFileStorage;
 import kbasesearchengine.system.StorageObjectType;
-import kbasesearchengine.system.SystemStorage;
+import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.system.TypeMappingParser;
 import kbasesearchengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
@@ -145,7 +145,7 @@ public class PerformanceTester {
         };
         final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
                 "yaml", new YAMLTypeMappingParser());
-        final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers, logger);
+        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken,
                 esHostPort, esUser, esPassword, esIndexPrefix, 
                 ss, tempDir, logger);

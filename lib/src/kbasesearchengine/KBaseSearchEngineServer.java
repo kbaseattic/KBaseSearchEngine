@@ -37,8 +37,8 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.MainObjectProcessor;
 import kbasesearchengine.search.ElasticIndexingStorage;
-import kbasesearchengine.system.DefaultSystemStorage;
-import kbasesearchengine.system.SystemStorage;
+import kbasesearchengine.system.TypeFileStorage;
+import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.system.TypeMappingParser;
 import kbasesearchengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
@@ -188,7 +188,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         };
         final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
                 "yaml", new YAMLTypeMappingParser());
-        final SystemStorage ss = new DefaultSystemStorage(typesDir, mappingsDir, parsers, logger);
+        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
         mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, db,
                 esHostPort, esUser, esPassword, esIndexPrefix, 
                 ss, tempDir, true, logger, admins);

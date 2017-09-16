@@ -17,7 +17,7 @@ import org.apache.commons.io.FilenameUtils;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.parse.ObjectParseException;
 
-public class DefaultSystemStorage implements SystemStorage {
+public class TypeFileStorage implements TypeStorage {
     
     //TODO JAVADOC
     //TODO TEST
@@ -130,11 +130,9 @@ public class DefaultSystemStorage implements SystemStorage {
             }
             return true;
         }
-        
-        
     }
     
-    public DefaultSystemStorage(
+    public TypeFileStorage(
             final Path typesDir,
             final Path mappingsDir,
             final Map<String, TypeMappingParser> parsers,

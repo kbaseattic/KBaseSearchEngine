@@ -39,6 +39,13 @@
     <include name="kbase/workspace/WorkspaceClient-0.6.0.jar"/>
     <include name="apache_commons/commons-logging-1.1.1.jar"/>
     <include name="apache_commons/commons-io-2.4.jar"/>
+    <include name="apache_commons/http/httpasyncclient-4.1.2.jar"/>
+    <include name="apache_commons/http/httpclient-4.5.2.jar"/>
+    <include name="apache_commons/http/httpcore-4.4.5.jar"/>
+    <include name="apache_commons/http/httpcore-nio-4.4.5.jar"/>
+    <include name="apache_commons/commons-codec-1.10.jar"/>
+    <include name="elasticsearch/rest-5.3.0.jar"/>
+    <include name="mongo/mongo-java-driver-3.4.2.jar"/>
     <include name="google/guava-18.0.jar"/>
     <include name="jcommander/jcommander-1.48.jar"/>
     <include name="snakeyaml/snakeyaml-1.18.jar"/>
@@ -49,19 +56,8 @@
     <include name="objenesis/objenesis-2.5.1.jar"/>
   </fileset>
 
-  <fileset dir="lib/jars" id="lib2">
-    <include name="apache_commons/http/httpasyncclient-4.1.2.jar"/>
-    <include name="apache_commons/http/httpclient-4.5.2.jar"/>
-    <include name="apache_commons/http/httpcore-4.4.5.jar"/>
-    <include name="apache_commons/http/httpcore-nio-4.4.5.jar"/>
-    <include name="elasticsearch/rest-5.3.0.jar"/>
-    <include name="apache_commons/commons-codec-1.10.jar"/>
-    <include name="mongodb/mongo-java-driver-3.4.2.jar"/>
-  </fileset>
-
   <path id="compile.classpath">
     <fileset refid="lib"/>
-    <fileset refid="lib2"/>
   </path>
 
   <path id="src.path">
@@ -104,7 +100,6 @@ commit=${git.commit}</echo>
     <mkdir dir="${dist}/lib"/>
     <copy todir="${dist}/lib/" flatten="true">
       <fileset refid="lib"/>
-      <fileset refid="lib2"/>
       <resources>
         <file file="${dist}/${jar.file}"/>
       </resources>
