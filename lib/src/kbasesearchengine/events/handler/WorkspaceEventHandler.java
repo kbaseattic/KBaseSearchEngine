@@ -206,10 +206,8 @@ public class WorkspaceEventHandler implements EventHandler {
                 new GUID(STORAGE_CODE, Math.toIntExact(obj.getE7()), obj.getE1() + "",
                         Math.toIntExact(obj.getE5()), null, null),
                 new StorageObjectType(STORAGE_CODE, obj.getE3().split("-")[0],
-                      Integer.parseInt(
-                              obj.getE3().split("-")[1].split("\\.")[0])),
-                DATE_PARSER.parseDateTime(
-                      obj.getE4()).getMillis());
+                      Integer.parseInt(obj.getE3().split("-")[1].split("\\.")[0])),
+                DATE_PARSER.parseDateTime(obj.getE4()).getMillis());
     }
 
     @Override
@@ -491,7 +489,7 @@ public class WorkspaceEventHandler implements EventHandler {
                 Math.toIntExact(obj.getE5()), // vers are always ints
                 null, // no rename
                 null, // not a datapalette share
-                origEvent.getTimestamp(), //TODO NOW switch to object timestamp
+                DATE_PARSER.parseDateTime(obj.getE4()).getMillis(),
                 new StorageObjectType(STORAGE_CODE, obj.getE3().split("-")[0],
                         Integer.parseInt(obj.getE3().split("-")[1].split("\\.")[0])),
                 ObjectStatusEventType.NEW_VERSION,
