@@ -22,10 +22,14 @@ import us.kbase.common.service.UObject;
 
 public class KeywordParser {
     
-    public static ParsedObject extractKeywords(String type, String json, String parentJson, 
-            List<IndexingRules> indexingRules, 
-            ObjectLookupProvider lookup, List<GUID> objectRefPath) 
-                    throws IOException, ObjectParseException {
+    public static ParsedObject extractKeywords(
+            final String type,
+            final String json,
+            final String parentJson,
+            final List<IndexingRules> indexingRules, 
+            final ObjectLookupProvider lookup,
+            final List<GUID> objectRefPath)
+            throws IOException, ObjectParseException {
         Map<String, InnerKeyValue> keywords = new LinkedHashMap<>();
         ValueConsumer<List<IndexingRules>> consumer = new ValueConsumer<List<IndexingRules>>() {
             @Override

@@ -41,9 +41,9 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.AccessGroupCache;
 import kbasesearchengine.events.AccessGroupProvider;
 import kbasesearchengine.events.ObjectStatusEvent;
-import kbasesearchengine.events.ObjectStatusEventType;
 import kbasesearchengine.events.WorkspaceAccessGroupProvider;
 import kbasesearchengine.events.handler.EventHandler;
+import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
@@ -65,9 +65,6 @@ import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
-import workspace.GetObjectInfo3Params;
-import workspace.GetObjectInfo3Results;
-import workspace.ObjectSpecification;
 import workspace.WorkspaceClient;
 
 public class MainObjectProcessor {
@@ -80,6 +77,7 @@ public class MainObjectProcessor {
     private IndexingStorage indexingStorage;
     private LineLogger logger;
     private Set<String> admins;
+    private Map<String, EventHandler> eventHandlers = new HashMap<>();
     
     public MainObjectProcessor(
             final URL wsURL,
@@ -111,6 +109,9 @@ public class MainObjectProcessor {
         MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(db);
         wsClient = new WorkspaceClient(wsURL, kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
+        
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(wsClient);
+        eventHandlers.put(weh.getStorageCode(), weh);
         // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
         accessGroupProvider = new AccessGroupCache(new WorkspaceAccessGroupProvider(wsClient),
                 30, 50000 * 1000);
@@ -288,12 +289,12 @@ public class MainObjectProcessor {
     }
     
     private EventHandler getEventHandler(final String storageCode) {
-        //TODO HANDLERS should pull from a hashmap of event type -> handler
-        if (!"WS".equals(storageCode)) {
+        if (!eventHandlers.containsKey(storageCode)) {
             //TODO EXP need to make this an error such that the event is not reprocessed
-            throw new IllegalStateException("Only WS events are currently supported");
+            throw new IllegalArgumentException(String.format(
+                    "No event handler for storage code %s is registered", storageCode));
         }
-        return new WorkspaceEventHandler(wsClient);
+        return eventHandlers.get(storageCode);
     }
 
     public void processOneEvent(ObjectStatusEvent ev) 
@@ -364,9 +365,11 @@ public class MainObjectProcessor {
             indexLookup = new MOPLookupProvider();
         }
         try {
-            objectRefPath.add(guid);
+            // make a copy to avoid mutating the caller's path
+            final LinkedList<GUID> newRefPath = new LinkedList<>(objectRefPath);
+            newRefPath.add(guid);
             final EventHandler handler = getEventHandler(guid);
-            final SourceData obj = handler.load(objectRefPath, tempFile.toPath());
+            final SourceData obj = handler.load(newRefPath, tempFile.toPath());
             if (logger != null) {
                 long loadTime = System.currentTimeMillis() - t1;
                 logger.logInfo("[Indexer]   " + guid + ", loading time: " + loadTime + " ms.");
@@ -385,8 +388,7 @@ public class MainObjectProcessor {
                 for (GUID subGuid : guidToJson.keySet()) {
                     String json = guidToJson.get(subGuid);
                     ParsedObject prsObj = KeywordParser.extractKeywords(rule.getGlobalObjectType(),
-                            json, parentJson, rule.getIndexingRules(), indexLookup, 
-                            objectRefPath);
+                            json, parentJson, rule.getIndexingRules(), indexLookup, newRefPath);
                     guidToObj.put(subGuid, prsObj);
                 }
                 long parsingTime = System.currentTimeMillis() - t2;
@@ -744,55 +746,41 @@ public class MainObjectProcessor {
         @Override
         public Set<String> resolveWorkspaceRefs(List<GUID> callerRefPath, Set<String> refs)
                 throws IOException {
+            /* the caller ref path 1) ensures that the object refs are valid when checked against
+             * the source, and 2) allows getting deleted objects with incoming references 
+             * in the case of the workspace
+             */
+            
+            // there may be a way to cache more of this info and call the workspace less
+            // by checking the ref against the refs in the parent object.
+            // doing it the dumb way for now.
+            final EventHandler eh = getEventHandler(callerRefPath.get(0));
+            final Map<String, String> refToRefPath = eh.buildReferencePaths(callerRefPath, refs);
             Set<String> ret = new LinkedHashSet<>();
             Set<String> refsToResolve = new LinkedHashSet<>();
-            for (String ref : refs) {
-                if (refResolvingCache.containsKey(ref)) {
-                    ret.add(refResolvingCache.get(ref));
+            for (final String ref : refs) {
+                final String refpath = refToRefPath.get(ref);
+                if (refResolvingCache.containsKey(refpath)) {
+                    ret.add(refResolvingCache.get(refpath));
                 } else {
                     refsToResolve.add(ref);
                 }
             }
-            String refPrefix = callerRefPath == null || callerRefPath.isEmpty() ? "" :
-                WorkspaceEventHandler.toWSRefPath(callerRefPath) + ";";
             if (refsToResolve.size() > 0) {
                 try {
-                    List<ObjectSpecification> getInfoInput = refs.stream().map(
-                            ref -> new ObjectSpecification().withRef(refPrefix + ref)).collect(
-                                    Collectors.toList());
-                    //TODO HANDLER move this to the handler api
-                    final Map<String, Object> command = new HashMap<>();
-                    command.put("command", "getObjectInfo");
-                    command.put("params", new GetObjectInfo3Params().withObjects(getInfoInput));
-                    List<ObjectStatusEvent> events = wsClient.administer(new UObject(command))
-                            .asClassInstance(GetObjectInfo3Results.class)
-                            .getInfos().stream().map(info -> new ObjectStatusEvent("", "WS",
-                                    (int)(long)info.getE7(), "" +info.getE1(), 
-                                    (int)(long)info.getE5(), null, null,
-                                    WorkspaceEventHandler.DATE_PARSER.parseDateTime(
-                                            info.getE4()).getMillis(),
-                                    new StorageObjectType("WS", info.getE3().split("-")[0],
-                                            Integer.parseInt(
-                                                    info.getE3().split("-")[1].split("\\.")[0])),
-                                    ObjectStatusEventType.NEW_VERSION, false)).collect(
-                                            Collectors.toList());
-                    for (int pos = 0; pos < getInfoInput.size(); pos++) {
-                        String origRef = getInfoInput.get(pos).getRef();
-                        ObjectStatusEvent ev = events.get(pos);
-                        GUID pguid = ev.toGUID();
-                        String resolvedRef = pguid.getAccessGroupId() + "/" + 
-                                pguid.getAccessGroupObjectId() + "/" + pguid.getVersion();
+                    final Set<ResolvedReference> resrefs =
+                            eh.resolveReferences(callerRefPath, refsToResolve);
+                    for (final ResolvedReference rr: resrefs) {
+                        final GUID guid = rr.getResolvedReferenceAsGUID();
                         boolean indexed = indexingStorage.checkParentGuidsExist(null, 
-                                new LinkedHashSet<>(Arrays.asList(pguid))).get(pguid);
+                                new LinkedHashSet<>(Arrays.asList(guid))).get(guid);
                         if (!indexed) {
-                            indexObject(pguid, ev.getStorageObjectType(), ev.getTimestamp(), false,
+                            indexObject(guid, rr.getType(), rr.getTimestamp(), false,
                                     this, callerRefPath);
                         }
-                        refResolvingCache.put(origRef, resolvedRef);
-                        ret.add(resolvedRef);
-                        if (!origRef.equals(resolvedRef)) {
-                            refResolvingCache.put(resolvedRef, resolvedRef);
-                        }
+                        ret.add(rr.getResolvedReference());
+                        refResolvingCache.put(refToRefPath.get(rr.getReference()),
+                                rr.getResolvedReference());
                     }
                 } catch (IOException e) {
                     throw e;
