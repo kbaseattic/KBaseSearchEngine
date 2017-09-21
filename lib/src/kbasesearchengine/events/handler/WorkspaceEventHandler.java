@@ -23,6 +23,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.ObjectStatusEvent;
 import kbasesearchengine.events.ObjectStatusEventType;
+import kbasesearchengine.events.exceptions.FatalIndexingException;
+import kbasesearchengine.events.exceptions.IndexingException;
+import kbasesearchengine.events.exceptions.RetriableIndexingException;
+import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
 import kbasesearchengine.system.StorageObjectType;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple11;
@@ -86,12 +90,12 @@ public class WorkspaceEventHandler implements EventHandler {
     }
     
     @Override
-    public SourceData load(final GUID guid, final Path file) {
+    public SourceData load(final GUID guid, final Path file) throws IndexingException {
         return load(Arrays.asList(guid), file);
     }
 
     @Override
-    public SourceData load(final List<GUID> guids, final Path file) {
+    public SourceData load(final List<GUID> guids, final Path file) throws IndexingException {
         //TODO CODE check storage code
         // create a new client since we're setting a file for the next response
         // fixes race conditions
@@ -115,9 +119,10 @@ public class WorkspaceEventHandler implements EventHandler {
             ret = wc.administer(new UObject(command))
                     .asClassInstance(GetObjects2Results.class)
                     .getData().get(0);
-        } catch (IOException |JsonClientException e) {
-            //TODO EXP some of these exceptions should be retries, some should shut down the event loop until the issue can be fixed (e.g. bad token, ws down), some should ignore the event (ws deleted)
-            throw new IllegalStateException("Error contacting workspace: " + e.getMessage(), e);
+        } catch (IOException e) {
+            throw handleException(e);
+        } catch (JsonClientException e) {
+            throw handleException(e);
         }
         // we'll assume here that there's only one provenance action. This may need more thought
         // if that's not true.
@@ -151,6 +156,25 @@ public class WorkspaceEventHandler implements EventHandler {
             }
         }
         return b.build();
+    }
+
+    private IndexingException handleException(final JsonClientException e) {
+        if (e.getMessage() == null) {
+            return new UnprocessableEventIndexingException(
+                    "Null error message from workspace server", e);
+        } else if (e.getMessage().toLowerCase().contains("login")) {
+            return new FatalIndexingException(
+                    "Workspace credentials are invalid: " + e.getMessage(), e);
+        } else {
+            //TODO ERR some errors may require retries or total failures
+            return new UnprocessableEventIndexingException(
+                    "Unrecoverable error from workspace on fetching object: " + e.getMessage(),
+                    e);
+        }
+    }
+
+    private RetriableIndexingException handleException(final IOException e) {
+        return new RetriableIndexingException(e.getMessage(), e);
     }
     
     @Override
@@ -213,7 +237,8 @@ public class WorkspaceEventHandler implements EventHandler {
     }
 
     @Override
-    public Iterable<ObjectStatusEvent> expand(final ObjectStatusEvent event) {
+    public Iterable<ObjectStatusEvent> expand(final ObjectStatusEvent event)
+            throws IndexingException {
         if (!STORAGE_CODE.equals(event.getStorageCode())) {
             throw new IllegalArgumentException("This handler only accepts "
                     + STORAGE_CODE + "events");
@@ -443,7 +468,8 @@ public class WorkspaceEventHandler implements EventHandler {
         }
     }
 
-    private Iterable<ObjectStatusEvent> handleNewAllVersions(final ObjectStatusEvent event) {
+    private Iterable<ObjectStatusEvent> handleNewAllVersions(final ObjectStatusEvent event)
+            throws IndexingException {
         final long objid;
         try {
             objid = Long.parseLong(event.getAccessGroupObjectId());
@@ -460,10 +486,10 @@ public class WorkspaceEventHandler implements EventHandler {
         try {
             return buildEvents(event, ws.administer(new UObject(command))
                     .asClassInstance(OBJ_TYPEREF));
-        } catch (JsonClientException | IOException e) {
-            //TODO EXP some of these exceptions should be retries, some should shut down the event loop until the issue can be fixed (e.g. bad token, ws down), some should cause the event to be ignored (deleted object)
-            throw new IllegalStateException("Error contacting workspace: " + e.getMessage(),
-                    e);
+        } catch (IOException e) {
+            throw handleException(e);
+        } catch (JsonClientException e) {
+            throw handleException(e);
         }
     }
 

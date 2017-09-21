@@ -15,7 +15,6 @@ import org.apache.http.HttpHost;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -165,8 +164,7 @@ public class MainObjectProcessorTest {
         esStorage.setIndexNamePrefix(esIndexPrefix);
         
         mop = new MainObjectProcessor(accessGroupProvider, Arrays.asList(weh), storage, esStorage,
-                ss, tempDir.resolve("MainObjectProcessor").toFile(), false,
-                logger, null);
+                ss, tempDir.resolve("MainObjectProcessor").toFile(), logger, null);
         loadTypes(wsUrl, wsadmintoken);
         wsid = (int) loadTestData(wsUrl, userToken);
     }
@@ -386,17 +384,5 @@ public class MainObjectProcessorTest {
                 false));
         checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);
         checkSearch(1, "SingleEndLibrary", "reads.2", wsid, false);
-    }
-    
-    @Ignore
-    @Test
-    public void testOneTick() throws Exception {
-        for (int i = 0; i < 10; i++) {
-            System.out.println();
-            long t1 = System.currentTimeMillis();
-            mop.performOneTick(false);
-            System.out.println("FULL TICK TIME: " + (System.currentTimeMillis() - t1) + " ms.");
-            Thread.sleep(1000);
-        }
     }
 }
