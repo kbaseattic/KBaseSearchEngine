@@ -92,6 +92,7 @@ public class WorkspaceEventHandler implements EventHandler {
 
     @Override
     public SourceData load(final List<GUID> guids, final Path file) {
+        //TODO CODE check storage code
         // create a new client since we're setting a file for the next response
         // fixes race conditions
         // a clone method would be handy
@@ -192,6 +193,7 @@ public class WorkspaceEventHandler implements EventHandler {
     }
 
     private String buildRefPrefix(final List<GUID> refpath) {
+        //TODO CODE check storage code
         return refpath == null || refpath.isEmpty() ? "" :
             WorkspaceEventHandler.toWSRefPath(refpath) + ";";
     }

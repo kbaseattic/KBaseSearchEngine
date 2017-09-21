@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -194,16 +195,37 @@ public class MainObjectProcessor {
         // Seems like this shouldn't be source specific. It should handle all event sources.
         ObjectStatusEventIterator iter = queue.iterator("WS");
         while (iter.hasNext()) {
-            //TODO NOW markAsVisited is called for every sub event, which is pointless. It should be called only when all sub events are processed.
             final ObjectStatusEvent preEvent = iter.next();
-            for (final ObjectStatusEvent ev: getEventHandler(preEvent).expand(preEvent)) {
+            final Iterator<ObjectStatusEvent> expanditer;
+            try {
+                expanditer = getEventHandler(preEvent).expand(preEvent).iterator();
+            } catch (Exception e) {
+                //TODO ERR log info about the event that failed.
+                logError(e);
+                iter.markAsVisited(false);
+                continue;
+            }
+            boolean success = true;
+            while (expanditer.hasNext()) {
+                final ObjectStatusEvent ev;
+                try {
+                    ev = expanditer.next();
+                } catch (Exception e) {
+                    //TODO ERR need to catch unchecked exception here and convert to checked
+                    logError(e);
+                    success = false;
+                    break; //stop processing sub events if failed for now
+                }
+                //TODO EVENT insert sub event into db - need to ensure not inserted twice on reprocess - use parent id
                 final StorageObjectType type = ev.getStorageObjectType();
                 if (type != null && !isStorageTypeSupported(type)) {
                     if (logger != null) {
                         logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
                                 toLogString(type) + ev.toGUID());
                     }
-                    iter.markAsVisitied(false);
+                    if (ev == preEvent) { // hack for now. long term insert the sub event into the db
+                        success = false;
+                    }
                     continue;
                 }
                 if (logger != null) {
@@ -214,18 +236,18 @@ public class MainObjectProcessor {
                 try {
                     processOneEvent(ev);
                 } catch (Exception e) {
-                    //TODO NOW with event expansion, this doesn't really work right.
                     // Will skip the sub event - should follow one of 3 strategies - retry, turn off the event handler, or ignore the parent event
+                    //TODO ERR log info about the event (and sub event) that failed.
                     logError(e);
-                    iter.markAsVisitied(false);
-                    continue;
+                    success = false;
+                    break; // stop processing sub events if failed for now
                 }
-                iter.markAsVisitied(true);
                 if (logger != null) {
                     logger.logInfo("[Indexer]   (total time: " +
                             (System.currentTimeMillis() - time) + "ms.)");
                 }
             }
+            iter.markAsVisited(success);
         }
     }
     

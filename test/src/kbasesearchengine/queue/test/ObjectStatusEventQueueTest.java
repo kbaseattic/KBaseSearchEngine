@@ -67,7 +67,7 @@ public class ObjectStatusEventQueueTest {
             it.next();
             //			System.out.println(it.next());
             if(i%2 == 0){
-                it.markAsVisitied(false);
+                it.markAsVisited(false);
                 n++;
             }
             i++;
