@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
+import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
@@ -187,7 +188,7 @@ public class KeywordParser {
     @SuppressWarnings("unchecked")
     private static Object transform(Object value, String transform, IndexingRules rule,
             Map<String, InnerKeyValue> sourceKeywords, ObjectLookupProvider lookup,
-            List<GUID> objectRefPath) throws IOException {
+            List<GUID> objectRefPath) throws IOException, IndexingException {
         String retProp = null;
         if (transform.contains(".")) {
             int dotPos = transform.indexOf('.');
@@ -371,7 +372,7 @@ public class KeywordParser {
         public Map<GUID, String> getTypesForGuids(Set<GUID> guids) throws IOException;
         public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids) 
                 throws IOException;
-        public ObjectTypeParsingRules getTypeDescriptor(String type);
+        public ObjectTypeParsingRules getTypeDescriptor(String type) throws IndexingException;
     }
 
     private static class InnerKeyValue {

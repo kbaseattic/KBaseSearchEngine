@@ -39,8 +39,9 @@ import kbasesearchengine.events.AccessGroupProvider;
 import kbasesearchengine.events.ObjectStatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
-import kbasesearchengine.events.exceptions.IndexingExceptionUncheckedWrapper;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
+import kbasesearchengine.events.exceptions.Retrier;
+import kbasesearchengine.events.exceptions.RetryResult;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.events.handler.SourceData;
@@ -75,6 +76,9 @@ public class MainObjectProcessor {
     private final LineLogger logger;
     private final Set<String> admins;
     private final Map<String, EventHandler> eventHandlers = new HashMap<>();
+    
+    private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
+            (retrycount, event, except) -> logError(except)); //TODO LOG better logging for retries
     
     public MainObjectProcessor(
             final AccessGroupProvider accessGroupProvider,
@@ -206,13 +210,15 @@ public class MainObjectProcessor {
         final ObjectStatusEventIterator iter = queue.iterator("WS");
         while (iter.hasNext()) {
             final ObjectStatusEvent parentEvent = iter.next();
+            //TODO ERR catch all errors and mark as failed if caught
             //TODO LOG log parent event. Add boolean willExpand(event) to eventhandler
-            final ExpandResult er = expand(parentEvent);
+            final RetryResult<Iterator<ObjectStatusEvent>> er = retrier.retryFunc(
+                    e -> getEventHandler(e).expand(e).iterator(), parentEvent, parentEvent);
             if (er.hasException()) {
-                handleException("Error expanding parent event", parentEvent, er.exception);
+                handleException("Error expanding parent event", parentEvent, er.getException());
                 iter.markAsVisited(false);
             } else {
-                iter.markAsVisited(performOneTick(parentEvent, er.event));
+                iter.markAsVisited(performOneTick(parentEvent, er.getResult()));
             }
         }
     }
@@ -224,15 +230,16 @@ public class MainObjectProcessor {
                 ObjectParseException {
         while (expanditer.hasNext()) {
             //TODO EVENT insert sub event into db - need to ensure not inserted twice on reprocess - use parent id
-            final GetEventResult ger = getNextEvent(parentEvent, expanditer);
+            final RetryResult<ObjectStatusEvent> ger = retrier.retryFunc(
+                    e -> e.next(), expanditer, parentEvent);
             if (ger.hasException()) {
                 handleException("Error getting event from data storage",
-                        parentEvent, ger.exception);
+                        parentEvent, ger.getException());
                 return false;
             }
-            final ObjectStatusEvent ev = ger.event;
+            final ObjectStatusEvent ev = ger.getResult();
             final StorageObjectType type = ev.getStorageObjectType();
-            if (type != null && !isStorageTypeSupported(type)) {
+            if (type != null && !isStorageTypeSupported(ev)) {
                 if (logger != null) {
                     logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
                             toLogString(type) + ev.toGUID());
@@ -267,8 +274,9 @@ public class MainObjectProcessor {
             final ObjectStatusEvent parentEvent,
             final ObjectStatusEvent event)
             //TODO ERR remove IOE and OPE
-            throws FatalIndexingException, IOException, ObjectParseException,
-                InterruptedException {
+            throws IOException, ObjectParseException, InterruptedException {
+        //TODO ERR use retrier
+//        return retrier.retryCons(e -> processOneEvent(e), event, event).getException();
         int retries = 1;
         while (true) {
             try {
@@ -290,49 +298,7 @@ public class MainObjectProcessor {
             Thread.sleep(RETRY_SLEEP_MS);
         }
     }
-
-    private class ExpandResult {
-        public final IndexingException exception;
-        public final Iterator<ObjectStatusEvent> event;
-        
-        public ExpandResult(final Iterator<ObjectStatusEvent> event) {
-            this.event = event;
-            this.exception = null;
-        }
-        
-        public ExpandResult(final IndexingException exception) {
-            this.event = null;
-            this.exception = exception;
-        }
-        
-        public boolean hasException() {
-            return exception != null;
-        }
-    }
     
-    private ExpandResult expand(final ObjectStatusEvent parentEvent) throws InterruptedException {
-        int retries = 0;
-        while (true) {
-            try {
-                return new ExpandResult(getEventHandler(parentEvent)
-                        .expand(parentEvent).iterator());
-            } catch (IndexingException e) {
-                if (e instanceof RetriableIndexingException) {
-                    if (retries > RETRY_COUNT) {
-                        return new ExpandResult(e);
-                    } else {
-                        logError(e);
-                        //TODO ERR log better error
-                        retries++;
-                    }
-                } else {
-                    return new ExpandResult(e);
-                }
-            }
-            Thread.sleep(RETRY_SLEEP_MS);
-        }
-    }
-
     private void handleException(
             final String error,
             final ObjectStatusEvent event,
@@ -343,51 +309,6 @@ public class MainObjectProcessor {
         } else {
             //TODO NOW better logs. Log which event failed with error.
             logError(exception);
-        }
-    }
-
-    private class GetEventResult {
-        public final IndexingException exception;
-        public final ObjectStatusEvent event;
-        
-        public GetEventResult(final ObjectStatusEvent event) {
-            this.event = event;
-            this.exception = null;
-        }
-        
-        public GetEventResult(final IndexingException exception) {
-            this.event = null;
-            this.exception = exception;
-        }
-        
-        public boolean hasException() {
-            return exception != null;
-        }
-    }
-    
-    private GetEventResult getNextEvent(
-            final ObjectStatusEvent parentEvent,
-            final Iterator<ObjectStatusEvent> eventiter)
-            throws InterruptedException {
-        int retries = 1;
-        while (true) {
-            try {
-                return new GetEventResult(eventiter.next());
-            } catch (IndexingExceptionUncheckedWrapper wrapped) {
-                final IndexingException e = wrapped.getIndexingException();
-                if (e instanceof RetriableIndexingException) {
-                    if (retries > RETRY_COUNT) {
-                        return new GetEventResult(e);
-                    } else {
-                        logError(e);
-                        //TODO ERR log better error
-                        retries++;
-                    }
-                } else {
-                    return new GetEventResult(e);
-                }
-            }
-            Thread.sleep(RETRY_SLEEP_MS);
         }
     }
 
@@ -473,9 +394,16 @@ public class MainObjectProcessor {
         }
     }
 
-    public boolean isStorageTypeSupported(final StorageObjectType storageObjectType)
-            throws IOException {
-        return !typeStorage.listObjectTypesByStorageObjectType(storageObjectType).isEmpty();
+    public boolean isStorageTypeSupported(final ObjectStatusEvent ev)
+            throws IOException, InterruptedException, FatalIndexingException {
+        final RetryResult<Boolean> res = retrier.retryFunc(
+                t -> typeStorage.listObjectTypesByStorageObjectType(
+                        ev.getStorageObjectType()).isEmpty(),
+                ev, ev);
+        if (res.hasException()) {
+            handleException("Error retrieving type info", ev, res.getException());
+        }
+        return !res.getResult();
     }
     
     private void indexObject(
@@ -948,12 +876,9 @@ public class MainObjectProcessor {
         }
         
         @Override
-        public ObjectTypeParsingRules getTypeDescriptor(String type) {
-            try {
-                return typeStorage.getObjectType(type);
-            } catch (IOException ex) {
-                throw new IllegalStateException(ex);
-            }
+        public ObjectTypeParsingRules getTypeDescriptor(final String type)
+                throws IndexingException {
+            return typeStorage.getObjectType(type);
         }
         
         @Override
