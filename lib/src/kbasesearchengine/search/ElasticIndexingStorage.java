@@ -42,7 +42,6 @@ import com.google.common.collect.ImmutableMap;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.SourceData;
-import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.system.IndexingRules;
 import us.kbase.common.service.Tuple2;
@@ -164,7 +163,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public void indexObjects(String objectType, SourceData data, long timestamp, 
             String parentJsonValue, GUID pguid, Map<GUID, ParsedObject> idToObj,
             boolean isPublic, List<IndexingRules> indexingRules) 
-                    throws IOException, ObjectParseException {
+                    throws IOException {
         String indexName = checkIndex(objectType, indexingRules);
         for (GUID id : idToObj.keySet()) {
             GUID parentGuid = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
@@ -218,8 +217,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final long timestamp,
             final String parentJson,
             final boolean isPublic,
-            final int lastVersion)
-            throws IOException, ObjectParseException {
+            final int lastVersion) {
         Map<String, List<Object>> indexPart = new LinkedHashMap<>();
         for (String key : obj.keywords.keySet()) {
             indexPart.put(getKeyProperty(key), obj.keywords.get(key));
@@ -255,7 +253,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public void indexObject(GUID id, String objectType, ParsedObject obj, SourceData data,
             long timestamp, String parentJsonValue, boolean isPublic,
-            List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
+            List<IndexingRules> indexingRules) throws IOException {
         String indexName = checkIndex(objectType, indexingRules);
         GUID parentGUID = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
                 id.getAccessGroupObjectId(), id.getVersion(), null, null);

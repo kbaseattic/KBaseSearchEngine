@@ -42,6 +42,7 @@ import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
 import kbasesearchengine.events.exceptions.Retrier;
 import kbasesearchengine.events.exceptions.RetryResult;
+import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.events.handler.SourceData;
@@ -60,7 +61,6 @@ import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import us.kbase.common.service.UObject;
-import us.kbase.common.service.UnauthorizedException;
 
 public class MainObjectProcessor {
     
@@ -88,8 +88,7 @@ public class MainObjectProcessor {
             final TypeStorage typeStorage,
             final File tempDir,
             final LineLogger logger,
-            final Set<String> admins)
-            throws IOException, ObjectParseException, UnauthorizedException {
+            final Set<String> admins) {
         this.logger = logger;
         this.rootTempDir = tempDir;
         this.admins = admins == null ? Collections.emptySet() : admins;
@@ -109,8 +108,7 @@ public class MainObjectProcessor {
             final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,
-            final LineLogger logger) 
-            throws IOException, ObjectParseException, UnauthorizedException {
+            final LineLogger logger) {
         this.accessGroupProvider = null;
         this.queue = null;
         this.rootTempDir = tempDir;
@@ -203,9 +201,8 @@ public class MainObjectProcessor {
     
     //TODO ERR handle the IOExceptions better. These are really data store access exceptions
     private void performOneTick()
-            //TODO ERR remove IOException and OPE
-            throws IOException, FatalIndexingException, InterruptedException,
-                ObjectParseException {
+            //TODO ERR remove IOException
+            throws IOException, FatalIndexingException, InterruptedException {
         // Seems like this shouldn't be source specific. It should handle all event sources.
         final ObjectStatusEventIterator iter = queue.iterator("WS");
         while (iter.hasNext()) {
@@ -226,8 +223,7 @@ public class MainObjectProcessor {
     private boolean performOneTick(
             final ObjectStatusEvent parentEvent,
             final Iterator<ObjectStatusEvent> expanditer)
-            throws InterruptedException, FatalIndexingException, IOException,
-                ObjectParseException {
+            throws InterruptedException, FatalIndexingException, IOException {
         while (expanditer.hasNext()) {
             //TODO EVENT insert sub event into db - need to ensure not inserted twice on reprocess - use parent id
             final RetryResult<ObjectStatusEvent> ger = retrier.retryFunc(
@@ -273,8 +269,8 @@ public class MainObjectProcessor {
     private IndexingException processOneEvent(
             final ObjectStatusEvent parentEvent,
             final ObjectStatusEvent event)
-            //TODO ERR remove IOE and OPE
-            throws IOException, ObjectParseException, InterruptedException {
+            //TODO ERR remove IOE
+            throws IOException, InterruptedException {
         //TODO ERR use retrier
 //        return retrier.retryCons(e -> processOneEvent(e), event, event).getException();
         int retries = 1;
@@ -346,7 +342,7 @@ public class MainObjectProcessor {
     }
 
     public void processOneEvent(ObjectStatusEvent ev) 
-            throws IOException, ObjectParseException, IndexingException {
+            throws IOException, IndexingException {
         switch (ev.getEventType()) {
         case NEW_VERSION:
             GUID pguid = ev.toGUID();
@@ -413,7 +409,7 @@ public class MainObjectProcessor {
             final boolean isPublic,
             ObjectLookupProvider indexLookup,
             final List<GUID> objectRefPath) 
-            throws IOException, ObjectParseException, IndexingException {
+            throws IOException, IndexingException {
         long t1 = System.currentTimeMillis();
         File tempFile = ObjectParser.prepareTempFile(getTempSubDir(guid.getStorageCode()));
         if (indexLookup == null) {
@@ -433,18 +429,23 @@ public class MainObjectProcessor {
             List<ObjectTypeParsingRules> parsingRules = 
                     typeStorage.listObjectTypesByStorageObjectType(storageObjectType);
             for (ObjectTypeParsingRules rule : parsingRules) {
-                long t2 = System.currentTimeMillis();
-                String parentJson = null;
-                try (JsonParser jts = obj.getData().getPlacedStream()) {
-                    parentJson = ObjectParser.extractParentFragment(rule, jts);
-                }
-                Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, guid, rule);
-                Map<GUID, ParsedObject> guidToObj = new LinkedHashMap<>();
-                for (GUID subGuid : guidToJson.keySet()) {
-                    String json = guidToJson.get(subGuid);
-                    ParsedObject prsObj = KeywordParser.extractKeywords(rule.getGlobalObjectType(),
-                            json, parentJson, rule.getIndexingRules(), indexLookup, newRefPath);
-                    guidToObj.put(subGuid, prsObj);
+                final long t2 = System.currentTimeMillis();
+                final String parentJson;
+                final Map<GUID, ParsedObject> guidToObj = new LinkedHashMap<>();
+                try {
+                    try (JsonParser jts = obj.getData().getPlacedStream()) {
+                        parentJson = ObjectParser.extractParentFragment(rule, jts);
+                    }
+                    final Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(
+                            obj, guid, rule);
+                    for (final GUID subGuid : guidToJson.keySet()) {
+                        final String json = guidToJson.get(subGuid);
+                        guidToObj.put(subGuid, KeywordParser.extractKeywords(
+                                rule.getGlobalObjectType(), json, parentJson,
+                                rule.getIndexingRules(), indexLookup, newRefPath));
+                    }
+                } catch (ObjectParseException e) {
+                    throw new UnprocessableEventIndexingException(e.getMessage(), e);
                 }
                 long parsingTime = System.currentTimeMillis() - t2;
                 if (logger != null) {
