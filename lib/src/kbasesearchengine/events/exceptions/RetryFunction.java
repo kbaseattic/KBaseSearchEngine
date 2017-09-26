@@ -9,5 +9,5 @@ public interface RetryFunction<T, R> {
      * @param t the function argument
      * @return the function result
      */
-    R apply(T t) throws IndexingException;
+    R apply(T t) throws IndexingException, RetriableIndexingException;
 }

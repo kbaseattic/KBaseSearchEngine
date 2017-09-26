@@ -7,13 +7,13 @@ package kbasesearchengine.events.exceptions;
  *
  */
 @SuppressWarnings("serial")
-public class RetriableIndexingException extends Exception {
+public class RetriesExceededIndexingException extends IndexingException {
 
-    public RetriableIndexingException(final String message) {
+    public RetriesExceededIndexingException(final String message) {
         super(message);
     }
     
-    public RetriableIndexingException(final String message, final Throwable cause) {
+    public RetriesExceededIndexingException(final String message, final Throwable cause) {
         super(message, cause);
     }
     

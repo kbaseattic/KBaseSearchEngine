@@ -20,7 +20,7 @@ public interface IndexingStorage {
      * @param indexingRules  indexing rules
      * @throws IOException
      */
-    public void indexObject(GUID guid, String objectType, ParsedObject obj, SourceData objectName,
+    public void indexObject(GUID guid, String objectType, ParsedObject obj, SourceData source,
             long timestamp, String parentJsonValue, boolean isPublic,
             List<IndexingRules> indexingRules) throws IOException;
 

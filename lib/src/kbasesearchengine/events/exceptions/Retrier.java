@@ -1,16 +1,28 @@
 package kbasesearchengine.events.exceptions;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import kbasesearchengine.events.ObjectStatusEvent;
 
 public class Retrier {
     
+    //TODO JAVADOC
+    //TODO TEST
+    
     private final int retryCount;
     private final int delayMS;
     private final RetryLogger logger;
+    private final List<Integer> fatalRetryBackoffsMS;
     
-    public Retrier(final int retryCount, final int delayMS, final RetryLogger logger) {
+    public Retrier(
+            final int retryCount,
+            final int delayMS,
+            final List<Integer> fatalRetryBackoffsMS,
+            final RetryLogger logger) {
         this.retryCount = retryCount;
         this.delayMS = delayMS;
+        this.fatalRetryBackoffsMS = new ArrayList<>(fatalRetryBackoffsMS);
         this.logger = logger;
     }
 
@@ -22,60 +34,72 @@ public class Retrier {
         return delayMS;
     }
     
-    public <T> RetryResult<Void> retryCons(
+    public <T> void retryCons(
             final RetryConsumer<T> consumer,
             final T input,
             final ObjectStatusEvent event)
-            throws InterruptedException {
+            throws InterruptedException, IndexingException {
         int retries = 1;
+        int fatalRetries = 1;
         while (true) {
             try {
                 consumer.accept(input);
-                return new RetryResult<>((Void) null);
-            } catch (IndexingException e) {
-                final RetryResult<Void> res = handleException(event, e, retries);
-                if (res != null) {
-                    return res;
+            } catch (RetriableIndexingException e) {
+                final boolean fatal = handleException(event, e, retries, fatalRetries);
+                if (fatal) {
+                    fatalRetries++;
+                } else {
+                    retries++;
                 }
-                retries++;
             }
-            Thread.sleep(delayMS);
         }
     }
     
-    public <T, R> RetryResult<R> retryFunc(
+    public <T, R> R retryFunc(
             final RetryFunction<T, R> function,
             final T input,
             final ObjectStatusEvent event)
-            throws InterruptedException {
+            throws InterruptedException, IndexingException {
         int retries = 1;
+        int fatalRetries = 1;
         while (true) {
             try {
-                return new RetryResult<>(function.apply(input));
-            } catch (IndexingException e) {
-                final RetryResult<R> res = handleException(event, e, retries);
-                if (res != null) {
-                    return res;
+                return function.apply(input);
+            } catch (RetriableIndexingException e) {
+                final boolean fatal = handleException(event, e, retries, fatalRetries);
+                if (fatal) {
+                    fatalRetries++;
+                } else {
+                    retries++;
                 }
-                retries++;
             }
-            Thread.sleep(delayMS);
         }
     }
     
-    private <R> RetryResult<R> handleException(
+    private boolean handleException(
             final ObjectStatusEvent event,
-            final IndexingException e,
-            final int retries) {
-        if (e instanceof RetriableIndexingException) {
-            if (retries > retryCount) {
-                return new RetryResult<>(e);
+            final RetriableIndexingException e,
+            final int retries,
+            final int fatalRetries)
+            throws InterruptedException, IndexingException {
+        if (e instanceof FatalRetriableIndexingException) {
+            if (retries - 1 >= fatalRetryBackoffsMS.size()) {
+                throw new FatalIndexingException(e.getMessage(), e);
             } else {
                 logger.log(retries, event, e);
-                return null;
+                Thread.sleep(fatalRetryBackoffsMS.get(fatalRetries - 1));
+                return true;
+            }
+        } else if (e instanceof RetriableIndexingException){
+            if (retries > retryCount) {
+                throw new RetriesExceededIndexingException(e.getMessage(), e);
+            } else {
+                logger.log(retries, event, e);
+                Thread.sleep(delayMS);
+                return false;
             }
         } else {
-            return new RetryResult<>(e);
+            throw new IllegalStateException("Exception hierarchy changed without update to retrier");
         }
         
     }

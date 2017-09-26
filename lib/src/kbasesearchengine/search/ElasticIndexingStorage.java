@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -158,12 +159,17 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return ret;
     }
     
-    @SuppressWarnings("serial")
     @Override
-    public void indexObjects(String objectType, SourceData data, long timestamp, 
-            String parentJsonValue, GUID pguid, Map<GUID, ParsedObject> idToObj,
-            boolean isPublic, List<IndexingRules> indexingRules) 
-                    throws IOException {
+    public void indexObjects(
+            final String objectType,
+            final SourceData data,
+            final long timestamp, 
+            final String parentJsonValue,
+            final GUID pguid,
+            final Map<GUID, ParsedObject> idToObj,
+            final boolean isPublic,
+            final List<IndexingRules> indexingRules) 
+            throws IOException {
         String indexName = checkIndex(objectType, indexingRules);
         for (GUID id : idToObj.keySet()) {
             GUID parentGuid = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
@@ -185,17 +191,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     ParsedObject obj = idToObj.get(id);
                     Map<String, Object> doc = convertObject(id, objectType, obj, data, 
                             timestamp, parentJsonValue, isPublic, lastVersion);
-                    Map<String, Object> index = new LinkedHashMap<String, Object>() {{
-                        put("_index", indexName);
-                        put("_type", getDataTableName());
-                        put("parent", esParentId);
-                    }};
+                    final Map<String, Object> index = new HashMap<>();
+                    index.put("_index", indexName);
+                    index.put("_type", getDataTableName());
+                    index.put("parent", esParentId);
                     if (esIds.containsKey(id)) {
                         index.put("_id", esIds.get(id));
                     }
-                    Map<String, Object> header = new LinkedHashMap<String, Object>() {{
-                        put("index", index);
-                    }};
+                    Map<String, Object> header = ImmutableMap.of("index", index);
                     pw.println(UObject.transformObjectToString(header));
                     pw.println(UObject.transformObjectToString(doc));
                 }
@@ -1478,8 +1481,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public Response makeRequest(String reqType, String urlPath, Map<String, ?> doc, 
             Map<String, String> attributes) throws IOException {
         try {
-            HttpEntity body = doc == null ? null : 
-                new StringEntity(UObject.transformObjectToString(doc));
+            HttpEntity body = doc == null ? null : stringEntity(
+                UObject.transformObjectToString(doc));
             RestClient restClient = getRestClient();  //restClientBld.build();
             return restClient.performRequest(reqType, urlPath, attributes, body);
         } catch (ResponseException ex) {
@@ -1487,6 +1490,19 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
     }
     
+    private StringEntity stringEntity(final String string) {
+        try {
+            return new StringEntity(string);
+            /* based on reading the code here:
+             * https://svn.apache.org/repos/asf/httpcomponents/httpcore/branches/4.4.x/httpcore/src/main/java/org/apache/http/entity/StringEntity.java
+             * this SE constructor never actually throws UEE. It looks like a typo. Hence ignore.
+             */
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(
+                    "This error can't happen, so you're obviously not seeing it.", e);
+        }
+    }
+
     private String getEsType(boolean fullText, String keywordType) {
         if (fullText) {
             return "text";

@@ -8,6 +8,7 @@ import java.util.Set;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.ObjectStatusEvent;
 import kbasesearchengine.events.exceptions.IndexingException;
+import kbasesearchengine.events.exceptions.RetriableIndexingException;
 
 /** An interface for handling search events. The interface abstracts away event source specific
  * operations.
@@ -31,16 +32,19 @@ public interface EventHandler {
      * @return an Iterable of the of the events resulting from the expansion or the original
      * event if no expansion is necessary.
      * @throws IndexingException if an error occurred expanding the event.
+     * @throws RetriableIndexingException if a retriable error occurred loading the data.
      */
-    Iterable<ObjectStatusEvent> expand(ObjectStatusEvent event) throws IndexingException;
+    Iterable<ObjectStatusEvent> expand(ObjectStatusEvent event)
+            throws IndexingException, RetriableIndexingException;
     
     /** The equivalent of {@link #load(List, Path) load(Arrays.asList(guid), tempfile)}
      * @param guid the globally unique ID of the source object to load.
      * @param file a file in which to store the object's data, which is expected to exist.
      * @return the source data.
      * @throws IndexingException if an error occurred loading the data.
+     * @throws RetriableIndexingException if a retriable error occurred loading the data.
      */
-    SourceData load(GUID guid, Path file) throws IndexingException;
+    SourceData load(GUID guid, Path file) throws IndexingException, RetriableIndexingException;
     
     /** Load an object's data from a remote source. The target object may need to be specified
      * as a path from an accessible object. If the target object is accessible only one entry is
@@ -50,8 +54,10 @@ public interface EventHandler {
      * @param file a file in which to store the object's data, which is expected to exist.
      * @return the object's source data.
      * @throws IndexingException if an error occurred loading the data.
+     * @throws RetriableIndexingException if a retriable error occurred loading the data.
      */
-    SourceData load(List<GUID> guids, Path file) throws IndexingException;
+    SourceData load(List<GUID> guids, Path file)
+            throws IndexingException, RetriableIndexingException;
 
     /** Build a set of reference paths from a path to the current object and the references found
      * in the current object.

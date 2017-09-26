@@ -38,10 +38,10 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.AccessGroupProvider;
 import kbasesearchengine.events.ObjectStatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
+import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
 import kbasesearchengine.events.exceptions.Retrier;
-import kbasesearchengine.events.exceptions.RetryResult;
 import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.ResolvedReference;
@@ -60,12 +60,15 @@ import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
+import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.UObject;
 
 public class MainObjectProcessor {
     
     private static final int RETRY_COUNT = 5;
     private static final int RETRY_SLEEP_MS = 1000;
+    private static final List<Integer> RETRY_FATAL_BACKOFF_MS = Arrays.asList(
+            1000, 2000, 4000, 8000, 16000);
     
     private final File rootTempDir;
     private final AccessGroupProvider accessGroupProvider;
@@ -78,6 +81,7 @@ public class MainObjectProcessor {
     private final Map<String, EventHandler> eventHandlers = new HashMap<>();
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
+            RETRY_FATAL_BACKOFF_MS,
             (retrycount, event, except) -> logError(except)); //TODO LOG better logging for retries
     
     public MainObjectProcessor(
@@ -89,6 +93,7 @@ public class MainObjectProcessor {
             final File tempDir,
             final LineLogger logger,
             final Set<String> admins) {
+        Utils.nonNull(logger, "logger");
         this.logger = logger;
         this.rootTempDir = tempDir;
         this.admins = admins == null ? Collections.emptySet() : admins;
@@ -109,6 +114,7 @@ public class MainObjectProcessor {
             final TypeStorage typeStorage,
             final File tempDir,
             final LineLogger logger) {
+        Utils.nonNull(logger, "logger");
         this.accessGroupProvider = null;
         this.queue = null;
         this.rootTempDir = tempDir;
@@ -206,71 +212,85 @@ public class MainObjectProcessor {
         // Seems like this shouldn't be source specific. It should handle all event sources.
         final ObjectStatusEventIterator iter = queue.iterator("WS");
         while (iter.hasNext()) {
-            final ObjectStatusEvent parentEvent = iter.next();
-            //TODO ERR catch all errors and mark as failed if caught
             //TODO LOG log parent event. Add boolean willExpand(event) to eventhandler
-            final RetryResult<Iterator<ObjectStatusEvent>> er = retrier.retryFunc(
-                    e -> getEventHandler(e).expand(e).iterator(), parentEvent, parentEvent);
-            if (er.hasException()) {
-                handleException("Error expanding parent event", parentEvent, er.getException());
-                iter.markAsVisited(false);
-            } else {
-                iter.markAsVisited(performOneTick(parentEvent, er.getResult()));
+            final ObjectStatusEvent parentEvent = iter.next();
+            final Iterator<ObjectStatusEvent> er;
+            try {
+                er = retrier.retryFunc(e -> getEventHandler(e).expand(e).iterator(),
+                        parentEvent, parentEvent);
+                iter.markAsVisited(performOneTick(parentEvent, er));
+            } catch (IndexingException e) {
+                markAsVisitedFailedPostError(iter);
+                handleException("Error expanding parent event", parentEvent, e);
+            } catch (InterruptedException e) {
+                throw e;
+            } catch (Exception e) {
+                // don't know how to respond to anything else, so mark event failed and keep going
+                //TODO LOG log unexpected error
+                logError(e);
+                markAsVisitedFailedPostError(iter);
             }
         }
     }
 
+    // assumes something has already failed, so if this fails as well something is really 
+    // wrong and we bail.
+    private void markAsVisitedFailedPostError(final ObjectStatusEventIterator iter)
+            throws FatalIndexingException {
+        try {
+            iter.markAsVisited(false);
+        } catch (Exception e) {
+            //ok then we're screwed
+            throw new FatalIndexingException("Can't mark events as failed: " + e.getMessage(), e);
+        }
+    }
+
+    // returns whether processing was successful or not.
     private boolean performOneTick(
             final ObjectStatusEvent parentEvent,
             final Iterator<ObjectStatusEvent> expanditer)
             throws InterruptedException, FatalIndexingException, IOException {
         while (expanditer.hasNext()) {
             //TODO EVENT insert sub event into db - need to ensure not inserted twice on reprocess - use parent id
-            final RetryResult<ObjectStatusEvent> ger = retrier.retryFunc(
-                    e -> e.next(), expanditer, parentEvent);
-            if (ger.hasException()) {
-                handleException("Error getting event from data storage",
-                        parentEvent, ger.getException());
+            final ObjectStatusEvent ev;
+            try {
+                ev = retrier.retryFunc(e -> e.next(), expanditer, parentEvent);
+            } catch (IndexingException e) {
+                // TODO EVENT mark sub event as failed
+                handleException("Error getting event from data storage", parentEvent, e);
                 return false;
             }
-            final ObjectStatusEvent ev = ger.getResult();
             final StorageObjectType type = ev.getStorageObjectType();
             if (type != null && !isStorageTypeSupported(ev)) {
-                if (logger != null) {
-                    logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
-                            toLogString(type) + ev.toGUID());
-                }
+                logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
+                        toLogString(type) + ev.toGUID());
                 if (ev == parentEvent) { // hack for now. long term insert the sub event into the db
                     return false;
                 } else {
                     continue;
                 }
             }
-            if (logger != null) {
-                logger.logInfo("[Indexer] processing " + ev.getEventType() + ", " + 
-                        toLogString(type) + ev.toGUID() + "...");
-            }
+            logger.logInfo("[Indexer] processing " + ev.getEventType() + ", " + 
+                    toLogString(type) + ev.toGUID() + "...");
             long time = System.currentTimeMillis();
-            final IndexingException ie = processOneEvent(parentEvent, ev);
-            if (ie != null) {
-                handleException("Error processing event", ev, ie);
+            try {
+                processOneEvent(parentEvent, ev);
+            } catch (IndexingException e) {
+                handleException("Error processing event", ev, e);
                 //TODO EVENT set failed on sub event and continue rather than failing completely
                 return false;
-            } else {
-                if (logger != null) {
-                    logger.logInfo("[Indexer]   (total time: " +
-                            (System.currentTimeMillis() - time) + "ms.)");
-                }
             }
+            logger.logInfo("[Indexer]   (total time: " +
+                    (System.currentTimeMillis() - time) + "ms.)");
         }
         return true;
     }
     
-    private IndexingException processOneEvent(
+    private RetriableIndexingException processOneEvent(
             final ObjectStatusEvent parentEvent,
             final ObjectStatusEvent event)
             //TODO ERR remove IOE
-            throws IOException, InterruptedException {
+            throws IOException, InterruptedException, IndexingException {
         //TODO ERR use retrier
 //        return retrier.retryCons(e -> processOneEvent(e), event, event).getException();
         int retries = 1;
@@ -278,7 +298,7 @@ public class MainObjectProcessor {
             try {
                 processOneEvent(event);
                 return null;
-            } catch (IndexingException e) {
+            } catch (RetriableIndexingException e) {
                 if (e instanceof RetriableIndexingException) {
                     if (retries > RETRY_COUNT) {
                         return e;
@@ -324,25 +344,28 @@ public class MainObjectProcessor {
         return sb.toString();
     }
 
-    private EventHandler getEventHandler(final ObjectStatusEvent ev) {
+    private EventHandler getEventHandler(final ObjectStatusEvent ev)
+            throws UnprocessableEventIndexingException {
         return getEventHandler(ev.getStorageCode());
     }
     
-    private EventHandler getEventHandler(final GUID guid) {
+    private EventHandler getEventHandler(final GUID guid)
+            throws UnprocessableEventIndexingException {
         return getEventHandler(guid.getStorageCode());
     }
     
-    private EventHandler getEventHandler(final String storageCode) {
+    private EventHandler getEventHandler(final String storageCode)
+            throws UnprocessableEventIndexingException {
         if (!eventHandlers.containsKey(storageCode)) {
-            //TODO EXP need to make this an error such that the event is not reprocessed
-            throw new IllegalArgumentException(String.format(
+            throw new UnprocessableEventIndexingException(String.format(
                     "No event handler for storage code %s is registered", storageCode));
         }
         return eventHandlers.get(storageCode);
     }
 
-    public void processOneEvent(ObjectStatusEvent ev) 
-            throws IOException, IndexingException {
+    public void processOneEvent(ObjectStatusEvent ev)
+            throws IOException, IndexingException, InterruptedException,
+                RetriableIndexingException {
         switch (ev.getEventType()) {
         case NEW_VERSION:
             GUID pguid = ev.toGUID();
@@ -390,16 +413,18 @@ public class MainObjectProcessor {
         }
     }
 
+    // returns false if a non-fatal error prevents retrieving the info
     public boolean isStorageTypeSupported(final ObjectStatusEvent ev)
-            throws IOException, InterruptedException, FatalIndexingException {
-        final RetryResult<Boolean> res = retrier.retryFunc(
-                t -> typeStorage.listObjectTypesByStorageObjectType(
-                        ev.getStorageObjectType()).isEmpty(),
-                ev, ev);
-        if (res.hasException()) {
-            handleException("Error retrieving type info", ev, res.getException());
+            throws InterruptedException, FatalIndexingException {
+        try {
+            return retrier.retryFunc(
+                    t -> typeStorage.listObjectTypesByStorageObjectType(
+                            ev.getStorageObjectType()).isEmpty(),
+                    ev, ev);
+        } catch (IndexingException e) {
+            handleException("Error retrieving type info", ev, e);
+            return false;
         }
-        return !res.getResult();
     }
     
     private void indexObject(
@@ -409,7 +434,8 @@ public class MainObjectProcessor {
             final boolean isPublic,
             ObjectLookupProvider indexLookup,
             final List<GUID> objectRefPath) 
-            throws IOException, IndexingException {
+            throws IOException, IndexingException, InterruptedException,
+                RetriableIndexingException {
         long t1 = System.currentTimeMillis();
         File tempFile = ObjectParser.prepareTempFile(getTempSubDir(guid.getStorageCode()));
         if (indexLookup == null) {
@@ -421,32 +447,16 @@ public class MainObjectProcessor {
             newRefPath.add(guid);
             final EventHandler handler = getEventHandler(guid);
             final SourceData obj = handler.load(newRefPath, tempFile.toPath());
-            if (logger != null) {
-                long loadTime = System.currentTimeMillis() - t1;
-                logger.logInfo("[Indexer]   " + guid + ", loading time: " + loadTime + " ms.");
-                logger.timeStat(guid, loadTime, 0, 0);
-            }
+            long loadTime = System.currentTimeMillis() - t1;
+            logger.logInfo("[Indexer]   " + guid + ", loading time: " + loadTime + " ms.");
+            logger.timeStat(guid, loadTime, 0, 0);
             List<ObjectTypeParsingRules> parsingRules = 
                     typeStorage.listObjectTypesByStorageObjectType(storageObjectType);
             for (ObjectTypeParsingRules rule : parsingRules) {
                 final long t2 = System.currentTimeMillis();
-                final String parentJson;
                 final Map<GUID, ParsedObject> guidToObj = new LinkedHashMap<>();
-                try {
-                    try (JsonParser jts = obj.getData().getPlacedStream()) {
-                        parentJson = ObjectParser.extractParentFragment(rule, jts);
-                    }
-                    final Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(
-                            obj, guid, rule);
-                    for (final GUID subGuid : guidToJson.keySet()) {
-                        final String json = guidToJson.get(subGuid);
-                        guidToObj.put(subGuid, KeywordParser.extractKeywords(
-                                rule.getGlobalObjectType(), json, parentJson,
-                                rule.getIndexingRules(), indexLookup, newRefPath));
-                    }
-                } catch (ObjectParseException e) {
-                    throw new UnprocessableEventIndexingException(e.getMessage(), e);
-                }
+                final String parentJson = parseObjects(guid, indexLookup,
+                        newRefPath, obj, rule, guidToObj);
                 long parsingTime = System.currentTimeMillis() - t2;
                 if (logger != null) {
                     logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", parsing " +
@@ -458,16 +468,64 @@ public class MainObjectProcessor {
                 }
                 indexingStorage.indexObjects(rule.getGlobalObjectType(), obj,
                         timestamp, parentJson, guid, guidToObj, isPublic, rule.getIndexingRules());
-                if (logger != null) {
-                    long indexTime = System.currentTimeMillis() - t3;
-                    logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", indexing " +
-                            "time: " + indexTime + " ms.");
-                    logger.timeStat(guid, 0, parsingTime, indexTime);
-                }
+                long indexTime = System.currentTimeMillis() - t3;
+                logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", indexing " +
+                        "time: " + indexTime + " ms.");
+                logger.timeStat(guid, 0, parsingTime, indexTime);
             }
         } finally {
             tempFile.delete();
         }
+    }
+
+    private String parseObjects(
+            final GUID guid,
+            final ObjectLookupProvider indexLookup,
+            final LinkedList<GUID> newRefPath,
+            final SourceData obj,
+            final ObjectTypeParsingRules rule,
+            final Map<GUID, ParsedObject> guidToObj)
+            throws IndexingException, InterruptedException {
+        final List<?> inputs = Arrays.asList(guid, indexLookup, newRefPath, obj, rule, guidToObj);
+        return retrier.retryFunc(i -> parseObjects(i), inputs, null);
+    }
+    
+    private String parseObjects(final List<?> inputs)
+            throws UnprocessableEventIndexingException, FatalRetriableIndexingException {
+        // should really wrap these in a class, but meh for now
+        final GUID guid = (GUID) inputs.get(0);
+        final ObjectLookupProvider indexLookup = (ObjectLookupProvider) inputs.get(1);
+        @SuppressWarnings("unchecked")
+        final List<GUID> newRefPath = (List<GUID>) inputs.get(2);
+        final SourceData obj = (SourceData) inputs.get(3);
+        final ObjectTypeParsingRules rule = (ObjectTypeParsingRules) inputs.get(4);
+        @SuppressWarnings("unchecked")
+        final Map<GUID, ParsedObject> guidToObj = (Map<GUID, ParsedObject>) inputs.get(5);
+        
+        final String parentJson;
+        try {
+            try (JsonParser jts = obj.getData().getPlacedStream()) {
+                parentJson = ObjectParser.extractParentFragment(rule, jts);
+            }
+            final Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(
+                    obj, guid, rule);
+            for (final GUID subGuid : guidToJson.keySet()) {
+                final String json = guidToJson.get(subGuid);
+                guidToObj.put(subGuid, KeywordParser.extractKeywords(
+                        rule.getGlobalObjectType(), json, parentJson,
+                        rule.getIndexingRules(), indexLookup, newRefPath));
+            }
+            /* any errors here are due to file IO or parse exceptions.
+             * Parse exceptions are def not retriable
+             * File IO problems are generally going to mean something is very wrong
+             * (like bad disk), since the file should already exist at this point.
+             */
+        } catch (ObjectParseException e) {
+            throw new UnprocessableEventIndexingException(e.getMessage(), e);
+        } catch (IOException e) {
+            throw new FatalRetriableIndexingException(e.getMessage(), e);
+        }
+        return parentJson;
     }
     
     public void share(GUID guid, int accessGroupId) throws IOException {
@@ -801,7 +859,7 @@ public class MainObjectProcessor {
         
         @Override
         public Set<String> resolveWorkspaceRefs(List<GUID> callerRefPath, Set<String> refs)
-                throws IOException {
+                throws IOException, IndexingException {
             /* the caller ref path 1) ensures that the object refs are valid when checked against
              * the source, and 2) allows getting deleted objects with incoming references 
              * in the case of the workspace
