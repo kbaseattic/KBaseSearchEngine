@@ -11,5 +11,5 @@ public interface RetryConsumer<T> {
      * @param t the input argument
      * @see Consumer
      */
-    void accept(T t) throws IndexingException, RetriableIndexingException;
+    void accept(T t) throws IndexingException, RetriableIndexingException, InterruptedException;
 }

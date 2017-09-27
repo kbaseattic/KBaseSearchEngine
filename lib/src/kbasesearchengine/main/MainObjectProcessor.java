@@ -161,7 +161,7 @@ public class MainObjectProcessor {
                         } catch (FatalIndexingException e) {
                             logError(e);
                             Thread.currentThread().interrupt();
-                        } catch (Exception e) { //TODO ERR switch to runtime and log
+                        } catch (Exception e) { //TODO ERR log unexpected error
                             logError(e);
                         } finally {
                             if (!Thread.currentThread().isInterrupted()) {
@@ -280,7 +280,7 @@ public class MainObjectProcessor {
                     toLogString(type) + ev.toGUID() + "...");
             long time = System.currentTimeMillis();
             try {
-                processOneEvent(parentEvent, ev);
+                retrier.retryCons(e -> processOneEvent(e), ev, parentEvent);
             } catch (IndexingException e) {
                 handleException("Error processing event", ev, e);
                 //TODO EVENT set failed on sub event and continue rather than failing completely
@@ -290,34 +290,6 @@ public class MainObjectProcessor {
                     (System.currentTimeMillis() - time) + "ms.)");
         }
         return true;
-    }
-    
-    private RetriableIndexingException processOneEvent(
-            final ObjectStatusEvent parentEvent,
-            final ObjectStatusEvent event)
-            throws InterruptedException, IndexingException {
-        //TODO ERR use retrier
-//        return retrier.retryCons(e -> processOneEvent(e), event, event).getException();
-        int retries = 1;
-        while (true) {
-            try {
-                processOneEvent(event);
-                return null;
-            } catch (RetriableIndexingException e) {
-                if (e instanceof RetriableIndexingException) {
-                    if (retries > RETRY_COUNT) {
-                        return e;
-                    } else {
-                        //TODO ERR log better error
-                        logError(e);
-                        retries++;
-                    }
-                } else {
-                    return e;
-                }
-            }
-            Thread.sleep(RETRY_SLEEP_MS);
-        }
     }
     
     private void handleException(
