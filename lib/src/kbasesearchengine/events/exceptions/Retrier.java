@@ -44,6 +44,7 @@ public class Retrier {
         while (true) {
             try {
                 consumer.accept(input);
+                return;
             } catch (RetriableIndexingException e) {
                 final boolean fatal = handleException(event, e, retries, fatalRetries);
                 if (fatal) {
@@ -83,10 +84,10 @@ public class Retrier {
             final int fatalRetries)
             throws InterruptedException, IndexingException {
         if (e instanceof FatalRetriableIndexingException) {
-            if (retries - 1 >= fatalRetryBackoffsMS.size()) {
+            if (fatalRetries - 1 >= fatalRetryBackoffsMS.size()) {
                 throw new FatalIndexingException(e.getMessage(), e);
             } else {
-                logger.log(retries, event, e);
+                logger.log(fatalRetries, event, e);
                 Thread.sleep(fatalRetryBackoffsMS.get(fatalRetries - 1));
                 return true;
             }
@@ -99,7 +100,8 @@ public class Retrier {
                 return false;
             }
         } else {
-            throw new IllegalStateException("Exception hierarchy changed without update to retrier");
+            throw new IllegalStateException(
+                    "Exception hierarchy changed without update to retrier");
         }
         
     }

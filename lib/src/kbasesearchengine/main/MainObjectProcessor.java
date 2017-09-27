@@ -82,7 +82,13 @@ public class MainObjectProcessor {
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
             RETRY_FATAL_BACKOFF_MS,
-            (retrycount, event, except) -> logError(except)); //TODO LOG better logging for retries
+            (retrycount, event, except) -> tempLog(retrycount, event, except)); //TODO LOG better logging for retries
+    
+    private void tempLog(final int retrycount, final ObjectStatusEvent ev, final Throwable ex) {
+        System.out.println(retrycount);
+        System.out.println(ev);
+        logError(ex);
+    }
     
     public MainObjectProcessor(
             final AccessGroupProvider accessGroupProvider,
@@ -363,7 +369,7 @@ public class MainObjectProcessor {
         return eventHandlers.get(storageCode);
     }
 
-    public void processOneEvent(ObjectStatusEvent ev)
+    public void processOneEvent(final ObjectStatusEvent ev)
             throws IOException, IndexingException, InterruptedException,
                 RetriableIndexingException {
         switch (ev.getEventType()) {
@@ -434,10 +440,14 @@ public class MainObjectProcessor {
             final boolean isPublic,
             ObjectLookupProvider indexLookup,
             final List<GUID> objectRefPath) 
-            throws IOException, IndexingException, InterruptedException,
-                RetriableIndexingException {
+            throws IndexingException, InterruptedException, RetriableIndexingException {
         long t1 = System.currentTimeMillis();
-        File tempFile = ObjectParser.prepareTempFile(getTempSubDir(guid.getStorageCode()));
+        final File tempFile;
+        try {
+            tempFile = ObjectParser.prepareTempFile(getTempSubDir(guid.getStorageCode()));
+        } catch (IOException e) {
+            throw new FatalRetriableIndexingException(e.getMessage(), e);
+        }
         if (indexLookup == null) {
             indexLookup = new MOPLookupProvider();
         }
@@ -458,16 +468,13 @@ public class MainObjectProcessor {
                 final String parentJson = parseObjects(guid, indexLookup,
                         newRefPath, obj, rule, guidToObj);
                 long parsingTime = System.currentTimeMillis() - t2;
-                if (logger != null) {
-                    logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", parsing " +
-                            "time: " + parsingTime + " ms.");
-                }
+                logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", parsing " +
+                        "time: " + parsingTime + " ms.");
                 long t3 = System.currentTimeMillis();
                 if (timestamp == null) {
                     timestamp = System.currentTimeMillis();
                 }
-                indexingStorage.indexObjects(rule.getGlobalObjectType(), obj,
-                        timestamp, parentJson, guid, guidToObj, isPublic, rule.getIndexingRules());
+                indexObject(guid, timestamp, isPublic, obj, rule, guidToObj, parentJson);
                 long indexTime = System.currentTimeMillis() - t3;
                 logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", indexing " +
                         "time: " + indexTime + " ms.");
@@ -475,6 +482,38 @@ public class MainObjectProcessor {
             }
         } finally {
             tempFile.delete();
+        }
+    }
+
+    private void indexObject(
+            final GUID guid,
+            final Long timestamp,
+            final boolean isPublic,
+            final SourceData obj,
+            final ObjectTypeParsingRules rule,
+            final Map<GUID, ParsedObject> guidToObj,
+            final String parentJson)
+            throws InterruptedException, IndexingException {
+        final List<?> input = Arrays.asList(rule, obj, timestamp, parentJson, guid, guidToObj,
+                isPublic);
+        retrier.retryCons(i -> indexObjects(i), input, null);
+    }
+
+    private void indexObjects(final List<?> input) throws FatalRetriableIndexingException {
+        final ObjectTypeParsingRules rule = (ObjectTypeParsingRules) input.get(0);
+        final SourceData obj = (SourceData) input.get(1);
+        final Long timestamp = (Long) input.get(2);
+        final String parentJson = (String) input.get(3);
+        final GUID guid = (GUID) input.get(4);
+        @SuppressWarnings("unchecked")
+        final Map<GUID, ParsedObject> guidToObj = (Map<GUID, ParsedObject>) input.get(5);
+        final Boolean isPublic = (Boolean) input.get(6);
+        
+        try {
+            indexingStorage.indexObjects(rule.getGlobalObjectType(), obj,
+                    timestamp, parentJson, guid, guidToObj, isPublic, rule.getIndexingRules());
+        } catch (IOException e) {
+            throw new FatalRetriableIndexingException(e.getMessage(), e);
         }
     }
 

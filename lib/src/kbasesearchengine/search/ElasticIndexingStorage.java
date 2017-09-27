@@ -140,7 +140,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             if (allowAnyType) {
                 return getAnyIndexPattern();
             } else {
-                throw new IOException("Object type is required");
+                throw new IllegalArgumentException("Object type is required");
             }
         }
         String key = mergeTypes ? "all_types" : objectType;
@@ -159,6 +159,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return ret;
     }
     
+    // IO exceptions are thrown for failure on creating or writing to file or contacting ES.
     @Override
     public void indexObjects(
             final String objectType,
