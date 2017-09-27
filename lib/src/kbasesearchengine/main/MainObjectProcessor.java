@@ -255,7 +255,7 @@ public class MainObjectProcessor {
     private boolean performOneTick(
             final ObjectStatusEvent parentEvent,
             final Iterator<ObjectStatusEvent> expanditer)
-            throws InterruptedException, FatalIndexingException, IOException {
+            throws InterruptedException, FatalIndexingException {
         while (expanditer.hasNext()) {
             //TODO EVENT insert sub event into db - need to ensure not inserted twice on reprocess - use parent id
             final ObjectStatusEvent ev;
@@ -295,8 +295,7 @@ public class MainObjectProcessor {
     private RetriableIndexingException processOneEvent(
             final ObjectStatusEvent parentEvent,
             final ObjectStatusEvent event)
-            //TODO ERR remove IOE
-            throws IOException, InterruptedException, IndexingException {
+            throws InterruptedException, IndexingException {
         //TODO ERR use retrier
 //        return retrier.retryCons(e -> processOneEvent(e), event, event).getException();
         int retries = 1;
@@ -370,52 +369,59 @@ public class MainObjectProcessor {
     }
 
     public void processOneEvent(final ObjectStatusEvent ev)
-            throws IOException, IndexingException, InterruptedException,
-                RetriableIndexingException {
-        switch (ev.getEventType()) {
-        case NEW_VERSION:
-            GUID pguid = ev.toGUID();
-            boolean indexed = indexingStorage.checkParentGuidsExist(null, new LinkedHashSet<>(
-                    Arrays.asList(pguid))).get(pguid);
-            if (indexed) {
-                logger.logInfo("[Indexer]   skipping " + pguid + " creation (already indexed)");
-                // TODO: we should fix public access for all sub-objects too !!!
-                if (ev.isGlobalAccessed()) {
-                    publish(pguid);
+            throws IndexingException, InterruptedException, RetriableIndexingException {
+        try {
+            switch (ev.getEventType()) {
+            case NEW_VERSION:
+                GUID pguid = ev.toGUID();
+                boolean indexed = indexingStorage.checkParentGuidsExist(null, new LinkedHashSet<>(
+                        Arrays.asList(pguid))).get(pguid);
+                if (indexed) {
+                    logger.logInfo("[Indexer]   skipping " + pguid +
+                            " creation (already indexed)");
+                    // TODO: we should fix public access for all sub-objects too !!!
+                    if (ev.isGlobalAccessed()) {
+                        publish(pguid);
+                    } else {
+                        unpublish(pguid);
+                    }
                 } else {
-                    unpublish(pguid);
+                    indexObject(pguid, ev.getStorageObjectType(), ev.getTimestamp(),
+                            ev.isGlobalAccessed(), null, new LinkedList<>());
                 }
-            } else {
-                indexObject(pguid, ev.getStorageObjectType(), ev.getTimestamp(),
-                        ev.isGlobalAccessed(), null, new LinkedList<>());
+                break;
+            case DELETED:
+                unshare(ev.toGUID(), ev.getAccessGroupId());
+                break;
+            case DELETE_ALL_VERSIONS:
+                unshareAllVersions(ev.toGUID());
+                break;
+            case UNDELETE_ALL_VERSIONS:
+                shareAllVersions(ev.toGUID());
+                break;
+            case SHARED:
+                share(ev.toGUID(), ev.getTargetAccessGroupId());
+                break;
+            case UNSHARED:
+                unshare(ev.toGUID(), ev.getTargetAccessGroupId());
+                break;
+            case RENAME_ALL_VERSIONS:
+                renameAllVersions(ev.toGUID(), ev.getNewName());
+                break;
+            case PUBLISH_ALL_VERSIONS:
+                publishAllVersions(ev.toGUID());
+                break;
+            case UNPUBLISH_ALL_VERSIONS:
+                unpublishAllVersions(ev.toGUID());
+                break;
+            default:
+                throw new UnprocessableEventIndexingException(
+                        "Unsupported event type: " + ev.getEventType());
             }
-            break;
-        case DELETED:
-            unshare(ev.toGUID(), ev.getAccessGroupId());
-            break;
-        case DELETE_ALL_VERSIONS:
-            unshareAllVersions(ev.toGUID());
-            break;
-        case UNDELETE_ALL_VERSIONS:
-            shareAllVersions(ev.toGUID());
-            break;
-        case SHARED:
-            share(ev.toGUID(), ev.getTargetAccessGroupId());
-            break;
-        case UNSHARED:
-            unshare(ev.toGUID(), ev.getTargetAccessGroupId());
-            break;
-        case RENAME_ALL_VERSIONS:
-            renameAllVersions(ev.toGUID(), ev.getNewName());
-            break;
-        case PUBLISH_ALL_VERSIONS:
-            publishAllVersions(ev.toGUID());
-            break;
-        case UNPUBLISH_ALL_VERSIONS:
-            unpublishAllVersions(ev.toGUID());
-            break;
-        default:
-            throw new IllegalStateException("Unsupported event type: " + ev.getEventType());
+        } catch (IOException e) {
+            // may want to make IndexingStorage throw more specific exceptions, but this will work
+            // for now. Need to look more carefully at the code before that happens.
+            throw new RetriableIndexingException(e.getMessage(), e);
         }
     }
 

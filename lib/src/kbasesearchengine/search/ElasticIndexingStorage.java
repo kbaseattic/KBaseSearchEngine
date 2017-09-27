@@ -428,6 +428,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }};
     }
 
+    // throws IOexceptions for elastic connection issues & deserializaion issues
     @Override
     public Map<GUID, Boolean> checkParentGuidsExist(String objectType, Set<GUID> guids) 
             throws IOException {
@@ -578,6 +579,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             "  }\n" +
             "}\n";
     
+    //IO exception thrown for deserialization & elasticsearch contact errors
     /* calling this method with accessGroupId == null and both booleans false is an error. */
     @SuppressWarnings({ "serial", "unchecked" })
     private boolean updateAccessGroupForVersions(
@@ -710,7 +712,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return new GUID(parentGUID.getStorageCode(), parentGUID.getAccessGroupId(),
                 parentGUID.getAccessGroupObjectId(), null, null, null).toString();
     }
-
+    //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
     public int setNameOnAllObjectVersions(final GUID object, final String newName)
             throws IOException {
@@ -746,6 +748,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return (int) data.get("updated");
     }
     
+    //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
     public void shareObjects(Set<GUID> guids, int accessGroupId, 
             boolean isExternalPublicGroup) throws IOException {
@@ -788,6 +791,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
     }
     
+    //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
     public void unshareObjects(Set<GUID> guids, int accessGroupId) throws IOException {
         Map<String, Set<GUID>> indexToGuids = groupParentIdsByIndex(guids);
@@ -810,6 +814,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
     }
     
+    //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
     public void deleteAllVersions(final GUID guid) throws IOException {
         // could optimize later by making LLV return the index name
@@ -831,6 +836,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         //TODO NOW admin access group id has same problem as public access group id
     }
     
+    //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
     public void undeleteAllVersions(final GUID guid) throws IOException {
         // could optimize later by making LLV return the index name
@@ -850,21 +856,25 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 guid.getAccessGroupObjectId(), ver, null, null);
     }
     
+    //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
     public void publishObjects(Set<GUID> guids) throws IOException {
         shareObjects(guids, PUBLIC_ACCESS_GROUP, false);
     }
     
+    //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
     public void unpublishObjects(Set<GUID> guids) throws IOException {
         unshareObjects(guids, PUBLIC_ACCESS_GROUP);
     }
     
+    //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
     public void publishAllVersions(final GUID guid) throws IOException {
         setFieldOnObject(guid, "public", true, true);
     }
     
+    //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
     public void unpublishAllVersions(final GUID guid) throws IOException {
         setFieldOnObject(guid, "public", false, true);
@@ -1523,7 +1533,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @SuppressWarnings("serial")
-    private void createAccessTable(String indexName, Map<String, Object> mappings) throws IOException {
+    private void createAccessTable(String indexName, Map<String, Object> mappings) {
         String tableName = getAccessTableName();
         Map<String, Object> table = new LinkedHashMap<>();
         mappings.put(tableName, table);
