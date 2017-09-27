@@ -1,6 +1,7 @@
 package kbasesearchengine.events.handler;
 
 import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -8,7 +9,9 @@ import java.util.Set;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.ObjectStatusEvent;
 import kbasesearchengine.events.exceptions.IndexingException;
+import kbasesearchengine.events.exceptions.IndexingExceptionUncheckedWrapper;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
+import kbasesearchengine.events.exceptions.RetriableIndexingExceptionUncheckedWrapper;
 
 /** An interface for handling search events. The interface abstracts away event source specific
  * operations.
@@ -28,6 +31,10 @@ public interface EventHandler {
      * Iterable if the event requires no expansion.
      * Note that the _id field of the sub events will be null since they have no storage system
      * records.
+     * Also note that the {@link Iterator#next()} function may throw
+     * {@link IndexingExceptionUncheckedWrapper} and
+     * {@link RetriableIndexingExceptionUncheckedWrapper} exceptions, which should be unwrapped
+     * and rethrown as soon as possible.
      * @param event the event to be expanded.
      * @return an Iterable of the of the events resulting from the expansion or the original
      * event if no expansion is necessary.

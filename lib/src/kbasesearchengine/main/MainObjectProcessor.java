@@ -40,7 +40,9 @@ import kbasesearchengine.events.ObjectStatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
+import kbasesearchengine.events.exceptions.IndexingExceptionUncheckedWrapper;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
+import kbasesearchengine.events.exceptions.RetriableIndexingExceptionUncheckedWrapper;
 import kbasesearchengine.events.exceptions.Retrier;
 import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
 import kbasesearchengine.events.handler.EventHandler;
@@ -260,7 +262,7 @@ public class MainObjectProcessor {
             //TODO EVENT insert sub event into db - need to ensure not inserted twice on reprocess - use parent id
             final ObjectStatusEvent ev;
             try {
-                ev = retrier.retryFunc(e -> e.next(), expanditer, parentEvent);
+                ev = retrier.retryFunc(i -> getNextSubEvent(i), expanditer, parentEvent);
             } catch (IndexingException e) {
                 // TODO EVENT mark sub event as failed
                 handleException("Error getting event from data storage", parentEvent, e);
@@ -290,6 +292,17 @@ public class MainObjectProcessor {
                     (System.currentTimeMillis() - time) + "ms.)");
         }
         return true;
+    }
+    
+    private ObjectStatusEvent getNextSubEvent(Iterator<ObjectStatusEvent> iter)
+            throws IndexingException, RetriableIndexingException {
+        try {
+            return iter.next();
+        } catch (IndexingExceptionUncheckedWrapper e) {
+            throw e.getIndexingException();
+        } catch (RetriableIndexingExceptionUncheckedWrapper e) {
+            throw e.getIndexingException();
+        }
     }
     
     private void handleException(
