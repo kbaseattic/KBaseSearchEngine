@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -36,6 +37,10 @@ import kbasesearchengine.TypeDescriptor;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.AccessGroupProvider;
 import kbasesearchengine.events.ObjectStatusEvent;
+import kbasesearchengine.events.exceptions.FatalIndexingException;
+import kbasesearchengine.events.exceptions.IndexingException;
+import kbasesearchengine.events.exceptions.IndexingExceptionUncheckedWrapper;
+import kbasesearchengine.events.exceptions.RetriableIndexingException;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.events.handler.SourceData;
@@ -53,11 +58,14 @@ import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
-import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
 
 public class MainObjectProcessor {
+    
+    private static final int RETRY_COUNT = 5;
+    private static final int RETRY_SLEEP_MS = 1000;
+    
     private final File rootTempDir;
     private final AccessGroupProvider accessGroupProvider;
     private final ObjectStatusEventQueue queue;
@@ -75,19 +83,9 @@ public class MainObjectProcessor {
             final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,
-            final boolean startLifecycleRunner,
             final LineLogger logger,
             final Set<String> admins)
             throws IOException, ObjectParseException, UnauthorizedException {
-        /* Some notes for the future - I'd probably change this to take an StatusEventStorage
-         * interface rather than constructing it itself. This allows easier swapping out of
-         * components and easier testing via component mocks.
-         * Same for IndexingStorage (now ElasticIndexingStorage) and SystemStorage.
-         * I'd also make an interface for retrieving data and pass in a mapping from
-         * storageCode to the interface, so allow indexing multiple data sources. 
-         * Currently it looks like only the WS is supported and adding other sources might be a 
-         * bit tricky.
-         */
         this.logger = logger;
         this.rootTempDir = tempDir;
         this.admins = admins == null ? Collections.emptySet() : admins;
@@ -98,10 +96,6 @@ public class MainObjectProcessor {
         queue = new ObjectStatusEventQueue(storage);
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
-        // We switch this flag off in tests 
-        if (startLifecycleRunner) {
-            startLifecycleRunner();
-        }
     }
     
     /**
@@ -142,14 +136,28 @@ public class MainObjectProcessor {
             @Override
             public void run() {
                 try {
-                    for (int iter = 0; !Thread.currentThread().isInterrupted(); iter++) {
+                    while(!Thread.currentThread().isInterrupted()) {
                         try {
-                            performOneTick(iter % 10 == 0);
-                            Thread.sleep(1000);
+                            performOneTick();
+                            //TODO ERR log better errors on shutdown
+                            //TODO ERR only log unexpected interrupt errors. Set stop flag or something.
                         } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                        } catch (Exception e) {
                             logError(e);
+                            Thread.currentThread().interrupt();
+                        } catch (FatalIndexingException e) {
+                            logError(e);
+                            Thread.currentThread().interrupt();
+                        } catch (Exception e) { //TODO ERR switch to runtime and log
+                            logError(e);
+                        } finally {
+                            if (!Thread.currentThread().isInterrupted()) {
+                                try {
+                                    Thread.sleep(1000);
+                                } catch (InterruptedException e) {
+                                    logError(e);
+                                    Thread.currentThread().interrupt();
+                                }
+                            }
                         }
                     }
                 } finally {
@@ -189,46 +197,200 @@ public class MainObjectProcessor {
         throw new IllegalStateException("Failed to stop Lifecycle Runner");
     }
     
-    public void performOneTick(boolean permissions)
-            throws IOException, JsonClientException, ObjectParseException {
+    //TODO ERR handle the IOExceptions better. These are really data store access exceptions
+    private void performOneTick()
+            //TODO ERR remove IOException and OPE
+            throws IOException, FatalIndexingException, InterruptedException,
+                ObjectParseException {
         // Seems like this shouldn't be source specific. It should handle all event sources.
-        ObjectStatusEventIterator iter = queue.iterator("WS");
+        final ObjectStatusEventIterator iter = queue.iterator("WS");
         while (iter.hasNext()) {
-            //TODO NOW markAsVisited is called for every sub event, which is pointless. It should be called only when all sub events are processed.
-            final ObjectStatusEvent preEvent = iter.next();
-            for (final ObjectStatusEvent ev: getEventHandler(preEvent).expand(preEvent)) {
-                final StorageObjectType type = ev.getStorageObjectType();
-                if (type != null && !isStorageTypeSupported(type)) {
-                    if (logger != null) {
-                        logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
-                                toLogString(type) + ev.toGUID());
-                    }
-                    iter.markAsVisitied(false);
-                    continue;
-                }
+            final ObjectStatusEvent parentEvent = iter.next();
+            //TODO LOG log parent event. Add boolean willExpand(event) to eventhandler
+            final ExpandResult er = expand(parentEvent);
+            if (er.hasException()) {
+                handleException("Error expanding parent event", parentEvent, er.exception);
+                iter.markAsVisited(false);
+            } else {
+                iter.markAsVisited(performOneTick(parentEvent, er.event));
+            }
+        }
+    }
+
+    private boolean performOneTick(
+            final ObjectStatusEvent parentEvent,
+            final Iterator<ObjectStatusEvent> expanditer)
+            throws InterruptedException, FatalIndexingException, IOException,
+                ObjectParseException {
+        while (expanditer.hasNext()) {
+            //TODO EVENT insert sub event into db - need to ensure not inserted twice on reprocess - use parent id
+            final GetEventResult ger = getNextEvent(parentEvent, expanditer);
+            if (ger.hasException()) {
+                handleException("Error getting event from data storage",
+                        parentEvent, ger.exception);
+                return false;
+            }
+            final ObjectStatusEvent ev = ger.event;
+            final StorageObjectType type = ev.getStorageObjectType();
+            if (type != null && !isStorageTypeSupported(type)) {
                 if (logger != null) {
-                    logger.logInfo("[Indexer] processing " + ev.getEventType() + ", " + 
-                            toLogString(type) + ev.toGUID() + "...");
+                    logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
+                            toLogString(type) + ev.toGUID());
                 }
-                long time = System.currentTimeMillis();
-                try {
-                    processOneEvent(ev);
-                } catch (Exception e) {
-                    //TODO NOW with event expansion, this doesn't really work right.
-                    // Will skip the sub event - should follow one of 3 strategies - retry, turn off the event handler, or ignore the parent event
-                    logError(e);
-                    iter.markAsVisitied(false);
+                if (ev == parentEvent) { // hack for now. long term insert the sub event into the db
+                    return false;
+                } else {
                     continue;
                 }
-                iter.markAsVisitied(true);
+            }
+            if (logger != null) {
+                logger.logInfo("[Indexer] processing " + ev.getEventType() + ", " + 
+                        toLogString(type) + ev.toGUID() + "...");
+            }
+            long time = System.currentTimeMillis();
+            final IndexingException ie = processOneEvent(parentEvent, ev);
+            if (ie != null) {
+                handleException("Error processing event", ev, ie);
+                //TODO EVENT set failed on sub event and continue rather than failing completely
+                return false;
+            } else {
                 if (logger != null) {
                     logger.logInfo("[Indexer]   (total time: " +
                             (System.currentTimeMillis() - time) + "ms.)");
                 }
             }
         }
+        return true;
     }
     
+    private IndexingException processOneEvent(
+            final ObjectStatusEvent parentEvent,
+            final ObjectStatusEvent event)
+            //TODO ERR remove IOE and OPE
+            throws FatalIndexingException, IOException, ObjectParseException,
+                InterruptedException {
+        int retries = 1;
+        while (true) {
+            try {
+                processOneEvent(event);
+                return null;
+            } catch (IndexingException e) {
+                if (e instanceof RetriableIndexingException) {
+                    if (retries > RETRY_COUNT) {
+                        return e;
+                    } else {
+                        //TODO ERR log better error
+                        logError(e);
+                        retries++;
+                    }
+                } else {
+                    return e;
+                }
+            }
+            Thread.sleep(RETRY_SLEEP_MS);
+        }
+    }
+
+    private class ExpandResult {
+        public final IndexingException exception;
+        public final Iterator<ObjectStatusEvent> event;
+        
+        public ExpandResult(final Iterator<ObjectStatusEvent> event) {
+            this.event = event;
+            this.exception = null;
+        }
+        
+        public ExpandResult(final IndexingException exception) {
+            this.event = null;
+            this.exception = exception;
+        }
+        
+        public boolean hasException() {
+            return exception != null;
+        }
+    }
+    
+    private ExpandResult expand(final ObjectStatusEvent parentEvent) throws InterruptedException {
+        int retries = 0;
+        while (true) {
+            try {
+                return new ExpandResult(getEventHandler(parentEvent)
+                        .expand(parentEvent).iterator());
+            } catch (IndexingException e) {
+                if (e instanceof RetriableIndexingException) {
+                    if (retries > RETRY_COUNT) {
+                        return new ExpandResult(e);
+                    } else {
+                        logError(e);
+                        //TODO ERR log better error
+                        retries++;
+                    }
+                } else {
+                    return new ExpandResult(e);
+                }
+            }
+            Thread.sleep(RETRY_SLEEP_MS);
+        }
+    }
+
+    private void handleException(
+            final String error,
+            final ObjectStatusEvent event,
+            final IndexingException exception)
+            throws FatalIndexingException {
+        if (exception instanceof FatalIndexingException) {
+            throw (FatalIndexingException) exception;
+        } else {
+            //TODO NOW better logs. Log which event failed with error.
+            logError(exception);
+        }
+    }
+
+    private class GetEventResult {
+        public final IndexingException exception;
+        public final ObjectStatusEvent event;
+        
+        public GetEventResult(final ObjectStatusEvent event) {
+            this.event = event;
+            this.exception = null;
+        }
+        
+        public GetEventResult(final IndexingException exception) {
+            this.event = null;
+            this.exception = exception;
+        }
+        
+        public boolean hasException() {
+            return exception != null;
+        }
+    }
+    
+    private GetEventResult getNextEvent(
+            final ObjectStatusEvent parentEvent,
+            final Iterator<ObjectStatusEvent> eventiter)
+            throws InterruptedException {
+        int retries = 1;
+        while (true) {
+            try {
+                return new GetEventResult(eventiter.next());
+            } catch (IndexingExceptionUncheckedWrapper wrapped) {
+                final IndexingException e = wrapped.getIndexingException();
+                if (e instanceof RetriableIndexingException) {
+                    if (retries > RETRY_COUNT) {
+                        return new GetEventResult(e);
+                    } else {
+                        logError(e);
+                        //TODO ERR log better error
+                        retries++;
+                    }
+                } else {
+                    return new GetEventResult(e);
+                }
+            }
+            Thread.sleep(RETRY_SLEEP_MS);
+        }
+    }
+
     private String toLogString(final StorageObjectType type) {
         if (type == null) {
             return "";
@@ -263,7 +425,7 @@ public class MainObjectProcessor {
     }
 
     public void processOneEvent(ObjectStatusEvent ev) 
-            throws IOException, JsonClientException, ObjectParseException {
+            throws IOException, ObjectParseException, IndexingException {
         switch (ev.getEventType()) {
         case NEW_VERSION:
             GUID pguid = ev.toGUID();
@@ -323,7 +485,7 @@ public class MainObjectProcessor {
             final boolean isPublic,
             ObjectLookupProvider indexLookup,
             final List<GUID> objectRefPath) 
-            throws IOException, JsonClientException, ObjectParseException {
+            throws IOException, ObjectParseException, IndexingException {
         long t1 = System.currentTimeMillis();
         File tempFile = ObjectParser.prepareTempFile(getTempSubDir(guid.getStorageCode()));
         if (indexLookup == null) {

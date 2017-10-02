@@ -217,7 +217,8 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         esStorage.setIndexNamePrefix(esIndexPrefix);
         
         mop = new MainObjectProcessor(accessGroupProvider, Arrays.asList(weh), storage,
-                esStorage, ss, tempDir, true, logger, admins);
+                esStorage, ss, tempDir, logger, admins);
+        mop.startLifecycleRunner();
         //END_CONSTRUCTOR
     }
 

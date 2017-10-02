@@ -10,6 +10,6 @@ public interface ObjectStatusEventIterator {
 	
 	public ObjectStatusEvent next() throws IOException;
 	
-	public void markAsVisitied(boolean isIndexed) throws IOException;
+	public void markAsVisited(boolean isIndexed) throws IOException;
 	
 }
