@@ -55,7 +55,7 @@ public class ObjectStatusEventQueue {
 		}
 
 		@Override
-		public void markAsVisitied(boolean isIndexed) throws IOException {
+		public void markAsVisited(boolean isIndexed) throws IOException {
 			int curPos = nextPos - 1;
 			if( curPos >= 0 && curPos < nItems){
 				objStatusStorage.markAsProcessed(buffer[curPos], isIndexed);
