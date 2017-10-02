@@ -203,13 +203,12 @@ public class TypeFileStorage implements TypeStorage {
     }
 
     @Override
-    public List<ObjectTypeParsingRules> listObjectTypes() throws IOException {
+    public List<ObjectTypeParsingRules> listObjectTypes() {
         return new LinkedList<>(searchTypes.values());
     }
     
     @Override
-    public ObjectTypeParsingRules getObjectType(final String type)
-            throws IOException {
+    public ObjectTypeParsingRules getObjectType(final String type) {
         if (searchTypes.containsKey(type)) {
             return searchTypes.get(type);
         } else {

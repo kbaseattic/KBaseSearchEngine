@@ -7,7 +7,6 @@ import java.util.Set;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.SourceData;
-import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.system.IndexingRules;
 
@@ -21,14 +20,14 @@ public interface IndexingStorage {
      * @param indexingRules  indexing rules
      * @throws IOException
      */
-    public void indexObject(GUID guid, String objectType, ParsedObject obj, SourceData objectName,
+    public void indexObject(GUID guid, String objectType, ParsedObject obj, SourceData source,
             long timestamp, String parentJsonValue, boolean isPublic,
-            List<IndexingRules> indexingRules) throws IOException, ObjectParseException;
+            List<IndexingRules> indexingRules) throws IOException;
 
     public void indexObjects(String objectType, SourceData obj, long timestamp,
             String parentJsonValue, GUID pguid, Map<GUID, ParsedObject> idToObj,
             boolean isPublic, List<IndexingRules> indexingRules) 
-                    throws IOException, ObjectParseException;
+                    throws IOException;
     
     public Map<GUID, Boolean> checkParentGuidsExist(String objectType, Set<GUID> parentGuids) 
             throws IOException;

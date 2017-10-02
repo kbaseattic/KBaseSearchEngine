@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
+import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
@@ -78,7 +79,7 @@ public class KeywordParser {
     private static List<Object> processDerivedRule(String type, 
             Map<String, List<IndexingRules>> ruleMap, String key, 
             Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup, 
-            Set<String> keysWaitingInStack, List<GUID> callerRefPath) throws IOException {
+            Set<String> keysWaitingInStack, List<GUID> callerRefPath) {
         if (!ruleMap.containsKey(key)) {
             throw new IllegalStateException("Unknown source-key in derived keywords: " + 
                     type + "/" + key);
@@ -93,8 +94,8 @@ public class KeywordParser {
     
     private static List<Object> processDerivedRule(String type, String key, IndexingRules rule,
             Map<String, List<IndexingRules>> ruleMap, Map<String, InnerKeyValue> keywords, 
-            ObjectLookupProvider lookup, Set<String> keysWaitingInStack, List<GUID> objectRefPath)
-                    throws IOException {
+            ObjectLookupProvider lookup, Set<String> keysWaitingInStack,
+            List<GUID> objectRefPath) {
         if (!ruleMap.containsKey(key) || rule == null) {
             throw new IllegalStateException("Unknown source-key in derived keywords: " + 
                     type + "/" + key);
@@ -139,8 +140,7 @@ public class KeywordParser {
     
     private static void processRule(String type, IndexingRules rule, String key, Object value,
             Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup,
-            List<GUID> objectRefPath)
-            throws IOException {
+            List<GUID> objectRefPath) {
         Object valueFinal = value;
         if (valueFinal == null) {
             if (rule.getOptionalDefaultValue() != null) {
@@ -187,7 +187,7 @@ public class KeywordParser {
     @SuppressWarnings("unchecked")
     private static Object transform(Object value, String transform, IndexingRules rule,
             Map<String, InnerKeyValue> sourceKeywords, ObjectLookupProvider lookup,
-            List<GUID> objectRefPath) throws IOException {
+            List<GUID> objectRefPath) throws IOException, IndexingException {
         String retProp = null;
         if (transform.contains(".")) {
             int dotPos = transform.indexOf('.');
@@ -367,11 +367,11 @@ public class KeywordParser {
 
     public interface ObjectLookupProvider {
         public Set<String> resolveWorkspaceRefs(List<GUID> objectRefPath, Set<String> refs) 
-                throws IOException;
+                throws IOException, IndexingException;
         public Map<GUID, String> getTypesForGuids(Set<GUID> guids) throws IOException;
         public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids) 
                 throws IOException;
-        public ObjectTypeParsingRules getTypeDescriptor(String type);
+        public ObjectTypeParsingRules getTypeDescriptor(String type) throws IndexingException;
     }
 
     private static class InnerKeyValue {
