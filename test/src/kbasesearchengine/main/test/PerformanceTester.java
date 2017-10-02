@@ -146,9 +146,16 @@ public class PerformanceTester {
         final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
                 "yaml", new YAMLTypeMappingParser());
         final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
-        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken,
-                esHostPort, esUser, esPassword, esIndexPrefix, 
-                ss, tempDir, logger);
+        
+        final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
+                MainObjectProcessor.getTempSubDir(tempDir, "esbulk"));
+        if (esUser != null) {
+            esStorage.setEsUser(esUser);
+            esStorage.setEsPassword(esPassword);
+        }
+        esStorage.setIndexNamePrefix(esIndexPrefix);
+        
+        mop = new MainObjectProcessor(esStorage, ss, tempDir, logger);
     }
     
     private static void deleteAllTestElasticIndices(HttpHost esHostPort, String esUser,

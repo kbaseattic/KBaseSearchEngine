@@ -34,6 +34,12 @@ import com.mongodb.client.MongoDatabase;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.events.AccessGroupCache;
+import kbasesearchengine.events.AccessGroupProvider;
+import kbasesearchengine.events.WorkspaceAccessGroupProvider;
+import kbasesearchengine.events.handler.WorkspaceEventHandler;
+import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
+import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.MainObjectProcessor;
 import kbasesearchengine.search.ElasticIndexingStorage;
@@ -43,6 +49,7 @@ import kbasesearchengine.system.TypeMappingParser;
 import kbasesearchengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.ConfigurableAuthService;
+import workspace.WorkspaceClient;
 //END_HEADER
 
 /**
@@ -186,12 +193,31 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
             public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
             }
         };
+        
         final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
                 "yaml", new YAMLTypeMappingParser());
         final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
-        mop = new MainObjectProcessor(wsUrl, kbaseIndexerToken, db,
-                esHostPort, esUser, esPassword, esIndexPrefix, 
-                ss, tempDir, true, logger, admins);
+        
+        final StatusEventStorage storage = new MongoDBStatusEventStorage(db);
+        
+        final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, kbaseIndexerToken);
+        wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
+        
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(wsClient);
+        // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
+        final AccessGroupProvider accessGroupProvider = new AccessGroupCache(
+                new WorkspaceAccessGroupProvider(wsClient), 30, 50000 * 1000);
+        
+        final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
+                MainObjectProcessor.getTempSubDir(tempDir, "esbulk"));
+        if (esUser != null) {
+            esStorage.setEsUser(esUser);
+            esStorage.setEsPassword(esPassword);
+        }
+        esStorage.setIndexNamePrefix(esIndexPrefix);
+        
+        mop = new MainObjectProcessor(accessGroupProvider, Arrays.asList(weh), storage,
+                esStorage, ss, tempDir, true, logger, admins);
         //END_CONSTRUCTOR
     }
 
