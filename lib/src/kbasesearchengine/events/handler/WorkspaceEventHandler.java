@@ -90,12 +90,14 @@ public class WorkspaceEventHandler implements EventHandler {
     }
     
     @Override
-    public SourceData load(final GUID guid, final Path file) throws IndexingException {
+    public SourceData load(final GUID guid, final Path file)
+            throws IndexingException, RetriableIndexingException {
         return load(Arrays.asList(guid), file);
     }
 
     @Override
-    public SourceData load(final List<GUID> guids, final Path file) throws IndexingException {
+    public SourceData load(final List<GUID> guids, final Path file)
+            throws IndexingException, RetriableIndexingException {
         //TODO CODE check storage code
         // create a new client since we're setting a file for the next response
         // fixes race conditions
@@ -238,7 +240,7 @@ public class WorkspaceEventHandler implements EventHandler {
 
     @Override
     public Iterable<ObjectStatusEvent> expand(final ObjectStatusEvent event)
-            throws IndexingException {
+            throws IndexingException, RetriableIndexingException {
         if (!STORAGE_CODE.equals(event.getStorageCode())) {
             throw new IllegalArgumentException("This handler only accepts "
                     + STORAGE_CODE + "events");
@@ -469,7 +471,7 @@ public class WorkspaceEventHandler implements EventHandler {
     }
 
     private Iterable<ObjectStatusEvent> handleNewAllVersions(final ObjectStatusEvent event)
-            throws IndexingException {
+            throws IndexingException, RetriableIndexingException {
         final long objid;
         try {
             objid = Long.parseLong(event.getAccessGroupObjectId());
