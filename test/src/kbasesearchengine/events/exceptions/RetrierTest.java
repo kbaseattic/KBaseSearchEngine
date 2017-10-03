@@ -173,7 +173,6 @@ public class RetrierTest {
         assertThat("incorrect event", le2.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le2.exception, new RetriableIndexingException("bar"));
         assertCloseMS(start, le2.time, 50, 15);
-        
         assertCloseMS(start, end, 100, 15);
     }
     
@@ -205,6 +204,105 @@ public class RetrierTest {
         assertCloseMS(start, end, 100, 15);
     }
 
+    private class TestFunction<T, R> implements RetryFunction<T, R> {
+
+        private final T input;
+        private final R ret;
+        private final int retries;
+        private int count = 0;
+        
+        private TestFunction(T input, R ret, int retries) {
+            this.input = input;
+            this.ret = ret;
+            this.retries = retries;
+        }
+
+        @Override
+        public R apply(final T t)
+                throws IndexingException, RetriableIndexingException, InterruptedException {
+            assertThat("incorrect input", t, is(input));
+            if (count == retries) {
+                return ret;
+            } else {
+                count++;
+                throw new RetriableIndexingException("bar");
+            }
+        }
+    }
+
+    @Test
+    public void function1RetrySuccessNoEvent() throws Exception {
+        final CollectingLogger collog = new CollectingLogger();
+        final Retrier ret = new Retrier(1, 50, Collections.emptyList(), collog);
+        final Instant start = Instant.now();
+        final long result = ret.retryFunc(new TestFunction<>("foo", 24L, 1), "foo", null);
+        final Instant end = Instant.now();
+        
+        assertThat("incorrect result", result, is(24L));
+        assertThat("incorrect retries", collog.events.size(), is(1));
+        final LogEvent le = collog.events.get(0);
+        assertThat("incorrect retry count", le.retryCount, is(1));
+        assertThat("incorrect event", le.event, is(Optional.absent()));
+        TestCommon.assertExceptionCorrect(le.exception, new RetriableIndexingException("bar"));
+        assertCloseMS(start, le.time, 0, 15);
+        assertCloseMS(start, end, 50, 15);
+    }
+    
+    @Test
+    public void function2RetrySuccessWithEvent() throws Exception {
+        final CollectingLogger collog = new CollectingLogger();
+        final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
+        final Instant start = Instant.now();
+        final ObjectStatusEvent ev = new ObjectStatusEvent(
+                null, "foo", 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
+                ObjectStatusEventType.DELETED, false);
+        final long result = ret.retryFunc(new TestFunction<>("foo", 26L, 2), "foo", ev);
+        final Instant end = Instant.now();
+        
+        assertThat("incorrect result", result, is(26L));
+        assertThat("incorrect retries", collog.events.size(), is(2));
+        final LogEvent le1 = collog.events.get(0);
+        assertThat("incorrect retry count", le1.retryCount, is(1));
+        assertThat("incorrect event", le1.event, is(Optional.of(ev)));
+        TestCommon.assertExceptionCorrect(le1.exception, new RetriableIndexingException("bar"));
+        assertCloseMS(start, le1.time, 0, 15);
+        
+        final LogEvent le2 = collog.events.get(1);
+        assertThat("incorrect retry count", le2.retryCount, is(2));
+        assertThat("incorrect event", le2.event, is(Optional.of(ev)));
+        TestCommon.assertExceptionCorrect(le2.exception, new RetriableIndexingException("bar"));
+        assertCloseMS(start, le2.time, 50, 15);
+        assertCloseMS(start, end, 100, 15);
+    }
+    
+    @Test
+    public void functionRetriesExceeded() throws Exception {
+        final CollectingLogger collog = new CollectingLogger();
+        final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
+        final Instant start = Instant.now();
+        try {
+            ret.retryFunc(new TestFunction<>("foo", 3L, -1), "foo", null);
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, new RetriesExceededIndexingException("bar"));
+        }
+        final Instant end = Instant.now();
+        
+        assertThat("incorrect retries", collog.events.size(), is(2));
+        final LogEvent le1 = collog.events.get(0);
+        assertThat("incorrect retry count", le1.retryCount, is(1));
+        assertThat("incorrect event", le1.event, is(Optional.absent()));
+        TestCommon.assertExceptionCorrect(le1.exception, new RetriableIndexingException("bar"));
+        assertCloseMS(start, le1.time, 0, 15);
+        
+        final LogEvent le2 = collog.events.get(1);
+        assertThat("incorrect retry count", le2.retryCount, is(2));
+        assertThat("incorrect event", le2.event, is(Optional.absent()));
+        TestCommon.assertExceptionCorrect(le2.exception, new RetriableIndexingException("bar"));
+        assertCloseMS(start, le2.time, 50, 15);
+        assertCloseMS(start, end, 100, 15);
+    }
+    
+    
     private void assertCloseMS(
             final Instant start,
             final Instant end,

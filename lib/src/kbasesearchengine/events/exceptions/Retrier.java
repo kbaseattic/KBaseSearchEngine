@@ -160,7 +160,7 @@ public class Retrier {
                 TimeUnit.MILLISECONDS.sleep(fatalRetryBackoffsMS.get(fatalRetries - 1));
                 return true;
             }
-        } else if (e instanceof RetriableIndexingException){
+        } else {
             if (retries > retryCount) {
                 throw new RetriesExceededIndexingException(e.getMessage(), e);
             } else {
@@ -168,9 +168,6 @@ public class Retrier {
                 TimeUnit.MILLISECONDS.sleep(delayMS);
                 return false;
             }
-        } else {
-            throw new IllegalStateException(
-                    "Exception hierarchy changed without update to retrier");
         }
         
     }
