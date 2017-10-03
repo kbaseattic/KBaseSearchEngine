@@ -3,8 +3,12 @@ package kbasesearchengine.events.exceptions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import com.google.common.base.Optional;
 
 import kbasesearchengine.events.ObjectStatusEvent;
+import kbasesearchengine.tools.Utils;
 
 /** Generic code for retrying functions. Expects the code to throw
  * {@link RetriableIndexingException} or a subclass when a retry should occur.
@@ -25,7 +29,7 @@ public class Retrier {
      * @param delayMS the millisecond delay between retries for non-fatal exceptions.
      * @param fatalRetryBackoffsMS the number of milliseconds to wait between each retry for
      * fatal exceptions, in order. The number of entries in the list determine the number of
-     * retries.
+     * retries. If it is empty, no retries will occur.
      * @param logger a logger to which retries will be logged.
      */
     public Retrier(
@@ -33,6 +37,19 @@ public class Retrier {
             final int delayMS,
             final List<Integer> fatalRetryBackoffsMS,
             final RetryLogger logger) {
+        if (retryCount < 1) {
+            throw new IllegalArgumentException("retryCount must be at least 1");
+        }
+        if (delayMS < 1) {
+            throw new IllegalArgumentException("delayMS must be at least 1");
+        }
+        Utils.nonNull(fatalRetryBackoffsMS, "fatalRetryBackoffsMS");
+        for (final Integer i: fatalRetryBackoffsMS) {
+            if (i == null || i < 1) {
+                throw new IllegalArgumentException("Illegal value in fatalRetryBackoffsMS: " + i);
+            }
+        }
+        Utils.nonNull(logger, "logger");
         this.retryCount = retryCount;
         this.delayMS = delayMS;
         this.fatalRetryBackoffsMS = Collections.unmodifiableList(
@@ -61,6 +78,13 @@ public class Retrier {
         return fatalRetryBackoffsMS;
     }
     
+    /** Get the logger for logging retries.
+     * @return the logger.
+     */
+    public RetryLogger getLogger() {
+        return logger;
+    }
+    
     /** Retry a "function" that only takes one input.
      * @param consumer the consumer function.
      * @param input the input to the function.
@@ -74,6 +98,7 @@ public class Retrier {
             final T input,
             final ObjectStatusEvent event)
             throws InterruptedException, IndexingException {
+        Utils.nonNull(consumer, "consumer");
         int retries = 1;
         int fatalRetries = 1;
         while (true) {
@@ -104,6 +129,7 @@ public class Retrier {
             final T input,
             final ObjectStatusEvent event)
             throws InterruptedException, IndexingException {
+        Utils.nonNull(function, "function");
         int retries = 1;
         int fatalRetries = 1;
         while (true) {
@@ -130,16 +156,16 @@ public class Retrier {
             if (fatalRetries - 1 >= fatalRetryBackoffsMS.size()) {
                 throw new FatalIndexingException(e.getMessage(), e);
             } else {
-                logger.log(fatalRetries, event, e);
-                Thread.sleep(fatalRetryBackoffsMS.get(fatalRetries - 1));
+                logger.log(fatalRetries, Optional.fromNullable(event), e);
+                TimeUnit.MILLISECONDS.sleep(fatalRetryBackoffsMS.get(fatalRetries - 1));
                 return true;
             }
         } else if (e instanceof RetriableIndexingException){
-            if (retries > retryCount) {
+            if (retries >= retryCount) {
                 throw new RetriesExceededIndexingException(e.getMessage(), e);
             } else {
-                logger.log(retries, event, e);
-                Thread.sleep(delayMS);
+                logger.log(retries, Optional.fromNullable(event), e);
+                TimeUnit.MILLISECONDS.sleep(delayMS);
                 return false;
             }
         } else {
