@@ -55,7 +55,7 @@ public class ObjectStatusEventQueueTest {
     }
 
     @Test
-    public void testIterator() throws IOException {
+    public void testIterator() throws Exception {
         int count = queue.count();
         System.out.println("Number of records " + count);
 

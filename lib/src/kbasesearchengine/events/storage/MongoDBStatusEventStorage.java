@@ -111,7 +111,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
 		return (int) collection(COLLECTION_OBJECT_STATUS_EVENTS).count(query);
 	}
 
-    private List<ObjectStatusEvent> find(Document query, int skip, int limit) throws IOException {
+    private List<ObjectStatusEvent> find(Document query, int skip, int limit) {
             List<ObjectStatusEvent> events = new ArrayList<ObjectStatusEvent>();
 
     FindIterable<Document> cursor = collection(COLLECTION_OBJECT_STATUS_EVENTS).find(query).skip(skip).limit(limit);
@@ -163,24 +163,27 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
 		}
 	}
 	
-	@Override
-	public ObjectStatusCursor cursor(String storageCode, boolean processed, int pageSize, String timeAlive)
-			throws IOException {
-		
-		final List<Document> queryItems = new LinkedList<>();
-		queryItems.add(new Document("processed", processed));
-		if(storageCode != null){
-			queryItems.add(new Document("storageCode", storageCode));			
-		}
-		final Document query = new Document("$and", queryItems);
-		
-		_Cursor cursor = new _Cursor(null, pageSize, timeAlive, query);
-		nextPage(cursor, 0);
-		return cursor;
-	}
+    @Override
+    public ObjectStatusCursor cursor(
+            final String storageCode,
+            final boolean processed,
+            final int pageSize,
+            final String timeAlive) {
+
+        final List<Document> queryItems = new LinkedList<>();
+        queryItems.add(new Document("processed", processed));
+        if(storageCode != null){
+            queryItems.add(new Document("storageCode", storageCode));
+        }
+        final Document query = new Document("$and", queryItems);
+
+        _Cursor cursor = new _Cursor(null, pageSize, timeAlive, query);
+        nextPage(cursor, 0);
+        return cursor;
+    }
 
 	@Override
-	public boolean nextPage(ObjectStatusCursor cursor, int nRemovedItems) throws IOException {
+	public boolean nextPage(ObjectStatusCursor cursor, int nRemovedItems) {
 		_Cursor _cursor = (_Cursor)cursor;
 		List<ObjectStatusEvent> objs = find(_cursor.query, _cursor.getPageIndex()*_cursor.getPageSize() - nRemovedItems, _cursor.getPageSize());
 		

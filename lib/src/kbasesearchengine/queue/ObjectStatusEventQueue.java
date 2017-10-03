@@ -2,8 +2,11 @@ package kbasesearchengine.queue;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import kbasesearchengine.events.ObjectStatusEvent;
+import kbasesearchengine.events.exceptions.FatalIndexingException;
+import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.storage.ObjectStatusCursor;
 import kbasesearchengine.events.storage.StatusEventStorage;
 
@@ -24,21 +27,22 @@ public class ObjectStatusEventQueue {
 		public _Iterator(String storageCode) {
 			super();
 			this.storageCode = storageCode;
+			loadBuffer();
 		}
 				
 
 		@Override
-		public boolean hasNext() throws IOException {
-			if(bufferEmpy()){
+		public boolean hasNext() {
+			if(isBufferEmpty()){
 				loadBuffer();
 			}			
-			return !bufferEmpy();
+			return !isBufferEmpty();
 		}
 
-		private void loadBuffer() throws IOException {
-			if(cursor == null){
-				cursor = objStatusStorage.cursor(storageCode, false, BUFFER_SIZE, BUFFER_ALIVE_TIME);							
-			} else{
+		private void loadBuffer() {
+			if (cursor == null){
+				cursor = objStatusStorage.cursor(storageCode, false, BUFFER_SIZE, BUFFER_ALIVE_TIME);
+			} else {
 				objStatusStorage.nextPage(cursor, nMarkedAsVisited);
 			}
 						
@@ -50,38 +54,40 @@ public class ObjectStatusEventQueue {
 			nItems = cursor.getData().size();
 		}
 
-		private boolean bufferEmpy() {
+		private boolean isBufferEmpty() {
 			return !(nextPos < nItems);
 		}
 
 		@Override
 		public void markAsVisited(boolean isIndexed) throws IOException {
 			int curPos = nextPos - 1;
-			if( curPos >= 0 && curPos < nItems){
+			if (curPos >= 0 && curPos < nItems) {
 				objStatusStorage.markAsProcessed(buffer[curPos], isIndexed);
 				
-			} else{
+			} else {
 				throw new IndexOutOfBoundsException();
 			}		
 			nMarkedAsVisited++;
 		}
 
-		@Override
-		public ObjectStatusEvent next() {
-			if(bufferEmpy()){
-				throw new IndexOutOfBoundsException();
-			}					
-			return buffer[nextPos++];
-		}		
+        @Override
+        public ObjectStatusEvent next() {
+            if (isBufferEmpty()) {
+                throw new NoSuchElementException();
+            }
+            final ObjectStatusEvent ev = buffer[nextPos++];
+            return ev;
+        }
 	}
 		
 	public ObjectStatusEventQueue(StatusEventStorage objStatusStorage){
 		this.objStatusStorage = objStatusStorage;
-	}    
-    	
-	public ObjectStatusEventIterator iterator(String storageCode){		
-		return new _Iterator(storageCode);
 	}
+
+    public ObjectStatusEventIterator iterator(String storageCode)
+            throws FatalIndexingException, FatalRetriableIndexingException {
+        return new _Iterator(storageCode);
+    }
 	
 	public void markAsNonprocessed(String storageCode, String storageObjectType) throws IOException{
 		objStatusStorage.markAsNonprocessed(storageCode, storageObjectType);
