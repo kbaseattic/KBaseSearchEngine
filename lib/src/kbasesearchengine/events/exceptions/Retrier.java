@@ -161,7 +161,7 @@ public class Retrier {
                 return true;
             }
         } else if (e instanceof RetriableIndexingException){
-            if (retries >= retryCount) {
+            if (retries > retryCount) {
                 throw new RetriesExceededIndexingException(e.getMessage(), e);
             } else {
                 logger.log(retries, Optional.fromNullable(event), e);
