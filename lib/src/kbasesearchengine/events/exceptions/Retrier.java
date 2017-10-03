@@ -17,8 +17,6 @@ import kbasesearchengine.tools.Utils;
  */
 public class Retrier {
     
-    //TODO TEST
-    
     private final int retryCount;
     private final int delayMS;
     private final RetryLogger logger;
