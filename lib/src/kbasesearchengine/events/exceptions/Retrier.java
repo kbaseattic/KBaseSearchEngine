@@ -1,13 +1,18 @@
 package kbasesearchengine.events.exceptions;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import kbasesearchengine.events.ObjectStatusEvent;
 
+/** Generic code for retrying functions. Expects the code to throw
+ * {@link RetriableIndexingException} or a subclass when a retry should occur.
+ * @author gaprice@lbl.gov
+ *
+ */
 public class Retrier {
     
-    //TODO JAVADOC
     //TODO TEST
     
     private final int retryCount;
@@ -15,6 +20,14 @@ public class Retrier {
     private final RetryLogger logger;
     private final List<Integer> fatalRetryBackoffsMS;
     
+    /** Create a retrier.
+     * @param retryCount the maximum number of retries for non-fatal exceptions.
+     * @param delayMS the millisecond delay between retries for non-fatal exceptions.
+     * @param fatalRetryBackoffsMS the number of milliseconds to wait between each retry for
+     * fatal exceptions, in order. The number of entries in the list determine the number of
+     * retries.
+     * @param logger a logger to which retries will be logged.
+     */
     public Retrier(
             final int retryCount,
             final int delayMS,
@@ -22,18 +35,40 @@ public class Retrier {
             final RetryLogger logger) {
         this.retryCount = retryCount;
         this.delayMS = delayMS;
-        this.fatalRetryBackoffsMS = new ArrayList<>(fatalRetryBackoffsMS);
+        this.fatalRetryBackoffsMS = Collections.unmodifiableList(
+                new ArrayList<>(fatalRetryBackoffsMS));
         this.logger = logger;
     }
 
+    /** Get the maximum number of retries for non-fatal exceptions.
+     * @return the retry count.
+     */
     public int getRetryCount() {
         return retryCount;
     }
 
+    /** Get the delay in milliseconds between non-fatal retry attempts.
+     * @return the retry delay.
+     */
     public int getDelayMS() {
         return delayMS;
     }
     
+    /** Get the delays between subsequent retries for fatal but retriable events.
+     * @return the retry delays.
+     */
+    public List<Integer> getFatalRetryBackoffsMS() {
+        return fatalRetryBackoffsMS;
+    }
+    
+    /** Retry a "function" that only takes one input.
+     * @param consumer the consumer function.
+     * @param input the input to the function.
+     * @param event the event associated with the function or null if none.
+     * @throws InterruptedException if the retry is interrupted.
+     * @throws IndexingException if an exception that cannot be retried occurs or retries are
+     * expended.
+     */
     public <T> void retryCons(
             final RetryConsumer<T> consumer,
             final T input,
@@ -56,6 +91,14 @@ public class Retrier {
         }
     }
     
+    /** Retry a function that only takes one input.
+     * @param function the function.
+     * @param input the input to the function.
+     * @param event the event associated with the function or null if none.
+     * @throws InterruptedException if the retry is interrupted.
+     * @throws IndexingException if an exception that cannot be retried occurs or retries are
+     * expended.
+     */
     public <T, R> R retryFunc(
             final RetryFunction<T, R> function,
             final T input,

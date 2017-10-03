@@ -1,7 +1,8 @@
 package kbasesearchengine.events.exceptions;
 
-/** This class wraps a checked indexing exception. It exists solely to allow throwing indexing
- * exceptions within interface implementations where the appropriate exception cannot be thrown.
+/** This class wraps a checked retriable indexing exception. It exists solely to allow throwing
+ * indexing exceptions within interface implementations where the appropriate exception cannot be
+ * thrown.
  * 
  * Exception handlers should catch the exception and handle the appropriate instance of the wrapped
  * checked exception.
