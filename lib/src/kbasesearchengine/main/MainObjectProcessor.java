@@ -213,15 +213,13 @@ public class MainObjectProcessor {
         throw new IllegalStateException("Failed to stop Lifecycle Runner");
     }
     
-    //TODO ERR handle the IOExceptions better. These are really data store access exceptions
-    private void performOneTick()
-            //TODO ERR remove IOException
-            throws IOException, FatalIndexingException, InterruptedException {
+    private void performOneTick() throws InterruptedException, IndexingException {
         // Seems like this shouldn't be source specific. It should handle all event sources.
-        final ObjectStatusEventIterator iter = queue.iterator("WS");
+        final ObjectStatusEventIterator iter = retrier.retryFunc(
+                q -> q.iterator("WS"), queue, null);
         while (iter.hasNext()) {
             //TODO LOG log parent event. Add boolean willExpand(event) to eventhandler
-            final ObjectStatusEvent parentEvent = iter.next();
+            final ObjectStatusEvent parentEvent = retrier.retryFunc(i -> i.next(), iter, null);
             final Iterator<ObjectStatusEvent> er;
             try {
                 er = retrier.retryFunc(e -> getEventHandler(e).expand(e).iterator(),
@@ -415,7 +413,7 @@ public class MainObjectProcessor {
             throws InterruptedException, FatalIndexingException {
         try {
             return retrier.retryFunc(
-                    t -> typeStorage.listObjectTypesByStorageObjectType(
+                    t -> !typeStorage.listObjectTypesByStorageObjectType(
                             ev.getStorageObjectType()).isEmpty(),
                     ev, ev);
         } catch (IndexingException e) {
