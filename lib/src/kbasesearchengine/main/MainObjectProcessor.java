@@ -18,6 +18,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.google.common.base.Optional;
 
 import kbasesearchengine.AccessFilter;
 import kbasesearchengine.GetObjectsInput;
@@ -86,7 +87,10 @@ public class MainObjectProcessor {
             RETRY_FATAL_BACKOFF_MS,
             (retrycount, event, except) -> tempLog(retrycount, event, except)); //TODO LOG better logging for retries
     
-    private void tempLog(final int retrycount, final ObjectStatusEvent ev, final Throwable ex) {
+    private void tempLog(
+            final int retrycount,
+            final Optional<ObjectStatusEvent> ev,
+            final Throwable ex) {
         System.out.println(retrycount);
         System.out.println(ev);
         logError(ex);
