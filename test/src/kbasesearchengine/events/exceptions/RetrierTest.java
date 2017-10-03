@@ -15,9 +15,11 @@ import org.junit.Test;
 import com.google.common.base.Optional;
 
 import kbasesearchengine.events.ObjectStatusEvent;
+import kbasesearchengine.events.ObjectStatusEventType;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
 import kbasesearchengine.events.exceptions.Retrier;
 import kbasesearchengine.events.exceptions.RetryLogger;
+import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.test.common.TestCommon;
 
 public class RetrierTest {
@@ -52,6 +54,7 @@ public class RetrierTest {
         
     }
 
+    @Test
     public void construct() throws Exception {
         final CollectingLogger log = new CollectingLogger();
         final Retrier ret = new Retrier(2, 10, Arrays.asList(4, 5, 6), log);
@@ -131,7 +134,7 @@ public class RetrierTest {
     }
     
     @Test
-    public void consumer1RetryNoEvent() throws Exception {
+    public void consumer1RetrySuccessNoEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(1, 50, Collections.emptyList(), collog);
         final Instant start = Instant.now();
@@ -145,6 +148,61 @@ public class RetrierTest {
         TestCommon.assertExceptionCorrect(le.exception, new RetriableIndexingException("bar"));
         assertCloseMS(start, le.time, 0, 15);
         assertCloseMS(start, end, 50, 15);
+    }
+    
+    @Test
+    public void consumer2RetrySuccessWithEvent() throws Exception {
+        final CollectingLogger collog = new CollectingLogger();
+        final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
+        final Instant start = Instant.now();
+        final ObjectStatusEvent ev = new ObjectStatusEvent(
+                null, "foo", 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
+                ObjectStatusEventType.DELETED, false);
+        ret.retryCons(new TestConsumer<>("foo", 2), "foo", ev);
+        final Instant end = Instant.now();
+        
+        assertThat("incorrect retries", collog.events.size(), is(2));
+        final LogEvent le1 = collog.events.get(0);
+        assertThat("incorrect retry count", le1.retryCount, is(1));
+        assertThat("incorrect event", le1.event, is(Optional.of(ev)));
+        TestCommon.assertExceptionCorrect(le1.exception, new RetriableIndexingException("bar"));
+        assertCloseMS(start, le1.time, 0, 15);
+        
+        final LogEvent le2 = collog.events.get(1);
+        assertThat("incorrect retry count", le2.retryCount, is(2));
+        assertThat("incorrect event", le2.event, is(Optional.of(ev)));
+        TestCommon.assertExceptionCorrect(le2.exception, new RetriableIndexingException("bar"));
+        assertCloseMS(start, le2.time, 50, 15);
+        
+        assertCloseMS(start, end, 100, 15);
+    }
+    
+    @Test
+    public void consumerRetriesExceeded() throws Exception {
+        final CollectingLogger collog = new CollectingLogger();
+        final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
+        final Instant start = Instant.now();
+        try {
+            ret.retryCons(new TestConsumer<>("foo", -1), "foo", null);
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, new RetriesExceededIndexingException("bar"));
+        }
+        final Instant end = Instant.now();
+        
+        assertThat("incorrect retries", collog.events.size(), is(2));
+        final LogEvent le1 = collog.events.get(0);
+        assertThat("incorrect retry count", le1.retryCount, is(1));
+        assertThat("incorrect event", le1.event, is(Optional.absent()));
+        TestCommon.assertExceptionCorrect(le1.exception, new RetriableIndexingException("bar"));
+        assertCloseMS(start, le1.time, 0, 15);
+        
+        final LogEvent le2 = collog.events.get(1);
+        assertThat("incorrect retry count", le2.retryCount, is(2));
+        assertThat("incorrect event", le2.event, is(Optional.absent()));
+        TestCommon.assertExceptionCorrect(le2.exception, new RetriableIndexingException("bar"));
+        assertCloseMS(start, le2.time, 50, 15);
+        
+        assertCloseMS(start, end, 100, 15);
     }
 
     private void assertCloseMS(
