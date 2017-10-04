@@ -32,6 +32,7 @@ import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple9;
 import us.kbase.common.service.UObject;
+import us.kbase.common.service.UnauthorizedException;
 import workspace.GetObjectInfo3Params;
 import workspace.GetObjectInfo3Results;
 import workspace.GetObjects2Params;
@@ -105,9 +106,10 @@ public class WorkspaceEventHandler implements EventHandler {
         final WorkspaceClient wc;
         try {
             wc = new WorkspaceClient(ws.getURL(), ws.getToken());
-        } catch (IOException |JsonClientException e) {
-            //TODO EXP some of these exceptions should be retries, some should shut down the event loop until the issue can be fixed (e.g. bad token, ws down), some should ignore the event (ws deleted)
-            throw new IllegalStateException("Error contacting workspace: " + e.getMessage(), e);
+        } catch (IOException e) {
+            throw handleException(e);
+        } catch (UnauthorizedException e) {
+            throw new FatalIndexingException(e.getMessage(), e);
         }
         wc.setIsInsecureHttpConnectionAllowed(ws.isInsecureHttpConnectionAllowed());
         wc.setStreamingModeOn(true);
@@ -161,6 +163,9 @@ public class WorkspaceEventHandler implements EventHandler {
     }
 
     private IndexingException handleException(final JsonClientException e) {
+        if (e instanceof UnauthorizedException) {
+            return new FatalIndexingException(e.getMessage(), e);
+        }
         if (e.getMessage() == null) {
             return new UnprocessableEventIndexingException(
                     "Null error message from workspace server", e);
@@ -190,7 +195,7 @@ public class WorkspaceEventHandler implements EventHandler {
     @Override
     public Set<ResolvedReference> resolveReferences(
             final List<GUID> refpath,
-            final Set<String> refs) {
+            final Set<String> refs) throws RetriableIndexingException, IndexingException {
         //TODO CODE may need to split into batches 
         final String refPrefix = buildRefPrefix(refpath);
         
@@ -206,10 +211,10 @@ public class WorkspaceEventHandler implements EventHandler {
         GetObjectInfo3Results res;
         try {
             res = ws.administer(new UObject(command)).asClassInstance(GetObjectInfo3Results.class);
-        } catch (JsonClientException | IOException e) {
-            //TODO EXP some of these exceptions should be retries, some should shut down the event loop until the issue can be fixed (e.g. bad token, ws down), some should ignore the event (ws deleted)
-            throw new IllegalStateException("Error contacting workspace: " + e.getMessage(),
-                    e);
+        } catch (IOException e) {
+            throw handleException(e);
+        } catch (JsonClientException e) {
+            throw handleException(e);
         }
         final Set<ResolvedReference> ret = new HashSet<>();
         for (int i = 0; i < orderedRefs.size(); i++) {

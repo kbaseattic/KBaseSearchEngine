@@ -427,6 +427,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
             put("range", term);
         }};
     }
+    
+    // throws IOexceptions for elastic connection issues & deserializaion issues
+    @Override
+    public Map<GUID, Boolean> checkParentGuidsExist(final Set<GUID> guids) throws IOException {
+        return checkParentGuidsExist(null, guids);
+    }
 
     // throws IOexceptions for elastic connection issues & deserializaion issues
     @Override
