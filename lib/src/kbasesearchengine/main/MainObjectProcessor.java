@@ -361,7 +361,7 @@ public class MainObjectProcessor {
             switch (ev.getEventType()) {
             case NEW_VERSION:
                 GUID pguid = ev.toGUID();
-                boolean indexed = indexingStorage.checkParentGuidsExist(null, new LinkedHashSet<>(
+                boolean indexed = indexingStorage.checkParentGuidsExist(new LinkedHashSet<>(
                         Arrays.asList(pguid))).get(pguid);
                 if (indexed) {
                     logger.logInfo("[Indexer]   skipping " + pguid +
@@ -467,7 +467,7 @@ public class MainObjectProcessor {
                 if (timestamp == null) {
                     timestamp = System.currentTimeMillis();
                 }
-                indexObject(guid, timestamp, isPublic, obj, rule, guidToObj, parentJson);
+                indexObjectInStorage(guid, timestamp, isPublic, obj, rule, guidToObj, parentJson);
                 long indexTime = System.currentTimeMillis() - t3;
                 logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", indexing " +
                         "time: " + indexTime + " ms.");
@@ -478,7 +478,7 @@ public class MainObjectProcessor {
         }
     }
 
-    private void indexObject(
+    private void indexObjectInStorage(
             final GUID guid,
             final Long timestamp,
             final boolean isPublic,
@@ -489,10 +489,10 @@ public class MainObjectProcessor {
             throws InterruptedException, IndexingException {
         final List<?> input = Arrays.asList(rule, obj, timestamp, parentJson, guid, guidToObj,
                 isPublic);
-        retrier.retryCons(i -> indexObjects(i), input, null);
+        retrier.retryCons(i -> indexObjectInStorage(i), input, null);
     }
 
-    private void indexObjects(final List<?> input) throws FatalRetriableIndexingException {
+    private void indexObjectInStorage(final List<?> input) throws FatalRetriableIndexingException {
         final ObjectTypeParsingRules rule = (ObjectTypeParsingRules) input.get(0);
         final SourceData obj = (SourceData) input.get(1);
         final Long timestamp = (Long) input.get(2);
@@ -891,7 +891,7 @@ public class MainObjectProcessor {
         
         @Override
         public Set<String> resolveWorkspaceRefs(List<GUID> callerRefPath, Set<String> refs)
-                throws IOException, IndexingException {
+                throws IOException, IndexingException, InterruptedException {
             /* the caller ref path 1) ensures that the object refs are valid when checked against
              * the source, and 2) allows getting deleted objects with incoming references 
              * in the case of the workspace
@@ -913,30 +913,79 @@ public class MainObjectProcessor {
                 }
             }
             if (refsToResolve.size() > 0) {
-                try {
-                    final Set<ResolvedReference> resrefs =
-                            eh.resolveReferences(callerRefPath, refsToResolve);
-                    for (final ResolvedReference rr: resrefs) {
-                        final GUID guid = rr.getResolvedReferenceAsGUID();
-                        boolean indexed = indexingStorage.checkParentGuidsExist(null, 
-                                new LinkedHashSet<>(Arrays.asList(guid))).get(guid);
-                        if (!indexed) {
-                            indexObject(guid, rr.getType(), rr.getTimestamp(), false,
-                                    this, callerRefPath);
-                        }
-                        ret.add(rr.getResolvedReference());
-                        refResolvingCache.put(refToRefPath.get(rr.getReference()),
-                                rr.getResolvedReference());
+                final Set<ResolvedReference> resrefs =
+                        resolveReferences(eh, callerRefPath, refsToResolve);
+                for (final ResolvedReference rr: resrefs) {
+                    final GUID guid = rr.getResolvedReferenceAsGUID();
+                    final boolean indexed = retrier.retryFunc(
+                            g -> checkParentGuidExists(g), guid, null);
+                    if (!indexed) {
+                        indexObjectWrapperFn(guid, rr.getType(), rr.getTimestamp(), false,
+                                this, callerRefPath);
                     }
-                } catch (IOException e) {
-                    throw e;
-                } catch (Exception ex) {
-                    throw new IOException(ex);
+                    ret.add(rr.getResolvedReference());
+                    refResolvingCache.put(refToRefPath.get(rr.getReference()),
+                            rr.getResolvedReference());
                 }
             }
             return ret;
         }
         
+        private boolean checkParentGuidExists(final GUID guid) throws RetriableIndexingException {
+            try {
+                return indexingStorage.checkParentGuidsExist(new HashSet<>(Arrays.asList(guid)))
+                        .get(guid);
+            } catch (IOException e) {
+                throw new RetriableIndexingException(e.getMessage(), e);
+            }
+        }
+        
+        private Set<ResolvedReference> resolveReferences(
+                final EventHandler eh,
+                final List<GUID> callerRefPath,
+                final Set<String> refsToResolve)
+                throws IndexingException, InterruptedException {
+            final List<Object> input = Arrays.asList(eh, callerRefPath, refsToResolve);
+            return retrier.retryFunc(i -> resolveReferences(i), input, null);
+        }
+        
+        private Set<ResolvedReference> resolveReferences(final List<Object> input)
+                throws IndexingException, RetriableIndexingException {
+            final EventHandler eh = (EventHandler) input.get(0);
+            @SuppressWarnings("unchecked")
+            final List<GUID> callerRefPath = (List<GUID>) input.get(1);
+            @SuppressWarnings("unchecked")
+            final Set<String> refsToResolve = (Set<String>) input.get(2);
+
+            return eh.resolveReferences(callerRefPath, refsToResolve);
+        }
+        
+        private void indexObjectWrapperFn(
+                final GUID guid,
+                final StorageObjectType storageObjectType,
+                final Long timestamp,
+                final boolean isPublic,
+                final ObjectLookupProvider indexLookup,
+                final List<GUID> objectRefPath) 
+                throws IndexingException, InterruptedException {
+            final List<Object> input = Arrays.asList(guid, storageObjectType, timestamp, isPublic,
+                    indexLookup, objectRefPath);
+            retrier.retryCons(i -> indexObjectWrapperFn(i), input, null);
+        }
+
+        private void indexObjectWrapperFn(final List<Object> input)
+                throws IndexingException, InterruptedException, RetriableIndexingException {
+            final GUID guid = (GUID) input.get(0);
+            final StorageObjectType storageObjectType = (StorageObjectType) input.get(1);
+            final Long timestamp = (Long) input.get(2);
+            final boolean isPublic = (boolean) input.get(3);
+            final ObjectLookupProvider indexLookup = (ObjectLookupProvider) input.get(4);
+            @SuppressWarnings("unchecked")
+            final List<GUID> objectRefPath = (List<GUID>) input.get(5);
+            
+            indexObject(guid, storageObjectType, timestamp, isPublic, indexLookup, objectRefPath);
+        }
+
         @Override
         public Map<GUID, kbasesearchengine.search.ObjectData> lookupObjectsByGuid(
                 Set<GUID> guids) throws IOException {

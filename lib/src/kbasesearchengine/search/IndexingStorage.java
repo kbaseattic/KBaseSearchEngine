@@ -31,6 +31,15 @@ public interface IndexingStorage {
     
     public Map<GUID, Boolean> checkParentGuidsExist(String objectType, Set<GUID> parentGuids) 
             throws IOException;
+    
+    /** Check that the parent objects (e.g. the access information) exists for a set of GUIDS.
+     * Equivalent to {@link #checkParentGuidsExist(String, Set)} with a null String.
+     * @param parentGuids the parent guids to check.
+     * @return a map from GUID to the existence of the parent document for the GUID.
+     * @throws IOException if an IO error occurs contacting the storage system.
+     */
+    public Map<GUID, Boolean> checkParentGuidsExist(Set<GUID> parentGuids)
+            throws IOException;
 
     public void flushIndexing(String objectType) throws IOException;
     

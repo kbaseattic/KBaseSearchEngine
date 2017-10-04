@@ -82,12 +82,12 @@ public class ElasticIndexingStorageTest {
                 for (String ref : refs) {
                     try {
                         GUID pguid = new GUID("WS:" + ref);
-                        boolean indexed = indexStorage.checkParentGuidsExist(null, new LinkedHashSet<>(
+                        boolean indexed = indexStorage.checkParentGuidsExist(new LinkedHashSet<>(
                                 Arrays.asList(pguid))).get(pguid);
                         if (!indexed) {
                             indexObject("Assembly", "assembly01", pguid, "MyAssembly.1");
                             indexObject("AssemblyContig", "assembly01", pguid, "MyAssembly.1");
-                            Assert.assertTrue(indexStorage.checkParentGuidsExist(null, new LinkedHashSet<>(
+                            Assert.assertTrue(indexStorage.checkParentGuidsExist(new LinkedHashSet<>(
                                     Arrays.asList(pguid))).get(pguid));
                         }
                     } catch (Exception ex) {

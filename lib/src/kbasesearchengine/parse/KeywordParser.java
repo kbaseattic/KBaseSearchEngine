@@ -187,7 +187,7 @@ public class KeywordParser {
     @SuppressWarnings("unchecked")
     private static Object transform(Object value, String transform, IndexingRules rule,
             Map<String, InnerKeyValue> sourceKeywords, ObjectLookupProvider lookup,
-            List<GUID> objectRefPath) throws IOException, IndexingException {
+            List<GUID> objectRefPath) throws IOException, IndexingException, InterruptedException {
         String retProp = null;
         if (transform.contains(".")) {
             int dotPos = transform.indexOf('.');
@@ -367,7 +367,7 @@ public class KeywordParser {
 
     public interface ObjectLookupProvider {
         public Set<String> resolveWorkspaceRefs(List<GUID> objectRefPath, Set<String> refs) 
-                throws IOException, IndexingException;
+                throws IOException, IndexingException, InterruptedException;
         public Map<GUID, String> getTypesForGuids(Set<GUID> guids) throws IOException;
         public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids) 
                 throws IOException;
