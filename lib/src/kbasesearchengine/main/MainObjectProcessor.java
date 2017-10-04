@@ -226,8 +226,7 @@ public class MainObjectProcessor {
             final ObjectStatusEvent parentEvent = retrier.retryFunc(i -> i.next(), iter, null);
             final Iterator<ObjectStatusEvent> er;
             try {
-                er = retrier.retryFunc(e -> getEventHandler(e).expand(e).iterator(),
-                        parentEvent, parentEvent);
+                er = retrier.retryFunc(e -> getSubEventIterator(e), parentEvent, parentEvent);
                 iter.markAsVisited(performOneTick(parentEvent, er));
             } catch (IndexingException e) {
                 markAsVisitedFailedPostError(iter);
@@ -240,6 +239,17 @@ public class MainObjectProcessor {
                 logError(e);
                 markAsVisitedFailedPostError(iter);
             }
+        }
+    }
+    
+    private Iterator<ObjectStatusEvent> getSubEventIterator(final ObjectStatusEvent ev)
+            throws IndexingException, RetriableIndexingException {
+        try {
+            return getEventHandler(ev).expand(ev).iterator();
+        } catch (IndexingExceptionUncheckedWrapper e) {
+            throw e.getIndexingException();
+        } catch (RetriableIndexingExceptionUncheckedWrapper e) {
+            throw e.getIndexingException();
         }
     }
 
