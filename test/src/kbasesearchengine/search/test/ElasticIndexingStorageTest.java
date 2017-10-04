@@ -122,14 +122,18 @@ public class ElasticIndexingStorageTest {
             }
             
             @Override
-            public Map<GUID, String> getTypesForGuids(Set<GUID> guids) throws IOException {
+            public Map<GUID, String> getTypesForGuids(Set<GUID> guids)
+                    throws FatalIndexingException {
                 PostProcessing pp = new PostProcessing();
                 pp.objectData = false;
                 pp.objectKeys = false;
                 pp.objectInfo = true;
-                Map<GUID, String> ret = indexStorage.getObjectsByIds(guids, pp).stream().collect(
-                        Collectors.toMap(od -> od.guid, od -> od.type));
-                return ret;
+                try {
+                    return indexStorage.getObjectsByIds(guids, pp).stream().collect(
+                            Collectors.toMap(od -> od.guid, od -> od.type));
+                } catch (IOException e) {
+                    throw new FatalIndexingException(e.getMessage(), e);
+                }
             }
         };
     }

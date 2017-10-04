@@ -189,7 +189,7 @@ public class KeywordParser {
     @SuppressWarnings("unchecked")
     private static Object transform(Object value, String transform, IndexingRules rule,
             Map<String, InnerKeyValue> sourceKeywords, ObjectLookupProvider lookup,
-            List<GUID> objectRefPath) throws IOException, IndexingException, InterruptedException {
+            List<GUID> objectRefPath) throws IndexingException, InterruptedException {
         String retProp = null;
         if (transform.contains(".")) {
             int dotPos = transform.indexOf('.');
@@ -371,7 +371,8 @@ public class KeywordParser {
     public interface ObjectLookupProvider {
         public Set<String> resolveRefs(List<GUID> objectRefPath, Set<String> refs) 
                 throws IndexingException, InterruptedException;
-        public Map<GUID, String> getTypesForGuids(Set<GUID> guids) throws IOException;
+        public Map<GUID, String> getTypesForGuids(Set<GUID> guids)
+                throws InterruptedException, IndexingException;
         public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids) 
                 throws InterruptedException, IndexingException;
         public ObjectTypeParsingRules getTypeDescriptor(String type) throws IndexingException;

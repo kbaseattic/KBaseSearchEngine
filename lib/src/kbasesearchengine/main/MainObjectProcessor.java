@@ -998,7 +998,8 @@ public class MainObjectProcessor {
 
         @Override
         public Map<GUID, kbasesearchengine.search.ObjectData> lookupObjectsByGuid(
-                Set<GUID> guids) throws InterruptedException, IndexingException {
+                final Set<GUID> guids)
+                throws InterruptedException, IndexingException {
             Map<GUID, kbasesearchengine.search.ObjectData> ret = new LinkedHashMap<>();
             Set<GUID> guidsToLoad = new LinkedHashSet<>();
             for (GUID guid : guids) {
@@ -1041,7 +1042,8 @@ public class MainObjectProcessor {
         }
         
         @Override
-        public Map<GUID, String> getTypesForGuids(Set<GUID> guids) throws IOException {
+        public Map<GUID, String> getTypesForGuids(Set<GUID> guids)
+                throws InterruptedException, IndexingException {
             Map<GUID, String> ret = new LinkedHashMap<>();
             Set<GUID> guidsToLoad = new LinkedHashSet<>();
             for (GUID guid : guids) {
@@ -1052,12 +1054,9 @@ public class MainObjectProcessor {
                 }
             }
             if (guidsToLoad.size() > 0) {
-                kbasesearchengine.search.PostProcessing pp = 
-                        new kbasesearchengine.search.PostProcessing();
-                pp.objectData = false;
-                pp.objectKeys = false;
-                pp.objectInfo = true;
-                Map<GUID, String> loaded = indexingStorage.getObjectsByIds(guids, pp).stream()
+                final List<kbasesearchengine.search.ObjectData> data =
+                        retrier.retryFunc(g -> getObjectsByIds(g), guidsToLoad, null);
+                final Map<GUID, String> loaded = data.stream()
                         .collect(Collectors.toMap(od -> od.guid, od -> od.type));
                 guidToTypeCache.putAll(loaded);
                 ret.putAll(loaded);
