@@ -6,6 +6,7 @@ import java.util.List;
 import com.fasterxml.jackson.core.JsonParser;
 
 import kbasesearchengine.common.ObjectJsonPath;
+import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.system.RelationRules;
 
 /**
@@ -26,10 +27,12 @@ public class IdMapper {
 	 * if we get true on extractKeysOf, it really is a mapping, and if we get a '*' or '[*]', it really is
 	 * a mapping or array.
 	 * @throws ObjectParseException 
+	 * @throws InterruptedException 
+	 * @throws IndexingException 
 	 */
 	public static void mapKeys(ObjectJsonPath pathToPrimary, 
 	        List<RelationRules> foreignKeyRules, JsonParser jts, IdConsumer consumer) 
-	                throws IOException, ObjectParseException {
+	        throws IOException, ObjectParseException, IndexingException, InterruptedException {
 		//if the selection is empty, we return without adding anything
 		ValueCollectingNode<IdMappingRules> root = new ValueCollectingNode<>();
 		root.addPath(pathToPrimary, new IdMappingRules(true));

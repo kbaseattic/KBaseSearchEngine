@@ -533,7 +533,7 @@ public class MainObjectProcessor {
     }
     
     private String parseObjects(final List<?> inputs)
-            throws UnprocessableEventIndexingException, FatalRetriableIndexingException {
+            throws IndexingException, FatalRetriableIndexingException, InterruptedException {
         // should really wrap these in a class, but meh for now
         final GUID guid = (GUID) inputs.get(0);
         final ObjectLookupProvider indexLookup = (ObjectLookupProvider) inputs.get(1);

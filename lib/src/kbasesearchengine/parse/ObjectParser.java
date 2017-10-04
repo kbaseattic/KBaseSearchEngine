@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
+import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
@@ -30,7 +31,7 @@ public class ObjectParser {
             final SourceData obj,
             final GUID guid, 
             final ObjectTypeParsingRules parsingRules)
-            throws IOException, ObjectParseException {
+            throws IOException, ObjectParseException, IndexingException, InterruptedException {
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
         try (JsonParser jts = obj.getData().getPlacedStream()) {

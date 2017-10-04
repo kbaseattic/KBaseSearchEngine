@@ -1,7 +1,8 @@
 package kbasesearchengine.parse;
 
-import java.io.IOException;
+import kbasesearchengine.events.exceptions.IndexingException;
 
 public interface ValueConsumer<T> {
-    public void addValue(T rules, Object value) throws IOException;
+    public void addValue(T rules, Object value)
+            throws IndexingException, InterruptedException;
 }

@@ -30,6 +30,7 @@ import junit.framework.Assert;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
+import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.parse.IdMapper;
 import kbasesearchengine.parse.KeywordParser;
@@ -154,7 +155,8 @@ public class ElasticIndexingStorageTest {
     
     private static void indexObject(GUID id, String objectType, String json, String objectName,
             long timestamp, String parentJsonValue, boolean isPublic,
-            List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
+            List<IndexingRules> indexingRules)
+            throws IOException, ObjectParseException, IndexingException, InterruptedException {
         ParsedObject obj = KeywordParser.extractKeywords(objectType, json, parentJsonValue, 
                 indexingRules, objLookup, null);
         final SourceData data = SourceData.getBuilder(new UObject(json), objectName).build();

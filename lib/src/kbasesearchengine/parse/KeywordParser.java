@@ -32,11 +32,12 @@ public class KeywordParser {
             final List<IndexingRules> indexingRules, 
             final ObjectLookupProvider lookup,
             final List<GUID> objectRefPath)
-            throws IOException, ObjectParseException {
+            throws IOException, ObjectParseException, IndexingException, InterruptedException {
         Map<String, InnerKeyValue> keywords = new LinkedHashMap<>();
         ValueConsumer<List<IndexingRules>> consumer = new ValueConsumer<List<IndexingRules>>() {
             @Override
-            public void addValue(List<IndexingRules> rulesList, Object value) throws IOException {
+            public void addValue(List<IndexingRules> rulesList, Object value)
+                    throws IndexingException, InterruptedException {
                 for (IndexingRules rule : rulesList) {
                     processRule(type, rule, getKeyName(rule), value, keywords, lookup, 
                             objectRefPath);
@@ -81,7 +82,8 @@ public class KeywordParser {
     private static List<Object> processDerivedRule(String type, 
             Map<String, List<IndexingRules>> ruleMap, String key, 
             Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup, 
-            Set<String> keysWaitingInStack, List<GUID> callerRefPath) {
+            Set<String> keysWaitingInStack, List<GUID> callerRefPath)
+            throws IndexingException, InterruptedException {
         if (!ruleMap.containsKey(key)) {
             throw new IllegalStateException("Unknown source-key in derived keywords: " + 
                     type + "/" + key);
@@ -97,7 +99,7 @@ public class KeywordParser {
     private static List<Object> processDerivedRule(String type, String key, IndexingRules rule,
             Map<String, List<IndexingRules>> ruleMap, Map<String, InnerKeyValue> keywords, 
             ObjectLookupProvider lookup, Set<String> keysWaitingInStack,
-            List<GUID> objectRefPath) {
+            List<GUID> objectRefPath) throws IndexingException, InterruptedException {
         if (!ruleMap.containsKey(key) || rule == null) {
             throw new IllegalStateException("Unknown source-key in derived keywords: " + 
                     type + "/" + key);
@@ -142,7 +144,7 @@ public class KeywordParser {
     
     private static void processRule(String type, IndexingRules rule, String key, Object value,
             Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup,
-            List<GUID> objectRefPath) {
+            List<GUID> objectRefPath) throws IndexingException, InterruptedException {
         Object valueFinal = value;
         if (valueFinal == null) {
             if (rule.getOptionalDefaultValue() != null) {
@@ -159,13 +161,8 @@ public class KeywordParser {
         }
         values.notIndexed = rule.isNotIndexed();
         if (rule.getTransform() != null) {
-            try {
-                valueFinal = transform(valueFinal, rule.getTransform(), rule, keywords,
-                        lookup, objectRefPath);
-            } catch (Exception ex) { //TODO EXP ARRRRRG
-                throw new IllegalStateException("Transformation error for keyword " + type + "/" +
-                        key + ": " + ex.getMessage(), ex);
-            }
+            valueFinal = transform(valueFinal, rule.getTransform(), rule, keywords,
+                    lookup, objectRefPath);
         }
         addOrAddAll(valueFinal, values.values);
     }
@@ -332,7 +329,8 @@ public class KeywordParser {
     
     private static void extractIndexingPart(String json, boolean fromParent,
             List<IndexingRules> indexingRules, ValueConsumer<List<IndexingRules>> consumer)
-            throws IOException, ObjectParseException, JsonParseException {
+            throws IOException, ObjectParseException, JsonParseException,
+            IndexingException, InterruptedException {
         Map<ObjectJsonPath, List<IndexingRules>> pathToRules = new LinkedHashMap<>();
         for (IndexingRules rules : indexingRules) {
             if (rules.isDerivedKey()) {
