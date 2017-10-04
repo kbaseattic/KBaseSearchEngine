@@ -23,6 +23,8 @@ import us.kbase.common.service.UObject;
 
 public class KeywordParser {
     
+    //TODO EXP handle all exceptions
+    
     public static ParsedObject extractKeywords(
             final String type,
             final String json,
@@ -30,11 +32,12 @@ public class KeywordParser {
             final List<IndexingRules> indexingRules, 
             final ObjectLookupProvider lookup,
             final List<GUID> objectRefPath)
-            throws IOException, ObjectParseException {
+            throws IOException, ObjectParseException, IndexingException, InterruptedException {
         Map<String, InnerKeyValue> keywords = new LinkedHashMap<>();
         ValueConsumer<List<IndexingRules>> consumer = new ValueConsumer<List<IndexingRules>>() {
             @Override
-            public void addValue(List<IndexingRules> rulesList, Object value) throws IOException {
+            public void addValue(List<IndexingRules> rulesList, Object value)
+                    throws IndexingException, InterruptedException {
                 for (IndexingRules rule : rulesList) {
                     processRule(type, rule, getKeyName(rule), value, keywords, lookup, 
                             objectRefPath);
@@ -79,7 +82,8 @@ public class KeywordParser {
     private static List<Object> processDerivedRule(String type, 
             Map<String, List<IndexingRules>> ruleMap, String key, 
             Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup, 
-            Set<String> keysWaitingInStack, List<GUID> callerRefPath) {
+            Set<String> keysWaitingInStack, List<GUID> callerRefPath)
+            throws IndexingException, InterruptedException {
         if (!ruleMap.containsKey(key)) {
             throw new IllegalStateException("Unknown source-key in derived keywords: " + 
                     type + "/" + key);
@@ -95,7 +99,7 @@ public class KeywordParser {
     private static List<Object> processDerivedRule(String type, String key, IndexingRules rule,
             Map<String, List<IndexingRules>> ruleMap, Map<String, InnerKeyValue> keywords, 
             ObjectLookupProvider lookup, Set<String> keysWaitingInStack,
-            List<GUID> objectRefPath) {
+            List<GUID> objectRefPath) throws IndexingException, InterruptedException {
         if (!ruleMap.containsKey(key) || rule == null) {
             throw new IllegalStateException("Unknown source-key in derived keywords: " + 
                     type + "/" + key);
@@ -140,7 +144,7 @@ public class KeywordParser {
     
     private static void processRule(String type, IndexingRules rule, String key, Object value,
             Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup,
-            List<GUID> objectRefPath) {
+            List<GUID> objectRefPath) throws IndexingException, InterruptedException {
         Object valueFinal = value;
         if (valueFinal == null) {
             if (rule.getOptionalDefaultValue() != null) {
@@ -157,13 +161,8 @@ public class KeywordParser {
         }
         values.notIndexed = rule.isNotIndexed();
         if (rule.getTransform() != null) {
-            try {
-                valueFinal = transform(valueFinal, rule.getTransform(), rule, keywords,
-                        lookup, objectRefPath);
-            } catch (Exception ex) {
-                throw new IllegalStateException("Transformation error for keyword " + type + "/" +
-                        key + ": " + ex.getMessage(), ex);
-            }
+            valueFinal = transform(valueFinal, rule.getTransform(), rule, keywords,
+                    lookup, objectRefPath);
         }
         addOrAddAll(valueFinal, values.values);
     }
@@ -187,7 +186,7 @@ public class KeywordParser {
     @SuppressWarnings("unchecked")
     private static Object transform(Object value, String transform, IndexingRules rule,
             Map<String, InnerKeyValue> sourceKeywords, ObjectLookupProvider lookup,
-            List<GUID> objectRefPath) throws IOException, IndexingException, InterruptedException {
+            List<GUID> objectRefPath) throws IndexingException, InterruptedException {
         String retProp = null;
         if (transform.contains(".")) {
             int dotPos = transform.indexOf('.');
@@ -245,11 +244,12 @@ public class KeywordParser {
             }
             ObjectTypeParsingRules typeDescr = lookup.getTypeDescriptor(type);
             Set<String> refs = toStringSet(value);
+            //TODO NOW fix this
             if (typeDescr.getStorageObjectType().getStorageCode().equals("WS")) {
                 // Lets remove storage code prefix first:
                 refs = refs.stream().map(item -> item.startsWith("WS:")
                         ? item.substring(3) : item).collect(Collectors.toSet());
-                refs = lookup.resolveWorkspaceRefs(objectRefPath, refs);
+                refs = lookup.resolveRefs(objectRefPath, refs);
             }
             Set<GUID> guids = new LinkedHashSet<>();
             for (String ref : refs) {
@@ -329,7 +329,8 @@ public class KeywordParser {
     
     private static void extractIndexingPart(String json, boolean fromParent,
             List<IndexingRules> indexingRules, ValueConsumer<List<IndexingRules>> consumer)
-            throws IOException, ObjectParseException, JsonParseException {
+            throws IOException, ObjectParseException, JsonParseException,
+            IndexingException, InterruptedException {
         Map<ObjectJsonPath, List<IndexingRules>> pathToRules = new LinkedHashMap<>();
         for (IndexingRules rules : indexingRules) {
             if (rules.isDerivedKey()) {
@@ -366,11 +367,12 @@ public class KeywordParser {
     }
 
     public interface ObjectLookupProvider {
-        public Set<String> resolveWorkspaceRefs(List<GUID> objectRefPath, Set<String> refs) 
-                throws IOException, IndexingException, InterruptedException;
-        public Map<GUID, String> getTypesForGuids(Set<GUID> guids) throws IOException;
+        public Set<String> resolveRefs(List<GUID> objectRefPath, Set<String> refs) 
+                throws IndexingException, InterruptedException;
+        public Map<GUID, String> getTypesForGuids(Set<GUID> guids)
+                throws InterruptedException, IndexingException;
         public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids) 
-                throws IOException;
+                throws InterruptedException, IndexingException;
         public ObjectTypeParsingRules getTypeDescriptor(String type) throws IndexingException;
     }
 

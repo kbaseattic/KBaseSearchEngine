@@ -29,6 +29,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import junit.framework.Assert;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
+import kbasesearchengine.events.exceptions.FatalIndexingException;
+import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.parse.IdMapper;
 import kbasesearchengine.parse.KeywordParser;
@@ -77,8 +79,7 @@ public class ElasticIndexingStorageTest {
         objLookup = new ObjectLookupProvider() {
             
             @Override
-            public Set<String> resolveWorkspaceRefs(List<GUID> callerRefPath, Set<String> refs)
-                    throws IOException {
+            public Set<String> resolveRefs(List<GUID> callerRefPath, Set<String> refs) {
                 for (String ref : refs) {
                     try {
                         GUID pguid = new GUID("WS:" + ref);
@@ -99,8 +100,13 @@ public class ElasticIndexingStorageTest {
             
             @Override
             public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids)
-                    throws IOException {
-                List<ObjectData> objList = indexStorage.getObjectsByIds(guids);
+                    throws FatalIndexingException {
+                List<ObjectData> objList;
+                try {
+                    objList = indexStorage.getObjectsByIds(guids);
+                } catch (IOException e) {
+                    throw new FatalIndexingException(e.getMessage(), e);
+                }
                 return objList.stream().collect(Collectors.toMap(od -> od.guid, Function.identity()));
             }
             
@@ -117,14 +123,18 @@ public class ElasticIndexingStorageTest {
             }
             
             @Override
-            public Map<GUID, String> getTypesForGuids(Set<GUID> guids) throws IOException {
+            public Map<GUID, String> getTypesForGuids(Set<GUID> guids)
+                    throws FatalIndexingException {
                 PostProcessing pp = new PostProcessing();
                 pp.objectData = false;
                 pp.objectKeys = false;
                 pp.objectInfo = true;
-                Map<GUID, String> ret = indexStorage.getObjectsByIds(guids, pp).stream().collect(
-                        Collectors.toMap(od -> od.guid, od -> od.type));
-                return ret;
+                try {
+                    return indexStorage.getObjectsByIds(guids, pp).stream().collect(
+                            Collectors.toMap(od -> od.guid, od -> od.type));
+                } catch (IOException e) {
+                    throw new FatalIndexingException(e.getMessage(), e);
+                }
             }
         };
     }
@@ -145,7 +155,8 @@ public class ElasticIndexingStorageTest {
     
     private static void indexObject(GUID id, String objectType, String json, String objectName,
             long timestamp, String parentJsonValue, boolean isPublic,
-            List<IndexingRules> indexingRules) throws IOException, ObjectParseException {
+            List<IndexingRules> indexingRules)
+            throws IOException, ObjectParseException, IndexingException, InterruptedException {
         ParsedObject obj = KeywordParser.extractKeywords(objectType, json, parentJsonValue, 
                 indexingRules, objLookup, null);
         final SourceData data = SourceData.getBuilder(new UObject(json), objectName).build();

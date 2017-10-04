@@ -533,7 +533,7 @@ public class MainObjectProcessor {
     }
     
     private String parseObjects(final List<?> inputs)
-            throws UnprocessableEventIndexingException, FatalRetriableIndexingException {
+            throws IndexingException, FatalRetriableIndexingException, InterruptedException {
         // should really wrap these in a class, but meh for now
         final GUID guid = (GUID) inputs.get(0);
         final ObjectLookupProvider indexLookup = (ObjectLookupProvider) inputs.get(1);
@@ -900,8 +900,8 @@ public class MainObjectProcessor {
         private Map<GUID, String> guidToTypeCache = new LinkedHashMap<>();
         
         @Override
-        public Set<String> resolveWorkspaceRefs(List<GUID> callerRefPath, Set<String> refs)
-                throws IOException, IndexingException, InterruptedException {
+        public Set<String> resolveRefs(List<GUID> callerRefPath, Set<String> refs)
+                throws IndexingException, InterruptedException {
             /* the caller ref path 1) ensures that the object refs are valid when checked against
              * the source, and 2) allows getting deleted objects with incoming references 
              * in the case of the workspace
@@ -998,7 +998,8 @@ public class MainObjectProcessor {
 
         @Override
         public Map<GUID, kbasesearchengine.search.ObjectData> lookupObjectsByGuid(
-                Set<GUID> guids) throws IOException {
+                final Set<GUID> guids)
+                throws InterruptedException, IndexingException {
             Map<GUID, kbasesearchengine.search.ObjectData> ret = new LinkedHashMap<>();
             Set<GUID> guidsToLoad = new LinkedHashSet<>();
             for (GUID guid : guids) {
@@ -1009,13 +1010,8 @@ public class MainObjectProcessor {
                 }
             }
             if (guidsToLoad.size() > 0) {
-                kbasesearchengine.search.PostProcessing pp = 
-                        new kbasesearchengine.search.PostProcessing();
-                pp.objectData = false;
-                pp.objectKeys = true;
-                pp.objectInfo = true;
-                List<kbasesearchengine.search.ObjectData> objList = 
-                        indexingStorage.getObjectsByIds(guidsToLoad, pp);
+                final List<kbasesearchengine.search.ObjectData> objList =
+                        retrier.retryFunc(g -> getObjectsByIds(g), guidsToLoad, null);
                 Map<GUID, kbasesearchengine.search.ObjectData> loaded = 
                         objList.stream().collect(Collectors.toMap(od -> od.guid, 
                                 Function.identity()));
@@ -1025,6 +1021,20 @@ public class MainObjectProcessor {
             return ret;
         }
         
+        private List<kbasesearchengine.search.ObjectData> getObjectsByIds(final Set<GUID> guids)
+                throws RetriableIndexingException {
+            kbasesearchengine.search.PostProcessing pp = 
+                    new kbasesearchengine.search.PostProcessing();
+            pp.objectData = false;
+            pp.objectKeys = true;
+            pp.objectInfo = true;
+            try {
+                return indexingStorage.getObjectsByIds(guids, pp);
+            } catch (IOException e) {
+                throw new RetriableIndexingException(e.getMessage(), e);
+            }
+        }
+        
         @Override
         public ObjectTypeParsingRules getTypeDescriptor(final String type)
                 throws IndexingException {
@@ -1032,7 +1042,8 @@ public class MainObjectProcessor {
         }
         
         @Override
-        public Map<GUID, String> getTypesForGuids(Set<GUID> guids) throws IOException {
+        public Map<GUID, String> getTypesForGuids(Set<GUID> guids)
+                throws InterruptedException, IndexingException {
             Map<GUID, String> ret = new LinkedHashMap<>();
             Set<GUID> guidsToLoad = new LinkedHashSet<>();
             for (GUID guid : guids) {
@@ -1043,12 +1054,9 @@ public class MainObjectProcessor {
                 }
             }
             if (guidsToLoad.size() > 0) {
-                kbasesearchengine.search.PostProcessing pp = 
-                        new kbasesearchengine.search.PostProcessing();
-                pp.objectData = false;
-                pp.objectKeys = false;
-                pp.objectInfo = true;
-                Map<GUID, String> loaded = indexingStorage.getObjectsByIds(guids, pp).stream()
+                final List<kbasesearchengine.search.ObjectData> data =
+                        retrier.retryFunc(g -> getObjectsByIds(g), guidsToLoad, null);
+                final Map<GUID, String> loaded = data.stream()
                         .collect(Collectors.toMap(od -> od.guid, od -> od.type));
                 guidToTypeCache.putAll(loaded);
                 ret.putAll(loaded);

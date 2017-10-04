@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import kbasesearchengine.common.JsonTokenUtil;
 import kbasesearchengine.common.ObjectJsonPath;
+import kbasesearchengine.events.exceptions.IndexingException;
 import us.kbase.common.service.UObject;
 
 /**
@@ -22,7 +23,8 @@ import us.kbase.common.service.UObject;
 public class ValueCollector <T> {
 
 	public void mapKeys(ValueCollectingNode<T> tree, JsonParser jts, 
-	        ValueConsumer<T> consumer) throws IOException, ObjectParseException {
+	        ValueConsumer<T> consumer)
+	        throws IOException, ObjectParseException, IndexingException, InterruptedException {
 		JsonToken t = jts.nextToken();
 		mapKeysWithOpenToken(jts, t, tree, consumer, new ArrayList<String>(), 
 		        false, false);
@@ -35,7 +37,8 @@ public class ValueCollector <T> {
 	 */
 	public void mapKeysWithOpenToken(JsonParser jts, JsonToken current, 
 	        ValueCollectingNode<T> selection, ValueConsumer<T> consumer, List<String> path, 
-	        boolean strictMaps, boolean strictArrays) throws IOException, ObjectParseException {
+	        boolean strictMaps, boolean strictArrays)
+	        throws IOException, ObjectParseException, IndexingException, InterruptedException {
 		JsonToken t = current;
         if (selection.getRules() != null && (t == JsonToken.START_OBJECT || t == JsonToken.START_ARRAY)) {
             StringWriter outChars = new StringWriter();
