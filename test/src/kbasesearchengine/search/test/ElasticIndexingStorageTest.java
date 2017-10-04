@@ -29,6 +29,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import junit.framework.Assert;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
+import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.parse.IdMapper;
 import kbasesearchengine.parse.KeywordParser;
@@ -77,8 +78,7 @@ public class ElasticIndexingStorageTest {
         objLookup = new ObjectLookupProvider() {
             
             @Override
-            public Set<String> resolveWorkspaceRefs(List<GUID> callerRefPath, Set<String> refs)
-                    throws IOException {
+            public Set<String> resolveRefs(List<GUID> callerRefPath, Set<String> refs) {
                 for (String ref : refs) {
                     try {
                         GUID pguid = new GUID("WS:" + ref);
@@ -99,8 +99,13 @@ public class ElasticIndexingStorageTest {
             
             @Override
             public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids)
-                    throws IOException {
-                List<ObjectData> objList = indexStorage.getObjectsByIds(guids);
+                    throws FatalIndexingException {
+                List<ObjectData> objList;
+                try {
+                    objList = indexStorage.getObjectsByIds(guids);
+                } catch (IOException e) {
+                    throw new FatalIndexingException(e.getMessage(), e);
+                }
                 return objList.stream().collect(Collectors.toMap(od -> od.guid, Function.identity()));
             }
             

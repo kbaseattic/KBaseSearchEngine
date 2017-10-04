@@ -23,6 +23,8 @@ import us.kbase.common.service.UObject;
 
 public class KeywordParser {
     
+    //TODO EXP handle all exceptions
+    
     public static ParsedObject extractKeywords(
             final String type,
             final String json,
@@ -160,7 +162,7 @@ public class KeywordParser {
             try {
                 valueFinal = transform(valueFinal, rule.getTransform(), rule, keywords,
                         lookup, objectRefPath);
-            } catch (Exception ex) {
+            } catch (Exception ex) { //TODO EXP ARRRRRG
                 throw new IllegalStateException("Transformation error for keyword " + type + "/" +
                         key + ": " + ex.getMessage(), ex);
             }
@@ -245,11 +247,12 @@ public class KeywordParser {
             }
             ObjectTypeParsingRules typeDescr = lookup.getTypeDescriptor(type);
             Set<String> refs = toStringSet(value);
+            //TODO NOW fix this
             if (typeDescr.getStorageObjectType().getStorageCode().equals("WS")) {
                 // Lets remove storage code prefix first:
                 refs = refs.stream().map(item -> item.startsWith("WS:")
                         ? item.substring(3) : item).collect(Collectors.toSet());
-                refs = lookup.resolveWorkspaceRefs(objectRefPath, refs);
+                refs = lookup.resolveRefs(objectRefPath, refs);
             }
             Set<GUID> guids = new LinkedHashSet<>();
             for (String ref : refs) {
@@ -366,11 +369,11 @@ public class KeywordParser {
     }
 
     public interface ObjectLookupProvider {
-        public Set<String> resolveWorkspaceRefs(List<GUID> objectRefPath, Set<String> refs) 
-                throws IOException, IndexingException, InterruptedException;
+        public Set<String> resolveRefs(List<GUID> objectRefPath, Set<String> refs) 
+                throws IndexingException, InterruptedException;
         public Map<GUID, String> getTypesForGuids(Set<GUID> guids) throws IOException;
         public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids) 
-                throws IOException;
+                throws InterruptedException, IndexingException;
         public ObjectTypeParsingRules getTypeDescriptor(String type) throws IndexingException;
     }
 
