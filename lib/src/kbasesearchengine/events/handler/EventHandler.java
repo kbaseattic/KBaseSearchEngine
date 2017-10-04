@@ -31,8 +31,8 @@ public interface EventHandler {
      * Iterable if the event requires no expansion.
      * Note that the _id field of the sub events will be null since they have no storage system
      * records.
-     * Also note that the {@link Iterator#next()} function may throw
-     * {@link IndexingExceptionUncheckedWrapper} and
+     * Also note that the {@link Iterable#iterator()} and  {@link Iterator#next()} functions may
+     * throw {@link IndexingExceptionUncheckedWrapper} and
      * {@link RetriableIndexingExceptionUncheckedWrapper} exceptions, which should be unwrapped
      * and rethrown as soon as possible.
      * @param event the event to be expanded.

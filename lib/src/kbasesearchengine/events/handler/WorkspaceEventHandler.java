@@ -25,7 +25,9 @@ import kbasesearchengine.events.ObjectStatusEvent;
 import kbasesearchengine.events.ObjectStatusEventType;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
+import kbasesearchengine.events.exceptions.IndexingExceptionUncheckedWrapper;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
+import kbasesearchengine.events.exceptions.RetriableIndexingExceptionUncheckedWrapper;
 import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
 import kbasesearchengine.system.StorageObjectType;
 import us.kbase.common.service.JsonClientException;
@@ -162,7 +164,7 @@ public class WorkspaceEventHandler implements EventHandler {
         return b.build();
     }
 
-    private IndexingException handleException(final JsonClientException e) {
+    private static IndexingException handleException(final JsonClientException e) {
         if (e instanceof UnauthorizedException) {
             return new FatalIndexingException(e.getMessage(), e);
         }
@@ -173,14 +175,14 @@ public class WorkspaceEventHandler implements EventHandler {
             return new FatalIndexingException(
                     "Workspace credentials are invalid: " + e.getMessage(), e);
         } else {
-            //TODO ERR some errors may require retries or total failures
+            // this may need to be expanded, some errors may require retries or total failures
             return new UnprocessableEventIndexingException(
                     "Unrecoverable error from workspace on fetching object: " + e.getMessage(),
                     e);
         }
     }
 
-    private RetriableIndexingException handleException(final IOException e) {
+    private static RetriableIndexingException handleException(final IOException e) {
         return new RetriableIndexingException(e.getMessage(), e);
     }
     
@@ -196,7 +198,7 @@ public class WorkspaceEventHandler implements EventHandler {
     public Set<ResolvedReference> resolveReferences(
             final List<GUID> refpath,
             final Set<String> refs) throws RetriableIndexingException, IndexingException {
-        //TODO CODE may need to split into batches 
+        // may need to split into batches 
         final String refPrefix = buildRefPrefix(refpath);
         
         final List<String> orderedRefs = new ArrayList<>(refs);
@@ -267,7 +269,8 @@ public class WorkspaceEventHandler implements EventHandler {
 
     private Iterable<ObjectStatusEvent> handlePublishAccessGroup(
             final ObjectStatusEvent event,
-            final ObjectStatusEventType newType) {
+            final ObjectStatusEventType newType)
+            throws RetriableIndexingException, IndexingException {
 
         final Map<String, Object> command = new HashMap<>();
         command.put("command", "getWorkspaceInfo");
@@ -278,10 +281,10 @@ public class WorkspaceEventHandler implements EventHandler {
         try {
             objcount = ws.administer(new UObject(command))
                     .asClassInstance(WS_INFO_TYPEREF).getE5();
-        } catch (JsonClientException | IOException e) {
-            //TODO EXP some of these exceptions should be retries, some should shut down the event loop until the issue can be fixed (e.g. bad token, ws down), some should ignore the event (ws deleted)
-            throw new IllegalStateException("Error contacting workspace: " + e.getMessage(),
-                    e);
+        } catch (IOException e) {
+            throw handleException(e);
+        } catch (JsonClientException e) {
+            throw handleException(e);
         }
         return new Iterable<ObjectStatusEvent>() {
             
@@ -409,10 +412,10 @@ public class WorkspaceEventHandler implements EventHandler {
             try {
                 events = buildEvents(sourceEvent, ws.administer(new UObject(command))
                         .asClassInstance(OBJ_TYPEREF));
-            } catch (JsonClientException | IOException e) {
-                //TODO EXP some of these exceptions should be retries, some should shut down the event loop until the issue can be fixed (e.g. bad token, ws down), some should ignore the event (ws deleted)
-                throw new IllegalStateException("Error contacting workspace: " + e.getMessage(),
-                        e);
+            } catch (IOException e) {
+                throw new RetriableIndexingExceptionUncheckedWrapper(handleException(e));
+            } catch (JsonClientException e) {
+                throw new IndexingExceptionUncheckedWrapper(handleException(e));
             }
             if (events.isEmpty()) {
                 return;
@@ -467,10 +470,10 @@ public class WorkspaceEventHandler implements EventHandler {
             try {
                 queue.addAll(buildEvents(sourceEvent, ws.administer(new UObject(command))
                         .asClassInstance(GetObjectInfo3Results.class).getInfos()));
-            } catch (JsonClientException | IOException e) {
-                //TODO EXP some of these exceptions should be retries, some should shut down the event loop until the issue can be fixed (e.g. bad token, ws down), some should ignore the event (ws deleted)
-                throw new IllegalStateException("Error contacting workspace: " + e.getMessage(),
-                        e);
+            } catch (IOException e) {
+                throw new RetriableIndexingExceptionUncheckedWrapper(handleException(e));
+            } catch (JsonClientException e) {
+                throw new IndexingExceptionUncheckedWrapper(handleException(e));
             }
         }
     }
@@ -481,8 +484,7 @@ public class WorkspaceEventHandler implements EventHandler {
         try {
             objid = Long.parseLong(event.getAccessGroupObjectId());
         } catch (NumberFormatException ne) {
-            //TODO EXP this exception should prevent the event from being processed again
-            throw new IllegalStateException("Illegal workspace object id: " +
+            throw new UnprocessableEventIndexingException("Illegal workspace object id: " +
                     event.getAccessGroupObjectId());
         }
         final Map<String, Object> command = new HashMap<>();
