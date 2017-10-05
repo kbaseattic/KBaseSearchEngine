@@ -72,15 +72,15 @@ public interface EventHandler {
      * @param refs a set of references in the current object.
      * @return a mapping of the references to their full path.
      */
-    Map<String, String> buildReferencePaths(List<GUID> refpath, Set<String> refs);
+    Map<GUID, String> buildReferencePaths(List<GUID> refpath, Set<GUID> refs);
 
     /** Resolve a set of references in an object.
      * @param refpath the reference path to the current object.
-     * @param refs the references in the current object to process.
+     * @param refsToResolve the references in the current object to process.
      * @return a set of resolved references.
      * @throws IndexingException if an error occurred resolving the references.
      * @throws RetriableIndexingException if a retriable error occurred resolving the references.
      */
-    Set<ResolvedReference> resolveReferences(List<GUID> refpath, Set<String> refs)
+    Set<ResolvedReference> resolveReferences(List<GUID> refpath, Set<GUID> refsToResolve)
             throws IndexingException, RetriableIndexingException;
 }

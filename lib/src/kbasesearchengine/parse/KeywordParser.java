@@ -37,7 +37,7 @@ public class KeywordParser {
         ValueConsumer<List<IndexingRules>> consumer = new ValueConsumer<List<IndexingRules>>() {
             @Override
             public void addValue(List<IndexingRules> rulesList, Object value)
-                    throws IndexingException, InterruptedException {
+                    throws IndexingException, InterruptedException, ObjectParseException {
                 for (IndexingRules rule : rulesList) {
                     processRule(type, rule, getKeyName(rule), value, keywords, lookup, 
                             objectRefPath);
@@ -83,7 +83,7 @@ public class KeywordParser {
             Map<String, List<IndexingRules>> ruleMap, String key, 
             Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup, 
             Set<String> keysWaitingInStack, List<GUID> callerRefPath)
-            throws IndexingException, InterruptedException {
+            throws IndexingException, InterruptedException, ObjectParseException {
         if (!ruleMap.containsKey(key)) {
             throw new IllegalStateException("Unknown source-key in derived keywords: " + 
                     type + "/" + key);
@@ -99,7 +99,8 @@ public class KeywordParser {
     private static List<Object> processDerivedRule(String type, String key, IndexingRules rule,
             Map<String, List<IndexingRules>> ruleMap, Map<String, InnerKeyValue> keywords, 
             ObjectLookupProvider lookup, Set<String> keysWaitingInStack,
-            List<GUID> objectRefPath) throws IndexingException, InterruptedException {
+            List<GUID> objectRefPath)
+            throws IndexingException, InterruptedException, ObjectParseException {
         if (!ruleMap.containsKey(key) || rule == null) {
             throw new IllegalStateException("Unknown source-key in derived keywords: " + 
                     type + "/" + key);
@@ -144,7 +145,8 @@ public class KeywordParser {
     
     private static void processRule(String type, IndexingRules rule, String key, Object value,
             Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup,
-            List<GUID> objectRefPath) throws IndexingException, InterruptedException {
+            List<GUID> objectRefPath)
+            throws IndexingException, InterruptedException, ObjectParseException {
         Object valueFinal = value;
         if (valueFinal == null) {
             if (rule.getOptionalDefaultValue() != null) {
@@ -186,7 +188,8 @@ public class KeywordParser {
     @SuppressWarnings("unchecked")
     private static Object transform(Object value, String transform, IndexingRules rule,
             Map<String, InnerKeyValue> sourceKeywords, ObjectLookupProvider lookup,
-            List<GUID> objectRefPath) throws IndexingException, InterruptedException {
+            List<GUID> objectRefPath)
+            throws IndexingException, InterruptedException, ObjectParseException {
         String retProp = null;
         if (transform.contains(".")) {
             int dotPos = transform.indexOf('.');
@@ -242,24 +245,17 @@ public class KeywordParser {
                 throw new IllegalStateException("Target object type should be set for 'guid' " +
                         "transform");
             }
-            ObjectTypeParsingRules typeDescr = lookup.getTypeDescriptor(type);
-            Set<String> refs = toStringSet(value);
-            //TODO NOW fix this
-            if (typeDescr.getStorageObjectType().getStorageCode().equals("WS")) {
-                // Lets remove storage code prefix first:
-                refs = refs.stream().map(item -> item.startsWith("WS:")
-                        ? item.substring(3) : item).collect(Collectors.toSet());
-                refs = lookup.resolveRefs(objectRefPath, refs);
+            final ObjectTypeParsingRules typeDescr = lookup.getTypeDescriptor(type);
+            final String storageCode = typeDescr.getStorageObjectType().getStorageCode();
+            final Set<String> refs = toStringSet(value);
+            final Set<GUID> unresolvedGUIDs;
+            try {
+                unresolvedGUIDs = refs.stream().map(r -> GUID.fromRef(storageCode, r))
+                        .collect(Collectors.toSet());
+            } catch (IllegalArgumentException e) {
+                throw new ObjectParseException(e.getMessage(), e);
             }
-            Set<GUID> guids = new LinkedHashSet<>();
-            for (String ref : refs) {
-                String guidText = ref;
-                if (!guidText.startsWith(
-                        typeDescr.getStorageObjectType().getStorageCode() + ":")) {
-                    guidText = typeDescr.getStorageObjectType().getStorageCode() + ":" + guidText;
-                }
-                guids.add(new GUID(guidText));
-            }
+            Set<GUID> guids = lookup.resolveRefs(objectRefPath, unresolvedGUIDs);
             Set<String> subIds = null;
             if (rule.getSubobjectIdKey() != null) {
                 if (typeDescr.getInnerSubType() == null) {
@@ -367,7 +363,7 @@ public class KeywordParser {
     }
 
     public interface ObjectLookupProvider {
-        public Set<String> resolveRefs(List<GUID> objectRefPath, Set<String> refs) 
+        public Set<GUID> resolveRefs(List<GUID> objectRefPath, Set<GUID> unresolvedGUIDs) 
                 throws IndexingException, InterruptedException;
         public Map<GUID, String> getTypesForGuids(Set<GUID> guids)
                 throws InterruptedException, IndexingException;
@@ -379,5 +375,16 @@ public class KeywordParser {
     private static class InnerKeyValue {
         boolean notIndexed;
         List<Object> values;
+        
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("InnerKeyValue [notIndexed=");
+            builder.append(notIndexed);
+            builder.append(", values=");
+            builder.append(values);
+            builder.append("]");
+            return builder.toString();
+        }
     }
 }

@@ -8,35 +8,28 @@ public class ResolvedReference {
     //TODO JAVADOC
     //TODO TEST
     
-    private final String reference;
-    private final String resolvedReference;
-    private final GUID resolvedReferenceAsGUID;
+    private final GUID reference;
+    private final GUID resolvedReference;
     private final StorageObjectType type;
     private final long timestamp;
     
     public ResolvedReference(
-            final String reference,
-            final String resolvedReference,
-            final GUID resolvedReferenceAsGUID,
+            final GUID reference,
+            final GUID resolvedReference,
             final StorageObjectType type,
             final long timestamp) {
         this.reference = reference;
         this.resolvedReference = resolvedReference;
-        this.resolvedReferenceAsGUID = resolvedReferenceAsGUID;
         this.type = type;
         this.timestamp = timestamp;
     }
 
-    public String getReference() {
+    public GUID getReference() {
         return reference;
     }
 
-    public String getResolvedReference() {
+    public GUID getResolvedReference() {
         return resolvedReference;
-    }
-
-    public GUID getResolvedReferenceAsGUID() {
-        return resolvedReferenceAsGUID;
     }
 
     public StorageObjectType getType() {
@@ -54,8 +47,6 @@ public class ResolvedReference {
         builder.append(reference);
         builder.append(", resolvedReference=");
         builder.append(resolvedReference);
-        builder.append(", resolvedReferenceAsGUID=");
-        builder.append(resolvedReferenceAsGUID);
         builder.append(", type=");
         builder.append(type);
         builder.append(", timestamp=");

@@ -187,24 +187,24 @@ public class WorkspaceEventHandler implements EventHandler {
     }
     
     @Override
-    public Map<String, String> buildReferencePaths(
+    public Map<GUID, String> buildReferencePaths(
             final List<GUID> refpath,
-            final Set<String> refs) {
+            final Set<GUID> refs) {
         final String refPrefix = buildRefPrefix(refpath);
-        return refs.stream().collect(Collectors.toMap(r -> r, r -> refPrefix + r));
+        return refs.stream().collect(Collectors.toMap(r -> r, r -> refPrefix + r.toRefString()));
     }
     
     @Override
     public Set<ResolvedReference> resolveReferences(
             final List<GUID> refpath,
-            final Set<String> refs) throws RetriableIndexingException, IndexingException {
+            final Set<GUID> refs) throws RetriableIndexingException, IndexingException {
         // may need to split into batches 
         final String refPrefix = buildRefPrefix(refpath);
         
-        final List<String> orderedRefs = new ArrayList<>(refs);
+        final List<GUID> orderedRefs = new ArrayList<>(refs);
         
         List<ObjectSpecification> getInfoInput = orderedRefs.stream().map(
-                ref -> new ObjectSpecification().withRef(refPrefix + ref)).collect(
+                ref -> new ObjectSpecification().withRef(refPrefix + ref.toRefString())).collect(
                         Collectors.toList());
         final Map<String, Object> command = new HashMap<>();
         command.put("command", "getObjectInfo");
@@ -232,12 +232,11 @@ public class WorkspaceEventHandler implements EventHandler {
     }
     
     private ResolvedReference createResolvedReference(
-            final String ref,
+            final GUID guid,
             final Tuple11<Long, String, String, String, Long, String, Long, String, String,
                     Long, Map<String, String>> obj) {
         return new ResolvedReference(
-                ref,
-                obj.getE7() + "/" + obj.getE1() + "/" + obj.getE5(),
+                guid,
                 new GUID(STORAGE_CODE, Math.toIntExact(obj.getE7()), obj.getE1() + "",
                         Math.toIntExact(obj.getE5()), null, null),
                 new StorageObjectType(STORAGE_CODE, obj.getE3().split("-")[0],

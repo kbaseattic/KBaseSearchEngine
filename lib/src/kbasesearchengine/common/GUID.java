@@ -2,7 +2,14 @@ package kbasesearchengine.common;
 
 import java.util.regex.Pattern;
 
+import kbasesearchengine.tools.Utils;
+
 public class GUID {
+    
+    //TODO JAVADOC
+    //TODO TEST
+    //TODO CODE check inputs valid
+    
     private String storageCode;
     private Integer accessGroupId;
     private String accessGroupObjectId;
@@ -55,6 +62,16 @@ public class GUID {
         return subObjectId;
     }
     
+    public static GUID fromRef(final String storageCode, final String ref) {
+        Utils.notNullOrEmpty(storageCode, "storageCode cannot be null or empty");
+        Utils.notNullOrEmpty(ref, "ref cannot be null or empty");
+        if (ref.startsWith(storageCode + ":")) {
+            return new GUID(ref);
+        } else {
+            return new GUID(storageCode + ":" + ref);
+        }
+    }
+    
     public GUID(String textGUID) {
         String innerId = textGUID;
         int colonPos = innerId.indexOf(':');
@@ -79,6 +96,7 @@ public class GUID {
                 throw new IllegalArgumentException("Wrong format for GUID: " + textGUID);
             }
             this.accessGroupObjectId = storageObjIdParts[1];
+            //TODO NOW not a guid if version not available...
             if (storageObjIdParts.length == 3) {
                 try {
                     this.version = Integer.parseInt(storageObjIdParts[2]);
@@ -101,6 +119,7 @@ public class GUID {
         }
     }
     
+    //TODO NOW if the version or accessGroupID is missing, how do you know which is which? Need to know storage code -> has access group mapping or have a placeholder (-1) for missing access group
     @Override
     public String toString() {
         String objRefId = this.version == null ? 
@@ -108,6 +127,12 @@ public class GUID {
                     (this.accessGroupId + "/" + this.accessGroupObjectId + "/" + this.version);
         return (this.storageCode + ":") + objRefId +
                 (this.subObjectType == null ? "" : (":" + this.getSubObjectType() + "/" + this.getSubObjectId()));
+    }
+    
+    public String toRefString() {
+        return this.version == null ? 
+                ((this.accessGroupId == null ? "" : (this.accessGroupId + "/")) + this.accessGroupObjectId) :
+                    (this.accessGroupId + "/" + this.accessGroupObjectId + "/" + this.version);
     }
 
     @Override
