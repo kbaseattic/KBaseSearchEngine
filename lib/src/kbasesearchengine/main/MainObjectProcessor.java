@@ -894,8 +894,8 @@ public class MainObjectProcessor {
     }
     
     private class MOPLookupProvider implements ObjectLookupProvider {
-        //TODO NOW this needs to be a map based on the storage code
-        private Map<String, GUID> refResolvingCache = new LinkedHashMap<>();
+        // storage code -> full ref path -> resolved guid
+        private Map<String, Map<String, GUID>> refResolvingCache = new LinkedHashMap<>();
         private Map<GUID, kbasesearchengine.search.ObjectData> objLookupCache =
                 new LinkedHashMap<>();
         private Map<GUID, String> guidToTypeCache = new LinkedHashMap<>();
@@ -912,13 +912,17 @@ public class MainObjectProcessor {
             // by checking the ref against the refs in the parent object.
             // doing it the dumb way for now.
             final EventHandler eh = getEventHandler(callerRefPath.get(0));
+            final String storageCode = eh.getStorageCode();
+            if (!refResolvingCache.containsKey(storageCode)) {
+                refResolvingCache.put(storageCode, new HashMap<>());
+            }
             final Map<GUID, String> refToRefPath = eh.buildReferencePaths(callerRefPath, refs);
             Set<GUID> ret = new LinkedHashSet<>();
             Set<GUID> refsToResolve = new LinkedHashSet<>();
             for (final GUID ref : refs) {
                 final String refpath = refToRefPath.get(ref);
-                if (refResolvingCache.containsKey(refpath)) {
-                    ret.add(refResolvingCache.get(refpath));
+                if (refResolvingCache.get(storageCode).containsKey(refpath)) {
+                    ret.add(refResolvingCache.get(storageCode).get(refpath));
                 } else {
                     refsToResolve.add(ref);
                 }
@@ -935,7 +939,8 @@ public class MainObjectProcessor {
                                 this, callerRefPath);
                     }
                     ret.add(guid);
-                    refResolvingCache.put(refToRefPath.get(rr.getReference()), guid);
+                    refResolvingCache.get(storageCode)
+                            .put(refToRefPath.get(rr.getReference()), guid);
                 }
             }
             return ret;
