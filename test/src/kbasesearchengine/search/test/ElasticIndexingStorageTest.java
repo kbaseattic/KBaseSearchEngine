@@ -79,10 +79,9 @@ public class ElasticIndexingStorageTest {
         objLookup = new ObjectLookupProvider() {
             
             @Override
-            public Set<String> resolveRefs(List<GUID> callerRefPath, Set<String> refs) {
-                for (String ref : refs) {
+            public Set<GUID> resolveRefs(List<GUID> callerRefPath, Set<GUID> refs) {
+                for (GUID pguid : refs) {
                     try {
-                        GUID pguid = new GUID("WS:" + ref);
                         boolean indexed = indexStorage.checkParentGuidsExist(new LinkedHashSet<>(
                                 Arrays.asList(pguid))).get(pguid);
                         if (!indexed) {
@@ -256,6 +255,7 @@ public class ElasticIndexingStorageTest {
     
     @Test
     public void testGenome() throws Exception {
+        System.out.println("*** start testGenome***");
         indexObject("Genome", "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
         Set<GUID> guids = indexStorage.searchIds("Genome", MatchFilter.create().withLookupInKey(
                 "features", new MatchValue(1, null)), null, AccessFilter.create().withAdmin(true));
@@ -271,6 +271,7 @@ public class ElasticIndexingStorageTest {
         ObjectData assemblyIndex = getIndexedObject(new GUID(assemblyGuidText));
         //System.out.println("Assembly index: " + genomeIndex);
         Assert.assertEquals("1", "" + assemblyIndex.keyProps.get("contigs"));
+        System.out.println("*** end testGenome***");
     }
     
     @Test

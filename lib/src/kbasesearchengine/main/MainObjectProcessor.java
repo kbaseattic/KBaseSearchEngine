@@ -894,13 +894,14 @@ public class MainObjectProcessor {
     }
     
     private class MOPLookupProvider implements ObjectLookupProvider {
-        private Map<String, String> refResolvingCache = new LinkedHashMap<>();
+        //TODO NOW this needs to be a map based on the storage code
+        private Map<String, GUID> refResolvingCache = new LinkedHashMap<>();
         private Map<GUID, kbasesearchengine.search.ObjectData> objLookupCache =
                 new LinkedHashMap<>();
         private Map<GUID, String> guidToTypeCache = new LinkedHashMap<>();
         
         @Override
-        public Set<String> resolveRefs(List<GUID> callerRefPath, Set<String> refs)
+        public Set<GUID> resolveRefs(List<GUID> callerRefPath, Set<GUID> refs)
                 throws IndexingException, InterruptedException {
             /* the caller ref path 1) ensures that the object refs are valid when checked against
              * the source, and 2) allows getting deleted objects with incoming references 
@@ -911,10 +912,10 @@ public class MainObjectProcessor {
             // by checking the ref against the refs in the parent object.
             // doing it the dumb way for now.
             final EventHandler eh = getEventHandler(callerRefPath.get(0));
-            final Map<String, String> refToRefPath = eh.buildReferencePaths(callerRefPath, refs);
-            Set<String> ret = new LinkedHashSet<>();
-            Set<String> refsToResolve = new LinkedHashSet<>();
-            for (final String ref : refs) {
+            final Map<GUID, String> refToRefPath = eh.buildReferencePaths(callerRefPath, refs);
+            Set<GUID> ret = new LinkedHashSet<>();
+            Set<GUID> refsToResolve = new LinkedHashSet<>();
+            for (final GUID ref : refs) {
                 final String refpath = refToRefPath.get(ref);
                 if (refResolvingCache.containsKey(refpath)) {
                     ret.add(refResolvingCache.get(refpath));
@@ -926,16 +927,15 @@ public class MainObjectProcessor {
                 final Set<ResolvedReference> resrefs =
                         resolveReferences(eh, callerRefPath, refsToResolve);
                 for (final ResolvedReference rr: resrefs) {
-                    final GUID guid = rr.getResolvedReferenceAsGUID();
+                    final GUID guid = rr.getResolvedReference();
                     final boolean indexed = retrier.retryFunc(
                             g -> checkParentGuidExists(g), guid, null);
                     if (!indexed) {
                         indexObjectWrapperFn(guid, rr.getType(), rr.getTimestamp(), false,
                                 this, callerRefPath);
                     }
-                    ret.add(rr.getResolvedReference());
-                    refResolvingCache.put(refToRefPath.get(rr.getReference()),
-                            rr.getResolvedReference());
+                    ret.add(guid);
+                    refResolvingCache.put(refToRefPath.get(rr.getReference()), guid);
                 }
             }
             return ret;
@@ -953,7 +953,7 @@ public class MainObjectProcessor {
         private Set<ResolvedReference> resolveReferences(
                 final EventHandler eh,
                 final List<GUID> callerRefPath,
-                final Set<String> refsToResolve)
+                final Set<GUID> refsToResolve)
                 throws IndexingException, InterruptedException {
             final List<Object> input = Arrays.asList(eh, callerRefPath, refsToResolve);
             return retrier.retryFunc(i -> resolveReferences(i), input, null);
@@ -965,7 +965,7 @@ public class MainObjectProcessor {
             @SuppressWarnings("unchecked")
             final List<GUID> callerRefPath = (List<GUID>) input.get(1);
             @SuppressWarnings("unchecked")
-            final Set<String> refsToResolve = (Set<String>) input.get(2);
+            final Set<GUID> refsToResolve = (Set<GUID>) input.get(2);
 
             return eh.resolveReferences(callerRefPath, refsToResolve);
         }
