@@ -103,9 +103,14 @@ public class SearchTools {
             printError("For config file " + a.configPath, e, a.verbose);
             return 1;
         }
-        return runEventGenerator(cfg, out, a.ref, a.verbose,
-                getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()),
-                getWsTypes(a.wsTypes, cfg.getWorkspaceTypes()));
+        if (a.genWSEvents) {
+            return runEventGenerator(cfg, out, a.ref, a.verbose,
+                    getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()),
+                    getWsTypes(a.wsTypes, cfg.getWorkspaceTypes()));
+        } else {
+            usage(jc);
+            return 0;
+        }
     }
     
     private List<String> getWsTypes(
@@ -199,7 +204,8 @@ public class SearchTools {
                         "(example file is search_tools.cfg.example).")
         private String configPath;
         
-        @Parameter(names = {"-r", "--ref"}, description = "A workspace style (e.g. 1/2/3) ref. " +
+        @Parameter(names = {"-r", "--ref"}, description = "A workspace style (e.g. 1/2/3) ref " +
+                "to be used with the -w command. " +
                 "Only absolute refs are accepted. If omitted, creation events for all objects " +
                 "in all workspaces will be submitted to search. A specific workspace, object, or " +
                 "object version can be specified by providing some or all of the ref.")
@@ -216,5 +222,16 @@ public class SearchTools {
                 "option overrides the type list in the config file.")
         private List<String> wsTypes;
         
+        @Parameter(names = {"-x", "--drop-databases"}, description =
+                "Permanently, and without warning, drop the search event database and " +
+                "elasticsearch indexes. Clears all data from the search system. " +
+                "WARNING: there is no warning or double check for this command. Data will " +
+                "be dropped immediately and will be unrecoverable.")
+        private boolean dropDB;
+        
+        @Parameter(names = {"-w", "--generate-workspace-events"}, description =
+                "Generate events for all objects in the workspace service database. " +
+                "Can be used with -r to specify particular workspaces, objects, or versions.")
+        private boolean genWSEvents;
     }
 }

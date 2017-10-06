@@ -254,7 +254,8 @@ public class WorkspaceEventGenerator {
             final int objid = Math.toIntExact(ver.getLong(WS_KEY_OBJ_ID));
             final Document obj = objects.get(objid);
             if (obj.getBoolean(WS_KEY_OBJ_DEL)) {
-                log(String.format("Skipping deleted object %s/%s", wsid, objid));
+                final int version = ver.getInteger(WS_KEY_VER);
+                log(String.format("Skipping deleted object %s/%s/%s", wsid, objid, version));
             } else {
                 generateEvent(wsid, pub, ver);
             }
