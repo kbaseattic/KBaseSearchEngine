@@ -11,7 +11,6 @@ import us.kbase.common.service.RpcContext;
 
 //BEGIN_HEADER
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.file.Path;
@@ -60,21 +59,6 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     //BEGIN_CLASS_HEADER
     private final SearchMethods search;
     
-    private static void deleteAllElasticIndices(HttpHost esHostPort, String esUser,
-            String esPassword, String prefix) throws IOException {
-        ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort, null);
-        if (esUser != null) {
-            esStorage.setEsUser(esUser);
-            esStorage.setEsPassword(esPassword);
-        }
-        for (String indexName : esStorage.listIndeces()) {
-            if (indexName.startsWith(prefix)) {
-                System.out.println("Deleting Elastic index: " + indexName);
-                esStorage.deleteIndex(indexName);
-            }
-        }
-    }
-    
     private void quietLoggers() {
         ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME))
                 .setLevel(Level.INFO);
@@ -112,14 +96,6 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         if (adminsText != null) {
             admins.addAll(Arrays.asList(adminsText.split(",")).stream().map(String::trim).collect(
                     Collectors.toList()));
-        }
-        String cleanDbs = config.get("clean-dbs");
-        if ("true".equals(cleanDbs)) {
-            try {
-                deleteAllElasticIndices(esHostPort, esUser, esPassword, esIndexPrefix);
-            } catch (Exception e) {
-                System.out.println("Error deleting Elastic index: " + e.getMessage());
-            }
         }
         File logFile = new File(tempDir, "log_" + System.currentTimeMillis() + ".txt");
         PrintWriter logPw = new PrintWriter(logFile);
