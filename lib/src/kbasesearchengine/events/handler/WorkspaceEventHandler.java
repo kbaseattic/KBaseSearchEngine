@@ -1,6 +1,7 @@
 package kbasesearchengine.events.handler;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +25,7 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.ObjectStatusEvent;
 import kbasesearchengine.events.ObjectStatusEventType;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
+import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.exceptions.IndexingExceptionUncheckedWrapper;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
@@ -183,6 +185,9 @@ public class WorkspaceEventHandler implements EventHandler {
     }
 
     private static RetriableIndexingException handleException(final IOException e) {
+        if (e instanceof ConnectException) {
+            return new FatalRetriableIndexingException(e.getMessage(), e);
+        }
         return new RetriableIndexingException(e.getMessage(), e);
     }
     

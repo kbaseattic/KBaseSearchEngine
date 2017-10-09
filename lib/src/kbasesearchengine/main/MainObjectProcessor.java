@@ -68,8 +68,6 @@ public class MainObjectProcessor {
             final int retrycount,
             final Optional<ObjectStatusEvent> ev,
             final Throwable ex) {
-        System.out.println(retrycount);
-        System.out.println(ev);
         logError(ex);
     }
     
@@ -81,6 +79,7 @@ public class MainObjectProcessor {
             final File tempDir,
             final LineLogger logger) {
         Utils.nonNull(logger, "logger");
+        Utils.nonNull(indexingStorage, "indexingStorage");
         this.logger = logger;
         this.rootTempDir = tempDir;
         
@@ -120,13 +119,13 @@ public class MainObjectProcessor {
     }
     
     public void startLifecycleRunner() {
-        if (mainRunner != null) {
-            throw new IllegalStateException("Lifecycle runner was already started");
-        }
-        mainRunner = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
+//        if (mainRunner != null) {
+//            throw new IllegalStateException("Lifecycle runner was already started");
+//        }
+//        mainRunner = new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
                     while(!Thread.currentThread().isInterrupted()) {
                         try {
                             performOneTick();
@@ -151,12 +150,13 @@ public class MainObjectProcessor {
                             }
                         }
                     }
-                } finally {
-                    mainRunner = null;
-                }
-            }
-        });
-        mainRunner.start();
+//                } finally {
+//                    mainRunner = null;
+//                }
+//            }
+//        });
+//        mainRunner.setDaemon(false);
+//        mainRunner.start();
     }
     
     private void logError(Throwable e) {

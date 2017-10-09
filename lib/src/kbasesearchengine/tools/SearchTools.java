@@ -5,13 +5,16 @@ import static kbasesearchengine.tools.Utils.nonNull;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.URISyntaxException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.http.HttpHost;
@@ -21,6 +24,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoCredential;
 import com.mongodb.MongoException;
@@ -29,11 +33,28 @@ import com.mongodb.client.MongoDatabase;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import kbasesearchengine.common.GUID;
+import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
+import kbasesearchengine.events.storage.StatusEventStorage;
+import kbasesearchengine.main.LineLogger;
+import kbasesearchengine.main.MainObjectProcessor;
+import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.IndexingStorage;
+import kbasesearchengine.system.TypeFileStorage;
+import kbasesearchengine.system.TypeMappingParser;
+import kbasesearchengine.system.TypeParseException;
+import kbasesearchengine.system.TypeStorage;
+import kbasesearchengine.system.YAMLTypeMappingParser;
 import kbasesearchengine.tools.SearchToolsConfig.SearchToolsConfigException;
 import kbasesearchengine.tools.WorkspaceEventGenerator.EventGeneratorException;
+import us.kbase.auth.AuthConfig;
+import us.kbase.auth.AuthException;
+import us.kbase.auth.AuthToken;
+import us.kbase.auth.ConfigurableAuthService;
+import us.kbase.common.service.UnauthorizedException;
+import workspace.WorkspaceClient;
 
 /** Tools for working with Search. Note that this CLI is designed against the search prototype
  * event listener in the workspace service, and may need changes if the event listener is changed
@@ -102,6 +123,10 @@ public class SearchTools {
             usage(jc);
             return 0;
         }
+        if (a.startCoordinator && a.genWSEvents) {
+            printError("Can only run one of the coordinator or event generator.");
+            return 1;
+        }
         final SearchToolsConfig cfg;
         try {
             cfg = getConfig(a.configPath);
@@ -119,7 +144,7 @@ public class SearchTools {
             return 1;
         }
         try {
-            setUpMongoDBs(cfg, a.genWSEvents, a.dropDB);
+            setUpMongoDBs(cfg, a.genWSEvents, a.dropDB || a.startCoordinator);
             setUpElasticSearch(cfg, a.dropDB);
         } catch (MongoException | IOException e) {
             printError(e, a.verbose);
@@ -129,6 +154,7 @@ public class SearchTools {
         if (a.dropDB) {
             try {
                 deleteMongoDB();
+                out.println("Deleting ElasticSearch indexes");
                 indexStore.dropData();
                 noCommand = false;
             } catch (MongoException | IOException e) {
@@ -136,9 +162,19 @@ public class SearchTools {
                 return 1;
             }
         }
+        if (a.startCoordinator) {
+            try {
+                runCoordinator(cfg, out, err);
+                noCommand = false;
+            } catch (IOException | AuthException | ObjectParseException | TypeParseException |
+                    UnauthorizedException e) {
+                printError(e, a.verbose);
+                return 1;
+            }
+        }
         if (a.genWSEvents) {
             try {
-                runEventGenerator(out, a.ref, a.verbose,
+                runEventGenerator(out, a.ref,
                         getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()),
                         getWsTypes(a.wsTypes, cfg.getWorkspaceTypes()));
                 noCommand = false;
@@ -154,6 +190,75 @@ public class SearchTools {
         
     }
     
+    private void runCoordinator(
+            final SearchToolsConfig cfg,
+            final PrintStream logTarget,
+            final PrintStream errTarget)
+            throws IOException, AuthException, ObjectParseException, TypeParseException,
+                UnauthorizedException {
+        final AuthToken kbaseIndexerToken = getIndexerToken(cfg);
+        final File tempDir = new File(cfg.getTempDir());
+        if (!tempDir.exists()) {
+            tempDir.mkdirs();
+        }
+        final LineLogger logger = buildLogger(logTarget, errTarget);
+        
+        final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
+                "yaml", new YAMLTypeMappingParser());
+        final Path typesDir = Paths.get(cfg.getTypesDirectory());
+        final Path mappingsDir = Paths.get(cfg.getTypeMappingsDirectory());
+        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
+        
+        final StatusEventStorage storage = new MongoDBStatusEventStorage(searchDB);
+        
+        final WorkspaceClient wsClient = new WorkspaceClient(
+                cfg.getWorkspaceURL(), kbaseIndexerToken);
+        wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(wsClient);
+        
+        final MainObjectProcessor mop = new MainObjectProcessor(
+                Arrays.asList(weh), storage, indexStore, ss, tempDir, logger);
+        mop.startLifecycleRunner();
+    }
+
+    private LineLogger buildLogger(final PrintStream logTarget,
+            final PrintStream errTarget) {
+        final LineLogger logger = new LineLogger() {
+            @Override
+            public void logInfo(final String line) {
+                logTarget.println(line);
+            }
+            @Override
+            public void logError(final String line) {
+                errTarget.println(line);
+            }
+            @Override
+            public void logError(final Throwable error) {
+                error.printStackTrace(errTarget);
+            }
+            @Override
+            public void timeStat(GUID guid, long loadMs, long parseMs, long indexMs) {
+            }
+        };
+        return logger;
+    }
+
+    private AuthToken getIndexerToken(final SearchToolsConfig cfg)
+            throws IOException, AuthException {
+        final AuthConfig c = new AuthConfig();
+        if (cfg.isAllowInsecureAuthURL()) {
+            c.withAllowInsecureURLs(true);
+        }
+        try {
+            c.withKBaseAuthServerURL(cfg.getAuthURL());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("This should virtually never happen", e);
+        }
+        final ConfigurableAuthService auth = new ConfigurableAuthService(c);
+        final AuthToken kbaseIndexerToken = auth.validateToken(cfg.getIndexerToken());
+        return kbaseIndexerToken;
+    }
+
     private void setUpElasticSearch(final SearchToolsConfig cfg, final boolean dropDB)
             throws IOException {
         if (!dropDB) {
@@ -166,49 +271,49 @@ public class SearchTools {
             esStorage.setEsUser(cfg.getElasticUser().get());
             esStorage.setEsPassword(new String(cfg.getElasticPassword().get()));
         }
-        esStorage.setIndexNamePrefix(cfg.getElasticNamespace());
+        esStorage.setIndexNamePrefix(cfg.getElasticNamespace() + ".");
         indexStore = esStorage;
     }
 
     private void setUpMongoDBs(
             final SearchToolsConfig cfg,
-            final boolean genWSEvents,
-            final boolean dropDB)
+            final boolean workspaceAndSearch,
+            final boolean search)
             throws MongoException {
         
-        if (!genWSEvents && !dropDB) {
+        if (!workspaceAndSearch && !search) {
             return;
         }
-        if (genWSEvents) {
-            setUpBothMongoClients(cfg);
+        if (workspaceAndSearch) {
+            setUpBothMongoDatabases(cfg);
         } else {
-            setUpSearchMongoClient(cfg);
+            setUpSearchMongoDatabase(cfg);
         }
     }
 
-    private void setUpSearchMongoClient(final SearchToolsConfig cfg) {
+    private void setUpSearchMongoDatabase(final SearchToolsConfig cfg) {
         // should close connection, but we rely on the program exiting to do that here
-        final MongoClient searchClient = getClient(cfg.getSearchMongoHost(), cfg.getSearchMongoDB(),
+        final MongoClient searchClient = getMongoClient(cfg.getSearchMongoHost(), cfg.getSearchMongoDB(),
                 cfg.getSearchMongoUser(), cfg.getSearchMongoPwd());
         searchDB = searchClient.getDatabase(cfg.getSearchMongoDB());
     }
 
-    private void setUpBothMongoClients(final SearchToolsConfig cfg) {
+    private void setUpBothMongoDatabases(final SearchToolsConfig cfg) {
         // should close connection, but we rely on the program exiting to do that here
         final MongoClient searchClient;
         final MongoClient wsClient;
         if (cfg.getSearchMongoHost().equals(cfg.getWorkspaceMongoHost())) {
             final List<MongoCredential> creds = new LinkedList<>();
-            addCred(cfg.getSearchMongoDB(), cfg.getSearchMongoUser(),
+            addMongoCred(cfg.getSearchMongoDB(), cfg.getSearchMongoUser(),
                     cfg.getSearchMongoPwd(), creds);
-            addCred(cfg.getWorkspaceMongoDB(), cfg.getWorkspaceMongoUser(),
+            addMongoCred(cfg.getWorkspaceMongoDB(), cfg.getWorkspaceMongoUser(),
                     cfg.getWorkspaceMongoPwd(), creds);
             searchClient = new MongoClient(new ServerAddress(cfg.getSearchMongoHost()), creds);
             wsClient = searchClient;
         } else {
-            searchClient = getClient(cfg.getSearchMongoHost(), cfg.getSearchMongoDB(),
+            searchClient = getMongoClient(cfg.getSearchMongoHost(), cfg.getSearchMongoDB(),
                     cfg.getSearchMongoUser(), cfg.getSearchMongoPwd());
-            wsClient = getClient(cfg.getWorkspaceMongoHost(), cfg.getWorkspaceMongoDB(),
+            wsClient = getMongoClient(cfg.getWorkspaceMongoHost(), cfg.getWorkspaceMongoDB(),
                     cfg.getWorkspaceMongoUser(), cfg.getWorkspaceMongoPwd());
             
         }
@@ -216,24 +321,24 @@ public class SearchTools {
         workspaceDB = wsClient.getDatabase(cfg.getWorkspaceMongoDB());
     }
 
-    private MongoClient getClient(
+    private MongoClient getMongoClient(
             final String host,
             final String db,
             final Optional<String> user,
             final Optional<char[]> pwd) {
-        return new MongoClient(new ServerAddress(host), getCred(db, user, pwd));
+        return new MongoClient(new ServerAddress(host), getMongoCred(db, user, pwd));
     }
 
-    private List<MongoCredential> getCred(
+    private List<MongoCredential> getMongoCred(
             final String db,
             final Optional<String> user,
             final Optional<char[]> pwd) {
         final List<MongoCredential> creds = new LinkedList<>();
-        addCred(db, user, pwd, creds);
+        addMongoCred(db, user, pwd, creds);
         return creds;
     }
 
-    private void addCred(
+    private void addMongoCred(
             final String db,
             final Optional<String> user,
             final Optional<char[]> pwd,
@@ -274,7 +379,6 @@ public class SearchTools {
     private void runEventGenerator(
             final PrintStream logtarget,
             final String ref,
-            final boolean verbose,
             final List<WorkspaceIdentifier> wsBlackList,
             final List<String> wsTypes)
             throws EventGeneratorException {
@@ -320,6 +424,10 @@ public class SearchTools {
         }
     }
     
+    private void printError(final String msg) {
+        err.println(msg);
+    }
+    
     private class Args {
         @Parameter(names = {"-h", "--help"}, help = true,
                 description = "Display help.")
@@ -358,6 +466,10 @@ public class SearchTools {
                 "WARNING: there is no warning or double check for this command. Data will " +
                 "be dropped immediately and will be unrecoverable.")
         private boolean dropDB;
+        
+        @Parameter(names = {"-s", "--start-coordinator"}, description =
+                "Start the indexder coordinator.")
+        private boolean startCoordinator;
         
         @Parameter(names = {"-w", "--generate-workspace-events"}, description =
                 "Generate events for all objects in the workspace service database. " +
