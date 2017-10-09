@@ -18,18 +18,13 @@ import java.util.regex.Pattern;
 
 import org.bson.Document;
 
-import com.google.common.base.Optional;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoCredential;
 import com.mongodb.MongoException;
-import com.mongodb.ServerAddress;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 
 import kbasesearchengine.events.ObjectStatusEvent;
 import kbasesearchengine.events.ObjectStatusEventType;
-import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.system.StorageObjectType;
 
@@ -77,8 +72,6 @@ public class WorkspaceEventGenerator {
     private final int obj;
     private final int ver;
     
-    private final MongoClient searchClient;
-    private final MongoClient wsClient;
     private final StatusEventStorage storage;
     private final MongoDatabase wsDB;
     private final PrintStream logtarget;
@@ -86,7 +79,8 @@ public class WorkspaceEventGenerator {
     private List<Pattern> wsTypes;
     
     private WorkspaceEventGenerator(
-            final SearchToolsConfig cfg,
+            final StatusEventStorage storage,
+            final MongoDatabase workspaceDatabase,
             final int ws,
             final int obj,
             final int ver,
@@ -97,30 +91,11 @@ public class WorkspaceEventGenerator {
         this.ws = ws;
         this.obj = obj;
         this.ver = ver;
+        this.storage = storage;
+        this.wsDB = workspaceDatabase;
         this.logtarget = logtarget;
         this.wsBlackList = Collections.unmodifiableSet(new HashSet<>(wsBlackList));
         this.wsTypes = processTypes(wsTypes);
-        if (cfg.getSearchMongoHost().equals(cfg.getWorkspaceMongoHost())) {
-            final List<MongoCredential> creds = new LinkedList<>();
-            addCred(cfg.getSearchMongoDB(), cfg.getSearchMongoUser(),
-                    cfg.getSearchMongoPwd(), creds);
-            addCred(cfg.getWorkspaceMongoDB(), cfg.getWorkspaceMongoUser(),
-                    cfg.getWorkspaceMongoPwd(), creds);
-            try {
-                searchClient = new MongoClient(new ServerAddress(cfg.getSearchMongoHost()), creds);
-                wsClient = searchClient;
-            } catch (MongoException e) {
-                throw convert(e, null);
-            }
-        } else {
-            searchClient = getClient(cfg.getSearchMongoHost(), cfg.getSearchMongoDB(),
-                    cfg.getSearchMongoUser(), cfg.getSearchMongoPwd());
-            wsClient = getClient(cfg.getWorkspaceMongoHost(), cfg.getWorkspaceMongoDB(),
-                    cfg.getWorkspaceMongoUser(), cfg.getWorkspaceMongoPwd());
-            
-        }
-        storage = new MongoDBStatusEventStorage(searchClient.getDatabase(cfg.getSearchMongoDB()));
-        wsDB = wsClient.getDatabase(cfg.getWorkspaceMongoDB());
         checkWorkspaceSchema();
     }
     
@@ -131,11 +106,6 @@ public class WorkspaceEventGenerator {
             ret.add(Pattern.compile("^" + Pattern.quote(t.trim()))); // set up mongo regex
         }
         return ret;
-    }
-
-    public void destroy() {
-        searchClient.close();
-        wsClient.close();
     }
 
     private EventGeneratorException convert(final MongoException e, final String db) {
@@ -160,37 +130,6 @@ public class WorkspaceEventGenerator {
             }
         } catch (MongoException e) {
             throw convert(e, "workspace");
-        }
-    }
-
-    private MongoClient getClient(
-            final String host,
-            final String db,
-            final Optional<String> user,
-            final Optional<char[]> pwd) throws EventGeneratorException {
-        try {
-            return new MongoClient(new ServerAddress(host), getCred(db, user, pwd));
-        } catch (MongoException e) {
-            throw convert(e, db);
-        }
-    }
-
-    private List<MongoCredential> getCred(
-            final String db,
-            final Optional<String> user,
-            final Optional<char[]> pwd) {
-        final List<MongoCredential> creds = new LinkedList<>();
-        addCred(db, user, pwd, creds);
-        return creds;
-    }
-
-    private void addCred(
-            final String db,
-            final Optional<String> user,
-            final Optional<char[]> pwd,
-            final List<MongoCredential> creds) {
-        if (user.isPresent()) {
-            creds.add(MongoCredential.createCredential(user.get(), db, pwd.get()));
         }
     }
 
@@ -370,7 +309,8 @@ public class WorkspaceEventGenerator {
 
     public static class Builder {
         
-        private final SearchToolsConfig cfg;
+        private final StatusEventStorage storage;
+        private final MongoDatabase workspaceDatabase;
         private int ws = -1;
         private int obj = -1;
         private int ver = -1;
@@ -378,10 +318,15 @@ public class WorkspaceEventGenerator {
         private Collection<WorkspaceIdentifier> wsBlackList = new LinkedList<>();
         private Collection<String> wsTypes = new LinkedList<>();
         
-        public Builder(final SearchToolsConfig cfg, final PrintStream logtarget) {
-            nonNull(cfg, "cfg");
+        public Builder(
+                final StatusEventStorage storage,
+                final MongoDatabase workspaceDatabase,
+                final PrintStream logtarget) {
+            nonNull(storage, "storage");
+            nonNull(workspaceDatabase, "workspaceDatabase");
             nonNull(logtarget, "logtarget");
-            this.cfg = cfg;
+            this.storage = storage;
+            this.workspaceDatabase = workspaceDatabase;
             this.logtarget = logtarget;
         }
         
@@ -430,7 +375,8 @@ public class WorkspaceEventGenerator {
         }
 
         public WorkspaceEventGenerator build() throws EventGeneratorException {
-            return new WorkspaceEventGenerator(cfg, ws, obj, ver, logtarget, wsBlackList, wsTypes);
+            return new WorkspaceEventGenerator(
+                    storage, workspaceDatabase, ws, obj, ver, logtarget, wsBlackList, wsTypes);
         }
 
     }

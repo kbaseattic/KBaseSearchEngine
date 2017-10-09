@@ -13,14 +13,23 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.http.HttpHost;
 import org.slf4j.LoggerFactory;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.google.common.base.Optional;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoCredential;
+import com.mongodb.MongoException;
+import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoDatabase;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
+import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.tools.SearchToolsConfig.SearchToolsConfigException;
 import kbasesearchengine.tools.WorkspaceEventGenerator.EventGeneratorException;
 
@@ -44,6 +53,9 @@ public class SearchTools {
     private final String[] args;
     private final PrintStream out;
     private final PrintStream err;
+    
+    private MongoDatabase workspaceDB = null;
+    private MongoDatabase searchDB = null;
 
     /** Create a new CLI instance.
      * @param args the program arguments.
@@ -103,13 +115,110 @@ public class SearchTools {
             printError("For config file " + a.configPath, e, a.verbose);
             return 1;
         }
+        try {
+            setUpMongoDBs(cfg, a.genWSEvents, a.dropDB);
+        } catch (MongoException e) {
+            printError(e, a.verbose);
+            return 1;
+        }
+        boolean noCommand = true; // this seems dumb...
+        if (a.dropDB) {
+            try {
+                deleteMongoDB();
+                noCommand = false;
+            } catch (MongoException e) {
+                printError(e, a.verbose);
+                return 1;
+            }
+        }
         if (a.genWSEvents) {
-            return runEventGenerator(cfg, out, a.ref, a.verbose,
-                    getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()),
-                    getWsTypes(a.wsTypes, cfg.getWorkspaceTypes()));
-        } else {
+            try {
+                runEventGenerator(out, a.ref, a.verbose,
+                        getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()),
+                        getWsTypes(a.wsTypes, cfg.getWorkspaceTypes()));
+                noCommand = false;
+            } catch (EventGeneratorException e) {
+                printError(e, a.verbose);
+                return 1;
+            }
+        }
+        if (noCommand) {
             usage(jc);
-            return 0;
+        }
+        return 0;
+        
+    }
+    
+    private void setUpMongoDBs(
+            final SearchToolsConfig cfg,
+            final boolean genWSEvents,
+            final boolean dropDB)
+            throws MongoException {
+        
+        if (!genWSEvents && !dropDB) {
+            return;
+        }
+        if (genWSEvents) {
+            setUpBothMongoClients(cfg);
+        } else {
+            setUpSearchMongoClient(cfg);
+        }
+    }
+
+    private void setUpSearchMongoClient(final SearchToolsConfig cfg) {
+        // should close connection, but we rely on the program exiting to do that here
+        final MongoClient searchClient = getClient(cfg.getSearchMongoHost(), cfg.getSearchMongoDB(),
+                cfg.getSearchMongoUser(), cfg.getSearchMongoPwd());
+        searchDB = searchClient.getDatabase(cfg.getSearchMongoDB());
+    }
+
+    private void setUpBothMongoClients(final SearchToolsConfig cfg) {
+        // should close connection, but we rely on the program exiting to do that here
+        final MongoClient searchClient;
+        final MongoClient wsClient;
+        if (cfg.getSearchMongoHost().equals(cfg.getWorkspaceMongoHost())) {
+            final List<MongoCredential> creds = new LinkedList<>();
+            addCred(cfg.getSearchMongoDB(), cfg.getSearchMongoUser(),
+                    cfg.getSearchMongoPwd(), creds);
+            addCred(cfg.getWorkspaceMongoDB(), cfg.getWorkspaceMongoUser(),
+                    cfg.getWorkspaceMongoPwd(), creds);
+            searchClient = new MongoClient(new ServerAddress(cfg.getSearchMongoHost()), creds);
+            wsClient = searchClient;
+        } else {
+            searchClient = getClient(cfg.getSearchMongoHost(), cfg.getSearchMongoDB(),
+                    cfg.getSearchMongoUser(), cfg.getSearchMongoPwd());
+            wsClient = getClient(cfg.getWorkspaceMongoHost(), cfg.getWorkspaceMongoDB(),
+                    cfg.getWorkspaceMongoUser(), cfg.getWorkspaceMongoPwd());
+            
+        }
+        searchDB = searchClient.getDatabase(cfg.getSearchMongoDB());
+        workspaceDB = wsClient.getDatabase(cfg.getWorkspaceMongoDB());
+    }
+
+    private MongoClient getClient(
+            final String host,
+            final String db,
+            final Optional<String> user,
+            final Optional<char[]> pwd) {
+        return new MongoClient(new ServerAddress(host), getCred(db, user, pwd));
+    }
+
+    private List<MongoCredential> getCred(
+            final String db,
+            final Optional<String> user,
+            final Optional<char[]> pwd) {
+        final List<MongoCredential> creds = new LinkedList<>();
+        addCred(db, user, pwd, creds);
+        return creds;
+    }
+
+    private void addCred(
+            final String db,
+            final Optional<String> user,
+            final Optional<char[]> pwd,
+            final List<MongoCredential> creds) {
+        if (user.isPresent()) {
+            creds.add(MongoCredential.createCredential(user.get(), db, pwd.get()));
         }
     }
     
@@ -141,25 +250,19 @@ public class SearchTools {
         }
     }
 
-    private int runEventGenerator(
-            final SearchToolsConfig cfg,
+    private void runEventGenerator(
             final PrintStream logtarget,
             final String ref,
             final boolean verbose,
             final List<WorkspaceIdentifier> wsBlackList,
-            final List<String> wsTypes) {
-        try {
-            final WorkspaceEventGenerator gen = new WorkspaceEventGenerator.Builder(cfg, logtarget)
+            final List<String> wsTypes)
+            throws EventGeneratorException {
+            final WorkspaceEventGenerator gen = new WorkspaceEventGenerator.Builder(
+                    new MongoDBStatusEventStorage(searchDB), workspaceDB, logtarget)
                     .withNullableRef(ref)
                     .withWorkspaceBlacklist(wsBlackList)
                     .withWorkspaceTypes(wsTypes).build();
             gen.generateEvents();
-            gen.destroy();
-        } catch (EventGeneratorException e) {
-            printError(e, verbose);
-            return 1;
-        }
-        return 0;
     }
 
     private SearchToolsConfig getConfig(final String configPath)
@@ -168,6 +271,31 @@ public class SearchTools {
         final Properties p = new Properties();
         p.load(Files.newInputStream(path));
         return SearchToolsConfig.from(p);
+    }
+    
+    private void deleteMongoDB() {
+        out.println("Deleting Mongo database: " + searchDB.getName());
+        //TODO CODE just remove all items from collections rather than dropping db, preserves indexes
+        searchDB.drop();
+    }
+    
+    //TODO NOW delete elastic indexes
+    private void deleteAllElasticIndices(
+            final HttpHost esHostPort,
+            final String esUser,
+            final String esPassword,
+            final String prefix) throws IOException {
+        ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort, null);
+        if (esUser != null) {
+            esStorage.setEsUser(esUser);
+            esStorage.setEsPassword(esPassword);
+        }
+        for (String indexName : esStorage.listIndeces()) {
+            if (indexName.startsWith(prefix)) {
+                out.println("Deleting Elastic index: " + indexName);
+                esStorage.deleteIndex(indexName);
+            }
+        }
     }
 
     private void usage(final JCommander jc) {
