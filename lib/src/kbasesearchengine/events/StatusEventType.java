@@ -1,6 +1,6 @@
 package kbasesearchengine.events;
 
-public enum ObjectStatusEventType {
+public enum StatusEventType {
 	NEW_VERSION,
 	DELETED,
 	SHARED,

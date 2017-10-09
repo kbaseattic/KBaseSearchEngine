@@ -23,8 +23,8 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 
-import kbasesearchengine.events.ObjectStatusEvent;
-import kbasesearchengine.events.ObjectStatusEventType;
+import kbasesearchengine.events.StatusEvent;
+import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.system.StorageObjectType;
 
@@ -209,7 +209,7 @@ public class WorkspaceEventGenerator {
         final String type = typeString[0];
         final int typever = Integer.parseInt(typeString[1].split("\\.")[0]);
         try {
-            storage.store(new ObjectStatusEvent(
+            storage.store(new StatusEvent(
                     null, // no mongo id
                     "WS",
                     wsid,
@@ -219,7 +219,7 @@ public class WorkspaceEventGenerator {
                     null,
                     ver.getDate(WS_KEY_SAVEDATE).getTime(),
                     new StorageObjectType("WS", type, typever),
-                    ObjectStatusEventType.NEW_VERSION,
+                    StatusEventType.NEW_VERSION,
                     pub));
         } catch (IOException e) {
             throw new EventGeneratorException("Error saving event to RESKE db: " + e.getMessage(),

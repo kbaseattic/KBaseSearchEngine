@@ -24,8 +24,8 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableMap;
 
 import kbasesearchengine.common.GUID;
-import kbasesearchengine.events.ObjectStatusEvent;
-import kbasesearchengine.events.ObjectStatusEventType;
+import kbasesearchengine.events.StatusEvent;
+import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.search.AccessFilter;
@@ -208,7 +208,7 @@ public class PerformanceTester {
                 String[] parts = ref.split("/");
                 int wsId = Integer.parseInt(parts[0]);
                 int version = Integer.parseInt(parts[2]);
-                ObjectStatusEvent ev = new ObjectStatusEvent(
+                StatusEvent ev = new StatusEvent(
                         "-1",
                         "WS",
                         wsId,
@@ -218,7 +218,7 @@ public class PerformanceTester {
                         null,
                         System.currentTimeMillis(),
                         new StorageObjectType("WS", "KBaseGenomes.Genome"),
-                        ObjectStatusEventType.NEW_VERSION,
+                        StatusEventType.NEW_VERSION,
                         true);
                 long t2 = System.currentTimeMillis();
                 try {

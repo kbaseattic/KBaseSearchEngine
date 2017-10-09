@@ -4,21 +4,21 @@ import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import kbasesearchengine.events.ObjectStatusEvent;
+import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
-import kbasesearchengine.events.storage.ObjectStatusCursor;
+import kbasesearchengine.events.storage.StatusEventCursor;
 import kbasesearchengine.events.storage.StatusEventStorage;
 
-public class ObjectStatusEventQueue {
+public class StatusEventQueue {
 	private final static String BUFFER_ALIVE_TIME = "1m";
 	private final static int BUFFER_SIZE = 10;
 	private StatusEventStorage objStatusStorage;	
 	
-	class _Iterator implements ObjectStatusEventIterator{
+	class _Iterator implements StatusEventIterator{
 		String storageCode;
-		ObjectStatusCursor cursor = null;
-		ObjectStatusEvent[] buffer = new ObjectStatusEvent[BUFFER_SIZE];
+		StatusEventCursor cursor = null;
+		StatusEvent[] buffer = new StatusEvent[BUFFER_SIZE];
 		int nextPos = 0;
 		int nItems = 0;
 		int nMarkedAsVisited = 0;
@@ -47,7 +47,7 @@ public class ObjectStatusEventQueue {
 			}
 						
 			int i = 0;
-			for(ObjectStatusEvent row : cursor.getData()){
+			for(StatusEvent row : cursor.getData()){
 				buffer[i++] = row;
 			}
 			nextPos = 0;
@@ -71,20 +71,20 @@ public class ObjectStatusEventQueue {
 		}
 
         @Override
-        public ObjectStatusEvent next() {
+        public StatusEvent next() {
             if (isBufferEmpty()) {
                 throw new NoSuchElementException();
             }
-            final ObjectStatusEvent ev = buffer[nextPos++];
+            final StatusEvent ev = buffer[nextPos++];
             return ev;
         }
 	}
 		
-	public ObjectStatusEventQueue(StatusEventStorage objStatusStorage){
+	public StatusEventQueue(StatusEventStorage objStatusStorage){
 		this.objStatusStorage = objStatusStorage;
 	}
 
-    public ObjectStatusEventIterator iterator(String storageCode)
+    public StatusEventIterator iterator(String storageCode)
             throws FatalIndexingException, FatalRetriableIndexingException {
         return new _Iterator(storageCode);
     }
@@ -101,11 +101,11 @@ public class ObjectStatusEventQueue {
 		return objStatusStorage.count(storageCode, false);
 	}
 
-	public List<ObjectStatusEvent> list(int maxSize) throws IOException {
+	public List<StatusEvent> list(int maxSize) throws IOException {
 		return list(null, maxSize);
 	}
 
-	public List<ObjectStatusEvent> list(String storageCode,
+	public List<StatusEvent> list(String storageCode,
 			int maxSize) throws IOException {
 		return objStatusStorage.find(storageCode, false, maxSize);
 	}		

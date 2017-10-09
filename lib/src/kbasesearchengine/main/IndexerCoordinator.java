@@ -19,7 +19,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.google.common.base.Optional;
 
 import kbasesearchengine.common.GUID;
-import kbasesearchengine.events.ObjectStatusEvent;
+import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
@@ -37,8 +37,8 @@ import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.parse.ObjectParser;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
-import kbasesearchengine.queue.ObjectStatusEventIterator;
-import kbasesearchengine.queue.ObjectStatusEventQueue;
+import kbasesearchengine.queue.StatusEventIterator;
+import kbasesearchengine.queue.StatusEventQueue;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.StorageObjectType;
@@ -53,7 +53,7 @@ public class IndexerCoordinator {
             1000, 2000, 4000, 8000, 16000);
     
     private final File rootTempDir;
-    private final ObjectStatusEventQueue queue;
+    private final StatusEventQueue queue;
     private final TypeStorage typeStorage;
     private final IndexingStorage indexingStorage;
     private final LineLogger logger;
@@ -76,7 +76,7 @@ public class IndexerCoordinator {
         this.rootTempDir = tempDir;
         
         eventHandlers.stream().forEach(eh -> this.eventHandlers.put(eh.getStorageCode(), eh));
-        queue = new ObjectStatusEventQueue(storage);
+        queue = new StatusEventQueue(storage);
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
     }
@@ -162,7 +162,7 @@ public class IndexerCoordinator {
 
     private void logError(
             final int retrycount,
-            final Optional<ObjectStatusEvent> event,
+            final Optional<StatusEvent> event,
             final RetriableIndexingException e) {
         final String msg;
         if (event.isPresent()) {
@@ -177,15 +177,15 @@ public class IndexerCoordinator {
     
     private void performOneTick() throws InterruptedException, IndexingException {
         // Seems like this shouldn't be source specific. It should handle all event sources.
-        final ObjectStatusEventIterator iter = retrier.retryFunc(
+        final StatusEventIterator iter = retrier.retryFunc(
                 q -> q.iterator("WS"), queue, null);
         while (iter.hasNext()) {
-            final ObjectStatusEvent parentEvent = retrier.retryFunc(i -> i.next(), iter, null);
+            final StatusEvent parentEvent = retrier.retryFunc(i -> i.next(), iter, null);
             if (getEventHandler(parentEvent).isExpandable(parentEvent)) {
                 logger.logInfo(String.format("[Indexer] Expanding event %s %s",
                         parentEvent.getEventType(), parentEvent.getId()));
             }
-            final Iterator<ObjectStatusEvent> er;
+            final Iterator<StatusEvent> er;
             try {
                 er = retrier.retryFunc(e -> getSubEventIterator(e), parentEvent, parentEvent);
                 iter.markAsVisited(processEvent(parentEvent, er));
@@ -202,7 +202,7 @@ public class IndexerCoordinator {
         }
     }
     
-    private Iterator<ObjectStatusEvent> getSubEventIterator(final ObjectStatusEvent ev)
+    private Iterator<StatusEvent> getSubEventIterator(final StatusEvent ev)
             throws IndexingException, RetriableIndexingException {
         try {
             return getEventHandler(ev).expand(ev).iterator();
@@ -215,7 +215,7 @@ public class IndexerCoordinator {
 
     // assumes something has already failed, so if this fails as well something is really 
     // wrong and we bail.
-    private void markAsVisitedFailedPostError(final ObjectStatusEventIterator iter)
+    private void markAsVisitedFailedPostError(final StatusEventIterator iter)
             throws FatalIndexingException {
         try {
             iter.markAsVisited(false);
@@ -227,12 +227,12 @@ public class IndexerCoordinator {
 
     // returns whether processing was successful or not.
     private boolean processEvent(
-            final ObjectStatusEvent parentEvent,
-            final Iterator<ObjectStatusEvent> expanditer)
+            final StatusEvent parentEvent,
+            final Iterator<StatusEvent> expanditer)
             throws InterruptedException, FatalIndexingException {
         while (expanditer.hasNext()) {
             //TODO EVENT insert sub event into db - need to ensure not inserted twice on reprocess - use parent id
-            final ObjectStatusEvent ev;
+            final StatusEvent ev;
             try {
                 ev = retrier.retryFunc(i -> getNextSubEvent(i), expanditer, parentEvent);
             } catch (IndexingException e) {
@@ -266,7 +266,7 @@ public class IndexerCoordinator {
         return true;
     }
     
-    private ObjectStatusEvent getNextSubEvent(Iterator<ObjectStatusEvent> iter)
+    private StatusEvent getNextSubEvent(Iterator<StatusEvent> iter)
             throws IndexingException, RetriableIndexingException {
         try {
             return iter.next();
@@ -279,7 +279,7 @@ public class IndexerCoordinator {
     
     private void handleException(
             final String error,
-            final ObjectStatusEvent event,
+            final StatusEvent event,
             final IndexingException exception)
             throws FatalIndexingException {
         if (exception instanceof FatalIndexingException) {
@@ -307,7 +307,7 @@ public class IndexerCoordinator {
         return sb.toString();
     }
 
-    private EventHandler getEventHandler(final ObjectStatusEvent ev)
+    private EventHandler getEventHandler(final StatusEvent ev)
             throws UnprocessableEventIndexingException {
         return getEventHandler(ev.getStorageCode());
     }
@@ -326,7 +326,7 @@ public class IndexerCoordinator {
         return eventHandlers.get(storageCode);
     }
 
-    public void processOneEvent(final ObjectStatusEvent ev)
+    public void processOneEvent(final StatusEvent ev)
             throws IndexingException, InterruptedException, RetriableIndexingException {
         try {
             switch (ev.getEventType()) {
@@ -384,7 +384,7 @@ public class IndexerCoordinator {
     }
 
     // returns false if a non-fatal error prevents retrieving the info
-    public boolean isStorageTypeSupported(final ObjectStatusEvent ev)
+    public boolean isStorageTypeSupported(final StatusEvent ev)
             throws InterruptedException, FatalIndexingException {
         try {
             return retrier.retryFunc(

@@ -3,7 +3,7 @@ package kbasesearchengine.events.storage;
 import java.io.IOException;
 import java.util.List;
 
-import kbasesearchengine.events.ObjectStatusEvent;
+import kbasesearchengine.events.StatusEvent;
 
 public interface StatusEventStorage {
 	
@@ -11,9 +11,9 @@ public interface StatusEventStorage {
 		
 	public void deleteStorage() throws IOException;
 
-	public void store(ObjectStatusEvent obj) throws IOException;
+	public void store(StatusEvent obj) throws IOException;
 	
-	public void markAsProcessed(ObjectStatusEvent row, boolean isIndexed) throws IOException;
+	public void markAsProcessed(StatusEvent row, boolean isIndexed) throws IOException;
 	
 	public void markAsNonprocessed(String storageCode, String storageObjectType) throws IOException;
 
@@ -21,12 +21,12 @@ public interface StatusEventStorage {
 		
 	public int count(String storageCode, boolean processed) throws IOException;
 	
-	public List<ObjectStatusEvent> find(String storageCode, boolean processed, int maxSize) throws IOException;
+	public List<StatusEvent> find(String storageCode, boolean processed, int maxSize) throws IOException;
 	
-	public ObjectStatusCursor cursor(String storageCode, boolean processed, int pageSize, String timeAlive);
+	public StatusEventCursor cursor(String storageCode, boolean processed, int pageSize, String timeAlive);
 	
-	public boolean nextPage(ObjectStatusCursor cursor, int nRemovedItems);
+	public boolean nextPage(StatusEventCursor cursor, int nRemovedItems);
 	
-	public List<ObjectStatusEvent> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds) throws IOException;
+	public List<StatusEvent> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds) throws IOException;
 		
 }

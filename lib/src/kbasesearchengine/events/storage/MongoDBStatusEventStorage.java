@@ -14,8 +14,8 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
-import kbasesearchengine.events.ObjectStatusEvent;
-import kbasesearchengine.events.ObjectStatusEventType;
+import kbasesearchengine.events.StatusEvent;
+import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.tools.Utils;
 
@@ -45,7 +45,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
 	}
 		
 	@Override
-	public void store(ObjectStatusEvent obj) throws IOException {
+	public void store(StatusEvent obj) throws IOException {
 		final Document dobj = new Document();
 		dobj.put("storageCode", obj.getStorageCode());
 		dobj.put("accessGroupId", obj.getAccessGroupId());
@@ -65,7 +65,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
 	}
 
 	@Override
-	public void markAsProcessed(ObjectStatusEvent row, boolean isIndexed) throws IOException {
+	public void markAsProcessed(StatusEvent row, boolean isIndexed) throws IOException {
 		final Document doc = new Document().append("$set", 
 				new Document()
 					.append("processed", true)
@@ -113,8 +113,8 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
 		return (int) collection(COLLECTION_OBJECT_STATUS_EVENTS).count(query);
 	}
 
-    private List<ObjectStatusEvent> find(Document query, int skip, int limit) {
-            List<ObjectStatusEvent> events = new ArrayList<ObjectStatusEvent>();
+    private List<StatusEvent> find(Document query, int skip, int limit) {
+            List<StatusEvent> events = new ArrayList<StatusEvent>();
 
     FindIterable<Document> cursor = collection(COLLECTION_OBJECT_STATUS_EVENTS).find(query).skip(skip).limit(limit);
         for (final Document dobj: cursor) {
@@ -123,7 +123,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
             final Integer ver = (Integer) dobj.get("storageObjectTypeVersion");
             final StorageObjectType sot = type == null ? null :
                 StorageObjectType.fromNullableVersion(storageCode, type, ver);
-            ObjectStatusEvent event = new ObjectStatusEvent(
+            StatusEvent event = new StatusEvent(
                     dobj.get("_id").toString(),
                     storageCode,
                     (Integer)dobj.get("accessGroupId"),
@@ -133,7 +133,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                     (Integer)dobj.get("targetAccessGroupId"),
                     (Long)dobj.get("timestamp"),
                     sot,
-                    ObjectStatusEventType.valueOf((String)dobj.get("eventType")),
+                    StatusEventType.valueOf((String)dobj.get("eventType")),
                     (Boolean)dobj.get("isGlobalAccessed")
 
                     );
@@ -144,7 +144,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     }
 	
 	@Override
-	public List<ObjectStatusEvent> find(String storageCode, boolean processed, int maxSize) throws IOException {
+	public List<StatusEvent> find(String storageCode, boolean processed, int maxSize) throws IOException {
 		final List<Document> queryItems = new LinkedList<>();
 		queryItems.add(new Document("processed", processed));
 		if(storageCode != null){
@@ -156,7 +156,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
 		return find(query, 0, maxSize);
 	}
 
-	class _Cursor extends ObjectStatusCursor{
+	class _Cursor extends StatusEventCursor{
 		final Document query;
 
 		public _Cursor(String cursorId, int pageSize, String timeAlive, Document query) {
@@ -166,7 +166,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
 	}
 	
     @Override
-    public ObjectStatusCursor cursor(
+    public StatusEventCursor cursor(
             final String storageCode,
             final boolean processed,
             final int pageSize,
@@ -185,9 +185,9 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     }
 
 	@Override
-	public boolean nextPage(ObjectStatusCursor cursor, int nRemovedItems) {
+	public boolean nextPage(StatusEventCursor cursor, int nRemovedItems) {
 		_Cursor _cursor = (_Cursor)cursor;
-		List<ObjectStatusEvent> objs = find(_cursor.query, _cursor.getPageIndex()*_cursor.getPageSize() - nRemovedItems, _cursor.getPageSize());
+		List<StatusEvent> objs = find(_cursor.query, _cursor.getPageIndex()*_cursor.getPageSize() - nRemovedItems, _cursor.getPageSize());
 		
 		_cursor.nextPage(objs);
 		
@@ -195,10 +195,10 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
 	}
 
 	@Override
-	public List<ObjectStatusEvent> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds)
+	public List<StatusEvent> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds)
 			throws IOException {
 		// TODO Auto-generated method stub
-		return new ArrayList<ObjectStatusEvent>();
+		return new ArrayList<StatusEvent>();
 	}
 
 }

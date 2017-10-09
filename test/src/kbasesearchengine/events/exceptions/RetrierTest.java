@@ -14,8 +14,8 @@ import org.junit.Test;
 
 import com.google.common.base.Optional;
 
-import kbasesearchengine.events.ObjectStatusEvent;
-import kbasesearchengine.events.ObjectStatusEventType;
+import kbasesearchengine.events.StatusEvent;
+import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
 import kbasesearchengine.events.exceptions.Retrier;
 import kbasesearchengine.events.exceptions.RetryLogger;
@@ -27,13 +27,13 @@ public class RetrierTest {
     private class LogEvent {
         private final Instant time;
         private final int retryCount;
-        private final Optional<ObjectStatusEvent> event;
+        private final Optional<StatusEvent> event;
         private final RetriableIndexingException exception;
         
         private LogEvent(
                 final Instant time,
                 final int retryCount,
-                final Optional<ObjectStatusEvent> optional,
+                final Optional<StatusEvent> optional,
                 final RetriableIndexingException exception) {
             this.time = time;
             this.retryCount = retryCount;
@@ -47,7 +47,7 @@ public class RetrierTest {
         private final List<LogEvent> events = new LinkedList<>();
         
         @Override
-        public void log(int retryCount, Optional<ObjectStatusEvent> optional,
+        public void log(int retryCount, Optional<StatusEvent> optional,
                 RetriableIndexingException e) {
             events.add(new LogEvent(Instant.now(), retryCount, optional, e));
         }
@@ -166,9 +166,9 @@ public class RetrierTest {
     public void consumer2RetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
-        final ObjectStatusEvent ev = new ObjectStatusEvent(
+        final StatusEvent ev = new StatusEvent(
                 null, "foo", 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
-                ObjectStatusEventType.DELETED, false);
+                StatusEventType.DELETED, false);
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 2), "foo", ev);
         final Instant end = Instant.now();
@@ -237,9 +237,9 @@ public class RetrierTest {
     public void consumer2FatalRetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Arrays.asList(70, 30), collog);
-        final ObjectStatusEvent ev = new ObjectStatusEvent(
+        final StatusEvent ev = new StatusEvent(
                 null, "foo", 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
-                ObjectStatusEventType.DELETED, false);
+                StatusEventType.DELETED, false);
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 2, true), "foo", ev);
         final Instant end = Instant.now();
@@ -351,9 +351,9 @@ public class RetrierTest {
     public void function2RetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
-        final ObjectStatusEvent ev = new ObjectStatusEvent(
+        final StatusEvent ev = new StatusEvent(
                 null, "foo", 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
-                ObjectStatusEventType.DELETED, false);
+                StatusEventType.DELETED, false);
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 26L, 2), "foo", ev);
         final Instant end = Instant.now();
@@ -424,9 +424,9 @@ public class RetrierTest {
     public void function2FatalRetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Arrays.asList(70, 30), collog);
-        final ObjectStatusEvent ev = new ObjectStatusEvent(
+        final StatusEvent ev = new StatusEvent(
                 null, "foo", 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
-                ObjectStatusEventType.DELETED, false);
+                StatusEventType.DELETED, false);
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 64L, 2, true), "foo", ev);
         final Instant end = Instant.now();

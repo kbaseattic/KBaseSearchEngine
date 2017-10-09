@@ -26,8 +26,8 @@ import com.mongodb.client.MongoDatabase;
 
 import junit.framework.Assert;
 import kbasesearchengine.common.GUID;
-import kbasesearchengine.events.ObjectStatusEvent;
-import kbasesearchengine.events.ObjectStatusEventType;
+import kbasesearchengine.events.StatusEvent;
+import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
@@ -259,7 +259,7 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testGenomeManually() throws Exception {
-        ObjectStatusEvent ev = new ObjectStatusEvent(
+        StatusEvent ev = new StatusEvent(
                 "-1",
                 "WS",
                 wsid,
@@ -269,7 +269,7 @@ public class MainObjectProcessorTest {
                 null,
                 System.currentTimeMillis(),
                 new StorageObjectType("WS", "KBaseGenomes.Genome"),
-                ObjectStatusEventType.NEW_VERSION,
+                StatusEventType.NEW_VERSION,
                 false);
         mop.processOneEvent(ev);
         PostProcessing pp = new PostProcessing();
@@ -297,9 +297,9 @@ public class MainObjectProcessorTest {
         System.out.println("Feature: " + obj);
     }
 
-    private void indexFewVersions(ObjectStatusEvent ev) throws Exception {
+    private void indexFewVersions(StatusEvent ev) throws Exception {
         for (int i = Math.max(1, ev.getVersion() - 5); i <= ev.getVersion(); i++) {
-            mop.processOneEvent(new ObjectStatusEvent(ev.getId(), ev.getStorageCode(), 
+            mop.processOneEvent(new StatusEvent(ev.getId(), ev.getStorageCode(), 
                     ev.getAccessGroupId(), ev.getAccessGroupObjectId(), i, null,
                     ev.getTargetAccessGroupId(), ev.getTimestamp(), ev.getStorageObjectType(),
                     ev.getEventType(), ev.isGlobalAccessed()));
@@ -323,7 +323,7 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testNarrativeManually() throws Exception {
-        indexFewVersions(new ObjectStatusEvent(
+        indexFewVersions(new StatusEvent(
                 "-1",
                 "WS",
                 wsid,
@@ -333,7 +333,7 @@ public class MainObjectProcessorTest {
                 null,
                 System.currentTimeMillis(),
                 new StorageObjectType("WS", "KBaseNarrative.Narrative"),
-                ObjectStatusEventType.NEW_VERSION,
+                StatusEventType.NEW_VERSION,
                 false));
         checkSearch(1, "Narrative", "tree", wsid, false);
         checkSearch(1, "Narrative", "species", wsid, false);
@@ -351,7 +351,7 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testReadsManually() throws Exception {
-        indexFewVersions(new ObjectStatusEvent(
+        indexFewVersions(new StatusEvent(
                 "-1",
                 "WS",
                 wsid,
@@ -361,11 +361,11 @@ public class MainObjectProcessorTest {
                 null,
                 System.currentTimeMillis(),
                 new StorageObjectType("WS", "KBaseFile.PairedEndLibrary"),
-                ObjectStatusEventType.NEW_VERSION,
+                StatusEventType.NEW_VERSION,
                 false));
         checkSearch(1, "PairedEndLibrary", "Illumina", wsid, true);
         checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
-        indexFewVersions(new ObjectStatusEvent(
+        indexFewVersions(new StatusEvent(
                 "-1",
                 "WS", 
                 wsid,
@@ -375,7 +375,7 @@ public class MainObjectProcessorTest {
                 null,
                 System.currentTimeMillis(),
                 new StorageObjectType("WS", "KBaseFile.SingleEndLibrary"),
-                ObjectStatusEventType.NEW_VERSION,
+                StatusEventType.NEW_VERSION,
                 false));
         checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);
         checkSearch(1, "SingleEndLibrary", "reads.2", wsid, false);

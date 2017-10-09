@@ -3,7 +3,7 @@ package kbasesearchengine.events;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.system.StorageObjectType;
 
-public class ObjectStatusEvent {
+public class StatusEvent {
     private final String _id;
     private final String storageCode;
     private final Integer accessGroupId;
@@ -12,7 +12,7 @@ public class ObjectStatusEvent {
     private final Integer targetAccessGroupId;
     private final Long timestamp;
     private final StorageObjectType storageObjectType;
-    private final ObjectStatusEventType eventType;
+    private final StatusEventType eventType;
     private final Boolean isGlobalAccessed;
     private final String newName;
 
@@ -21,7 +21,7 @@ public class ObjectStatusEvent {
     //TODO JAVADOC
     //TODO TEST
     
-    public ObjectStatusEvent(
+    public StatusEvent(
             final String _id,
             final String storageCode,
             final Integer accessGroupId,
@@ -31,7 +31,7 @@ public class ObjectStatusEvent {
             final Integer targetAccessGroupId,
             final Long timestamp,
             final StorageObjectType storageObjectType,
-            final ObjectStatusEventType eventType,
+            final StatusEventType eventType,
             final Boolean isGlobalAccessed) {
         super();
         this._id = _id;
@@ -110,7 +110,7 @@ public class ObjectStatusEvent {
         return storageObjectType;
     }
 
-    public ObjectStatusEventType getEventType() {
+    public StatusEventType getEventType() {
         return eventType;
     }
 
