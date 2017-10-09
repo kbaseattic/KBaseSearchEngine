@@ -382,12 +382,12 @@ public class SearchTools {
             final List<WorkspaceIdentifier> wsBlackList,
             final List<String> wsTypes)
             throws EventGeneratorException {
-            final WorkspaceEventGenerator gen = new WorkspaceEventGenerator.Builder(
-                    new MongoDBStatusEventStorage(searchDB), workspaceDB, logtarget)
-                    .withNullableRef(ref)
-                    .withWorkspaceBlacklist(wsBlackList)
-                    .withWorkspaceTypes(wsTypes).build();
-            gen.generateEvents();
+        final WorkspaceEventGenerator gen = new WorkspaceEventGenerator.Builder(
+                new MongoDBStatusEventStorage(searchDB), workspaceDB, logtarget)
+                .withNullableRef(ref)
+                .withWorkspaceBlacklist(wsBlackList)
+                .withWorkspaceTypes(wsTypes).build();
+        gen.generateEvents();
     }
 
     private SearchToolsConfig getConfig(final String configPath)
