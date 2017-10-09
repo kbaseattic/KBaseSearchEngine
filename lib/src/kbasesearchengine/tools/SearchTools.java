@@ -2,6 +2,7 @@ package kbasesearchengine.tools;
 
 import static kbasesearchengine.tools.Utils.nonNull;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.AccessDeniedException;
@@ -30,6 +31,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.search.ElasticIndexingStorage;
+import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.tools.SearchToolsConfig.SearchToolsConfigException;
 import kbasesearchengine.tools.WorkspaceEventGenerator.EventGeneratorException;
 
@@ -56,6 +58,7 @@ public class SearchTools {
     
     private MongoDatabase workspaceDB = null;
     private MongoDatabase searchDB = null;
+    private IndexingStorage indexStore = null;
 
     /** Create a new CLI instance.
      * @param args the program arguments.
@@ -117,7 +120,8 @@ public class SearchTools {
         }
         try {
             setUpMongoDBs(cfg, a.genWSEvents, a.dropDB);
-        } catch (MongoException e) {
+            setUpElasticSearch(cfg, a.dropDB);
+        } catch (MongoException | IOException e) {
             printError(e, a.verbose);
             return 1;
         }
@@ -125,8 +129,9 @@ public class SearchTools {
         if (a.dropDB) {
             try {
                 deleteMongoDB();
+                indexStore.dropData();
                 noCommand = false;
-            } catch (MongoException e) {
+            } catch (MongoException | IOException e) {
                 printError(e, a.verbose);
                 return 1;
             }
@@ -149,6 +154,22 @@ public class SearchTools {
         
     }
     
+    private void setUpElasticSearch(final SearchToolsConfig cfg, final boolean dropDB)
+            throws IOException {
+        if (!dropDB) {
+            return;
+        }
+        final HttpHost esHostPort = new HttpHost(cfg.getElasticHost(), cfg.getElasticPort());
+        ElasticIndexingStorage esStorage = new ElasticIndexingStorage(
+                esHostPort, new File(cfg.getTempDir()));
+        if (cfg.getElasticUser().isPresent()) {
+            esStorage.setEsUser(cfg.getElasticUser().get());
+            esStorage.setEsPassword(new String(cfg.getElasticPassword().get()));
+        }
+        esStorage.setIndexNamePrefix(cfg.getElasticNamespace());
+        indexStore = esStorage;
+    }
+
     private void setUpMongoDBs(
             final SearchToolsConfig cfg,
             final boolean genWSEvents,
@@ -279,25 +300,6 @@ public class SearchTools {
         searchDB.drop();
     }
     
-    //TODO NOW delete elastic indexes
-    private void deleteAllElasticIndices(
-            final HttpHost esHostPort,
-            final String esUser,
-            final String esPassword,
-            final String prefix) throws IOException {
-        ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort, null);
-        if (esUser != null) {
-            esStorage.setEsUser(esUser);
-            esStorage.setEsPassword(esPassword);
-        }
-        for (String indexName : esStorage.listIndeces()) {
-            if (indexName.startsWith(prefix)) {
-                out.println("Deleting Elastic index: " + indexName);
-                esStorage.deleteIndex(indexName);
-            }
-        }
-    }
-
     private void usage(final JCommander jc) {
         final StringBuilder sb = new StringBuilder();
         jc.usage(sb);

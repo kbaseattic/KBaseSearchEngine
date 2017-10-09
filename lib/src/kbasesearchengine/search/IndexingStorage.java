@@ -12,6 +12,11 @@ import kbasesearchengine.system.IndexingRules;
 
 public interface IndexingStorage {
     
+    /** Drop all data from the storage system. 
+     * @throws IOException if an IO error occcurs.
+     */
+    public void dropData() throws IOException;
+    
     /**
      * Adds object to searchable indexing storage.
      * @param id  global object ID including: storage type, parent object reference, inner sub-type and inner sub-object unique key (last two are optional)
