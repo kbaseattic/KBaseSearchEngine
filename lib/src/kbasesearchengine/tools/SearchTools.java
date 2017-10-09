@@ -218,7 +218,7 @@ public class SearchTools {
         
         final MainObjectProcessor mop = new MainObjectProcessor(
                 Arrays.asList(weh), storage, indexStore, ss, tempDir, logger);
-        mop.startLifecycleRunner();
+        mop.startIndexer();
     }
 
     private LineLogger buildLogger(final PrintStream logTarget,
