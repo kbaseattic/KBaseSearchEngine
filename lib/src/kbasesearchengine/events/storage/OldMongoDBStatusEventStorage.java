@@ -18,7 +18,7 @@ import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.tools.Utils;
 
-public class OldMongoDBStatusEventStorage implements StatusEventStorage {
+public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
 
     private static final String COLLECTION_OBJECT_STATUS_EVENTS = "ObjectStatusEvents";
 
