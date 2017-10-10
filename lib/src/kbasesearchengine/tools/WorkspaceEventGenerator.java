@@ -211,7 +211,6 @@ public class WorkspaceEventGenerator {
         try {
             storage.store(new StatusEvent(
                     null, // no mongo id
-                    "WS",
                     wsid,
                     objid + "",
                     vernum,

@@ -125,7 +125,6 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 StorageObjectType.fromNullableVersion(storageCode, type, ver);
             StatusEvent event = new StatusEvent(
                     dobj.get("_id").toString(),
-                    storageCode,
                     (Integer)dobj.get("accessGroupId"),
                     (String)dobj.get("accessGroupObjectId"),
                     (Integer)dobj.get("version"),
