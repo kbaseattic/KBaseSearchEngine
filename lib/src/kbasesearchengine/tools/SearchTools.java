@@ -35,7 +35,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
-import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
+import kbasesearchengine.events.storage.OldMongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.IndexerCoordinator;
@@ -209,7 +209,7 @@ public class SearchTools {
         final Path mappingsDir = Paths.get(cfg.getTypeMappingsDirectory());
         final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
         
-        final StatusEventStorage storage = new MongoDBStatusEventStorage(searchDB);
+        final StatusEventStorage storage = new OldMongoDBStatusEventStorage(searchDB);
         
         final WorkspaceClient wsClient = new WorkspaceClient(
                 cfg.getWorkspaceURL(), kbaseIndexerToken);
@@ -385,7 +385,7 @@ public class SearchTools {
             final List<String> wsTypes)
             throws EventGeneratorException {
         final WorkspaceEventGenerator gen = new WorkspaceEventGenerator.Builder(
-                new MongoDBStatusEventStorage(searchDB), workspaceDB, logtarget)
+                new OldMongoDBStatusEventStorage(searchDB), workspaceDB, logtarget)
                 .withNullableRef(ref)
                 .withWorkspaceBlacklist(wsBlackList)
                 .withWorkspaceTypes(wsTypes).build();

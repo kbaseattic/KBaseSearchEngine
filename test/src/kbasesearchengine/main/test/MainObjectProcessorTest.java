@@ -29,7 +29,7 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
-import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
+import kbasesearchengine.events.storage.OldMongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.IndexerCoordinator;
@@ -147,7 +147,7 @@ public class MainObjectProcessorTest {
                 "yaml", new YAMLTypeMappingParser());
         final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
         
-        final StatusEventStorage storage = new MongoDBStatusEventStorage(db);
+        final StatusEventStorage storage = new OldMongoDBStatusEventStorage(db);
         final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, wsadmintoken);
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
         

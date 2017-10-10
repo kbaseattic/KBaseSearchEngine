@@ -10,14 +10,14 @@ import org.junit.Test;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
-import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
+import kbasesearchengine.events.storage.OldMongoDBStatusEventStorage;
 import kbasesearchengine.test.common.TestCommon;
 import us.kbase.common.test.controllers.mongo.MongoController;
 
 public class MongoDBStatusEventStorageTest {
 
     @SuppressWarnings("unused")
-    private MongoDBStatusEventStorage mdStorage;
+    private OldMongoDBStatusEventStorage mdStorage;
     private static MongoController mongo;
     private static MongoDatabase db;
     private static MongoClient mc;
@@ -46,7 +46,7 @@ public class MongoDBStatusEventStorageTest {
     @Before
     public void init() throws Exception {
         TestCommon.destroyDB(db);
-        mdStorage  = new MongoDBStatusEventStorage(db);
+        mdStorage  = new OldMongoDBStatusEventStorage(db);
     }
 
 
