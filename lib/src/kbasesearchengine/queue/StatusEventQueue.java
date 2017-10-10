@@ -1,7 +1,6 @@
 package kbasesearchengine.queue;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 import kbasesearchengine.events.StatusEvent;
@@ -88,25 +87,5 @@ public class StatusEventQueue {
             throws FatalIndexingException, FatalRetriableIndexingException {
         return new _Iterator(storageCode);
     }
-	
-	public void markAsNonprocessed(String storageCode, String storageObjectType) throws IOException{
-		objStatusStorage.markAsNonprocessed(storageCode, storageObjectType);
-	}
-	
-	public int count() throws IOException {
-		return count(null);
-	}
-
-	public int count(String storageCode) throws IOException {
-		return objStatusStorage.count(storageCode, false);
-	}
-
-	public List<StatusEvent> list(int maxSize) throws IOException {
-		return list(null, maxSize);
-	}
-
-	public List<StatusEvent> list(String storageCode,
-			int maxSize) throws IOException {
-		return objStatusStorage.find(storageCode, false, maxSize);
-	}		
 }
+	
