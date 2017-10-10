@@ -134,6 +134,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return indexNamePrefix + "*";
     }
     
+    public void dropData() throws IOException {
+        for (String indexName : listIndeces()) {
+            if (indexName.startsWith(indexNamePrefix)) {
+                deleteIndex(indexName);
+            }
+        }
+    }
+    
     private String checkIndex(String objectType, List<IndexingRules> indexingRules,
             boolean allowAnyType) throws IOException {
         if (objectType == null) {

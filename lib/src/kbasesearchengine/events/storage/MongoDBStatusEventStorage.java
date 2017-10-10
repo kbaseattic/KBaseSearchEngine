@@ -17,6 +17,7 @@ import com.mongodb.client.MongoDatabase;
 import kbasesearchengine.events.ObjectStatusEvent;
 import kbasesearchengine.events.ObjectStatusEventType;
 import kbasesearchengine.system.StorageObjectType;
+import kbasesearchengine.tools.Utils;
 
 public class MongoDBStatusEventStorage implements StatusEventStorage {
 
@@ -24,9 +25,10 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
 	
 	private MongoDatabase db;
 
-	public MongoDBStatusEventStorage(final MongoDatabase db){
-	    this.db = db;
-	}
+    public MongoDBStatusEventStorage(final MongoDatabase db){
+        Utils.nonNull(db, "db");
+        this.db = db;
+    }
 
 	@Override
 	public void createStorage() throws IOException {

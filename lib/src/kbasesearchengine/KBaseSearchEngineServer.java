@@ -11,14 +11,12 @@ import us.kbase.common.service.RpcContext;
 
 //BEGIN_HEADER
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -26,10 +24,6 @@ import org.apache.http.HttpHost;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableMap;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoCredential;
-import com.mongodb.ServerAddress;
-import com.mongodb.client.MongoDatabase;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -37,11 +31,9 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.AccessGroupCache;
 import kbasesearchengine.events.AccessGroupProvider;
 import kbasesearchengine.events.WorkspaceAccessGroupProvider;
-import kbasesearchengine.events.handler.WorkspaceEventHandler;
-import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
-import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.MainObjectProcessor;
+import kbasesearchengine.main.SearchMethods;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.system.TypeFileStorage;
 import kbasesearchengine.system.TypeStorage;
@@ -65,53 +57,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final String gitCommitHash = "";
 
     //BEGIN_CLASS_HEADER
-    private MainObjectProcessor mop = null;
-    
-    private static void deleteMongoDb(String mongoHost, int mongoPort, String dbName) {
-        try (MongoClient mongoClient = new MongoClient(mongoHost, mongoPort)) {
-            System.out.println("Deleting Mongo database: " + dbName);
-            mongoClient.dropDatabase(dbName);
-        }
-    }
-    
-    private static void deleteAllElasticIndices(HttpHost esHostPort, String esUser,
-            String esPassword, String prefix) throws IOException {
-        ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort, null);
-        if (esUser != null) {
-            esStorage.setEsUser(esUser);
-            esStorage.setEsPassword(esPassword);
-        }
-        for (String indexName : esStorage.listIndeces()) {
-            if (indexName.startsWith(prefix)) {
-                System.out.println("Deleting Elastic index: " + indexName);
-                esStorage.deleteIndex(indexName);
-            }
-        }
-    }
-    
-    // can't close mongo client or the connection shuts down
-    // may need a shut down listener to ensure the client shuts down, but probably unnecessary
-    @SuppressWarnings("resource")
-    private MongoDatabase getMongoDB(
-            final String host,
-            final String dbname,
-            final String user,
-            final String pwd) {
-        final MongoClient cli;
-        if (user != null && !user.trim().isEmpty()) {
-            if (pwd == null || pwd.trim().isEmpty()) {
-                throw new IllegalArgumentException("Must provide mongo pwd if providing user");
-            }
-            final List<MongoCredential> creds = Arrays.asList(MongoCredential.createCredential(
-                    user, dbname, pwd.toCharArray()));
-            // unclear if and when it's safe to clear the password
-            cli = new MongoClient(new ServerAddress(host), creds);
-        } else {
-            cli = new MongoClient(new ServerAddress(host));
-        }
-        final MongoDatabase database = cli.getDatabase(dbname);
-        return database;
-    }
+    private final SearchMethods search;
     
     private void quietLoggers() {
         ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME))
@@ -133,13 +79,6 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         c.withKBaseAuthServerURL(new URL(authURL));
         ConfigurableAuthService auth = new ConfigurableAuthService(c);
         AuthToken kbaseIndexerToken = auth.validateToken(tokenStr);
-        final String mongoHost = config.get("mongo-host");
-        final int mongoPort = Integer.parseInt(config.get("mongo-port"));
-        final String mongoDbName = config.get("mongo-database");
-        final String mongoUser = config.get("mongo-user");
-        final String mongoPwd = config.get("mongo-pwd");
-        final MongoDatabase db = getMongoDB(
-                mongoHost + ":" + mongoPort, mongoDbName, mongoUser, mongoPwd);
         String elasticHost = config.get("elastic-host");
         int elasticPort = Integer.parseInt(config.get("elastic-port"));
         String esUser = config.get("elastic-user");
@@ -157,19 +96,6 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         if (adminsText != null) {
             admins.addAll(Arrays.asList(adminsText.split(",")).stream().map(String::trim).collect(
                     Collectors.toList()));
-        }
-        String cleanDbs = config.get("clean-dbs");
-        if ("true".equals(cleanDbs)) {
-            try {
-                deleteMongoDb(mongoHost, mongoPort, mongoDbName);
-            } catch (Exception e) {
-                System.out.println("Error deleting Mongo database: " + e.getMessage());
-            }
-            try {
-                deleteAllElasticIndices(esHostPort, esUser, esPassword, esIndexPrefix);
-            } catch (Exception e) {
-                System.out.println("Error deleting Elastic index: " + e.getMessage());
-            }
         }
         File logFile = new File(tempDir, "log_" + System.currentTimeMillis() + ".txt");
         PrintWriter logPw = new PrintWriter(logFile);
@@ -198,12 +124,10 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
                 "yaml", new YAMLTypeMappingParser());
         final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
         
-        final StatusEventStorage storage = new MongoDBStatusEventStorage(db);
         
         final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
         
-        final WorkspaceEventHandler weh = new WorkspaceEventHandler(wsClient);
         // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
         final AccessGroupProvider accessGroupProvider = new AccessGroupCache(
                 new WorkspaceAccessGroupProvider(wsClient), 30, 50000 * 1000);
@@ -216,9 +140,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
         
-        mop = new MainObjectProcessor(accessGroupProvider, Arrays.asList(weh), storage,
-                esStorage, ss, tempDir, logger, admins);
-        mop.startLifecycleRunner();
+        search = new SearchMethods(accessGroupProvider, esStorage, ss, admins);
         //END_CONSTRUCTOR
     }
 
@@ -234,7 +156,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     public SearchTypesOutput searchTypes(SearchTypesInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         SearchTypesOutput returnVal = null;
         //BEGIN search_types
-        returnVal = mop.searchTypes(params, authPart.getUserName());
+        returnVal = search.searchTypes(params, authPart.getUserName());
         //END search_types
         return returnVal;
     }
@@ -251,7 +173,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     public SearchObjectsOutput searchObjects(SearchObjectsInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         SearchObjectsOutput returnVal = null;
         //BEGIN search_objects
-        returnVal = mop.searchObjects(params, authPart.getUserName());
+        returnVal = search.searchObjects(params, authPart.getUserName());
         //END search_objects
         return returnVal;
     }
@@ -268,7 +190,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     public GetObjectsOutput getObjects(GetObjectsInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         GetObjectsOutput returnVal = null;
         //BEGIN get_objects
-        returnVal = mop.getObjects(params, authPart.getUserName());
+        returnVal = search.getObjects(params, authPart.getUserName());
         //END get_objects
         return returnVal;
     }
@@ -285,7 +207,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     public ListTypesOutput listTypes(ListTypesInput params, RpcContext jsonRpcContext) throws Exception {
         ListTypesOutput returnVal = null;
         //BEGIN list_types
-        returnVal = new ListTypesOutput().withTypes(mop.listTypes(params.getTypeName()));
+        returnVal = new ListTypesOutput().withTypes(search.listTypes(params.getTypeName()));
         //END list_types
         return returnVal;
     }

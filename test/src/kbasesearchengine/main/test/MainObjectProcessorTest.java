@@ -26,11 +26,8 @@ import com.mongodb.client.MongoDatabase;
 
 import junit.framework.Assert;
 import kbasesearchengine.common.GUID;
-import kbasesearchengine.events.AccessGroupCache;
-import kbasesearchengine.events.AccessGroupProvider;
 import kbasesearchengine.events.ObjectStatusEvent;
 import kbasesearchengine.events.ObjectStatusEventType;
-import kbasesearchengine.events.WorkspaceAccessGroupProvider;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
@@ -156,15 +153,13 @@ public class MainObjectProcessorTest {
         
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(wsClient);
         // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
-        final AccessGroupProvider accessGroupProvider = new AccessGroupCache(
-                new WorkspaceAccessGroupProvider(wsClient), 30, 50000 * 1000);
         
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
                 MainObjectProcessor.getTempSubDir(tempDir.toFile(), "esbulk"));
         esStorage.setIndexNamePrefix(esIndexPrefix);
         
-        mop = new MainObjectProcessor(accessGroupProvider, Arrays.asList(weh), storage, esStorage,
-                ss, tempDir.resolve("MainObjectProcessor").toFile(), logger, null);
+        mop = new MainObjectProcessor(Arrays.asList(weh), storage, esStorage,
+                ss, tempDir.resolve("MainObjectProcessor").toFile(), logger);
         loadTypes(wsUrl, wsadmintoken);
         wsid = (int) loadTestData(wsUrl, userToken);
     }
