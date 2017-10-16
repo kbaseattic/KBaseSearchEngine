@@ -45,7 +45,7 @@ import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.tools.Utils;
 
-public class MainObjectProcessor {
+public class IndexerCoordinator {
     
     private static final int RETRY_COUNT = 5;
     private static final int RETRY_SLEEP_MS = 1000;
@@ -63,7 +63,7 @@ public class MainObjectProcessor {
             RETRY_FATAL_BACKOFF_MS,
             (retrycount, event, except) -> logError(retrycount, event, except));
 
-    public MainObjectProcessor(
+    public IndexerCoordinator(
             final List<EventHandler> eventHandlers,
             final StatusEventStorage storage,
             final IndexingStorage indexingStorage,
@@ -84,7 +84,7 @@ public class MainObjectProcessor {
     /**
      * For tests only !!!
      */
-    public MainObjectProcessor(
+    public IndexerCoordinator(
             final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,

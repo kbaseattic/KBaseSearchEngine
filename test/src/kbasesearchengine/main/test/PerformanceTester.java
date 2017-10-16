@@ -27,7 +27,7 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.ObjectStatusEvent;
 import kbasesearchengine.events.ObjectStatusEventType;
 import kbasesearchengine.main.LineLogger;
-import kbasesearchengine.main.MainObjectProcessor;
+import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.search.AccessFilter;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.MatchFilter;
@@ -55,7 +55,7 @@ public class PerformanceTester {
     private static String esPassword = null;
     private static File tempDir = null;
     private static URL wsUrl = null;
-    private static MainObjectProcessor mop = null;
+    private static IndexerCoordinator mop = null;
     private static List<long[]> timeStats = new ArrayList<>();
     
     @BeforeClass
@@ -148,14 +148,14 @@ public class PerformanceTester {
         final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
         
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
-                MainObjectProcessor.getTempSubDir(tempDir, "esbulk"));
+                IndexerCoordinator.getTempSubDir(tempDir, "esbulk"));
         if (esUser != null) {
             esStorage.setEsUser(esUser);
             esStorage.setEsPassword(esPassword);
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
         
-        mop = new MainObjectProcessor(esStorage, ss, tempDir, logger);
+        mop = new IndexerCoordinator(esStorage, ss, tempDir, logger);
     }
     
     private static void deleteAllTestElasticIndices(HttpHost esHostPort, String esUser,

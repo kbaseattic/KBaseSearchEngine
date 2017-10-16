@@ -38,7 +38,7 @@ import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.LineLogger;
-import kbasesearchengine.main.MainObjectProcessor;
+import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.IndexingStorage;
@@ -216,7 +216,7 @@ public class SearchTools {
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(wsClient);
         
-        final MainObjectProcessor mop = new MainObjectProcessor(
+        final IndexerCoordinator mop = new IndexerCoordinator(
                 Arrays.asList(weh), storage, indexStore, ss, tempDir, logger);
         mop.startIndexer();
     }
