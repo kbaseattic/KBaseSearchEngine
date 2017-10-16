@@ -265,8 +265,10 @@ public class SearchTools {
             return;
         }
         final HttpHost esHostPort = new HttpHost(cfg.getElasticHost(), cfg.getElasticPort());
-        ElasticIndexingStorage esStorage = new ElasticIndexingStorage(
-                esHostPort, new File(cfg.getTempDir()));
+        final File tempSubDir = IndexerCoordinator.getTempSubDir(
+                new File(cfg.getTempDir()), "esbulk");
+        final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(
+                esHostPort, tempSubDir);
         if (cfg.getElasticUser().isPresent()) {
             esStorage.setEsUser(cfg.getElasticUser().get());
             esStorage.setEsPassword(new String(cfg.getElasticPassword().get()));

@@ -12,14 +12,14 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
-import kbasesearchengine.queue.ObjectStatusEventIterator;
-import kbasesearchengine.queue.ObjectStatusEventQueue;
+import kbasesearchengine.queue.StatusEventIterator;
+import kbasesearchengine.queue.StatusEventQueue;
 import kbasesearchengine.test.common.TestCommon;
 import us.kbase.common.test.controllers.mongo.MongoController;
 
 public class ObjectStatusEventQueueTest {
 
-    private ObjectStatusEventQueue queue;
+    private StatusEventQueue queue;
     private static MongoController mongo;
     private static MongoDatabase db;
     private static MongoClient mc;
@@ -51,7 +51,7 @@ public class ObjectStatusEventQueueTest {
         //ESObjectStatusEventStorage storage = new ESObjectStatusEventStorage(new HttpHost("localhost", 9200));
         MongoDBStatusEventStorage storage = new MongoDBStatusEventStorage(db);
 
-        queue = new ObjectStatusEventQueue(storage);
+        queue = new StatusEventQueue(storage);
     }
 
     @Test
@@ -60,7 +60,7 @@ public class ObjectStatusEventQueueTest {
         System.out.println("Number of records " + count);
 
 
-        ObjectStatusEventIterator it = queue.iterator("WS");
+        StatusEventIterator it = queue.iterator("WS");
         int i = 0;
         int n = 0;
         while(it.hasNext()){

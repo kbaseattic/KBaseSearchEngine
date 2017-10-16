@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Optional;
 
-import kbasesearchengine.events.ObjectStatusEvent;
+import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.tools.Utils;
 
 /** Generic code for retrying functions. Expects the code to throw
@@ -94,7 +94,7 @@ public class Retrier {
     public <T> void retryCons(
             final RetryConsumer<T> consumer,
             final T input,
-            final ObjectStatusEvent event)
+            final StatusEvent event)
             throws InterruptedException, IndexingException {
         Utils.nonNull(consumer, "consumer");
         int retries = 1;
@@ -125,7 +125,7 @@ public class Retrier {
     public <T, R> R retryFunc(
             final RetryFunction<T, R> function,
             final T input,
-            final ObjectStatusEvent event)
+            final StatusEvent event)
             throws InterruptedException, IndexingException {
         Utils.nonNull(function, "function");
         int retries = 1;
@@ -145,7 +145,7 @@ public class Retrier {
     }
     
     private boolean handleException(
-            final ObjectStatusEvent event,
+            final StatusEvent event,
             final RetriableIndexingException e,
             final int retries,
             final int fatalRetries)
