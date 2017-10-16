@@ -3,7 +3,6 @@ package kbasesearchengine.tools;
 import static kbasesearchengine.tools.Utils.noNulls;
 import static kbasesearchengine.tools.Utils.nonNull;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.time.Instant;
 import java.util.Collection;
@@ -208,20 +207,15 @@ public class WorkspaceEventGenerator {
         final String[] typeString = ver.getString(WS_KEY_TYPE).split("-");
         final String type = typeString[0];
         final int typever = Integer.parseInt(typeString[1].split("\\.")[0]);
-        try {
-            storage.store(StatusEvent.getBuilder(
-                    new StorageObjectType("WS", type, typever),
-                    ver.getDate(WS_KEY_SAVEDATE).toInstant(),
-                    StatusEventType.NEW_VERSION)
-                    .withNullableAccessGroupID(wsid)
-                    .withNullableObjectID(objid + "")
-                    .withNullableVersion(vernum)
-                    .withNullableisPublic(pub)
-                    .build());
-        } catch (IOException e) {
-            throw new EventGeneratorException("Error saving event to RESKE db: " + e.getMessage(),
-                    e);
-        }
+        storage.store(StatusEvent.getBuilder(
+                new StorageObjectType("WS", type, typever),
+                ver.getDate(WS_KEY_SAVEDATE).toInstant(),
+                StatusEventType.NEW_VERSION)
+                .withNullableAccessGroupID(wsid)
+                .withNullableObjectID(objid + "")
+                .withNullableVersion(vernum)
+                .withNullableisPublic(pub)
+                .build());
         log(String.format("Generated event %s/%s/%s %s-%s", wsid, objid, vernum, type, typever));
     }
 

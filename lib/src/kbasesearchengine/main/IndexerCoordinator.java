@@ -21,6 +21,7 @@ import com.google.common.base.Optional;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.StatusEvent;
+import kbasesearchengine.events.StatusEventWithID;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
@@ -54,6 +55,7 @@ public class IndexerCoordinator {
             1000, 2000, 4000, 8000, 16000);
     
     private final File rootTempDir;
+    private final OldStatusEventStorage storage;
     private final StatusEventQueue queue;
     private final TypeStorage typeStorage;
     private final IndexingStorage indexingStorage;
@@ -77,6 +79,7 @@ public class IndexerCoordinator {
         this.rootTempDir = tempDir;
         
         eventHandlers.stream().forEach(eh -> this.eventHandlers.put(eh.getStorageCode(), eh));
+        this.storage = storage;
         queue = new StatusEventQueue(storage);
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
@@ -92,6 +95,7 @@ public class IndexerCoordinator {
             final LineLogger logger) {
         Utils.nonNull(logger, "logger");
         this.queue = null;
+        this.storage = null;
         this.rootTempDir = tempDir;
         this.logger = logger;
         this.typeStorage = typeStorage;
@@ -163,13 +167,12 @@ public class IndexerCoordinator {
 
     private void logError(
             final int retrycount,
-            final Optional<StatusEvent> event,
+            final Optional<StatusEventWithID> event,
             final RetriableIndexingException e) {
         final String msg;
         if (event.isPresent()) {
-            //TODO LOG events should always have IDs
             msg = String.format("Retriable error in indexer for event %s %s, retry %s: ",
-                    event.get().getEventType(), event.get().getId(), retrycount);
+                    event.get().getEvent().getEventType(), event.get().getId(), retrycount);
         } else {
             msg = String.format("Retriable error in indexer, retry %s: ", retrycount);
         }
@@ -178,32 +181,45 @@ public class IndexerCoordinator {
     
     private void performOneTick() throws InterruptedException, IndexingException {
         // Seems like this shouldn't be source specific. It should handle all event sources.
-        final StatusEventIterator iter = retrier.retryFunc(
-                q -> q.iterator("WS"), queue, null);
+        final StatusEventIterator iter = retrier.retryFunc(q -> q.iterator("WS"), queue, null);
         while (iter.hasNext()) {
-            final StatusEvent parentEvent = retrier.retryFunc(i -> i.next(), iter, null);
+            final StatusEventWithID parentEvent = retrier.retryFunc(i -> i.next(), iter, null);
+            //TODO NOW getEventHandler indexing exception should be caught and the event skipped
             if (getEventHandler(parentEvent).isExpandable(parentEvent)) {
                 logger.logInfo(String.format("[Indexer] Expanding event %s %s",
-                        parentEvent.getEventType(), parentEvent.getId()));
-            }
-            final Iterator<StatusEvent> er;
-            try {
-                er = retrier.retryFunc(e -> getSubEventIterator(e), parentEvent, parentEvent);
-                iter.markAsVisited(processEvent(parentEvent, er));
-            } catch (IndexingException e) {
-                markAsVisitedFailedPostError(iter);
-                handleException("Error expanding parent event", parentEvent, e);
-            } catch (InterruptedException e) {
-                throw e;
-            } catch (Exception e) {
-                // don't know how to respond to anything else, so mark event failed and keep going
-                logError(ErrorType.UNEXPECTED, e);
-                markAsVisitedFailedPostError(iter);
+                        parentEvent.getEvent().getEventType(), parentEvent.getId()));
+                try {
+                    final Iterator<StatusEvent> er = retrier.retryFunc(
+                            e -> getSubEventIterator(e), parentEvent, parentEvent);
+                    storage.markAsProcessed(parentEvent, processEvents(parentEvent, er));
+                } catch (IndexingException e) {
+                    markAsVisitedFailedPostError(parentEvent);
+                    handleException("Error expanding parent event", parentEvent, e);
+                } catch (InterruptedException e) {
+                    throw e;
+                } catch (Exception e) {
+                    // don't know how to respond to anything else, so mark event failed and keep going
+                    logError(ErrorType.UNEXPECTED, e);
+                    markAsVisitedFailedPostError(parentEvent);
+                }
+            } else {
+                try {
+                    storage.markAsProcessed(parentEvent, processEvent(parentEvent));
+                } catch (FatalIndexingException e) {
+                    markAsVisitedFailedPostError(parentEvent);
+                    throw e;
+                } catch (InterruptedException e) {
+                    throw e;
+                } catch (Exception e) {
+                    // don't know how to respond to anything else, so mark event failed and keep going
+                    logError(ErrorType.UNEXPECTED, e);
+                    markAsVisitedFailedPostError(parentEvent);
+                }
             }
         }
     }
     
-    private Iterator<StatusEvent> getSubEventIterator(final StatusEvent ev)
+    private Iterator<StatusEvent> getSubEventIterator(final StatusEventWithID ev)
             throws IndexingException, RetriableIndexingException {
         try {
             return getEventHandler(ev).expand(ev).iterator();
@@ -216,10 +232,10 @@ public class IndexerCoordinator {
 
     // assumes something has already failed, so if this fails as well something is really 
     // wrong and we bail.
-    private void markAsVisitedFailedPostError(final StatusEventIterator iter)
+    private void markAsVisitedFailedPostError(final StatusEventWithID parentEvent)
             throws FatalIndexingException {
         try {
-            iter.markAsVisited(false);
+            storage.markAsProcessed(parentEvent, false);
         } catch (Exception e) {
             //ok then we're screwed
             throw new FatalIndexingException("Can't mark events as failed: " + e.getMessage(), e);
@@ -227,43 +243,50 @@ public class IndexerCoordinator {
     }
 
     // returns whether processing was successful or not.
-    private boolean processEvent(
-            final StatusEvent parentEvent,
+    private boolean processEvents(
+            final StatusEventWithID parentEvent,
             final Iterator<StatusEvent> expanditer)
             throws InterruptedException, FatalIndexingException {
+        boolean allsuccess = true;
         while (expanditer.hasNext()) {
             //TODO EVENT insert sub event into db - need to ensure not inserted twice on reprocess - use parent id
-            final StatusEvent ev;
+            final StatusEventWithID ev;
             try {
-                ev = retrier.retryFunc(i -> getNextSubEvent(i), expanditer, parentEvent);
+                final StatusEvent subev = retrier.retryFunc(
+                        i -> getNextSubEvent(i), expanditer, parentEvent);
+                //TODO NOW store parent ID
+                //TODO NOW deal with exceptions from storage
+                ev = storage.store(subev);
             } catch (IndexingException e) {
                 // TODO EVENT mark sub event as failed
                 handleException("Error getting event from data storage", parentEvent, e);
                 return false;
             }
-            final Optional<StorageObjectType> type = ev.getStorageObjectType();
-            if (type.isPresent() && !isStorageTypeSupported(ev)) {
-                logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
-                        toLogString(type) + ev.toGUID());
-                if (ev == parentEvent) { // hack for now. long term insert the sub event into the db
-                    return false;
-                } else {
-                    continue;
-                }
-            }
-            logger.logInfo("[Indexer] processing " + ev.getEventType() + ", " + 
-                    toLogString(type) + ev.toGUID() + "...");
-            long time = System.currentTimeMillis();
-            try {
-                retrier.retryCons(e -> processOneEvent(e), ev, parentEvent);
-            } catch (IndexingException e) {
-                handleException("Error processing event", ev, e);
-                //TODO EVENT set failed on sub event and continue rather than failing completely
-                return false;
-            }
-            logger.logInfo("[Indexer]   (total time: " +
-                    (System.currentTimeMillis() - time) + "ms.)");
+            allsuccess = allsuccess && processEvent(ev);
         }
+        return allsuccess;
+    }
+
+    private boolean processEvent(final StatusEventWithID ev)
+            throws InterruptedException, FatalIndexingException {
+        final Optional<StorageObjectType> type = ev.getEvent().getStorageObjectType();
+        if (type.isPresent() && !isStorageTypeSupported(ev)) {
+            logger.logInfo("[Indexer] skipping " + ev.getEvent().getEventType() + ", " + 
+                    toLogString(type) + ev.getEvent().toGUID());
+            storage.markAsProcessed(ev, false); //TODO retry
+            return false;
+        }
+        logger.logInfo("[Indexer] processing " + ev.getEvent().getEventType() + ", " + 
+                toLogString(type) + ev.getEvent().toGUID() + "...");
+        final long time = System.currentTimeMillis();
+        try {
+            retrier.retryCons(e -> processOneEvent(e), ev, ev);
+        } catch (IndexingException e) {
+            storage.markAsProcessed(ev, false); //TODO retry
+            handleException("Error processing event", ev, e);
+            return false;
+        }
+        logger.logInfo("[Indexer]   (total time: " + (System.currentTimeMillis() - time) + "ms.)");
         return true;
     }
     
@@ -280,14 +303,14 @@ public class IndexerCoordinator {
     
     private void handleException(
             final String error,
-            final StatusEvent event,
+            final StatusEventWithID event,
             final IndexingException exception)
             throws FatalIndexingException {
         if (exception instanceof FatalIndexingException) {
             throw (FatalIndexingException) exception;
         } else {
             final String msg = error + String.format(" for event %s %s: ",
-                    event.getEventType(), event.getId());
+                    event.getEvent().getEventType(), event.getId());
             logError(msg, exception);
         }
     }
@@ -308,9 +331,9 @@ public class IndexerCoordinator {
         return sb.toString();
     }
 
-    private EventHandler getEventHandler(final StatusEvent ev)
+    private EventHandler getEventHandler(final StatusEventWithID ev)
             throws UnprocessableEventIndexingException {
-        return getEventHandler(ev.getStorageCode());
+        return getEventHandler(ev.getEvent().getStorageCode());
     }
     
     private EventHandler getEventHandler(final GUID guid)
@@ -327,9 +350,10 @@ public class IndexerCoordinator {
         return eventHandlers.get(storageCode);
     }
 
-    public void processOneEvent(final StatusEvent ev)
+    public void processOneEvent(final StatusEventWithID evid)
             throws IndexingException, InterruptedException, RetriableIndexingException {
         try {
+            final StatusEvent ev = evid.getEvent();
             switch (ev.getEventType()) {
             case NEW_VERSION:
                 GUID pguid = ev.toGUID();
@@ -387,12 +411,12 @@ public class IndexerCoordinator {
     }
 
     // returns false if a non-fatal error prevents retrieving the info
-    public boolean isStorageTypeSupported(final StatusEvent ev)
+    public boolean isStorageTypeSupported(final StatusEventWithID ev)
             throws InterruptedException, FatalIndexingException {
         try {
             return retrier.retryFunc(
                     t -> !typeStorage.listObjectTypesByStorageObjectType(
-                            ev.getStorageObjectType().get()).isEmpty(),
+                            ev.getEvent().getStorageObjectType().get()).isEmpty(),
                     ev, ev);
         } catch (IndexingException e) {
             handleException("Error retrieving type info", ev, e);

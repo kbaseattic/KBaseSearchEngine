@@ -25,6 +25,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventType;
+import kbasesearchengine.events.StatusEventWithID;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
@@ -252,9 +253,9 @@ public class WorkspaceEventHandler implements EventHandler {
     }
 
     @Override
-    public boolean isExpandable(final StatusEvent parentEvent) {
+    public boolean isExpandable(final StatusEventWithID parentEvent) {
         checkStorageCode(parentEvent);
-        return EXPANDABLES.contains(parentEvent.getEventType());
+        return EXPANDABLES.contains(parentEvent.getEvent().getEventType());
         
     };
     
@@ -266,9 +267,10 @@ public class WorkspaceEventHandler implements EventHandler {
             StatusEventType.UNPUBLISH_ACCESS_GROUP));
     
     @Override
-    public Iterable<StatusEvent> expand(final StatusEvent event)
+    public Iterable<StatusEvent> expand(final StatusEventWithID eventWID)
             throws IndexingException, RetriableIndexingException {
-        checkStorageCode(event);
+        checkStorageCode(eventWID);
+        final StatusEvent event = eventWID.getEvent();
         if (StatusEventType.NEW_ALL_VERSIONS.equals(event.getEventType())) {
             return handleNewAllVersions(event);
         } else if (StatusEventType.COPY_ACCESS_GROUP.equals(event.getEventType())) {
@@ -284,8 +286,12 @@ public class WorkspaceEventHandler implements EventHandler {
         }
     }
 
-    private void checkStorageCode(final StatusEvent event) {
-        if (!STORAGE_CODE.equals(event.getStorageCode())) {
+    private void checkStorageCode(final StatusEventWithID event) {
+        checkStorageCode(event.getEvent().getStorageCode());
+    }
+
+    private void checkStorageCode(final String storageCode) {
+        if (!STORAGE_CODE.equals(storageCode)) {
             throw new IllegalArgumentException("This handler only accepts "
                     + STORAGE_CODE + "events");
         }

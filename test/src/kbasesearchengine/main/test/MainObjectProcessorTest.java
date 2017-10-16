@@ -28,7 +28,9 @@ import com.mongodb.client.MongoDatabase;
 import junit.framework.Assert;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.StatusEvent;
+import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventType;
+import kbasesearchengine.events.StatusEventWithID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.OldMongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.OldStatusEventStorage;
@@ -260,16 +262,16 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testGenomeManually() throws Exception {
-        final StatusEvent ev = StatusEvent.getBuilder(
+        final StatusEventWithID ev = new StatusEventWithID(StatusEvent.getBuilder(
                 new StorageObjectType("WS", "KBaseGenomes.Genome"),
                 Instant.now(),
                 StatusEventType.NEW_VERSION)
-                .withID("-1")
                 .withNullableAccessGroupID(wsid)
                 .withNullableObjectID("3")
                 .withNullableVersion(1)
                 .withNullableisPublic(false)
-                .build();
+                .build(),
+                new StatusEventID("-1"));
         mop.processOneEvent(ev);
         PostProcessing pp = new PostProcessing();
         pp.objectInfo = true;
@@ -296,18 +298,19 @@ public class MainObjectProcessorTest {
         System.out.println("Feature: " + obj);
     }
 
-    private void indexFewVersions(StatusEvent ev) throws Exception {
+    private void indexFewVersions(final StatusEventWithID evid) throws Exception {
+        final StatusEvent ev = evid.getEvent();
         for (int i = Math.max(1, ev.getVersion().get() - 5); i <= ev.getVersion().get(); i++) {
-            final StatusEvent ev2 = StatusEvent.getBuilder(
+            final StatusEventWithID ev2 = new StatusEventWithID(StatusEvent.getBuilder(
                     ev.getStorageObjectType().get(),
                     ev.getTimestamp(),
                     ev.getEventType())
-                    .withID(ev.getId())
                     .withNullableAccessGroupID(ev.getAccessGroupId().get())
                     .withNullableObjectID(ev.getAccessGroupObjectId().get())
                     .withNullableVersion(i)
                     .withNullableisPublic(ev.isGlobalAccessed().get())
-                    .build();
+                    .build(),
+                    evid.getId());
             mop.processOneEvent(ev2);
         }
     }
@@ -333,13 +336,12 @@ public class MainObjectProcessorTest {
                 new StorageObjectType("WS", "KBaseNarrative.Narrative"),
                 Instant.now(),
                 StatusEventType.NEW_VERSION)
-                .withID("-1")
                 .withNullableAccessGroupID(wsid)
                 .withNullableObjectID("1")
                 .withNullableVersion(5)
                 .withNullableisPublic(false)
                 .build();
-        indexFewVersions(ev);
+        indexFewVersions(new StatusEventWithID(ev, new StatusEventID("-1")));
         checkSearch(1, "Narrative", "tree", wsid, false);
         checkSearch(1, "Narrative", "species", wsid, false);
         /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
@@ -360,26 +362,24 @@ public class MainObjectProcessorTest {
                 new StorageObjectType("WS", "KBaseFile.PairedEndLibrary"),
                 Instant.now(),
                 StatusEventType.NEW_VERSION)
-                .withID("-1")
                 .withNullableAccessGroupID(wsid)
                 .withNullableObjectID("4")
                 .withNullableVersion(1)
                 .withNullableisPublic(false)
                 .build();
-        indexFewVersions(ev);
+        indexFewVersions(new StatusEventWithID(ev, new StatusEventID("-1")));
         checkSearch(1, "PairedEndLibrary", "Illumina", wsid, true);
         checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
         final StatusEvent ev2 = StatusEvent.getBuilder(
                 new StorageObjectType("WS", "KBaseFile.SingleEndLibrary"),
                 Instant.now(),
                 StatusEventType.NEW_VERSION)
-                .withID("-1")
                 .withNullableAccessGroupID(wsid)
                 .withNullableObjectID("5")
                 .withNullableVersion(1)
                 .withNullableisPublic(false)
                 .build();
-        indexFewVersions(ev2);
+        indexFewVersions(new StatusEventWithID(ev2, new StatusEventID("-1")));
         checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);
         checkSearch(1, "SingleEndLibrary", "reads.2", wsid, false);
     }
