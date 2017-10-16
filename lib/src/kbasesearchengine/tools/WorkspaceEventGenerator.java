@@ -25,7 +25,7 @@ import com.mongodb.client.MongoDatabase;
 
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventType;
-import kbasesearchengine.events.storage.StatusEventStorage;
+import kbasesearchengine.events.storage.OldStatusEventStorage;
 import kbasesearchengine.system.StorageObjectType;
 
 /** Generates events from the workspace and inserts them into the search queue.
@@ -72,14 +72,14 @@ public class WorkspaceEventGenerator {
     private final int obj;
     private final int ver;
     
-    private final StatusEventStorage storage;
+    private final OldStatusEventStorage storage;
     private final MongoDatabase wsDB;
     private final PrintStream logtarget;
     private final Set<WorkspaceIdentifier> wsBlackList;
     private List<Pattern> wsTypes;
     
     private WorkspaceEventGenerator(
-            final StatusEventStorage storage,
+            final OldStatusEventStorage storage,
             final MongoDatabase workspaceDatabase,
             final int ws,
             final int obj,
@@ -308,7 +308,7 @@ public class WorkspaceEventGenerator {
 
     public static class Builder {
         
-        private final StatusEventStorage storage;
+        private final OldStatusEventStorage storage;
         private final MongoDatabase workspaceDatabase;
         private int ws = -1;
         private int obj = -1;
@@ -318,7 +318,7 @@ public class WorkspaceEventGenerator {
         private Collection<String> wsTypes = new LinkedList<>();
         
         public Builder(
-                final StatusEventStorage storage,
+                final OldStatusEventStorage storage,
                 final MongoDatabase workspaceDatabase,
                 final PrintStream logtarget) {
             nonNull(storage, "storage");

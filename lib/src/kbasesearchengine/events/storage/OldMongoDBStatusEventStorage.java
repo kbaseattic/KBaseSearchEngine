@@ -18,13 +18,13 @@ import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.tools.Utils;
 
-public class MongoDBStatusEventStorage implements StatusEventStorage {
+public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
 
     private static final String COLLECTION_OBJECT_STATUS_EVENTS = "ObjectStatusEvents";
 
     private MongoDatabase db;
 
-    public MongoDBStatusEventStorage(final MongoDatabase db){
+    public OldMongoDBStatusEventStorage(final MongoDatabase db){
         Utils.nonNull(db, "db");
         this.db = db;
     }

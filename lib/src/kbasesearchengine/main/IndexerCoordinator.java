@@ -31,7 +31,7 @@ import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.events.handler.SourceData;
-import kbasesearchengine.events.storage.StatusEventStorage;
+import kbasesearchengine.events.storage.OldStatusEventStorage;
 import kbasesearchengine.parse.KeywordParser;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.parse.ObjectParser;
@@ -65,7 +65,7 @@ public class IndexerCoordinator {
 
     public IndexerCoordinator(
             final List<EventHandler> eventHandlers,
-            final StatusEventStorage storage,
+            final OldStatusEventStorage storage,
             final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,

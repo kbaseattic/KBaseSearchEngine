@@ -7,12 +7,12 @@ import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.storage.StatusEventCursor;
-import kbasesearchengine.events.storage.StatusEventStorage;
+import kbasesearchengine.events.storage.OldStatusEventStorage;
 
 public class StatusEventQueue {
 	private final static String BUFFER_ALIVE_TIME = "1m";
 	private final static int BUFFER_SIZE = 10;
-	private StatusEventStorage objStatusStorage;	
+	private OldStatusEventStorage objStatusStorage;	
 	
 	class _Iterator implements StatusEventIterator{
 		String storageCode;
@@ -79,7 +79,7 @@ public class StatusEventQueue {
         }
 	}
 		
-	public StatusEventQueue(StatusEventStorage objStatusStorage){
+	public StatusEventQueue(OldStatusEventStorage objStatusStorage){
 		this.objStatusStorage = objStatusStorage;
 	}
 

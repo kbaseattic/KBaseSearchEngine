@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import kbasesearchengine.events.StatusEvent;
 
-public interface StatusEventStorage {
+public interface OldStatusEventStorage {
 	
 	public void store(StatusEvent obj) throws IOException;
 	
