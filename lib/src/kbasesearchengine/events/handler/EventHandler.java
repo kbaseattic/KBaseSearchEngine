@@ -83,4 +83,10 @@ public interface EventHandler {
      */
     Set<ResolvedReference> resolveReferences(List<GUID> refpath, Set<GUID> refsToResolve)
             throws IndexingException, RetriableIndexingException;
+
+    /** Returns whether an event will be expanded into multiple individual events.
+     * @param parentEvent the event to check.
+     * @return true if the event will be expanded, false otherwise.
+     */
+    boolean isExpandable(ObjectStatusEvent parentEvent);
 }

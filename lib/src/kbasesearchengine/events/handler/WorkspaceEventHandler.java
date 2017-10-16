@@ -250,12 +250,23 @@ public class WorkspaceEventHandler implements EventHandler {
     }
 
     @Override
+    public boolean isExpandable(final ObjectStatusEvent parentEvent) {
+        checkStorageCode(parentEvent);
+        return EXPANDABLES.contains(parentEvent.getEventType());
+        
+    };
+    
+    private static final Set<ObjectStatusEventType> EXPANDABLES = new HashSet<>(Arrays.asList(
+            ObjectStatusEventType.NEW_ALL_VERSIONS,
+            ObjectStatusEventType.COPY_ACCESS_GROUP,
+            ObjectStatusEventType.DELETE_ACCESS_GROUP,
+            ObjectStatusEventType.PUBLISH_ACCESS_GROUP,
+            ObjectStatusEventType.UNPUBLISH_ACCESS_GROUP));
+    
+    @Override
     public Iterable<ObjectStatusEvent> expand(final ObjectStatusEvent event)
             throws IndexingException, RetriableIndexingException {
-        if (!STORAGE_CODE.equals(event.getStorageCode())) {
-            throw new IllegalArgumentException("This handler only accepts "
-                    + STORAGE_CODE + "events");
-        }
+        checkStorageCode(event);
         if (ObjectStatusEventType.NEW_ALL_VERSIONS.equals(event.getEventType())) {
             return handleNewAllVersions(event);
         } else if (ObjectStatusEventType.COPY_ACCESS_GROUP.equals(event.getEventType())) {
@@ -268,6 +279,13 @@ public class WorkspaceEventHandler implements EventHandler {
             return handlePublishAccessGroup(event, ObjectStatusEventType.UNPUBLISH_ALL_VERSIONS);
         } else {
             return Arrays.asList(event);
+        }
+    }
+
+    private void checkStorageCode(final ObjectStatusEvent event) {
+        if (!STORAGE_CODE.equals(event.getStorageCode())) {
+            throw new IllegalArgumentException("This handler only accepts "
+                    + STORAGE_CODE + "events");
         }
     }
 

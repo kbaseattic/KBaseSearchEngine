@@ -54,7 +54,6 @@ public class MainObjectProcessor {
     
     private final File rootTempDir;
     private final ObjectStatusEventQueue queue;
-    private Thread mainRunner;
     private final TypeStorage typeStorage;
     private final IndexingStorage indexingStorage;
     private final LineLogger logger;
@@ -62,15 +61,8 @@ public class MainObjectProcessor {
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
             RETRY_FATAL_BACKOFF_MS,
-            (retrycount, event, except) -> tempLog(retrycount, event, except)); //TODO LOG better logging for retries
-    
-    private void tempLog(
-            final int retrycount,
-            final Optional<ObjectStatusEvent> ev,
-            final Throwable ex) {
-        logError(ex);
-    }
-    
+            (retrycount, event, except) -> logError(retrycount, event, except));
+
     public MainObjectProcessor(
             final List<EventHandler> eventHandlers,
             final StatusEventStorage storage,
@@ -84,7 +76,6 @@ public class MainObjectProcessor {
         this.rootTempDir = tempDir;
         
         eventHandlers.stream().forEach(eh -> this.eventHandlers.put(eh.getStorageCode(), eh));
-        // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
         queue = new ObjectStatusEventQueue(storage);
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
@@ -118,74 +109,70 @@ public class MainObjectProcessor {
         return ret;
     }
     
-    public void startLifecycleRunner() {
-//        if (mainRunner != null) {
-//            throw new IllegalStateException("Lifecycle runner was already started");
-//        }
-//        mainRunner = new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                try {
-                    while(!Thread.currentThread().isInterrupted()) {
-                        try {
-                            performOneTick();
-                            //TODO ERR log better errors on shutdown
-                            //TODO ERR only log unexpected interrupt errors. Set stop flag or something.
-                        } catch (InterruptedException e) {
-                            logError(e);
-                            Thread.currentThread().interrupt();
-                        } catch (FatalIndexingException e) {
-                            logError(e);
-                            Thread.currentThread().interrupt();
-                        } catch (Exception e) { //TODO ERR log unexpected error
-                            logError(e);
-                        } finally {
-                            if (!Thread.currentThread().isInterrupted()) {
-                                try {
-                                    Thread.sleep(1000);
-                                } catch (InterruptedException e) {
-                                    logError(e);
-                                    Thread.currentThread().interrupt();
-                                }
-                            }
-                        }
-                    }
-//                } finally {
-//                    mainRunner = null;
-//                }
-//            }
-//        });
-//        mainRunner.setDaemon(false);
-//        mainRunner.start();
-    }
-    
-    private void logError(Throwable e) {
-        String codePlace = e.getStackTrace().length == 0 ? "<not-available>" : 
-            e.getStackTrace()[0].toString();
-        if (logger != null) {
-            logger.logError("Error in Lifecycle runner: " + e + ", " + codePlace);
-            logger.logError(e);
-        }
-    }
-    
-    public boolean stopLifecycleRunner() {
-        if (mainRunner == null) {
-            return false;
-        }
-        if (mainRunner.isInterrupted()) {
-            throw new IllegalStateException("Lifecycle Runner can not be stopped twice");
-        }
-        mainRunner.interrupt();
-        // Let's check every 100 ms during 1 minute at most.
-        for (int i = 0; i < 600; i++) {
+    public void startIndexer() {
+        while(!Thread.currentThread().isInterrupted()) {
             try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {}
-            if (mainRunner == null) {
-                return true;
+                performOneTick();
+            } catch (InterruptedException e) {
+                logError(ErrorType.FATAL, e);
+                Thread.currentThread().interrupt();
+            } catch (FatalIndexingException e) {
+                logError(ErrorType.FATAL, e);
+                Thread.currentThread().interrupt();
+            } catch (Exception e) {
+                logError(ErrorType.UNEXPECTED, e);
+            } finally {
+                if (!Thread.currentThread().isInterrupted()) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        logError(ErrorType.FATAL, e);
+                        Thread.currentThread().interrupt();
+                    }
+                }
             }
         }
-        throw new IllegalStateException("Failed to stop Lifecycle Runner");
+    }
+    
+    private enum ErrorType {
+        STD, FATAL, UNEXPECTED;
+    }
+    
+    private void logError(final ErrorType errtype, final Throwable e) {
+        Utils.nonNull(errtype, "errtype");
+        final String msg;
+        if (ErrorType.FATAL.equals(errtype)) {
+            msg = "Fatal error in indexer, shutting down: ";
+        } else if (ErrorType.STD.equals(errtype)) {
+            msg = "Error in indexer: ";
+        } else if (ErrorType.UNEXPECTED.equals(errtype)) {
+            msg = "Unexpected error in indexer: ";
+        } else {
+            throw new RuntimeException("Unknown error type: " + errtype);
+        }
+        logError(msg, e);
+    }
+
+    private void logError(final String msg, final Throwable e) {
+        final String firstStackLine = e.getStackTrace().length == 0 ? "<not-available>" : 
+                e.getStackTrace()[0].toString();
+        logger.logError(msg + e + ", " + firstStackLine);
+        logger.logError(e); //TODO LOG split into lines with id
+    }
+
+    private void logError(
+            final int retrycount,
+            final Optional<ObjectStatusEvent> event,
+            final RetriableIndexingException e) {
+        final String msg;
+        if (event.isPresent()) {
+            //TODO LOG events should always have IDs
+            msg = String.format("Retriable error in indexer for event %s %s, retry %s: ",
+                    event.get().getEventType(), event.get().getId(), retrycount);
+        } else {
+            msg = String.format("Retriable error in indexer, retry %s: ", retrycount);
+        }
+        logError(msg, e);
     }
     
     private void performOneTick() throws InterruptedException, IndexingException {
@@ -193,12 +180,15 @@ public class MainObjectProcessor {
         final ObjectStatusEventIterator iter = retrier.retryFunc(
                 q -> q.iterator("WS"), queue, null);
         while (iter.hasNext()) {
-            //TODO LOG log parent event. Add boolean willExpand(event) to eventhandler
             final ObjectStatusEvent parentEvent = retrier.retryFunc(i -> i.next(), iter, null);
+            if (getEventHandler(parentEvent).isExpandable(parentEvent)) {
+                logger.logInfo(String.format("[Indexer] Expanding event %s %s",
+                        parentEvent.getEventType(), parentEvent.getId()));
+            }
             final Iterator<ObjectStatusEvent> er;
             try {
                 er = retrier.retryFunc(e -> getSubEventIterator(e), parentEvent, parentEvent);
-                iter.markAsVisited(performOneTick(parentEvent, er));
+                iter.markAsVisited(processEvent(parentEvent, er));
             } catch (IndexingException e) {
                 markAsVisitedFailedPostError(iter);
                 handleException("Error expanding parent event", parentEvent, e);
@@ -206,8 +196,7 @@ public class MainObjectProcessor {
                 throw e;
             } catch (Exception e) {
                 // don't know how to respond to anything else, so mark event failed and keep going
-                //TODO LOG log unexpected error
-                logError(e);
+                logError(ErrorType.UNEXPECTED, e);
                 markAsVisitedFailedPostError(iter);
             }
         }
@@ -237,7 +226,7 @@ public class MainObjectProcessor {
     }
 
     // returns whether processing was successful or not.
-    private boolean performOneTick(
+    private boolean processEvent(
             final ObjectStatusEvent parentEvent,
             final Iterator<ObjectStatusEvent> expanditer)
             throws InterruptedException, FatalIndexingException {
@@ -296,8 +285,9 @@ public class MainObjectProcessor {
         if (exception instanceof FatalIndexingException) {
             throw (FatalIndexingException) exception;
         } else {
-            //TODO NOW better logs. Log which event failed with error.
-            logError(exception);
+            final String msg = error + String.format(" for event %s %s: ",
+                    event.getEventType(), event.getId());
+            logError(msg, exception);
         }
     }
 
