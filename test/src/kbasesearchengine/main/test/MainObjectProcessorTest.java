@@ -261,7 +261,6 @@ public class MainObjectProcessorTest {
     public void testGenomeManually() throws Exception {
         StatusEvent ev = new StatusEvent(
                 "-1",
-                "WS",
                 wsid,
                 "3",
                 1,
@@ -299,7 +298,7 @@ public class MainObjectProcessorTest {
 
     private void indexFewVersions(StatusEvent ev) throws Exception {
         for (int i = Math.max(1, ev.getVersion() - 5); i <= ev.getVersion(); i++) {
-            mop.processOneEvent(new StatusEvent(ev.getId(), ev.getStorageCode(), 
+            mop.processOneEvent(new StatusEvent(ev.getId(),
                     ev.getAccessGroupId(), ev.getAccessGroupObjectId(), i, null,
                     ev.getTargetAccessGroupId(), ev.getTimestamp(), ev.getStorageObjectType(),
                     ev.getEventType(), ev.isGlobalAccessed()));
@@ -325,7 +324,6 @@ public class MainObjectProcessorTest {
     public void testNarrativeManually() throws Exception {
         indexFewVersions(new StatusEvent(
                 "-1",
-                "WS",
                 wsid,
                 "1",
                 5,
@@ -353,7 +351,6 @@ public class MainObjectProcessorTest {
     public void testReadsManually() throws Exception {
         indexFewVersions(new StatusEvent(
                 "-1",
-                "WS",
                 wsid,
                 "4",
                 1,
@@ -367,7 +364,6 @@ public class MainObjectProcessorTest {
         checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
         indexFewVersions(new StatusEvent(
                 "-1",
-                "WS", 
                 wsid,
                 "5",
                 1,

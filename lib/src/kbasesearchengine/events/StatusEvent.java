@@ -23,7 +23,6 @@ public class StatusEvent {
     
     public StatusEvent(
             final String _id,
-            final String storageCode,
             final Integer accessGroupId,
             final String accessGroupObjectId,
             final Integer version,
@@ -35,18 +34,38 @@ public class StatusEvent {
             final Boolean isGlobalAccessed) {
         super();
         this._id = _id;
-        if (storageObjectType != null && storageCode != null &&
-                !storageObjectType.getStorageCode().equals(storageCode)) {
-            throw new IllegalArgumentException(
-                    "Specified mismatched storage code and storage type");
-        }
-        this.storageCode = storageCode;
+        this.storageCode = storageObjectType.getStorageCode();
         this.accessGroupId = accessGroupId;
         this.accessGroupObjectId = accessGroupObjectId;
         this.version = version;
         this.targetAccessGroupId = targetAccessGroupId;
         this.timestamp = timestamp;
         this.storageObjectType = storageObjectType;
+        this.eventType = eventType;
+        this.isGlobalAccessed = isGlobalAccessed;
+        this.newName = newName;
+    }
+    
+    public StatusEvent(
+            final String _id,
+            final String storageCode,
+            final Integer accessGroupId,
+            final String accessGroupObjectId,
+            final Integer version,
+            final String newName,
+            final Integer targetAccessGroupId,
+            final Long timestamp,
+            final StatusEventType eventType,
+            final Boolean isGlobalAccessed) {
+        super();
+        this._id = _id;
+        this.storageCode = storageCode;
+        this.accessGroupId = accessGroupId;
+        this.accessGroupObjectId = accessGroupObjectId;
+        this.version = version;
+        this.targetAccessGroupId = targetAccessGroupId;
+        this.timestamp = timestamp;
+        this.storageObjectType = null;
         this.eventType = eventType;
         this.isGlobalAccessed = isGlobalAccessed;
         this.newName = newName;

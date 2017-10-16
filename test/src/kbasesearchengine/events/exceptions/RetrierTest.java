@@ -167,7 +167,7 @@ public class RetrierTest {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
         final StatusEvent ev = new StatusEvent(
-                null, "foo", 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
+                null, 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
                 StatusEventType.DELETED, false);
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 2), "foo", ev);
@@ -238,7 +238,7 @@ public class RetrierTest {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Arrays.asList(70, 30), collog);
         final StatusEvent ev = new StatusEvent(
-                null, "foo", 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
+                null, 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
                 StatusEventType.DELETED, false);
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 2, true), "foo", ev);
@@ -352,7 +352,7 @@ public class RetrierTest {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
         final StatusEvent ev = new StatusEvent(
-                null, "foo", 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
+                null, 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
                 StatusEventType.DELETED, false);
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 26L, 2), "foo", ev);
@@ -425,7 +425,7 @@ public class RetrierTest {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Arrays.asList(70, 30), collog);
         final StatusEvent ev = new StatusEvent(
-                null, "foo", 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
+                null, 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
                 StatusEventType.DELETED, false);
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 64L, 2, true), "foo", ev);

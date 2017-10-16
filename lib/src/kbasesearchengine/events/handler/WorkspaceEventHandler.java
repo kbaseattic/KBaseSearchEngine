@@ -369,7 +369,6 @@ public class WorkspaceEventHandler implements EventHandler {
                     null, // no rename
                     null, // not a datapalette share
                     event.getTimestamp(),
-                    null, // no source type
                     newType,
                     null); // no global access rule
         }
@@ -542,7 +541,6 @@ public class WorkspaceEventHandler implements EventHandler {
                     Long, Map<String, String>> obj) {
         return new StatusEvent(
                 null, // no mongo id
-                STORAGE_CODE,
                 origEvent.getAccessGroupId(),
                 obj.getE1() + "",
                 Math.toIntExact(obj.getE5()), // vers are always ints

@@ -210,7 +210,6 @@ public class PerformanceTester {
                 int version = Integer.parseInt(parts[2]);
                 StatusEvent ev = new StatusEvent(
                         "-1",
-                        "WS",
                         wsId,
                         parts[1],
                         version, 
