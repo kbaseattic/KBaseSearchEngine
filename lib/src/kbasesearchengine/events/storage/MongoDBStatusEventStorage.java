@@ -9,7 +9,6 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import com.google.common.base.Optional;
-import com.mongodb.BasicDBObject;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -28,15 +27,6 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     public MongoDBStatusEventStorage(final MongoDatabase db){
         Utils.nonNull(db, "db");
         this.db = db;
-    }
-
-    @Override
-    public void createStorage() throws IOException {
-    }
-
-    @Override
-    public void deleteStorage() throws IOException {
-        // TODO Auto-generated method stub
     }
 
     private MongoCollection<Document> collection(String name){
@@ -76,42 +66,6 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         collection(COLLECTION_OBJECT_STATUS_EVENTS).updateOne(query, doc);
     }
 
-    @Override
-    public void markAsNonprocessed(String storageCode, String storageObjectType) throws IOException {
-        final Document doc = new Document().append("$set", 
-                new Document()
-                .append("processed", false)
-                .append("indexed", false)
-
-                );
-
-        final List<Document> queryItems = new LinkedList<>();		
-        if(storageCode != null){
-
-            queryItems.add(new Document("storageCode", storageCode));			
-        }
-        if(storageObjectType != null){
-            queryItems.add(new Document("storageObjectType", storageObjectType));
-        }
-        BasicDBObject query = new BasicDBObject("$and", queryItems);
-
-        collection(COLLECTION_OBJECT_STATUS_EVENTS).updateMany(query, doc);
-    }
-
-    @Override
-    public int count(String storageCode, boolean processed) throws IOException {
-
-        final List<Document> queryItems = new LinkedList<>();
-        queryItems.add(new Document("processed", processed));
-        if(storageCode != null){
-
-            queryItems.add(new Document("storageCode", storageCode));			
-        }
-        final Document query = new Document("$and", queryItems);
-
-        return (int) collection(COLLECTION_OBJECT_STATUS_EVENTS).count(query);
-    }
-
     private List<StatusEvent> find(Document query, int skip, int limit) {
         List<StatusEvent> events = new ArrayList<StatusEvent>();
 
@@ -139,19 +93,6 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         }
         return events;
 
-    }
-
-    @Override
-    public List<StatusEvent> find(String storageCode, boolean processed, int maxSize) throws IOException {
-        final List<Document> queryItems = new LinkedList<>();
-        queryItems.add(new Document("processed", processed));
-        if(storageCode != null){
-            queryItems.add(new Document("storageCode", storageCode));			
-        }
-        final Document query = new Document("$and", queryItems);
-
-
-        return find(query, 0, maxSize);
     }
 
     class _Cursor extends StatusEventCursor{
@@ -191,12 +132,4 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
 
         return objs.size() > 0;
     }
-
-    @Override
-    public List<StatusEvent> find(String storageCode, int accessGroupId, List<String> accessGroupObjectIds)
-            throws IOException {
-        // TODO Auto-generated method stub
-        return new ArrayList<StatusEvent>();
-    }
-
 }
