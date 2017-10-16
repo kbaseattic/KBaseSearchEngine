@@ -1,6 +1,7 @@
 package kbasesearchengine.search;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,10 +27,10 @@ public interface IndexingStorage {
      * @throws IOException
      */
     public void indexObject(GUID guid, String objectType, ParsedObject obj, SourceData source,
-            long timestamp, String parentJsonValue, boolean isPublic,
+            Instant timestamp, String parentJsonValue, boolean isPublic,
             List<IndexingRules> indexingRules) throws IOException;
 
-    public void indexObjects(String objectType, SourceData obj, long timestamp,
+    public void indexObjects(String objectType, SourceData obj, Instant timestamp,
             String parentJsonValue, GUID pguid, Map<GUID, ParsedObject> idToObj,
             boolean isPublic, List<IndexingRules> indexingRules) 
                     throws IOException;

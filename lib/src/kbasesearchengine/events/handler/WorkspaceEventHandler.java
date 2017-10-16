@@ -3,6 +3,7 @@ package kbasesearchengine.events.handler;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -202,20 +203,21 @@ public class WorkspaceEventHandler implements EventHandler {
     @Override
     public Set<ResolvedReference> resolveReferences(
             final List<GUID> refpath,
-            final Set<GUID> refs) throws RetriableIndexingException, IndexingException {
+            final Set<GUID> refs)
+            throws RetriableIndexingException, IndexingException {
         // may need to split into batches 
         final String refPrefix = buildRefPrefix(refpath);
         
         final List<GUID> orderedRefs = new ArrayList<>(refs);
         
-        List<ObjectSpecification> getInfoInput = orderedRefs.stream().map(
+        final List<ObjectSpecification> getInfoInput = orderedRefs.stream().map(
                 ref -> new ObjectSpecification().withRef(refPrefix + ref.toRefString())).collect(
                         Collectors.toList());
         final Map<String, Object> command = new HashMap<>();
         command.put("command", "getObjectInfo");
         command.put("params", new GetObjectInfo3Params().withObjects(getInfoInput));
         
-        GetObjectInfo3Results res;
+        final GetObjectInfo3Results res;
         try {
             res = ws.administer(new UObject(command)).asClassInstance(GetObjectInfo3Results.class);
         } catch (IOException e) {
@@ -246,7 +248,7 @@ public class WorkspaceEventHandler implements EventHandler {
                         Math.toIntExact(obj.getE5()), null, null),
                 new StorageObjectType(STORAGE_CODE, obj.getE3().split("-")[0],
                       Integer.parseInt(obj.getE3().split("-")[1].split("\\.")[0])),
-                DATE_PARSER.parseDateTime(obj.getE4()).getMillis());
+                Instant.ofEpochMilli(DATE_PARSER.parseDateTime(obj.getE4()).getMillis()));
     }
 
     @Override
@@ -297,7 +299,7 @@ public class WorkspaceEventHandler implements EventHandler {
         final Map<String, Object> command = new HashMap<>();
         command.put("command", "getWorkspaceInfo");
         command.put("params", new WorkspaceIdentity()
-                .withId((long) event.getAccessGroupId()));
+                .withId((long) event.getAccessGroupId().get()));
         
         final long objcount;
         try {
@@ -324,7 +326,7 @@ public class WorkspaceEventHandler implements EventHandler {
             @Override
             public Iterator<StatusEvent> iterator() {
                 return new StupidWorkspaceObjectIterator(
-                        event, Long.parseLong(event.getAccessGroupObjectId()),
+                        event, Long.parseLong(event.getAccessGroupObjectId().get()),
                         StatusEventType.DELETE_ALL_VERSIONS);
             }
             
@@ -360,17 +362,10 @@ public class WorkspaceEventHandler implements EventHandler {
             if (counter >= maxObjectID) {
                 throw new NoSuchElementException();
             }
-            return new StatusEvent(
-                    null, // no mongo id
-                    STORAGE_CODE,
-                    event.getAccessGroupId(),
-                    ++counter + "",
-                    null, // no ver
-                    null, // no rename
-                    null, // not a datapalette share
-                    event.getTimestamp(),
-                    newType,
-                    null); // no global access rule
+            return StatusEvent.getBuilder(STORAGE_CODE, event.getTimestamp(), newType)
+                    .withNullableAccessGroupID(event.getAccessGroupId().get())
+                    .withNullableObjectID(++counter + "")
+                    .build();
         }
         
     }
@@ -397,7 +392,7 @@ public class WorkspaceEventHandler implements EventHandler {
         public WorkspaceIterator(final WorkspaceClient ws, final StatusEvent sourceEvent) {
             this.ws = ws;
             this.sourceEvent = sourceEvent;
-            this.accessGroupId = sourceEvent.getAccessGroupId();
+            this.accessGroupId = sourceEvent.getAccessGroupId().get();
             fillQueue();
         }
 
@@ -442,26 +437,27 @@ public class WorkspaceEventHandler implements EventHandler {
                 return;
             }
             // might want to do something smarter about the extra parse at some point
-            final long first = Long.parseLong(events.get(0).getAccessGroupObjectId());
+            final long first = Long.parseLong(events.get(0).getAccessGroupObjectId().get());
             final StatusEvent lastEv = events.get(events.size() - 1);
-            long last = Long.parseLong(lastEv.getAccessGroupObjectId());
+            long last = Long.parseLong(lastEv.getAccessGroupObjectId().get());
             // it cannot be true that there were <10K objects and the last object returned's
             // version was != 1
-            if (first == last && events.size() == WS_BATCH_SIZE && lastEv.getVersion() != 1) {
+            if (first == last && events.size() == WS_BATCH_SIZE &&
+                    lastEv.getVersion().get() != 1) {
                 //holy poopsnacks, a > 10K version object
                 queue.addAll(events);
-                for (int i = lastEv.getVersion(); i > 1; i =- WS_BATCH_SIZE) {
+                for (int i = lastEv.getVersion().get(); i > 1; i =- WS_BATCH_SIZE) {
                     fillQueueWithVersions(first, i - WS_BATCH_SIZE, i);
                 }
             } else {
                 // could be smarter about this later, rather than throwing away all the versions of
                 // the last object
                 // not too many objects will have enough versions to matter
-                if (lastEv.getVersion() != 1) {
+                if (lastEv.getVersion().get() != 1) {
                     last--;
                 }
                 for (final StatusEvent e: events) {
-                    if (Long.parseLong(e.getAccessGroupObjectId()) > last) { // *&@ parse
+                    if (Long.parseLong(e.getAccessGroupObjectId().get()) > last) { // *&@ parse
                         break;
                     }
                     queue.add(e);
@@ -503,7 +499,7 @@ public class WorkspaceEventHandler implements EventHandler {
             throws IndexingException, RetriableIndexingException {
         final long objid;
         try {
-            objid = Long.parseLong(event.getAccessGroupObjectId());
+            objid = Long.parseLong(event.getAccessGroupObjectId().get());
         } catch (NumberFormatException ne) {
             throw new UnprocessableEventIndexingException("Illegal workspace object id: " +
                     event.getAccessGroupObjectId());
@@ -511,7 +507,7 @@ public class WorkspaceEventHandler implements EventHandler {
         final Map<String, Object> command = new HashMap<>();
         command.put("command", "getObjectHistory");
         command.put("params", new ObjectIdentity()
-                .withWsid((long) event.getAccessGroupId())
+                .withWsid((long) event.getAccessGroupId().get())
                 .withObjid(objid));
         try {
             return buildEvents(event, ws.administer(new UObject(command))
@@ -539,18 +535,18 @@ public class WorkspaceEventHandler implements EventHandler {
             final StatusEvent origEvent,
             final Tuple11<Long, String, String, String, Long, String, Long, String, String,
                     Long, Map<String, String>> obj) {
-        return new StatusEvent(
-                null, // no mongo id
-                origEvent.getAccessGroupId(),
-                obj.getE1() + "",
-                Math.toIntExact(obj.getE5()), // vers are always ints
-                null, // no rename
-                null, // not a datapalette share
-                DATE_PARSER.parseDateTime(obj.getE4()).getMillis(),
-                new StorageObjectType(STORAGE_CODE, obj.getE3().split("-")[0],
-                        Integer.parseInt(obj.getE3().split("-")[1].split("\\.")[0])),
-                StatusEventType.NEW_VERSION,
-                origEvent.isGlobalAccessed());
+        final StorageObjectType storageObjectType = new StorageObjectType(
+                STORAGE_CODE, obj.getE3().split("-")[0],
+                Integer.parseInt(obj.getE3().split("-")[1].split("\\.")[0]));
+        return StatusEvent.getBuilder(
+                storageObjectType,
+                Instant.ofEpochMilli(DATE_PARSER.parseDateTime(obj.getE4()).getMillis()),
+                StatusEventType.NEW_VERSION)
+                .withNullableAccessGroupID(origEvent.getAccessGroupId().get())
+                .withNullableObjectID(obj.getE1() + "")
+                .withNullableVersion(Math.toIntExact(obj.getE5()))
+                .withNullableisPublic(origEvent.isGlobalAccessed().get())
+                .build();
     }
     
     private static String toWSRefPath(final List<GUID> objectRefPath) {

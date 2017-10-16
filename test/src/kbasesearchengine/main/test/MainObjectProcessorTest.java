@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -259,17 +260,16 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testGenomeManually() throws Exception {
-        StatusEvent ev = new StatusEvent(
-                "-1",
-                wsid,
-                "3",
-                1,
-                null,
-                null,
-                System.currentTimeMillis(),
+        final StatusEvent ev = StatusEvent.getBuilder(
                 new StorageObjectType("WS", "KBaseGenomes.Genome"),
-                StatusEventType.NEW_VERSION,
-                false);
+                Instant.now(),
+                StatusEventType.NEW_VERSION)
+                .withID("-1")
+                .withNullableAccessGroupID(wsid)
+                .withNullableObjectID("3")
+                .withNullableVersion(1)
+                .withNullableisPublic(false)
+                .build();
         mop.processOneEvent(ev);
         PostProcessing pp = new PostProcessing();
         pp.objectInfo = true;
@@ -297,11 +297,18 @@ public class MainObjectProcessorTest {
     }
 
     private void indexFewVersions(StatusEvent ev) throws Exception {
-        for (int i = Math.max(1, ev.getVersion() - 5); i <= ev.getVersion(); i++) {
-            mop.processOneEvent(new StatusEvent(ev.getId(),
-                    ev.getAccessGroupId(), ev.getAccessGroupObjectId(), i, null,
-                    ev.getTargetAccessGroupId(), ev.getTimestamp(), ev.getStorageObjectType(),
-                    ev.getEventType(), ev.isGlobalAccessed()));
+        for (int i = Math.max(1, ev.getVersion().get() - 5); i <= ev.getVersion().get(); i++) {
+            final StatusEvent ev2 = StatusEvent.getBuilder(
+                    ev.getStorageObjectType().get(),
+                    ev.getTimestamp(),
+                    ev.getEventType())
+                    .withID(ev.getId())
+                    .withNullableAccessGroupID(ev.getAccessGroupId().get())
+                    .withNullableObjectID(ev.getAccessGroupObjectId().get())
+                    .withNullableVersion(i)
+                    .withNullableisPublic(ev.isGlobalAccessed().get())
+                    .build();
+            mop.processOneEvent(ev2);
         }
     }
     
@@ -322,17 +329,17 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testNarrativeManually() throws Exception {
-        indexFewVersions(new StatusEvent(
-                "-1",
-                wsid,
-                "1",
-                5,
-                null,
-                null,
-                System.currentTimeMillis(),
+        final StatusEvent ev = StatusEvent.getBuilder(
                 new StorageObjectType("WS", "KBaseNarrative.Narrative"),
-                StatusEventType.NEW_VERSION,
-                false));
+                Instant.now(),
+                StatusEventType.NEW_VERSION)
+                .withID("-1")
+                .withNullableAccessGroupID(wsid)
+                .withNullableObjectID("1")
+                .withNullableVersion(5)
+                .withNullableisPublic(false)
+                .build();
+        indexFewVersions(ev);
         checkSearch(1, "Narrative", "tree", wsid, false);
         checkSearch(1, "Narrative", "species", wsid, false);
         /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
@@ -349,30 +356,30 @@ public class MainObjectProcessorTest {
     
     @Test
     public void testReadsManually() throws Exception {
-        indexFewVersions(new StatusEvent(
-                "-1",
-                wsid,
-                "4",
-                1,
-                null,
-                null,
-                System.currentTimeMillis(),
+        final StatusEvent ev = StatusEvent.getBuilder(
                 new StorageObjectType("WS", "KBaseFile.PairedEndLibrary"),
-                StatusEventType.NEW_VERSION,
-                false));
+                Instant.now(),
+                StatusEventType.NEW_VERSION)
+                .withID("-1")
+                .withNullableAccessGroupID(wsid)
+                .withNullableObjectID("4")
+                .withNullableVersion(1)
+                .withNullableisPublic(false)
+                .build();
+        indexFewVersions(ev);
         checkSearch(1, "PairedEndLibrary", "Illumina", wsid, true);
         checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
-        indexFewVersions(new StatusEvent(
-                "-1",
-                wsid,
-                "5",
-                1,
-                null,
-                null,
-                System.currentTimeMillis(),
+        final StatusEvent ev2 = StatusEvent.getBuilder(
                 new StorageObjectType("WS", "KBaseFile.SingleEndLibrary"),
-                StatusEventType.NEW_VERSION,
-                false));
+                Instant.now(),
+                StatusEventType.NEW_VERSION)
+                .withID("-1")
+                .withNullableAccessGroupID(wsid)
+                .withNullableObjectID("5")
+                .withNullableVersion(1)
+                .withNullableisPublic(false)
+                .build();
+        indexFewVersions(ev2);
         checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);
         checkSearch(1, "SingleEndLibrary", "reads.2", wsid, false);
     }

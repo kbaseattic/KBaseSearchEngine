@@ -166,9 +166,12 @@ public class RetrierTest {
     public void consumer2RetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
-        final StatusEvent ev = new StatusEvent(
-                null, 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
-                StatusEventType.DELETED, false);
+        final StatusEvent ev = StatusEvent.getBuilder(
+                new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.DELETED)
+                .withNullableAccessGroupID(23)
+                .withNullableObjectID("bar")
+                .withNullableVersion(6)
+                .build();
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 2), "foo", ev);
         final Instant end = Instant.now();
@@ -237,9 +240,12 @@ public class RetrierTest {
     public void consumer2FatalRetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Arrays.asList(70, 30), collog);
-        final StatusEvent ev = new StatusEvent(
-                null, 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
-                StatusEventType.DELETED, false);
+        final StatusEvent ev = StatusEvent.getBuilder(
+                new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.DELETED)
+                .withNullableAccessGroupID(23)
+                .withNullableObjectID("bar")
+                .withNullableVersion(6)
+                .build();
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 2, true), "foo", ev);
         final Instant end = Instant.now();
@@ -351,9 +357,12 @@ public class RetrierTest {
     public void function2RetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
-        final StatusEvent ev = new StatusEvent(
-                null, 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
-                StatusEventType.DELETED, false);
+        final StatusEvent ev = StatusEvent.getBuilder(
+                new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.DELETED)
+                .withNullableAccessGroupID(23)
+                .withNullableObjectID("bar")
+                .withNullableVersion(6)
+                .build();
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 26L, 2), "foo", ev);
         final Instant end = Instant.now();
@@ -424,9 +433,12 @@ public class RetrierTest {
     public void function2FatalRetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Arrays.asList(70, 30), collog);
-        final StatusEvent ev = new StatusEvent(
-                null, 23, "bar", 6, null, null, 2L, new StorageObjectType("foo", "whee"),
-                StatusEventType.DELETED, false);
+        final StatusEvent ev = StatusEvent.getBuilder(
+                new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.DELETED)
+                .withNullableAccessGroupID(23)
+                .withNullableObjectID("bar")
+                .withNullableVersion(6)
+                .build();
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 64L, 2, true), "foo", ev);
         final Instant end = Instant.now();

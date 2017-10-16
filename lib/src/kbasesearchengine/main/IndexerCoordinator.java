@@ -2,6 +2,7 @@ package kbasesearchengine.main;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -240,8 +241,8 @@ public class IndexerCoordinator {
                 handleException("Error getting event from data storage", parentEvent, e);
                 return false;
             }
-            final StorageObjectType type = ev.getStorageObjectType();
-            if (type != null && !isStorageTypeSupported(ev)) {
+            final Optional<StorageObjectType> type = ev.getStorageObjectType();
+            if (type.isPresent() && !isStorageTypeSupported(ev)) {
                 logger.logInfo("[Indexer] skipping " + ev.getEventType() + ", " + 
                         toLogString(type) + ev.toGUID());
                 if (ev == parentEvent) { // hack for now. long term insert the sub event into the db
@@ -291,17 +292,17 @@ public class IndexerCoordinator {
         }
     }
 
-    private String toLogString(final StorageObjectType type) {
-        if (type == null) {
+    private String toLogString(final Optional<StorageObjectType> type) {
+        if (!type.isPresent()) {
             return "";
         }
         final StringBuilder sb = new StringBuilder();
-        sb.append(type.getStorageCode());
+        sb.append(type.get().getStorageCode());
         sb.append(":");
-        sb.append(type.getType());
-        if (type.getVersion().isPresent()) {
+        sb.append(type.get().getType());
+        if (type.get().getVersion().isPresent()) {
             sb.append("-");
-            sb.append(type.getVersion().get());
+            sb.append(type.get().getVersion().get());
         }
         sb.append(", ");
         return sb.toString();
@@ -338,18 +339,18 @@ public class IndexerCoordinator {
                     logger.logInfo("[Indexer]   skipping " + pguid +
                             " creation (already indexed)");
                     // TODO: we should fix public access for all sub-objects too !!!
-                    if (ev.isGlobalAccessed()) {
+                    if (ev.isGlobalAccessed().get()) {
                         publish(pguid);
                     } else {
                         unpublish(pguid);
                     }
                 } else {
-                    indexObject(pguid, ev.getStorageObjectType(), ev.getTimestamp(),
-                            ev.isGlobalAccessed(), null, new LinkedList<>());
+                    indexObject(pguid, ev.getStorageObjectType().get(), ev.getTimestamp(),
+                            ev.isGlobalAccessed().get(), null, new LinkedList<>());
                 }
                 break;
             case DELETED:
-                unshare(ev.toGUID(), ev.getAccessGroupId());
+                unshare(ev.toGUID(), ev.getAccessGroupId().get());
                 break;
             case DELETE_ALL_VERSIONS:
                 unshareAllVersions(ev.toGUID());
@@ -358,13 +359,15 @@ public class IndexerCoordinator {
                 shareAllVersions(ev.toGUID());
                 break;
             case SHARED:
-                share(ev.toGUID(), ev.getTargetAccessGroupId());
+                //TODO DP reenable if we support DPs
+//                share(ev.toGUID(), ev.getTargetAccessGroupId());
                 break;
             case UNSHARED:
-                unshare(ev.toGUID(), ev.getTargetAccessGroupId());
+                //TODO DP reenable if we support DPs
+//                unshare(ev.toGUID(), ev.getTargetAccessGroupId());
                 break;
             case RENAME_ALL_VERSIONS:
-                renameAllVersions(ev.toGUID(), ev.getNewName());
+                renameAllVersions(ev.toGUID(), ev.getNewName().get());
                 break;
             case PUBLISH_ALL_VERSIONS:
                 publishAllVersions(ev.toGUID());
@@ -389,7 +392,7 @@ public class IndexerCoordinator {
         try {
             return retrier.retryFunc(
                     t -> !typeStorage.listObjectTypesByStorageObjectType(
-                            ev.getStorageObjectType()).isEmpty(),
+                            ev.getStorageObjectType().get()).isEmpty(),
                     ev, ev);
         } catch (IndexingException e) {
             handleException("Error retrieving type info", ev, e);
@@ -400,7 +403,7 @@ public class IndexerCoordinator {
     private void indexObject(
             final GUID guid,
             final StorageObjectType storageObjectType,
-            Long timestamp,
+            final Instant timestamp,
             final boolean isPublic,
             ObjectLookupProvider indexLookup,
             final List<GUID> objectRefPath) 
@@ -435,9 +438,6 @@ public class IndexerCoordinator {
                 logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", parsing " +
                         "time: " + parsingTime + " ms.");
                 long t3 = System.currentTimeMillis();
-                if (timestamp == null) {
-                    timestamp = System.currentTimeMillis();
-                }
                 indexObjectInStorage(guid, timestamp, isPublic, obj, rule, guidToObj, parentJson);
                 long indexTime = System.currentTimeMillis() - t3;
                 logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", indexing " +
@@ -451,7 +451,7 @@ public class IndexerCoordinator {
 
     private void indexObjectInStorage(
             final GUID guid,
-            final Long timestamp,
+            final Instant timestamp,
             final boolean isPublic,
             final SourceData obj,
             final ObjectTypeParsingRules rule,
@@ -466,7 +466,7 @@ public class IndexerCoordinator {
     private void indexObjectInStorage(final List<?> input) throws FatalRetriableIndexingException {
         final ObjectTypeParsingRules rule = (ObjectTypeParsingRules) input.get(0);
         final SourceData obj = (SourceData) input.get(1);
-        final Long timestamp = (Long) input.get(2);
+        final Instant timestamp = (Instant) input.get(2);
         final String parentJson = (String) input.get(3);
         final GUID guid = (GUID) input.get(4);
         @SuppressWarnings("unchecked")
@@ -659,7 +659,7 @@ public class IndexerCoordinator {
         private void indexObjectWrapperFn(
                 final GUID guid,
                 final StorageObjectType storageObjectType,
-                final Long timestamp,
+                final Instant timestamp,
                 final boolean isPublic,
                 final ObjectLookupProvider indexLookup,
                 final List<GUID> objectRefPath) 
@@ -673,7 +673,7 @@ public class IndexerCoordinator {
                 throws IndexingException, InterruptedException, RetriableIndexingException {
             final GUID guid = (GUID) input.get(0);
             final StorageObjectType storageObjectType = (StorageObjectType) input.get(1);
-            final Long timestamp = (Long) input.get(2);
+            final Instant timestamp = (Instant) input.get(2);
             final boolean isPublic = (boolean) input.get(3);
             final ObjectLookupProvider indexLookup = (ObjectLookupProvider) input.get(4);
             @SuppressWarnings("unchecked")

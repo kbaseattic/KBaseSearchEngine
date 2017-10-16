@@ -1,7 +1,10 @@
 package kbasesearchengine.events.handler;
 
+import java.time.Instant;
+
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.system.StorageObjectType;
+import kbasesearchengine.tools.Utils;
 
 public class ResolvedReference {
     
@@ -11,17 +14,21 @@ public class ResolvedReference {
     private final GUID reference;
     private final GUID resolvedReference;
     private final StorageObjectType type;
-    private final long timestamp;
+    private final Instant timestamp;
     
     public ResolvedReference(
             final GUID reference,
             final GUID resolvedReference,
             final StorageObjectType type,
-            final long timestamp) {
+            final Instant time) {
+        Utils.nonNull(reference, "reference");
+        Utils.nonNull(resolvedReference, "resolvedReference");
+        Utils.nonNull(type, "type");
+        Utils.nonNull(time, "time");
         this.reference = reference;
         this.resolvedReference = resolvedReference;
         this.type = type;
-        this.timestamp = timestamp;
+        this.timestamp = time;
     }
 
     public GUID getReference() {
@@ -36,7 +43,7 @@ public class ResolvedReference {
         return type;
     }
 
-    public long getTimestamp() {
+    public Instant getTimestamp() {
         return timestamp;
     }
 
