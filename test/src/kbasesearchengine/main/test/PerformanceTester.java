@@ -26,7 +26,9 @@ import com.google.common.collect.ImmutableMap;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.StatusEvent;
+import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventType;
+import kbasesearchengine.events.StatusEventWithID;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.search.AccessFilter;
@@ -209,16 +211,16 @@ public class PerformanceTester {
                 String[] parts = ref.split("/");
                 int wsId = Integer.parseInt(parts[0]);
                 int version = Integer.parseInt(parts[2]);
-                final StatusEvent ev = StatusEvent.getBuilder(
+                final StatusEventWithID ev = new StatusEventWithID(StatusEvent.getBuilder(
                         new StorageObjectType("WS", "KBaseGenomes.Genome"),
                         Instant.now(),
                         StatusEventType.NEW_VERSION)
-                        .withID("-1")
                         .withNullableAccessGroupID(wsId)
                         .withNullableObjectID(parts[1])
                         .withNullableVersion(version)
                         .withNullableisPublic(true)
-                        .build();
+                        .build(),
+                        new StatusEventID("-1"));
                 long t2 = System.currentTimeMillis();
                 try {
                     mop.processOneEvent(ev);

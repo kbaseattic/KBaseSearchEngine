@@ -1,9 +1,8 @@
 package kbasesearchengine.queue;
 
-import java.io.IOException;
 import java.util.NoSuchElementException;
 
-import kbasesearchengine.events.StatusEvent;
+import kbasesearchengine.events.StatusEventWithID;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.storage.StatusEventCursor;
@@ -17,7 +16,7 @@ public class StatusEventQueue {
 	class _Iterator implements StatusEventIterator{
 		String storageCode;
 		StatusEventCursor cursor = null;
-		StatusEvent[] buffer = new StatusEvent[BUFFER_SIZE];
+		StatusEventWithID[] buffer = new StatusEventWithID[BUFFER_SIZE];
 		int nextPos = 0;
 		int nItems = 0;
 		int nMarkedAsVisited = 0;
@@ -28,7 +27,6 @@ public class StatusEventQueue {
 			this.storageCode = storageCode;
 			loadBuffer();
 		}
-				
 
 		@Override
 		public boolean hasNext() {
@@ -46,7 +44,7 @@ public class StatusEventQueue {
 			}
 						
 			int i = 0;
-			for(StatusEvent row : cursor.getData()){
+			for(StatusEventWithID row : cursor.getData()){
 				buffer[i++] = row;
 			}
 			nextPos = 0;
@@ -57,24 +55,12 @@ public class StatusEventQueue {
 			return !(nextPos < nItems);
 		}
 
-		@Override
-		public void markAsVisited(boolean isIndexed) throws IOException {
-			int curPos = nextPos - 1;
-			if (curPos >= 0 && curPos < nItems) {
-				objStatusStorage.markAsProcessed(buffer[curPos], isIndexed);
-				
-			} else {
-				throw new IndexOutOfBoundsException();
-			}		
-			nMarkedAsVisited++;
-		}
-
         @Override
-        public StatusEvent next() {
+        public StatusEventWithID next() {
             if (isBufferEmpty()) {
                 throw new NoSuchElementException();
             }
-            final StatusEvent ev = buffer[nextPos++];
+            final StatusEventWithID ev = buffer[nextPos++];
             return ev;
         }
 	}

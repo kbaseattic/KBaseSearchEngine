@@ -1,6 +1,5 @@
 package kbasesearchengine.events.storage;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -16,7 +15,9 @@ import com.mongodb.client.MongoDatabase;
 
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEvent.Builder;
+import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventType;
+import kbasesearchengine.events.StatusEventWithID;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.tools.Utils;
 
@@ -36,7 +37,7 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
     }
 
     @Override
-    public void store(StatusEvent obj) throws IOException {
+    public StatusEventWithID store(StatusEvent obj) {
         final Document dobj = new Document();
         final Optional<StorageObjectType> sot = obj.getStorageObjectType();
         dobj.put("storageCode", obj.getStorageCode());
@@ -56,10 +57,11 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
         dobj.put("indexed", false);
         dobj.put("processed", false);
         collection(COLLECTION_OBJECT_STATUS_EVENTS).insertOne(dobj);
+        return new StatusEventWithID(obj, new StatusEventID(dobj.getObjectId("_id").toString()));
     }
 
     @Override
-    public void markAsProcessed(StatusEvent row, boolean isIndexed) throws IOException {
+    public void markAsProcessed(StatusEventWithID row, boolean isIndexed) {
         final Document doc = new Document().append("$set", 
                 new Document()
                 .append("processed", true)
@@ -67,12 +69,12 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
 
                 );
 
-        final Document query = new Document("_id", new ObjectId(row.getId() ) );
+        final Document query = new Document("_id", new ObjectId(row.getId().getId() ) );
         collection(COLLECTION_OBJECT_STATUS_EVENTS).updateOne(query, doc);
     }
 
-    private List<StatusEvent> find(Document query, int skip, int limit) {
-        List<StatusEvent> events = new ArrayList<StatusEvent>();
+    private List<StatusEventWithID> find(Document query, int skip, int limit) {
+        List<StatusEventWithID> events = new ArrayList<>();
 
         FindIterable<Document> cursor = collection(COLLECTION_OBJECT_STATUS_EVENTS).find(query).skip(skip).limit(limit);
         for (final Document dobj: cursor) {
@@ -89,14 +91,14 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
             } else {
                 b = StatusEvent.getBuilder(sot, time, eventType);
             }
-            events.add(b
-                    .withID(dobj.getObjectId("_id").toString())
+            events.add(new StatusEventWithID(b
                     .withNullableAccessGroupID(dobj.getInteger("accessGroupId"))
                     .withNullableObjectID(dobj.getString("accessGroupObjectId"))
                     .withNullableVersion(dobj.getInteger("version"))
                     .withNullableNewName(dobj.getString("newName"))
                     .withNullableisPublic(dobj.getBoolean("isGlobalAccessed"))
-                    .build());
+                    .build(),
+                    new StatusEventID(dobj.getObjectId("_id").toString())));
         }
         return events;
 
@@ -133,7 +135,7 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
     @Override
     public boolean nextPage(StatusEventCursor cursor, int nRemovedItems) {
         _Cursor _cursor = (_Cursor)cursor;
-        List<StatusEvent> objs = find(_cursor.query, _cursor.getPageIndex()*_cursor.getPageSize() - nRemovedItems, _cursor.getPageSize());
+        List<StatusEventWithID> objs = find(_cursor.query, _cursor.getPageIndex()*_cursor.getPageSize() - nRemovedItems, _cursor.getPageSize());
 
         _cursor.nextPage(objs);
 

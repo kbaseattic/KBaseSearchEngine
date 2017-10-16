@@ -18,7 +18,6 @@ public class StatusEvent {
     private final StatusEventType eventType;
     private final String storageCode;
     private final Optional<StorageObjectType> storageObjectType;
-    private final String id; // TODO NOW remove
     private final Optional<Integer> accessGroupID;
     private final Optional<String> objectID;
     private final Optional<Integer> version;
@@ -26,7 +25,6 @@ public class StatusEvent {
     private final Optional<String> newName;
     
     private StatusEvent(
-            final String id,
             final StatusEventType eventType,
             final String storageCode,
             final Optional<Integer> accessGroupID,
@@ -36,7 +34,6 @@ public class StatusEvent {
             final Instant time,
             final Optional<Boolean> isPublic,
             final Optional<String> newName) {
-        this.id = id;
         this.eventType = eventType;
         this.storageCode = storageCode;
         this.accessGroupID = accessGroupID;
@@ -57,10 +54,6 @@ public class StatusEvent {
                 version.orNull(),
                 null,
                 null);
-    }
-
-    public String getId() {
-        return id;
     }
 
     public String getStorageCode() {
@@ -110,8 +103,6 @@ public class StatusEvent {
         builder2.append(storageCode);
         builder2.append(", storageObjectType=");
         builder2.append(storageObjectType);
-        builder2.append(", id=");
-        builder2.append(id);
         builder2.append(", accessGroupID=");
         builder2.append(accessGroupID);
         builder2.append(", objectID=");
@@ -146,7 +137,6 @@ public class StatusEvent {
         private final StatusEventType eventType;
         private final String storageCode;
         private final Optional<StorageObjectType> storageObjectType;
-        private String id = null; // TODO NOW remove
         private Optional<Integer> accessGroupID = Optional.absent();
         private Optional<String> objectID = Optional.absent();
         private Optional<Integer> version = Optional.absent();
@@ -177,12 +167,6 @@ public class StatusEvent {
             this.storageCode = storageType.getStorageCode();
             this.eventType = eventType;
             this.storageObjectType = Optional.of(storageType);
-        }
-        
-        //TODO NOW remove. Use StatusEventWithID
-        public Builder withID(final String id) {
-            this.id = id;
-            return this;
         }
         
         public Builder withNullableAccessGroupID(final Integer accessGroupID) {
@@ -219,7 +203,7 @@ public class StatusEvent {
         }
         
         public StatusEvent build() {
-            return new StatusEvent(id, eventType, storageCode, accessGroupID, objectID,
+            return new StatusEvent(eventType, storageCode, accessGroupID, objectID,
                     version, storageObjectType, time, isPublic, newName);
         }
     }
