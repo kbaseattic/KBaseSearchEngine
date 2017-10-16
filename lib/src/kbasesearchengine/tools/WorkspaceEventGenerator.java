@@ -209,17 +209,15 @@ public class WorkspaceEventGenerator {
         final String type = typeString[0];
         final int typever = Integer.parseInt(typeString[1].split("\\.")[0]);
         try {
-            storage.store(new StatusEvent(
-                    null, // no mongo id
-                    wsid,
-                    objid + "",
-                    vernum,
-                    null,
-                    null,
-                    ver.getDate(WS_KEY_SAVEDATE).getTime(),
+            storage.store(StatusEvent.getBuilder(
                     new StorageObjectType("WS", type, typever),
-                    StatusEventType.NEW_VERSION,
-                    pub));
+                    ver.getDate(WS_KEY_SAVEDATE).toInstant(),
+                    StatusEventType.NEW_VERSION)
+                    .withNullableAccessGroupID(wsid)
+                    .withNullableObjectID(objid + "")
+                    .withNullableVersion(vernum)
+                    .withNullableisPublic(pub)
+                    .build());
         } catch (IOException e) {
             throw new EventGeneratorException("Error saving event to RESKE db: " + e.getMessage(),
                     e);

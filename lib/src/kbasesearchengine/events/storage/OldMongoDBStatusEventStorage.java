@@ -1,6 +1,7 @@
 package kbasesearchengine.events.storage;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,6 +15,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
 import kbasesearchengine.events.StatusEvent;
+import kbasesearchengine.events.StatusEvent.Builder;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.tools.Utils;
@@ -36,20 +38,23 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
     @Override
     public void store(StatusEvent obj) throws IOException {
         final Document dobj = new Document();
+        final Optional<StorageObjectType> sot = obj.getStorageObjectType();
         dobj.put("storageCode", obj.getStorageCode());
-        dobj.put("accessGroupId", obj.getAccessGroupId());
-        dobj.put("accessGroupObjectId", obj.getAccessGroupObjectId().toString());
-        dobj.put("version", obj.getVersion());
-        dobj.put("targetAccessGroupId", obj.getTargetAccessGroupId());
+        dobj.put("accessGroupId", obj.getAccessGroupId().isPresent() ?
+                obj.getAccessGroupId().get(): null);
+        dobj.put("accessGroupObjectId", obj.getAccessGroupObjectId().isPresent() ?
+                obj.getAccessGroupObjectId().get() : null);
+        dobj.put("version", obj.getVersion().isPresent() ? obj.getVersion().get() : null);
         dobj.put("timestamp", obj.getTimestamp());
         dobj.put("eventType", obj.getEventType().toString());
-        dobj.put("storageObjectType", obj.getStorageObjectType().getType());
-        final Optional<Integer> version = obj.getStorageObjectType().getVersion();
+        dobj.put("storageObjectType", sot.isPresent() ? sot.get().getType() : null);
+        final Optional<Integer> version = sot.isPresent() ?
+                sot.get().getVersion() : Optional.absent();
         dobj.put("storageObjectTypeVersion", version.isPresent() ? version.get() : null);
-        dobj.put("isGlobalAccessed", obj.isGlobalAccessed());
-        dobj.put("newName", obj.getNewName());
+        dobj.put("isGlobalAccessed", obj.isGlobalAccessed().isPresent() ? obj.isGlobalAccessed().get() : null);
+        dobj.put("newName", obj.getNewName().isPresent() ? obj.getNewName().get() : null);
         dobj.put("indexed", false);
-        dobj.put("processed", false);		
+        dobj.put("processed", false);
         collection(COLLECTION_OBJECT_STATUS_EVENTS).insertOne(dobj);
     }
 
@@ -76,20 +81,22 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
             final Integer ver = (Integer) dobj.get("storageObjectTypeVersion");
             final StorageObjectType sot = type == null ? null :
                 StorageObjectType.fromNullableVersion(storageCode, type, ver);
-            StatusEvent event = new StatusEvent(
-                    dobj.get("_id").toString(),
-                    (Integer)dobj.get("accessGroupId"),
-                    (String)dobj.get("accessGroupObjectId"),
-                    (Integer)dobj.get("version"),
-                    (String) dobj.get("newName"),
-                    (Integer)dobj.get("targetAccessGroupId"),
-                    (Long)dobj.get("timestamp"),
-                    sot,
-                    StatusEventType.valueOf((String)dobj.get("eventType")),
-                    (Boolean)dobj.get("isGlobalAccessed")
-
-                    );
-            events.add(event);
+            final Instant time = Instant.ofEpochMilli(dobj.getLong("timestamp"));
+            final StatusEventType eventType = StatusEventType.valueOf(dobj.getString("eventType"));
+            final Builder b;
+            if (sot == null) {
+                b = StatusEvent.getBuilder(storageCode, time, eventType);
+            } else {
+                b = StatusEvent.getBuilder(sot, time, eventType);
+            }
+            events.add(b
+                    .withID(dobj.getObjectId("_id").toString())
+                    .withNullableAccessGroupID(dobj.getInteger("accessGroupId"))
+                    .withNullableObjectID(dobj.getString("accessGroupObjectId"))
+                    .withNullableVersion(dobj.getInteger("version"))
+                    .withNullableNewName(dobj.getString("newName"))
+                    .withNullableisPublic(dobj.getBoolean("isGlobalAccessed"))
+                    .build());
         }
         return events;
 

@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -208,17 +209,16 @@ public class PerformanceTester {
                 String[] parts = ref.split("/");
                 int wsId = Integer.parseInt(parts[0]);
                 int version = Integer.parseInt(parts[2]);
-                StatusEvent ev = new StatusEvent(
-                        "-1",
-                        wsId,
-                        parts[1],
-                        version, 
-                        null,
-                        null,
-                        System.currentTimeMillis(),
+                final StatusEvent ev = StatusEvent.getBuilder(
                         new StorageObjectType("WS", "KBaseGenomes.Genome"),
-                        StatusEventType.NEW_VERSION,
-                        true);
+                        Instant.now(),
+                        StatusEventType.NEW_VERSION)
+                        .withID("-1")
+                        .withNullableAccessGroupID(wsId)
+                        .withNullableObjectID(parts[1])
+                        .withNullableVersion(version)
+                        .withNullableisPublic(true)
+                        .build();
                 long t2 = System.currentTimeMillis();
                 try {
                     mop.processOneEvent(ev);

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -172,7 +173,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public void indexObjects(
             final String objectType,
             final SourceData data,
-            final long timestamp, 
+            final Instant timestamp, 
             final String parentJsonValue,
             final GUID pguid,
             final Map<GUID, ParsedObject> idToObj,
@@ -226,7 +227,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final String objectType,
             final ParsedObject obj, 
             final SourceData data,
-            final long timestamp,
+            final Instant timestamp,
             final String parentJson,
             final boolean isPublic,
             final int lastVersion) {
@@ -247,7 +248,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put(OBJ_PROV_MODULE_VERSION, data.getVersion());
         doc.put(OBJ_PROV_COMMIT_HASH, data.getCommitHash());
         
-        doc.put("timestamp", timestamp);
+        doc.put("timestamp", timestamp.toEpochMilli());
         doc.put("prefix", toGUIDPrefix(id));
         doc.put("str_cde", id.getStorageCode());
         doc.put("accgrp", id.getAccessGroupId());
@@ -264,7 +265,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     @Override
     public void indexObject(GUID id, String objectType, ParsedObject obj, SourceData data,
-            long timestamp, String parentJsonValue, boolean isPublic,
+            Instant timestamp, String parentJsonValue, boolean isPublic,
             List<IndexingRules> indexingRules) throws IOException {
         String indexName = checkIndex(objectType, indexingRules);
         GUID parentGUID = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
