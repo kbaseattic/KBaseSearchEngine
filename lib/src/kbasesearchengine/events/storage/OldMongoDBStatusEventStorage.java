@@ -1,8 +1,8 @@
 package kbasesearchengine.events.storage;
 
-import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
