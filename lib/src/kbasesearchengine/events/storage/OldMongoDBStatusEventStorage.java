@@ -16,6 +16,7 @@ import com.mongodb.client.MongoDatabase;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEvent.Builder;
 import kbasesearchengine.events.StatusEventID;
+import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StatusEventWithID;
 import kbasesearchengine.system.StorageObjectType;
@@ -54,20 +55,17 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
         dobj.put("storageObjectTypeVersion", version.isPresent() ? version.get() : null);
         dobj.put("isGlobalAccessed", obj.isGlobalAccessed().isPresent() ? obj.isGlobalAccessed().get() : null);
         dobj.put("newName", obj.getNewName().isPresent() ? obj.getNewName().get() : null);
-        dobj.put("indexed", false);
-        dobj.put("processed", false);
+        dobj.put("procst", obj.getProcessingState().toString()); //TODO NOW update workspace
         collection(COLLECTION_OBJECT_STATUS_EVENTS).insertOne(dobj);
         return new StatusEventWithID(obj, new StatusEventID(dobj.getObjectId("_id").toString()));
     }
 
     @Override
-    public void markAsProcessed(StatusEventWithID row, boolean isIndexed) {
-        final Document doc = new Document().append("$set", 
-                new Document()
-                .append("processed", true)
-                .append("indexed", isIndexed)
-
-                );
+    public void markAsProcessed(
+            final StatusEventWithID row,
+            final StatusEventProcessingState state) {
+        final Document doc = new Document().append("$set",
+                new Document("procst", state.toString()));
 
         final Document query = new Document("_id", new ObjectId(row.getId().getId() ) );
         collection(COLLECTION_OBJECT_STATUS_EVENTS).updateOne(query, doc);
@@ -97,6 +95,8 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
                     .withNullableVersion(dobj.getInteger("version"))
                     .withNullableNewName(dobj.getString("newName"))
                     .withNullableisPublic(dobj.getBoolean("isGlobalAccessed"))
+                    .withProcessingState(StatusEventProcessingState.valueOf(
+                            dobj.getString("procst")))
                     .build(),
                     new StatusEventID(dobj.getObjectId("_id").toString())));
         }

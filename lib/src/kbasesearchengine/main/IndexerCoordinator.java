@@ -21,6 +21,7 @@ import com.google.common.base.Optional;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.StatusEvent;
+import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventWithID;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
@@ -235,7 +236,7 @@ public class IndexerCoordinator {
     private void markAsVisitedFailedPostError(final StatusEventWithID parentEvent)
             throws FatalIndexingException {
         try {
-            storage.markAsProcessed(parentEvent, false);
+            storage.markAsProcessed(parentEvent, StatusEventProcessingState.FAIL);
         } catch (Exception e) {
             //ok then we're screwed
             throw new FatalIndexingException("Can't mark events as failed: " + e.getMessage(), e);
@@ -243,11 +244,11 @@ public class IndexerCoordinator {
     }
 
     // returns whether processing was successful or not.
-    private boolean processEvents(
+    private StatusEventProcessingState processEvents(
             final StatusEventWithID parentEvent,
             final Iterator<StatusEvent> expanditer)
             throws InterruptedException, FatalIndexingException {
-        boolean allsuccess = true;
+        StatusEventProcessingState allsuccess = StatusEventProcessingState.INDX;
         while (expanditer.hasNext()) {
             //TODO EVENT insert sub event into db - need to ensure not inserted twice on reprocess - use parent id
             final StatusEventWithID ev;
@@ -260,21 +261,24 @@ public class IndexerCoordinator {
             } catch (IndexingException e) {
                 // TODO EVENT mark sub event as failed
                 handleException("Error getting event from data storage", parentEvent, e);
-                return false;
+                return StatusEventProcessingState.FAIL;
             }
-            allsuccess = allsuccess && processEvent(ev);
+            final StatusEventProcessingState res = processEvent(ev);
+            if (StatusEventProcessingState.FAIL.equals(res)) {
+                allsuccess = StatusEventProcessingState.FAIL;
+            }
         }
         return allsuccess;
     }
 
-    private boolean processEvent(final StatusEventWithID ev)
+    private StatusEventProcessingState processEvent(final StatusEventWithID ev)
             throws InterruptedException, FatalIndexingException {
         final Optional<StorageObjectType> type = ev.getEvent().getStorageObjectType();
         if (type.isPresent() && !isStorageTypeSupported(ev)) {
             logger.logInfo("[Indexer] skipping " + ev.getEvent().getEventType() + ", " + 
                     toLogString(type) + ev.getEvent().toGUID());
-            storage.markAsProcessed(ev, false); //TODO retry
-            return false;
+            storage.markAsProcessed(ev, StatusEventProcessingState.UNINDX); //TODO retry
+            return StatusEventProcessingState.UNINDX;
         }
         logger.logInfo("[Indexer] processing " + ev.getEvent().getEventType() + ", " + 
                 toLogString(type) + ev.getEvent().toGUID() + "...");
@@ -282,12 +286,12 @@ public class IndexerCoordinator {
         try {
             retrier.retryCons(e -> processOneEvent(e), ev, ev);
         } catch (IndexingException e) {
-            storage.markAsProcessed(ev, false); //TODO retry
+            storage.markAsProcessed(ev, StatusEventProcessingState.FAIL); //TODO retry
             handleException("Error processing event", ev, e);
-            return false;
+            return StatusEventProcessingState.FAIL;
         }
         logger.logInfo("[Indexer]   (total time: " + (System.currentTimeMillis() - time) + "ms.)");
-        return true;
+        return StatusEventProcessingState.INDX;
     }
     
     private StatusEvent getNextSubEvent(Iterator<StatusEvent> iter)
