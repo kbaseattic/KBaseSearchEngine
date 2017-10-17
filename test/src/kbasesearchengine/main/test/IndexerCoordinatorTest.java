@@ -63,8 +63,7 @@ import workspace.RegisterTypespecParams;
 import workspace.SaveObjectsParams;
 import workspace.WorkspaceClient;
 
-public class MainObjectProcessorTest {
-    //TODO CODE rename to IndexerCoordinatorTest
+public class IndexerCoordinatorTest {
 	
     private static IndexerCoordinator mop = null;
     private static MongoController mongo;
