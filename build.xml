@@ -49,6 +49,7 @@
     <include name="google/guava-18.0.jar"/>
     <include name="jcommander/jcommander-1.48.jar"/>
     <include name="snakeyaml/snakeyaml-1.18.jar"/>
+    <include name="equalsverifier/equalsverifier-2.2.2.jar"/>
     <!-- mockito and dependencies -->
     <include name="mockito/mockito-core-2.7.10.jar"/>
     <include name="bytebuddy/byte-buddy-1.6.8.jar"/>
@@ -143,6 +144,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <fileset dir="${test.src}">
           <include name="kbasesearchengine/parse/test/**Test.java"/>
           <include name="kbasesearchengine/authorization/AccessGroupCacheTest.java"/>
+          <include name="kbasesearchengine/events/StatusEventIDTest.java"/>
           <include name="kbasesearchengine/events/exceptions/RetrierTest.java"/>
           <include name="kbasesearchengine/events/storage/MongoDBStatusEventStorageTest.java"/>
           <include name="kbasesearchengine/search/test/ElasticIndexingStorageTest.java"/>

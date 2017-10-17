@@ -2,18 +2,26 @@ package kbasesearchengine.events;
 
 import kbasesearchengine.tools.Utils;
 
+/** An ID for a status event, which is an arbitrary string. The generator of the ID is responsible
+ * for ensuring uniqueness.
+ * @author gaprice@lbl.gov
+ *
+ */
 public class StatusEventID {
-    
-    //TODO JAVADOC
-    //TODO TEST
     
     private final String id;
 
+    /** Create a new ID.
+     * @param id the ID.
+     */
     public StatusEventID(final String id) {
         Utils.notNullOrEmpty(id, "id cannot be null or the empty string");
         this.id = id;
     }
 
+    /** Get the id.
+     * @return the id.
+     */
     public String getId() {
         return id;
     }
@@ -46,6 +54,15 @@ public class StatusEventID {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("StatusEventID [id=");
+        builder.append(id);
+        builder.append("]");
+        return builder.toString();
     }
 
 }
