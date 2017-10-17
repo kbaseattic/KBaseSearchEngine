@@ -1,4 +1,4 @@
-package kbasesearchengine.events;
+package kbasesearchengine.authorization;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -14,8 +14,8 @@ import org.junit.Test;
 
 import com.google.common.base.Ticker;
 
-import kbasesearchengine.events.AccessGroupCache;
-import kbasesearchengine.events.AccessGroupProvider;
+import kbasesearchengine.authorization.AccessGroupCache;
+import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.test.common.TestCommon;
 
 public class AccessGroupCacheTest {

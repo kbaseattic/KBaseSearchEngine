@@ -1,4 +1,4 @@
-package kbasesearchengine.events;
+package kbasesearchengine.authorization;
 
 import java.io.IOException;
 import java.util.List;

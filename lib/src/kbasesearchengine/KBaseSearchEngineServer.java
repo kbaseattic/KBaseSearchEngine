@@ -27,10 +27,10 @@ import com.google.common.collect.ImmutableMap;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import kbasesearchengine.authorization.AccessGroupCache;
+import kbasesearchengine.authorization.AccessGroupProvider;
+import kbasesearchengine.authorization.WorkspaceAccessGroupProvider;
 import kbasesearchengine.common.GUID;
-import kbasesearchengine.events.AccessGroupCache;
-import kbasesearchengine.events.AccessGroupProvider;
-import kbasesearchengine.events.WorkspaceAccessGroupProvider;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.main.SearchMethods;
