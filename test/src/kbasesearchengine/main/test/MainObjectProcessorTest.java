@@ -64,6 +64,7 @@ import workspace.SaveObjectsParams;
 import workspace.WorkspaceClient;
 
 public class MainObjectProcessorTest {
+    //TODO CODE rename to IndexerCoordinatorTest
 	
     private static IndexerCoordinator mop = null;
     private static MongoController mongo;

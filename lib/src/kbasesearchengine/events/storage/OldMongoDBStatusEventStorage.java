@@ -1,5 +1,6 @@
 package kbasesearchengine.events.storage;
 
+import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -47,7 +48,7 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
         dobj.put("accessGroupObjectId", obj.getAccessGroupObjectId().isPresent() ?
                 obj.getAccessGroupObjectId().get() : null);
         dobj.put("version", obj.getVersion().isPresent() ? obj.getVersion().get() : null);
-        dobj.put("timestamp", obj.getTimestamp());
+        dobj.put("timestamp", Date.from(obj.getTimestamp()));
         dobj.put("eventType", obj.getEventType().toString());
         dobj.put("storageObjectType", sot.isPresent() ? sot.get().getType() : null);
         final Optional<Integer> version = sot.isPresent() ?
@@ -55,7 +56,7 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
         dobj.put("storageObjectTypeVersion", version.isPresent() ? version.get() : null);
         dobj.put("isGlobalAccessed", obj.isGlobalAccessed().isPresent() ? obj.isGlobalAccessed().get() : null);
         dobj.put("newName", obj.getNewName().isPresent() ? obj.getNewName().get() : null);
-        dobj.put("procst", obj.getProcessingState().toString()); //TODO NOW update workspace
+        dobj.put("procst", obj.getProcessingState().toString());
         collection(COLLECTION_OBJECT_STATUS_EVENTS).insertOne(dobj);
         return new StatusEventWithID(obj, new StatusEventID(dobj.getObjectId("_id").toString()));
     }
@@ -81,7 +82,7 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
             final Integer ver = (Integer) dobj.get("storageObjectTypeVersion");
             final StorageObjectType sot = type == null ? null :
                 StorageObjectType.fromNullableVersion(storageCode, type, ver);
-            final Instant time = Instant.ofEpochMilli(dobj.getLong("timestamp"));
+            final Instant time = dobj.getDate("timestamp").toInstant();
             final StatusEventType eventType = StatusEventType.valueOf(dobj.getString("eventType"));
             final Builder b;
             if (sot == null) {
@@ -121,7 +122,7 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
             final String timeAlive) {
 
         final List<Document> queryItems = new LinkedList<>();
-        queryItems.add(new Document("processed", processed));
+        queryItems.add(new Document("procst", StatusEventProcessingState.UNPROC.toString()));
         if(storageCode != null){
             queryItems.add(new Document("storageCode", storageCode));
         }

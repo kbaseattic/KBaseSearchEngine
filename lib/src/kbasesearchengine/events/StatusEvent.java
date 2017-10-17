@@ -12,7 +12,7 @@ public class StatusEvent {
 
     //TODO JAVADOC
     //TODO TEST
-    //TODO add some validation that the available fields match the requirement for the event type
+    //TODO CODE add some validation that the available fields match the requirement for the event type
     
     private final Instant time;
     private final StatusEventType eventType;

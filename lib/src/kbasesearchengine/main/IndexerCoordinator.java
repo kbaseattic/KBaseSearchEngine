@@ -173,7 +173,8 @@ public class IndexerCoordinator {
         final String msg;
         if (event.isPresent()) {
             msg = String.format("Retriable error in indexer for event %s %s, retry %s: ",
-                    event.get().getEvent().getEventType(), event.get().getId(), retrycount);
+                    event.get().getEvent().getEventType(), event.get().getId().getId(),
+                    retrycount);
         } else {
             msg = String.format("Retriable error in indexer, retry %s: ", retrycount);
         }
@@ -188,7 +189,7 @@ public class IndexerCoordinator {
             //TODO NOW getEventHandler indexing exception should be caught and the event skipped
             if (getEventHandler(parentEvent).isExpandable(parentEvent)) {
                 logger.logInfo(String.format("[Indexer] Expanding event %s %s",
-                        parentEvent.getEvent().getEventType(), parentEvent.getId()));
+                        parentEvent.getEvent().getEventType(), parentEvent.getId().getId()));
                 try {
                     final Iterator<StatusEvent> er = retrier.retryFunc(
                             e -> getSubEventIterator(e), parentEvent, parentEvent);
@@ -264,6 +265,7 @@ public class IndexerCoordinator {
                 return StatusEventProcessingState.FAIL;
             }
             final StatusEventProcessingState res = processEvent(ev);
+            storage.markAsProcessed(ev, res); //TODO NOW retry
             if (StatusEventProcessingState.FAIL.equals(res)) {
                 allsuccess = StatusEventProcessingState.FAIL;
             }
@@ -277,7 +279,6 @@ public class IndexerCoordinator {
         if (type.isPresent() && !isStorageTypeSupported(ev)) {
             logger.logInfo("[Indexer] skipping " + ev.getEvent().getEventType() + ", " + 
                     toLogString(type) + ev.getEvent().toGUID());
-            storage.markAsProcessed(ev, StatusEventProcessingState.UNINDX); //TODO retry
             return StatusEventProcessingState.UNINDX;
         }
         logger.logInfo("[Indexer] processing " + ev.getEvent().getEventType() + ", " + 
@@ -286,7 +287,6 @@ public class IndexerCoordinator {
         try {
             retrier.retryCons(e -> processOneEvent(e), ev, ev);
         } catch (IndexingException e) {
-            storage.markAsProcessed(ev, StatusEventProcessingState.FAIL); //TODO retry
             handleException("Error processing event", ev, e);
             return StatusEventProcessingState.FAIL;
         }
@@ -314,7 +314,7 @@ public class IndexerCoordinator {
             throw (FatalIndexingException) exception;
         } else {
             final String msg = error + String.format(" for event %s %s: ",
-                    event.getEvent().getEventType(), event.getId());
+                    event.getEvent().getEventType(), event.getId().getId());
             logError(msg, exception);
         }
     }
