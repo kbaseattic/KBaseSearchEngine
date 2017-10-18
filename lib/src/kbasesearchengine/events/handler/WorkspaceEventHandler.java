@@ -25,7 +25,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventType;
-import kbasesearchengine.events.StatusEventWithID;
+import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
@@ -253,7 +253,7 @@ public class WorkspaceEventHandler implements EventHandler {
     }
 
     @Override
-    public boolean isExpandable(final StatusEventWithID parentEvent) {
+    public boolean isExpandable(final StoredStatusEvent parentEvent) {
         checkStorageCode(parentEvent);
         return EXPANDABLES.contains(parentEvent.getEvent().getEventType());
         
@@ -267,7 +267,7 @@ public class WorkspaceEventHandler implements EventHandler {
             StatusEventType.UNPUBLISH_ACCESS_GROUP));
     
     @Override
-    public Iterable<StatusEvent> expand(final StatusEventWithID eventWID)
+    public Iterable<StatusEvent> expand(final StoredStatusEvent eventWID)
             throws IndexingException, RetriableIndexingException {
         checkStorageCode(eventWID);
         final StatusEvent event = eventWID.getEvent();
@@ -286,7 +286,7 @@ public class WorkspaceEventHandler implements EventHandler {
         }
     }
 
-    private void checkStorageCode(final StatusEventWithID event) {
+    private void checkStorageCode(final StoredStatusEvent event) {
         checkStorageCode(event.getEvent().getStorageCode());
     }
 

@@ -146,6 +146,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
           <include name="kbasesearchengine/test/authorization/AccessGroupCacheTest.java"/>
           <include name="kbasesearchengine/test/events/StatusEventIDTest.java"/>
           <include name="kbasesearchengine/test/events/StatusEventTest.java"/>
+          <include name="kbasesearchengine/test/events/StoredStatusEventTest.java"/>
           <include name="kbasesearchengine/test/events/exceptions/RetrierTest.java"/>
           <include name="kbasesearchengine/test/events/storage/MongoDBStatusEventStorageTest.java"/>
           <include name="kbasesearchengine/test/search/ElasticIndexingStorageTest.java"/>

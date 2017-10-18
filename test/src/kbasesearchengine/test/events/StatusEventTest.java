@@ -12,13 +12,17 @@ import com.google.common.base.Optional;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.StatusEvent;
-import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
-import kbasesearchengine.events.StatusEvent.Builder;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.test.common.TestCommon;
+import nl.jqno.equalsverifier.EqualsVerifier;
 
 public class StatusEventTest {
+    
+    @Test
+    public void equals() {
+        EqualsVerifier.forClass(StatusEvent.class).usingGetClass().verify();
+    }
     
     @Test
     public void minimalBuildStorageCode() {
@@ -32,8 +36,6 @@ public class StatusEventTest {
         assertThat("incorrect event type", se.getEventType(),
                 is(StatusEventType.NEW_ALL_VERSIONS));
         assertThat("incorrect new name", se.getNewName(), is(Optional.absent()));
-        assertThat("incorrect processing state", se.getProcessingState(),
-                is(StatusEventProcessingState.UNPROC));
         assertThat("incorrect storage code", se.getStorageCode(), is("WS"));
         assertThat("incorrect storage object type", se.getStorageObjectType(),
                 is(Optional.absent()));
@@ -56,7 +58,6 @@ public class StatusEventTest {
         final StatusEvent se = StatusEvent.getBuilder(
                 StorageObjectType.fromNullableVersion("RK", "foo", 3),
                 Instant.ofEpochMilli(30000), StatusEventType.RENAME_ALL_VERSIONS)
-                .withProcessingState(StatusEventProcessingState.FAIL)
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("nn")
@@ -70,8 +71,6 @@ public class StatusEventTest {
         assertThat("incorrect event type", se.getEventType(),
                 is(StatusEventType.RENAME_ALL_VERSIONS));
         assertThat("incorrect new name", se.getNewName(), is(Optional.of("nn")));
-        assertThat("incorrect processing state", se.getProcessingState(),
-                is(StatusEventProcessingState.FAIL));
         assertThat("incorrect storage code", se.getStorageCode(), is("RK"));
         assertThat("incorrect storage object type", se.getStorageObjectType(),
                 is(Optional.of(StorageObjectType.fromNullableVersion("RK", "foo", 3))));
@@ -106,8 +105,6 @@ public class StatusEventTest {
         assertThat("incorrect event type", se.getEventType(),
                 is(StatusEventType.NEW_VERSION));
         assertThat("incorrect new name", se.getNewName(), is(Optional.absent()));
-        assertThat("incorrect processing state", se.getProcessingState(),
-                is(StatusEventProcessingState.UNPROC));
         assertThat("incorrect storage code", se.getStorageCode(), is("PP"));
         assertThat("incorrect storage object type", se.getStorageObjectType(),
                 is(Optional.absent()));
@@ -138,8 +135,6 @@ public class StatusEventTest {
         assertThat("incorrect event type", se.getEventType(),
                 is(StatusEventType.NEW_VERSION));
         assertThat("incorrect new name", se.getNewName(), is(Optional.absent()));
-        assertThat("incorrect processing state", se.getProcessingState(),
-                is(StatusEventProcessingState.UNPROC));
         assertThat("incorrect storage code", se.getStorageCode(), is("PP"));
         assertThat("incorrect storage object type", se.getStorageObjectType(),
                 is(Optional.absent()));
@@ -154,19 +149,6 @@ public class StatusEventTest {
                         "accessGroupID=Optional.absent(), objectID=Optional.absent(), " +
                         "version=Optional.absent(), isPublic=Optional.absent(), " +
                         "newName=Optional.absent()]"));
-    }
-    
-    @Test
-    public void buildFail() {
-        // only one way the build can fail other than getBuilder method
-        final Builder se = StatusEvent.getBuilder(
-                "WS", Instant.ofEpochMilli(20000), StatusEventType.NEW_ALL_VERSIONS);
-        try {
-            se.withProcessingState(null);
-            fail("expected exception");
-        } catch (Exception got) {
-            TestCommon.assertExceptionCorrect(got, new NullPointerException("state"));
-        }
     }
     
     @Test

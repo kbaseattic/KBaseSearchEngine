@@ -16,8 +16,9 @@ import com.google.common.base.Optional;
 
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventID;
+import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
-import kbasesearchengine.events.StatusEventWithID;
+import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
@@ -35,13 +36,13 @@ public class RetrierTest {
     private class LogEvent {
         private final Instant time;
         private final int retryCount;
-        private final Optional<StatusEventWithID> event;
+        private final Optional<StoredStatusEvent> event;
         private final RetriableIndexingException exception;
         
         private LogEvent(
                 final Instant time,
                 final int retryCount,
-                final Optional<StatusEventWithID> optional,
+                final Optional<StoredStatusEvent> optional,
                 final RetriableIndexingException exception) {
             this.time = time;
             this.retryCount = retryCount;
@@ -55,7 +56,7 @@ public class RetrierTest {
         private final List<LogEvent> events = new LinkedList<>();
         
         @Override
-        public void log(int retryCount, Optional<StatusEventWithID> optional,
+        public void log(int retryCount, Optional<StoredStatusEvent> optional,
                 RetriableIndexingException e) {
             events.add(new LogEvent(Instant.now(), retryCount, optional, e));
         }
@@ -174,13 +175,14 @@ public class RetrierTest {
     public void consumer2RetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
-        final StatusEventWithID ev = new StatusEventWithID(StatusEvent.getBuilder(
+        final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
                 new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.DELETED)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
                 .build(),
-                new StatusEventID("wugga"));
+                new StatusEventID("wugga"),
+                StatusEventProcessingState.UNPROC);
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 2), "foo", ev);
         final Instant end = Instant.now();
@@ -249,13 +251,14 @@ public class RetrierTest {
     public void consumer2FatalRetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Arrays.asList(70, 30), collog);
-        final StatusEventWithID ev = new StatusEventWithID(StatusEvent.getBuilder(
+        final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
                 new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.DELETED)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
                 .build(),
-                new StatusEventID("wugga"));
+                new StatusEventID("wugga"),
+                StatusEventProcessingState.UNPROC);
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 2, true), "foo", ev);
         final Instant end = Instant.now();
@@ -367,13 +370,14 @@ public class RetrierTest {
     public void function2RetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
-        final StatusEventWithID ev = new StatusEventWithID(StatusEvent.getBuilder(
+        final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
                 new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.DELETED)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
                 .build(),
-                new StatusEventID("wugga"));
+                new StatusEventID("wugga"),
+                StatusEventProcessingState.UNPROC);
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 26L, 2), "foo", ev);
         final Instant end = Instant.now();
@@ -444,13 +448,14 @@ public class RetrierTest {
     public void function2FatalRetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Arrays.asList(70, 30), collog);
-        final StatusEventWithID ev = new StatusEventWithID(StatusEvent.getBuilder(
+        final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
                 new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.DELETED)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
                 .build(),
-                new StatusEventID("wugga"));
+                new StatusEventID("wugga"),
+                StatusEventProcessingState.UNPROC);
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 64L, 2, true), "foo", ev);
         final Instant end = Instant.now();

@@ -2,13 +2,13 @@ package kbasesearchengine.events.storage;
 
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventProcessingState;
-import kbasesearchengine.events.StatusEventWithID;
+import kbasesearchengine.events.StoredStatusEvent;
 
 public interface OldStatusEventStorage {
 	
-	public StatusEventWithID store(StatusEvent obj);
+	public StoredStatusEvent store(StatusEvent obj, StatusEventProcessingState state);
 	
-	public void markAsProcessed(StatusEventWithID row, StatusEventProcessingState state);
+	public void markAsProcessed(StoredStatusEvent row, StatusEventProcessingState state);
 	
 	public StatusEventCursor cursor(String storageCode, boolean processed, int pageSize, String timeAlive);
 	

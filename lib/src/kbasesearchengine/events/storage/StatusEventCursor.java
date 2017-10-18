@@ -3,7 +3,7 @@ package kbasesearchengine.events.storage;
 import java.util.ArrayList;
 import java.util.List;
 
-import kbasesearchengine.events.StatusEventWithID;
+import kbasesearchengine.events.StoredStatusEvent;
 
 public class StatusEventCursor {
 	
@@ -11,7 +11,7 @@ public class StatusEventCursor {
 	private int pageSize;
 	private String timeAlive;
 	private int pageIndex;
-	List<StatusEventWithID> data = new ArrayList<StatusEventWithID>();
+	List<StoredStatusEvent> data = new ArrayList<StoredStatusEvent>();
 	
 	public StatusEventCursor(String cursorId, int pageSize, String timeAlive) {
 		super();
@@ -21,7 +21,7 @@ public class StatusEventCursor {
 		pageIndex = 0;
 	}
 
-	public void nextPage(List<StatusEventWithID> objs){
+	public void nextPage(List<StoredStatusEvent> objs){
 		pageIndex++;
 		data.clear();
 		data.addAll(objs);
@@ -43,7 +43,7 @@ public class StatusEventCursor {
 		return pageIndex;
 	}
 
-	public List<StatusEventWithID> getData() {
+	public List<StoredStatusEvent> getData() {
 		return data;
 	}
 }
