@@ -1,4 +1,4 @@
-package kbasesearchengine.authorization;
+package kbasesearchengine.test.authorization;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

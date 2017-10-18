@@ -1,4 +1,4 @@
-package kbasesearchengine.events.storage;
+package kbasesearchengine.test.events.storage;
 
 import java.nio.file.Paths;
 

@@ -1,4 +1,4 @@
-package kbasesearchengine.events;
+package kbasesearchengine.test.events;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
+import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.test.common.TestCommon;
 import nl.jqno.equalsverifier.EqualsVerifier;
 

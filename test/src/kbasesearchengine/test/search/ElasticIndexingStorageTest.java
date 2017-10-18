@@ -1,4 +1,4 @@
-package kbasesearchengine.search.test;
+package kbasesearchengine.test.search;
 
 import static kbasesearchengine.test.common.TestCommon.set;
 import static org.hamcrest.CoreMatchers.is;
@@ -42,7 +42,6 @@ import kbasesearchengine.parse.SimpleIdConsumer;
 import kbasesearchengine.parse.SimpleSubObjectConsumer;
 import kbasesearchengine.parse.SubObjectConsumer;
 import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
-import kbasesearchengine.parse.test.SubObjectExtractorTest;
 import kbasesearchengine.search.AccessFilter;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.MatchFilter;
@@ -53,6 +52,7 @@ import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.test.common.TestCommon;
 import kbasesearchengine.test.controllers.elasticsearch.ElasticSearchController;
+import kbasesearchengine.test.parse.SubObjectExtractorTest;
 import us.kbase.common.service.UObject;
 
 public class ElasticIndexingStorageTest {

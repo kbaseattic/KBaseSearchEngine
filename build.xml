@@ -142,14 +142,14 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
       <formatter type="plain" usefile="false" />
       <batchtest>
         <fileset dir="${test.src}">
-          <include name="kbasesearchengine/parse/test/**Test.java"/>
-          <include name="kbasesearchengine/authorization/AccessGroupCacheTest.java"/>
-          <include name="kbasesearchengine/events/StatusEventIDTest.java"/>
-          <include name="kbasesearchengine/events/StatusEventTest.java"/>
-          <include name="kbasesearchengine/events/exceptions/RetrierTest.java"/>
-          <include name="kbasesearchengine/events/storage/MongoDBStatusEventStorageTest.java"/>
-          <include name="kbasesearchengine/search/test/ElasticIndexingStorageTest.java"/>
-          <include name="kbasesearchengine/main/test/IndexerCoordinatorTest.java"/>
+          <include name="kbasesearchengine/test/parse/**Test.java"/>
+          <include name="kbasesearchengine/test/authorization/AccessGroupCacheTest.java"/>
+          <include name="kbasesearchengine/test/events/StatusEventIDTest.java"/>
+          <include name="kbasesearchengine/test/events/StatusEventTest.java"/>
+          <include name="kbasesearchengine/test/events/exceptions/RetrierTest.java"/>
+          <include name="kbasesearchengine/test/events/storage/MongoDBStatusEventStorageTest.java"/>
+          <include name="kbasesearchengine/test/search/ElasticIndexingStorageTest.java"/>
+          <include name="kbasesearchengine/test/main/IndexerCoordinatorTest.java"/>
         </fileset>
       </batchtest>
     </junit>
