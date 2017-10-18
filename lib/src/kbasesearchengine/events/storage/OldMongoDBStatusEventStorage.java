@@ -54,7 +54,7 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
         final Optional<Integer> version = sot.isPresent() ?
                 sot.get().getVersion() : Optional.absent();
         dobj.put("storageObjectTypeVersion", version.isPresent() ? version.get() : null);
-        dobj.put("isGlobalAccessed", obj.isGlobalAccessed().isPresent() ? obj.isGlobalAccessed().get() : null);
+        dobj.put("isGlobalAccessed", obj.isPublic().isPresent() ? obj.isPublic().get() : null);
         dobj.put("newName", obj.getNewName().isPresent() ? obj.getNewName().get() : null);
         dobj.put("procst", obj.getProcessingState().toString());
         collection(COLLECTION_OBJECT_STATUS_EVENTS).insertOne(dobj);

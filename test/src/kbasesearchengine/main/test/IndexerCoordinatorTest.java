@@ -308,7 +308,7 @@ public class IndexerCoordinatorTest {
                     .withNullableAccessGroupID(ev.getAccessGroupId().get())
                     .withNullableObjectID(ev.getAccessGroupObjectId().get())
                     .withNullableVersion(i)
-                    .withNullableisPublic(ev.isGlobalAccessed().get())
+                    .withNullableisPublic(ev.isPublic().get())
                     .build(),
                     evid.getId());
             mop.processOneEvent(ev2);
