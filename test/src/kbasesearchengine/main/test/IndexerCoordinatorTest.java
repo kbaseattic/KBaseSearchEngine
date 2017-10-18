@@ -63,7 +63,7 @@ import workspace.RegisterTypespecParams;
 import workspace.SaveObjectsParams;
 import workspace.WorkspaceClient;
 
-public class MainObjectProcessorTest {
+public class IndexerCoordinatorTest {
 	
     private static IndexerCoordinator mop = null;
     private static MongoController mongo;

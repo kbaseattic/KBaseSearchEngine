@@ -2,6 +2,7 @@ package kbasesearchengine.events.storage;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -16,6 +17,7 @@ import com.mongodb.client.MongoDatabase;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEvent.Builder;
 import kbasesearchengine.events.StatusEventID;
+import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StatusEventWithID;
 import kbasesearchengine.system.StorageObjectType;
@@ -46,7 +48,7 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
         dobj.put("accessGroupObjectId", obj.getAccessGroupObjectId().isPresent() ?
                 obj.getAccessGroupObjectId().get() : null);
         dobj.put("version", obj.getVersion().isPresent() ? obj.getVersion().get() : null);
-        dobj.put("timestamp", obj.getTimestamp());
+        dobj.put("timestamp", Date.from(obj.getTimestamp()));
         dobj.put("eventType", obj.getEventType().toString());
         dobj.put("storageObjectType", sot.isPresent() ? sot.get().getType() : null);
         final Optional<Integer> version = sot.isPresent() ?
@@ -54,20 +56,17 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
         dobj.put("storageObjectTypeVersion", version.isPresent() ? version.get() : null);
         dobj.put("isGlobalAccessed", obj.isGlobalAccessed().isPresent() ? obj.isGlobalAccessed().get() : null);
         dobj.put("newName", obj.getNewName().isPresent() ? obj.getNewName().get() : null);
-        dobj.put("indexed", false);
-        dobj.put("processed", false);
+        dobj.put("procst", obj.getProcessingState().toString());
         collection(COLLECTION_OBJECT_STATUS_EVENTS).insertOne(dobj);
         return new StatusEventWithID(obj, new StatusEventID(dobj.getObjectId("_id").toString()));
     }
 
     @Override
-    public void markAsProcessed(StatusEventWithID row, boolean isIndexed) {
-        final Document doc = new Document().append("$set", 
-                new Document()
-                .append("processed", true)
-                .append("indexed", isIndexed)
-
-                );
+    public void markAsProcessed(
+            final StatusEventWithID row,
+            final StatusEventProcessingState state) {
+        final Document doc = new Document().append("$set",
+                new Document("procst", state.toString()));
 
         final Document query = new Document("_id", new ObjectId(row.getId().getId() ) );
         collection(COLLECTION_OBJECT_STATUS_EVENTS).updateOne(query, doc);
@@ -83,7 +82,7 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
             final Integer ver = (Integer) dobj.get("storageObjectTypeVersion");
             final StorageObjectType sot = type == null ? null :
                 StorageObjectType.fromNullableVersion(storageCode, type, ver);
-            final Instant time = Instant.ofEpochMilli(dobj.getLong("timestamp"));
+            final Instant time = dobj.getDate("timestamp").toInstant();
             final StatusEventType eventType = StatusEventType.valueOf(dobj.getString("eventType"));
             final Builder b;
             if (sot == null) {
@@ -97,6 +96,8 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
                     .withNullableVersion(dobj.getInteger("version"))
                     .withNullableNewName(dobj.getString("newName"))
                     .withNullableisPublic(dobj.getBoolean("isGlobalAccessed"))
+                    .withProcessingState(StatusEventProcessingState.valueOf(
+                            dobj.getString("procst")))
                     .build(),
                     new StatusEventID(dobj.getObjectId("_id").toString())));
         }
@@ -121,7 +122,7 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
             final String timeAlive) {
 
         final List<Document> queryItems = new LinkedList<>();
-        queryItems.add(new Document("processed", processed));
+        queryItems.add(new Document("procst", StatusEventProcessingState.UNPROC.toString()));
         if(storageCode != null){
             queryItems.add(new Document("storageCode", storageCode));
         }

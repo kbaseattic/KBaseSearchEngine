@@ -735,7 +735,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     /* expects that GUID does not have sub object info */
-    // TODO allow providing index name for optimization
+    // TODO CODE allow providing index name for optimization
     private int setFieldOnObject(
             final GUID object,
             final String field,

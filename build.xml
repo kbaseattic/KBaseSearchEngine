@@ -142,11 +142,11 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
       <batchtest>
         <fileset dir="${test.src}">
           <include name="kbasesearchengine/parse/test/**Test.java"/>
-          <include name="kbasesearchengine/events/AccessGroupCacheTest.java"/>
+          <include name="kbasesearchengine/authorization/AccessGroupCacheTest.java"/>
           <include name="kbasesearchengine/events/exceptions/RetrierTest.java"/>
           <include name="kbasesearchengine/events/storage/MongoDBStatusEventStorageTest.java"/>
           <include name="kbasesearchengine/search/test/ElasticIndexingStorageTest.java"/>
-          <include name="kbasesearchengine/main/test/MainObjectProcessorTest.java"/>
+          <include name="kbasesearchengine/main/test/IndexerCoordinatorTest.java"/>
         </fileset>
       </batchtest>
     </junit>

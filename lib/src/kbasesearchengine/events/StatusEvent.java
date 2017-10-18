@@ -12,7 +12,7 @@ public class StatusEvent {
 
     //TODO JAVADOC
     //TODO TEST
-    //TODO add some validation that the available fields match the requirement for the event type
+    //TODO CODE add some validation that the available fields match the requirement for the event type
     
     private final Instant time;
     private final StatusEventType eventType;
@@ -23,6 +23,7 @@ public class StatusEvent {
     private final Optional<Integer> version;
     private final Optional<Boolean> isPublic;
     private final Optional<String> newName;
+    private final StatusEventProcessingState processingState;
     
     private StatusEvent(
             final StatusEventType eventType,
@@ -33,7 +34,8 @@ public class StatusEvent {
             final Optional<StorageObjectType> storageObjectType,
             final Instant time,
             final Optional<Boolean> isPublic,
-            final Optional<String> newName) {
+            final Optional<String> newName,
+            final StatusEventProcessingState processingState) {
         this.eventType = eventType;
         this.storageCode = storageCode;
         this.accessGroupID = accessGroupID;
@@ -43,6 +45,7 @@ public class StatusEvent {
         this.time = time;
         this.isPublic = isPublic;
         this.newName = newName;
+        this.processingState = processingState;
     }
 
     public GUID toGUID(){
@@ -92,6 +95,10 @@ public class StatusEvent {
         return newName;
     }
     
+    public StatusEventProcessingState getProcessingState() {
+        return processingState;
+    }
+
     @Override
     public String toString() {
         StringBuilder builder2 = new StringBuilder();
@@ -142,6 +149,7 @@ public class StatusEvent {
         private Optional<Integer> version = Optional.absent();
         private Optional<Boolean> isPublic = Optional.absent();
         private Optional<String> newName = Optional.absent();
+        private StatusEventProcessingState processingState = StatusEventProcessingState.UNPROC;
         
         private Builder(
                 final String storageCode,
@@ -202,9 +210,16 @@ public class StatusEvent {
             return this;
         }
         
+        // note default is unprocessed
+        public Builder withProcessingState(final StatusEventProcessingState state) {
+            Utils.nonNull(state, "state");
+            this.processingState = state;
+            return this;
+        }
+        
         public StatusEvent build() {
             return new StatusEvent(eventType, storageCode, accessGroupID, objectID,
-                    version, storageObjectType, time, isPublic, newName);
+                    version, storageObjectType, time, isPublic, newName, processingState);
         }
     }
 }
