@@ -143,8 +143,8 @@ public class WorkspaceEventHandler implements EventHandler {
         if (ret.getCopied() == null & ret.getCopySourceInaccessible() == 0) {
             copier = null;
         }
-        final SourceData.Builder b = SourceData.getBuilder(ret.getData(), ret.getInfo().getE2())
-                .withNullableCreator(creator)
+        final SourceData.Builder b = SourceData.getBuilder(
+                ret.getData(), ret.getInfo().getE2(), creator)
                 .withNullableCopier(copier);
         if (pa != null) {
             b.withNullableModule(pa.getService())

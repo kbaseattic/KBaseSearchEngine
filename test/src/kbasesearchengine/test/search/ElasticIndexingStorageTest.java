@@ -159,7 +159,8 @@ public class ElasticIndexingStorageTest {
             throws IOException, ObjectParseException, IndexingException, InterruptedException {
         ParsedObject obj = KeywordParser.extractKeywords(objectType, json, parentJsonValue, 
                 indexingRules, objLookup, null);
-        final SourceData data = SourceData.getBuilder(new UObject(json), objectName).build();
+        final SourceData data = SourceData.getBuilder(new UObject(json), objectName, "creator")
+                .build();
         indexStorage.indexObject(id, objectType, obj, data, timestamp, parentJsonValue, 
                 isPublic, indexingRules);
     }
