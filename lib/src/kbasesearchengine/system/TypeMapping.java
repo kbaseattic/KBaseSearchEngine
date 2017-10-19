@@ -21,8 +21,6 @@ import kbasesearchengine.tools.Utils;
  */
 public class TypeMapping {
     
-    //TODO TEST
-    
     private final String storageCode;
     private final String storageType;
     private final Optional<String> sourceInfo;
@@ -200,8 +198,8 @@ public class TypeMapping {
         private final Map<Integer, Set<String>> versions = new TreeMap<>();
         
         private Builder(final String storageCode, final String storageType) {
-            Utils.notNullOrEmpty(storageCode, "storageCode");
-            Utils.notNullOrEmpty(storageType, "storageType");
+            Utils.notNullOrEmpty(storageCode, "storageCode cannot be null or the empty string");
+            Utils.notNullOrEmpty(storageType, "storageType cannot be null or the empty string");
             this.storageCode = storageCode;
             this.storageType = storageType;
         }
@@ -243,7 +241,7 @@ public class TypeMapping {
             if (version < 0) {
                 throw new IllegalArgumentException("version must be at least 0");
             }
-            Utils.notNullOrEmpty(searchType, "searchType");
+            Utils.notNullOrEmpty(searchType, "searchType cannot be null or the empty string");
             if (!versions.containsKey(version)) {
                 versions.put(version, new HashSet<>());
             }
