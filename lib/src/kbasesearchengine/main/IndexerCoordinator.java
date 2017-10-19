@@ -367,14 +367,14 @@ public class IndexerCoordinator {
                     logger.logInfo("[Indexer]   skipping " + pguid +
                             " creation (already indexed)");
                     // TODO: we should fix public access for all sub-objects too !!!
-                    if (ev.isGlobalAccessed().get()) {
+                    if (ev.isPublic().get()) {
                         publish(pguid);
                     } else {
                         unpublish(pguid);
                     }
                 } else {
                     indexObject(pguid, ev.getStorageObjectType().get(), ev.getTimestamp(),
-                            ev.isGlobalAccessed().get(), null, new LinkedList<>());
+                            ev.isPublic().get(), null, new LinkedList<>());
                 }
                 break;
             case DELETED:

@@ -551,7 +551,7 @@ public class WorkspaceEventHandler implements EventHandler {
                 .withNullableAccessGroupID(origEvent.getAccessGroupId().get())
                 .withNullableObjectID(obj.getE1() + "")
                 .withNullableVersion(Math.toIntExact(obj.getE5()))
-                .withNullableisPublic(origEvent.isGlobalAccessed().get())
+                .withNullableisPublic(origEvent.isPublic().get())
                 .build();
     }
     
