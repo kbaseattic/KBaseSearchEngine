@@ -1,4 +1,4 @@
-package kbasesearchengine.events.exceptions;
+package kbasesearchengine.test.events.exceptions;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -18,8 +18,14 @@ import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StatusEventWithID;
+import kbasesearchengine.events.exceptions.FatalIndexingException;
+import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
+import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
 import kbasesearchengine.events.exceptions.Retrier;
+import kbasesearchengine.events.exceptions.RetriesExceededIndexingException;
+import kbasesearchengine.events.exceptions.RetryConsumer;
+import kbasesearchengine.events.exceptions.RetryFunction;
 import kbasesearchengine.events.exceptions.RetryLogger;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.test.common.TestCommon;

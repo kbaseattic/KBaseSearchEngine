@@ -1,4 +1,4 @@
-package kbasesearchengine.events;
+package kbasesearchengine.test.events;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -11,6 +11,9 @@ import org.junit.Test;
 import com.google.common.base.Optional;
 
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.events.StatusEvent;
+import kbasesearchengine.events.StatusEventProcessingState;
+import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StatusEvent.Builder;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.test.common.TestCommon;

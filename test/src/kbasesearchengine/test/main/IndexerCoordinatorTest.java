@@ -1,4 +1,4 @@
-package kbasesearchengine.main.test;
+package kbasesearchengine.test.main;
 
 import java.io.IOException;
 import java.net.URL;

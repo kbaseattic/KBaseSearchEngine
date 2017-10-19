@@ -1,4 +1,4 @@
-package kbasesearchengine.parse.test;
+package kbasesearchengine.test.parse;
 
 import java.io.InputStream;
 import java.util.ArrayList;
