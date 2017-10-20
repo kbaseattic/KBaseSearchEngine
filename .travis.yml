@@ -1,0 +1,78 @@
+dist: trusty
+
+sudo: required
+
+language: java
+
+jdk:
+- openjdk8
+- oraclejdk8
+
+services:
+- docker
+
+notifications:
+  email:
+    recipients:
+    - arfathpasha@gmail.com
+    on_success: never
+    on_failure: always
+
+env:
+  matrix:
+  - MONGODB_VER=mongodb-linux-x86_64-2.6.12 ANT_TEST=test WIRED_TIGER=false
+  - JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+  global:
+  - secure: tguBGgSgTvVY/ayL0IFA08JM8Nu0ys0iwU2nte2oZIl8J6db+8FwzV6SlXeRjYYJYYHu3uOobYb2i1OpEGfRH2aE8+Q0TZzuupSlKb2cEReV9SAL4w0cb0azg06gjKmY+NoA18lCDZKV7X15Zh9cGkRvcM0Mjbhbbdek3n8vf1h5F1Gp6sV7MHSwQEGRmvmyEy/qTb7D1qIVEyZaxWV+ou3kd4eagiaJr0P+rvqBUOvoqWsUrroR3Vfs2A5J5gy4IeZJhpxwJsJz3UapuWcmYFV+fU/DgGdx3oaG7O5+rBH/v4uzZGaha7xuLFP93UURpxPbQyXKhsE1OiRW+9svpZw3yAS5/PN49GIWcqg3vNECkuyPBO9iSDLzz6iUNiErlsePFKKIlk/qzwOJimmz1+8ZCeDHZXUv81JK+RhKK1dlWECZcpYrr4YsTV4GVkVORIcseIy2jLmvRIer0pLiauOPooiNVcCv+TiYkwfeZdO8QiwsxN1WBzjzniwS3cA6z/AKmm0qJNpu37JTO19AiKEqgcjEfbftSp7S/nnIdGxObFt84iToGb3XfdFVeI8O3B9ngFxuxILb0hYfaXm5TfD2WIUL8pL6g3GVVapFJDkal1PTmc6uq6jU8UW+3SirqRd34ELHcoOKI03cnVdaAgCbKViTdGZtjZjpuBkHz48=
+  - secure: uvWMPRCu9Ww4aZOwjaECspxJ3NLQwLOhn1p5ND0mUADupOqFHmG6aiejhD+FoQ4JETd0FofHUAOhtIzmZuKYj08f/v7q6/bipSXqEj1Ufb0hgS7V9AaItfsYvgEeXr0jj04C1rfHCliSZGyDW2MhNoeNjIKgmyD9EbJ3lqpuHI4zXmWUrPknqqkq9GIN+ZI8AEGN6P1FtVD5zfQ43poWAiVlPVUiT6q/wcuDANx4teYPIBWC4jMNZRAP44JzMkru/TIlgM5V9UgvscBAHVt6V5U7fHolQJ+chwFioQniTySKkA5PyLnnXeydKyUajEzrylhQgBq9NuHtUs4cqEiop5RTwQ4yDQdCK9/1gY9FNRMvdSj0Z0C7YwA+m6YA95tAONf8PGAL1bXAQfXZ58IRMqyf/Gu+PTuOGVX/NPbXqYgWBXl9HAi4Es8pXl0EX3m3OSDbfaiXd+7ogxdiYiWiSjKUGfHsNpCii7bg2Txec3QnqzXPR1T+Vd3kNHX6z2Ry83K5z1UBwHoBkfSLOULY4mxI6zbhXU0h2fadLUDeCiTAe9KTYOWq4xpxiepbWjg2VBnN3Lw4inlevan2iw/kh9ZQzEurZUo/PakIHPWmUn2RbG7QWu88LNh8Ku80ei1lfVwk/8IpT9V4Clx9FRm4zedE1dDdsXy5OhKGJCk0llM=
+
+branches:
+  only:
+  - master
+
+before_install:
+- docker version
+- javac -version
+- java -version
+
+install:
+- cd /opt
+- wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.0.tar.gz
+- tar xfz elasticsearch-5.5.0.tar.gz
+- ln -s elasticsearch-5.5.0 elasticsearch
+- wget http://fastdl.mongodb.org/linux/$MONGODB_VER.tgz
+- tar xfz $MONGODB_VER.tgz
+- export MONGOD=`pwd`/$MONGODB_VER/bin/mongod
+- ln -s mongodb-linux-x86_64-2.6.12 mongo
+- cd /
+- git clone https://github.com/kbase/jars
+- git clone https://github.com/kbase/kb_sdk
+- cd kb_sdk
+- make
+- make sdkbase
+- docker images
+- export PATH=$(pwd)/bin:$PATH
+- cd /
+- git clone https://github.com/arfathpasha/KBaseSearchEngine.git
+- cd KBaseSearchEngine
+- kb-sdk test || true
+- sed -i "s/test_token=/test_token=$TEST_TOKEN/" test_local/test.cfg
+- sed -i "s/test_token2=/test_token=$TEST_TOKEN2/" test_local/test.cfg
+- sed -i 's\https://appdev.kbase.us/services\https://ci.kbase.us/services\' test_local/test.cfg
+- sed -i 's\https://appdev.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\'
+  test_local/test.cfg
+- sed -i 's/$(id -u)/0:0/' test_local/run_tests.sh
+- pwd=$(pwd)
+- echo "#!/bin/bash" >> test_local/run_subjob.sh
+- echo -e "$pwd/test_local/run_docker.sh run --rm --user 0:0 -v $pwd/test_local/subjobs/\$1/workdir:/kb/module/work
+  -v $pwd/test_local/workdir/tmp:/kb/module/work/tmp \$4 -e \"SDK_CALLBACK_URL=\$3\"
+  \$2 async" >> test_local/run_subjob.sh
+- cat test_local/run_subjob.sh
+
+
+script:
+- kb-sdk test
+
+after_success:
+- ls work/test-reports
+- bash <(curl -s https://codecov.io/bash) -t 52a915c3-441b-4257-baa1-a1a21f0a3a74 -f work/test-reports/coverage-report.xml
