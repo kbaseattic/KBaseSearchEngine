@@ -1,4 +1,5 @@
-<project name="KBaseRelationEngine" default="compile" basedir=".">
+<project name="KBaseRelationEngine" default="compile" basedir="."
+         xmlns:jacoco="antlib:org.jacoco.ant">
 
   <description>
       Build JAR and WAR files for KBaseRelationEngine 
@@ -19,6 +20,7 @@
   <property name="exec.cmd.file2" value="run_KBaseSearchEngine_perform.sh"/>
   <property name="exec.cmd.search_tools" value="search_tools.sh"/>
   <property name="startup.cmd.file" value="start_server.sh"/>
+  <property name="test.reports.dir" location="work/test-reports"/>
 
   <fileset dir="${jars.dir}" id="lib">
     <include name="ini4j/ini4j-0.5.2.jar"/>
@@ -93,7 +95,6 @@ commit=${git.commit}</echo>
       <fileset dir="${test.src}"/>
     </copy>
     <jar destfile="${dist}/${jar.file}" basedir="${classes}"/>
-    <delete dir="${classes}"/>
   </target>
 
   <target name="war" depends="compile" description="build the WAR file. Assumes compile has been run">
@@ -134,30 +135,70 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
   </target>
 	
   <target name="test" description="run all tests">
-    <junit printsummary="yes" haltonfailure="yes" fork="true">
-      <classpath>
-        <pathelement location="${dist}/${jar.file}"/>
-        <path refid="compile.classpath"/>
-      </classpath>
-      <formatter type="plain" usefile="false" />
-      <batchtest>
-        <fileset dir="${test.src}">
-          <include name="kbasesearchengine/test/parse/**Test.java"/>
-          <include name="kbasesearchengine/test/authorization/AccessGroupCacheTest.java"/>
-          <include name="kbasesearchengine/test/events/StatusEventIDTest.java"/>
-          <include name="kbasesearchengine/test/events/StatusEventTest.java"/>
-          <include name="kbasesearchengine/test/events/StoredStatusEventTest.java"/>
-          <include name="kbasesearchengine/test/events/exceptions/RetrierTest.java"/>
-          <include name="kbasesearchengine/test/events/handler/ResolvedReferenceTest.java"/>
-          <include name="kbasesearchengine/test/events/handler/SourceDataTest.java"/>
-          <include name="kbasesearchengine/test/events/storage/MongoDBStatusEventStorageTest.java"/>
-          <include name="kbasesearchengine/test/integration/IndexerIntegrationTest.java"/>
-          <include name="kbasesearchengine/test/search/ElasticIndexingStorageTest.java"/>
-          <include name="kbasesearchengine/test/system/StorageObjectTypeTest.java"/>
-          <include name="kbasesearchengine/test/system/TypeMappingTest.java"/>
-          <include name="kbasesearchengine/test/main/IndexerCoordinatorTest.java"/>
-        </fileset>
-      </batchtest>
-    </junit>
+    <delete dir="${test.reports.dir}"/>
+    <mkdir dir="${test.reports.dir}"/>
+    <jacoco:coverage destfile="${test.reports.dir}/jacoco.exec"
+                     excludes="org/*:junit/*">
+      <junit printsummary="yes" haltonfailure="yes" fork="true">
+        <classpath>
+          <pathelement location="${dist}/${jar.file}"/>
+          <path refid="compile.classpath"/>
+        </classpath>
+        <formatter type="plain" usefile="false" />
+        <batchtest>
+          <fileset dir="${test.src}">
+            <include name="kbasesearchengine/test/parse/**Test.java"/>
+            <include name="kbasesearchengine/test/authorization/AccessGroupCacheTest.java"/>
+            <include name="kbasesearchengine/test/events/StatusEventIDTest.java"/>
+            <include name="kbasesearchengine/test/events/StatusEventTest.java"/>
+            <include name="kbasesearchengine/test/events/StoredStatusEventTest.java"/>
+            <include name="kbasesearchengine/test/events/exceptions/RetrierTest.java"/>
+            <include name="kbasesearchengine/test/events/handler/ResolvedReferenceTest.java"/>
+            <include name="kbasesearchengine/test/events/handler/SourceDataTest.java"/>
+            <include name="kbasesearchengine/test/events/storage/MongoDBStatusEventStorageTest.java"/>
+            <include name="kbasesearchengine/test/integration/IndexerIntegrationTest.java"/>
+            <include name="kbasesearchengine/test/search/ElasticIndexingStorageTest.java"/>
+            <include name="kbasesearchengine/test/system/StorageObjectTypeTest.java"/>
+            <include name="kbasesearchengine/test/system/TypeMappingTest.java"/>
+            <include name="kbasesearchengine/test/main/IndexerCoordinatorTest.java"/>
+          </fileset>
+        </batchtest>
+      </junit>
+    </jacoco:coverage>
+    <fail message="Test failure detected, check test results." if="test.failed" />
+  </target>
+
+  <path id="jacoco.classpath">
+    <fileset dir="${jars.dir}">
+      <include name="jacoco/jacocoant.jar"/>
+    </fileset>
+  </path>
+
+  <taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml"
+           classpathref="jacoco.classpath"/>
+
+  <target name="test-report"
+          depends="test"
+          description="run all tests and generate test report">
+    <jacoco:report>
+      <executiondata>
+        <file file="${test.reports.dir}/jacoco.exec"/>
+      </executiondata>
+      <structure name="Auth2 Unit Tests">
+        <classfiles>
+          <fileset dir="${classes}">
+            <exclude name="**/test/**" />
+          </fileset>
+        </classfiles>
+        <sourcefiles encoding="UTF-8">
+          <fileset dir="${src}">
+            <exclude name="**/test/**" />
+          </fileset>
+        </sourcefiles>
+      </structure>
+      <html destdir="${test.reports.dir}/html"/>
+      <csv destfile="${test.reports.dir}/coverage-report.csv"/>
+      <xml destfile="${test.reports.dir}/coverage-report.xml"/>
+    </jacoco:report>
   </target>
 </project>
