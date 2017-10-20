@@ -38,6 +38,7 @@ before_install:
 - java -version
 
 install:
+- pwd
 - cd /opt
 - wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.0.tar.gz
 - tar xfz elasticsearch-5.5.0.tar.gz
@@ -46,7 +47,7 @@ install:
 - tar xfz $MONGODB_VER.tgz
 - export MONGOD=`pwd`/$MONGODB_VER/bin/mongod
 - ln -s mongodb-linux-x86_64-2.6.12 mongo
-- cd /
+- cd /opt
 - git clone https://github.com/kbase/jars
 - git clone https://github.com/kbase/kb_sdk
 - cd kb_sdk
@@ -54,7 +55,7 @@ install:
 - make sdkbase
 - docker images
 - export PATH=$(pwd)/bin:$PATH
-- cd /
+- cd /opt
 - git clone https://github.com/arfathpasha/KBaseSearchEngine.git
 - cd KBaseSearchEngine
 - kb-sdk test || true
