@@ -2,7 +2,7 @@ package kbasesearchengine.queue;
 
 import java.util.NoSuchElementException;
 
-import kbasesearchengine.events.StatusEventWithID;
+import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.storage.StatusEventCursor;
@@ -16,7 +16,7 @@ public class StatusEventQueue {
 	class _Iterator implements StatusEventIterator{
 		String storageCode;
 		StatusEventCursor cursor = null;
-		StatusEventWithID[] buffer = new StatusEventWithID[BUFFER_SIZE];
+		StoredStatusEvent[] buffer = new StoredStatusEvent[BUFFER_SIZE];
 		int nextPos = 0;
 		int nItems = 0;
 		int nMarkedAsVisited = 0;
@@ -44,7 +44,7 @@ public class StatusEventQueue {
 			}
 						
 			int i = 0;
-			for(StatusEventWithID row : cursor.getData()){
+			for(StoredStatusEvent row : cursor.getData()){
 				buffer[i++] = row;
 			}
 			nextPos = 0;
@@ -56,11 +56,11 @@ public class StatusEventQueue {
 		}
 
         @Override
-        public StatusEventWithID next() {
+        public StoredStatusEvent next() {
             if (isBufferEmpty()) {
                 throw new NoSuchElementException();
             }
-            final StatusEventWithID ev = buffer[nextPos++];
+            final StoredStatusEvent ev = buffer[nextPos++];
             return ev;
         }
 	}

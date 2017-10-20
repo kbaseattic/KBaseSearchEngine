@@ -29,8 +29,9 @@ import junit.framework.Assert;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventID;
+import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
-import kbasesearchengine.events.StatusEventWithID;
+import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.OldMongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.OldStatusEventStorage;
@@ -262,7 +263,7 @@ public class IndexerCoordinatorTest {
     
     @Test
     public void testGenomeManually() throws Exception {
-        final StatusEventWithID ev = new StatusEventWithID(StatusEvent.getBuilder(
+        final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
                 new StorageObjectType("WS", "KBaseGenomes.Genome"),
                 Instant.now(),
                 StatusEventType.NEW_VERSION)
@@ -271,7 +272,8 @@ public class IndexerCoordinatorTest {
                 .withNullableVersion(1)
                 .withNullableisPublic(false)
                 .build(),
-                new StatusEventID("-1"));
+                new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC);
         mop.processOneEvent(ev);
         PostProcessing pp = new PostProcessing();
         pp.objectInfo = true;
@@ -298,10 +300,10 @@ public class IndexerCoordinatorTest {
         System.out.println("Feature: " + obj);
     }
 
-    private void indexFewVersions(final StatusEventWithID evid) throws Exception {
+    private void indexFewVersions(final StoredStatusEvent evid) throws Exception {
         final StatusEvent ev = evid.getEvent();
         for (int i = Math.max(1, ev.getVersion().get() - 5); i <= ev.getVersion().get(); i++) {
-            final StatusEventWithID ev2 = new StatusEventWithID(StatusEvent.getBuilder(
+            final StoredStatusEvent ev2 = new StoredStatusEvent(StatusEvent.getBuilder(
                     ev.getStorageObjectType().get(),
                     ev.getTimestamp(),
                     ev.getEventType())
@@ -310,7 +312,8 @@ public class IndexerCoordinatorTest {
                     .withNullableVersion(i)
                     .withNullableisPublic(ev.isPublic().get())
                     .build(),
-                    evid.getId());
+                    evid.getId(),
+                    StatusEventProcessingState.UNPROC);
             mop.processOneEvent(ev2);
         }
     }
@@ -341,7 +344,8 @@ public class IndexerCoordinatorTest {
                 .withNullableVersion(5)
                 .withNullableisPublic(false)
                 .build();
-        indexFewVersions(new StatusEventWithID(ev, new StatusEventID("-1")));
+        indexFewVersions(new StoredStatusEvent(ev, new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC));
         checkSearch(1, "Narrative", "tree", wsid, false);
         checkSearch(1, "Narrative", "species", wsid, false);
         /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
@@ -367,7 +371,8 @@ public class IndexerCoordinatorTest {
                 .withNullableVersion(1)
                 .withNullableisPublic(false)
                 .build();
-        indexFewVersions(new StatusEventWithID(ev, new StatusEventID("-1")));
+        indexFewVersions(new StoredStatusEvent(ev, new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC));
         checkSearch(1, "PairedEndLibrary", "Illumina", wsid, true);
         checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
         final StatusEvent ev2 = StatusEvent.getBuilder(
@@ -379,7 +384,8 @@ public class IndexerCoordinatorTest {
                 .withNullableVersion(1)
                 .withNullableisPublic(false)
                 .build();
-        indexFewVersions(new StatusEventWithID(ev2, new StatusEventID("-1")));
+        indexFewVersions(new StoredStatusEvent(ev2, new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC));
         checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);
         checkSearch(1, "SingleEndLibrary", "reads.2", wsid, false);
     }

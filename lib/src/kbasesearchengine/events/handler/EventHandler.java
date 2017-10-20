@@ -8,7 +8,7 @@ import java.util.Set;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.StatusEvent;
-import kbasesearchengine.events.StatusEventWithID;
+import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.exceptions.IndexingExceptionUncheckedWrapper;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
@@ -40,7 +40,7 @@ public interface EventHandler {
      * @throws IndexingException if an error occurred expanding the event.
      * @throws RetriableIndexingException if a retriable error occurred loading the data.
      */
-    Iterable<StatusEvent> expand(StatusEventWithID event)
+    Iterable<StatusEvent> expand(StoredStatusEvent event)
             throws IndexingException, RetriableIndexingException;
     
     /** The equivalent of {@link #load(List, Path) load(Arrays.asList(guid), tempfile)}
@@ -87,5 +87,5 @@ public interface EventHandler {
      * @param parentEvent the event to check.
      * @return true if the event will be expanded, false otherwise.
      */
-    boolean isExpandable(StatusEventWithID parentEvent);
+    boolean isExpandable(StoredStatusEvent parentEvent);
 }

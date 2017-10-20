@@ -25,7 +25,6 @@ public class StatusEvent {
     private final Optional<Integer> version;
     private final Optional<Boolean> isPublic;
     private final Optional<String> newName;
-    private final StatusEventProcessingState processingState;
     
     private StatusEvent(
             final StatusEventType eventType,
@@ -36,8 +35,7 @@ public class StatusEvent {
             final Optional<StorageObjectType> storageObjectType,
             final Instant time,
             final Optional<Boolean> isPublic,
-            final Optional<String> newName,
-            final StatusEventProcessingState processingState) {
+            final Optional<String> newName) {
         this.eventType = eventType;
         this.storageCode = storageCode;
         this.accessGroupID = accessGroupID;
@@ -47,7 +45,6 @@ public class StatusEvent {
         this.time = time;
         this.isPublic = isPublic;
         this.newName = newName;
-        this.processingState = processingState;
     }
 
     /** The GUID of the data involved in the event. All fields except the storage code may be null.
@@ -127,13 +124,6 @@ public class StatusEvent {
         return newName;
     }
     
-    /** Get the processing state of the event.
-     * @return the event's processing state.
-     */
-    public StatusEventProcessingState getProcessingState() {
-        return processingState;
-    }
-
     @Override
     public String toString() {
         StringBuilder builder2 = new StringBuilder();
@@ -159,6 +149,102 @@ public class StatusEvent {
         return builder2.toString();
     }
     
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result
+                + ((accessGroupID == null) ? 0 : accessGroupID.hashCode());
+        result = prime * result
+                + ((eventType == null) ? 0 : eventType.hashCode());
+        result = prime * result
+                + ((isPublic == null) ? 0 : isPublic.hashCode());
+        result = prime * result + ((newName == null) ? 0 : newName.hashCode());
+        result = prime * result
+                + ((objectID == null) ? 0 : objectID.hashCode());
+        result = prime * result
+                + ((storageCode == null) ? 0 : storageCode.hashCode());
+        result = prime * result + ((storageObjectType == null) ? 0
+                : storageObjectType.hashCode());
+        result = prime * result + ((time == null) ? 0 : time.hashCode());
+        result = prime * result + ((version == null) ? 0 : version.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        StatusEvent other = (StatusEvent) obj;
+        if (accessGroupID == null) {
+            if (other.accessGroupID != null) {
+                return false;
+            }
+        } else if (!accessGroupID.equals(other.accessGroupID)) {
+            return false;
+        }
+        if (eventType != other.eventType) {
+            return false;
+        }
+        if (isPublic == null) {
+            if (other.isPublic != null) {
+                return false;
+            }
+        } else if (!isPublic.equals(other.isPublic)) {
+            return false;
+        }
+        if (newName == null) {
+            if (other.newName != null) {
+                return false;
+            }
+        } else if (!newName.equals(other.newName)) {
+            return false;
+        }
+        if (objectID == null) {
+            if (other.objectID != null) {
+                return false;
+            }
+        } else if (!objectID.equals(other.objectID)) {
+            return false;
+        }
+        if (storageCode == null) {
+            if (other.storageCode != null) {
+                return false;
+            }
+        } else if (!storageCode.equals(other.storageCode)) {
+            return false;
+        }
+        if (storageObjectType == null) {
+            if (other.storageObjectType != null) {
+                return false;
+            }
+        } else if (!storageObjectType.equals(other.storageObjectType)) {
+            return false;
+        }
+        if (time == null) {
+            if (other.time != null) {
+                return false;
+            }
+        } else if (!time.equals(other.time)) {
+            return false;
+        }
+        if (version == null) {
+            if (other.version != null) {
+                return false;
+            }
+        } else if (!version.equals(other.version)) {
+            return false;
+        }
+        return true;
+    }
+
     /** Get a builder for an event when the object type is not known.
      * @param storageCode the storage code for the storage system where the event occurred.
      * @param time the time the event occurred.
@@ -200,7 +286,6 @@ public class StatusEvent {
         private Optional<Integer> version = Optional.absent();
         private Optional<Boolean> isPublic = Optional.absent();
         private Optional<String> newName = Optional.absent();
-        private StatusEventProcessingState processingState = StatusEventProcessingState.UNPROC;
         
         private Builder(
                 final String storageCode,
@@ -286,23 +371,12 @@ public class StatusEvent {
             return this;
         }
         
-        /** Set the processing state of this event. Defaults to unprocessed.
-         * @param state the event's processing state.
-         * @return this builder.
-         */
-        // note default is unprocessed
-        public Builder withProcessingState(final StatusEventProcessingState state) {
-            Utils.nonNull(state, "state");
-            this.processingState = state;
-            return this;
-        }
-        
         /** Build the status event.
          * @return the new event.
          */
         public StatusEvent build() {
             return new StatusEvent(eventType, storageCode, accessGroupID, objectID,
-                    version, storageObjectType, time, isPublic, newName, processingState);
+                    version, storageObjectType, time, isPublic, newName);
         }
     }
 }

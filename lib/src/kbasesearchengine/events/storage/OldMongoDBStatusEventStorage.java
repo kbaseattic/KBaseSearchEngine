@@ -19,7 +19,7 @@ import kbasesearchengine.events.StatusEvent.Builder;
 import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
-import kbasesearchengine.events.StatusEventWithID;
+import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.tools.Utils;
 
@@ -39,7 +39,7 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
     }
 
     @Override
-    public StatusEventWithID store(StatusEvent obj) {
+    public StoredStatusEvent store(final StatusEvent obj, final StatusEventProcessingState state) {
         final Document dobj = new Document();
         final Optional<StorageObjectType> sot = obj.getStorageObjectType();
         dobj.put("storageCode", obj.getStorageCode());
@@ -56,14 +56,15 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
         dobj.put("storageObjectTypeVersion", version.isPresent() ? version.get() : null);
         dobj.put("isGlobalAccessed", obj.isPublic().isPresent() ? obj.isPublic().get() : null);
         dobj.put("newName", obj.getNewName().isPresent() ? obj.getNewName().get() : null);
-        dobj.put("procst", obj.getProcessingState().toString());
+        dobj.put("procst", state.toString());
         collection(COLLECTION_OBJECT_STATUS_EVENTS).insertOne(dobj);
-        return new StatusEventWithID(obj, new StatusEventID(dobj.getObjectId("_id").toString()));
+        return new StoredStatusEvent(
+                obj, new StatusEventID(dobj.getObjectId("_id").toString()), state);
     }
 
     @Override
     public void markAsProcessed(
-            final StatusEventWithID row,
+            final StoredStatusEvent row,
             final StatusEventProcessingState state) {
         final Document doc = new Document().append("$set",
                 new Document("procst", state.toString()));
@@ -72,8 +73,8 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
         collection(COLLECTION_OBJECT_STATUS_EVENTS).updateOne(query, doc);
     }
 
-    private List<StatusEventWithID> find(Document query, int skip, int limit) {
-        List<StatusEventWithID> events = new ArrayList<>();
+    private List<StoredStatusEvent> find(Document query, int skip, int limit) {
+        List<StoredStatusEvent> events = new ArrayList<>();
 
         FindIterable<Document> cursor = collection(COLLECTION_OBJECT_STATUS_EVENTS).find(query).skip(skip).limit(limit);
         for (final Document dobj: cursor) {
@@ -90,16 +91,15 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
             } else {
                 b = StatusEvent.getBuilder(sot, time, eventType);
             }
-            events.add(new StatusEventWithID(b
+            events.add(new StoredStatusEvent(b
                     .withNullableAccessGroupID(dobj.getInteger("accessGroupId"))
                     .withNullableObjectID(dobj.getString("accessGroupObjectId"))
                     .withNullableVersion(dobj.getInteger("version"))
                     .withNullableNewName(dobj.getString("newName"))
                     .withNullableisPublic(dobj.getBoolean("isGlobalAccessed"))
-                    .withProcessingState(StatusEventProcessingState.valueOf(
-                            dobj.getString("procst")))
                     .build(),
-                    new StatusEventID(dobj.getObjectId("_id").toString())));
+                    new StatusEventID(dobj.getObjectId("_id").toString()),
+                    StatusEventProcessingState.valueOf(dobj.getString("procst"))));
         }
         return events;
 
@@ -136,7 +136,7 @@ public class OldMongoDBStatusEventStorage implements OldStatusEventStorage {
     @Override
     public boolean nextPage(StatusEventCursor cursor, int nRemovedItems) {
         _Cursor _cursor = (_Cursor)cursor;
-        List<StatusEventWithID> objs = find(_cursor.query, _cursor.getPageIndex()*_cursor.getPageSize() - nRemovedItems, _cursor.getPageSize());
+        List<StoredStatusEvent> objs = find(_cursor.query, _cursor.getPageIndex()*_cursor.getPageSize() - nRemovedItems, _cursor.getPageSize());
 
         _cursor.nextPage(objs);
 

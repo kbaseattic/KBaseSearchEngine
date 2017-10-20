@@ -11,8 +11,6 @@ import kbasesearchengine.tools.Utils;
  */
 public class StorageObjectType {
     
-    //TODO TEST
-
     private final String storageCode;
     private final String type;
     private final Optional<Integer> version;
@@ -22,9 +20,9 @@ public class StorageObjectType {
      * @param type the type name.
      */
     public StorageObjectType(final String storageCode, final String type) {
-        Utils.notNullOrEmpty(storageCode, "storageCode cannot be null or empty");
+        Utils.notNullOrEmpty(storageCode, "storageCode cannot be null or the empty string");
         this.storageCode = storageCode;
-        Utils.notNullOrEmpty(type, "type cannot be null or empty");
+        Utils.notNullOrEmpty(type, "type cannot be null or the empty string");
         this.type = type;
         this.version = Optional.absent();
     }
@@ -35,9 +33,9 @@ public class StorageObjectType {
      * @param version the type version.
      */
     public StorageObjectType(final String storageCode, final String type, final int version) {
-        Utils.notNullOrEmpty(storageCode, "storageCode cannot be null or empty");
+        Utils.notNullOrEmpty(storageCode, "storageCode cannot be null or the empty string");
         this.storageCode = storageCode;
-        Utils.notNullOrEmpty(type, "type cannot be null or empty");
+        Utils.notNullOrEmpty(type, "type cannot be null or the empty string");
         this.type = type;
         if (version < 0) {
             throw new IllegalArgumentException("version must be at least 0");

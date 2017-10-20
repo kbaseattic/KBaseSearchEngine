@@ -2,7 +2,7 @@ package kbasesearchengine.events.exceptions;
 
 import com.google.common.base.Optional;
 
-import kbasesearchengine.events.StatusEventWithID;
+import kbasesearchengine.events.StoredStatusEvent;
 
 /** A logging interface for the retrier.
  * @see Retrier
@@ -16,6 +16,6 @@ public interface RetryLogger {
      * @param event an event associated with the retry. May be absent.
      * @param e the exception that occurred on the current retry.
      */
-    void log(int retryCount, Optional<StatusEventWithID> event, RetriableIndexingException e);
+    void log(int retryCount, Optional<StoredStatusEvent> event, RetriableIndexingException e);
 
 }

@@ -23,6 +23,7 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 
 import kbasesearchengine.events.StatusEvent;
+import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.storage.OldStatusEventStorage;
 import kbasesearchengine.system.StorageObjectType;
@@ -215,7 +216,8 @@ public class WorkspaceEventGenerator {
                 .withNullableObjectID(objid + "")
                 .withNullableVersion(vernum)
                 .withNullableisPublic(pub)
-                .build());
+                .build(),
+                StatusEventProcessingState.UNPROC);
         log(String.format("Generated event %s/%s/%s %s-%s", wsid, objid, vernum, type, typever));
     }
 
