@@ -49,6 +49,8 @@ import kbasesearchengine.system.IndexingRules;
 import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.UObject;
 
+//TODO CODE remove 'fake' group IDs (-1 public, -2 admin). use alternate mechanism.
+
 public class ElasticIndexingStorage implements IndexingStorage {
 
     private static final String OBJ_PROV_COMMIT_HASH = "prv_cmt";
@@ -1049,7 +1051,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @SuppressWarnings("unchecked")
     private ObjectData buildObjectData(Map<String, Object> obj, boolean info, boolean keys, 
             boolean json, List<String> objectDataIncludes) {
-        // TODO: support sub-data selection based on objectDataIncludes
+        // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
         ObjectData item = new ObjectData();
         item.guid = new GUID((String)obj.get("guid"));
         if (info) {
@@ -1151,7 +1153,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             return Collections.emptyMap();
         }
         List<Object> shouldList = new ArrayList<>();
-        // TODO: support for matchFilter.accessGroupId
+        // TODO: support for matchFilter.accessGroupId (e.g. reduce search scope to one group)
         List<Object> matchFilters = new ArrayList<>(prepareMatchFilters(matchFilter));
         // Public block (we exclude it for admin because it's covered by owner block)
         if (accessFilter.withPublic && !accessFilter.isAdmin) {
@@ -1258,7 +1260,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             ret.add(createRangeFilter("timestamp", matchFilter.timestamp.minDate, 
                     matchFilter.timestamp.maxDate));
         }
-        // TODO: support parent guid
+        // TODO: support parent guid (reduce search scope to one object, e.g. features of one geneom)
         if (ret.isEmpty()) {
             ret.add(createFilter("match_all", null, null));
         }
@@ -1348,7 +1350,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             return ret;
         }
         List<Object> shouldList = new ArrayList<>();
-        // TODO: support for matchFilter.accessGroupId
+        // TODO: support for matchFilter.accessGroupId  (e.g. reduce search scope to one group)
         // Public block (we exclude it for admin because it's covered by owner block)
         if (accessFilter.withPublic && !accessFilter.isAdmin) {
             shouldList.add(createPublicShouldBlock(accessFilter.withAllHistory));

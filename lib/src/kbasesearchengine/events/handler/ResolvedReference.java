@@ -12,10 +12,6 @@ import kbasesearchengine.tools.Utils;
  * @author gaprice@lbl.gov
  *
  */
-/**
- * @author gaprice@lbl.gov
- *
- */
 public class ResolvedReference {
     
     //TODO CODE check that all storage codes (in GUIDs and SOT) are the same

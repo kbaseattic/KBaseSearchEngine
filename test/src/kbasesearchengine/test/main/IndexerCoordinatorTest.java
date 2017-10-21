@@ -33,8 +33,8 @@ import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
-import kbasesearchengine.events.storage.OldMongoDBStatusEventStorage;
-import kbasesearchengine.events.storage.OldStatusEventStorage;
+import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
+import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.search.AccessFilter;
@@ -151,7 +151,7 @@ public class IndexerCoordinatorTest {
                 "yaml", new YAMLTypeMappingParser());
         final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
         
-        final OldStatusEventStorage storage = new OldMongoDBStatusEventStorage(db);
+        final StatusEventStorage storage = new MongoDBStatusEventStorage(db);
         final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, wsadmintoken);
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
         
