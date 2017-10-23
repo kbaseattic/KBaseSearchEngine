@@ -148,9 +148,11 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
           <include name="kbasesearchengine/test/events/StatusEventTest.java"/>
           <include name="kbasesearchengine/test/events/StoredStatusEventTest.java"/>
           <include name="kbasesearchengine/test/events/exceptions/RetrierTest.java"/>
+          <include name="kbasesearchengine/test/events/handler/ResolvedReferenceTest.java"/>
           <include name="kbasesearchengine/test/events/storage/MongoDBStatusEventStorageTest.java"/>
           <include name="kbasesearchengine/test/search/ElasticIndexingStorageTest.java"/>
           <include name="kbasesearchengine/test/system/StorageObjectTypeTest.java"/>
+          <include name="kbasesearchengine/test/system/TypeMappingTest.java"/>
           <include name="kbasesearchengine/test/main/IndexerCoordinatorTest.java"/>
         </fileset>
       </batchtest>
