@@ -59,8 +59,7 @@ install:
 - git clone https://github.com/arfathpasha/KBaseSearchEngine.git
 - cd KBaseSearchEngine
 - kb-sdk test || true
-- sed -i "s/test_token=/test_token=$TEST_TOKEN/" test_local/test.cfg
-- sed -i "s/test.token2=/test.token2=$TEST_TOKEN2/" test_local/test.cfg
+- sed -i "s/test_token=/test_token=$TEST_TOKEN\ntest.token2=$TEST_TOKEN2\n/" test_local/test.cfg
 - sed -i 's\https://appdev.kbase.us/services\https://ci.kbase.us/services\' test_local/test.cfg
 - sed -i 's\https://appdev.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\'
   test_local/test.cfg
