@@ -71,7 +71,7 @@ install:
   -v $pwd/test_local/workdir/tmp:/kb/module/work/tmp \$4 -e \"SDK_CALLBACK_URL=\$3\"
   \$2 async" >> test_local/run_subjob.sh
 - cat test_local/run_subjob.sh
-- cat /kb/module/work/test.cfg
+- cat test_local/test.cfg
 
 
 script:
