@@ -56,7 +56,7 @@ install:
 - docker images
 - export PATH=$(pwd)/bin:$PATH
 - cd /opt
-- git clone https://github.com/arfathpasha/KBaseSearchEngine.git
+- git clone https://github.com/arfathpasha/KBaseSearchEngine.git -b develop
 - cd KBaseSearchEngine
 - kb-sdk test || true
 - sed -i "s/test_token=/test_token=$TEST_TOKEN\ntest.token2=$TEST_TOKEN2\n/" test_local/test.cfg
