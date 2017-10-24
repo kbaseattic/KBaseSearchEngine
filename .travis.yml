@@ -34,6 +34,9 @@ branches:
 
 before_install:
 - whoami
+- id -u
+- cd ~
+- pwd
 - docker version
 - javac -version
 - java -version
