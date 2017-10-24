@@ -88,6 +88,7 @@ public class MongoDBStatusEventStorageTest {
                 StatusEventProcessingState.UNPROC);
         
         assertThat("incorrect state", sse.getState(), is(StatusEventProcessingState.UNPROC));
+        assertThat("incorrect updater", sse.getUpdater(), is(Optional.absent()));
         assertThat("incorrect event", sse.getEvent(), is(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
                 .withNullableAccessGroupID(6)
@@ -102,6 +103,7 @@ public class MongoDBStatusEventStorageTest {
         
         assertThat("ids don't match", got.getId(), is(sse.getId()));
         assertThat("incorrect state", got.getState(), is(StatusEventProcessingState.UNPROC));
+        assertThat("incorrect updater", sse.getUpdater(), is(Optional.absent()));
         assertThat("incorrect event", got.getEvent(), is(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
                 .withNullableAccessGroupID(6)
@@ -122,6 +124,7 @@ public class MongoDBStatusEventStorageTest {
                 StatusEventProcessingState.FAIL);
         
         assertThat("incorrect state", sse.getState(), is(StatusEventProcessingState.FAIL));
+        assertThat("incorrect updater", sse.getUpdater(), is(Optional.absent()));
         assertThat("incorrect event", sse.getEvent(), is(StatusEvent.getBuilder(
                 new StorageObjectType("foo", "bar", 9), Instant.ofEpochMilli(20000),
                     StatusEventType.DELETE_ALL_VERSIONS)
@@ -132,6 +135,7 @@ public class MongoDBStatusEventStorageTest {
         
         assertThat("ids don't match", got.getId(), is(sse.getId()));
         assertThat("incorrect state", got.getState(), is(StatusEventProcessingState.FAIL));
+        assertThat("incorrect updater", sse.getUpdater(), is(Optional.absent()));
         assertThat("incorrect event", got.getEvent(), is(StatusEvent.getBuilder(
                 new StorageObjectType("foo", "bar", 9), Instant.ofEpochMilli(20000),
                 StatusEventType.DELETE_ALL_VERSIONS).build()));
@@ -146,6 +150,7 @@ public class MongoDBStatusEventStorageTest {
                 StatusEventProcessingState.FAIL);
         
         assertThat("incorrect state", sse.getState(), is(StatusEventProcessingState.FAIL));
+        assertThat("incorrect updater", sse.getUpdater(), is(Optional.absent()));
         assertThat("incorrect event", sse.getEvent(), is(StatusEvent.getBuilder(
                 new StorageObjectType("foo", "bar", 9), Instant.ofEpochMilli(20000),
                     StatusEventType.DELETE_ALL_VERSIONS)
@@ -158,37 +163,165 @@ public class MongoDBStatusEventStorageTest {
     }
     
     @Test
-    public void mark() throws Exception {
+    public void setProcessingState() throws Exception {
         final StoredStatusEvent sse = storage.store(StatusEvent.getBuilder(
                 "KE", Instant.ofEpochMilli(30000), StatusEventType.COPY_ACCESS_GROUP).build(),
                 StatusEventProcessingState.UNPROC);
         
-        final StoredStatusEvent marked = storage.setProcessingState(sse, StatusEventProcessingState.FAIL).get();
-        assertThat("ids don't match", marked.getId(), is(sse.getId()));
-        assertThat("incorrect state", marked.getState(), is(StatusEventProcessingState.FAIL));
-        assertThat("incorrect event", marked.getEvent(), is(StatusEvent.getBuilder(
-                "KE", Instant.ofEpochMilli(30000), StatusEventType.COPY_ACCESS_GROUP).build()));
+        final boolean success = storage.setProcessingState(
+                sse, StatusEventProcessingState.FAIL);
+        assertThat("expected success", success, is(true));
         
         final StoredStatusEvent got = storage.get(sse.getId()).get();
         assertThat("ids don't match", got.getId(), is(sse.getId()));
         assertThat("incorrect state", got.getState(), is(StatusEventProcessingState.FAIL));
+        assertThat("incorrect updater", sse.getUpdater(), is(Optional.absent()));
         assertThat("incorrect event", got.getEvent(), is(StatusEvent.getBuilder(
                 "KE", Instant.ofEpochMilli(30000), StatusEventType.COPY_ACCESS_GROUP).build()));
     }
     
     @Test
-    public void markNonExistant() throws Exception {
+    public void setProcessingStateNonExistant() throws Exception {
         final StoredStatusEvent sse = storage.store(StatusEvent.getBuilder(
                 "FE", Instant.ofEpochMilli(30000), StatusEventType.COPY_ACCESS_GROUP).build(),
                 StatusEventProcessingState.UNPROC);
         
-        final Optional<StoredStatusEvent> marked = storage.setProcessingState(
+        final boolean success = storage.setProcessingState(
                 new StoredStatusEvent(sse.getEvent(),
                         new StatusEventID(new ObjectId().toString()),
-                        sse.getState()),
+                        sse.getState(), null),
                 StatusEventProcessingState.FAIL);
         
-        assertThat("expected absent", marked, is(Optional.absent()));
+        assertThat("expected fail", success, is(false));
+    }
+    
+
+    @Test
+    public void getAndSetProcessingStateNoUpdater() throws Exception {
+        getAndSetProcessingNoUpdater(null);
+        getAndSetProcessingNoUpdater("   \t   \n   ");
+    }
+
+    private void getAndSetProcessingNoUpdater(final String updater) throws Exception {
+        final StorageObjectType sot = new StorageObjectType("foo", "bar", 9);
+        final StoredStatusEvent sse = storage.store(StatusEvent.getBuilder(
+                sot, Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
+                .withNullableAccessGroupID(6)
+                .withNullableisPublic(true)
+                .withNullableNewName("foo")
+                .withNullableObjectID("bar")
+                .withNullableVersion(7)
+                .build(),
+                StatusEventProcessingState.READY);
+        
+        final StoredStatusEvent ret = storage.getAndSetProcessingState(
+                StatusEventProcessingState.READY, StatusEventProcessingState.PROC, updater).get();
+        assertThat("incorrect state", ret.getState(), is(StatusEventProcessingState.PROC));
+        assertThat("incorrect updater", ret.getUpdater(), is(Optional.absent()));
+        assertThat("incorrect event", ret.getEvent(), is(StatusEvent.getBuilder(
+                sot, Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
+                .withNullableAccessGroupID(6)
+                .withNullableisPublic(true)
+                .withNullableNewName("foo")
+                .withNullableObjectID("bar")
+                .withNullableVersion(7)
+                .build()));
+        assertThat("ids don't match", ret.getId(), is(sse.getId()));
+        
+        final StoredStatusEvent got = storage.get(sse.getId()).get();
+        assertThat("incorrect state", got.getState(), is(StatusEventProcessingState.PROC));
+        assertThat("incorrect updater", got.getUpdater(), is(Optional.absent()));
+        assertThat("incorrect event", got.getEvent(), is(StatusEvent.getBuilder(
+                sot, Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
+                .withNullableAccessGroupID(6)
+                .withNullableisPublic(true)
+                .withNullableNewName("foo")
+                .withNullableObjectID("bar")
+                .withNullableVersion(7)
+                .build()));
+        assertThat("ids don't match", got.getId(), is(sse.getId()));
+    }
+    
+    @Test
+    public void getAndSetProcessingWithUpdaterAndSort() throws Exception {
+        // test that the event that is updated is the oldest event
+        store(2, 200, StatusEventProcessingState.READY);
+        final StorageObjectType sot = new StorageObjectType("foo", "bar", 9);
+        final StoredStatusEvent sse = storage.store(StatusEvent.getBuilder(
+                sot, Instant.ofEpochMilli(1000), StatusEventType.COPY_ACCESS_GROUP)
+                .withNullableAccessGroupID(6)
+                .withNullableisPublic(true)
+                .withNullableNewName("foo")
+                .withNullableObjectID("bar")
+                .withNullableVersion(7)
+                .build(),
+                StatusEventProcessingState.READY);
+        store(201, 400, StatusEventProcessingState.READY);
+        
+        final StoredStatusEvent ret = storage.getAndSetProcessingState(
+                StatusEventProcessingState.READY, StatusEventProcessingState.PROC, "whee").get();
+        assertThat("incorrect state", ret.getState(), is(StatusEventProcessingState.PROC));
+        assertThat("incorrect updater", ret.getUpdater(), is(Optional.of("whee")));
+        assertThat("incorrect event", ret.getEvent(), is(StatusEvent.getBuilder(
+                sot, Instant.ofEpochMilli(1000), StatusEventType.COPY_ACCESS_GROUP)
+                .withNullableAccessGroupID(6)
+                .withNullableisPublic(true)
+                .withNullableNewName("foo")
+                .withNullableObjectID("bar")
+                .withNullableVersion(7)
+                .build()));
+        assertThat("ids don't match", ret.getId(), is(sse.getId()));
+        
+        final StoredStatusEvent got = storage.get(sse.getId()).get();
+        assertThat("incorrect state", got.getState(), is(StatusEventProcessingState.PROC));
+        assertThat("incorrect updater", got.getUpdater(), is(Optional.of("whee")));
+        assertThat("incorrect event", got.getEvent(), is(StatusEvent.getBuilder(
+                sot, Instant.ofEpochMilli(1000), StatusEventType.COPY_ACCESS_GROUP)
+                .withNullableAccessGroupID(6)
+                .withNullableisPublic(true)
+                .withNullableNewName("foo")
+                .withNullableObjectID("bar")
+                .withNullableVersion(7)
+                .build()));
+        assertThat("ids don't match", got.getId(), is(sse.getId()));
+    }
+    
+    @Test
+    public void getAndSetProcessingNonExistant() throws Exception {
+        final StorageObjectType sot = new StorageObjectType("foo", "bar", 9);
+        storage.store(StatusEvent.getBuilder(
+                sot, Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
+                .withNullableAccessGroupID(6)
+                .withNullableisPublic(true)
+                .withNullableNewName("foo")
+                .withNullableObjectID("bar")
+                .withNullableVersion(7)
+                .build(),
+                StatusEventProcessingState.UNPROC);
+        
+        final Optional<StoredStatusEvent> ret = storage.getAndSetProcessingState(
+                StatusEventProcessingState.READY, StatusEventProcessingState.PROC, "whee");
+        assertThat("expected absent", ret, is(Optional.absent()));
+    }
+    
+    @Test
+    public void getAndSetProcessingFail() {
+        failGetAndSetProcessing(null, StatusEventProcessingState.FAIL,
+                new NullPointerException("oldState"));
+        failGetAndSetProcessing(StatusEventProcessingState.FAIL, null,
+                new NullPointerException("newState"));
+    }
+    
+    private void failGetAndSetProcessing(
+            final StatusEventProcessingState oldState,
+            final StatusEventProcessingState newState,
+            final Exception expected) {
+        try {
+            storage.getAndSetProcessingState(oldState, newState, "foo");
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
     }
     
     @Test
@@ -198,27 +331,30 @@ public class MongoDBStatusEventStorageTest {
         store(10, StatusEventProcessingState.FAIL);
         
         //basic checks
-        assertFound(StatusEventProcessingState.UNPROC, 15, Range.closed(1, 15));
-        assertFound(StatusEventProcessingState.UNINDX, 15, Range.closed(1, 10));
-        assertFound(StatusEventProcessingState.FAIL, 15, Range.closed(1, 10));
+        assertReturnedInOrder(StatusEventProcessingState.UNPROC, 15, 15, Range.closed(1, 15));
+        assertReturnedInOrder(StatusEventProcessingState.UNINDX, 15, 10, Range.closed(1, 10));
+        assertReturnedInOrder(StatusEventProcessingState.FAIL, 15, 10, Range.closed(1, 10));
         // ensures no events are found for INDX
-        assertFound(StatusEventProcessingState.INDX, 15, Range.closed(-1, -1));
+        assertReturnedInOrder(StatusEventProcessingState.INDX, 15, 0, Range.closed(-1, -1));
         
         // check limit works as expected
-        assertFound(StatusEventProcessingState.UNPROC, 0, Range.closed(1, 1000));
-        assertFound(StatusEventProcessingState.UNPROC, 1, Range.closed(1, 1));
-        assertFound(StatusEventProcessingState.UNPROC, 999, Range.closed(1, 999));
-        assertFound(StatusEventProcessingState.UNPROC, 1000, Range.closed(1, 1000));
-        assertFound(StatusEventProcessingState.UNPROC, 1001, Range.closed(1, 1000));
+        assertReturnedInOrder(StatusEventProcessingState.UNPROC, 0, 1000, Range.closed(1, 1000));
+        assertReturnedInOrder(StatusEventProcessingState.UNPROC, 1, 1, Range.closed(1, 1));
+        assertReturnedInOrder(StatusEventProcessingState.UNPROC, 999, 999, Range.closed(1, 999));
+        assertReturnedInOrder(StatusEventProcessingState.UNPROC, 1000, 1000,
+                Range.closed(1, 1000));
+        assertReturnedInOrder(StatusEventProcessingState.UNPROC, 1001, 1000,
+                Range.closed(1, 1000));
         
         // check changing state moves limits around
         setState(StatusEventProcessingState.UNPROC, StatusEventProcessingState.INDX,
                 Range.closed(100, 150));
         
-        assertFound(StatusEventProcessingState.INDX, 25, Range.closed(100, 125));
-        assertFound(StatusEventProcessingState.INDX, 51, Range.closed(100, 150));
-        assertFound(StatusEventProcessingState.INDX, -1, Range.closed(100, 150));
-        assertFound(StatusEventProcessingState.UNPROC, -1,
+        assertReturnedInOrder(StatusEventProcessingState.INDX, 25, 25, Range.closed(100, 124));
+        assertReturnedInOrder(StatusEventProcessingState.INDX, 51, 51, Range.closed(100, 150));
+        assertReturnedInOrder(StatusEventProcessingState.INDX, 52, 51, Range.closed(100, 150));
+        assertReturnedInOrder(StatusEventProcessingState.INDX, -1, 51, Range.closed(100, 150));
+        assertReturnedInOrder(StatusEventProcessingState.UNPROC, -1, 1000,
                 Range.closed(1, 99), Range.closed(151, 1051));
     }
 
@@ -236,12 +372,21 @@ public class MongoDBStatusEventStorageTest {
     }
 
     @SafeVarargs
-    private final void assertFound(
+    private final void assertReturnedInOrder(
             final StatusEventProcessingState state,
             final int limit,
+            final int expected,
             final Range<Integer>... ranges)
             throws Exception {
-        for (final StoredStatusEvent event: storage.get(state, limit)) {
+        Instant last = null;
+        final List<StoredStatusEvent> events = storage.get(state, limit);
+        assertThat("incorrect number of events", events.size(), is(expected));
+        for (final StoredStatusEvent event: events) {
+            if (last != null) {
+                assertThat("expected correct ordering",
+                        last.isBefore(event.getEvent().getTimestamp()), is(true));
+            }
+            last = event.getEvent().getTimestamp();
             assertInRange(event.getEvent().getTimestamp(), ranges);
         }
     }
@@ -258,8 +403,13 @@ public class MongoDBStatusEventStorageTest {
 
     private void store(final int count, final StatusEventProcessingState state)
             throws RetriableIndexingException {
+        store(1, count, state);
+    }
+    
+    private void store(final int start, final int count, final StatusEventProcessingState state)
+            throws RetriableIndexingException {
         final List<Integer> times = new ArrayList<>();
-        for (int i = 1; i <= count; i++) {
+        for (int i = start; i <= count; i++) {
             times.add(i);
         }
         Collections.shuffle(times);
@@ -324,7 +474,7 @@ public class MongoDBStatusEventStorageTest {
     public void setStateFail() {
         final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
                 "ws", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION).build(),
-                new StatusEventID("foo"), StatusEventProcessingState.UNINDX);
+                new StatusEventID("foo"), StatusEventProcessingState.UNINDX, null);
         failSetState(null, StatusEventProcessingState.INDX, new NullPointerException("event"));
         failSetState(sse, null, new NullPointerException("state"));
     }
