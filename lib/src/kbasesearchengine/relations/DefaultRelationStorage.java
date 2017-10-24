@@ -10,7 +10,7 @@ public class DefaultRelationStorage implements RelationStorage {
 
     @Override
     public void addRelations(List<Relation> links) throws IOException {
-        // TODO: implement
+        // TODO: implement (relations)
     }
     
     @Override

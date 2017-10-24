@@ -34,14 +34,12 @@ import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.events.handler.SourceData;
-import kbasesearchengine.events.storage.OldStatusEventStorage;
+import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.parse.KeywordParser;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.parse.ObjectParser;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
-import kbasesearchengine.queue.StatusEventIterator;
-import kbasesearchengine.queue.StatusEventQueue;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.StorageObjectType;
@@ -56,8 +54,7 @@ public class IndexerCoordinator {
             1000, 2000, 4000, 8000, 16000);
     
     private final File rootTempDir;
-    private final OldStatusEventStorage storage;
-    private final StatusEventQueue queue;
+    private final StatusEventStorage storage;
     private final TypeStorage typeStorage;
     private final IndexingStorage indexingStorage;
     private final LineLogger logger;
@@ -69,7 +66,7 @@ public class IndexerCoordinator {
 
     public IndexerCoordinator(
             final List<EventHandler> eventHandlers,
-            final OldStatusEventStorage storage,
+            final StatusEventStorage storage,
             final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,
@@ -81,7 +78,6 @@ public class IndexerCoordinator {
         
         eventHandlers.stream().forEach(eh -> this.eventHandlers.put(eh.getStorageCode(), eh));
         this.storage = storage;
-        queue = new StatusEventQueue(storage);
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
     }
@@ -95,7 +91,6 @@ public class IndexerCoordinator {
             final File tempDir,
             final LineLogger logger) {
         Utils.nonNull(logger, "logger");
-        this.queue = null;
         this.storage = null;
         this.rootTempDir = tempDir;
         this.logger = logger;
@@ -182,10 +177,10 @@ public class IndexerCoordinator {
     }
     
     private void performOneTick() throws InterruptedException, IndexingException {
-        // Seems like this shouldn't be source specific. It should handle all event sources.
-        final StatusEventIterator iter = retrier.retryFunc(q -> q.iterator("WS"), queue, null);
-        while (iter.hasNext()) {
-            final StoredStatusEvent parentEvent = retrier.retryFunc(i -> i.next(), iter, null);
+        //TODO NOW intelligent queue
+        final List<StoredStatusEvent> parentEvents = retrier.retryFunc(
+                s -> s.get(StatusEventProcessingState.UNPROC, 1000), storage, null);
+        for (final StoredStatusEvent parentEvent: parentEvents) {
             //TODO NOW getEventHandler indexing exception should be caught and the event skipped
             if (getEventHandler(parentEvent).isExpandable(parentEvent)) {
                 logger.logInfo(String.format("[Indexer] Expanding event %s %s",
@@ -193,7 +188,7 @@ public class IndexerCoordinator {
                 try {
                     final Iterator<StatusEvent> er = retrier.retryFunc(
                             e -> getSubEventIterator(e), parentEvent, parentEvent);
-                    storage.markAsProcessed(parentEvent, processEvents(parentEvent, er));
+                    storage.setProcessingState(parentEvent, processEvents(parentEvent, er)); //TODO NOW retry
                 } catch (IndexingException e) {
                     markAsVisitedFailedPostError(parentEvent);
                     handleException("Error expanding parent event", parentEvent, e);
@@ -206,7 +201,7 @@ public class IndexerCoordinator {
                 }
             } else {
                 try {
-                    storage.markAsProcessed(parentEvent, processEvent(parentEvent));
+                    storage.setProcessingState(parentEvent, processEvent(parentEvent)); //TODO NOW retry
                 } catch (FatalIndexingException e) {
                     markAsVisitedFailedPostError(parentEvent);
                     throw e;
@@ -237,7 +232,7 @@ public class IndexerCoordinator {
     private void markAsVisitedFailedPostError(final StoredStatusEvent parentEvent)
             throws FatalIndexingException {
         try {
-            storage.markAsProcessed(parentEvent, StatusEventProcessingState.FAIL);
+            storage.setProcessingState(parentEvent, StatusEventProcessingState.FAIL); //TODO NOW retry
         } catch (Exception e) {
             //ok then we're screwed
             throw new FatalIndexingException("Can't mark events as failed: " + e.getMessage(), e);
@@ -252,20 +247,21 @@ public class IndexerCoordinator {
         StatusEventProcessingState allsuccess = StatusEventProcessingState.INDX;
         while (expanditer.hasNext()) {
             //TODO EVENT insert sub event into db - need to ensure not inserted twice on reprocess - use parent id
-            final StoredStatusEvent ev;
+            final StatusEventProcessingState res;
             try {
                 final StatusEvent subev = retrier.retryFunc(
                         i -> getNextSubEvent(i), expanditer, parentEvent);
                 //TODO NOW store parent ID
-                //TODO NOW deal with exceptions from storage
-                ev = storage.store(subev, StatusEventProcessingState.UNPROC);
+                final StoredStatusEvent ev = retrier.retryFunc(
+                        s -> s.store(subev, StatusEventProcessingState.UNPROC),
+                        storage, parentEvent);
+                res = processEvent(ev);
+                retrier.retryFunc(s -> s.setProcessingState(ev, res), storage, ev);
             } catch (IndexingException e) {
                 // TODO EVENT mark sub event as failed
                 handleException("Error getting event from data storage", parentEvent, e);
                 return StatusEventProcessingState.FAIL;
             }
-            final StatusEventProcessingState res = processEvent(ev);
-            storage.markAsProcessed(ev, res); //TODO NOW retry
             if (StatusEventProcessingState.FAIL.equals(res)) {
                 allsuccess = StatusEventProcessingState.FAIL;
             }
@@ -366,7 +362,7 @@ public class IndexerCoordinator {
                 if (indexed) {
                     logger.logInfo("[Indexer]   skipping " + pguid +
                             " creation (already indexed)");
-                    // TODO: we should fix public access for all sub-objects too !!!
+                    // TODO: we should fix public access for all sub-objects too (maybe already works. Anyway, ensure all subobjects are set correctly as well as the parent)
                     if (ev.isPublic().get()) {
                         publish(pguid);
                     } else {

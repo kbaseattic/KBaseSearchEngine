@@ -35,8 +35,9 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
-import kbasesearchengine.events.storage.OldMongoDBStatusEventStorage;
-import kbasesearchengine.events.storage.OldStatusEventStorage;
+import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
+import kbasesearchengine.events.storage.StatusEventStorage;
+import kbasesearchengine.events.storage.StorageInitException;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.parse.ObjectParseException;
@@ -145,7 +146,7 @@ public class SearchTools {
         }
         try {
             setUpMongoDBs(cfg, a.genWSEvents, a.dropDB || a.startCoordinator);
-            setUpElasticSearch(cfg, a.dropDB);
+            setUpElasticSearch(cfg, a.dropDB || a.startCoordinator);
         } catch (MongoException | IOException e) {
             printError(e, a.verbose);
             return 1;
@@ -167,7 +168,7 @@ public class SearchTools {
                 runCoordinator(cfg, out, err);
                 noCommand = false;
             } catch (IOException | AuthException | ObjectParseException | TypeParseException |
-                    UnauthorizedException e) {
+                    UnauthorizedException | StorageInitException e) {
                 printError(e, a.verbose);
                 return 1;
             }
@@ -178,7 +179,7 @@ public class SearchTools {
                         getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()),
                         getWsTypes(a.wsTypes, cfg.getWorkspaceTypes()));
                 noCommand = false;
-            } catch (EventGeneratorException e) {
+            } catch (EventGeneratorException | StorageInitException e) {
                 printError(e, a.verbose);
                 return 1;
             }
@@ -195,7 +196,7 @@ public class SearchTools {
             final PrintStream logTarget,
             final PrintStream errTarget)
             throws IOException, AuthException, ObjectParseException, TypeParseException,
-                UnauthorizedException {
+                UnauthorizedException, StorageInitException {
         final AuthToken kbaseIndexerToken = getIndexerToken(cfg);
         final File tempDir = new File(cfg.getTempDir());
         if (!tempDir.exists()) {
@@ -209,7 +210,7 @@ public class SearchTools {
         final Path mappingsDir = Paths.get(cfg.getTypeMappingsDirectory());
         final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
         
-        final OldStatusEventStorage storage = new OldMongoDBStatusEventStorage(searchDB);
+        final StatusEventStorage storage = new MongoDBStatusEventStorage(searchDB);
         
         final WorkspaceClient wsClient = new WorkspaceClient(
                 cfg.getWorkspaceURL(), kbaseIndexerToken);
@@ -259,9 +260,9 @@ public class SearchTools {
         return kbaseIndexerToken;
     }
 
-    private void setUpElasticSearch(final SearchToolsConfig cfg, final boolean dropDB)
+    private void setUpElasticSearch(final SearchToolsConfig cfg, final boolean dontSkip)
             throws IOException {
-        if (!dropDB) {
+        if (!dontSkip) {
             return;
         }
         final HttpHost esHostPort = new HttpHost(cfg.getElasticHost(), cfg.getElasticPort());
@@ -383,9 +384,9 @@ public class SearchTools {
             final String ref,
             final List<WorkspaceIdentifier> wsBlackList,
             final List<String> wsTypes)
-            throws EventGeneratorException {
+            throws EventGeneratorException, StorageInitException {
         final WorkspaceEventGenerator gen = new WorkspaceEventGenerator.Builder(
-                new OldMongoDBStatusEventStorage(searchDB), workspaceDB, logtarget)
+                new MongoDBStatusEventStorage(searchDB), workspaceDB, logtarget)
                 .withNullableRef(ref)
                 .withWorkspaceBlacklist(wsBlackList)
                 .withWorkspaceTypes(wsTypes).build();

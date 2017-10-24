@@ -25,7 +25,8 @@ import com.mongodb.client.MongoDatabase;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
-import kbasesearchengine.events.storage.OldStatusEventStorage;
+import kbasesearchengine.events.exceptions.RetriableIndexingException;
+import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.system.StorageObjectType;
 
 /** Generates events from the workspace and inserts them into the search queue.
@@ -72,14 +73,14 @@ public class WorkspaceEventGenerator {
     private final int obj;
     private final int ver;
     
-    private final OldStatusEventStorage storage;
+    private final StatusEventStorage storage;
     private final MongoDatabase wsDB;
     private final PrintStream logtarget;
     private final Set<WorkspaceIdentifier> wsBlackList;
     private List<Pattern> wsTypes;
     
     private WorkspaceEventGenerator(
-            final OldStatusEventStorage storage,
+            final StatusEventStorage storage,
             final MongoDatabase workspaceDatabase,
             final int ws,
             final int obj,
@@ -208,16 +209,20 @@ public class WorkspaceEventGenerator {
         final String[] typeString = ver.getString(WS_KEY_TYPE).split("-");
         final String type = typeString[0];
         final int typever = Integer.parseInt(typeString[1].split("\\.")[0]);
-        storage.store(StatusEvent.getBuilder(
-                new StorageObjectType("WS", type, typever),
-                ver.getDate(WS_KEY_SAVEDATE).toInstant(),
-                StatusEventType.NEW_VERSION)
-                .withNullableAccessGroupID(wsid)
-                .withNullableObjectID(objid + "")
-                .withNullableVersion(vernum)
-                .withNullableisPublic(pub)
-                .build(),
-                StatusEventProcessingState.UNPROC);
+        try {
+            storage.store(StatusEvent.getBuilder(
+                    new StorageObjectType("WS", type, typever),
+                    ver.getDate(WS_KEY_SAVEDATE).toInstant(),
+                    StatusEventType.NEW_VERSION)
+                    .withNullableAccessGroupID(wsid)
+                    .withNullableObjectID(objid + "")
+                    .withNullableVersion(vernum)
+                    .withNullableisPublic(pub)
+                    .build(),
+                    StatusEventProcessingState.UNPROC);
+        } catch (RetriableIndexingException e) {
+            throw new EventGeneratorException(e.getMessage(), e); //TODO CODE retries
+        }
         log(String.format("Generated event %s/%s/%s %s-%s", wsid, objid, vernum, type, typever));
     }
 
@@ -302,7 +307,7 @@ public class WorkspaceEventGenerator {
 
     public static class Builder {
         
-        private final OldStatusEventStorage storage;
+        private final StatusEventStorage storage;
         private final MongoDatabase workspaceDatabase;
         private int ws = -1;
         private int obj = -1;
@@ -312,7 +317,7 @@ public class WorkspaceEventGenerator {
         private Collection<String> wsTypes = new LinkedList<>();
         
         public Builder(
-                final OldStatusEventStorage storage,
+                final StatusEventStorage storage,
                 final MongoDatabase workspaceDatabase,
                 final PrintStream logtarget) {
             nonNull(storage, "storage");
