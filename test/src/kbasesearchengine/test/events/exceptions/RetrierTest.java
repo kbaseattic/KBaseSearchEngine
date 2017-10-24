@@ -182,7 +182,8 @@ public class RetrierTest {
                 .withNullableVersion(6)
                 .build(),
                 new StatusEventID("wugga"),
-                StatusEventProcessingState.UNPROC);
+                StatusEventProcessingState.UNPROC,
+                null);
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 2), "foo", ev);
         final Instant end = Instant.now();
@@ -258,7 +259,8 @@ public class RetrierTest {
                 .withNullableVersion(6)
                 .build(),
                 new StatusEventID("wugga"),
-                StatusEventProcessingState.UNPROC);
+                StatusEventProcessingState.UNPROC,
+                null);
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 2, true), "foo", ev);
         final Instant end = Instant.now();
@@ -377,7 +379,8 @@ public class RetrierTest {
                 .withNullableVersion(6)
                 .build(),
                 new StatusEventID("wugga"),
-                StatusEventProcessingState.UNPROC);
+                StatusEventProcessingState.UNPROC,
+                null);
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 26L, 2), "foo", ev);
         final Instant end = Instant.now();
@@ -455,7 +458,8 @@ public class RetrierTest {
                 .withNullableVersion(6)
                 .build(),
                 new StatusEventID("wugga"),
-                StatusEventProcessingState.UNPROC);
+                StatusEventProcessingState.UNPROC,
+                null);
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 64L, 2, true), "foo", ev);
         final Instant end = Instant.now();

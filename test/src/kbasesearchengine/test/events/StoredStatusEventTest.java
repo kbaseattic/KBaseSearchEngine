@@ -8,6 +8,8 @@ import java.time.Instant;
 
 import org.junit.Test;
 
+import com.google.common.base.Optional;
+
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
@@ -18,16 +20,36 @@ import kbasesearchengine.test.common.TestCommon;
 public class StoredStatusEventTest {
 
     @Test
-    public void construct() {
+    public void constructNoUpdater() {
+        constructNoUpdater(null);
+        constructNoUpdater("   \t   \n   ");
+    }
+
+    private void constructNoUpdater(final String updater) {
         final StatusEvent se = StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build();
         
         final StoredStatusEvent sei = new StoredStatusEvent(
-                se, new StatusEventID("foo"), StatusEventProcessingState.UNPROC);
+                se, new StatusEventID("foo"), StatusEventProcessingState.UNPROC, updater);
         assertThat("incorrect id", sei.getId(), is(new StatusEventID("foo")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build()));
         assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));
+        assertThat("incorrect updater", sei.getUpdater(), is(Optional.absent()));
+    }
+    
+    @Test
+    public void constructWithUpdater() {
+        final StatusEvent se = StatusEvent.getBuilder(
+                "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build();
+        
+        final StoredStatusEvent sei = new StoredStatusEvent(
+                se, new StatusEventID("foo"), StatusEventProcessingState.UNPROC, "foo");
+        assertThat("incorrect id", sei.getId(), is(new StatusEventID("foo")));
+        assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
+                "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build()));
+        assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));
+        assertThat("incorrect updater", sei.getUpdater(), is(Optional.of("foo")));
     }
     
     @Test
@@ -49,7 +71,7 @@ public class StoredStatusEventTest {
             final StatusEventProcessingState state,
             final Exception expected) {
         try {
-            new StoredStatusEvent(event, id, state);
+            new StoredStatusEvent(event, id, state, null);
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
