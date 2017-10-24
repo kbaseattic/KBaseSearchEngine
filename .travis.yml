@@ -33,12 +33,14 @@ branches:
   - develop
 
 before_install:
+- whoami
 - docker version
 - javac -version
 - java -version
 - sudo groupadd non_root_user
 - sudo useradd -r -u 1000 -g non_root_user non_root_user
-- sudo su - non_root_user
+- su - non_root_user
+- whoami
 - cd ~
 - pwd
 
