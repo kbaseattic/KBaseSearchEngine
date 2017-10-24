@@ -40,12 +40,6 @@ before_install:
 - docker version
 - javac -version
 - java -version
-- sudo groupadd non_root_user
-- sudo useradd -r -u 1000 -g non_root_user non_root_user
-- su - non_root_user
-- whoami
-- cd ~
-- pwd
 
 install:
 - wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.0.tar.gz
@@ -72,10 +66,10 @@ install:
 - sed -i 's\https://appdev.kbase.us/services\https://ci.kbase.us/services\' test_local/test.cfg
 - sed -i 's\https://appdev.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\'
   test_local/test.cfg
-- sed -i 's/$(id -u)/1000/' test_local/run_tests.sh
+- sed -i 's/$(id -u)/2000/' test_local/run_tests.sh
 - pwd=$(pwd)
 - echo "#!/bin/bash" >> test_local/run_subjob.sh
-- echo -e "$pwd/test_local/run_docker.sh run --rm --user 1000 -v $pwd/test_local/subjobs/\$1/workdir:/kb/module/work
+- echo -e "$pwd/test_local/run_docker.sh run --rm --user 2000 -v $pwd/test_local/subjobs/\$1/workdir:/kb/module/work
   -v $pwd/test_local/workdir/tmp:/kb/module/work/tmp \$4 -e \"SDK_CALLBACK_URL=\$3\"
   \$2 async" >> test_local/run_subjob.sh
 - cat test_local/run_subjob.sh
