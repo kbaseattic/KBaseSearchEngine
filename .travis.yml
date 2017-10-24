@@ -80,5 +80,5 @@ script:
 - kb-sdk test
 
 after_success:
-- ls work/test-reports
-- bash <(curl -s https://codecov.io/bash) -t 52a915c3-441b-4257-baa1-a1a21f0a3a74 -f work/test-reports/coverage-report.xml
+- ls test_local/workdir/test-reports/
+- bash <(curl -s https://codecov.io/bash) -t 52a915c3-441b-4257-baa1-a1a21f0a3a74 -f test_local/workdir/test-reports/coverage-report.xml
