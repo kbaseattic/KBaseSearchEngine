@@ -242,11 +242,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         doc.put(OBJ_NAME, data.getName());
         doc.put(OBJ_CREATOR, data.getCreator());
-        doc.put(OBJ_COPIER, data.getCopier());
-        doc.put(OBJ_PROV_MODULE, data.getModule());
-        doc.put(OBJ_PROV_METHOD, data.getMethod());
-        doc.put(OBJ_PROV_MODULE_VERSION, data.getVersion());
-        doc.put(OBJ_PROV_COMMIT_HASH, data.getCommitHash());
+        doc.put(OBJ_COPIER, data.getCopier().orNull());
+        doc.put(OBJ_PROV_MODULE, data.getModule().orNull());
+        doc.put(OBJ_PROV_METHOD, data.getMethod().orNull());
+        doc.put(OBJ_PROV_MODULE_VERSION, data.getVersion().orNull());
+        doc.put(OBJ_PROV_COMMIT_HASH, data.getCommitHash().orNull());
         
         doc.put("timestamp", timestamp.toEpochMilli());
         doc.put("prefix", toGUIDPrefix(id));
