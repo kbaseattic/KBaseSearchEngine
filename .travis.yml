@@ -36,8 +36,8 @@ before_install:
 - docker version
 - javac -version
 - java -version
-- groupadd non_root_user
-- useradd -r -u 1000 -g non_root_user non_root_user
+- sudo groupadd non_root_user
+- sudo useradd -r -u 1000 -g non_root_user non_root_user
 
 install:
 - pwd
@@ -51,7 +51,7 @@ install:
 - tar xfz $MONGODB_VER.tgz
 - export MONGOD=`pwd`/$MONGODB_VER/bin/mongod
 - ln -s mongodb-linux-x86_64-2.6.12 mongo
-- su - non_root_user
+- sudo su - non_root_user
 - cd /opt
 - git clone https://github.com/kbase/jars
 - git clone https://github.com/kbase/kb_sdk
