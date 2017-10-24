@@ -38,21 +38,20 @@ before_install:
 - java -version
 - sudo groupadd non_root_user
 - sudo useradd -r -u 1000 -g non_root_user non_root_user
+- sudo su - non_root_user
+- cd ~
+- pwd
 
 install:
-- pwd
-- cd /opt
 - wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.0.tar.gz
 - tar xfz elasticsearch-5.5.0.tar.gz
 - ln -s elasticsearch-5.5.0 elasticsearch
-- chown -R non_root_user /opt/elasticsearch
-- chown -R non_root_user /opt/elasticsearch-5.5.0
 - wget http://fastdl.mongodb.org/linux/$MONGODB_VER.tgz
 - tar xfz $MONGODB_VER.tgz
 - export MONGOD=`pwd`/$MONGODB_VER/bin/mongod
 - ln -s mongodb-linux-x86_64-2.6.12 mongo
-- sudo su - non_root_user
-- cd /opt
+
+- cd ~
 - git clone https://github.com/kbase/jars
 - git clone https://github.com/kbase/kb_sdk
 - cd kb_sdk
@@ -60,7 +59,7 @@ install:
 - make sdkbase
 - docker images
 - export PATH=$(pwd)/bin:$PATH
-- cd /opt
+- cd ~
 - git clone https://github.com/arfathpasha/KBaseSearchEngine.git -b develop
 - cd KBaseSearchEngine
 - kb-sdk test || true
@@ -71,7 +70,7 @@ install:
 - sed -i 's/$(id -u)/1000/' test_local/run_tests.sh
 - pwd=$(pwd)
 - echo "#!/bin/bash" >> test_local/run_subjob.sh
-- echo -e "$pwd/test_local/run_docker.sh run --rm --user 0:0 -v $pwd/test_local/subjobs/\$1/workdir:/kb/module/work
+- echo -e "$pwd/test_local/run_docker.sh run --rm --user 1000 -v $pwd/test_local/subjobs/\$1/workdir:/kb/module/work
   -v $pwd/test_local/workdir/tmp:/kb/module/work/tmp \$4 -e \"SDK_CALLBACK_URL=\$3\"
   \$2 async" >> test_local/run_subjob.sh
 - cat test_local/run_subjob.sh
