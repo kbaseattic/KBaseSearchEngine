@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 import org.apache.http.HttpHost;
 import org.slf4j.LoggerFactory;
@@ -34,12 +35,14 @@ import com.mongodb.client.MongoDatabase;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.events.storage.StorageInitException;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.IndexerCoordinator;
+import kbasesearchengine.main.IndexerWorker;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.IndexingStorage;
@@ -124,8 +127,12 @@ public class SearchTools {
             usage(jc);
             return 0;
         }
-        if (a.startCoordinator && a.genWSEvents) {
-            printError("Can only run one of the coordinator or event generator.");
+        // can't be empty string since it's a command line param
+        final boolean startWorker = a.startWorker != null;
+        if ((a.startCoordinator ? 1 : 0) + 
+                (a.genWSEvents ? 1 : 0) +
+                (startWorker ? 1 : 0) > 1) {
+            printError("Can only run one of the coordinator, event generator, or a worker.");
             return 1;
         }
         final SearchToolsConfig cfg;
@@ -145,8 +152,8 @@ public class SearchTools {
             return 1;
         }
         try {
-            setUpMongoDBs(cfg, a.genWSEvents, a.dropDB || a.startCoordinator);
-            setUpElasticSearch(cfg, a.dropDB || a.startCoordinator);
+            setUpMongoDBs(cfg, a.genWSEvents, a.dropDB || a.startCoordinator || startWorker);
+            setUpElasticSearch(cfg, a.dropDB || startWorker);
         } catch (MongoException | IOException e) {
             printError(e, a.verbose);
             return 1;
@@ -166,6 +173,15 @@ public class SearchTools {
         if (a.startCoordinator) {
             try {
                 runCoordinator(cfg, out, err);
+                noCommand = false; 
+            } catch (StorageInitException e) {
+                printError(e, a.verbose);
+                return 1;
+            }
+        }
+        if (startWorker) {
+            try {
+                runWorker(cfg, a.startWorker, out, err);
                 noCommand = false;
             } catch (IOException | AuthException | ObjectParseException | TypeParseException |
                     UnauthorizedException | StorageInitException e) {
@@ -195,6 +211,20 @@ public class SearchTools {
             final SearchToolsConfig cfg,
             final PrintStream logTarget,
             final PrintStream errTarget)
+            throws StorageInitException {
+        final LineLogger logger = buildLogger(logTarget, errTarget);
+        
+        final StatusEventStorage storage = new MongoDBStatusEventStorage(searchDB);
+        
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger);
+        coord.startIndexer();
+    }
+    
+    private void runWorker(
+            final SearchToolsConfig cfg,
+            final String id,
+            final PrintStream logTarget,
+            final PrintStream errTarget)
             throws IOException, AuthException, ObjectParseException, TypeParseException,
                 UnauthorizedException, StorageInitException {
         final AuthToken kbaseIndexerToken = getIndexerToken(cfg);
@@ -215,11 +245,19 @@ public class SearchTools {
         final WorkspaceClient wsClient = new WorkspaceClient(
                 cfg.getWorkspaceURL(), kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
-        final WorkspaceEventHandler weh = new WorkspaceEventHandler(wsClient);
+        final EventHandler weh = new WorkspaceEventHandler(wsClient);
         
-        final IndexerCoordinator mop = new IndexerCoordinator(
-                Arrays.asList(weh), storage, indexStore, ss, tempDir, logger);
-        mop.startIndexer();
+        final IndexerWorker wrk = new IndexerWorker(
+                getID(id), Arrays.asList(weh), storage, indexStore, ss, tempDir, logger);
+        wrk.startIndexer();
+    }
+
+    private String getID(final String id) {
+        if ("-".equals(id)) {
+            return UUID.randomUUID().toString();
+        } else {
+            return id;
+        }
     }
 
     private LineLogger buildLogger(final PrintStream logTarget,
@@ -266,7 +304,7 @@ public class SearchTools {
             return;
         }
         final HttpHost esHostPort = new HttpHost(cfg.getElasticHost(), cfg.getElasticPort());
-        final File tempSubDir = IndexerCoordinator.getTempSubDir(
+        final File tempSubDir = IndexerWorker.getTempSubDir(
                 new File(cfg.getTempDir()), "esbulk");
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(
                 esHostPort, tempSubDir);
@@ -463,7 +501,7 @@ public class SearchTools {
                 "option overrides the type list in the config file.")
         private List<String> wsTypes;
         
-        @Parameter(names = {"-x", "--drop-databases"}, description =
+        @Parameter(names = {"--destroy-all-databases"}, description =
                 "Permanently, and without warning, drop the search event database and " +
                 "elasticsearch indexes. Clears all data from the search system. " +
                 "WARNING: there is no warning or double check for this command. Data will " +
@@ -471,8 +509,14 @@ public class SearchTools {
         private boolean dropDB;
         
         @Parameter(names = {"-s", "--start-coordinator"}, description =
-                "Start the indexder coordinator.")
+                "Start the indexer coordinator. Only one coordinator may be run per search " +
+                "instance, but many workers may be run.")
         private boolean startCoordinator;
+        
+        @Parameter(names = {"-k", "--start-worker"}, description =
+                "Start an indexer worker with the provided id. Set the id to '-' to " +
+                "generate a random id.")
+        private String startWorker;
         
         @Parameter(names = {"-w", "--generate-workspace-events"}, description =
                 "Generate events for all objects in the workspace service database. " +

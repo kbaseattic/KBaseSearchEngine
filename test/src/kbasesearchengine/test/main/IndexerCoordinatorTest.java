@@ -36,7 +36,7 @@ import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.LineLogger;
-import kbasesearchengine.main.IndexerCoordinator;
+import kbasesearchengine.main.IndexerWorker;
 import kbasesearchengine.search.AccessFilter;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.MatchFilter;
@@ -64,9 +64,9 @@ import workspace.RegisterTypespecParams;
 import workspace.SaveObjectsParams;
 import workspace.WorkspaceClient;
 
-public class IndexerCoordinatorTest {
+public class IndexerCoordinatorTest { //TODO CODE change to indexerworkertest
 	
-    private static IndexerCoordinator mop = null;
+    private static IndexerWorker mop = null;
     private static MongoController mongo;
     private static MongoClient mc;
     private static MongoDatabase db;
@@ -159,10 +159,10 @@ public class IndexerCoordinatorTest {
         // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
         
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
-                IndexerCoordinator.getTempSubDir(tempDir.toFile(), "esbulk"));
+                IndexerWorker.getTempSubDir(tempDir.toFile(), "esbulk"));
         esStorage.setIndexNamePrefix(esIndexPrefix);
         
-        mop = new IndexerCoordinator(Arrays.asList(weh), storage, esStorage,
+        mop = new IndexerWorker("test", Arrays.asList(weh), storage, esStorage,
                 ss, tempDir.resolve("MainObjectProcessor").toFile(), logger);
         loadTypes(wsUrl, wsadmintoken);
         wsid = (int) loadTestData(wsUrl, userToken);

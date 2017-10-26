@@ -31,7 +31,7 @@ import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.main.LineLogger;
-import kbasesearchengine.main.IndexerCoordinator;
+import kbasesearchengine.main.IndexerWorker;
 import kbasesearchengine.search.AccessFilter;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.MatchFilter;
@@ -48,6 +48,12 @@ import workspace.ListObjectsParams;
 import workspace.WorkspaceClient;
 import workspace.WorkspaceIdentity;
 
+/** NOTE: extremely large refactors have occurred since this code was written and it has not been
+ * updated. It should be considered to be obsolete until someone takes the time to review and
+ * rewrite the code for the new infrastructure.
+ * 
+ *
+ */
 public class PerformanceTester {
     private static final boolean cleanup = false;
     private static final boolean debug = false;
@@ -59,7 +65,7 @@ public class PerformanceTester {
     private static String esPassword = null;
     private static File tempDir = null;
     private static URL wsUrl = null;
-    private static IndexerCoordinator mop = null;
+    private static IndexerWorker mop = null;
     private static List<long[]> timeStats = new ArrayList<>();
     
     @BeforeClass
@@ -152,14 +158,14 @@ public class PerformanceTester {
         final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
         
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
-                IndexerCoordinator.getTempSubDir(tempDir, "esbulk"));
+                IndexerWorker.getTempSubDir(tempDir, "esbulk"));
         if (esUser != null) {
             esStorage.setEsUser(esUser);
             esStorage.setEsPassword(esPassword);
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
         
-        mop = new IndexerCoordinator(esStorage, ss, tempDir, logger);
+        mop = new IndexerWorker("test", esStorage, ss, tempDir, logger);
     }
     
     private static void deleteAllTestElasticIndices(HttpHost esHostPort, String esUser,
