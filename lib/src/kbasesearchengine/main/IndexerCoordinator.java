@@ -23,6 +23,7 @@ public class IndexerCoordinator {
     
     private final StatusEventStorage storage;
     private final LineLogger logger;
+    private boolean stopIndexer = false;
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
             RETRY_FATAL_BACKOFF_MS,
@@ -47,7 +48,8 @@ public class IndexerCoordinator {
     }
     
     public void startIndexer() {
-        while(!Thread.currentThread().isInterrupted()) {
+        stopIndexer = false;
+        while(!Thread.currentThread().isInterrupted() && !stopIndexer) {
             try {
                 performOneTick();
             } catch (InterruptedException e) {
@@ -69,6 +71,10 @@ public class IndexerCoordinator {
                 }
             }
         }
+    }
+    
+    public void stopIndexer() {
+        stopIndexer = true;
     }
     
     private enum ErrorType {

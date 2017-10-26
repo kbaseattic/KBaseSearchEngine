@@ -13,7 +13,7 @@ RUN cd /kb/dev_container/modules/jars \
 	&& git pull \
 	&& . /kb/dev_container/user-env.sh \
 	&& make deploy \
-	&& echo docker is annoying 1
+	&& echo docker is annoying 2
 
 RUN apt-get install nano \
 	&& add-apt-repository ppa:openjdk-r/ppa \

@@ -1004,6 +1004,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
     }
     
+    @Override
     public List<ObjectData> getObjectsByIds(Set<GUID> ids) throws IOException {
         PostProcessing pp = new PostProcessing();
         pp.objectInfo = true;

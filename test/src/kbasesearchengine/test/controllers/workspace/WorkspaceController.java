@@ -58,6 +58,7 @@ public class WorkspaceController {
             final Path jarsDir,
             final String mongoHost,
             final String mongoDatabase,
+            final String searchMongoDB,
             final String adminUser,
             final URL authServiceRootURL,
             final Path rootTempDir)
@@ -66,7 +67,7 @@ public class WorkspaceController {
         tempDir = makeTempDirs(rootTempDir, "WorkspaceController-", tempDirectories);
         port = findFreePort();
         final Path deployCfg = createDeployCfg(
-                mongoHost, mongoDatabase, authServiceRootURL, adminUser);
+                mongoHost, mongoDatabase, searchMongoDB, authServiceRootURL, adminUser);
         
         try (final MongoClient mc = new MongoClient(mongoHost)) {
             final MongoDatabase db = mc.getDatabase(mongoDatabase);
@@ -91,6 +92,7 @@ public class WorkspaceController {
     private Path createDeployCfg(
             final String mongoHost,
             final String mongoDatabase,
+            final String searchMongoDB,
             final URL authRootURL,
             final String adminUser)
             throws IOException {
@@ -107,6 +109,12 @@ public class WorkspaceController {
         ws.add("ws-admin", adminUser);
         ws.add("temp-dir", tempDir.resolve("temp_data"));
         ws.add("ignore-handle-service", "true");
+        // search listener config
+        ws.add("listeners", "search");
+        ws.add("listener-search-class",
+                "us.kbase.workspace.modules.SearchPrototypeEventHandlerFactory");
+        ws.add("listener-search-config-mongohost", mongoHost);
+        ws.add("listener-search-config-mongodatabase", searchMongoDB);
         ini.store(iniFile);
         return iniFile.toPath();
     }
@@ -158,6 +166,7 @@ public class WorkspaceController {
                 Paths.get("/home/crusherofheads/localgit/jars"),
                 "localhost:27017",
                 "WSController",
+                "SearchDB",
                 "workspaceadmin",
                 new URL("https://ci.kbase.us/services/auth"),
                 Paths.get("workspacetesttemp"));
