@@ -15,7 +15,9 @@ import com.mongodb.MongoException;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.result.UpdateResult;
 
 import kbasesearchengine.events.StatusEvent;
@@ -25,7 +27,6 @@ import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.StatusEvent.Builder;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
-import kbasesearchengine.events.exceptions.RetriableIndexingException;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.tools.Utils;
 
@@ -51,6 +52,8 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     private static final String FLD_OBJECT_TYPE_VER = "objtypever";
     private static final String FLD_PUBLIC = "public";
     private static final String FLD_NEW_NAME = "newname";
+    // the ID, if any, of the operator that last changed the event status. Arbitrary string.
+    private static final String FLD_UPDATER = "updtr";
     
     private static final String COL_EVENT = "searchEvents";
     
@@ -144,7 +147,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     public StoredStatusEvent store(
             final StatusEvent newEvent,
             final StatusEventProcessingState state)
-            throws RetriableIndexingException {
+            throws FatalRetriableIndexingException {
         Utils.nonNull(newEvent, "newEvent");
         Utils.nonNull(state, "state");
         final Optional<StorageObjectType> sot = newEvent.getStorageObjectType();
@@ -169,12 +172,12 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                     "Failed event storage: " + e.getMessage(), e);
         }
         return new StoredStatusEvent(
-                newEvent, new StatusEventID(doc.getObjectId("_id").toString()), state);
+                newEvent, new StatusEventID(doc.getObjectId("_id").toString()), state, null);
     }
     
     @Override
     public Optional<StoredStatusEvent> get(final StatusEventID id)
-            throws RetriableIndexingException {
+            throws FatalRetriableIndexingException {
         Utils.nonNull(id, "id");
         final Document event;
         try {
@@ -212,13 +215,14 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 .withNullableisPublic(event.getBoolean(FLD_PUBLIC))
                 .build(),
                 new StatusEventID(event.getObjectId("_id").toString()),
-                StatusEventProcessingState.valueOf(event.getString(FLD_STATUS)));
+                StatusEventProcessingState.valueOf(event.getString(FLD_STATUS)),
+                event.getString(FLD_UPDATER));
     }
     
     // note returns in order of time stamp, oldest first (e.g FIFO)
     @Override
     public List<StoredStatusEvent> get(final StatusEventProcessingState state, int limit)
-            throws RetriableIndexingException {
+            throws FatalRetriableIndexingException {
         Utils.nonNull(state, "state");
         if (limit < 1 || limit > 1000) {
             limit = 1000;
@@ -241,24 +245,51 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     }
     
     @Override
-    public Optional<StoredStatusEvent> setProcessingState(
+    public boolean setProcessingState(
             final StoredStatusEvent event,
             final StatusEventProcessingState state)
-            throws RetriableIndexingException {
+            throws FatalRetriableIndexingException {
         Utils.nonNull(event, "event");
         Utils.nonNull(state, "state");
         try {
             final UpdateResult res = db.getCollection(COL_EVENT).updateOne(
                     new Document("_id", new ObjectId(event.getId().getId())), 
                     new Document("$set", new Document(FLD_STATUS, state.toString())));
-            if (res.getMatchedCount() != 1) {
-                return Optional.absent();
-            }
+            return res.getMatchedCount() == 1;
         } catch (MongoException e) {
             throw new FatalRetriableIndexingException(
                     "Failed setting event state: " + e.getMessage(), e);
         }
-        return Optional.of(new StoredStatusEvent(event.getEvent(), event.getId(), state));
+    }
+
+    @Override
+    public Optional<StoredStatusEvent> getAndSetProcessingState(
+            final StatusEventProcessingState oldState,
+            final StatusEventProcessingState newState,
+            final String updater)
+            throws FatalRetriableIndexingException {
+        Utils.nonNull(oldState, "oldState");
+        Utils.nonNull(newState, "newState");
+        final Document innerQuery = new Document(FLD_STATUS, newState.toString());
+        if (!Utils.isNullOrEmpty(updater)) {
+            innerQuery.append(FLD_UPDATER, updater);
+        }
+        final Document ret;
+        try {
+             ret = db.getCollection(COL_EVENT).findOneAndUpdate(
+                     new Document(FLD_STATUS, oldState.toString()),
+                     new Document("$set", innerQuery),
+                     new FindOneAndUpdateOptions()
+                             .sort(new Document(FLD_TIMESTAMP, 1))
+                             .returnDocument(ReturnDocument.AFTER));
+        } catch (MongoException e) {
+            throw new FatalRetriableIndexingException(
+                    "Failed setting event state: " + e.getMessage(), e);
+        }
+        if (ret == null) {
+            return Optional.absent();
+        }
+        return Optional.of(toEvent(ret));
     }
 
 }

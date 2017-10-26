@@ -9,6 +9,12 @@ public enum StatusEventProcessingState {
     /** Not processed */
     UNPROC,
     
+    /** Ready for processing */
+    READY,
+    
+    /** Processing */
+    PROC,
+    
     /** Failed */
     FAIL,
     

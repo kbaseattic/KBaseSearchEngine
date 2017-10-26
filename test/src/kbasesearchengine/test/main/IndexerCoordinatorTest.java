@@ -273,7 +273,8 @@ public class IndexerCoordinatorTest {
                 .withNullableisPublic(false)
                 .build(),
                 new StatusEventID("-1"),
-                StatusEventProcessingState.UNPROC);
+                StatusEventProcessingState.UNPROC,
+                null);
         mop.processOneEvent(ev);
         PostProcessing pp = new PostProcessing();
         pp.objectInfo = true;
@@ -313,7 +314,8 @@ public class IndexerCoordinatorTest {
                     .withNullableisPublic(ev.isPublic().get())
                     .build(),
                     evid.getId(),
-                    StatusEventProcessingState.UNPROC);
+                    StatusEventProcessingState.UNPROC,
+                    null);
             mop.processOneEvent(ev2);
         }
     }
@@ -345,7 +347,7 @@ public class IndexerCoordinatorTest {
                 .withNullableisPublic(false)
                 .build();
         indexFewVersions(new StoredStatusEvent(ev, new StatusEventID("-1"),
-                StatusEventProcessingState.UNPROC));
+                StatusEventProcessingState.UNPROC, null));
         checkSearch(1, "Narrative", "tree", wsid, false);
         checkSearch(1, "Narrative", "species", wsid, false);
         /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
@@ -372,7 +374,7 @@ public class IndexerCoordinatorTest {
                 .withNullableisPublic(false)
                 .build();
         indexFewVersions(new StoredStatusEvent(ev, new StatusEventID("-1"),
-                StatusEventProcessingState.UNPROC));
+                StatusEventProcessingState.UNPROC, null));
         checkSearch(1, "PairedEndLibrary", "Illumina", wsid, true);
         checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
         final StatusEvent ev2 = StatusEvent.getBuilder(
@@ -385,7 +387,7 @@ public class IndexerCoordinatorTest {
                 .withNullableisPublic(false)
                 .build();
         indexFewVersions(new StoredStatusEvent(ev2, new StatusEventID("-1"),
-                StatusEventProcessingState.UNPROC));
+                StatusEventProcessingState.UNPROC, null));
         checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);
         checkSearch(1, "SingleEndLibrary", "reads.2", wsid, false);
     }

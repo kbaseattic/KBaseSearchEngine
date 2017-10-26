@@ -222,7 +222,8 @@ public class PerformanceTester {
                         .withNullableisPublic(true)
                         .build(),
                         new StatusEventID("-1"),
-                        StatusEventProcessingState.UNPROC);
+                        StatusEventProcessingState.UNPROC,
+                        null);
                 long t2 = System.currentTimeMillis();
                 try {
                     mop.processOneEvent(ev);
