@@ -41,14 +41,18 @@ before_install:
 - java -version
 
 install:
+# install elastic search
 - wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.0.tar.gz
 - tar xfz elasticsearch-5.5.0.tar.gz
 - ln -s elasticsearch-5.5.0 elasticsearch
+
+# install mongodb
 - wget http://fastdl.mongodb.org/linux/$MONGODB_VER.tgz
 - tar xfz $MONGODB_VER.tgz
 - export MONGOD=`pwd`/$MONGODB_VER/bin/mongod
 - ln -s mongodb-linux-x86_64-2.6.12 mongo
 
+# install kb-sdk
 - cd ~
 - git clone https://github.com/kbase/jars
 - git clone https://github.com/kbase/kb_sdk
@@ -57,18 +61,23 @@ install:
 - make sdkbase
 - docker images
 - export PATH=$(pwd)/bin:$PATH
+
+# install KBaseSearchEngine
 - cd ~
 - git clone https://github.com/arfathpasha/KBaseSearchEngine.git -b develop
 - cd KBaseSearchEngine
+
+# create test_local dir
 - kb-sdk test || true
+
+# update test.cfg with travis user
 - sed -i "s/test_token=/test_token=$TEST_TOKEN\ntest.token2=$TEST_TOKEN2\n/" test_local/test.cfg
 - sed -i 's\https://appdev.kbase.us/services\https://ci.kbase.us/services\' test_local/test.cfg
 - sed -i 's\https://appdev.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\'
   test_local/test.cfg
-- sed -i 's/$(id -u)/2000/' test_local/run_tests.sh
 - pwd=$(pwd)
 - echo "#!/bin/bash" >> test_local/run_subjob.sh
-- echo -e "$pwd/test_local/run_docker.sh run --rm --user 2000 -v $pwd/test_local/subjobs/\$1/workdir:/kb/module/work
+- echo -e "$pwd/test_local/run_docker.sh run --rm --user $(id -u) -v $pwd/test_local/subjobs/\$1/workdir:/kb/module/work
   -v $pwd/test_local/workdir/tmp:/kb/module/work/tmp \$4 -e \"SDK_CALLBACK_URL=\$3\"
   \$2 async" >> test_local/run_subjob.sh
 - cat test_local/run_subjob.sh
