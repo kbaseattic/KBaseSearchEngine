@@ -61,6 +61,8 @@ public interface IndexingStorage {
 
     public void unpublishObjectsExternally(Set<GUID> guids, int accessGroupId) throws IOException;
 
+    public List<ObjectData> getObjectsByIds(Set<GUID> guids) throws IOException;
+    
     public List<ObjectData> getObjectsByIds(Set<GUID> guids, PostProcessing postProcessing) 
             throws IOException;
 

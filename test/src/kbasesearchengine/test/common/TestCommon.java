@@ -12,6 +12,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,7 +45,7 @@ public class TestCommon {
     public static final String JARS_PATH = "test.jars.dir";
     public static final String JARS_PATH_DEFAULT = "/kb/deployment/lib/jars";
     public static final String WS_VER = "test.workspace.ver";
-    public static final String WS_VER_DEFAULT = "0.7.2-dev1";
+    public static final String WS_VER_DEFAULT = "0.8.0-dev3";
     
     public static final String AUTHSERV = "auth_service_url";
     public static final String TEST_TOKEN = "test_token";
@@ -225,5 +226,16 @@ public class TestCommon {
     @SafeVarargs
     public static <T> Set<T> set(T... objects) {
         return new HashSet<T>(Arrays.asList(objects));
+    }
+    
+    public static void assertCloseMS(
+            final Instant start,
+            final Instant end,
+            final int differenceMS,
+            final int slopMS) {
+        final long gotDiff = end.toEpochMilli() - start.toEpochMilli();
+        assertThat(String.format("time difference not within bounds: %s %s %s %s %s",
+                start, end, gotDiff, differenceMS, slopMS),
+                Math.abs(gotDiff - differenceMS) < slopMS, is(true));
     }
 }

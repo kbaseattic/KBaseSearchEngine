@@ -60,6 +60,7 @@ public class IndexerWorker {
     private final IndexingStorage indexingStorage;
     private final LineLogger logger;
     private final Map<String, EventHandler> eventHandlers = new HashMap<>();
+    private boolean stopIndexer = false;
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
             RETRY_FATAL_BACKOFF_MS,
@@ -118,7 +119,8 @@ public class IndexerWorker {
     }
     
     public void startIndexer() {
-        while(!Thread.currentThread().isInterrupted()) {
+        stopIndexer = false;
+        while(!Thread.currentThread().isInterrupted() && !stopIndexer) {
             boolean processedEvent = false; // sleep for 1 sec on an error by default
             try {
                 processedEvent = performOneTick();
@@ -143,6 +145,10 @@ public class IndexerWorker {
                 }
             }
         }
+    }
+    
+    public void stopIndexer() {
+        stopIndexer = true;
     }
     
     private enum ErrorType {

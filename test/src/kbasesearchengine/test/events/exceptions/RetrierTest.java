@@ -2,6 +2,7 @@ package kbasesearchengine.test.events.exceptions;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static kbasesearchengine.test.common.TestCommon.assertCloseMS;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -509,17 +510,6 @@ public class RetrierTest {
                 new FatalRetriableIndexingException("game over man"));
         assertCloseMS(start, le2.time, 30, 20);
         assertCloseMS(start, end, 100, 20);
-    }
-    
-    private void assertCloseMS(
-            final Instant start,
-            final Instant end,
-            final int differenceMS,
-            final int slopMS) {
-        final long gotDiff = end.toEpochMilli() - start.toEpochMilli();
-        assertThat(String.format("time difference not within bounds: %s %s %s %s %s",
-                start, end, gotDiff, differenceMS, slopMS),
-                Math.abs(gotDiff - differenceMS) < slopMS, is(true));
     }
 
 }

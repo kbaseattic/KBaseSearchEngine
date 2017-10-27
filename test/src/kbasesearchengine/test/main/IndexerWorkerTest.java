@@ -64,7 +64,7 @@ import workspace.RegisterTypespecParams;
 import workspace.SaveObjectsParams;
 import workspace.WorkspaceClient;
 
-public class IndexerCoordinatorTest { //TODO CODE change to indexerworkertest
+public class IndexerWorkerTest {
 	
     private static IndexerWorker mop = null;
     private static MongoController mongo;
@@ -117,8 +117,10 @@ public class IndexerCoordinatorTest { //TODO CODE change to indexerworkertest
         ws = new WorkspaceController(
                 TestCommon.getWorkspaceVersion(),
                 TestCommon.getJarsDir(),
-                "localhost:" + mongo.getServerPort(), "MOPTestWSDB",
-                    wsadmintoken.getUserName(),
+                "localhost:" + mongo.getServerPort(),
+                "MOPTestWSDB",
+                dbName,
+                wsadmintoken.getUserName(),
                 authServiceRootURL,
                 tempDir);
         System.out.println("Started workspace on port " + ws.getServerPort());
@@ -156,7 +158,6 @@ public class IndexerCoordinatorTest { //TODO CODE change to indexerworkertest
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
         
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(wsClient);
-        // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
         
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
                 IndexerWorker.getTempSubDir(tempDir.toFile(), "esbulk"));
