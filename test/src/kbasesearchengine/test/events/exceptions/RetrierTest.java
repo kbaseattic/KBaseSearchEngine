@@ -227,8 +227,8 @@ public class RetrierTest {
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le2.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le2.time, 50, 20);
-        assertCloseMS(start, end, 100, 20);
+        assertCloseMS(start, le2.time, 50, 30);
+        assertCloseMS(start, end, 100, 30);
     }
     
     @Test
