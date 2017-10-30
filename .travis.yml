@@ -79,11 +79,6 @@ install:
 - sed -i 's\https://appdev.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\'
   test_local/test.cfg
 - pwd=$(pwd)
-- echo "#!/bin/bash" >> test_local/run_subjob.sh
-- echo -e "$pwd/test_local/run_docker.sh run --rm --user $(id -u) -v $pwd/test_local/subjobs/\$1/workdir:/kb/module/work
-  -v $pwd/test_local/workdir/tmp:/kb/module/work/tmp \$4 -e \"SDK_CALLBACK_URL=\$3\"
-  \$2 async" >> test_local/run_subjob.sh
-- cat test_local/run_subjob.sh
 - cat test_local/test.cfg
 
 
