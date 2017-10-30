@@ -30,6 +30,7 @@ branches:
   only:
   - master
   - develop
+  - travis
 
 before_install:
 - whoami
