@@ -78,7 +78,6 @@ install:
 - sed -i 's\https://appdev.kbase.us/services\https://ci.kbase.us/services\' test_local/test.cfg
 - sed -i 's\https://appdev.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\'
   test_local/test.cfg
-- pwd=$(pwd)
 - cat test_local/test.cfg
 
 
