@@ -1,5 +1,7 @@
 package kbasesearchengine.events;
 
+import java.time.Instant;
+
 import com.google.common.base.Optional;
 
 import kbasesearchengine.tools.Utils;
@@ -14,12 +16,17 @@ public class StoredStatusEvent {
     private final StatusEvent event;
     private final StatusEventID id;
     private final StatusEventProcessingState state;
+    private final Optional<Instant> updateTime;
     private final Optional<String> updater;
+    
+    // right on the edge of needing to convert to a builder...
     
     /** Create a stored event.
      * @param event the event.
      * @param id the event ID.
      * @param state the processing state of the event.
+     * @param updateTime the time of the last update to the processing state. Optional and
+     * nullable.
      * @param updater the id of the operator that last updated the processing state. Optional and
      * nullable.
      */
@@ -27,6 +34,7 @@ public class StoredStatusEvent {
             final StatusEvent event,
             final StatusEventID id,
             final StatusEventProcessingState state,
+            final Instant updateTime,
             final String updater) {
         Utils.nonNull(event, "event");
         Utils.nonNull(id, "id");
@@ -34,6 +42,7 @@ public class StoredStatusEvent {
         this.event = event;
         this.id = id;
         this.state = state;
+        this.updateTime = Optional.fromNullable(updateTime);
         if (Utils.isNullOrEmpty(updater)) {
             this.updater = Optional.absent();
         } else {
@@ -62,6 +71,13 @@ public class StoredStatusEvent {
         return state;
     }
     
+    /** Get the time at which the event was updated.
+     * @return the update time, or absent if missing.
+     */
+    public Optional<Instant> getUpdateTime() {
+        return updateTime;
+    }
+
     /** Return the ID of the operator that last updated the processing state.
      * @return the operator ID, or absent if missing.
      */

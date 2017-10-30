@@ -1,7 +1,7 @@
 package kbasesearchengine.events.storage;
 
-import java.sql.Date;
 import java.time.Instant;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,6 +52,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     private static final String FLD_OBJECT_TYPE_VER = "objtypever";
     private static final String FLD_PUBLIC = "public";
     private static final String FLD_NEW_NAME = "newname";
+    private static final String FLD_UPDATE_TIME = "updte";
     // the ID, if any, of the operator that last changed the event status. Arbitrary string.
     private static final String FLD_UPDATER = "updtr";
     
@@ -172,7 +173,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                     "Failed event storage: " + e.getMessage(), e);
         }
         return new StoredStatusEvent(
-                newEvent, new StatusEventID(doc.getObjectId("_id").toString()), state, null);
+                newEvent, new StatusEventID(doc.getObjectId("_id").toString()), state, null, null);
     }
     
     @Override
@@ -201,6 +202,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
             StorageObjectType.fromNullableVersion(storageCode, type, ver);
         final Instant time = event.getDate(FLD_TIMESTAMP).toInstant();
         final StatusEventType eventType = StatusEventType.valueOf(event.getString(FLD_EVENT_TYPE));
+        final Date updateTime = event.getDate(FLD_UPDATE_TIME);
         final Builder b;
         if (sot == null) {
             b = StatusEvent.getBuilder(storageCode, time, eventType);
@@ -216,6 +218,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 .build(),
                 new StatusEventID(event.getObjectId("_id").toString()),
                 StatusEventProcessingState.valueOf(event.getString(FLD_STATUS)),
+                updateTime == null ? null : updateTime.toInstant(),
                 event.getString(FLD_UPDATER));
     }
     
@@ -266,11 +269,14 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     public Optional<StoredStatusEvent> getAndSetProcessingState(
             final StatusEventProcessingState oldState,
             final StatusEventProcessingState newState,
+            final Instant updateTime,
             final String updater)
             throws FatalRetriableIndexingException {
         Utils.nonNull(oldState, "oldState");
         Utils.nonNull(newState, "newState");
-        final Document innerQuery = new Document(FLD_STATUS, newState.toString());
+        Utils.nonNull(updateTime, "updateTime");
+        final Document innerQuery = new Document(FLD_STATUS, newState.toString())
+                .append(FLD_UPDATE_TIME, Date.from(updateTime));
         if (!Utils.isNullOrEmpty(updater)) {
             innerQuery.append(FLD_UPDATER, updater);
         }

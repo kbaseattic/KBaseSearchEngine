@@ -229,6 +229,7 @@ public class PerformanceTester {
                         .build(),
                         new StatusEventID("-1"),
                         StatusEventProcessingState.UNPROC,
+                        null,
                         null);
                 long t2 = System.currentTimeMillis();
                 try {

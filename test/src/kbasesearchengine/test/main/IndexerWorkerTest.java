@@ -275,6 +275,7 @@ public class IndexerWorkerTest {
                 .build(),
                 new StatusEventID("-1"),
                 StatusEventProcessingState.UNPROC,
+                null,
                 null);
         mop.processOneEvent(ev);
         PostProcessing pp = new PostProcessing();
@@ -316,6 +317,7 @@ public class IndexerWorkerTest {
                     .build(),
                     evid.getId(),
                     StatusEventProcessingState.UNPROC,
+                    null,
                     null);
             mop.processOneEvent(ev2);
         }
@@ -348,7 +350,7 @@ public class IndexerWorkerTest {
                 .withNullableisPublic(false)
                 .build();
         indexFewVersions(new StoredStatusEvent(ev, new StatusEventID("-1"),
-                StatusEventProcessingState.UNPROC, null));
+                StatusEventProcessingState.UNPROC, null, null));
         checkSearch(1, "Narrative", "tree", wsid, false);
         checkSearch(1, "Narrative", "species", wsid, false);
         /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
@@ -375,7 +377,7 @@ public class IndexerWorkerTest {
                 .withNullableisPublic(false)
                 .build();
         indexFewVersions(new StoredStatusEvent(ev, new StatusEventID("-1"),
-                StatusEventProcessingState.UNPROC, null));
+                StatusEventProcessingState.UNPROC, null, null));
         checkSearch(1, "PairedEndLibrary", "Illumina", wsid, true);
         checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
         final StatusEvent ev2 = StatusEvent.getBuilder(
@@ -388,7 +390,7 @@ public class IndexerWorkerTest {
                 .withNullableisPublic(false)
                 .build();
         indexFewVersions(new StoredStatusEvent(ev2, new StatusEventID("-1"),
-                StatusEventProcessingState.UNPROC, null));
+                StatusEventProcessingState.UNPROC, null, null));
         checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);
         checkSearch(1, "SingleEndLibrary", "reads.2", wsid, false);
     }
