@@ -194,8 +194,8 @@ public class IndexerWorker {
     
     private boolean performOneTick() throws InterruptedException, IndexingException {
         final Optional<StoredStatusEvent> optEvent = retrier.retryFunc(
-                s -> s.getAndSetProcessingState(
-                        StatusEventProcessingState.READY, StatusEventProcessingState.PROC, id),
+                s -> s.getAndSetProcessingState(StatusEventProcessingState.READY,
+                        StatusEventProcessingState.PROC, Instant.now(), id),
                 storage, null);
         boolean processedEvent = false;
         if (optEvent.isPresent()) {

@@ -29,13 +29,14 @@ public class StoredStatusEventTest {
         final StatusEvent se = StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build();
         
-        final StoredStatusEvent sei = new StoredStatusEvent(
-                se, new StatusEventID("foo"), StatusEventProcessingState.UNPROC, updater);
+        final StoredStatusEvent sei = new StoredStatusEvent(se, new StatusEventID("foo"),
+                StatusEventProcessingState.UNPROC, null, updater);
         assertThat("incorrect id", sei.getId(), is(new StatusEventID("foo")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build()));
         assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));
         assertThat("incorrect updater", sei.getUpdater(), is(Optional.absent()));
+        assertThat("incorrect update time", sei.getUpdateTime(), is(Optional.absent()));
     }
     
     @Test
@@ -43,13 +44,15 @@ public class StoredStatusEventTest {
         final StatusEvent se = StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build();
         
-        final StoredStatusEvent sei = new StoredStatusEvent(
-                se, new StatusEventID("foo"), StatusEventProcessingState.UNPROC, "foo");
+        final StoredStatusEvent sei = new StoredStatusEvent(se, new StatusEventID("foo"),
+                StatusEventProcessingState.UNPROC, Instant.ofEpochMilli(20000), "foo");
         assertThat("incorrect id", sei.getId(), is(new StatusEventID("foo")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build()));
         assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));
         assertThat("incorrect updater", sei.getUpdater(), is(Optional.of("foo")));
+        assertThat("incorrect update time", sei.getUpdateTime(),
+                is(Optional.of(Instant.ofEpochMilli(20000))));
     }
     
     @Test
@@ -71,7 +74,8 @@ public class StoredStatusEventTest {
             final StatusEventProcessingState state,
             final Exception expected) {
         try {
-            new StoredStatusEvent(event, id, state, null);
+            // no exceptions can be triggered by update time or updater
+            new StoredStatusEvent(event, id, state, null, null);
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
