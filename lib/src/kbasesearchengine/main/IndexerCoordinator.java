@@ -2,6 +2,9 @@ package kbasesearchengine.main;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Optional;
 
@@ -23,7 +26,7 @@ public class IndexerCoordinator {
     
     private final StatusEventStorage storage;
     private final LineLogger logger;
-    private boolean stopIndexer = false;
+    private ScheduledExecutorService executor = null;
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
             RETRY_FATAL_BACKOFF_MS,
@@ -32,49 +35,35 @@ public class IndexerCoordinator {
     public IndexerCoordinator(
             final StatusEventStorage storage,
             final LineLogger logger) {
+        Utils.nonNull(storage, "storage");
         Utils.nonNull(logger, "logger");
         this.logger = logger;
         this.storage = storage;
     }
     
-    /**
-     * For tests only !!!
-     */
-    public IndexerCoordinator(
-            final LineLogger logger) {
-        Utils.nonNull(logger, "logger");
-        this.storage = null;
-        this.logger = logger;
+    public void startIndexer() {
+        executor = Executors.newSingleThreadScheduledExecutor();
+        // may want to make this configurable
+        executor.scheduleAtFixedRate(new IndexerRunner(), 0, 1000, TimeUnit.MILLISECONDS);
     }
     
-    public void startIndexer() {
-        stopIndexer = false;
-        while(!Thread.currentThread().isInterrupted() && !stopIndexer) {
+    private class IndexerRunner implements Runnable {
+
+        @Override
+        public void run() {
             try {
                 performOneTick();
-            } catch (InterruptedException e) {
+            } catch (InterruptedException | FatalIndexingException e) {
                 logError(ErrorType.FATAL, e);
-                Thread.currentThread().interrupt();
-            } catch (FatalIndexingException e) {
-                logError(ErrorType.FATAL, e);
-                Thread.currentThread().interrupt();
+                executor.shutdown();
             } catch (Exception e) {
                 logError(ErrorType.UNEXPECTED, e);
-            } finally {
-                if (!Thread.currentThread().isInterrupted()) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        logError(ErrorType.FATAL, e);
-                        Thread.currentThread().interrupt();
-                    }
-                }
             }
         }
     }
     
     public void stopIndexer() {
-        stopIndexer = true;
+        executor.shutdown();
     }
     
     private enum ErrorType {

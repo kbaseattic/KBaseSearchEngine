@@ -13,6 +13,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -60,7 +63,7 @@ public class IndexerWorker {
     private final IndexingStorage indexingStorage;
     private final LineLogger logger;
     private final Map<String, EventHandler> eventHandlers = new HashMap<>();
-    private boolean stopIndexer = false;
+    private ScheduledExecutorService executor = null;
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
             RETRY_FATAL_BACKOFF_MS,
@@ -119,36 +122,33 @@ public class IndexerWorker {
     }
     
     public void startIndexer() {
-        stopIndexer = false;
-        while(!Thread.currentThread().isInterrupted() && !stopIndexer) {
-            boolean processedEvent = false; // sleep for 1 sec on an error by default
-            try {
-                processedEvent = performOneTick();
-            } catch (InterruptedException e) {
-                logError(ErrorType.FATAL, e);
-                Thread.currentThread().interrupt();
-            } catch (FatalIndexingException e) {
-                logError(ErrorType.FATAL, e);
-                Thread.currentThread().interrupt();
-            } catch (Exception e) {
-                logError(ErrorType.UNEXPECTED, e);
-            } finally {
-                if (!Thread.currentThread().isInterrupted()) {
-                    try {
-                        if (!processedEvent) { // only sleep when an event was not processed
-                            Thread.sleep(1000);
-                        }
-                    } catch (InterruptedException e) {
-                        logError(ErrorType.FATAL, e);
-                        Thread.currentThread().interrupt();
-                    }
+        executor = Executors.newSingleThreadScheduledExecutor();
+        // may want to make this configurable
+        executor.scheduleAtFixedRate(new IndexerRunner(), 0, 1000, TimeUnit.MILLISECONDS);
+    }
+    
+    private class IndexerRunner implements Runnable {
+
+        @Override
+        public void run() {
+            boolean processedEvent = true;
+            while (processedEvent) {
+                processedEvent = false;
+                try {
+                    // keep processing events until there are none left
+                    processedEvent = performOneTick();
+                } catch (InterruptedException | FatalIndexingException e) {
+                    logError(ErrorType.FATAL, e);
+                    executor.shutdown();
+                } catch (Exception e) {
+                    logError(ErrorType.UNEXPECTED, e);
                 }
             }
         }
     }
     
     public void stopIndexer() {
-        stopIndexer = true;
+        executor.shutdown();
     }
     
     private enum ErrorType {

@@ -63,9 +63,7 @@ import workspace.WorkspaceClient;
 public class IndexerIntegrationTest {
     
     private static IndexerWorker worker = null;
-    private static Thread workerThread = null;
     private static IndexerCoordinator coord = null;
-    private static Thread coordThread = null;
     private static MongoController mongo;
     private static MongoClient mc;
     private static MongoDatabase db;
@@ -172,48 +170,13 @@ public class IndexerIntegrationTest {
         System.out.println("Creating indexer worker");
         worker = new IndexerWorker("test", Arrays.asList(weh), storage, indexStorage,
                 ss, tempDir.resolve("MainObjectProcessor").toFile(), logger);
-        workerThread = new WorkerThread(worker);
-        System.out.println("Starting indexer worker thread");
-        workerThread.start();
-        System.out.println("Starting indexer coordinator");
+        System.out.println("Starting indexer worker");
+        worker.startIndexer();
+        System.out.println("Creating indexer coordinator");
         coord = new IndexerCoordinator(storage, logger);
-        coordThread = new CoordinatorThread(coord);
-        coordThread.start();
+        System.out.println("Starting indexer coordinator");
+        coord.startIndexer();
         loadWSTypes(wsUrl, wsadmintoken);
-    }
-    
-    protected static class WorkerThread extends Thread {
-        private IndexerWorker worker;
-        
-        protected WorkerThread(final IndexerWorker worker) {
-            this.worker = worker;
-        }
-        
-        public void run() {
-            try {
-                worker.startIndexer();
-            } catch (Exception e) {
-                System.err.println("Can't start worker:");
-                e.printStackTrace();
-            }
-        }
-    }
-    
-    protected static class CoordinatorThread extends Thread {
-        private IndexerCoordinator coordinator;
-        
-        protected CoordinatorThread(final IndexerCoordinator coordinator) {
-            this.coordinator = coordinator;
-        }
-        
-        public void run() {
-            try {
-                coordinator.startIndexer();
-            } catch (Exception e) {
-                System.err.println("Can't start coordinator:");
-                e.printStackTrace();
-            }
-        }
     }
     
     private static void installSearchTypes(final Path target) throws IOException {
@@ -260,12 +223,6 @@ public class IndexerIntegrationTest {
         }
         if (worker != null) {
             worker.stopIndexer();
-        }
-        if (coordThread != null) {
-            coordThread.join();
-        }
-        if (workerThread != null) {
-            workerThread.join();
         }
         
         final boolean deleteTempFiles = TestCommon.getDeleteTempFiles();
@@ -323,6 +280,7 @@ public class IndexerIntegrationTest {
                 .withObjects(Arrays.asList(new ObjectSpecification()
                         .withRef("1/1/1")))).getData().get(0).getEpoch();
         
+        System.out.println("waiting 5s for event to trickle through the system");
         Thread.sleep(5000); // wait for the indexer & worker to process the event
         
         final ObjectData indexedObj =
