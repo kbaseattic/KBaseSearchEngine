@@ -19,6 +19,7 @@ public class SourceData {
     private final Optional<String> method;
     private final Optional<String> commitHash;
     private final Optional<String> version;
+    private final Optional<String> md5;
     
     private SourceData(
             final UObject data,
@@ -28,7 +29,8 @@ public class SourceData {
             final Optional<String> module,
             final Optional<String> method,
             final Optional<String> commitHash,
-            final Optional<String> version) {
+            final Optional<String> version,
+            final Optional<String> md5) {
         this.data = data;
         this.name = name;
         this.creator = creator;
@@ -37,6 +39,7 @@ public class SourceData {
         this.method = method;
         this.commitHash = commitHash;
         this.version = version;
+        this.md5 = md5;
     }
     
     /** Get the data.
@@ -94,6 +97,13 @@ public class SourceData {
     public Optional<String> getVersion() {
         return version;
     }
+    
+    /** Get the md5 of the object, if available.
+     * @return the md5.
+     */
+    public Optional<String> getMD5() {
+        return md5;
+    }
 
     /** Get a builder for a SourceData instance.
      * @param data the data.
@@ -119,6 +129,7 @@ public class SourceData {
         private Optional<String> method = Optional.absent();
         private Optional<String> commitHash = Optional.absent();
         private Optional<String> version = Optional.absent();
+        private Optional<String> md5 = Optional.absent();
         
         private Builder(final UObject data, final String name, final String creator) {
             Utils.nonNull(data, "data");
@@ -182,12 +193,21 @@ public class SourceData {
             return this;
         }
         
+        /** Add the md of the data.
+         * @param md5 the md5.
+         * @return this builder.
+         */
+        public Builder withNullableMD5(final String md5) {
+            this.md5 = checkNullOrEmpty(md5);
+            return this;
+        }
+        
         /** Build the SourceData instance.
          * @return the SourceData.
          */
         public SourceData build() {
             return new SourceData(data, name, creator, copier, module, method, commitHash,
-                    version);
+                    version, md5);
         }
     }
     
