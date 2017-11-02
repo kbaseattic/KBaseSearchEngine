@@ -168,8 +168,8 @@ public class RetrierTest {
         assertThat("incorrect retry count", le.retryCount, is(1));
         assertThat("incorrect event", le.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le.time, 0, 20);
-        assertCloseMS(start, end, 50, 20);
+        assertCloseMS(start, le.time, 0, 30);
+        assertCloseMS(start, end, 50, 30);
     }
     
     @Test
@@ -195,14 +195,14 @@ public class RetrierTest {
         assertThat("incorrect retry count", le1.retryCount, is(1));
         assertThat("incorrect event", le1.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le1.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le1.time, 0, 20);
+        assertCloseMS(start, le1.time, 0, 30);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le2.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le2.time, 50, 20);
-        assertCloseMS(start, end, 100, 20);
+        assertCloseMS(start, le2.time, 50, 30);
+        assertCloseMS(start, end, 100, 30);
     }
     
     @Test
@@ -222,14 +222,14 @@ public class RetrierTest {
         assertThat("incorrect retry count", le1.retryCount, is(1));
         assertThat("incorrect event", le1.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le1.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le1.time, 0, 20);
+        assertCloseMS(start, le1.time, 0, 30);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le2.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le2.time, 50, 20);
-        assertCloseMS(start, end, 100, 20);
+        assertCloseMS(start, le2.time, 50, 30);
+        assertCloseMS(start, end, 100, 30);
     }
     
     @Test
@@ -246,8 +246,8 @@ public class RetrierTest {
         assertThat("incorrect event", le.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le.time, 0, 20);
-        assertCloseMS(start, end, 70, 20);
+        assertCloseMS(start, le.time, 0, 30);
+        assertCloseMS(start, end, 70, 30);
     }
     
     @Test
@@ -274,15 +274,15 @@ public class RetrierTest {
         assertThat("incorrect event", le1.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le1.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le1.time, 0, 20);
+        assertCloseMS(start, le1.time, 0, 30);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le2.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le2.time, 70, 20);
-        assertCloseMS(start, end, 100, 20);
+        assertCloseMS(start, le2.time, 70, 30);
+        assertCloseMS(start, end, 100, 30);
     }
     
     @Test
@@ -303,15 +303,15 @@ public class RetrierTest {
         assertThat("incorrect event", le1.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le1.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le1.time, 0, 20);
+        assertCloseMS(start, le1.time, 0, 30);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le2.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le2.time, 30, 20);
-        assertCloseMS(start, end, 100, 20);
+        assertCloseMS(start, le2.time, 30, 30);
+        assertCloseMS(start, end, 100, 30);
     }
 
     private class TestFunction<T, R> implements RetryFunction<T, R> {
@@ -367,8 +367,8 @@ public class RetrierTest {
         assertThat("incorrect retry count", le.retryCount, is(1));
         assertThat("incorrect event", le.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le.time, 0, 20);
-        assertCloseMS(start, end, 50, 20);
+        assertCloseMS(start, le.time, 0, 30);
+        assertCloseMS(start, end, 50, 30);
     }
     
     @Test
@@ -395,14 +395,14 @@ public class RetrierTest {
         assertThat("incorrect retry count", le1.retryCount, is(1));
         assertThat("incorrect event", le1.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le1.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le1.time, 0, 20);
+        assertCloseMS(start, le1.time, 0, 30);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le2.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le2.time, 50, 20);
-        assertCloseMS(start, end, 100, 20);
+        assertCloseMS(start, le2.time, 50, 30);
+        assertCloseMS(start, end, 100, 30);
     }
     
     @Test
@@ -422,14 +422,14 @@ public class RetrierTest {
         assertThat("incorrect retry count", le1.retryCount, is(1));
         assertThat("incorrect event", le1.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le1.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le1.time, 0, 20);
+        assertCloseMS(start, le1.time, 0, 30);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le2.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le2.time, 50, 20);
-        assertCloseMS(start, end, 100, 20);
+        assertCloseMS(start, le2.time, 50, 30);
+        assertCloseMS(start, end, 100, 30);
     }
     
     @Test
@@ -447,8 +447,8 @@ public class RetrierTest {
         assertThat("incorrect event", le.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le.time, 0, 20);
-        assertCloseMS(start, end, 70, 20);
+        assertCloseMS(start, le.time, 0, 30);
+        assertCloseMS(start, end, 70, 30);
     }
     
     @Test
@@ -476,15 +476,15 @@ public class RetrierTest {
         assertThat("incorrect event", le1.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le1.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le1.time, 0, 20);
+        assertCloseMS(start, le1.time, 0, 30);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le2.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le2.time, 70, 20);
-        assertCloseMS(start, end, 100, 20);
+        assertCloseMS(start, le2.time, 70, 30);
+        assertCloseMS(start, end, 100, 30);
     }
     
     @Test
@@ -505,15 +505,15 @@ public class RetrierTest {
         assertThat("incorrect event", le1.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le1.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le1.time, 0, 20);
+        assertCloseMS(start, le1.time, 0, 30);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le2.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le2.time, 30, 20);
-        assertCloseMS(start, end, 100, 20);
+        assertCloseMS(start, le2.time, 30, 30);
+        assertCloseMS(start, end, 100, 30);
     }
 
 }
