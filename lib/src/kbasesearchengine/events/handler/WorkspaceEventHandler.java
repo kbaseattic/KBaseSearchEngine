@@ -145,7 +145,8 @@ public class WorkspaceEventHandler implements EventHandler {
         }
         final SourceData.Builder b = SourceData.getBuilder(
                 ret.getData(), ret.getInfo().getE2(), creator)
-                .withNullableCopier(copier);
+                .withNullableCopier(copier)
+                .withNullableMD5(ret.getInfo().getE9());
         if (pa != null) {
             b.withNullableModule(pa.getService())
                     .withNullableMethod(pa.getMethod())

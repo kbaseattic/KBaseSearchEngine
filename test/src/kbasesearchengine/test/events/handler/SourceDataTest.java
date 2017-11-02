@@ -32,6 +32,7 @@ public class SourceDataTest {
         assertThat("incorrect method", sd.getMethod(), is(Optional.absent()));
         assertThat("incorrect module", sd.getModule(), is(Optional.absent()));
         assertThat("incorrect version", sd.getVersion(), is(Optional.absent()));
+        assertThat("incorrect md5", sd.getMD5(), is(Optional.absent()));
     }
     
     @Test
@@ -43,6 +44,7 @@ public class SourceDataTest {
                 .withNullableMethod("meth")
                 .withNullableModule("mod")
                 .withNullableVersion("ver")
+                .withNullableMD5("md5")
                 .build();
         
         assertThat("incorrect data", sd.getData().asClassInstance(Map.class),
@@ -54,6 +56,7 @@ public class SourceDataTest {
         assertThat("incorrect method", sd.getMethod(), is(Optional.of("meth")));
         assertThat("incorrect module", sd.getModule(), is(Optional.of("mod")));
         assertThat("incorrect version", sd.getVersion(), is(Optional.of("ver")));
+        assertThat("incorrect md5", sd.getMD5(), is(Optional.of("md5")));
     }
     
     @Test
@@ -65,6 +68,7 @@ public class SourceDataTest {
                 .withNullableMethod(null)
                 .withNullableModule(null)
                 .withNullableVersion(null)
+                .withNullableMD5(null)
                 .build();
         
         assertThat("incorrect data", sd.getData().asClassInstance(Map.class),
@@ -76,6 +80,7 @@ public class SourceDataTest {
         assertThat("incorrect method", sd.getMethod(), is(Optional.absent()));
         assertThat("incorrect module", sd.getModule(), is(Optional.absent()));
         assertThat("incorrect version", sd.getVersion(), is(Optional.absent()));
+        assertThat("incorrect md5", sd.getMD5(), is(Optional.absent()));
     }
     
     @Test
@@ -87,6 +92,7 @@ public class SourceDataTest {
                 .withNullableMethod("   \t   \n   ")
                 .withNullableModule("   \t   \n   ")
                 .withNullableVersion("   \t   \n   ")
+                .withNullableMD5("   \t   \n   ")
                 .build();
         
         assertThat("incorrect data", sd.getData().asClassInstance(Map.class),
@@ -98,6 +104,7 @@ public class SourceDataTest {
         assertThat("incorrect method", sd.getMethod(), is(Optional.absent()));
         assertThat("incorrect module", sd.getModule(), is(Optional.absent()));
         assertThat("incorrect version", sd.getVersion(), is(Optional.absent()));
+        assertThat("incorrect md5", sd.getMD5(), is(Optional.absent()));
     }
     
     @Test

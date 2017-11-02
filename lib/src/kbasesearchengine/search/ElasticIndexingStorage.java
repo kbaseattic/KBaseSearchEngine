@@ -57,6 +57,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private static final String OBJ_PROV_MODULE_VERSION = "prv_ver";
     private static final String OBJ_PROV_METHOD = "prv_meth";
     private static final String OBJ_PROV_MODULE = "prv_mod";
+    private static final String OBJ_MD5 = "md5";
     private static final String OBJ_COPIER = "copier";
     private static final String OBJ_CREATOR = "creator";
     private static final String OBJ_NAME = "oname";
@@ -249,6 +250,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put(OBJ_PROV_METHOD, data.getMethod().orNull());
         doc.put(OBJ_PROV_MODULE_VERSION, data.getVersion().orNull());
         doc.put(OBJ_PROV_COMMIT_HASH, data.getCommitHash().orNull());
+        doc.put(OBJ_MD5, data.getMD5().orNull());
         
         doc.put("timestamp", timestamp.toEpochMilli());
         doc.put("prefix", toGUIDPrefix(id));
@@ -1063,6 +1065,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             item.method = (String) obj.get(OBJ_PROV_METHOD);
             item.moduleVersion = (String) obj.get(OBJ_PROV_MODULE_VERSION);
             item.commitHash = (String) obj.get(OBJ_PROV_COMMIT_HASH);
+            item.md5 = (String) obj.get(OBJ_MD5);
             item.type = (String)obj.get("otype");
             Object dateProp = obj.get("timestamp");
             item.timestamp = (dateProp instanceof Long) ? (Long)dateProp : 
@@ -1615,6 +1618,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         props.put(OBJ_PROV_METHOD, keyword);
         props.put(OBJ_PROV_MODULE_VERSION, keyword);
         props.put(OBJ_PROV_COMMIT_HASH, keyword);
+        props.put(OBJ_MD5, keyword);
         props.put("timestamp", new LinkedHashMap<String, Object>() {{
             put("type", "date");
         }});

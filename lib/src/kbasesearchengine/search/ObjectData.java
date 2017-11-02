@@ -20,6 +20,7 @@ public class ObjectData {
     public String method;
     public String commitHash;
     public String moduleVersion;
+    public String md5;
     public long timestamp;
     public Object parentData;
     public Object data;
@@ -48,6 +49,8 @@ public class ObjectData {
         builder.append(commitHash);
         builder.append(", moduleVersion=");
         builder.append(moduleVersion);
+        builder.append(", md5=");
+        builder.append(md5);
         builder.append(", timestamp=");
         builder.append(timestamp);
         builder.append(", parentData=");
@@ -72,6 +75,7 @@ public class ObjectData {
         result = prime * result + ((guid == null) ? 0 : guid.hashCode());
         result = prime * result
                 + ((keyProps == null) ? 0 : keyProps.hashCode());
+        result = prime * result + ((md5 == null) ? 0 : md5.hashCode());
         result = prime * result + ((method == null) ? 0 : method.hashCode());
         result = prime * result + ((module == null) ? 0 : module.hashCode());
         result = prime * result
@@ -139,6 +143,13 @@ public class ObjectData {
                 return false;
             }
         } else if (!keyProps.equals(other.keyProps)) {
+            return false;
+        }
+        if (md5 == null) {
+            if (other.md5 != null) {
+                return false;
+            }
+        } else if (!md5.equals(other.md5)) {
             return false;
         }
         if (method == null) {

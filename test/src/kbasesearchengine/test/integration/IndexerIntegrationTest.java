@@ -295,6 +295,7 @@ public class IndexerIntegrationTest {
         expected.method = "meth";
         expected.commitHash = "commit";
         expected.moduleVersion = "servver";
+        expected.md5 = "3c6e8d4dde8a26a0bfca203228cc6a36";
         expected.timestamp = indexedObj.timestamp;
         expected.data = ImmutableMap.of("whee", "wugga");
         expected.keyProps = ImmutableMap.of("whee", "wugga");
