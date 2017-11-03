@@ -122,6 +122,7 @@ public class IndexerWorker {
     }
     
     public void startIndexer() {
+        //TODO TEST add a way to inject an executor for testing purposes
         executor = Executors.newSingleThreadScheduledExecutor();
         // may want to make this configurable
         executor.scheduleAtFixedRate(new IndexerRunner(), 0, 1000, TimeUnit.MILLISECONDS);
