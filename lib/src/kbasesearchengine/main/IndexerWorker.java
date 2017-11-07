@@ -39,10 +39,10 @@ import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.parse.KeywordParser;
+import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.parse.ObjectParser;
 import kbasesearchengine.parse.ParsedObject;
-import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.StorageObjectType;
@@ -445,6 +445,14 @@ public class IndexerWorker {
         }
     }
     
+    private static File prepareTempFile(File tempDir) throws IOException {
+        if (!tempDir.exists()) {
+            tempDir.mkdirs();
+        }
+        File tempFile = File.createTempFile("ws_srv_response_", ".json", tempDir);
+        return tempFile;
+    }
+
     private void indexObject(
             final GUID guid,
             final StorageObjectType storageObjectType,
@@ -456,7 +464,7 @@ public class IndexerWorker {
         long t1 = System.currentTimeMillis();
         final File tempFile;
         try {
-            tempFile = ObjectParser.prepareTempFile(getTempSubDir(guid.getStorageCode()));
+            tempFile = prepareTempFile(getTempSubDir(guid.getStorageCode()));
         } catch (IOException e) {
             throw new FatalRetriableIndexingException(e.getMessage(), e);
         }

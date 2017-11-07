@@ -4,8 +4,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.matchers.JUnitMatchers.both;
-import static org.junit.matchers.JUnitMatchers.containsString;
 
 import java.io.File;
 import java.io.InputStream;
@@ -19,7 +17,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
@@ -45,13 +42,11 @@ import us.kbase.common.service.UObject;
 public class ObjectParserTest {
 
     private static Path scratch;
-    private static ObjectParser impl = null;
 
     @BeforeClass
     public static void prepare() throws Exception {
 
         scratch = Paths.get(TestCommon.getTempDir(), "test_object_parser");
-        impl = new ObjectParser();
     }
 
     @AfterClass
@@ -62,21 +57,6 @@ public class ObjectParserTest {
         if (scratch != null && scratch.toFile().exists() && deleteTempFiles) {
             FileUtils.deleteDirectory(scratch.toFile());
         }
-    }
-
-    @Test
-    public void prepareTempFileTest() throws Exception {
-
-        final File tempDir = new File(scratch.toString(), UUID.randomUUID().toString());
-        assertEquals(false, tempDir.exists());
-
-        @SuppressWarnings("static-access")
-        final File tmpFile = impl.prepareTempFile(tempDir);
-        assertEquals(true, tempDir.exists());
-        assertEquals(true, tmpFile.exists());
-
-        assertThat(tmpFile.toString(),
-                both(containsString("ws_srv_response_")).and(containsString(".json")));
     }
 
     @Test
