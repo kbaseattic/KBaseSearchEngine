@@ -6,7 +6,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.both;
 import static org.junit.matchers.JUnitMatchers.containsString;
-import static org.junit.matchers.JUnitMatchers.hasItem;
 
 import java.io.File;
 import java.io.InputStream;
@@ -23,7 +22,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
-import org.ini4j.Ini;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -41,216 +39,226 @@ import kbasesearchengine.parse.SimpleIdConsumer;
 import kbasesearchengine.parse.SimpleSubObjectConsumer;
 import kbasesearchengine.parse.SubObjectConsumer;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.test.common.TestCommon;
 import us.kbase.common.service.UObject;
 
 public class ObjectParserTest {
 
-	private static Map<String, String> config = null;
-	private static Path scratch;
-	private static ObjectParser impl = null;
+    private static Path scratch;
+    private static ObjectParser impl = null;
 
-	@BeforeClass
-	public static void init() throws Exception {
-		// config loading
-		String configFilePath = System.getenv("KB_DEPLOYMENT_CONFIG");
-		if (configFilePath == null) {
-			configFilePath = System.getProperty("KB_DEPLOYMENT_CONFIG");
-		}
-		File deploy = new File(configFilePath);
-		Ini ini = new Ini(deploy);
-		config = ini.get("KBaseSearchEngine");
-		scratch = Paths.get(config.get("scratch"), "test_object_parser");
+    @BeforeClass
+    public static void prepare() throws Exception {
 
-		impl = new ObjectParser();
-	}
+        scratch = Paths.get(TestCommon.getTempDir(), "test_object_parser");
+        impl = new ObjectParser();
+    }
 
-	@AfterClass
-	public static void teardown() throws Exception {
-		FileUtils.deleteDirectory(scratch.toFile());
-	}
+    @AfterClass
+    public static void teardown() throws Exception {
 
-	@Test
-	public void prepareTempFileTest() throws Exception {
+        final boolean deleteTempFiles = TestCommon.getDeleteTempFiles();
 
-		File tempDir = new File(scratch.toString(), UUID.randomUUID().toString());
-		assertEquals(false, tempDir.exists());
+        if (scratch != null && scratch.toFile().exists() && deleteTempFiles) {
+            FileUtils.deleteDirectory(scratch.toFile());
+        }
+    }
 
-		@SuppressWarnings("static-access")
-		File tmpFile = impl.prepareTempFile(tempDir);
-		assertEquals(true, tempDir.exists());
-		assertEquals(true, tmpFile.exists());
-		
-		assertThat(tmpFile.toString(), both(containsString("ws_srv_response_")).and(containsString(".json")));
-	}
+    @Test
+    public void prepareTempFileTest() throws Exception {
 
-	@SuppressWarnings("static-access")
-	@Test
-	public void extractParentFragmentGenomeFeatureTest() throws Exception {
+        final File tempDir = new File(scratch.toString(), UUID.randomUUID().toString());
+        assertEquals(false, tempDir.exists());
 
-		String jsonResource = "genome01";
-		String type = "GenomeFeature";
+        @SuppressWarnings("static-access")
+        final File tmpFile = impl.prepareTempFile(tempDir);
+        assertEquals(true, tempDir.exists());
+        assertEquals(true, tmpFile.exists());
 
-		String parentJson = this.extractParentFragment(type, jsonResource);
-		String expectedParentJson = "{\"domain\":\"B\",\"scientific_name\":\"Shewanella\",\"assembly_ref\":\"1/2/1\"}";
-		assertEquals(parentJson, expectedParentJson);
-	}
+        assertThat(tmpFile.toString(),
+                both(containsString("ws_srv_response_")).and(containsString(".json")));
+    }
 
-	@SuppressWarnings("static-access")
-	@Test
-	public void extractParentFragmentGenomeTest() throws Exception {
+    @Test
+    public void extractParentFragmentGenomeFeatureTest() throws Exception {
 
-		String jsonResource = "genome01";
-		String type = "Genome";
+        final String jsonResource = "genome01";
+        final String type = "GenomeFeature";
 
-		String parentJson = this.extractParentFragment(type, jsonResource);
-		assertNull(parentJson); // Genome.json doesn't have "from-parent" path
-	}
+        final String parentJson = extractParentFragment(type, jsonResource);
+        final String expectedParentJson = "{\"domain\":\"B\",\"scientific_name\":\"Shewanella\","
+                + "\"assembly_ref\":\"1/2/1\"}";
+        assertEquals(parentJson, expectedParentJson);
+    }
 
-	@SuppressWarnings("unchecked")
-	public static String extractParentFragment(String type, String jsonResource) throws Exception {
+    @Test
+    public void extractParentFragmentGenomeTest() throws Exception {
 
-		Map<String, Object> parsingRulesObj = UObject.getMapper()
-				.readValue(new File("resources/types/" + type + ".json"), Map.class);
-		ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules.fromObject(parsingRulesObj, "test");
-		
-		try (JsonParser jts = SubObjectExtractorTest.getParsedJsonResource(jsonResource)) {
-			String parentJson = ObjectParser.extractParentFragment(parsingRules, jts);
-			return parentJson;
-		}
-	}
+        final String jsonResource = "genome01";
+        final String type = "Genome";
 
-	@SuppressWarnings("static-access")
-	@Test
-	public void prepareGUIDGenomeFeatureTest() throws Exception {
+        final String parentJson = extractParentFragment(type, jsonResource);
+        assertNull(parentJson); // Genome.json doesn't have "from-parent" path
+    }
 
-		String jsonResource = "genome01";
-		String type = "GenomeFeature";
+    public static String extractParentFragment(String type, String jsonResource) throws Exception {
 
-		List<String> expectedIds = Arrays.asList("NewGenome.CDS.6211", "NewGenome.CDS.6210", "NewGenome.CDS.6209");
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> parsingRulesObj = UObject.getMapper()
+                .readValue(new File("resources/types/" + type + ".json"), Map.class);
+        final ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules
+                .fromObject(parsingRulesObj, "test");
 
-		ArrayList<GUID> idList = this.prepareGUID(type, jsonResource, new GUID("WS:1/1/1"));
+        try (JsonParser jts = SubObjectExtractorTest.getParsedJsonResource(jsonResource)) {
+            final String parentJson = ObjectParser.extractParentFragment(parsingRules, jts);
+            return parentJson;
+        }
+    }
 
-		assertThat(idList.size(), is(3));
-		for (GUID guid : idList) {
-			assertThat(expectedIds, hasItem(guid.getSubObjectId()));
-			assertThat(guid.getSubObjectType(), is("feature"));
-			assertThat(guid.getStorageCode(), is("WS"));
-			assertThat(guid.getVersion(), is(1));
-			assertThat(guid.getAccessGroupId(), is(1));
-			assertThat(guid.getAccessGroupObjectId(), is("1"));
-		}
-	}
+    @Test
+    public void prepareGUIDGenomeFeatureTest() throws Exception {
 
-	@SuppressWarnings("unchecked")
-	public static ArrayList<GUID> prepareGUID(String type, String jsonResource, GUID ref) throws Exception {
+        final String jsonResource = "genome01";
+        final String type = "GenomeFeature";
 
-		ArrayList<GUID> idList = new ArrayList<GUID>();
+        final ArrayList<GUID> idList = prepareGUID(type, jsonResource, new GUID("WS:1/1/1"));
 
-		Map<String, Object> parsingRulesObj = UObject.getMapper()
-				.readValue(new File("resources/types/" + type + ".json"), Map.class);
-		ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules.fromObject(parsingRulesObj, "test");
-		Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
-		SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
+        assertThat(idList.size(), is(3));
+        final List<String> expectedIds = Arrays.asList("NewGenome.CDS.6211", "NewGenome.CDS.6210",
+                "NewGenome.CDS.6209");
+        for (GUID guid : idList) {
+            assertThat(guid.getSubObjectId(), is(expectedIds.get(idList.indexOf(guid))));
+            assertThat(guid.getSubObjectType(), is("feature"));
+            assertThat(guid.getStorageCode(), is("WS"));
+            assertThat(guid.getVersion(), is(1));
+            assertThat(guid.getAccessGroupId(), is(1));
+            assertThat(guid.getAccessGroupObjectId(), is("1"));
+        }
+    }
 
-		try (JsonParser jts = SubObjectExtractorTest.getParsedJsonResource(jsonResource)) {
-			ObjectParser.extractSubObjects(parsingRules, subObjConsumer, jts);
-		}
+    public static ArrayList<GUID> prepareGUID(String type, String jsonResource, GUID ref)
+            throws Exception {
 
-		for (ObjectJsonPath path : pathToJson.keySet()) {
-			String subJson = pathToJson.get(path);
-			SimpleIdConsumer idConsumer = new SimpleIdConsumer();
-			if (parsingRules.getPrimaryKeyPath() != null || parsingRules.getRelationRules() != null) {
-				try (JsonParser subJts = UObject.getMapper().getFactory().createParser(subJson)) {
-					IdMapper.mapKeys(parsingRules.getPrimaryKeyPath(), parsingRules.getRelationRules(), subJts,
-							idConsumer);
-				}
-			}
-			GUID id = ObjectParser.prepareGUID(parsingRules, ref, path, idConsumer);
-			idList.add(id);
-		}
+        final ArrayList<GUID> idList = new ArrayList<GUID>();
 
-		return idList;
-	}
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> parsingRulesObj = UObject.getMapper()
+                .readValue(new File("resources/types/" + type + ".json"), Map.class);
+        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules.fromObject(parsingRulesObj,
+                "test");
+        final Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
+        final SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
 
-	@SuppressWarnings({ "static-access", "unchecked" })
-	@Test
-	public void parseSubObjectsGenomeTest() throws Exception {
+        try (JsonParser jts = SubObjectExtractorTest.getParsedJsonResource(jsonResource)) {
+            ObjectParser.extractSubObjects(parsingRules, subObjConsumer, jts);
+        }
 
-		String jsonResource = "genome01";
-		String type = "Genome";
-		String guid = "WS:1/1/1";
+        for (ObjectJsonPath path : pathToJson.keySet()) {
+            final String subJson = pathToJson.get(path);
+            final SimpleIdConsumer idConsumer = new SimpleIdConsumer();
+            if (parsingRules.getPrimaryKeyPath() != null
+                    || parsingRules.getRelationRules() != null) {
+                try (JsonParser subJts = UObject.getMapper().getFactory().createParser(subJson)) {
+                    IdMapper.mapKeys(parsingRules.getPrimaryKeyPath(),
+                            parsingRules.getRelationRules(), subJts, idConsumer);
+                }
+            }
+            final GUID id = ObjectParser.prepareGUID(parsingRules, ref, path, idConsumer);
+            idList.add(id);
+        }
 
-		Map<GUID, String> guidToJson = this.parseSubObjects(type, jsonResource, guid);
+        return idList;
+    }
 
-		assertThat(guidToJson.size(), is(1));
-		String jsonString = guidToJson.values().iterator().next();
-		HashMap<String, Object> result = new ObjectMapper().readValue(jsonString, HashMap.class);
-		
-		HashMap<String, Object> expectedResult = new HashMap<String, Object>();
-		expectedResult.put("features", 3);
-		expectedResult.put("domain", "B");
-		expectedResult.put("assembly_ref", "1/2/1");
-		expectedResult.put("scientific_name", "Shewanella");
-		expectedResult.put("id", "NewGenome");
-		
-		assertThat(expectedResult, is(result));
-	}
-	
-	@SuppressWarnings({ "static-access", "unchecked" })
-	@Test
-	public void parseSubObjectsGenomeFeatureTest() throws Exception {
+    @Test
+    public void parseSubObjectsGenomeTest() throws Exception {
 
-		String jsonResource = "genome01";
-		String type = "GenomeFeature";
-		String guid = "WS:1/1/1";
+        final String jsonResource = "genome01";
+        final String type = "Genome";
+        final String guid = "WS:1/1/1";
 
-		Map<GUID, String> guidToJson = this.parseSubObjects(type, jsonResource, guid);
+        final Map<GUID, String> guidToJson = parseSubObjects(type, jsonResource, guid);
 
-		assertThat(guidToJson.size(), is(3));
+        assertThat(guidToJson.size(), is(1));
+        final String jsonString = guidToJson.values().iterator().next();
+        @SuppressWarnings("unchecked")
+        HashMap<String, Object> result = new ObjectMapper().readValue(jsonString, HashMap.class);
 
-		List<String> expectedIds = Arrays.asList("NewGenome.CDS.6211", "NewGenome.CDS.6210", "NewGenome.CDS.6209");
-		for (GUID guidKey : guidToJson.keySet()) {
-			assertThat(expectedIds, hasItem(guidKey.getSubObjectId()));
-			assertThat(guidKey.getSubObjectType(), is("feature"));
-			assertThat(guidKey.getStorageCode(), is("WS"));
-			assertThat(guidKey.getVersion(), is(1));
-			assertThat(guidKey.getAccessGroupId(), is(1));
-			assertThat(guidKey.getAccessGroupObjectId(), is("1"));
-		}
+        HashMap<String, Object> expectedResult = new HashMap<String, Object>();
+        expectedResult.put("features", 3);
+        expectedResult.put("domain", "B");
+        expectedResult.put("assembly_ref", "1/2/1");
+        expectedResult.put("scientific_name", "Shewanella");
+        expectedResult.put("id", "NewGenome");
 
-		List<String> expectedKeys = Arrays.asList("ontology_terms", "function", "protein_translation", "location", "id", "type");
-		for (String jsonString : guidToJson.values()) {
-			HashMap<String, Object> result = new ObjectMapper().readValue(jsonString, HashMap.class);
-			assertThat(expectedKeys.containsAll(result.keySet()), is(true));
-		}
-	}
+        assertThat(expectedResult, is(result));
+    }
 
-	@SuppressWarnings("unchecked")
-	public static Map<GUID, String> parseSubObjects(String type, String jsonResource, String guidString)
-			throws Exception {
+    @Test
+    public void parseSubObjectsGenomeFeatureTest() throws Exception {
 
-		GUID guid = new GUID(guidString);
+        final String jsonResource = "genome01";
+        final String type = "GenomeFeature";
+        final String guid = "WS:1/1/1";
 
-		InputStream inputStream = ObjectParserTest.class.getResourceAsStream(jsonResource + ".json.properties");
-		Reader reader = new InputStreamReader(inputStream);
+        final Map<GUID, String> guidToJson = parseSubObjects(type, jsonResource, guid);
 
-		UObject data = UObject.fromJsonString(CharStreams.toString(reader));
-        String name = "TestObj" + "_" + type;
-        String creator = "creator";
-        
-        SourceData obj = SourceData.getBuilder(data, name, creator).withNullableCommitHash(null)
-                												   .withNullableCopier(null)
-													               .withNullableMethod(null)
-													               .withNullableModule(null)
-													               .withNullableVersion(null)
-													               .build();
-		
-		Map<String, Object> parsingRulesObj = UObject.getMapper()
-				.readValue(new File("resources/types/" + type + ".json"), Map.class);
-		ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules.fromObject(parsingRulesObj, "test");
+        assertThat(guidToJson.size(), is(3));
 
-		Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, guid, parsingRules);
+        final List<String> expectedIds = Arrays.asList("NewGenome.CDS.6211", "NewGenome.CDS.6210",
+                "NewGenome.CDS.6209");
+        int key_index = 0;
+        for (GUID guidKey : guidToJson.keySet()) {
+            assertThat(guidKey.getSubObjectId(), is(expectedIds.get(key_index)));
+            assertThat(guidKey.getSubObjectType(), is("feature"));
+            assertThat(guidKey.getStorageCode(), is("WS"));
+            assertThat(guidKey.getVersion(), is(1));
+            assertThat(guidKey.getAccessGroupId(), is(1));
+            assertThat(guidKey.getAccessGroupObjectId(), is("1"));
+            key_index++;
+        }
 
-		return guidToJson;
-	}
+        final List<String> expectedKeys = Arrays.asList("ontology_terms", "function",
+                "protein_translation", "location", "id", "type");
+        final List<String> expectedFunctions = Arrays.asList("Polysaccharide biosynthesis protein",
+                "Transcriptional activator RfaH", "Di-tripeptide/cation symporter");
+        final String expectedType = "CDS";
+        int value_index = 0;
+        for (String jsonString : guidToJson.values()) {
+            @SuppressWarnings("unchecked")
+            HashMap<String, Object> result = new ObjectMapper().readValue(jsonString,
+                    HashMap.class);
+            assertThat(expectedKeys.containsAll(result.keySet()), is(true));
+            assertThat(result.get("id"), is(expectedIds.get(value_index)));
+            assertThat(result.get("function"), is(expectedFunctions.get(value_index)));
+            assertThat(result.get("type"), is(expectedType));
+            value_index++;
+        }
+    }
+
+    public static Map<GUID, String> parseSubObjects(String type, String jsonResource,
+            String guidString) throws Exception {
+
+        final GUID guid = new GUID(guidString);
+
+        final InputStream inputStream = ObjectParserTest.class
+                .getResourceAsStream(jsonResource + ".json.properties");
+        final Reader reader = new InputStreamReader(inputStream);
+
+        final UObject data = UObject.fromJsonString(CharStreams.toString(reader));
+        final String name = "TestObj" + "_" + type;
+        final String creator = "creator";
+
+        final SourceData obj = SourceData.getBuilder(data, name, creator).build();
+
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> parsingRulesObj = UObject.getMapper()
+                .readValue(new File("resources/types/" + type + ".json"), Map.class);
+        final ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules
+                .fromObject(parsingRulesObj, "test");
+
+        final Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, guid, parsingRules);
+
+        return guidToJson;
+    }
 }
