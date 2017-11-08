@@ -89,4 +89,4 @@ script:
 
 after_success:
 - ls test_local/workdir/test-reports/
-- bash <(curl -s https://codecov.io/bash) -t 52a915c3-441b-4257-baa1-a1a21f0a3a74 -f test_local/workdir/test-reports/coverage-report.xml
+- bash <(curl -s https://codecov.io/bash) -t 206d1355-c004-4912-9921-92c6d1c003d5 -f test_local/workdir/test-reports/coverage-report.xml
