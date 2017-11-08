@@ -75,8 +75,6 @@ install:
 - kb-sdk test || true
 
 # update test.cfg with travis user
-- "curl -n -H Authorization:$TEST_TOKEN https://ci.kbase.us/services/auth/me"
-- "curl -n -H Authorization:$TEST_TOKEN2 https://ci.kbase.us/services/auth/me"
 - sed -i "s/test_token=/test_token=$TEST_TOKEN\ntest.token2=$TEST_TOKEN2\n/" test_local/test.cfg
 - sed -i 's\https://appdev.kbase.us/services\https://ci.kbase.us/services\' test_local/test.cfg
 - sed -i 's\https://appdev.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\'
