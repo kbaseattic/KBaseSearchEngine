@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.Set;
 
 import static kbasesearchengine.test.common.TestCommon.set;
@@ -31,6 +32,7 @@ public class ObjectEventQueueTest {
         assertThat("incorrect get processing", queue.getProcessing(), is(processing));
         assertThat("incorrect is processing", queue.isProcessing(), is(!processing.isEmpty()));
         assertThat("incorrect size", queue.size(), is(size));
+        assertThat("incorrect isEmpty", queue.isEmpty(), is(size == 0));
     }
     
     /* this assert does not mutate the queue state */
@@ -283,12 +285,12 @@ public class ObjectEventQueueTest {
         for (final StatusEventType type: Arrays.asList(StatusEventType.DELETE_ALL_VERSIONS,
                 StatusEventType.NEW_ALL_VERSIONS, StatusEventType.PUBLISH_ALL_VERSIONS,
                 StatusEventType.RENAME_ALL_VERSIONS, StatusEventType.UNDELETE_ALL_VERSIONS)) {
-            assertSingleReadyEvent(type);
+            assertSingleObjectLevelReadyEvent(type);
             
         }
     }
 
-    private void assertSingleReadyEvent(final StatusEventType type) {
+    private void assertSingleObjectLevelReadyEvent(final StatusEventType type) {
         final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), type)
                 .build(),
@@ -302,18 +304,91 @@ public class ObjectEventQueueTest {
         for (final StatusEventType type: Arrays.asList(StatusEventType.DELETE_ALL_VERSIONS,
                 StatusEventType.NEW_ALL_VERSIONS, StatusEventType.PUBLISH_ALL_VERSIONS,
                 StatusEventType.RENAME_ALL_VERSIONS, StatusEventType.UNDELETE_ALL_VERSIONS)) {
-            assertSingleProcessingEvent(type);
+            assertSingleObjectLevelProcessingEvent(type);
             
         }
     }
     
-    private void assertSingleProcessingEvent(final StatusEventType type) {
+    private void assertSingleObjectLevelProcessingEvent(final StatusEventType type) {
         final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), type)
                 .build(),
                 new StatusEventID("foo"), StatusEventProcessingState.PROC, null, null);
         final ObjectEventQueue q = new ObjectEventQueue(sse);
         assertQueueState(q, set(), set(sse), 1);
+    }
+    
+    @Test
+    public void initializeWithVersionLevelEvents() {
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+        final StoredStatusEvent sse1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar1", Instant.ofEpochMilli(20000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo1"), StatusEventProcessingState.READY, null, null);
+        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar2", Instant.ofEpochMilli(30000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo2"), StatusEventProcessingState.PROC, null, null);
+        final StoredStatusEvent sse3 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar3", Instant.ofEpochMilli(40000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo4"), StatusEventProcessingState.PROC, null, null);
+        
+        assertEmpty(new ObjectEventQueue(new LinkedList<>(), new LinkedList<>()));
+        
+        final ObjectEventQueue q1 = new ObjectEventQueue(
+                Arrays.asList(sse1), new LinkedList<>());
+        assertQueueState(q1, set(sse1), set(), 1);
+        
+        final ObjectEventQueue q2 = new ObjectEventQueue(
+                Arrays.asList(sse, sse1), new LinkedList<>());
+        assertQueueState(q2, set(sse, sse1), set(), 2);
+        
+        final ObjectEventQueue q3 = new ObjectEventQueue(
+                new LinkedList<>(), Arrays.asList(sse2));
+        assertQueueState(q3, set(), set(sse2), 1);
+        
+        final ObjectEventQueue q4 = new ObjectEventQueue(
+                new LinkedList<>(), Arrays.asList(sse2, sse3));
+        assertQueueState(q4, set(), set(sse2, sse3), 2);
+        
+        final ObjectEventQueue q5 = new ObjectEventQueue(
+                Arrays.asList(sse1), Arrays.asList(sse2));
+        assertQueueState(q5, set(sse1), set(sse2), 2);
+        
+        final ObjectEventQueue q6 = new ObjectEventQueue(
+                Arrays.asList(sse1, sse), Arrays.asList(sse2, sse3));
+        assertQueueState(q6, set(sse1, sse), set(sse2, sse3), 4);
+    }
+    
+    @Test
+    public void setProcessedWithMutatedEvent() {
+        // in practice we expect the events passed into setProcessed() to have mutated slightly
+        // from the original load()ed event, so check that works.
+        // the status event itself and the id should not mutate, but other fields are fair game.
+        
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+        
+        final ObjectEventQueue q = new ObjectEventQueue();
+        q.load(sse);
+        q.moveToReady();
+        q.moveReadyToProcessing();
+        assertQueueState(q, set(), set(sse), 1);
+        
+        final StoredStatusEvent hideousmutant = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.INDX,
+                Instant.ofEpochMilli(10000), "whee");
+        
+        q.setProcessingComplete(hideousmutant);
+        assertEmpty(q);
     }
     
     //TODO TEST returned sets are immutable
