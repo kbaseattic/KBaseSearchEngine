@@ -5,6 +5,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Set;
 
 import static kbasesearchengine.test.common.TestCommon.set;
@@ -275,6 +276,44 @@ public class ObjectEventQueueTest {
         q.setProcessingComplete(sse2);
         q.setProcessingComplete(sse3);
         assertEmpty(q);
+    }
+    
+    @Test
+    public void initializeWithReadyObjectLevelEvent() {
+        for (final StatusEventType type: Arrays.asList(StatusEventType.DELETE_ALL_VERSIONS,
+                StatusEventType.NEW_ALL_VERSIONS, StatusEventType.PUBLISH_ALL_VERSIONS,
+                StatusEventType.RENAME_ALL_VERSIONS, StatusEventType.UNDELETE_ALL_VERSIONS)) {
+            assertSingleReadyEvent(type);
+            
+        }
+    }
+
+    private void assertSingleReadyEvent(final StatusEventType type) {
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), type)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+        final ObjectEventQueue q = new ObjectEventQueue(sse);
+        assertQueueState(q, set(sse), set(), 1);
+    }
+    
+    @Test
+    public void initializeWithProcessingObjectLevelEvent() {
+        for (final StatusEventType type: Arrays.asList(StatusEventType.DELETE_ALL_VERSIONS,
+                StatusEventType.NEW_ALL_VERSIONS, StatusEventType.PUBLISH_ALL_VERSIONS,
+                StatusEventType.RENAME_ALL_VERSIONS, StatusEventType.UNDELETE_ALL_VERSIONS)) {
+            assertSingleProcessingEvent(type);
+            
+        }
+    }
+    
+    private void assertSingleProcessingEvent(final StatusEventType type) {
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), type)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.PROC, null, null);
+        final ObjectEventQueue q = new ObjectEventQueue(sse);
+        assertQueueState(q, set(), set(sse), 1);
     }
     
     //TODO TEST returned sets are immutable
