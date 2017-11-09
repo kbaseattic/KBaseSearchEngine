@@ -1,6 +1,7 @@
 package kbasesearchengine.events;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,6 +19,8 @@ import kbasesearchengine.tools.Utils;
  * Note that the calling code is responsible for ensuring that IDs for events added to this queue
  * are unique.
  * If events with duplicate IDs are added to the queue unexpected behavior may result.
+ * 
+ * This class is not thread safe.
  * @author gaprice@lbl.gov
  *
  */
@@ -152,7 +155,7 @@ public class ObjectEventQueue {
         } else {
             ret = new HashSet<>(Arrays.asList(ready));
         }
-        return ret;
+        return Collections.unmodifiableSet(ret);
     }
     
     /** Get the set of events that the queue has determined are ready for processing, and set
@@ -171,16 +174,18 @@ public class ObjectEventQueue {
             processing = ready;
             ready = null;
         }
-        return ret;
+        return Collections.unmodifiableSet(ret);
     }
     
     public Set<StoredStatusEvent> getProcessing() {
+        final Set<StoredStatusEvent> ret;
         if (processing == null) {
             // will be empty list if ready != null;
-            return new HashSet<>(versionProcessing.values());
+            ret = new HashSet<>(versionProcessing.values());
         } else {
-            return new HashSet<>(Arrays.asList(processing));
+            ret = new HashSet<>(Arrays.asList(processing));
         }
+        return Collections.unmodifiableSet(ret);
     }
     
     /** Remove a processed event from the queue and update the queue state, potentially adding
@@ -241,7 +246,7 @@ public class ObjectEventQueue {
             return ret;
         }
         /* Either no events are ready/processing or only version level events are ready/processing.
-         * pull all the version level events off the front of the queue and put them in
+         * Pull all the version level events off the front of the queue and put them in
          * the ready state.
          */
         /* should really check we're not running events for the same version at the same time,
@@ -265,7 +270,7 @@ public class ObjectEventQueue {
             ret.add(next);
             queue.remove();
         }
-        return ret;
+        return Collections.unmodifiableSet(ret);
     }
     
     //TODO QUEUE set and remove drain and block 
