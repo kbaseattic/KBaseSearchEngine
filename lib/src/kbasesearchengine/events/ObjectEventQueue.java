@@ -136,10 +136,12 @@ public class ObjectEventQueue {
     public void load(final StoredStatusEvent event) {
         Utils.nonNull(event, "event");
         if (!event.getState().equals(StatusEventProcessingState.UNPROC)) {
-            throw new IllegalArgumentException("Can only load events in the unprocessed state");
+            throw new IllegalArgumentException("Illegal state for loading event: " +
+                    event.getState());
         }
         if (!OBJ_AND_VER_LVL_EVENTS.contains(event.getEvent().getEventType())) {
-            throw new IllegalArgumentException("Cannot load access group level events");
+            throw new IllegalArgumentException("Illegal type for loading event: " +
+                    event.getEvent().getEventType());
         }
         queue.add(event);
     }
