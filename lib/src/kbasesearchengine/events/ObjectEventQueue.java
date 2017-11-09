@@ -111,8 +111,8 @@ public class ObjectEventQueue {
     public ObjectEventQueue(final StoredStatusEvent initialEvent) {
         Utils.nonNull(initialEvent, "initialEvent");
         if (!isObjectLevelEvent(initialEvent)) {
-            throw new IllegalArgumentException(
-                    "This constructor only accepts object level events");
+            throw new IllegalArgumentException("Illegal initial event type: " +
+                    initialEvent.getEvent().getEventType());
         }
         final StatusEventProcessingState state = initialEvent.getState();
         if (state.equals(StatusEventProcessingState.PROC)) {
