@@ -222,6 +222,13 @@ public class ObjectEventQueue {
                 (ready == null ? 0 : 1) + (processing == null ? 0 : 1);
     }
     
+    /** Check if the queue is empty.
+     * @return true if the queue is empty.
+     */
+    public boolean isEmpty() {
+        return size() == 0;
+    }
+    
     /** Move events into the ready state if possible. Usually called after loading
      * ({@link #load(StoredStatusEvent)}) one or more events.
      * @return the events that have been moved into the ready state.
