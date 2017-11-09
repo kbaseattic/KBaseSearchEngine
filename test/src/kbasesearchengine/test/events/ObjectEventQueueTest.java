@@ -80,6 +80,86 @@ public class ObjectEventQueueTest {
     }
     
     @Test
+    public void loadMultipleObjectLevelEventsAndProcess() {
+        final ObjectEventQueue q = new ObjectEventQueue();
+        
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+        final StoredStatusEvent sse1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar1", Instant.ofEpochMilli(20000), StatusEventType.NEW_ALL_VERSIONS)
+                .build(),
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
+        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar2", Instant.ofEpochMilli(30000), StatusEventType.RENAME_ALL_VERSIONS)
+                .build(),
+                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC, null, null);
+        
+        assertEmpty(q);
+        
+        q.load(sse2);
+        q.load(sse1);
+        q.load(sse);
+        assertQueueState(q, set(), set(), 3);
+        assertMoveToReadyCorrect(q, set(sse));
+        assertQueueState(q, set(sse), set(), 3);
+        //check queue is blocked
+        assertMoveToReadyCorrect(q, set());
+        assertMoveToProcessingCorrect(q, set(sse));
+        assertQueueState(q, set(), set(sse), 3);
+        //check queue is blocked
+        assertMoveToReadyCorrect(q, set());
+        assertMoveToProcessingCorrect(q, set());
+        
+        q.setProcessingComplete(sse); // calls move to ready
+        assertQueueState(q, set(sse1), set(), 2);
+        //check queue is blocked
+        assertMoveToReadyCorrect(q, set());
+        assertMoveToProcessingCorrect(q, set(sse1));
+        assertQueueState(q, set(), set(sse1), 2);
+        //check queue is blocked
+        assertMoveToReadyCorrect(q, set());
+        assertMoveToProcessingCorrect(q, set());
+        
+        q.setProcessingComplete(sse1);
+        assertQueueState(q, set(sse2), set(), 1);
+        //check queue is blocked
+        assertMoveToReadyCorrect(q, set());
+        assertMoveToProcessingCorrect(q, set(sse2));
+        assertQueueState(q, set(), set(sse2), 1);
+        //check queue is blocked
+        assertMoveToReadyCorrect(q, set());
+        assertMoveToProcessingCorrect(q, set());
+        
+        q.setProcessingComplete(sse2);
+        assertEmpty(q);
+    }
+    
+    
+    @Test
+    public void loadOneVersionLevelEventAndProcess() {
+        final ObjectEventQueue q = new ObjectEventQueue();
+        
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+        
+        assertEmpty(q);
+        
+        q.load(sse);
+        assertQueueState(q, set(), set(), 1);
+        assertMoveToReadyCorrect(q, set(sse));
+        assertQueueState(q, set(sse), set(), 1);
+        assertMoveToProcessingCorrect(q, set(sse));
+        assertQueueState(q, set(), set(sse), 1);
+        
+        q.setProcessingComplete(sse);
+        assertEmpty(q);
+    }
+    
+    @Test
     public void loadMultipleVersionLevelEventsAndProcess() {
         final ObjectEventQueue q = new ObjectEventQueue();
         
@@ -144,7 +224,6 @@ public class ObjectEventQueueTest {
                 .build(),
                 new StatusEventID("foo4"), StatusEventProcessingState.UNPROC, null, null);
         
-        
         final StoredStatusEvent blocking = new StoredStatusEvent(StatusEvent.getBuilder(
                 "blocker", Instant.ofEpochMilli(25000), StatusEventType.DELETE_ALL_VERSIONS)
                 .build(),
@@ -197,4 +276,6 @@ public class ObjectEventQueueTest {
         q.setProcessingComplete(sse3);
         assertEmpty(q);
     }
+    
+    //TODO TEST returned sets are immutable
 }
