@@ -15,6 +15,7 @@ import static kbasesearchengine.test.common.TestCommon.set;
 import org.junit.Test;
 
 import kbasesearchengine.events.ObjectEventQueue;
+import kbasesearchengine.events.ObjectEventQueue.NoSuchEventException;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
@@ -654,6 +655,49 @@ public class ObjectEventQueueTest {
     private void failLoad(final StoredStatusEvent sse, final Exception expected) {
         try {
             new ObjectEventQueue().load(sse);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
+    
+    @Test
+    public void setProcessingCompleteFail() {
+        final ObjectEventQueue q = new ObjectEventQueue();
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+        
+        //nulls
+        failSetProcessingComplete(q, null, new NullPointerException("event"));
+        
+        //empty queue
+        failSetProcessingComplete(q, sse, new NoSuchEventException(sse));
+        
+        // with object level event in processed state
+        final ObjectEventQueue q2 = new ObjectEventQueue(new StoredStatusEvent(
+                StatusEvent.getBuilder(
+                        "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                        .build(),
+                        new StatusEventID("foo2"), StatusEventProcessingState.PROC, null, null));
+        failSetProcessingComplete(q2, sse, new NoSuchEventException(sse));
+        
+        // with version level event in processed state
+        final ObjectEventQueue q3 = new ObjectEventQueue(new LinkedList<>(), Arrays.asList(
+                new StoredStatusEvent(StatusEvent.getBuilder(
+                        "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                        .build(),
+                        new StatusEventID("foo2"), StatusEventProcessingState.PROC, null, null)));
+        failSetProcessingComplete(q3, sse, new NoSuchEventException(sse));
+    }
+    
+    private void failSetProcessingComplete(
+            final ObjectEventQueue queue,
+            final StoredStatusEvent sse,
+            final Exception expected) {
+        try {
+            queue.setProcessingComplete(sse);
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);

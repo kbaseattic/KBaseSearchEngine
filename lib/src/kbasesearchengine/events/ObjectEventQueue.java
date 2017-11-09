@@ -282,7 +282,7 @@ public class ObjectEventQueue {
      *
      */
     @SuppressWarnings("serial")
-    public class NoSuchEventException extends RuntimeException {
+    public static class NoSuchEventException extends RuntimeException {
         
         public NoSuchEventException(final StoredStatusEvent event) {
             super(String.format("No event with ID %s is in a processing state", event));
