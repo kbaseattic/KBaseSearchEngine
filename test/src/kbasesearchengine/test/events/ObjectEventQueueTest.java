@@ -391,5 +391,124 @@ public class ObjectEventQueueTest {
         assertEmpty(q);
     }
     
-    //TODO TEST returned sets are immutable
+    @Test
+    public void immutableGetReady() {
+        // test both getReady paths
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar2", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+        
+        final ObjectEventQueue q = new ObjectEventQueue(sse);
+        assertGetReadyReturnIsImmutable(sse2, q);
+        
+        final ObjectEventQueue q2 = new ObjectEventQueue(Arrays.asList(sse2), new LinkedList<>());
+        assertGetReadyReturnIsImmutable(sse, q2);
+    }
+
+    private void assertGetReadyReturnIsImmutable(
+            final StoredStatusEvent sse,
+            final ObjectEventQueue q) {
+        try {
+            q.getReadyForProcessing().add(sse);
+            fail("expected exception");
+        } catch (UnsupportedOperationException e) {
+            //test passed
+        }
+    }
+    
+    @Test
+    public void immutableGetProcessing() {
+        // test both getProcessing paths
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.PROC, null, null);
+        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar2", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.PROC, null, null);
+        
+        final ObjectEventQueue q = new ObjectEventQueue(sse);
+        assertGetProcessingReturnIsImmutable(sse2, q);
+        
+        final ObjectEventQueue q2 = new ObjectEventQueue(new LinkedList<>(), Arrays.asList(sse2));
+        assertGetProcessingReturnIsImmutable(sse, q2);
+    }
+
+    private void assertGetProcessingReturnIsImmutable(final StoredStatusEvent sse,
+            final ObjectEventQueue q) {
+        try {
+            q.getProcessing().add(sse);
+            fail("expected exception");
+        } catch (UnsupportedOperationException e) {
+            //test passed
+        }
+    }
+    
+    @Test
+    public void immutableMoveReady() {
+        // test both moveReady paths
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar2", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+        
+        final ObjectEventQueue q = new ObjectEventQueue();
+        q.load(sse);
+        assertMoveReadyReturnIsImmutable(sse2, q);
+        
+        final ObjectEventQueue q2 = new ObjectEventQueue();
+        q2.load(sse2);
+        assertMoveReadyReturnIsImmutable(sse, q2);
+    }
+
+    private void assertMoveReadyReturnIsImmutable(
+            final StoredStatusEvent sse,
+            final ObjectEventQueue q) {
+        try {
+            q.moveToReady().add(sse);
+            fail("expected exception");
+        } catch (UnsupportedOperationException e) {
+            // test passed
+        }
+    }
+    
+    @Test
+    public void immutableMoveProcessing() {
+        // test both moveProcessing paths
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar2", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+        
+        final ObjectEventQueue q = new ObjectEventQueue(sse);
+        assertMoveProcessingReturnIsImmutable(sse2, q);
+        
+        final ObjectEventQueue q2 = new ObjectEventQueue(Arrays.asList(sse2), new LinkedList<>());
+        assertMoveProcessingReturnIsImmutable(sse, q2);
+    }
+
+    private void assertMoveProcessingReturnIsImmutable(
+            final StoredStatusEvent sse,
+            final ObjectEventQueue q) {
+        try {
+            q.moveReadyToProcessing().add(sse);
+            fail("expected exception");
+        } catch (UnsupportedOperationException e) {
+            // test passed
+        }
+    }
 }
