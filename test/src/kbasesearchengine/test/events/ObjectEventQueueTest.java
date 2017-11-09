@@ -620,4 +620,43 @@ public class ObjectEventQueueTest {
             TestCommon.assertExceptionCorrect(got, expected);
         }
     }
+    
+    @Test
+    public void loadFail() {
+        final StatusEvent se = StatusEvent.getBuilder(
+                "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build();
+        final StatusEventID id = new StatusEventID("some id");
+        
+        // null
+        failLoad(null, new NullPointerException("event"));
+        
+        //bad state
+        for (final StatusEventProcessingState state: Arrays.asList(
+                StatusEventProcessingState.FAIL, StatusEventProcessingState.INDX,
+                StatusEventProcessingState.UNINDX, StatusEventProcessingState.READY,
+                StatusEventProcessingState.PROC)) {
+            failLoad(new StoredStatusEvent(se, id, state, null, null),
+                    new IllegalArgumentException("Illegal state for loading event: " + state));
+        }
+        
+        // bad event types
+        for (final StatusEventType type: Arrays.asList(
+                StatusEventType.COPY_ACCESS_GROUP, StatusEventType.DELETE_ACCESS_GROUP,
+                StatusEventType.PUBLISH_ACCESS_GROUP)) {
+            final StoredStatusEvent setype = new StoredStatusEvent(StatusEvent.getBuilder(
+                    "foo", Instant.ofEpochMilli(10000), type).build(),
+                    id, StatusEventProcessingState.UNPROC, null, null);
+            failLoad(setype,
+                    new IllegalArgumentException("Illegal type for loading event: " + type));
+        }
+    }
+    
+    private void failLoad(final StoredStatusEvent sse, final Exception expected) {
+        try {
+            new ObjectEventQueue().load(sse);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
 }
