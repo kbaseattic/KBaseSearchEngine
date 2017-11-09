@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import static kbasesearchengine.test.common.TestCommon.set;
@@ -19,6 +20,7 @@ import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StoredStatusEvent;
+import kbasesearchengine.test.common.TestCommon;
 
 public class ObjectEventQueueTest {
 
@@ -281,7 +283,7 @@ public class ObjectEventQueueTest {
     }
     
     @Test
-    public void initializeWithReadyObjectLevelEvent() {
+    public void constructWithReadyObjectLevelEvent() {
         for (final StatusEventType type: Arrays.asList(StatusEventType.DELETE_ALL_VERSIONS,
                 StatusEventType.NEW_ALL_VERSIONS, StatusEventType.PUBLISH_ALL_VERSIONS,
                 StatusEventType.RENAME_ALL_VERSIONS, StatusEventType.UNDELETE_ALL_VERSIONS)) {
@@ -300,7 +302,7 @@ public class ObjectEventQueueTest {
     }
     
     @Test
-    public void initializeWithProcessingObjectLevelEvent() {
+    public void constructWithProcessingObjectLevelEvent() {
         for (final StatusEventType type: Arrays.asList(StatusEventType.DELETE_ALL_VERSIONS,
                 StatusEventType.NEW_ALL_VERSIONS, StatusEventType.PUBLISH_ALL_VERSIONS,
                 StatusEventType.RENAME_ALL_VERSIONS, StatusEventType.UNDELETE_ALL_VERSIONS)) {
@@ -319,7 +321,7 @@ public class ObjectEventQueueTest {
     }
     
     @Test
-    public void initializeWithVersionLevelEvents() {
+    public void constructWithVersionLevelEvents() {
         final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .build(),
@@ -509,6 +511,113 @@ public class ObjectEventQueueTest {
             fail("expected exception");
         } catch (UnsupportedOperationException e) {
             // test passed
+        }
+    }
+    
+    @Test
+    public void constructFailWithVersionLevelEvents() {
+        final StatusEvent se = StatusEvent.getBuilder(
+                "foo", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION).build();
+        final StatusEventID id = new StatusEventID("some id");
+        final List<StoredStatusEvent> mt = new LinkedList<>();
+        
+        // nulls
+        failConstructWithVersionLevelEvents(null, mt, new NullPointerException("initialReady"));
+        failConstructWithVersionLevelEvents(mt, null,
+                new NullPointerException("initialProcessing"));
+        
+        // bad status
+        for (final StatusEventProcessingState state: Arrays.asList(
+                StatusEventProcessingState.FAIL, StatusEventProcessingState.INDX,
+                StatusEventProcessingState.UNINDX, StatusEventProcessingState.UNPROC)) {
+            failConstructWithVersionLevelEvents(
+                    Arrays.asList(new StoredStatusEvent(se, id, state, null, null)),
+                    new LinkedList<>(),
+                    new IllegalArgumentException("Illegal initial event state: " + state));
+            failConstructWithVersionLevelEvents(new LinkedList<>(),
+                    Arrays.asList(new StoredStatusEvent(se, id, state, null, null)),
+                    new IllegalArgumentException("Illegal initial event state: " + state));
+        }
+        
+        failConstructWithVersionLevelEvents(
+                Arrays.asList(new StoredStatusEvent(
+                        se, id, StatusEventProcessingState.PROC, null, null)),
+                new LinkedList<>(),
+                new IllegalArgumentException("Illegal initial event state: PROC"));
+        failConstructWithVersionLevelEvents(new LinkedList<>(),
+                Arrays.asList(new StoredStatusEvent(
+                        se, id, StatusEventProcessingState.READY, null, null)),
+                new IllegalArgumentException("Illegal initial event state: READY"));
+        
+        // bad event types
+        for (final StatusEventType type: Arrays.asList(
+                StatusEventType.COPY_ACCESS_GROUP, StatusEventType.DELETE_ACCESS_GROUP,
+                StatusEventType.DELETE_ALL_VERSIONS, StatusEventType.NEW_ALL_VERSIONS,
+                StatusEventType.PUBLISH_ACCESS_GROUP, StatusEventType.PUBLISH_ALL_VERSIONS,
+                StatusEventType.RENAME_ALL_VERSIONS, StatusEventType.UNDELETE_ALL_VERSIONS,
+                StatusEventType.UNPUBLISH_ACCESS_GROUP, StatusEventType.UNPUBLISH_ALL_VERSIONS)) {
+            final StoredStatusEvent setype = new StoredStatusEvent(StatusEvent.getBuilder(
+                    "foo", Instant.ofEpochMilli(10000), type).build(),
+                    id, StatusEventProcessingState.READY, null, null);
+            failConstructWithVersionLevelEvents(Arrays.asList(setype), new LinkedList<>(),
+                    new IllegalArgumentException("Illegal initial event type: " + type));
+            final StoredStatusEvent setype2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                    "foo", Instant.ofEpochMilli(10000), type).build(),
+                    id, StatusEventProcessingState.PROC, null, null);
+            failConstructWithVersionLevelEvents(new LinkedList<>(), Arrays.asList(setype2),
+                    new IllegalArgumentException("Illegal initial event type: " + type));
+        }
+    }
+    
+    private void failConstructWithVersionLevelEvents(
+            final List<StoredStatusEvent> ready,
+            final List<StoredStatusEvent> processing,
+            final Exception expected) {
+        try {
+            new ObjectEventQueue(ready, processing);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
+    
+    @Test
+    public void constructFailWithObjectLevelEvent() {
+        final StatusEvent se = StatusEvent.getBuilder(
+                "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build();
+        final StatusEventID id = new StatusEventID("some id");
+        
+        failConstructWithObjectLevelEvent(null, new NullPointerException("initialEvent"));
+        
+        // bad status
+        for (final StatusEventProcessingState state: Arrays.asList(
+                StatusEventProcessingState.FAIL, StatusEventProcessingState.INDX,
+                StatusEventProcessingState.UNINDX, StatusEventProcessingState.UNPROC)) {
+            failConstructWithObjectLevelEvent(new StoredStatusEvent(se, id, state, null, null),
+                    new IllegalArgumentException("Illegal initial event state: " + state));
+        }
+        
+        // bad event types
+        for (final StatusEventType type: Arrays.asList(
+                StatusEventType.COPY_ACCESS_GROUP, StatusEventType.DELETE_ACCESS_GROUP,
+                StatusEventType.NEW_VERSION, StatusEventType.PUBLISH_ACCESS_GROUP)) {
+            final StoredStatusEvent setype = new StoredStatusEvent(StatusEvent.getBuilder(
+                    "foo", Instant.ofEpochMilli(10000), type).build(),
+                    id, StatusEventProcessingState.READY, null, null);
+            failConstructWithObjectLevelEvent(setype,
+                    new IllegalArgumentException("Illegal initial event type: " + type));
+        }
+        
+    }
+    
+    private void failConstructWithObjectLevelEvent(
+            final StoredStatusEvent event,
+            final Exception expected) {
+        try {
+            new ObjectEventQueue(event);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
         }
     }
 }
