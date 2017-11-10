@@ -14,6 +14,8 @@ import static kbasesearchengine.test.common.TestCommon.set;
 
 import org.junit.Test;
 
+import com.google.common.base.Optional;
+
 import kbasesearchengine.events.ObjectEventQueue;
 import kbasesearchengine.events.ObjectEventQueue.NoSuchEventException;
 import kbasesearchengine.events.StatusEvent;
@@ -702,5 +704,149 @@ public class ObjectEventQueueTest {
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
         }
+    }
+    
+    @Test
+    public void setGetAndRemoveBlock() {
+        final ObjectEventQueue q = new ObjectEventQueue();
+        
+        assertThat("incorrect block time", q.getBlockTime(), is(Optional.absent()));
+        q.removeBlock(); // noop
+        assertThat("incorrect block time", q.getBlockTime(), is(Optional.absent()));
+        
+        q.drainAndBlockAt(Instant.ofEpochMilli(10000));
+        assertThat("incorrect block time", q.getBlockTime(),
+                is(Optional.of(Instant.ofEpochMilli(10000))));
+        
+        q.removeBlock();
+        assertThat("incorrect block time", q.getBlockTime(), is(Optional.absent()));
+    }
+    
+    @Test
+    public void drainAndBlockAtFail() {
+        final ObjectEventQueue q = new ObjectEventQueue();
+        try {
+            q.drainAndBlockAt(null);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, new NullPointerException("blockTime"));
+        }
+    }
+    
+    @Test
+    public void drainAndBlockVersionLevelEventsWithEventInReadyAndNoDrain() {
+        final ObjectEventQueue q = new ObjectEventQueue();
+        
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+        final StoredStatusEvent sse1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar1", Instant.ofEpochMilli(20000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
+        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar2", Instant.ofEpochMilli(30000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC, null, null);
+        
+        assertEmpty(q);
+        
+        q.load(sse);
+        assertMoveToReadyCorrect(q, set(sse));
+        q.load(sse1);
+        q.load(sse2);
+        assertQueueState(q, set(sse), set(), 3);
+        q.drainAndBlockAt(Instant.ofEpochMilli(5000));
+        assertMoveToReadyCorrect(q, set());
+        assertQueueState(q, set(sse), set(), 3);
+        assertMoveToProcessingCorrect(q, set(sse));
+        assertQueueState(q, set(), set(sse), 3);
+        q.setProcessingComplete(sse);
+        assertQueueState(q, set(), set(), 2);
+        assertMoveToReadyCorrect(q, set());
+        assertQueueState(q, set(), set(), 2);
+        
+        q.removeBlock();
+        assertMoveToReadyCorrect(q, set(sse2, sse1));
+        assertQueueState(q, set(sse1, sse2), set(), 2);
+    }
+    
+    @Test
+    public void drainAndBlockVersionLevelEventsWithDrain() {
+        final ObjectEventQueue q = new ObjectEventQueue();
+        
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+        final StoredStatusEvent sse1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar1", Instant.ofEpochMilli(20000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
+        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar2", Instant.ofEpochMilli(30000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC, null, null);
+        
+        assertEmpty(q);
+        
+        q.load(sse2);
+        q.load(sse);
+        q.load(sse1);
+        q.drainAndBlockAt(Instant.ofEpochMilli(25000));
+        assertMoveToReadyCorrect(q, set(sse, sse1));
+        assertQueueState(q, set(sse, sse1), set(), 3);
+        assertMoveToProcessingCorrect(q, set(sse, sse1));
+        assertQueueState(q, set(), set(sse, sse1), 3);
+        q.removeBlock();
+        assertMoveToReadyCorrect(q, set(sse2));
+        assertQueueState(q, set(sse2), set(sse, sse1), 3);
+    }
+    
+    @Test
+    public void drainAndBlockObjectLevelEvents() {
+        final ObjectEventQueue q = new ObjectEventQueue();
+        
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+        final StoredStatusEvent sse1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar1", Instant.ofEpochMilli(20000), StatusEventType.NEW_ALL_VERSIONS)
+                .build(),
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
+        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar2", Instant.ofEpochMilli(30000), StatusEventType.RENAME_ALL_VERSIONS)
+                .build(),
+                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC, null, null);
+        
+        assertEmpty(q);
+        
+        q.load(sse2);
+        q.load(sse1);
+        q.load(sse);
+        
+        q.drainAndBlockAt(Instant.ofEpochMilli(25000));
+        
+        assertMoveToReadyCorrect(q, set(sse));
+        assertMoveToProcessingCorrect(q, set(sse));
+        assertQueueState(q, set(), set(sse), 3);
+        q.setProcessingComplete(sse); // moves next to ready
+        assertQueueState(q, set(sse1), set(), 2);
+        
+        assertMoveToReadyCorrect(q, set());
+        assertMoveToProcessingCorrect(q, set(sse1));
+        q.setProcessingComplete(sse1);
+        assertQueueState(q, set(), set(), 1);
+        
+        assertMoveToReadyCorrect(q, set()); // queue blocked
+        assertMoveToProcessingCorrect(q, set());
+        
+        q.removeBlock();
+        assertMoveToReadyCorrect(q, set(sse2));
+        assertMoveToProcessingCorrect(q, set(sse2));
+        q.setProcessingComplete(sse2);
+        assertEmpty(q);
     }
 }

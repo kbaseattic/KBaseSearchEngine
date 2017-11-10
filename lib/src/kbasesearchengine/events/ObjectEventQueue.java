@@ -1,5 +1,6 @@
 package kbasesearchengine.events;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -9,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
+
+import com.google.common.base.Optional;
 
 import kbasesearchengine.tools.Utils;
 
@@ -64,6 +67,7 @@ public class ObjectEventQueue {
     private StoredStatusEvent processing = null;
     // maps id to event
     private final Map<StatusEventID, StoredStatusEvent> versionProcessing = new HashMap<>();
+    private Instant blockTime = null;
     
     // could require an access group id and object id and reject any events that don't match
     
@@ -257,8 +261,7 @@ public class ObjectEventQueue {
          * cause multiple events for the same version.
          */
         StoredStatusEvent next = queue.peek();
-        while (next != null &&
-                next.getEvent().getEventType().equals(StatusEventType.NEW_VERSION)) {
+        while (isNewVersion(next) && !isBlockActive(next)) {
             versionReady.add(next);
             ret.add(next);
             queue.remove();
@@ -267,15 +270,46 @@ public class ObjectEventQueue {
         // if there's still an event left in the queue and no version level events are ready
         // for processing or processing, put the object level event in the ready state.
         // this blocks the queue for all other events.
-        if (next != null && versionProcessing.isEmpty() && versionReady.isEmpty()) {
+        if (next != null && versionProcessing.isEmpty() && versionReady.isEmpty() &&
+                !isBlockActive(next)) {
             ready = next;
             ret.add(next);
             queue.remove();
         }
         return Collections.unmodifiableSet(ret);
     }
+
+    private boolean isNewVersion(final StoredStatusEvent next) {
+        return next != null && next.getEvent().getEventType().equals(StatusEventType.NEW_VERSION);
+    }
+
+    private boolean isBlockActive(final StoredStatusEvent next) {
+        return blockTime != null && blockTime.isBefore(next.getEvent().getTimestamp());
+    }
     
-    //TODO QUEUE set and remove drain and block 
+    /** Run all events until an event has an later date than blockTime, and then run no
+     * more events until {@link #removeBlock()} is called. Any events in the ready or
+     * processing state are not affected.
+     * @param blockTime the time after which no more events should be set to the ready state.
+     */
+    public void drainAndBlockAt(final Instant blockTime) {
+        Utils.nonNull(blockTime, "blockTime");
+        this.blockTime = blockTime;
+    }
+    
+    /** Get the block time set by {@link #drainAndBlockAt(Instant)}, if set.
+     * @return the block time.
+     */
+    public Optional<Instant> getBlockTime() {
+        return Optional.fromNullable(blockTime);
+    }
+    
+    /** Removes the block set by {@link #drainAndBlockAt(Instant)}, but does not otherwise
+     * alter the queue state.
+     */
+    public void removeBlock() {
+        blockTime = null;
+    }
     
     /** Thrown when an attempt at accessing an event that does not exist in the queue is made.
      * @author gaprice@lbl.gov
