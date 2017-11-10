@@ -122,6 +122,7 @@ public class IndexerWorker {
     }
     
     public void startIndexer() {
+        //TODO TEST add a way to inject an executor for testing purposes
         executor = Executors.newSingleThreadScheduledExecutor();
         // may want to make this configurable
         executor.scheduleAtFixedRate(new IndexerRunner(), 0, 1000, TimeUnit.MILLISECONDS);
@@ -394,23 +395,24 @@ public class IndexerWorker {
                             ev.isPublic().get(), null, new LinkedList<>());
                 }
                 break;
-            case DELETED:
-                unshare(ev.toGUID(), ev.getAccessGroupId().get());
-                break;
+            // currently unused
+//            case DELETED:
+//                unshare(ev.toGUID(), ev.getAccessGroupId().get());
+//                break;
             case DELETE_ALL_VERSIONS:
-                unshareAllVersions(ev.toGUID());
+                deleteAllVersions(ev.toGUID());
                 break;
             case UNDELETE_ALL_VERSIONS:
-                shareAllVersions(ev.toGUID());
+                undeleteAllVersions(ev.toGUID());
                 break;
-            case SHARED:
                 //TODO DP reenable if we support DPs
+//            case SHARED:
 //                share(ev.toGUID(), ev.getTargetAccessGroupId());
-                break;
-            case UNSHARED:
+//                break;
                 //TODO DP reenable if we support DPs
+//            case UNSHARED:
 //                unshare(ev.toGUID(), ev.getTargetAccessGroupId());
-                break;
+//                break;
             case RENAME_ALL_VERSIONS:
                 renameAllVersions(ev.toGUID(), ev.getNewName().get());
                 break;
@@ -584,20 +586,20 @@ public class IndexerWorker {
         return parentJson;
     }
     
-    public void share(GUID guid, int accessGroupId) throws IOException {
-        indexingStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId, 
-                false);
-    }
+//    public void share(GUID guid, int accessGroupId) throws IOException {
+//        indexingStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId, 
+//                false);
+//    }
     
-    public void shareAllVersions(final GUID guid) throws IOException {
+    public void undeleteAllVersions(final GUID guid) throws IOException {
         indexingStorage.undeleteAllVersions(guid);
     }
 
-    public void unshare(GUID guid, int accessGroupId) throws IOException {
-        indexingStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
-    }
+//    public void unshare(GUID guid, int accessGroupId) throws IOException {
+//        indexingStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
+//    }
 
-    public void unshareAllVersions(final GUID guid) throws IOException {
+    public void deleteAllVersions(final GUID guid) throws IOException {
         indexingStorage.deleteAllVersions(guid);
     }
 

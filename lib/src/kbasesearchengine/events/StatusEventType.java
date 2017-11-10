@@ -2,9 +2,10 @@ package kbasesearchengine.events;
 
 public enum StatusEventType {
 	NEW_VERSION,
-	DELETED,
-	SHARED,
-	UNSHARED,
+	// these are currently unused
+//	DELETED,
+//	SHARED,
+//	UNSHARED,
 	PUBLISH_ALL_VERSIONS,
 	PUBLISH_ACCESS_GROUP, //TODO NOW need to add access group to access docs public list where access group in groups list
 	UNPUBLISH_ALL_VERSIONS,

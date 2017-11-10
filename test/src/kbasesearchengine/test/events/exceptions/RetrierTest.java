@@ -177,7 +177,7 @@ public class RetrierTest {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
         final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
-                new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.DELETED)
+                new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
@@ -255,7 +255,7 @@ public class RetrierTest {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Arrays.asList(70, 30), collog);
         final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
-                new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.DELETED)
+                new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
@@ -376,7 +376,7 @@ public class RetrierTest {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
         final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
-                new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.DELETED)
+                new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
@@ -456,7 +456,7 @@ public class RetrierTest {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 50, Arrays.asList(70, 30), collog);
         final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
-                new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.DELETED)
+                new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
