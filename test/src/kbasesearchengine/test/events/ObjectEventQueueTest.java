@@ -17,7 +17,7 @@ import org.junit.Test;
 import com.google.common.base.Optional;
 
 import kbasesearchengine.events.ObjectEventQueue;
-import kbasesearchengine.events.ObjectEventQueue.NoSuchEventException;
+import kbasesearchengine.events.exceptions.NoSuchEventException;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
@@ -34,8 +34,11 @@ public class ObjectEventQueueTest {
             final Set<StoredStatusEvent> processing,
             final int size) {
         assertThat("incorrect ready", queue.getReadyForProcessing(), is(ready));
+        assertThat("incorrect hasReady", queue.hasReady(), is(!ready.isEmpty()));
         assertThat("incorrect get processing", queue.getProcessing(), is(processing));
         assertThat("incorrect is processing", queue.isProcessing(), is(!processing.isEmpty()));
+        assertThat("incorrect is proc or ready", queue.isProcessingOrReady(),
+                is(!processing.isEmpty() || !ready.isEmpty()));
         assertThat("incorrect size", queue.size(), is(size));
         assertThat("incorrect isEmpty", queue.isEmpty(), is(size == 0));
     }

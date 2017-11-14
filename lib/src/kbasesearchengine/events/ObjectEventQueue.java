@@ -13,6 +13,7 @@ import java.util.Set;
 
 import com.google.common.base.Optional;
 
+import kbasesearchengine.events.exceptions.NoSuchEventException;
 import kbasesearchengine.tools.Utils;
 
 /** An event queue on the level of an object. Object level events block the queue entirely,
@@ -40,6 +41,10 @@ public class ObjectEventQueue {
      * If versionReady or versionProcessing are not empty, both ready and processing must be null.
      * 
      * The intent is to ensure that no record in the search index is modified concurrently.
+     */
+    
+    /* may want to initialize with an access group & object ID and ensure that all incoming
+     * events match
      */
     
     private static final Set<StatusEventType> OBJ_LVL_EVENTS = new HashSet<>(Arrays.asList(
@@ -219,10 +224,24 @@ public class ObjectEventQueue {
     }
     
     /** Returns true if at least one event is in the processing state.
-     * @return true if the queue has event sin the processing state.
+     * @return true if the queue has events in the processing state.
      */
     public boolean isProcessing() {
         return !versionProcessing.isEmpty() || processing != null;
+    }
+    
+    /** Returns true if at least one event is in the ready state.
+     * @return true if the queue has events in the ready state.
+     */
+    public boolean hasReady() {
+        return !versionReady.isEmpty() || ready != null;
+    }
+    
+    /** Returns true if at least one event is in the ready or processing state.
+     * @return true if the queue has events in the ready or processsing state.
+     */
+    public boolean isProcessingOrReady() {
+        return isProcessing() || hasReady();
     }
     
     /** Returns the number of events in the queue.
@@ -310,17 +329,4 @@ public class ObjectEventQueue {
     public void removeBlock() {
         blockTime = null;
     }
-    
-    /** Thrown when an attempt at accessing an event that does not exist in the queue is made.
-     * @author gaprice@lbl.gov
-     *
-     */
-    @SuppressWarnings("serial")
-    public static class NoSuchEventException extends RuntimeException {
-        
-        public NoSuchEventException(final StoredStatusEvent event) {
-            super(String.format("No event with ID %s is in a processing state", event));
-        }
-    }
-
 }
