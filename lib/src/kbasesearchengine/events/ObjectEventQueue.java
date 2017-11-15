@@ -203,6 +203,8 @@ public class ObjectEventQueue {
      * more events to the ready state.
      * This function implicitly calls {@link #moveToReady()}.
      * @param event the event to remove.
+     * @throws NoSuchEventException if there is no event with the given ID in the processing
+     * state.
      */
     public void setProcessingComplete(final StoredStatusEvent event) {
         Utils.nonNull(event, "event");
