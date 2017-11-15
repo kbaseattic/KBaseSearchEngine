@@ -154,6 +154,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
             <include name="kbasesearchengine/test/events/StatusEventTest.java"/>
             <include name="kbasesearchengine/test/events/StoredStatusEventTest.java"/>
             <include name="kbasesearchengine/test/events/exceptions/RetrierTest.java"/>
+            <include name="kbasesearchengine/test/events/exceptions/ExceptionTest.java"/>
             <include name="kbasesearchengine/test/events/handler/ResolvedReferenceTest.java"/>
             <include name="kbasesearchengine/test/events/handler/SourceDataTest.java"/>
             <include name="kbasesearchengine/test/events/storage/MongoDBStatusEventStorageTest.java"/>
@@ -185,7 +186,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
       <executiondata>
         <file file="${test.reports.dir}/jacoco.exec"/>
       </executiondata>
-      <structure name="Auth2 Unit Tests">
+      <structure name="KBaseSearchEngine Unit Tests">
         <classfiles>
           <fileset dir="${classes}">
             <exclude name="**/test/**" />
