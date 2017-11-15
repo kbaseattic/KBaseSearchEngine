@@ -26,6 +26,42 @@ import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.test.common.TestCommon;
 
 public class ObjectEventQueueTest {
+    
+    @Test
+    public void isVersionLevelEvent() {
+        isVersionLevelEvent(StatusEventType.NEW_VERSION, true);
+        
+        isVersionLevelEvent(StatusEventType.COPY_ACCESS_GROUP, false);
+        isVersionLevelEvent(StatusEventType.DELETE_ACCESS_GROUP, false);
+        isVersionLevelEvent(StatusEventType.DELETE_ALL_VERSIONS, false);
+        isVersionLevelEvent(StatusEventType.NEW_ALL_VERSIONS, false);
+        isVersionLevelEvent(StatusEventType.PUBLISH_ACCESS_GROUP, false);
+        isVersionLevelEvent(StatusEventType.PUBLISH_ALL_VERSIONS, false);
+        isVersionLevelEvent(StatusEventType.RENAME_ALL_VERSIONS, false);
+        isVersionLevelEvent(StatusEventType.UNDELETE_ALL_VERSIONS, false);
+        isVersionLevelEvent(StatusEventType.UNPUBLISH_ACCESS_GROUP, false);
+        isVersionLevelEvent(StatusEventType.UNPUBLISH_ALL_VERSIONS, false);
+    }
+
+    private void isVersionLevelEvent(final StatusEventType type, final boolean expected) {
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), type)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+        
+        assertThat("incorrect isVersion", ObjectEventQueue.isVersionLevelEvent(sse),
+                is(expected));
+    }
+    
+    @Test
+    public void isVersionLevelEventFail() {
+        try {
+            ObjectEventQueue.isVersionLevelEvent(null);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, new NullPointerException("event"));
+        }
+    }
 
     /* this assert does not mutate the queue state */
     private void assertQueueState(

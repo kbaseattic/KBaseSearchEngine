@@ -282,7 +282,7 @@ public class ObjectEventQueue {
          * cause multiple events for the same version.
          */
         StoredStatusEvent next = queue.peek();
-        while (isNewVersion(next) && !isBlockActive(next)) {
+        while (next != null && isVersionLevelEvent(next) && !isBlockActive(next)) {
             versionReady.add(next);
             ret.add(next);
             queue.remove();
@@ -300,8 +300,9 @@ public class ObjectEventQueue {
         return Collections.unmodifiableSet(ret);
     }
 
-    private boolean isNewVersion(final StoredStatusEvent next) {
-        return next != null && next.getEvent().getEventType().equals(StatusEventType.NEW_VERSION);
+    public static boolean isVersionLevelEvent(final StoredStatusEvent event) {
+        Utils.nonNull(event, "event");
+        return event.getEvent().getEventType().equals(StatusEventType.NEW_VERSION);
     }
 
     private boolean isBlockActive(final StoredStatusEvent next) {

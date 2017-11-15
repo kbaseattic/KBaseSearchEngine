@@ -186,7 +186,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
       <executiondata>
         <file file="${test.reports.dir}/jacoco.exec"/>
       </executiondata>
-      <structure name="Auth2 Unit Tests">
+      <structure name="KBaseSearchEngine Unit Tests">
         <classfiles>
           <fileset dir="${classes}">
             <exclude name="**/test/**" />
