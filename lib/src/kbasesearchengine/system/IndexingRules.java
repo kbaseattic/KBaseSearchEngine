@@ -142,7 +142,7 @@ public class IndexingRules {
 
     /** Checks if this indexing rule is valid.
      *
-     * @throws ValidationException if this rule is found to be invalid.
+     * @throws ValidationException if these rules are found to be invalid.
      */
     public void validate() throws ValidationException {
         if(!derivedKey && path == null)
