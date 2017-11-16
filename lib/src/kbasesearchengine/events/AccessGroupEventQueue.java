@@ -91,6 +91,10 @@ public class AccessGroupEventQueue {
                 initObjectEvent(objects, e);
             }
         }
+        if ((ready != null || processing != null) && initialLoad.size() > 1) {
+            throw new IllegalArgumentException("If an access group level event is in the " +
+                    "ready or processing state, no other events may be submitted");
+        }
         final Set<String> allObjIDs = new HashSet<>();
         allObjIDs.addAll(objects.keySet());
         allObjIDs.addAll(objectVersionReady.keySet());
@@ -110,8 +114,8 @@ public class AccessGroupEventQueue {
                         objectVersionReady.getOrDefault(objID, Collections.emptyList()),
                         objectVersionProcessing.getOrDefault(objID, Collections.emptyList())));
             }
-            
         }
+        this.size = initialLoad.size();
     }
 
     private void initObjectEvent(
@@ -136,6 +140,16 @@ public class AccessGroupEventQueue {
             addEvent(objectVersionProcessing, objID, e);
         }
     }
+    
+    private void addEvent(
+            final Map<String, List<StoredStatusEvent>> objectVersionProcessing,
+            final String objID,
+            final StoredStatusEvent e) {
+        if (!objectVersionProcessing.containsKey(objID)) {
+            objectVersionProcessing.put(objID, new LinkedList<>());
+        }
+        objectVersionProcessing.get(objID).add(e);
+    }
 
     private void initAccessGroupEvent(final StoredStatusEvent e) {
         if (ready != null || processing != null) {
@@ -147,16 +161,6 @@ public class AccessGroupEventQueue {
         } else {
             processing = e;
         }
-    }
-
-    private void addEvent(
-            final Map<String, List<StoredStatusEvent>> objectVersionProcessing,
-            final String objID,
-            final StoredStatusEvent e) {
-        if (!objectVersionProcessing.containsKey(objID)) {
-            objectVersionProcessing.put(objID, new LinkedList<>());
-        }
-        objectVersionProcessing.get(objID).add(e);
     }
     
     /** Add an new {@link StatusEventProcessingState#UNPROC} event to the queue. Before any

@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
 
 import org.junit.Test;
@@ -76,12 +77,44 @@ public class AccessGroupEventQueueTest {
         return createEvent(id, time, type, StatusEventProcessingState.UNPROC, objectID);
     }
     
+    private StoredStatusEvent ready(
+            final String id,
+            final Instant time,
+            final String objectID,
+            final StatusEventType type) {
+        return createEvent(id, time, type, StatusEventProcessingState.READY, objectID);
+    }
+    
+    private StoredStatusEvent proc(
+            final String id,
+            final Instant time,
+            final String objectID,
+            final StatusEventType type) {
+        return createEvent(id, time, type, StatusEventProcessingState.PROC, objectID);
+    }
+    
     private StoredStatusEvent unprocVer(
             final String id,
             final Instant time,
             final String objectID) {
         return createEvent(id, time, StatusEventType.NEW_VERSION,
                 StatusEventProcessingState.UNPROC, objectID);
+    }
+    
+    private StoredStatusEvent readyVer(
+            final String id,
+            final Instant time,
+            final String objectID) {
+        return createEvent(id, time, StatusEventType.NEW_VERSION,
+                StatusEventProcessingState.READY, objectID);
+    }
+    
+    private StoredStatusEvent procVer(
+            final String id,
+            final Instant time,
+            final String objectID) {
+        return createEvent(id, time, StatusEventType.NEW_VERSION,
+                StatusEventProcessingState.PROC, objectID);
     }
     
     private StoredStatusEvent loadUnproc(
@@ -108,6 +141,7 @@ public class AccessGroupEventQueueTest {
     @Test
     public void createEmpty() {
         assertEmpty(new AccessGroupEventQueue());
+        assertEmpty(new AccessGroupEventQueue(Collections.emptyList()));
     }
     
     @Test
@@ -523,6 +557,107 @@ public class AccessGroupEventQueueTest {
         }
     }
 
+    @Test
+    public void constructWithAccessGroupReady() {
+        final StoredStatusEvent e1 = ready(
+                "1", Instant.ofEpochMilli(20000), null, StatusEventType.COPY_ACCESS_GROUP);
+        
+        final AccessGroupEventQueue q = new AccessGroupEventQueue(Arrays.asList(e1));
+        
+        assertQueueState(q, set(e1), set(), 1);
+        
+        // add an object level event to make sure it's blocked
+        final StoredStatusEvent e2 = unproc("2", Instant.ofEpochMilli(10000), "foo",
+                StatusEventType.DELETE_ALL_VERSIONS);
+        q.load(e2);
+        assertMoveToReadyCorrect(q, set());
+        assertMoveToProcessingCorrect(q, set(e1));
+        assertQueueState(q, set(), set(e1), 2);
+        q.setProcessingComplete(e1);
+        assertQueueState(q, set(e2), set(), 1);
+    }
+    
+    @Test
+    public void constructWithAccessGroupProc() {
+        final StoredStatusEvent e1 = proc(
+                "1", Instant.ofEpochMilli(20000), null, StatusEventType.COPY_ACCESS_GROUP);
+        
+        final AccessGroupEventQueue q = new AccessGroupEventQueue(Arrays.asList(e1));
+        
+        assertQueueState(q, set(), set(e1), 1);
+        
+        // add an object level event to make sure it's blocked
+        final StoredStatusEvent e2 = unproc("2", Instant.ofEpochMilli(10000), "foo",
+                StatusEventType.DELETE_ALL_VERSIONS);
+        q.load(e2);
+        assertMoveToReadyCorrect(q, set());
+        assertMoveToProcessingCorrect(q, set());
+        assertQueueState(q, set(), set(e1), 2);
+        q.setProcessingComplete(e1);
+        assertQueueState(q, set(e2), set(), 1);
+    }
+    
+    @Test
+    public void constructWithMultipleObjectAndVersionProcAndReady() {
+        final StoredStatusEvent e1 = ready("1", Instant.ofEpochMilli(20000), "foo1",
+                StatusEventType.DELETE_ALL_VERSIONS);
+        final StoredStatusEvent e2 = ready("2", Instant.ofEpochMilli(20000), "foo2",
+                StatusEventType.DELETE_ALL_VERSIONS);
+        final StoredStatusEvent e3 = proc("3", Instant.ofEpochMilli(20000), "foo3",
+                StatusEventType.DELETE_ALL_VERSIONS);
+        final StoredStatusEvent e4 = readyVer("4", Instant.ofEpochMilli(20000), "foo4");
+        final StoredStatusEvent e5 = procVer("5", Instant.ofEpochMilli(20000), "foo4");
+        
+        final AccessGroupEventQueue q = new AccessGroupEventQueue(
+                Arrays.asList(e1, e2, e3, e4, e5));
+        
+        assertQueueState(q, set(e1, e2, e4), set(e3, e5), 5);
+        
+        // add access group, object and version events to make sure they're blocked
+        final StoredStatusEvent e6 = unproc(
+                "6", Instant.ofEpochMilli(150000), null, StatusEventType.COPY_ACCESS_GROUP);
+        final StoredStatusEvent e7 = unproc(
+                "7", Instant.ofEpochMilli(10000), "foo4", StatusEventType.DELETE_ALL_VERSIONS);
+        final StoredStatusEvent e8 = unprocVer("8", Instant.ofEpochMilli(10000), "foo1");
+        q.load(e6);
+        q.load(e7);
+        q.load(e8);
+        assertMoveToReadyCorrect(q, set());
+        assertMoveToProcessingCorrect(q, set(e1, e2, e4));
+        assertQueueState(q, set(), set(e1, e2, e3, e4, e5), 8);
+        
+        q.setProcessingComplete(e1);
+        assertQueueState(q, set(e8), set(e2, e3, e4, e5), 7);
+        q.setProcessingComplete(e4);
+        assertQueueState(q, set(e8), set(e2, e3, e5), 6);
+        q.setProcessingComplete(e5);
+        assertQueueState(q, set(e8, e7), set(e2, e3), 5);
+        
+        assertMoveToProcessingCorrect(q, set(e8, e7));
+        q.setProcessingComplete(e7);
+        q.setProcessingComplete(e8);
+        q.setProcessingComplete(e2);
+        assertQueueState(q, set(), set(e3), 2);
+        
+        q.setProcessingComplete(e3);
+        assertQueueState(q, set(e6), set(), 1);
+    }
+    
+    @Test
+    public void constructWithVersionProcOrReadyOnly() {
+        // tests adding more than one version of the same type to an object queue,
+        // but not adding the other type to ensure that null pointers don't occur for the missing
+        // type
+        final StoredStatusEvent e1 = readyVer("1", Instant.ofEpochMilli(20000), "foo1");
+        final StoredStatusEvent e2 = readyVer("2", Instant.ofEpochMilli(20000), "foo1");
+        final StoredStatusEvent e3 = procVer("3", Instant.ofEpochMilli(20000), "foo2");
+        final StoredStatusEvent e4 = procVer("4", Instant.ofEpochMilli(20000), "foo2");
+        
+        final AccessGroupEventQueue q = new AccessGroupEventQueue(Arrays.asList(e1, e2, e3, e4));
+        
+        assertQueueState(q, set(e1, e2), set(e3, e4), 4);
+    }
+    
     //TODO QUEUE NOW constructor tests
     //TODO QUEUE NOW constructor unhappy tests
     
