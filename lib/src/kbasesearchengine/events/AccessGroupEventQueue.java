@@ -79,11 +79,11 @@ public class AccessGroupEventQueue {
         final Map<String, List<StoredStatusEvent>> objectVersionProcessing = new HashMap<>();
         
         for (final StoredStatusEvent e: initialLoad) {
-            if (!e.getState().equals(StatusEventProcessingState.READY) ||
+            if (!e.getState().equals(StatusEventProcessingState.READY) &&
                     !e.getState().equals(StatusEventProcessingState.PROC)) {
                 throw new IllegalArgumentException("Illegal initial event state: " + e.getState());
             }
-            if (ACCESS_GROUP_EVENTS.contains(e)) {
+            if (ACCESS_GROUP_EVENTS.contains(e.getEvent().getEventType())) {
                 initAccessGroupEvent(e);
             } else if (ObjectEventQueue.isVersionLevelEvent(e)) {
                 initVersionEvent(objectVersionReady, objectVersionProcessing, e);
@@ -191,7 +191,7 @@ public class AccessGroupEventQueue {
     public Set<StoredStatusEvent> moveToReady() {
         final Set<StoredStatusEvent> ret = new HashSet<>();
         if (ready != null || processing != null) {
-            return ret; // nothing to do, queue is blocked
+            return Collections.unmodifiableSet(ret); // nothing to do, queue is blocked
         }
         if (drain == null) {
             drain = accessGroupQueue.poll();

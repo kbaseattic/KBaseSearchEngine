@@ -3,8 +3,10 @@ package kbasesearchengine.test.events;
 import static kbasesearchengine.test.common.TestCommon.set;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Set;
 
 import org.junit.Test;
@@ -15,6 +17,8 @@ import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StoredStatusEvent;
+import kbasesearchengine.events.exceptions.NoSuchEventException;
+import kbasesearchengine.test.common.TestCommon;
 
 public class AccessGroupEventQueueTest {
 
@@ -266,9 +270,260 @@ public class AccessGroupEventQueueTest {
         q.setProcessingComplete(e3);
         assertEmpty(q);
     }
+    
+    @Test
+    public void setProcessedWithMutatedEvent() {
+        // in practice we expect the events passed into setProcessed() to have mutated slightly
+        // from the original load()ed event, so check that works.
+        // the status event itself and the id should not mutate, but other fields are fair game.
+        
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+        
+        final AccessGroupEventQueue q = new AccessGroupEventQueue();
+        q.load(sse);
+        q.moveToReady();
+        q.moveReadyToProcessing();
+        assertQueueState(q, set(), set(sse), 1);
+        
+        final StoredStatusEvent hideousmutant = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.INDX,
+                Instant.ofEpochMilli(10000), "whee");
+        
+        q.setProcessingComplete(hideousmutant);
+        assertEmpty(q);
+    }
+    
+    @Test
+    public void immutableGetReady() {
+        // test the 3 getReady paths
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar2", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .withNullableObjectID("bar")
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+        final StoredStatusEvent sse3 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar3", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.PROC, null, null);
+        
+        final AccessGroupEventQueue q = new AccessGroupEventQueue(Arrays.asList(sse));
+        assertGetReadyReturnIsImmutable(sse2, q);
+        
+        final AccessGroupEventQueue q2 = new AccessGroupEventQueue(Arrays.asList(sse2));
+        assertGetReadyReturnIsImmutable(sse, q2);
+        
+        final AccessGroupEventQueue q3 = new AccessGroupEventQueue(Arrays.asList(sse3));
+        assertGetReadyReturnIsImmutable(sse, q3);
+    }
+
+    private void assertGetReadyReturnIsImmutable(
+            final StoredStatusEvent sse,
+            final AccessGroupEventQueue q) {
+        try {
+            q.getReadyForProcessing().add(sse);
+            fail("expected exception");
+        } catch (UnsupportedOperationException e) {
+            //test passed
+        }
+    }
+    
+    @Test
+    public void immutableGetProcessing() {
+        // test the 3 getProcessing paths
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.PROC, null, null);
+        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar2", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .withNullableObjectID("bar")
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.PROC, null, null);
+        final StoredStatusEvent sse3 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar3", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+        
+        final AccessGroupEventQueue q = new AccessGroupEventQueue(Arrays.asList(sse));
+        assertGetProcessingReturnIsImmutable(sse2, q);
+        
+        final AccessGroupEventQueue q2 = new AccessGroupEventQueue(Arrays.asList(sse2));
+        assertGetProcessingReturnIsImmutable(sse, q2);
+        
+        final AccessGroupEventQueue q3 = new AccessGroupEventQueue(Arrays.asList(sse3));
+        assertGetProcessingReturnIsImmutable(sse, q3);
+    }
+
+    private void assertGetProcessingReturnIsImmutable(
+            final StoredStatusEvent sse,
+            final AccessGroupEventQueue q) {
+        try {
+            q.getProcessing().add(sse);
+            fail("expected exception");
+        } catch (UnsupportedOperationException e) {
+            //test passed
+        }
+    }
+    
+    @Test
+    public void immutableMoveReady() {
+        // test both moveReady paths
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar2", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .withNullableObjectID("id")
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+        
+        final AccessGroupEventQueue q = new AccessGroupEventQueue();
+        q.load(sse);
+        assertMoveReadyReturnIsImmutable(sse2, q);
+        
+        final AccessGroupEventQueue q2 = new AccessGroupEventQueue();
+        q2.load(sse);
+        q2.moveToReady();
+        assertMoveReadyReturnIsImmutable(sse2, q2);
+    }
+
+    private void assertMoveReadyReturnIsImmutable(
+            final StoredStatusEvent sse,
+            final AccessGroupEventQueue q) {
+        try {
+            q.moveToReady().add(sse);
+            fail("expected exception");
+        } catch (UnsupportedOperationException e) {
+            // test passed
+        }
+    }
+    
+    @Test
+    public void immutableMoveProcessing() {
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar2", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .withNullableObjectID("id")
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+        
+        final AccessGroupEventQueue q = new AccessGroupEventQueue(Arrays.asList(sse));
+        assertMoveProcessingReturnIsImmutable(sse2, q);
+        
+        final AccessGroupEventQueue q2 = new AccessGroupEventQueue(Arrays.asList(sse2));
+        assertMoveProcessingReturnIsImmutable(sse, q2);
+    }
+
+    private void assertMoveProcessingReturnIsImmutable(
+            final StoredStatusEvent sse,
+            final AccessGroupEventQueue q) {
+        try {
+            q.moveReadyToProcessing().add(sse);
+            fail("expected exception");
+        } catch (UnsupportedOperationException e) {
+            // test passed
+        }
+    }
+    
+    @Test
+    public void loadFail() {
+        final StatusEvent se = StatusEvent.getBuilder(
+                "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build();
+        final StatusEventID id = new StatusEventID("some id");
+        
+        //null
+        failLoad(null, new NullPointerException("event"));
+        
+        //bad state
+        for (final StatusEventProcessingState state: Arrays.asList(
+                StatusEventProcessingState.FAIL, StatusEventProcessingState.INDX,
+                StatusEventProcessingState.UNINDX, StatusEventProcessingState.READY,
+                StatusEventProcessingState.PROC)) {
+            failLoad(new StoredStatusEvent(se, id, state, null, null),
+                    new IllegalArgumentException("Illegal state for loading event: " + state));
+        }
+    }
+    
+    private void failLoad(
+            final StoredStatusEvent event,
+            final Exception expected) {
+        try {
+            new AccessGroupEventQueue().load(event);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
+    
+    @Test
+    public void setProcessingCompleteFail() {
+        final AccessGroupEventQueue q = new AccessGroupEventQueue();
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                .withNullableObjectID("id")
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+        
+        //nulls
+        failSetProcessingComplete(q, null, new NullPointerException("event"));
+        
+        //empty queue
+        failSetProcessingComplete(q, sse, new NoSuchEventException(sse));
+        
+        // with group level event in processed state with different event id
+        final AccessGroupEventQueue q2 = new AccessGroupEventQueue(Arrays.asList(
+                new StoredStatusEvent(StatusEvent.getBuilder(
+                        "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ACCESS_GROUP)
+                        .build(),
+                        new StatusEventID("foo2"), StatusEventProcessingState.PROC, null, null)));
+        failSetProcessingComplete(q2, sse, new NoSuchEventException(sse));
+        
+        // with object level event with different object id
+        final AccessGroupEventQueue q3 = new AccessGroupEventQueue(Arrays.asList(
+                new StoredStatusEvent(StatusEvent.getBuilder(
+                        "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                        .withNullableObjectID("id2")
+                        .build(),
+                        new StatusEventID("foo"), StatusEventProcessingState.PROC, null, null)));
+        failSetProcessingComplete(q3, sse, new NoSuchEventException(sse));
+        
+        
+        // with version level event with different event id
+        final AccessGroupEventQueue q4= new AccessGroupEventQueue(Arrays.asList(
+                new StoredStatusEvent(StatusEvent.getBuilder(
+                        "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                        .withNullableObjectID("id")
+                        .build(),
+                        new StatusEventID("foo2"), StatusEventProcessingState.PROC, null, null)));
+        failSetProcessingComplete(q4, sse, new NoSuchEventException(sse));
+    }
+    
+    private void failSetProcessingComplete(
+            final AccessGroupEventQueue queue,
+            final StoredStatusEvent sse,
+            final Exception expected) {
+        try {
+            queue.setProcessingComplete(sse);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
 
     //TODO QUEUE NOW constructor tests
-    //TODO QUEUE NOW unhappy path tests
-    //TODO QUEUE NOW immutable results tests
+    //TODO QUEUE NOW constructor unhappy tests
     
 }

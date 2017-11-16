@@ -273,7 +273,7 @@ public class ObjectEventQueue {
         // if a object level event is ready for processing or processing, do nothing.
         // the queue is blocked.
         if (ready != null || processing != null) {
-            return ret;
+            return Collections.unmodifiableSet(ret);
         }
         /* Either no events are ready/processing or only version level events are ready/processing.
          * Pull all the version level events off the front of the queue and put them in
