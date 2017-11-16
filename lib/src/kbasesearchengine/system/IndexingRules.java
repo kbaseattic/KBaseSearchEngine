@@ -145,42 +145,49 @@ public class IndexingRules {
      * @throws ValidationException if these rules are found to be invalid.
      */
     public void validate() throws ValidationException {
-        if(!derivedKey && path == null)
-            throw  new ValidationException("Must specify either derivedKey=true "+
-                    "and source key, or non-null path to form keyword from: "+
+        if (!derivedKey && path == null) {
+            throw new ValidationException("Must specify either derivedKey=true " +
+                    "and source key, or non-null path to form keyword from: " +
                     toString());
-        if(derivedKey && path != null)
+        }
+        if (derivedKey && path != null) {
             throw new ValidationException("Specify either derivedKey=true or " +
-                    "sourceKey or path, but not both: "+toString());
-        if(derivedKey && sourceKey == null)
+                    "sourceKey or path, but not both: " + toString());
+        }
+        if (derivedKey && sourceKey == null) {
             throw new ValidationException("derivedKey is true and source-key is " +
                     "null expecting a non-null sourceKey to form the derived: " +
-                    "keyword from. "+toString());
-        if(fullText && keywordType != null)
+                    "keyword from. " + toString());
+        }
+        if (fullText && keywordType != null) {
             throw new ValidationException("Specify either fullText=true or " +
-                    "sourceKey, but not both: "+toString());
-        if(transform != null && !( transform.startsWith("location") ||
+                    "sourceKey, but not both: " + toString());
+        }
+        if (transform != null && !( transform.startsWith("location") ||
                 transform.startsWith("length") || transform.startsWith("values") ||
                 transform.startsWith("string") || transform.startsWith("integer") ||
-                transform.startsWith("guid") || transform.startsWith("lookup")))
+                transform.startsWith("guid") || transform.startsWith("lookup"))) {
             throw new ValidationException("Unsupported transformation. Must be " +
                     "one of location, length, values, string, integer, guid: "
-                    +toString());
-        if(targetObjectType != null &&
-                (transform == null || !transform.startsWith("guid")))
+                    + toString());
+        }
+        if (targetObjectType != null &&
+                (transform == null || !transform.startsWith("guid"))) {
             throw new ValidationException("targetObjectType must be" +
                     "used with guid transform only. Transform is either null or" +
-                    "not a guid transform: "+toString());
-        if(subobjectIdKey != null && !derivedKey)
+                    "not a guid transform: " + toString());
+        }
+        if (subobjectIdKey != null && !derivedKey) {
             throw new ValidationException("subobjectIdKey can be" +
                     "defined for derivedKey only, but derivedKey is set to " +
-                    "false!: "+toString());
-        if(subobjectIdKey != null &&
-                (transform == null || !transform.startsWith("guid")))
+                    "false!: " + toString());
+        }
+        if (subobjectIdKey != null &&
+                (transform == null || !transform.startsWith("guid"))) {
             throw new ValidationException("subobjectIdKey must be" +
                     "used with guid transform only. Transform is either null or" +
-                    "not a guid transform: "+toString());
-
+                    "not a guid transform: " + toString());
+        }
     }
     
     public ObjectJsonPath getPath() {
@@ -323,5 +330,4 @@ public class IndexingRules {
                 + ", constantValue=" + constantValue + ", uiName=" + uiName
                 + ", uiHidden=" + uiHidden + ", uiLinkKey=" + uiLinkKey + "]";
     }
-    
 }

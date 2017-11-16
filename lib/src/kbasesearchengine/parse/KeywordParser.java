@@ -20,6 +20,7 @@ import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.ValidationException;
+import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.UObject;
 
 public class KeywordParser {
@@ -36,13 +37,14 @@ public class KeywordParser {
             throws IOException, ObjectParseException, IndexingException, InterruptedException {
 
         // check pre-conditons
-        if(json == null) throw new IllegalArgumentException("json is a required parameter");
-        if(indexingRules == null) throw new IllegalArgumentException("indexingRules is a required parameter");
+        Utils.notNullOrEmpty(json, "json is a required parameter");
 
-        for(IndexingRules rule: indexingRules) {
+        Utils.nonNull(indexingRules, "indexingRules is a required parameter");
+
+        for (IndexingRules rule: indexingRules) {
             try {
                 rule.validate();
-            } catch(ValidationException ex) {
+            } catch (ValidationException ex) {
                 throw new IllegalArgumentException("Unable to extract keywords", ex);
             }
         }
