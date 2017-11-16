@@ -8,6 +8,7 @@ import static org.junit.Assert.fail;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.Test;
@@ -658,7 +659,88 @@ public class AccessGroupEventQueueTest {
         assertQueueState(q, set(e1, e2), set(e3, e4), 4);
     }
     
-    //TODO QUEUE NOW constructor tests
-    //TODO QUEUE NOW constructor unhappy tests
+    @Test
+    public void constructFailNulls() {
+        final StoredStatusEvent e1 = readyVer("6", Instant.ofEpochMilli(20000), "foo1");
+        failConstruct(new NullPointerException("initialLoad"), (List<StoredStatusEvent>) null);
+        failConstruct(new NullPointerException("initialLoad has null entries"),
+                Arrays.asList(e1, null));
+    }
     
+    @Test
+    public void constructFailIllegalEventLevelCombinations() {
+        // test combinations of illegal event types.
+        final StoredStatusEvent agready = ready(
+                "1", Instant.ofEpochMilli(20000), null, StatusEventType.COPY_ACCESS_GROUP);
+        final StoredStatusEvent agproc = proc(
+                "2", Instant.ofEpochMilli(20000), null, StatusEventType.COPY_ACCESS_GROUP);
+        final StoredStatusEvent objready1 = ready(
+                "3", Instant.ofEpochMilli(10000), "foo1", StatusEventType.DELETE_ALL_VERSIONS);
+        final StoredStatusEvent objproc1 = ready(
+                "4", Instant.ofEpochMilli(10000), "foo1", StatusEventType.DELETE_ALL_VERSIONS);
+        final StoredStatusEvent verready1 = readyVer("5", Instant.ofEpochMilli(20000), "foo1");
+        final StoredStatusEvent verproc1 = readyVer("6", Instant.ofEpochMilli(20000), "foo1");
+        
+        final IllegalArgumentException expAccess = new IllegalArgumentException(
+                "More than one access level event is not allowed");
+        failConstruct(expAccess, agready, agproc);
+        failConstruct(expAccess, agproc, agready);
+        failConstruct(expAccess, agready, agready);
+        failConstruct(expAccess, agproc, agproc);
+        
+        final IllegalArgumentException expAccessPlus = new IllegalArgumentException(
+                "If an access group level event is in the ready or processing state, no " +
+                "other events may be submitted");
+        failConstruct(expAccessPlus, agready, objready1);
+        failConstruct(expAccessPlus, agready, objproc1);
+        failConstruct(expAccessPlus, agready, verready1);
+        failConstruct(expAccessPlus, agready, verproc1);
+        failConstruct(expAccessPlus, agproc, objready1);
+        failConstruct(expAccessPlus, agproc, objproc1);
+        failConstruct(expAccessPlus, agproc, verready1);
+        failConstruct(expAccessPlus, agproc, verproc1);
+        
+        final IllegalArgumentException expObjVer = new IllegalArgumentException(
+                "Cannot submit both object and version level events for object ID foo1");
+        failConstruct(expObjVer, objready1, verready1);
+        failConstruct(expObjVer, objready1, verproc1);
+        failConstruct(expObjVer, objproc1, verready1);
+        failConstruct(expObjVer, objproc1, verproc1);
+        
+        final IllegalArgumentException expObj2 = new IllegalArgumentException(
+                "Already contains an event for object ID foo1");
+        failConstruct(expObj2, objready1, objproc1);
+    }
+    
+    @Test
+    public void constructFailIllegalState() {
+        final StatusEvent se = StatusEvent.getBuilder(
+                "foo", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION).build();
+        final StatusEventID id = new StatusEventID("some id");
+        
+        for (final StatusEventProcessingState state: Arrays.asList(
+                StatusEventProcessingState.FAIL, StatusEventProcessingState.INDX,
+                StatusEventProcessingState.UNINDX, StatusEventProcessingState.UNPROC)) {
+            failConstruct(new IllegalArgumentException("Illegal initial event state: " + state),
+                    new StoredStatusEvent(se, id, state, null, null));
+        }
+    }
+    
+    private void failConstruct(final Exception expected, final List<StoredStatusEvent> events) {
+        try {
+            new AccessGroupEventQueue(events);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
+    
+    private void failConstruct(final Exception expected, final StoredStatusEvent... events) {
+        try {
+            new AccessGroupEventQueue(Arrays.asList(events));
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
 }

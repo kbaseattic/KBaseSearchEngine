@@ -104,7 +104,7 @@ public class AccessGroupEventQueue {
             if ((objectVersionReady.containsKey(objID) ||
                     objectVersionProcessing.containsKey(objID)) &&
                     objects.containsKey(objID)) {
-                throw new IllegalArgumentException("Cannot submit both object level events and " +
+                throw new IllegalArgumentException("Cannot submit both object and " +
                         "version level events for object ID " + objID);
             }
             if (objects.containsKey(objID)) {
