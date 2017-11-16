@@ -30,8 +30,6 @@ import kbasesearchengine.tools.Utils;
  */
 public class AccessGroupEventQueue {
     
-    //TODO QUEUE TEST
-    
     private static final Set<StatusEventType> ACCESS_GROUP_EVENTS = new HashSet<>(Arrays.asList(
             StatusEventType.COPY_ACCESS_GROUP, StatusEventType.DELETE_ACCESS_GROUP,
             StatusEventType.PUBLISH_ACCESS_GROUP)); 
@@ -54,7 +52,7 @@ public class AccessGroupEventQueue {
     private StoredStatusEvent drain = null; // AG event waiting for object queues to drain
     private StoredStatusEvent ready = null; // AG event ready for processing
     private StoredStatusEvent processing = null; // AG event processing
-    private int size = 0; // memoize size rather than running through sub queues
+    private int size = 0; // keep a record of size rather than running through sub queues
     
     /* should maybe initialize with an acccess group id and reject events that don't match */
     
@@ -204,8 +202,7 @@ public class AccessGroupEventQueue {
             if (drainTime != null) {
                 oq.drainAndBlockAt(drainTime);
             }
-            oq.moveToReady();
-            ret.addAll(oq.getReadyForProcessing());
+            ret.addAll(oq.moveToReady());
             drained = drained && !oq.isProcessingOrReady();
         }
         if (drained && drain != null) {
@@ -261,8 +258,13 @@ public class AccessGroupEventQueue {
             if (!objectQueues.containsKey(objID)) {
                 throw new NoSuchEventException(event);
             }
-            objectQueues.get(objID).setProcessingComplete(event);
+            final ObjectEventQueue q = objectQueues.get(objID);
+            q.setProcessingComplete(event);
+            if (q.isEmpty()) {
+                objectQueues.remove(objID);
+            }
             size--;
+            moveToReady();
         }
     }
     
