@@ -1,6 +1,7 @@
 package kbasesearchengine.system;
 
-/**
+/** Base exception of all Search Validation "unexpected" problems.
+ * 
  * Created by Arfath on 11/15/17.
  */
 public class ValidationException extends Exception {
