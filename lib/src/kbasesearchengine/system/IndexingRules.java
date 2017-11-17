@@ -172,7 +172,7 @@ public class IndexingRules {
             throw new ValidationException("Specify either fullText=true or " +
                     "sourceKey, but not both: " + toString());
         }
-        if (transform != null && !( transform.startsWith("location") ||
+        if (transform != null && !(transform.startsWith("location") ||
                 transform.startsWith(TRANSFORM_LENGTH) ||
                 transform.startsWith(TRANSFORM_VALUES) ||
                 transform.startsWith(TRANSFORM_STRING) ||
