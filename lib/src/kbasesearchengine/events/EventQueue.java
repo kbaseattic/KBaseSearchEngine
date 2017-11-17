@@ -13,9 +13,9 @@ import java.util.stream.Stream;
 import kbasesearchengine.events.exceptions.NoSuchEventException;
 import kbasesearchengine.tools.Utils;
 
-/** A search status event queue. The purpose of the queue is to ensure that events the may
- * modify are not processed concurrently, since currently the only search storage implementation
- * is elasticsearch.
+/** A search status event queue. The purpose of the queue is to ensure that events that may
+ * modify the same record are not processed concurrently, since currently the only search
+ * storage implementation is elasticsearch.
  * 
  * Note that the calling code is responsible for ensuring that IDs for events added to this queue
  * are unique.
@@ -45,7 +45,7 @@ public class EventQueue {
      */
     public EventQueue(final List<StoredStatusEvent> initialLoad) {
         Utils.nonNull(initialLoad, "initialLoad");
-        Utils.noNulls(initialLoad, "intialLoad has null entries");
+        Utils.noNulls(initialLoad, "initialLoad has null entries");
         final Map<Integer, List<StoredStatusEvent>> events = new HashMap<>();
         for (final StoredStatusEvent e: initialLoad) {
             // if this is null, the access group should be ignored rather than putting all
@@ -59,6 +59,7 @@ public class EventQueue {
         for (final int accgrpID: events.keySet()) {
             queues.put(accgrpID, new AccessGroupEventQueue(events.get(accgrpID)));
         }
+        this.size = initialLoad.size();
     }
     
     /** Get the number of events in the queue.
@@ -102,8 +103,15 @@ public class EventQueue {
      */
     public void setProcessingComplete(final StoredStatusEvent event) {
         final int id = getAGID(event);
-        queues.get(id).setProcessingComplete(event);
+        if (!queues.containsKey(id)) {
+            throw new NoSuchEventException(event);
+        }
+        final AccessGroupEventQueue q = queues.get(id);
+        q.setProcessingComplete(event);
         size--;
+        if (q.isEmpty()) {
+            queues.remove(id);
+        }
     }
     
     /** Moves any events that are ready for processing based on the queue rules into the ready
