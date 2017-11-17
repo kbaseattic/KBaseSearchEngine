@@ -484,7 +484,8 @@ public class ObjectEventQueueTest {
         assertGetProcessingReturnIsImmutable(sse, q2);
     }
 
-    private void assertGetProcessingReturnIsImmutable(final StoredStatusEvent sse,
+    private void assertGetProcessingReturnIsImmutable(
+            final StoredStatusEvent sse,
             final ObjectEventQueue q) {
         try {
             q.getProcessing().add(sse);
@@ -513,6 +514,11 @@ public class ObjectEventQueueTest {
         final ObjectEventQueue q2 = new ObjectEventQueue();
         q2.load(sse2);
         assertMoveReadyReturnIsImmutable(sse, q2);
+        
+        final ObjectEventQueue q3 = new ObjectEventQueue();
+        q3.load(sse);
+        q3.moveToReady();
+        assertMoveReadyReturnIsImmutable(sse2, q3);
     }
 
     private void assertMoveReadyReturnIsImmutable(

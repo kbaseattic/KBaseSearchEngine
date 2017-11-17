@@ -188,6 +188,9 @@ public class ObjectEventQueue {
         return Collections.unmodifiableSet(ret);
     }
     
+    /** Get the set of events in the processing state.
+     * @return the events that are in the processing state.
+     */
     public Set<StoredStatusEvent> getProcessing() {
         final Set<StoredStatusEvent> ret;
         if (processing == null) {
@@ -270,7 +273,7 @@ public class ObjectEventQueue {
         // if a object level event is ready for processing or processing, do nothing.
         // the queue is blocked.
         if (ready != null || processing != null) {
-            return ret;
+            return Collections.unmodifiableSet(ret);
         }
         /* Either no events are ready/processing or only version level events are ready/processing.
          * Pull all the version level events off the front of the queue and put them in
@@ -300,6 +303,11 @@ public class ObjectEventQueue {
         return Collections.unmodifiableSet(ret);
     }
 
+    /** Check if an event is a version level, as opposed to an object or access group level,
+     * event.
+     * @param event the event to check.
+     * @return true if the event is a version level event.
+     */
     public static boolean isVersionLevelEvent(final StoredStatusEvent event) {
         Utils.nonNull(event, "event");
         return event.getEvent().getEventType().equals(StatusEventType.NEW_VERSION);
