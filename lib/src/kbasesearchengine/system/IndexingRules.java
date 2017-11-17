@@ -19,6 +19,15 @@ import kbasesearchengine.common.ObjectJsonPath;
  *
  */
 public class IndexingRules {
+    // supported transformations
+    public static final String TRANSFORM_LOCATION = "location";
+    public static final String TRANSFORM_LENGTH = "length";
+    public static final String TRANSFORM_VALUES = "values";
+    public static final String TRANSFORM_STRING = "string";
+    public static final String TRANSFORM_INTEGER = "integer";
+    public static final String TRANSFORM_GUID = "guid";
+    public static final String TRANSFORM_LOOKUP = "lookup";
+
     /**
      * Path to an element of the source object from which to form the keyword.
      * The path may contain "*" or "[*]" to collect an array of values for the
@@ -164,9 +173,12 @@ public class IndexingRules {
                     "sourceKey, but not both: " + toString());
         }
         if (transform != null && !( transform.startsWith("location") ||
-                transform.startsWith("length") || transform.startsWith("values") ||
-                transform.startsWith("string") || transform.startsWith("integer") ||
-                transform.startsWith("guid") || transform.startsWith("lookup"))) {
+                transform.startsWith(TRANSFORM_LENGTH) ||
+                transform.startsWith(TRANSFORM_VALUES) ||
+                transform.startsWith(TRANSFORM_STRING) ||
+                transform.startsWith(TRANSFORM_INTEGER) ||
+                transform.startsWith(TRANSFORM_GUID) ||
+                transform.startsWith(TRANSFORM_LOOKUP))) {
             throw new ValidationException("Unsupported transformation. Must be " +
                     "one of location, length, values, string, integer, guid: "
                     + toString());
