@@ -19,6 +19,8 @@ import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.ValidationException;
+import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.UObject;
 
 public class KeywordParser {
@@ -33,6 +35,20 @@ public class KeywordParser {
             final ObjectLookupProvider lookup,
             final List<GUID> objectRefPath)
             throws IOException, ObjectParseException, IndexingException, InterruptedException {
+
+        // check pre-conditons
+        Utils.notNullOrEmpty(json, "json is a required parameter");
+
+        Utils.nonNull(indexingRules, "indexingRules is a required parameter");
+
+        for (IndexingRules rule: indexingRules) {
+            try {
+                rule.validate();
+            } catch (ValidationException ex) {
+                throw new IllegalArgumentException("Unable to extract keywords", ex);
+            }
+        }
+
         Map<String, InnerKeyValue> keywords = new LinkedHashMap<>();
         ValueConsumer<List<IndexingRules>> consumer = new ValueConsumer<List<IndexingRules>>() {
             @Override
