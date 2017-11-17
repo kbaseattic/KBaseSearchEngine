@@ -63,15 +63,18 @@ public interface StatusEventStorage {
             throws FatalRetriableIndexingException;
     
     /** Mark an event with a processing state.
-     * @param event the event to modify.
-     * @param state the processing state to set on the event.
+     * @param id the id of the event to modify.
+     * @param oldState the expected state of the event. If non-null, an event is only modified
+     * if both the id and the oldState match.
+     * @param newState the processing state to set on the event.
      * @return true if the event was updated, false if the event was not found in the storage
      * system.
      * @throws FatalRetriableIndexingException if an error occurs while setting the state.
      */
     boolean setProcessingState(
-            StoredStatusEvent event,
-            StatusEventProcessingState state)
+            StatusEventID id,
+            StatusEventProcessingState oldState,
+            StatusEventProcessingState newState)
             throws FatalRetriableIndexingException;
 
 }

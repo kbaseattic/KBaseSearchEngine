@@ -114,7 +114,8 @@ public class IndexerCoordinator {
         final List<StoredStatusEvent> parentEvents = retrier.retryFunc(
                 s -> s.get(StatusEventProcessingState.UNPROC, 1000), storage, null);
         for (final StoredStatusEvent parentEvent: parentEvents) {
-            retrier.retryCons(e -> storage.setProcessingState(e, StatusEventProcessingState.READY),
+            retrier.retryCons(e -> storage.setProcessingState(e.getId(),
+                    StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY),
                     parentEvent, parentEvent);
         }
     }

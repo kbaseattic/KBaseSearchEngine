@@ -35,6 +35,7 @@ import com.mongodb.client.MongoDatabase;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
@@ -174,7 +175,7 @@ public class SearchTools {
             try {
                 runCoordinator(cfg, out, err);
                 noCommand = false; 
-            } catch (StorageInitException e) {
+            } catch (StorageInitException | IndexingException | InterruptedException e) {
                 printError(e, a.verbose);
                 return 1;
             }
@@ -184,7 +185,7 @@ public class SearchTools {
                 runWorker(cfg, a.startWorker, out, err);
                 noCommand = false;
             } catch (IOException | AuthException | ObjectParseException | TypeParseException |
-                    UnauthorizedException | StorageInitException e) {
+                    UnauthorizedException | StorageInitException | IllegalArgumentException e) {
                 printError(e, a.verbose);
                 return 1;
             }
@@ -211,7 +212,7 @@ public class SearchTools {
             final SearchToolsConfig cfg,
             final PrintStream logTarget,
             final PrintStream errTarget)
-            throws StorageInitException {
+            throws StorageInitException, InterruptedException, IndexingException {
         final LineLogger logger = buildLogger(logTarget, errTarget);
         
         final StatusEventStorage storage = new MongoDBStatusEventStorage(searchDB);
@@ -252,9 +253,13 @@ public class SearchTools {
         wrk.startIndexer();
     }
 
-    private String getID(final String id) {
+    private String getID(String id) {
+        Utils.notNullOrEmpty(id, "id cannot be null or empty");
+        id = id.trim();
         if ("-".equals(id)) {
             return UUID.randomUUID().toString();
+//        } else if (IndexerCoordinator.INDEXER_NAME.equals(id)) {
+//            throw new IllegalArgumentException("Reserved id: " + id);
         } else {
             return id;
         }
@@ -515,6 +520,7 @@ public class SearchTools {
         
         @Parameter(names = {"-k", "--start-worker"}, description =
                 "Start an indexer worker with the provided id. Set the id to '-' to " +
+//                "generate a random id. " + IndexerCoordinator.INDEXER_NAME + " is a reserved ID.")
                 "generate a random id.")
         private String startWorker;
         
