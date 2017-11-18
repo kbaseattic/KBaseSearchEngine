@@ -1,6 +1,7 @@
 package kbasesearchengine.main;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -8,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Optional;
 
+import kbasesearchengine.events.EventQueue;
 import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
@@ -17,6 +19,14 @@ import kbasesearchengine.events.exceptions.Retrier;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.tools.Utils;
 
+/** Coordinates which events will get processed by {@link IndexerWorker}s based on the
+ * {@link EventQueue}. The responsibility of the coordinator is to periodically update the event
+ * state in the {@link StatusEventStorage} such that the workers process the correct events.
+ * 
+ * Only one indexer coordinator should run at one time.
+ * @author gaprice@lbl.gov
+ *
+ */
 public class IndexerCoordinator {
     
     private static final int RETRY_COUNT = 5;
@@ -26,24 +36,41 @@ public class IndexerCoordinator {
     
     private final StatusEventStorage storage;
     private final LineLogger logger;
-    private ScheduledExecutorService executor = null;
+    //TODO TEST add a way to inject an executor for testing purposes
+    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    private final EventQueue queue;
+    
+    private int maxQueueSize = 10000; //TODO QUEUE NOW setter and getter for tests
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
             RETRY_FATAL_BACKOFF_MS,
             (retrycount, event, except) -> logError(retrycount, event, except));
 
+    /** Create the indexer coordinator. Only one coordinator should run at one time.
+     * @param storage the storage system containing events.
+     * @param logger a logger.
+     * @throws InterruptedException if the thread is interrupted while attempting to initialize
+     * the coordinator.
+     * @throws IndexingException if an exception occurs while trying to initialize the
+     * coordinator.
+     */
     public IndexerCoordinator(
             final StatusEventStorage storage,
-            final LineLogger logger) {
+            final LineLogger logger)
+            throws InterruptedException, IndexingException {
         Utils.nonNull(storage, "storage");
         Utils.nonNull(logger, "logger");
         this.logger = logger;
         this.storage = storage;
+        final List<StoredStatusEvent> events = retrier.retryFunc(
+                s -> s.get(StatusEventProcessingState.READY, maxQueueSize), storage, null);
+        events.addAll(retrier.retryFunc(
+                s -> s.get(StatusEventProcessingState.PROC, maxQueueSize), storage, null));
+        queue = new EventQueue(events);
     }
     
+    /** Start the indexer. */
     public void startIndexer() {
-        //TODO TEST add a way to inject an executor for testing purposes
-        executor = Executors.newSingleThreadScheduledExecutor();
         // may want to make this configurable
         executor.scheduleAtFixedRate(new IndexerRunner(), 0, 1000, TimeUnit.MILLISECONDS);
     }
@@ -63,6 +90,9 @@ public class IndexerCoordinator {
         }
     }
     
+    /** Stop the indexer. The current indexer cycle will complete and the indexer will then
+     * process no more events.
+     */
     public void stopIndexer() {
         executor.shutdown();
     }
@@ -109,14 +139,47 @@ public class IndexerCoordinator {
     }
     
     private void performOneTick() throws InterruptedException, IndexingException {
-        //TODO QUEUE intelligent queue
+        // some of these ops could be batched if they prove to be a bottleneck
+        // but the mongo client keeps a connection open so it's not that expensive to 
+        // run one at a time
+        // also the bottleneck is almost assuredly the workers
         //TODO QUEUE check for stalled events
-        final List<StoredStatusEvent> parentEvents = retrier.retryFunc(
-                s -> s.get(StatusEventProcessingState.UNPROC, 1000), storage, null);
-        for (final StoredStatusEvent parentEvent: parentEvents) {
-            retrier.retryCons(e -> storage.setProcessingState(e.getId(),
-                    StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY),
-                    parentEvent, parentEvent);
+        boolean noWait = true;
+        while (noWait) {
+            final List<StoredStatusEvent> events;
+            final int loadSize = maxQueueSize - queue.size();
+            if (loadSize > 0) {
+                events = retrier.retryFunc(s -> s.get(StatusEventProcessingState.UNPROC, loadSize),
+                        storage, null);
+                events.stream().forEach(e -> queue.load(e));
+            } else {
+                events = Collections.emptyList();
+            }
+            queue.moveToReady();
+            for (final StoredStatusEvent sse: queue.getReadyForProcessing()) {
+                //TODO QUEUE mark with timestamp
+                retrier.retryCons(e -> storage.setProcessingState(e.getId(),
+                        StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY),
+                        sse, sse);
+            }
+            // so we don't run through the same events again next loop
+            queue.moveReadyToProcessing();
+            for (final StoredStatusEvent sse: queue.getProcessing()) {
+                final Optional<StoredStatusEvent> fromStorage =
+                        retrier.retryFunc(s -> s.get(sse.getId()), storage, sse);
+                if (fromStorage.isPresent()) {
+                    final StatusEventProcessingState state = fromStorage.get().getState();
+                    if (!state.equals(StatusEventProcessingState.PROC) &&
+                            !state.equals(StatusEventProcessingState.READY)) {
+                        queue.setProcessingComplete(fromStorage.get());
+                    }
+                } else {
+                    logger.logInfo(String.format("Event %s is in the in-memory queue but not " +
+                            "in the storage system. Removing from queue", sse.getId()));
+                    queue.setProcessingComplete(sse);
+                }
+            }
+            noWait = !events.isEmpty() && queue.size() < maxQueueSize;
         }
     }
 }

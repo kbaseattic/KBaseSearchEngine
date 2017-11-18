@@ -258,8 +258,6 @@ public class SearchTools {
         id = id.trim();
         if ("-".equals(id)) {
             return UUID.randomUUID().toString();
-//        } else if (IndexerCoordinator.INDEXER_NAME.equals(id)) {
-//            throw new IllegalArgumentException("Reserved id: " + id);
         } else {
             return id;
         }
@@ -520,7 +518,6 @@ public class SearchTools {
         
         @Parameter(names = {"-k", "--start-worker"}, description =
                 "Start an indexer worker with the provided id. Set the id to '-' to " +
-//                "generate a random id. " + IndexerCoordinator.INDEXER_NAME + " is a reserved ID.")
                 "generate a random id.")
         private String startWorker;
         
