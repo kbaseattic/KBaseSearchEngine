@@ -32,7 +32,7 @@ public class AccessGroupEventQueue {
     
     private static final Set<StatusEventType> ACCESS_GROUP_EVENTS = new HashSet<>(Arrays.asList(
             StatusEventType.COPY_ACCESS_GROUP, StatusEventType.DELETE_ACCESS_GROUP,
-            StatusEventType.PUBLISH_ACCESS_GROUP)); 
+            StatusEventType.PUBLISH_ACCESS_GROUP, StatusEventType.UNPUBLISH_ACCESS_GROUP)); 
 
     private final Map<String, ObjectEventQueue> objectQueues = new HashMap<>();
     
