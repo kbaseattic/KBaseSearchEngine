@@ -249,15 +249,19 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     
     @Override
     public boolean setProcessingState(
-            final StoredStatusEvent event,
-            final StatusEventProcessingState state)
+            final StatusEventID id,
+            final StatusEventProcessingState oldState,
+            final StatusEventProcessingState newState)
             throws FatalRetriableIndexingException {
-        Utils.nonNull(event, "event");
-        Utils.nonNull(state, "state");
+        Utils.nonNull(id, "id");
+        Utils.nonNull(newState, "newState");
+        final Document query = new Document("_id", new ObjectId(id.getId()));
+        if (oldState != null) {
+            query.append(FLD_STATUS, oldState.toString());
+        }
         try {
-            final UpdateResult res = db.getCollection(COL_EVENT).updateOne(
-                    new Document("_id", new ObjectId(event.getId().getId())), 
-                    new Document("$set", new Document(FLD_STATUS, state.toString())));
+            final UpdateResult res = db.getCollection(COL_EVENT).updateOne(query, 
+                    new Document("$set", new Document(FLD_STATUS, newState.toString())));
             return res.getMatchedCount() == 1;
         } catch (MongoException e) {
             throw new FatalRetriableIndexingException(

@@ -208,7 +208,8 @@ public class IndexerWorker {
                 try {
                     final Iterator<StatusEvent> er = retrier.retryFunc(
                             e -> getSubEventIterator(e), parentEvent, parentEvent);
-                    storage.setProcessingState(parentEvent, processEvents(parentEvent, er)); //TODO NOW retry
+                    storage.setProcessingState(parentEvent.getId(),
+                            StatusEventProcessingState.PROC, processEvents(parentEvent, er)); //TODO NOW retry
                 } catch (IndexingException e) {
                     markAsVisitedFailedPostError(parentEvent);
                     handleException("Error expanding parent event", parentEvent, e);
@@ -221,7 +222,8 @@ public class IndexerWorker {
                 }
             } else {
                 try {
-                    storage.setProcessingState(parentEvent, processEvent(parentEvent)); //TODO NOW retry
+                    storage.setProcessingState(parentEvent.getId(),
+                            StatusEventProcessingState.PROC, processEvent(parentEvent)); //TODO NOW retry
                 } catch (FatalIndexingException e) {
                     markAsVisitedFailedPostError(parentEvent);
                     throw e;
@@ -254,7 +256,7 @@ public class IndexerWorker {
     private void markAsVisitedFailedPostError(final StoredStatusEvent parentEvent)
             throws FatalIndexingException {
         try {
-            storage.setProcessingState(parentEvent, StatusEventProcessingState.FAIL); //TODO NOW retry
+            storage.setProcessingState(parentEvent.getId(), null, StatusEventProcessingState.FAIL); //TODO NOW retry
         } catch (Exception e) {
             //ok then we're screwed
             throw new FatalIndexingException("Can't mark events as failed: " + e.getMessage(), e);
@@ -275,10 +277,11 @@ public class IndexerWorker {
                         i -> getNextSubEvent(i), expanditer, parentEvent);
                 //TODO NOW store parent ID
                 final StoredStatusEvent ev = retrier.retryFunc(
-                        s -> s.store(subev, StatusEventProcessingState.PROC), //TODO WORKER store ID
+                        s -> s.store(subev, StatusEventProcessingState.PROC), //TODO QUEUE WORKER store ID
                         storage, parentEvent);
                 res = processEvent(ev);
-                retrier.retryFunc(s -> s.setProcessingState(ev, res), storage, ev);
+                retrier.retryFunc(s -> s.setProcessingState(
+                        ev.getId(), StatusEventProcessingState.PROC, res), storage, ev);
             } catch (IndexingException e) {
                 // TODO EVENT mark sub event as failed
                 handleException("Error getting event from data storage", parentEvent, e);
