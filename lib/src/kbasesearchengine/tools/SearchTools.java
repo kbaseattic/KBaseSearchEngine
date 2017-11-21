@@ -70,6 +70,7 @@ import workspace.WorkspaceClient;
 public class SearchTools {
     
     private static final String NAME = "search_tools";
+    private static final int MAX_Q_SIZE = 10000;
 
     /** Runs the CLI.
      * @param args the program arguments.
@@ -217,7 +218,7 @@ public class SearchTools {
         
         final StatusEventStorage storage = new MongoDBStatusEventStorage(searchDB);
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, MAX_Q_SIZE);
         coord.startIndexer();
     }
     

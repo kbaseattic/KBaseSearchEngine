@@ -36,7 +36,7 @@ public interface StatusEventStorage {
     /** Get list of events, by processing state, ordered by the event timestamp such that the
      * events with the earliest timestamp are first in the list.
      * @param state the processing state of the events to be returned.
-     * @param limit the maximum number of events to return. If < 1 or > 1000 is set to 1000.
+     * @param limit the maximum number of events to return. If < 1 or > 10000 is set to 10000.
      * @return the list of events.
      * @throws FatalRetriableIndexingException if an error occurs while getting the events.
      */

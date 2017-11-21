@@ -227,8 +227,8 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     public List<StoredStatusEvent> get(final StatusEventProcessingState state, int limit)
             throws FatalRetriableIndexingException {
         Utils.nonNull(state, "state");
-        if (limit < 1 || limit > 1000) {
-            limit = 1000;
+        if (limit < 1 || limit > 10000) {
+            limit = 10000;
         }
         final List<StoredStatusEvent> ret = new LinkedList<>();
         try {

@@ -173,7 +173,7 @@ public class IndexerIntegrationTest {
         System.out.println("Starting indexer worker");
         worker.startIndexer();
         System.out.println("Creating indexer coordinator");
-        coord = new IndexerCoordinator(storage, logger);
+        coord = new IndexerCoordinator(storage, logger, 10);
         System.out.println("Starting indexer coordinator");
         coord.startIndexer();
         loadWSTypes(wsUrl, wsadmintoken);

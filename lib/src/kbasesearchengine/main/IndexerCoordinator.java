@@ -24,6 +24,8 @@ import kbasesearchengine.tools.Utils;
  * state in the {@link StatusEventStorage} such that the workers process the correct events.
  * 
  * Only one indexer coordinator should run at one time.
+ * 
+ * This class is not thread safe.
  * @author gaprice@lbl.gov
  *
  */
@@ -36,11 +38,11 @@ public class IndexerCoordinator {
     
     private final StatusEventStorage storage;
     private final LineLogger logger;
-    //TODO TEST add a way to inject an executor for testing purposes
-    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService executor;
     private final EventQueue queue;
     
-    private int maxQueueSize = 10000; //TODO QUEUE NOW setter and getter for tests
+    private final int maxQueueSize;
+    private int continuousCycles = 0;
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
             RETRY_FATAL_BACKOFF_MS,
@@ -49,6 +51,10 @@ public class IndexerCoordinator {
     /** Create the indexer coordinator. Only one coordinator should run at one time.
      * @param storage the storage system containing events.
      * @param logger a logger.
+     * @param maximumQueueSize the maximum number of events in the internal in-memory queue.
+     * This should be a fairly large number because events may not arrive in the storage system
+     * in the ordering of their timestamps, and so the queue acts as a buffer so events can be
+     * sorted before processing if an event arrives late.
      * @throws InterruptedException if the thread is interrupted while attempting to initialize
      * the coordinator.
      * @throws IndexingException if an exception occurs while trying to initialize the
@@ -56,10 +62,35 @@ public class IndexerCoordinator {
      */
     public IndexerCoordinator(
             final StatusEventStorage storage,
-            final LineLogger logger)
+            final LineLogger logger,
+            final int maximumQueueSize)
+            throws InterruptedException, IndexingException {
+        this(storage, logger, maximumQueueSize, Executors.newSingleThreadScheduledExecutor());
+    }
+    
+    /** Create an indexer coordinator solely for the purposes of testing. This constructor should
+     * not be used for any other purpose.
+     * @param storage the storage system containing events.
+     * @param logger a logger.
+     * @param maximumQueueSize the maximum number of events in the internal in-memory queue.
+     * @param testExecutor a single thread executor for testing purposes, usually a mock.
+     * @throws InterruptedException if the thread is interrupted while attempting to initialize
+     * the coordinator.
+     * @throws IndexingException if an exception occurs while trying to initialize the
+     * coordinator.
+     */
+    public IndexerCoordinator(
+            final StatusEventStorage storage,
+            final LineLogger logger,
+            final int maximumQueueSize,
+            final ScheduledExecutorService testExecutor)
             throws InterruptedException, IndexingException {
         Utils.nonNull(storage, "storage");
         Utils.nonNull(logger, "logger");
+        if (maximumQueueSize < 1) {
+            throw new IllegalArgumentException("maximumQueueSize must be at least 1");
+        }
+        this.maxQueueSize = maximumQueueSize;
         this.logger = logger;
         this.storage = storage;
         final List<StoredStatusEvent> events = retrier.retryFunc(
@@ -67,6 +98,14 @@ public class IndexerCoordinator {
         events.addAll(retrier.retryFunc(
                 s -> s.get(StatusEventProcessingState.PROC, maxQueueSize), storage, null));
         queue = new EventQueue(events);
+        executor = testExecutor;
+    }
+    
+    /** Get the maximum size of the in memory queue.
+     * @return
+     */
+    public int getMaximumQueueSize() {
+        return maxQueueSize;
     }
     
     /** Start the indexer. */
@@ -80,7 +119,7 @@ public class IndexerCoordinator {
         @Override
         public void run() {
             try {
-                performOneTick();
+                runOneCycle();
             } catch (InterruptedException | FatalIndexingException e) {
                 logError(ErrorType.FATAL, e);
                 executor.shutdown();
@@ -98,7 +137,7 @@ public class IndexerCoordinator {
     }
     
     private enum ErrorType {
-        STD, FATAL, UNEXPECTED;
+        FATAL, UNEXPECTED;
     }
     
     private void logError(final ErrorType errtype, final Throwable e) {
@@ -106,8 +145,6 @@ public class IndexerCoordinator {
         final String msg;
         if (ErrorType.FATAL.equals(errtype)) {
             msg = "Fatal error in indexer, shutting down: ";
-        } else if (ErrorType.STD.equals(errtype)) {
-            msg = "Error in indexer: ";
         } else if (ErrorType.UNEXPECTED.equals(errtype)) {
             msg = "Unexpected error in indexer: ";
         } else {
@@ -138,11 +175,12 @@ public class IndexerCoordinator {
         logError(msg, e);
     }
     
-    private void performOneTick() throws InterruptedException, IndexingException {
+    private void runOneCycle() throws InterruptedException, IndexingException {
         // some of these ops could be batched if they prove to be a bottleneck
         // but the mongo client keeps a connection open so it's not that expensive to 
         // run one at a time
         // also the bottleneck is almost assuredly the workers
+        continuousCycles = 0;
         //TODO QUEUE check for stalled events
         boolean noWait = true;
         while (noWait) {
@@ -161,6 +199,7 @@ public class IndexerCoordinator {
                 retrier.retryCons(e -> storage.setProcessingState(e.getId(),
                         StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY),
                         sse, sse);
+                //TODO QUEUE LOG this
             }
             // so we don't run through the same events again next loop
             queue.moveReadyToProcessing();
@@ -172,14 +211,33 @@ public class IndexerCoordinator {
                     if (!state.equals(StatusEventProcessingState.PROC) &&
                             !state.equals(StatusEventProcessingState.READY)) {
                         queue.setProcessingComplete(fromStorage.get());
+                        //TODO QUEUE LOG this
+                    } else {
+                        //TODO QUEUE check time since last update and log if > X min (log periodically, maybe 1 /hr)
                     }
                 } else {
-                    logger.logInfo(String.format("Event %s is in the in-memory queue but not " +
+                    logger.logError(String.format("Event %s is in the in-memory queue but not " +
                             "in the storage system. Removing from queue", sse.getId()));
                     queue.setProcessingComplete(sse);
                 }
             }
             noWait = !events.isEmpty() && queue.size() < maxQueueSize;
+            continuousCycles++;
         }
+    }
+    
+    /** Returns the number of cycles the indexer has run without pausing (e.g. without the
+     * indexer cycle being scheduled). This information is mostly useful for test purposes.
+     * @return 
+     */
+    public int getContinuousCycles() {
+        return continuousCycles;
+    }
+    
+    /** Returns the current size of the queue.
+     * @return the queue size.
+     */
+    public int getQueueSize() {
+        return queue.size();
     }
 }
