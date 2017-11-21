@@ -307,6 +307,31 @@ public class AccessGroupEventQueueTest {
     }
     
     @Test
+    public void blockQueueWithAccessGroupTypes() {
+        blockQueueWithAccessGroupType(StatusEventType.COPY_ACCESS_GROUP);
+        blockQueueWithAccessGroupType(StatusEventType.DELETE_ACCESS_GROUP);
+        blockQueueWithAccessGroupType(StatusEventType.PUBLISH_ACCESS_GROUP);
+        blockQueueWithAccessGroupType(StatusEventType.UNPUBLISH_ACCESS_GROUP);
+    }
+
+    private void blockQueueWithAccessGroupType(final StatusEventType type) {
+        final AccessGroupEventQueue q = new AccessGroupEventQueue();
+        
+        final StoredStatusEvent e1 = loadUnproc(
+                q, "3", Instant.ofEpochMilli(10000), null, type);
+        final StoredStatusEvent e2 = loadUnproc(q, "4", Instant.ofEpochMilli(20000), "1",
+                StatusEventType.PUBLISH_ALL_VERSIONS);
+        
+        assertMoveToReadyCorrect(q, set(e1));
+        assertQueueState(q, set(e1), set(), 2);
+        assertMoveToProcessingCorrect(q, set(e1));
+        assertQueueState(q, set(), set(e1), 2);
+        
+        q.setProcessingComplete(e1);
+        assertQueueState(q, set(e2), set(), 1);
+    }
+    
+    @Test
     public void setProcessedWithMutatedEvent() {
         // in practice we expect the events passed into setProcessed() to have mutated slightly
         // from the original load()ed event, so check that works.
@@ -560,8 +585,15 @@ public class AccessGroupEventQueueTest {
 
     @Test
     public void constructWithAccessGroupReady() {
+        constructWithAccessGroupReady(StatusEventType.COPY_ACCESS_GROUP);
+        constructWithAccessGroupReady(StatusEventType.DELETE_ACCESS_GROUP);
+        constructWithAccessGroupReady(StatusEventType.PUBLISH_ACCESS_GROUP);
+        constructWithAccessGroupReady(StatusEventType.UNPUBLISH_ACCESS_GROUP);
+    }
+
+    private void constructWithAccessGroupReady(final StatusEventType type) {
         final StoredStatusEvent e1 = ready(
-                "1", Instant.ofEpochMilli(20000), null, StatusEventType.COPY_ACCESS_GROUP);
+                "1", Instant.ofEpochMilli(20000), null, type);
         
         final AccessGroupEventQueue q = new AccessGroupEventQueue(Arrays.asList(e1));
         
@@ -580,8 +612,15 @@ public class AccessGroupEventQueueTest {
     
     @Test
     public void constructWithAccessGroupProc() {
+        constructWithAccessGroupProc(StatusEventType.COPY_ACCESS_GROUP);
+        constructWithAccessGroupProc(StatusEventType.DELETE_ACCESS_GROUP);
+        constructWithAccessGroupProc(StatusEventType.PUBLISH_ACCESS_GROUP);
+        constructWithAccessGroupProc(StatusEventType.UNPUBLISH_ACCESS_GROUP);
+    }
+
+    private void constructWithAccessGroupProc(final StatusEventType type) {
         final StoredStatusEvent e1 = proc(
-                "1", Instant.ofEpochMilli(20000), null, StatusEventType.COPY_ACCESS_GROUP);
+                "1", Instant.ofEpochMilli(20000), null, type);
         
         final AccessGroupEventQueue q = new AccessGroupEventQueue(Arrays.asList(e1));
         
