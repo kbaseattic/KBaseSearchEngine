@@ -34,7 +34,7 @@ public class IndexerCoordinator {
     
     private static final int RETRY_COUNT = 5;
     private static final int RETRY_SLEEP_MS = 1000;
-    private static final List<Integer> RETRY_FATAL_BACKOFF_MS = Arrays.asList(
+    private static final List<Integer> RETRY_FATAL_BACKOFF_MS_DEFAULT = Arrays.asList(
             1000, 2000, 4000, 8000, 16000);
     
     private final StatusEventStorage storage;
@@ -45,9 +45,7 @@ public class IndexerCoordinator {
     private final int maxQueueSize;
     private int continuousCycles = 0;
     
-    private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
-            RETRY_FATAL_BACKOFF_MS,
-            (retrycount, event, except) -> logError(retrycount, event, except));
+    private final Retrier retrier;
 
     /** Create the indexer coordinator. Only one coordinator should run at one time.
      * @param storage the storage system containing events.
@@ -66,7 +64,8 @@ public class IndexerCoordinator {
             final LineLogger logger,
             final int maximumQueueSize)
             throws InterruptedException, IndexingException {
-        this(storage, logger, maximumQueueSize, Executors.newSingleThreadScheduledExecutor());
+        this(storage, logger, maximumQueueSize, Executors.newSingleThreadScheduledExecutor(),
+                RETRY_FATAL_BACKOFF_MS_DEFAULT);
     }
     
     /** Create an indexer coordinator solely for the purposes of testing. This constructor should
@@ -84,7 +83,8 @@ public class IndexerCoordinator {
             final StatusEventStorage storage,
             final LineLogger logger,
             final int maximumQueueSize,
-            final ScheduledExecutorService testExecutor)
+            final ScheduledExecutorService testExecutor,
+            final List<Integer> retryFatalBackoffMS)
             throws InterruptedException, IndexingException {
         Utils.nonNull(storage, "storage");
         Utils.nonNull(logger, "logger");
@@ -95,6 +95,8 @@ public class IndexerCoordinator {
         this.logger = logger;
         this.storage = storage;
         final List<StoredStatusEvent> all = new LinkedList<>();
+        retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS, retryFatalBackoffMS,
+                (retrycount, event, except) -> logError(retrycount, event, except));
         all.addAll(retrier.retryFunc(
                 s -> s.get(StatusEventProcessingState.READY, maxQueueSize), storage, null));
         all.addAll(retrier.retryFunc(
@@ -125,7 +127,7 @@ public class IndexerCoordinator {
             } catch (InterruptedException | FatalIndexingException e) {
                 logError(ErrorType.FATAL, e);
                 executor.shutdown();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logError(ErrorType.UNEXPECTED, e);
             }
         }
@@ -143,22 +145,17 @@ public class IndexerCoordinator {
     }
     
     private void logError(final ErrorType errtype, final Throwable e) {
-        Utils.nonNull(errtype, "errtype");
         final String msg;
         if (ErrorType.FATAL.equals(errtype)) {
-            msg = "Fatal error in indexer, shutting down: ";
-        } else if (ErrorType.UNEXPECTED.equals(errtype)) {
-            msg = "Unexpected error in indexer: ";
-        } else {
-            throw new RuntimeException("Unknown error type: " + errtype);
+            msg = "Fatal error in indexer, shutting down";
+        } else { // has to be UNEXPECTED
+            msg = "Unexpected error in indexer";
         }
         logError(msg, e);
     }
 
     private void logError(final String msg, final Throwable e) {
-        final String firstStackLine = e.getStackTrace().length == 0 ? "<not-available>" : 
-                e.getStackTrace()[0].toString();
-        logger.logError(msg + e + ", " + firstStackLine);
+        logger.logError(msg + ": " + e);
         logger.logError(e); //TODO LOG split into lines with id
     }
 
@@ -168,11 +165,11 @@ public class IndexerCoordinator {
             final RetriableIndexingException e) {
         final String msg;
         if (event.isPresent()) {
-            msg = String.format("Retriable error in indexer for event %s %s, retry %s: ",
+            msg = String.format("Retriable error in indexer for event %s %s, retry %s",
                     event.get().getEvent().getEventType(), event.get().getId().getId(),
                     retrycount);
         } else {
-            msg = String.format("Retriable error in indexer, retry %s: ", retrycount);
+            msg = String.format("Retriable error in indexer, retry %s", retrycount);
         }
         logError(msg, e);
     }
@@ -223,7 +220,7 @@ public class IndexerCoordinator {
                     }
                 } else {
                     logger.logError(String.format("Event %s is in the in-memory queue but not " +
-                            "in the storage system. Removing from queue", sse.getId()));
+                            "in the storage system. Removing from queue", sse.getId().getId()));
                     queue.setProcessingComplete(sse);
                 }
             }

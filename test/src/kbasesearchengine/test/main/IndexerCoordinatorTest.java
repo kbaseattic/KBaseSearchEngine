@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -28,12 +29,16 @@ import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StoredStatusEvent;
+import kbasesearchengine.events.exceptions.FatalIndexingException;
+import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.test.common.TestCommon;
 
 public class IndexerCoordinatorTest {
+    
+    private static final List<Integer> MT = Collections.emptyList();
 
     @Test
     public void construct() throws Exception {
@@ -77,7 +82,7 @@ public class IndexerCoordinatorTest {
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor, MT);
         
         coord.startIndexer();
         
@@ -92,7 +97,7 @@ public class IndexerCoordinatorTest {
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor, MT);
         
         coord.stopIndexer();
         
@@ -132,7 +137,7 @@ public class IndexerCoordinatorTest {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor, MT);
         
         final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.UNPUBLISH_ACCESS_GROUP)
@@ -195,7 +200,7 @@ public class IndexerCoordinatorTest {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor, MT);
         
         final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.UNPUBLISH_ACCESS_GROUP)
@@ -267,12 +272,12 @@ public class IndexerCoordinatorTest {
                 StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY);
     }
     
-    @Test
+    @Test(timeout = 1000) // in case the coordinator loops forever
     public void emptyNoInput() throws Exception {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor, MT);
         
         final Runnable coordRunner = getIndexerRunnable(executor, coord);
         
@@ -291,7 +296,7 @@ public class IndexerCoordinatorTest {
         verify(storage, never()).setProcessingState(any(), any(), any());
     }
     
-    @Test
+    @Test(timeout = 1000) // in case the coordinator loops forever
     public void constructWithMultipleEvents() throws Exception {
         final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ALL_VERSIONS)
@@ -317,7 +322,7 @@ public class IndexerCoordinatorTest {
         when(storage.get(StatusEventProcessingState.READY, 3)).thenReturn(Arrays.asList(event1));
         when(storage.get(StatusEventProcessingState.PROC, 3)).thenReturn(Arrays.asList(event2));
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor, MT);
         assertThat("incorrect queue size", coord.getQueueSize(), is(2));
         
         when(storage.get(eq(StatusEventProcessingState.UNPROC), anyInt()))
@@ -343,7 +348,7 @@ public class IndexerCoordinatorTest {
         verify(storage, never()).setProcessingState(any(), any(), any());
     }
     
-    @Test
+    @Test(timeout = 1000) // in case the coordinator loops forever
     public void constructWithSingleEvent() throws Exception {
         final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
@@ -359,7 +364,7 @@ public class IndexerCoordinatorTest {
         
         when(storage.get(StatusEventProcessingState.READY, 3)).thenReturn(Arrays.asList(event1));
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor, MT);
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
         
         when(storage.get(eq(StatusEventProcessingState.UNPROC), anyInt()))
@@ -382,5 +387,223 @@ public class IndexerCoordinatorTest {
         verify(storage, never()).setProcessingState(any(), any(), any());
     }
     
+    @Test(timeout = 1000) // in case the coordinator loops forever
+    public void desynchedQueue() throws Exception {
+        /* test the case where the in memory queue does not match the DB. */
+        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
+                .withNullableAccessGroupID(2)
+                .build(),
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
+        
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor, MT);
+        
+        when(storage.get(StatusEventProcessingState.UNPROC, 3))
+                .thenReturn(Arrays.asList(event1))
+                .thenReturn(Collections.emptyList());
+        
+        when(storage.get(new StatusEventID("foo1"))).thenReturn(Optional.absent());
+        
+        final Runnable coordRunner = getIndexerRunnable(executor, coord);
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(2));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(0));
+        
+        verify(storage).setProcessingState(new StatusEventID("foo1"),
+                StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY);
+        
+        verify(logger).logError("Event foo1 is in the in-memory queue but not " +
+                            "in the storage system. Removing from queue");
+    }
     
+    @Test
+    public void fatalErrorOnPull() throws Exception {
+        
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+                Arrays.asList(1, 1));
+        
+        when(storage.get(StatusEventProcessingState.UNPROC, 3)).thenThrow(
+                new FatalRetriableIndexingException("wheee!"));
+        
+        final Runnable coordRunner = getIndexerRunnable(executor, coord);
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(0));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(0));
+        
+        verify(executor).shutdown();
+
+        verify(logger).logError("Retriable error in indexer, retry 1: " +
+                "kbasesearchengine.events.exceptions.FatalRetriableIndexingException: wheee!");
+        verify(logger).logError("Retriable error in indexer, retry 2: " +
+                "kbasesearchengine.events.exceptions.FatalRetriableIndexingException: wheee!");
+        verify(logger).logError("Fatal error in indexer, shutting down: " +
+                "kbasesearchengine.events.exceptions.FatalIndexingException: wheee!");
+        
+        final ArgumentCaptor<Exception> retExpCaptor = 
+                ArgumentCaptor.forClass(FatalRetriableIndexingException.class);
+        verify(logger, times(3)).logError(retExpCaptor.capture());
+        
+        final List<Exception> expected = Arrays.asList(
+                new FatalRetriableIndexingException("wheee!"),
+                new FatalRetriableIndexingException("wheee!"),
+                new FatalIndexingException("wheee!"));
+        
+        for (int i = 0; i < expected.size(); i++) {
+            TestCommon.assertExceptionCorrect(retExpCaptor.getAllValues().get(i), expected.get(i));
+        }
+    }
+    
+    @Test
+    public void unexpectedErrorOnGetUnprocessed() throws Exception {
+        
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+                Arrays.asList(1, 1));
+        
+        when(storage.get(StatusEventProcessingState.UNPROC, 3)).thenThrow(
+                new RuntimeException("arg"));
+        
+        final Runnable coordRunner = getIndexerRunnable(executor, coord);
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(0));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(0));
+
+        verify(executor, never()).shutdown();
+        
+        verify(logger).logError("Unexpected error in indexer: java.lang.RuntimeException: arg");
+        
+        final ArgumentCaptor<Exception> retExpCaptor = 
+                ArgumentCaptor.forClass(FatalRetriableIndexingException.class);
+        verify(logger).logError(retExpCaptor.capture());
+        
+        final List<Exception> expected = Arrays.asList(
+                new RuntimeException("arg"));
+        
+        for (int i = 0; i < expected.size(); i++) {
+            TestCommon.assertExceptionCorrect(retExpCaptor.getAllValues().get(i), expected.get(i));
+        }
+    }
+    
+    @Test
+    public void fatalErrorOnSetState() throws Exception {
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+                Arrays.asList(1));
+        
+        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
+                .withNullableAccessGroupID(2)
+                .build(),
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
+        
+        final Runnable coordRunner = getIndexerRunnable(executor, coord);
+        
+        when(storage.get(StatusEventProcessingState.UNPROC, 3)).thenReturn(Arrays.asList(event1));
+        
+        when(storage.setProcessingState(new StatusEventID("foo1"),
+                StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY)).thenThrow(
+                        new FatalRetriableIndexingException("oof ouch owie my bones"));
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(0));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        
+        verify(executor).shutdown();
+
+        verify(logger).logError("Retriable error in indexer for event " +
+                "PUBLISH_ACCESS_GROUP foo1, retry 1: " +
+                "kbasesearchengine.events.exceptions.FatalRetriableIndexingException: " +
+                "oof ouch owie my bones");
+        verify(logger).logError("Fatal error in indexer, shutting down: " +
+                "kbasesearchengine.events.exceptions.FatalIndexingException: " +
+                "oof ouch owie my bones");
+        
+        final ArgumentCaptor<Exception> retExpCaptor = 
+                ArgumentCaptor.forClass(FatalRetriableIndexingException.class);
+        verify(logger, times(2)).logError(retExpCaptor.capture());
+        
+        final List<Exception> expected = Arrays.asList(
+                new FatalRetriableIndexingException("oof ouch owie my bones"),
+                new FatalIndexingException("oof ouch owie my bones"));
+        
+        for (int i = 0; i < expected.size(); i++) {
+            TestCommon.assertExceptionCorrect(retExpCaptor.getAllValues().get(i), expected.get(i));
+        }
+    }
+    
+    
+    @Test
+    public void fatalErrorOnGet() throws Exception {
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+                Arrays.asList(1, 1, 1));
+        
+        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "WS", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                .withNullableAccessGroupID(2)
+                .withNullableObjectID("1")
+                .build(),
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
+        
+        final Runnable coordRunner = getIndexerRunnable(executor, coord);
+        
+        when(storage.get(StatusEventProcessingState.UNPROC, 3)).thenReturn(Arrays.asList(event1));
+        
+        when(storage.get(new StatusEventID("foo1"))).thenThrow(
+                        new FatalRetriableIndexingException("yay"));
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(0));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        
+        verify(storage).setProcessingState(new StatusEventID("foo1"),
+                StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY);
+        verify(executor).shutdown();
+
+        verify(logger).logError("Retriable error in indexer for event " +
+                "DELETE_ALL_VERSIONS foo1, retry 1: " +
+                "kbasesearchengine.events.exceptions.FatalRetriableIndexingException: yay");
+        verify(logger).logError("Retriable error in indexer for event " +
+                "DELETE_ALL_VERSIONS foo1, retry 2: " +
+                "kbasesearchengine.events.exceptions.FatalRetriableIndexingException: yay");
+        verify(logger).logError("Retriable error in indexer for event " +
+                "DELETE_ALL_VERSIONS foo1, retry 3: " +
+                "kbasesearchengine.events.exceptions.FatalRetriableIndexingException: yay");
+        verify(logger).logError("Fatal error in indexer, shutting down: " +
+                "kbasesearchengine.events.exceptions.FatalIndexingException: yay");
+        
+        final ArgumentCaptor<Exception> retExpCaptor = 
+                ArgumentCaptor.forClass(FatalRetriableIndexingException.class);
+        verify(logger, times(4)).logError(retExpCaptor.capture());
+        
+        final List<Exception> expected = Arrays.asList(
+                new FatalRetriableIndexingException("yay"),
+                new FatalRetriableIndexingException("yay"),
+                new FatalRetriableIndexingException("yay"),
+                new FatalIndexingException("yay"));
+        
+        for (int i = 0; i < expected.size(); i++) {
+            TestCommon.assertExceptionCorrect(retExpCaptor.getAllValues().get(i), expected.get(i));
+        }
+    }
 }
