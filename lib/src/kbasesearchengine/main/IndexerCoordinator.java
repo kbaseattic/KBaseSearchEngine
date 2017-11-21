@@ -234,11 +234,15 @@ public class IndexerCoordinator {
             final Optional<StoredStatusEvent> fromStorage =
                     retrier.retryFunc(s -> s.get(sse.getId()), storage, sse);
             if (fromStorage.isPresent()) {
-                final StatusEventProcessingState state = fromStorage.get().getState();
+                final StoredStatusEvent e = fromStorage.get();
+                final StatusEventProcessingState state = e.getState();
                 if (!state.equals(StatusEventProcessingState.PROC) &&
                         !state.equals(StatusEventProcessingState.READY)) {
-                    queue.setProcessingComplete(fromStorage.get());
-                    //TODO QUEUE LOG this
+                    queue.setProcessingComplete(e);
+                    logger.logInfo(String.format(
+                            "Event %s %s %s completed processing with state %s",
+                            e.getId().getId(), e.getEvent().getEventType(),
+                            e.getEvent().toGUID(), state));
                 } else {
                     //TODO QUEUE check time since last update and log if > X min (log periodically, maybe 1 /hr)
                 }

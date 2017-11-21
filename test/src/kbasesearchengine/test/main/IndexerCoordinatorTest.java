@@ -47,7 +47,7 @@ public class IndexerCoordinatorTest {
         
         final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10);
         
-        assertThat("incorrect queue size", coord.getMaximumQueueSize(), is(10));
+        assertThat("incorrect max queue size", coord.getMaximumQueueSize(), is(10));
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(0));
         assertThat("incorrect queue size", coord.getQueueSize(), is(0));
     }
@@ -179,6 +179,9 @@ public class IndexerCoordinatorTest {
         coordRunner.run(); // this will move event1 out of the queue
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        
+        verify(logger).logInfo("Event foo1 UNPUBLISH_ACCESS_GROUP WS:2/null completed " +
+                "processing with state INDX");
         
         verify(storage, never()).setProcessingState(new StatusEventID("foo2"),
                 StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY);
@@ -353,10 +356,14 @@ public class IndexerCoordinatorTest {
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        verify(logger).logInfo("Event foo2 RENAME_ALL_VERSIONS WS:2/2 completed " +
+                "processing with state FAIL");
         
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(0));
+        verify(logger).logInfo("Event foo1 PUBLISH_ALL_VERSIONS WS:2/1 completed " +
+                "processing with state UNINDX");
         
         verify(storage, never()).setProcessingState(any(), any(), any());
         verify(logger, never()).logError(any(String.class));
@@ -394,10 +401,13 @@ public class IndexerCoordinatorTest {
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        verify(logger, never()).logInfo(any());
         
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(0));
+        verify(logger).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null completed " +
+                "processing with state INDX");
         
         verify(storage, never()).setProcessingState(any(), any(), any());
         verify(logger, never()).logError(any(String.class));
@@ -441,7 +451,7 @@ public class IndexerCoordinatorTest {
     }
     
     @Test
-    public void fatalErrorOnPull() throws Exception {
+    public void fatalErrorOnGetUnprocessed() throws Exception {
         
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
