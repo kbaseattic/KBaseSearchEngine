@@ -176,6 +176,13 @@ public class ObjectTypeParsingRules {
                     rules.setUiHidden(uiHidden);
                 }
                 rules.setUiLinkKey((String)rulesObj.get("ui-link-key"));
+
+                try {
+                    rules.validate();
+                } catch (ValidationException ex) {
+                    throw new IllegalArgumentException("Unable to build parsing rules", ex);
+                }
+
                 ret.getIndexingRules().add(rules);
             }
         }
