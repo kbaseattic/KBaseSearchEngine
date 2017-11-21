@@ -20,6 +20,8 @@ import kbasesearchengine.tools.Utils;
  * while in contrast multiple version level events (e.g. {@link StatusEventType#NEW_VERSION})
  * can run at the same time.
  * 
+ * The queue never changes the state of the {@link StoredStatusEvent}s submitted to it.
+ * 
  * Note that the calling code is responsible for ensuring that IDs for events added to this queue
  * are unique.
  * If events with duplicate IDs are added to the queue unexpected behavior may result.

@@ -2,6 +2,7 @@ package kbasesearchengine.main;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -93,11 +94,12 @@ public class IndexerCoordinator {
         this.maxQueueSize = maximumQueueSize;
         this.logger = logger;
         this.storage = storage;
-        final List<StoredStatusEvent> events = retrier.retryFunc(
-                s -> s.get(StatusEventProcessingState.READY, maxQueueSize), storage, null);
-        events.addAll(retrier.retryFunc(
+        final List<StoredStatusEvent> all = new LinkedList<>();
+        all.addAll(retrier.retryFunc(
+                s -> s.get(StatusEventProcessingState.READY, maxQueueSize), storage, null));
+        all.addAll(retrier.retryFunc(
                 s -> s.get(StatusEventProcessingState.PROC, maxQueueSize), storage, null));
-        queue = new EventQueue(events);
+        queue = new EventQueue(all);
         executor = testExecutor;
     }
     
@@ -195,11 +197,15 @@ public class IndexerCoordinator {
             }
             queue.moveToReady();
             for (final StoredStatusEvent sse: queue.getReadyForProcessing()) {
-                //TODO QUEUE mark with timestamp
-                retrier.retryCons(e -> storage.setProcessingState(e.getId(),
-                        StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY),
-                        sse, sse);
-                //TODO QUEUE LOG this
+                // since the queue doesn't mutate the state, if the state is not UNPROC
+                // it's not in that state in the DB either
+                if (sse.getState().equals(StatusEventProcessingState.UNPROC)) {
+                    //TODO QUEUE mark with timestamp
+                    retrier.retryCons(e -> storage.setProcessingState(e.getId(),
+                            StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY),
+                            sse, sse);
+                    //TODO QUEUE LOG this
+                }
             }
             // so we don't run through the same events again next loop
             queue.moveReadyToProcessing();

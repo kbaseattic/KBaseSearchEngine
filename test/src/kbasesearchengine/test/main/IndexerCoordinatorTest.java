@@ -4,6 +4,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -290,6 +291,96 @@ public class IndexerCoordinatorTest {
         verify(storage, never()).setProcessingState(any(), any(), any());
     }
     
-    //TODO TEST startup with events
+    @Test
+    public void constructWithMultipleEvents() throws Exception {
+        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ALL_VERSIONS)
+                .withNullableAccessGroupID(2)
+                .withNullableObjectID("1")
+                .build(),
+                new StatusEventID("foo1"), StatusEventProcessingState.READY, null, null);
+        
+        final StoredStatusEvent event2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "WS", Instant.ofEpochMilli(20000), StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableAccessGroupID(2)
+                .withNullableObjectID("2")
+                .build(),
+                new StatusEventID("foo2"), StatusEventProcessingState.PROC, null, null);
+        
+        final StoredStatusEvent unidx1 = to(event1, StatusEventProcessingState.UNINDX);
+        final StoredStatusEvent fail2 = to(event2, StatusEventProcessingState.FAIL);
+        
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        
+        when(storage.get(StatusEventProcessingState.READY, 3)).thenReturn(Arrays.asList(event1));
+        when(storage.get(StatusEventProcessingState.PROC, 3)).thenReturn(Arrays.asList(event2));
+        
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor);
+        assertThat("incorrect queue size", coord.getQueueSize(), is(2));
+        
+        when(storage.get(eq(StatusEventProcessingState.UNPROC), anyInt()))
+                .thenReturn(Collections.emptyList());
+        when(storage.get(new StatusEventID("foo1")))
+                .thenReturn(Optional.of(event1))
+                .thenReturn(Optional.of(unidx1)) //2nd call
+                .thenReturn(null);
+        when(storage.get(new StatusEventID("foo2")))
+                .thenReturn(Optional.of(fail2))
+                .thenReturn(null);
+        
+        final Runnable coordRunner = getIndexerRunnable(executor, coord);
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(0));
+        
+        verify(storage, never()).setProcessingState(any(), any(), any());
+    }
+    
+    @Test
+    public void constructWithSingleEvent() throws Exception {
+        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
+                .withNullableAccessGroupID(2)
+                .build(),
+                new StatusEventID("foo1"), StatusEventProcessingState.READY, null, null);
+        
+        final StoredStatusEvent idx1 = to(event1, StatusEventProcessingState.INDX);
+        
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        
+        when(storage.get(StatusEventProcessingState.READY, 3)).thenReturn(Arrays.asList(event1));
+        
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor);
+        assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        
+        when(storage.get(eq(StatusEventProcessingState.UNPROC), anyInt()))
+                .thenReturn(Collections.emptyList());
+        when(storage.get(new StatusEventID("foo1")))
+                .thenReturn(Optional.of(event1))
+                .thenReturn(Optional.of(idx1)) //2nd call
+                .thenReturn(null);
+        
+        final Runnable coordRunner = getIndexerRunnable(executor, coord);
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(0));
+        
+        verify(storage, never()).setProcessingState(any(), any(), any());
+    }
+    
     
 }

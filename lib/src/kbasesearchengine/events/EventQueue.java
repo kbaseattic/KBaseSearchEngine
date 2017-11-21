@@ -17,6 +17,8 @@ import kbasesearchengine.tools.Utils;
  * modify the same record are not processed concurrently, since currently the only search
  * storage implementation is elasticsearch.
  * 
+ * The queue never changes the state of the {@link StoredStatusEvent}s submitted to it.
+ * 
  * Note that the calling code is responsible for ensuring that IDs for events added to this queue
  * are unique.
  * If events with duplicate IDs are added to the queue unexpected behavior may result.
