@@ -217,7 +217,6 @@ public class IndexerCoordinator {
             // since the queue doesn't mutate the state, if the state is not UNPROC
             // it's not in that state in the DB either
             if (sse.getState().equals(StatusEventProcessingState.UNPROC)) {
-                //TODO QUEUE mark with timestamp
                 retrier.retryCons(e -> storage.setProcessingState(e.getId(),
                         StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY),
                         sse, sse);
