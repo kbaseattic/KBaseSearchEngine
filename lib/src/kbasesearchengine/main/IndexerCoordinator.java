@@ -1,5 +1,9 @@
 package kbasesearchengine.main;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -8,8 +12,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Ticker;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 import kbasesearchengine.events.EventQueue;
+import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
@@ -36,10 +44,13 @@ public class IndexerCoordinator {
     private static final List<Integer> RETRY_FATAL_BACKOFF_MS_DEFAULT = Arrays.asList(
             1000, 2000, 4000, 8000, 16000);
     
+    private final Cache<StatusEventID, Instant> cache;
+    
     private final StatusEventStorage storage;
     private final LineLogger logger;
     private final ScheduledExecutorService executor;
     private final EventQueue queue;
+    private final Clock clock;
     
     private final int maxQueueSize;
     private int continuousCycles = 0;
@@ -64,7 +75,7 @@ public class IndexerCoordinator {
             final int maximumQueueSize)
             throws InterruptedException, IndexingException {
         this(storage, logger, maximumQueueSize, Executors.newSingleThreadScheduledExecutor(),
-                RETRY_FATAL_BACKOFF_MS_DEFAULT);
+                RETRY_FATAL_BACKOFF_MS_DEFAULT, Ticker.systemTicker(), Clock.systemDefaultZone());
     }
     
     /** Create an indexer coordinator solely for the purposes of testing. This constructor should
@@ -73,6 +84,14 @@ public class IndexerCoordinator {
      * @param logger a logger.
      * @param maximumQueueSize the maximum number of events in the internal in-memory queue.
      * @param testExecutor a single thread executor for testing purposes, usually a mock.
+     * @param retryFatalBackoffMS a list of times in milliseconds since the epoch. Starting with
+     * the first item, any retriable commands, if failed, will wait for the specified number of
+     * milliseconds prior to retrying the command. The number of retries is determined by the
+     * number of items in the list.
+     * @param ticker a time ticker that controls when records expire from the event id ->
+     * last log cache. This cache controls how often log records are created for events that have
+     * been processing or waiting for processing for a long time.
+     * @param clock a clock for determining the current time.
      * @throws InterruptedException if the thread is interrupted while attempting to initialize
      * the coordinator.
      * @throws IndexingException if an exception occurs while trying to initialize the
@@ -83,7 +102,9 @@ public class IndexerCoordinator {
             final LineLogger logger,
             final int maximumQueueSize,
             final ScheduledExecutorService testExecutor,
-            final List<Integer> retryFatalBackoffMS)
+            final List<Integer> retryFatalBackoffMS,
+            final Ticker ticker,
+            final Clock clock)
             throws InterruptedException, IndexingException {
         Utils.nonNull(storage, "storage");
         Utils.nonNull(logger, "logger");
@@ -102,6 +123,11 @@ public class IndexerCoordinator {
                 s -> s.get(StatusEventProcessingState.PROC, maxQueueSize), storage, null));
         queue = new EventQueue(all);
         executor = testExecutor;
+        this.clock = clock;
+        cache = CacheBuilder.newBuilder()
+                .ticker(ticker)
+                .expireAfterWrite(1, TimeUnit.HOURS)
+                .build();
     }
     
     /** Get the maximum size of the in memory queue.
@@ -182,7 +208,6 @@ public class IndexerCoordinator {
          * also the bottleneck is almost assuredly the workers
          */
         continuousCycles = 0;
-        //TODO QUEUE check for stalled events
         boolean noWait = true;
         while (noWait) {
             final boolean loadedEvents = loadEventsIntoQueue();
@@ -243,12 +268,30 @@ public class IndexerCoordinator {
                             e.getId().getId(), e.getEvent().getEventType(),
                             e.getEvent().toGUID(), state));
                 } else {
-                    //TODO QUEUE check time since last update and log if > X min (log periodically, maybe 1 /hr)
+                    logDelayedEvent(e);
                 }
             } else {
                 logger.logError(String.format("Event %s is in the in-memory queue but not " +
                         "in the storage system. Removing from queue", sse.getId().getId()));
                 queue.setProcessingComplete(sse);
+            }
+        }
+    }
+
+    private void logDelayedEvent(final StoredStatusEvent e) {
+        // this method should only be called on events that are READY or PROC and so will
+        // always have an updateTime().
+        final Instant lastStateChange = e.getUpdateTime().get();
+        final Instant now = clock.instant();
+        if (now.isAfter(lastStateChange.plus(1, ChronoUnit.HOURS))) {
+            final Instant lastlog = cache.getIfPresent(e.getId());
+            if (lastlog == null || now.isAfter(lastlog.plus(1, ChronoUnit.HOURS))) {
+                cache.put(e.getId(), now);
+                final long hours = Duration.between(lastStateChange, now).toHours();
+                logger.logInfo(String.format(
+                            "Event %s %s %s in state %s has been processing for %s hours",
+                            e.getId().getId(), e.getEvent().getEventType(),
+                            e.getEvent().toGUID(), e.getState(), hours));
             }
         }
     }

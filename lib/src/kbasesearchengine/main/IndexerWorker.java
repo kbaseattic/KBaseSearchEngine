@@ -201,7 +201,7 @@ public class IndexerWorker {
         boolean processedEvent = false;
         if (optEvent.isPresent()) {
             final StoredStatusEvent parentEvent = optEvent.get();
-            //TODO NOW getEventHandler indexing exception should be caught and the event skipped
+            //TODO INDEXER NOW getEventHandler indexing exception should be caught and the event skipped
             if (getEventHandler(parentEvent).isExpandable(parentEvent)) {
                 logger.logInfo(String.format("[Indexer] Expanding event %s %s",
                         parentEvent.getEvent().getEventType(), parentEvent.getId().getId()));
@@ -209,7 +209,7 @@ public class IndexerWorker {
                     final Iterator<StatusEvent> er = retrier.retryFunc(
                             e -> getSubEventIterator(e), parentEvent, parentEvent);
                     storage.setProcessingState(parentEvent.getId(),
-                            StatusEventProcessingState.PROC, processEvents(parentEvent, er)); //TODO NOW retry
+                            StatusEventProcessingState.PROC, processEvents(parentEvent, er)); //TODO INDEXER NOW retry
                 } catch (IndexingException e) {
                     markAsVisitedFailedPostError(parentEvent);
                     handleException("Error expanding parent event", parentEvent, e);
@@ -223,7 +223,7 @@ public class IndexerWorker {
             } else {
                 try {
                     storage.setProcessingState(parentEvent.getId(),
-                            StatusEventProcessingState.PROC, processEvent(parentEvent)); //TODO NOW retry
+                            StatusEventProcessingState.PROC, processEvent(parentEvent)); //TODO INDEXER NOW retry
                 } catch (FatalIndexingException e) {
                     markAsVisitedFailedPostError(parentEvent);
                     throw e;
@@ -256,7 +256,7 @@ public class IndexerWorker {
     private void markAsVisitedFailedPostError(final StoredStatusEvent parentEvent)
             throws FatalIndexingException {
         try {
-            storage.setProcessingState(parentEvent.getId(), null, StatusEventProcessingState.FAIL); //TODO NOW retry
+            storage.setProcessingState(parentEvent.getId(), null, StatusEventProcessingState.FAIL); //TODO INDEXER NOW retry
         } catch (Exception e) {
             //ok then we're screwed
             throw new FatalIndexingException("Can't mark events as failed: " + e.getMessage(), e);
