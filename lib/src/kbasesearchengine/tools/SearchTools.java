@@ -2,6 +2,7 @@ package kbasesearchengine.tools;
 
 import static kbasesearchengine.tools.Utils.nonNull;
 
+import java.io.Console;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -76,12 +77,13 @@ public class SearchTools {
      * @param args the program arguments.
      */
     public static void main(String[] args) {
-        System.exit(new SearchTools(args, System.out, System.err).execute());
+        System.exit(new SearchTools(args, System.out, System.err, System.console()).execute());
     }
     
     private final String[] args;
     private final PrintStream out;
     private final PrintStream err;
+    private final Console console; 
     
     private MongoDatabase workspaceDB = null;
     private MongoDatabase searchDB = null;
@@ -96,13 +98,16 @@ public class SearchTools {
     public SearchTools(
             final String[] args,
             final PrintStream out,
-            final PrintStream err) {
+            final PrintStream err,
+            final Console console) { //TODO TEST will need to wrap this for testing so it's mockable
         nonNull(args, "args");
         nonNull(out, "out");
         nonNull(err, "err");
+        nonNull(console, "console");
         this.args = args;
         this.out = out;
         this.err = err;
+        this.console = console;
         quietLogger();
     }
     
@@ -180,6 +185,7 @@ public class SearchTools {
                 printError(e, a.verbose);
                 return 1;
             }
+            waitForReturn();
         }
         if (startWorker) {
             try {
@@ -190,6 +196,7 @@ public class SearchTools {
                 printError(e, a.verbose);
                 return 1;
             }
+            waitForReturn();
         }
         if (a.genWSEvents) {
             try {
@@ -206,7 +213,11 @@ public class SearchTools {
             usage(jc);
         }
         return 0;
-        
+    }
+    
+    private void waitForReturn() {
+        out.println("Press return to shut down process.");
+        console.readLine();
     }
     
     private void runCoordinator(

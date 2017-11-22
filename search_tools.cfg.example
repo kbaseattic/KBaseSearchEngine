@@ -9,7 +9,7 @@ search-mongo-pwd=
 
 # INDEXER
 
-# ElasticSearch information. This is used when starting the indexer coordinator or workers.
+# ElasticSearch information. This is used when starting the indexer workers.
 elastic-host=
 elastic-port=
 elastic-user=
@@ -18,13 +18,13 @@ elastic-namespace=kbase.1
 scratch=
 
 # Workspace and auth urls and token information. This is used when starting the indexer
-# coordinator or workers.
+# workers.
 workspace-url=
 auth-service-url=https://kbase.us/services/auth/api/legacy/KBase/Sessions/Login
 auth-service-url-allow-insecure=false
 indexer-token=
 
-# Type information. This is used when starting the indexer coordinator or workers.
+# Type information. This is used when starting the indexer workers.
 types-dir=
 type-mappings-dir=
 
