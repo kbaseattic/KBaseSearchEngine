@@ -141,7 +141,7 @@ public class IndexerWorker {
                 } catch (InterruptedException | FatalIndexingException e) {
                     logError(ErrorType.FATAL, e);
                     executor.shutdown();
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logError(ErrorType.UNEXPECTED, e);
                 }
             }

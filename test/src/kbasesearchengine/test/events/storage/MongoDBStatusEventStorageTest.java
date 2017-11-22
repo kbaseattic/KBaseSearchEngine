@@ -376,7 +376,7 @@ public class MongoDBStatusEventStorageTest {
     
     @Test
     public void getByState() throws Exception {
-        store(1100, StatusEventProcessingState.UNPROC);
+        store(10100, StatusEventProcessingState.UNPROC);
         store(10, StatusEventProcessingState.UNINDX);
         store(10, StatusEventProcessingState.FAIL);
         
@@ -388,13 +388,14 @@ public class MongoDBStatusEventStorageTest {
         assertReturnedInOrder(StatusEventProcessingState.INDX, 15, 0, Range.closed(-1, -1));
         
         // check limit works as expected
-        assertReturnedInOrder(StatusEventProcessingState.UNPROC, 0, 1000, Range.closed(1, 1000));
+        assertReturnedInOrder(StatusEventProcessingState.UNPROC, 0, 10000, Range.closed(1, 10000));
         assertReturnedInOrder(StatusEventProcessingState.UNPROC, 1, 1, Range.closed(1, 1));
-        assertReturnedInOrder(StatusEventProcessingState.UNPROC, 999, 999, Range.closed(1, 999));
-        assertReturnedInOrder(StatusEventProcessingState.UNPROC, 1000, 1000,
-                Range.closed(1, 1000));
-        assertReturnedInOrder(StatusEventProcessingState.UNPROC, 1001, 1000,
-                Range.closed(1, 1000));
+        assertReturnedInOrder(StatusEventProcessingState.UNPROC, 9999, 9999,
+                Range.closed(1, 9999));
+        assertReturnedInOrder(StatusEventProcessingState.UNPROC, 10000, 10000,
+                Range.closed(1, 10000));
+        assertReturnedInOrder(StatusEventProcessingState.UNPROC, 10001, 10000,
+                Range.closed(1, 10000));
         
         // check changing state moves limits around
         setState(StatusEventProcessingState.UNPROC, StatusEventProcessingState.INDX,
@@ -404,8 +405,8 @@ public class MongoDBStatusEventStorageTest {
         assertReturnedInOrder(StatusEventProcessingState.INDX, 51, 51, Range.closed(100, 150));
         assertReturnedInOrder(StatusEventProcessingState.INDX, 52, 51, Range.closed(100, 150));
         assertReturnedInOrder(StatusEventProcessingState.INDX, -1, 51, Range.closed(100, 150));
-        assertReturnedInOrder(StatusEventProcessingState.UNPROC, -1, 1000,
-                Range.closed(1, 99), Range.closed(151, 1051));
+        assertReturnedInOrder(StatusEventProcessingState.UNPROC, -1, 10000,
+                Range.closed(1, 99), Range.closed(151, 10051));
     }
 
     private void setState(
