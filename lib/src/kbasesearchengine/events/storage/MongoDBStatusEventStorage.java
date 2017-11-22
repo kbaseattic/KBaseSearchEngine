@@ -41,6 +41,8 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     
     //TODO DB add schema ver code
     
+    private static final int MAX_RETURNED_EVENTS = 10000;
+    
     private static final String FLD_STATUS = "status";
     private static final String FLD_STORAGE_CODE = "strcde";
     private static final String FLD_ACCESS_GROUP_ID = "accgrp";
@@ -241,8 +243,8 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     public List<StoredStatusEvent> get(final StatusEventProcessingState state, int limit)
             throws FatalRetriableIndexingException {
         Utils.nonNull(state, "state");
-        if (limit < 1 || limit > 10000) { //TODO NNOW make constant
-            limit = 10000;
+        if (limit < 1 || limit > MAX_RETURNED_EVENTS) {
+            limit = MAX_RETURNED_EVENTS;
         }
         final List<StoredStatusEvent> ret = new LinkedList<>();
         try {
