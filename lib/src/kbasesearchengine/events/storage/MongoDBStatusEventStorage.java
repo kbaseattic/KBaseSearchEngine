@@ -40,7 +40,6 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     /* Note that general mongoexceptions are more or less impossible to test. */
     
     //TODO DB add schema ver code
-    //TODO EVENT need optional parent event for sub events, so can check if event already exists
     
     private static final String FLD_STATUS = "status";
     private static final String FLD_STORAGE_CODE = "strcde";
@@ -242,7 +241,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     public List<StoredStatusEvent> get(final StatusEventProcessingState state, int limit)
             throws FatalRetriableIndexingException {
         Utils.nonNull(state, "state");
-        if (limit < 1 || limit > 10000) {
+        if (limit < 1 || limit > 10000) { //TODO NNOW make constant
             limit = 10000;
         }
         final List<StoredStatusEvent> ret = new LinkedList<>();

@@ -129,7 +129,7 @@ public class IndexerCoordinatorTest {
                 Instant.now(), sse.getUpdater().orNull());
     }
     
-    @Test(timeout = 1000) // in case the coordinator loops forever
+    @Test(timeout = 2000) // in case the coordinator loops forever
     public void blockingEvent() throws Exception {
         /* this test is a bit complex, since it runs through multiple indexer cycles
          * First call is two loops - first loop moves event1 to processing, second loop
@@ -207,7 +207,7 @@ public class IndexerCoordinatorTest {
         verify(logger, never()).logError(any(Throwable.class));
     }
     
-    @Test(timeout = 1000) // in case the coordinator loops forever
+    @Test(timeout = 2000) // in case the coordinator loops forever
     public void eventLoadRequestSize() throws Exception {
         /* test that the coordinator requests the correct number of events from storage,
          * and that the coordinator stops cycling when no events were returned or the
@@ -293,7 +293,7 @@ public class IndexerCoordinatorTest {
         verify(logger, never()).logError(any(Throwable.class));
     }
     
-    @Test(timeout = 1000) // in case the coordinator loops forever
+    @Test(timeout = 2000) // in case the coordinator loops forever
     public void emptyNoInput() throws Exception {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
@@ -321,7 +321,7 @@ public class IndexerCoordinatorTest {
         verify(logger, never()).logError(any(Throwable.class));
     }
     
-    @Test(timeout = 1000) // in case the coordinator loops forever
+    @Test(timeout = 2000) // in case the coordinator loops forever
     public void constructWithMultipleEvents() throws Exception {
         final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ALL_VERSIONS)
@@ -380,7 +380,7 @@ public class IndexerCoordinatorTest {
         verify(logger, never()).logError(any(Throwable.class));
     }
     
-    @Test(timeout = 1000) // in case the coordinator loops forever
+    @Test(timeout = 2000) // in case the coordinator loops forever
     public void constructWithSingleEvent() throws Exception {
         final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
@@ -425,7 +425,7 @@ public class IndexerCoordinatorTest {
         verify(logger, never()).logError(any(Throwable.class));
     }
     
-    @Test(timeout = 1000) // in case the coordinator loops forever
+    @Test(timeout = 2000) // in case the coordinator loops forever
     public void desynchedQueue() throws Exception {
         /* test the case where the in memory queue does not match the DB. */
         final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(

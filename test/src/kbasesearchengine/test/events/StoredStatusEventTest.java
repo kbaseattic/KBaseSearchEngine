@@ -37,6 +37,7 @@ public class StoredStatusEventTest {
         assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));
         assertThat("incorrect updater", sei.getUpdater(), is(Optional.absent()));
         assertThat("incorrect update time", sei.getUpdateTime(), is(Optional.absent()));
+        assertThat("incorrect is parent", sei.isParentId(), is(false));
     }
     
     @Test
@@ -53,6 +54,7 @@ public class StoredStatusEventTest {
         assertThat("incorrect updater", sei.getUpdater(), is(Optional.of("foo")));
         assertThat("incorrect update time", sei.getUpdateTime(),
                 is(Optional.of(Instant.ofEpochMilli(20000))));
+        assertThat("incorrect is parent", sei.isParentId(), is(false));
     }
     
     @Test

@@ -23,6 +23,7 @@ import org.joda.time.format.DateTimeFormatterBuilder;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.events.ChildStatusEvent;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StoredStatusEvent;
@@ -268,22 +269,22 @@ public class WorkspaceEventHandler implements EventHandler {
             StatusEventType.UNPUBLISH_ACCESS_GROUP));
     
     @Override
-    public Iterable<StatusEvent> expand(final StoredStatusEvent eventWID)
+    public Iterable<ChildStatusEvent> expand(final StoredStatusEvent eventWID)
             throws IndexingException, RetriableIndexingException {
         checkStorageCode(eventWID);
         final StatusEvent event = eventWID.getEvent();
         if (StatusEventType.NEW_ALL_VERSIONS.equals(event.getEventType())) {
-            return handleNewAllVersions(event);
+            return handleNewAllVersions(eventWID);
         } else if (StatusEventType.COPY_ACCESS_GROUP.equals(event.getEventType())) {
-            return handleNewAccessGroup(event);
+            return handleNewAccessGroup(eventWID);
         } else if (StatusEventType.DELETE_ACCESS_GROUP.equals(event.getEventType())) {
-            return handleDeletedAccessGroup(event);
+            return handleDeletedAccessGroup(eventWID);
         } else if (StatusEventType.PUBLISH_ACCESS_GROUP.equals(event.getEventType())) {
-            return handlePublishAccessGroup(event, StatusEventType.PUBLISH_ALL_VERSIONS);
+            return handlePublishAccessGroup(eventWID, StatusEventType.PUBLISH_ALL_VERSIONS);
         } else if (StatusEventType.UNPUBLISH_ACCESS_GROUP.equals(event.getEventType())) {
-            return handlePublishAccessGroup(event, StatusEventType.UNPUBLISH_ALL_VERSIONS);
+            return handlePublishAccessGroup(eventWID, StatusEventType.UNPUBLISH_ALL_VERSIONS);
         } else {
-            return Arrays.asList(event);
+            throw new IllegalArgumentException("Unexpandable event type: " + event.getEventType());
         }
     }
 
@@ -298,15 +299,15 @@ public class WorkspaceEventHandler implements EventHandler {
         }
     }
 
-    private Iterable<StatusEvent> handlePublishAccessGroup(
-            final StatusEvent event,
+    private Iterable<ChildStatusEvent> handlePublishAccessGroup(
+            final StoredStatusEvent event,
             final StatusEventType newType)
             throws RetriableIndexingException, IndexingException {
 
         final Map<String, Object> command = new HashMap<>();
         command.put("command", "getWorkspaceInfo");
         command.put("params", new WorkspaceIdentity()
-                .withId((long) event.getAccessGroupId().get()));
+                .withId((long) event.getEvent().getAccessGroupId().get()));
         
         final long objcount;
         try {
@@ -317,23 +318,23 @@ public class WorkspaceEventHandler implements EventHandler {
         } catch (JsonClientException e) {
             throw handleException(e);
         }
-        return new Iterable<StatusEvent>() {
+        return new Iterable<ChildStatusEvent>() {
             
             @Override
-            public Iterator<StatusEvent> iterator() {
+            public Iterator<ChildStatusEvent> iterator() {
                 return new StupidWorkspaceObjectIterator(event, objcount, newType);
             }
         };
     }
 
-    private Iterable<StatusEvent> handleDeletedAccessGroup(final StatusEvent event) {
+    private Iterable<ChildStatusEvent> handleDeletedAccessGroup(final StoredStatusEvent event) {
         
-        return new Iterable<StatusEvent>() {
+        return new Iterable<ChildStatusEvent>() {
 
             @Override
-            public Iterator<StatusEvent> iterator() {
+            public Iterator<ChildStatusEvent> iterator() {
                 return new StupidWorkspaceObjectIterator(
-                        event, Long.parseLong(event.getAccessGroupObjectId().get()),
+                        event, Long.parseLong(event.getEvent().getAccessGroupObjectId().get()),
                         StatusEventType.DELETE_ALL_VERSIONS);
             }
             
@@ -343,15 +344,15 @@ public class WorkspaceEventHandler implements EventHandler {
     /* This is not efficient, but allows parallelizing events by decomposing the event
      * to per object events. That means the parallelization can run on a per object basis.
      */
-    private static class StupidWorkspaceObjectIterator implements Iterator<StatusEvent> {
+    private static class StupidWorkspaceObjectIterator implements Iterator<ChildStatusEvent> {
 
-        private final StatusEvent event;
+        private final StoredStatusEvent event;
         private final StatusEventType newType;
         private final long maxObjectID;
         private long counter = 0;
         
         public StupidWorkspaceObjectIterator(
-                final StatusEvent event,
+                final StoredStatusEvent event,
                 final long maxObjectID,
                 final StatusEventType newType) {
             this.event = event;
@@ -365,41 +366,43 @@ public class WorkspaceEventHandler implements EventHandler {
         }
 
         @Override
-        public StatusEvent next() {
+        public ChildStatusEvent next() {
             if (counter >= maxObjectID) {
                 throw new NoSuchElementException();
             }
-            return StatusEvent.getBuilder(STORAGE_CODE, event.getTimestamp(), newType)
-                    .withNullableAccessGroupID(event.getAccessGroupId().get())
-                    .withNullableObjectID(++counter + "")
-                    .build();
+            return new ChildStatusEvent(
+                    StatusEvent.getBuilder(STORAGE_CODE, event.getEvent().getTimestamp(), newType)
+                            .withNullableAccessGroupID(event.getEvent().getAccessGroupId().get())
+                            .withNullableObjectID(++counter + "")
+                            .build(),
+                    event.getId());
         }
         
     }
 
-    private Iterable<StatusEvent> handleNewAccessGroup(final StatusEvent event) {
-        return new Iterable<StatusEvent>() {
+    private Iterable<ChildStatusEvent> handleNewAccessGroup(final StoredStatusEvent event) {
+        return new Iterable<ChildStatusEvent>() {
 
             @Override
-            public Iterator<StatusEvent> iterator() {
+            public Iterator<ChildStatusEvent> iterator() {
                 return new WorkspaceIterator(ws, event);
             }
             
         };
     }
     
-    private static class WorkspaceIterator implements Iterator<StatusEvent> {
+    private static class WorkspaceIterator implements Iterator<ChildStatusEvent> {
         
         private final WorkspaceClient ws;
-        private final StatusEvent sourceEvent;
+        private final StoredStatusEvent sourceEvent;
         private final int accessGroupId;
         private long processedObjs = 0;
-        private LinkedList<StatusEvent> queue = new LinkedList<>();
+        private LinkedList<ChildStatusEvent> queue = new LinkedList<>();
 
-        public WorkspaceIterator(final WorkspaceClient ws, final StatusEvent sourceEvent) {
+        public WorkspaceIterator(final WorkspaceClient ws, final StoredStatusEvent sourceEvent) {
             this.ws = ws;
             this.sourceEvent = sourceEvent;
-            this.accessGroupId = sourceEvent.getAccessGroupId().get();
+            this.accessGroupId = sourceEvent.getEvent().getAccessGroupId().get();
             fillQueue();
         }
 
@@ -409,11 +412,11 @@ public class WorkspaceEventHandler implements EventHandler {
         }
 
         @Override
-        public StatusEvent next() {
+        public ChildStatusEvent next() {
             if (queue.isEmpty()) {
                 throw new NoSuchElementException();
             }
-            final StatusEvent event = queue.removeFirst();
+            final ChildStatusEvent event = queue.removeFirst();
             if (queue.isEmpty()) {
                 fillQueue();
             }
@@ -424,7 +427,7 @@ public class WorkspaceEventHandler implements EventHandler {
             // as of 0.7.2 if only object id filters are used, workspace will sort by
             // ws asc, obj id asc, ver dec
             
-            final ArrayList<StatusEvent> events;
+            final ArrayList<ChildStatusEvent> events;
             final Map<String, Object> command = new HashMap<>();
             command.put("command", "listObjects");
             command.put("params", new ListObjectsParams()
@@ -444,27 +447,28 @@ public class WorkspaceEventHandler implements EventHandler {
                 return;
             }
             // might want to do something smarter about the extra parse at some point
-            final long first = Long.parseLong(events.get(0).getAccessGroupObjectId().get());
-            final StatusEvent lastEv = events.get(events.size() - 1);
-            long last = Long.parseLong(lastEv.getAccessGroupObjectId().get());
+            final long first = Long.parseLong(events.get(0).getEvent()
+                    .getAccessGroupObjectId().get());
+            final ChildStatusEvent lastEv = events.get(events.size() - 1);
+            long last = Long.parseLong(lastEv.getEvent().getAccessGroupObjectId().get());
             // it cannot be true that there were <10K objects and the last object returned's
             // version was != 1
             if (first == last && events.size() == WS_BATCH_SIZE &&
-                    lastEv.getVersion().get() != 1) {
+                    lastEv.getEvent().getVersion().get() != 1) {
                 //holy poopsnacks, a > 10K version object
                 queue.addAll(events);
-                for (int i = lastEv.getVersion().get(); i > 1; i =- WS_BATCH_SIZE) {
+                for (int i = lastEv.getEvent().getVersion().get(); i > 1; i =- WS_BATCH_SIZE) {
                     fillQueueWithVersions(first, i - WS_BATCH_SIZE, i);
                 }
             } else {
                 // could be smarter about this later, rather than throwing away all the versions of
                 // the last object
                 // not too many objects will have enough versions to matter
-                if (lastEv.getVersion().get() != 1) {
+                if (lastEv.getEvent().getVersion().get() != 1) {
                     last--;
                 }
-                for (final StatusEvent e: events) {
-                    if (Long.parseLong(e.getAccessGroupObjectId().get()) > last) { // *&@ parse
+                for (final ChildStatusEvent e: events) {
+                    if (Long.parseLong(e.getEvent().getAccessGroupObjectId().get()) > last) { // *&@ parse
                         break;
                     }
                     queue.add(e);
@@ -502,8 +506,9 @@ public class WorkspaceEventHandler implements EventHandler {
         }
     }
 
-    private Iterable<StatusEvent> handleNewAllVersions(final StatusEvent event)
+    private ArrayList<ChildStatusEvent> handleNewAllVersions(final StoredStatusEvent eventWID)
             throws IndexingException, RetriableIndexingException {
+        final StatusEvent event = eventWID.getEvent();
         final long objid;
         try {
             objid = Long.parseLong(event.getAccessGroupObjectId().get());
@@ -517,7 +522,7 @@ public class WorkspaceEventHandler implements EventHandler {
                 .withWsid((long) event.getAccessGroupId().get())
                 .withObjid(objid));
         try {
-            return buildEvents(event, ws.administer(new UObject(command))
+            return buildEvents(eventWID, ws.administer(new UObject(command))
                     .asClassInstance(OBJ_TYPEREF));
         } catch (IOException e) {
             throw handleException(e);
@@ -526,11 +531,11 @@ public class WorkspaceEventHandler implements EventHandler {
         }
     }
 
-    private static ArrayList<StatusEvent> buildEvents(
-            final StatusEvent originalEvent,
+    private static ArrayList<ChildStatusEvent> buildEvents(
+            final StoredStatusEvent originalEvent,
             final List<Tuple11<Long, String, String, String, Long, String, Long, String,
                     String, Long, Map<String, String>>> objects) {
-        final ArrayList<StatusEvent> events = new ArrayList<>();
+        final ArrayList<ChildStatusEvent> events = new ArrayList<>();
         for (final Tuple11<Long, String, String, String, Long, String, Long, String, String,
                 Long, Map<String, String>> obj: objects) {
             events.add(buildEvent(originalEvent, obj));
@@ -538,22 +543,23 @@ public class WorkspaceEventHandler implements EventHandler {
         return events;
     }
     
-    private static StatusEvent buildEvent(
-            final StatusEvent origEvent,
+    private static ChildStatusEvent buildEvent(
+            final StoredStatusEvent origEvent,
             final Tuple11<Long, String, String, String, Long, String, Long, String, String,
                     Long, Map<String, String>> obj) {
         final StorageObjectType storageObjectType = new StorageObjectType(
                 STORAGE_CODE, obj.getE3().split("-")[0],
                 Integer.parseInt(obj.getE3().split("-")[1].split("\\.")[0]));
-        return StatusEvent.getBuilder(
+        return new ChildStatusEvent(StatusEvent.getBuilder(
                 storageObjectType,
                 Instant.ofEpochMilli(DATE_PARSER.parseDateTime(obj.getE4()).getMillis()),
                 StatusEventType.NEW_VERSION)
-                .withNullableAccessGroupID(origEvent.getAccessGroupId().get())
+                .withNullableAccessGroupID(origEvent.getEvent().getAccessGroupId().get())
                 .withNullableObjectID(obj.getE1() + "")
                 .withNullableVersion(Math.toIntExact(obj.getE5()))
-                .withNullableisPublic(origEvent.isPublic().get())
-                .build();
+                .withNullableisPublic(origEvent.getEvent().isPublic().get())
+                .build(),
+                origEvent.getId());
     }
     
     private static String toWSRefPath(final List<GUID> objectRefPath) {
