@@ -1,7 +1,6 @@
 package kbasesearchengine.main;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -155,8 +154,9 @@ public class IndexerCoordinator {
     }
 
     private void logError(final String msg, final Throwable e) {
+        // TODO LOG make log method that takes msg + e and have the logger figure out how to log it correctly
         logger.logError(msg + ": " + e);
-        logger.logError(e); //TODO LOG split into lines with id
+        logger.logError(e);
     }
 
     private void logError(
@@ -175,60 +175,85 @@ public class IndexerCoordinator {
     }
     
     private void runOneCycle() throws InterruptedException, IndexingException {
-        // some of these ops could be batched if they prove to be a bottleneck
-        // but the mongo client keeps a connection open so it's not that expensive to 
-        // run one at a time
-        // also the bottleneck is almost assuredly the workers
+        /* some of the operations in the submethods could be batched if they prove to be a
+         * bottleneck
+         * but the mongo client keeps a connection open so it's not that expensive to 
+         * run one at a time
+         * also the bottleneck is almost assuredly the workers
+         */
         continuousCycles = 0;
         //TODO QUEUE check for stalled events
         boolean noWait = true;
         while (noWait) {
-            final List<StoredStatusEvent> events;
-            final int loadSize = maxQueueSize - queue.size();
-            if (loadSize > 0) {
-                events = retrier.retryFunc(s -> s.get(StatusEventProcessingState.UNPROC, loadSize),
-                        storage, null);
-                events.stream().forEach(e -> queue.load(e));
-            } else {
-                events = Collections.emptyList();
-            }
+            final boolean loadedEvents = loadEventsIntoQueue();
             queue.moveToReady();
-            for (final StoredStatusEvent sse: queue.getReadyForProcessing()) {
-                // since the queue doesn't mutate the state, if the state is not UNPROC
-                // it's not in that state in the DB either
-                if (sse.getState().equals(StatusEventProcessingState.UNPROC)) {
-                    //TODO QUEUE mark with timestamp
-                    retrier.retryCons(e -> storage.setProcessingState(e.getId(),
-                            StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY),
-                            sse, sse);
-                    //TODO QUEUE LOG this
-                }
-            }
+            setEventsAsReadyInStorage();
             // so we don't run through the same events again next loop
             queue.moveReadyToProcessing();
-            for (final StoredStatusEvent sse: queue.getProcessing()) {
-                final Optional<StoredStatusEvent> fromStorage =
-                        retrier.retryFunc(s -> s.get(sse.getId()), storage, sse);
-                if (fromStorage.isPresent()) {
-                    final StatusEventProcessingState state = fromStorage.get().getState();
-                    if (!state.equals(StatusEventProcessingState.PROC) &&
-                            !state.equals(StatusEventProcessingState.READY)) {
-                        queue.setProcessingComplete(fromStorage.get());
-                        //TODO QUEUE LOG this
-                    } else {
-                        //TODO QUEUE check time since last update and log if > X min (log periodically, maybe 1 /hr)
-                    }
-                } else {
-                    logger.logError(String.format("Event %s is in the in-memory queue but not " +
-                            "in the storage system. Removing from queue", sse.getId().getId()));
-                    queue.setProcessingComplete(sse);
-                }
-            }
-            noWait = !events.isEmpty() && queue.size() < maxQueueSize;
+            checkOnEventsInProcess();
+            // start the cycle immediately if there were events in storage and the queue isn't full
+            noWait = loadedEvents && queue.size() < maxQueueSize;
             continuousCycles++;
         }
     }
     
+
+    private boolean loadEventsIntoQueue() throws InterruptedException, IndexingException {
+        final boolean loaded;
+        final int loadSize = maxQueueSize - queue.size();
+        if (loadSize > 0) {
+            final List<StoredStatusEvent> events = retrier.retryFunc(
+                    s -> s.get(StatusEventProcessingState.UNPROC, loadSize), storage, null);
+            events.stream().forEach(e -> queue.load(e));
+            loaded = !events.isEmpty();
+        } else {
+            loaded = false;
+        }
+        return loaded;
+    }
+
+    private void setEventsAsReadyInStorage() throws InterruptedException, IndexingException {
+        for (final StoredStatusEvent sse: queue.getReadyForProcessing()) {
+            // since the queue doesn't mutate the state, if the state is not UNPROC
+            // it's not in that state in the DB either
+            if (sse.getState().equals(StatusEventProcessingState.UNPROC)) {
+                //TODO QUEUE mark with timestamp
+                retrier.retryCons(e -> storage.setProcessingState(e.getId(),
+                        StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY),
+                        sse, sse);
+                logger.logInfo(String.format("Moved event %s %s %s from %s to %s",
+                        sse.getId().getId(), sse.getEvent().getEventType(),
+                        sse.getEvent().toGUID(), StatusEventProcessingState.UNPROC,
+                        StatusEventProcessingState.READY));
+            }
+        }
+    }
+    
+    private void checkOnEventsInProcess() throws InterruptedException, IndexingException {
+        for (final StoredStatusEvent sse: queue.getProcessing()) {
+            final Optional<StoredStatusEvent> fromStorage =
+                    retrier.retryFunc(s -> s.get(sse.getId()), storage, sse);
+            if (fromStorage.isPresent()) {
+                final StoredStatusEvent e = fromStorage.get();
+                final StatusEventProcessingState state = e.getState();
+                if (!state.equals(StatusEventProcessingState.PROC) &&
+                        !state.equals(StatusEventProcessingState.READY)) {
+                    queue.setProcessingComplete(e);
+                    logger.logInfo(String.format(
+                            "Event %s %s %s completed processing with state %s",
+                            e.getId().getId(), e.getEvent().getEventType(),
+                            e.getEvent().toGUID(), state));
+                } else {
+                    //TODO QUEUE check time since last update and log if > X min (log periodically, maybe 1 /hr)
+                }
+            } else {
+                logger.logError(String.format("Event %s is in the in-memory queue but not " +
+                        "in the storage system. Removing from queue", sse.getId().getId()));
+                queue.setProcessingComplete(sse);
+            }
+        }
+    }
+
     /** Returns the number of cycles the indexer has run without pausing (e.g. without the
      * indexer cycle being scheduled). This information is mostly useful for test purposes.
      * @return 

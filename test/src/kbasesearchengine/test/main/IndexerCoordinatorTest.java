@@ -47,7 +47,7 @@ public class IndexerCoordinatorTest {
         
         final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10);
         
-        assertThat("incorrect queue size", coord.getMaximumQueueSize(), is(10));
+        assertThat("incorrect max queue size", coord.getMaximumQueueSize(), is(10));
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(0));
         assertThat("incorrect queue size", coord.getQueueSize(), is(0));
     }
@@ -173,10 +173,15 @@ public class IndexerCoordinatorTest {
         
         verify(storage).setProcessingState(new StatusEventID("foo1"),
                 StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY);
+        verify(logger).logInfo(
+                "Moved event foo1 UNPUBLISH_ACCESS_GROUP WS:2/null from UNPROC to READY");
 
         coordRunner.run(); // this will move event1 out of the queue
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        
+        verify(logger).logInfo("Event foo1 UNPUBLISH_ACCESS_GROUP WS:2/null completed " +
+                "processing with state INDX");
         
         verify(storage, never()).setProcessingState(new StatusEventID("foo2"),
                 StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY);
@@ -189,6 +194,10 @@ public class IndexerCoordinatorTest {
 
         verify(storage).setProcessingState(new StatusEventID("foo2"),
                 StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY);
+        verify(logger).logInfo(
+                "Moved event foo2 PUBLISH_ACCESS_GROUP WS:2/null from UNPROC to READY");
+        verify(logger, never()).logError(any(String.class));
+        verify(logger, never()).logError(any(Throwable.class));
     }
     
     @Test(timeout = 1000) // in case the coordinator loops forever
@@ -245,6 +254,8 @@ public class IndexerCoordinatorTest {
         
         verify(storage).setProcessingState(new StatusEventID("foo1"),
                 StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY);
+        verify(logger).logInfo(
+                "Moved event foo1 UNPUBLISH_ACCESS_GROUP WS:2/null from UNPROC to READY");
         verify(storage).get(StatusEventProcessingState.UNPROC, 2);
         verify(storage, never()).get(StatusEventProcessingState.UNPROC, 1);
         
@@ -270,6 +281,8 @@ public class IndexerCoordinatorTest {
                 StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY);
         verify(storage, never()).setProcessingState(new StatusEventID("foo3"),
                 StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY);
+        verify(logger, never()).logError(any(String.class));
+        verify(logger, never()).logError(any(Throwable.class));
     }
     
     @Test(timeout = 1000) // in case the coordinator loops forever
@@ -294,6 +307,9 @@ public class IndexerCoordinatorTest {
         verify(storage, never()).get(any(), eq(1));
         verify(storage, never()).get(any(), eq(0));
         verify(storage, never()).setProcessingState(any(), any(), any());
+        verify(logger, never()).logInfo(any());
+        verify(logger, never()).logError(any(String.class));
+        verify(logger, never()).logError(any(Throwable.class));
     }
     
     @Test(timeout = 1000) // in case the coordinator loops forever
@@ -340,12 +356,18 @@ public class IndexerCoordinatorTest {
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        verify(logger).logInfo("Event foo2 RENAME_ALL_VERSIONS WS:2/2 completed " +
+                "processing with state FAIL");
         
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(0));
+        verify(logger).logInfo("Event foo1 PUBLISH_ALL_VERSIONS WS:2/1 completed " +
+                "processing with state UNINDX");
         
         verify(storage, never()).setProcessingState(any(), any(), any());
+        verify(logger, never()).logError(any(String.class));
+        verify(logger, never()).logError(any(Throwable.class));
     }
     
     @Test(timeout = 1000) // in case the coordinator loops forever
@@ -379,12 +401,17 @@ public class IndexerCoordinatorTest {
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        verify(logger, never()).logInfo(any());
         
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(0));
+        verify(logger).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null completed " +
+                "processing with state INDX");
         
         verify(storage, never()).setProcessingState(any(), any(), any());
+        verify(logger, never()).logError(any(String.class));
+        verify(logger, never()).logError(any(Throwable.class));
     }
     
     @Test(timeout = 1000) // in case the coordinator loops forever
@@ -416,13 +443,15 @@ public class IndexerCoordinatorTest {
         
         verify(storage).setProcessingState(new StatusEventID("foo1"),
                 StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY);
+        verify(logger).logInfo(
+                "Moved event foo1 PUBLISH_ACCESS_GROUP WS:2/null from UNPROC to READY");
         
         verify(logger).logError("Event foo1 is in the in-memory queue but not " +
                             "in the storage system. Removing from queue");
     }
     
     @Test
-    public void fatalErrorOnPull() throws Exception {
+    public void fatalErrorOnGetUnprocessed() throws Exception {
         
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
@@ -548,7 +577,6 @@ public class IndexerCoordinatorTest {
         }
     }
     
-    
     @Test
     public void fatalErrorOnGet() throws Exception {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
@@ -578,6 +606,8 @@ public class IndexerCoordinatorTest {
         
         verify(storage).setProcessingState(new StatusEventID("foo1"),
                 StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY);
+        verify(logger).logInfo(
+                "Moved event foo1 DELETE_ALL_VERSIONS WS:2/1 from UNPROC to READY");
         verify(executor).shutdown();
 
         verify(logger).logError("Retriable error in indexer for event " +
