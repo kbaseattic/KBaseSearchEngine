@@ -17,7 +17,7 @@ import org.junit.Test;
 import com.google.common.base.Optional;
 
 import kbasesearchengine.events.ObjectEventQueue;
-import kbasesearchengine.events.ObjectEventQueue.NoSuchEventException;
+import kbasesearchengine.events.exceptions.NoSuchEventException;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
@@ -26,6 +26,42 @@ import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.test.common.TestCommon;
 
 public class ObjectEventQueueTest {
+    
+    @Test
+    public void isVersionLevelEvent() {
+        isVersionLevelEvent(StatusEventType.NEW_VERSION, true);
+        
+        isVersionLevelEvent(StatusEventType.COPY_ACCESS_GROUP, false);
+        isVersionLevelEvent(StatusEventType.DELETE_ACCESS_GROUP, false);
+        isVersionLevelEvent(StatusEventType.DELETE_ALL_VERSIONS, false);
+        isVersionLevelEvent(StatusEventType.NEW_ALL_VERSIONS, false);
+        isVersionLevelEvent(StatusEventType.PUBLISH_ACCESS_GROUP, false);
+        isVersionLevelEvent(StatusEventType.PUBLISH_ALL_VERSIONS, false);
+        isVersionLevelEvent(StatusEventType.RENAME_ALL_VERSIONS, false);
+        isVersionLevelEvent(StatusEventType.UNDELETE_ALL_VERSIONS, false);
+        isVersionLevelEvent(StatusEventType.UNPUBLISH_ACCESS_GROUP, false);
+        isVersionLevelEvent(StatusEventType.UNPUBLISH_ALL_VERSIONS, false);
+    }
+
+    private void isVersionLevelEvent(final StatusEventType type, final boolean expected) {
+        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), type)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+        
+        assertThat("incorrect isVersion", ObjectEventQueue.isVersionLevelEvent(sse),
+                is(expected));
+    }
+    
+    @Test
+    public void isVersionLevelEventFail() {
+        try {
+            ObjectEventQueue.isVersionLevelEvent(null);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, new NullPointerException("event"));
+        }
+    }
 
     /* this assert does not mutate the queue state */
     private void assertQueueState(
@@ -34,8 +70,11 @@ public class ObjectEventQueueTest {
             final Set<StoredStatusEvent> processing,
             final int size) {
         assertThat("incorrect ready", queue.getReadyForProcessing(), is(ready));
+        assertThat("incorrect hasReady", queue.hasReady(), is(!ready.isEmpty()));
         assertThat("incorrect get processing", queue.getProcessing(), is(processing));
         assertThat("incorrect is processing", queue.isProcessing(), is(!processing.isEmpty()));
+        assertThat("incorrect is proc or ready", queue.isProcessingOrReady(),
+                is(!processing.isEmpty() || !ready.isEmpty()));
         assertThat("incorrect size", queue.size(), is(size));
         assertThat("incorrect isEmpty", queue.isEmpty(), is(size == 0));
     }
@@ -445,7 +484,8 @@ public class ObjectEventQueueTest {
         assertGetProcessingReturnIsImmutable(sse, q2);
     }
 
-    private void assertGetProcessingReturnIsImmutable(final StoredStatusEvent sse,
+    private void assertGetProcessingReturnIsImmutable(
+            final StoredStatusEvent sse,
             final ObjectEventQueue q) {
         try {
             q.getProcessing().add(sse);
@@ -474,6 +514,11 @@ public class ObjectEventQueueTest {
         final ObjectEventQueue q2 = new ObjectEventQueue();
         q2.load(sse2);
         assertMoveReadyReturnIsImmutable(sse, q2);
+        
+        final ObjectEventQueue q3 = new ObjectEventQueue();
+        q3.load(sse);
+        q3.moveToReady();
+        assertMoveReadyReturnIsImmutable(sse2, q3);
     }
 
     private void assertMoveReadyReturnIsImmutable(

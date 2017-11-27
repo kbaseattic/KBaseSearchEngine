@@ -35,6 +35,7 @@ import com.mongodb.client.MongoDatabase;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
@@ -69,6 +70,7 @@ import workspace.WorkspaceClient;
 public class SearchTools {
     
     private static final String NAME = "search_tools";
+    private static final int MAX_Q_SIZE = 10000;
 
     /** Runs the CLI.
      * @param args the program arguments.
@@ -174,7 +176,7 @@ public class SearchTools {
             try {
                 runCoordinator(cfg, out, err);
                 noCommand = false; 
-            } catch (StorageInitException e) {
+            } catch (StorageInitException | IndexingException | InterruptedException e) {
                 printError(e, a.verbose);
                 return 1;
             }
@@ -184,7 +186,7 @@ public class SearchTools {
                 runWorker(cfg, a.startWorker, out, err);
                 noCommand = false;
             } catch (IOException | AuthException | ObjectParseException | TypeParseException |
-                    UnauthorizedException | StorageInitException e) {
+                    UnauthorizedException | StorageInitException | IllegalArgumentException e) {
                 printError(e, a.verbose);
                 return 1;
             }
@@ -211,12 +213,12 @@ public class SearchTools {
             final SearchToolsConfig cfg,
             final PrintStream logTarget,
             final PrintStream errTarget)
-            throws StorageInitException {
+            throws StorageInitException, InterruptedException, IndexingException {
         final LineLogger logger = buildLogger(logTarget, errTarget);
         
         final StatusEventStorage storage = new MongoDBStatusEventStorage(searchDB);
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, MAX_Q_SIZE);
         coord.startIndexer();
     }
     
@@ -252,7 +254,9 @@ public class SearchTools {
         wrk.startIndexer();
     }
 
-    private String getID(final String id) {
+    private String getID(String id) {
+        Utils.notNullOrEmpty(id, "id cannot be null or empty");
+        id = id.trim();
         if ("-".equals(id)) {
             return UUID.randomUUID().toString();
         } else {
