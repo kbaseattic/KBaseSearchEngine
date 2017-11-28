@@ -45,18 +45,38 @@ public class ObjectParser {
         return guidToJson;
     }
 
+    /**
+     * Returns a new GUID object keeping parent_guid's storageCode,
+     * accessGroupId, accessGroupObjectId and version instance variables.
+     * Assigns instance variable subObjectType and subObjectId of the new GUID
+     * from @param parsingRules, path and idConsumer
+     * 
+     * @param parsingRules
+     *            instance of ObjectTypeParsingRules used to form subObjectType
+     *            instance variable of returned GUID object
+     * @param parent_guid
+     *            parent GUID object
+     * @param path
+     *            instance of ObjectJsonPath used to form subObjectId instance
+     *            variable of returned GUID object
+     * @param idConsumer
+     *            instance of SimpleIdConsumer used to form subObjectId instance
+     *            variable of returned GUID object
+     * @return GUID object
+     */
     public static GUID prepareGUID(ObjectTypeParsingRules parsingRules,
-            GUID guid, ObjectJsonPath path,
+            GUID parent_guid, ObjectJsonPath path,
             SimpleIdConsumer idConsumer) {
-        String innerSubType = null;
-        String innerID = null;
+        String subObjectType = null;
+        String subObjectId = null;
         if (parsingRules.getPathToSubObjects() != null) {
-            innerID = idConsumer.getPrimaryKey() == null ? path.toString() : 
+            subObjectId = idConsumer.getPrimaryKey() == null ? path.toString() :
                 String.valueOf(idConsumer.getPrimaryKey());
-            innerSubType = parsingRules.getInnerSubType() == null ? "_" : 
+            subObjectType = parsingRules.getInnerSubType() == null ? "_" :
                 parsingRules.getInnerSubType();
         }
-        return new GUID(guid, innerSubType, innerID);
+        
+        return new GUID(parent_guid, subObjectType, subObjectId);
     }
     
     public static String extractParentFragment(ObjectTypeParsingRules parsingRules,
