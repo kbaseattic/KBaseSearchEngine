@@ -442,7 +442,7 @@ public class IndexerWorker {
     }
 
     // returns false if a non-fatal error prevents retrieving the info
-    public boolean isStorageTypeSupported(final StatusEventWithId ev)
+    private boolean isStorageTypeSupported(final StatusEventWithId ev)
             throws InterruptedException, FatalIndexingException {
         try {
             return retrier.retryFunc(
@@ -586,37 +586,37 @@ public class IndexerWorker {
         return parentJson;
     }
     
-//    public void share(GUID guid, int accessGroupId) throws IOException {
+//    private void share(GUID guid, int accessGroupId) throws IOException {
 //        indexingStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId, 
 //                false);
 //    }
     
-    public void undeleteAllVersions(final GUID guid) throws IOException {
+    private void undeleteAllVersions(final GUID guid) throws IOException {
         indexingStorage.undeleteAllVersions(guid);
     }
 
-//    public void unshare(GUID guid, int accessGroupId) throws IOException {
+//    private void unshare(GUID guid, int accessGroupId) throws IOException {
 //        indexingStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
 //    }
 
-    public void deleteAllVersions(final GUID guid) throws IOException {
+    private void deleteAllVersions(final GUID guid) throws IOException {
         indexingStorage.deleteAllVersions(guid);
     }
 
-    public void publish(GUID guid) throws IOException {
+    private void publish(GUID guid) throws IOException {
         indexingStorage.publishObjects(new LinkedHashSet<>(Arrays.asList(guid)));
     }
     
-    public void publishAllVersions(final GUID guid) throws IOException {
+    private void publishAllVersions(final GUID guid) throws IOException {
         indexingStorage.publishAllVersions(guid);
         //TODO DP need to handle objects in datapalette
     }
 
-    public void unpublish(GUID guid) throws IOException {
+    private void unpublish(GUID guid) throws IOException {
         indexingStorage.unpublishObjects(new LinkedHashSet<>(Arrays.asList(guid)));
     }
     
-    public void unpublishAllVersions(final GUID guid) throws IOException {
+    private void unpublishAllVersions(final GUID guid) throws IOException {
         indexingStorage.unpublishAllVersions(guid);
         //TODO DP need to handle objects in datapalette
     }
@@ -625,10 +625,6 @@ public class IndexerWorker {
         indexingStorage.setNameOnAllObjectVersions(guid, newName);
     }
 
-    public IndexingStorage getIndexingStorage(String objectType) {
-        return indexingStorage;
-    }
-    
     private class MOPLookupProvider implements ObjectLookupProvider {
         // storage code -> full ref path -> resolved guid
         private Map<String, Map<String, GUID>> refResolvingCache = new LinkedHashMap<>();
