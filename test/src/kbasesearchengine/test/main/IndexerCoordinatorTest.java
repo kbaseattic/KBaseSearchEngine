@@ -12,6 +12,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,6 +24,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Ticker;
 
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventID;
@@ -39,6 +41,8 @@ import kbasesearchengine.test.common.TestCommon;
 public class IndexerCoordinatorTest {
     
     private static final List<Integer> MT = Collections.emptyList();
+    private static final Ticker ST = Ticker.systemTicker();
+    private static final Clock SC = Clock.systemDefaultZone();
 
     @Test
     public void construct() throws Exception {
@@ -82,7 +86,8 @@ public class IndexerCoordinatorTest {
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor, MT);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor,
+                MT, ST, SC);
         
         coord.startIndexer();
         
@@ -97,7 +102,8 @@ public class IndexerCoordinatorTest {
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor, MT);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor,
+                MT, ST, SC);
         
         coord.stopIndexer();
         
@@ -120,7 +126,7 @@ public class IndexerCoordinatorTest {
             final StoredStatusEvent sse,
             final StatusEventProcessingState state) {
         return new StoredStatusEvent(sse.getEvent(), sse.getId(), state,
-                sse.getUpdateTime().orNull(), sse.getUpdater().orNull());
+                Instant.now(), sse.getUpdater().orNull());
     }
     
     @Test(timeout = 1000) // in case the coordinator loops forever
@@ -137,7 +143,8 @@ public class IndexerCoordinatorTest {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor, MT);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor,
+                MT, ST, SC);
         
         final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.UNPUBLISH_ACCESS_GROUP)
@@ -209,7 +216,8 @@ public class IndexerCoordinatorTest {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor, MT);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+                MT, ST, SC);
         
         final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.UNPUBLISH_ACCESS_GROUP)
@@ -290,7 +298,8 @@ public class IndexerCoordinatorTest {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor, MT);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+                MT, ST, SC);
         
         final Runnable coordRunner = getIndexerRunnable(executor, coord);
         
@@ -319,14 +328,14 @@ public class IndexerCoordinatorTest {
                 .withNullableAccessGroupID(2)
                 .withNullableObjectID("1")
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.READY, null, null);
+                new StatusEventID("foo1"), StatusEventProcessingState.READY, Instant.now(), null);
         
         final StoredStatusEvent event2 = new StoredStatusEvent(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(20000), StatusEventType.RENAME_ALL_VERSIONS)
                 .withNullableAccessGroupID(2)
                 .withNullableObjectID("2")
                 .build(),
-                new StatusEventID("foo2"), StatusEventProcessingState.PROC, null, null);
+                new StatusEventID("foo2"), StatusEventProcessingState.PROC, Instant.now(), null);
         
         final StoredStatusEvent unidx1 = to(event1, StatusEventProcessingState.UNINDX);
         final StoredStatusEvent fail2 = to(event2, StatusEventProcessingState.FAIL);
@@ -338,7 +347,8 @@ public class IndexerCoordinatorTest {
         when(storage.get(StatusEventProcessingState.READY, 3)).thenReturn(Arrays.asList(event1));
         when(storage.get(StatusEventProcessingState.PROC, 3)).thenReturn(Arrays.asList(event2));
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor, MT);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+                MT, ST, SC);
         assertThat("incorrect queue size", coord.getQueueSize(), is(2));
         
         when(storage.get(eq(StatusEventProcessingState.UNPROC), anyInt()))
@@ -376,7 +386,7 @@ public class IndexerCoordinatorTest {
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
                 .withNullableAccessGroupID(2)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.READY, null, null);
+                new StatusEventID("foo1"), StatusEventProcessingState.READY, Instant.now(), null);
         
         final StoredStatusEvent idx1 = to(event1, StatusEventProcessingState.INDX);
         
@@ -386,7 +396,8 @@ public class IndexerCoordinatorTest {
         
         when(storage.get(StatusEventProcessingState.READY, 3)).thenReturn(Arrays.asList(event1));
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor, MT);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+                MT, ST, SC);
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
         
         when(storage.get(eq(StatusEventProcessingState.UNPROC), anyInt()))
@@ -427,7 +438,8 @@ public class IndexerCoordinatorTest {
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor, MT);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+                MT, ST, SC);
         
         when(storage.get(StatusEventProcessingState.UNPROC, 3))
                 .thenReturn(Arrays.asList(event1))
@@ -458,7 +470,7 @@ public class IndexerCoordinatorTest {
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
         
         final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
-                Arrays.asList(1, 1));
+                Arrays.asList(1, 1), ST, SC);
         
         when(storage.get(StatusEventProcessingState.UNPROC, 3)).thenThrow(
                 new FatalRetriableIndexingException("wheee!"));
@@ -500,7 +512,7 @@ public class IndexerCoordinatorTest {
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
         
         final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
-                Arrays.asList(1, 1));
+                Arrays.asList(1, 1), ST, SC);
         
         when(storage.get(StatusEventProcessingState.UNPROC, 3)).thenThrow(
                 new RuntimeException("arg"));
@@ -534,7 +546,7 @@ public class IndexerCoordinatorTest {
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
         
         final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
-                Arrays.asList(1));
+                Arrays.asList(1), ST, SC);
         
         final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
@@ -584,7 +596,7 @@ public class IndexerCoordinatorTest {
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
         
         final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
-                Arrays.asList(1, 1, 1));
+                Arrays.asList(1, 1, 1), ST, SC);
         
         final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
@@ -635,5 +647,128 @@ public class IndexerCoordinatorTest {
         for (int i = 0; i < expected.size(); i++) {
             TestCommon.assertExceptionCorrect(retExpCaptor.getAllValues().get(i), expected.get(i));
         }
+    }
+    
+    @Test
+    public void logDelayed() throws Exception {
+        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
+                .withNullableAccessGroupID(2)
+                .build(),
+                new StatusEventID("foo1"), StatusEventProcessingState.PROC,
+                Instant.ofEpochMilli(10000), null);
+        
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        final Clock clock = mock(Clock.class);
+        
+        when(storage.get(StatusEventProcessingState.READY, 3)).thenReturn(Arrays.asList(event1));
+        
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+                MT, ST, clock);
+        assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+
+        final Runnable coordRunner = getIndexerRunnable(executor, coord);
+        
+        when(clock.instant())
+                .thenReturn(Instant.ofEpochMilli(10000 + (3600 * 1000)))
+                .thenReturn(Instant.ofEpochMilli(10000 + (3600 * 1000) + 1000))
+                .thenReturn(Instant.ofEpochMilli(10000 + (2 * 3600 * 1000) + 1000))
+                .thenReturn(Instant.ofEpochMilli(10000 + (2 * 3600 * 1000) + 2000))
+                .thenReturn(null);
+        
+        when(storage.get(new StatusEventID("foo1"))).thenReturn(Optional.of(event1));
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        verify(logger, never()).logInfo(any());
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        verify(logger).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null in state PROC " +
+                "has been processing for 1 hours");
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        verify(logger, never()).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null in state " +
+                "PROC has been processing for 2 hours");
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        verify(logger).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null in state PROC " +
+                "has been processing for 2 hours");
+
+        verify(storage, never()).setProcessingState(any(), any(), any());
+        verify(logger, never()).logError(any(String.class));
+        verify(logger, never()).logError(any(Throwable.class));
+    }
+    
+    @Test
+    public void logDelayedWithCacheExpiry() throws Exception {
+        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
+                .withNullableAccessGroupID(2)
+                .build(),
+                new StatusEventID("foo1"), StatusEventProcessingState.READY,
+                Instant.ofEpochMilli(10000), null);
+        
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        final Clock clock = mock(Clock.class);
+        final Ticker ticker = mock(Ticker.class);
+        
+        when(storage.get(StatusEventProcessingState.PROC, 3)).thenReturn(Arrays.asList(event1));
+        
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+                MT, ticker, clock);
+        assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+
+        final Runnable coordRunner = getIndexerRunnable(executor, coord);
+        
+        when(clock.instant())
+                .thenReturn(Instant.ofEpochMilli(10000 + (3600 * 1000) + 1000))
+                .thenReturn(Instant.ofEpochMilli(10000 + (2 * 3600 * 1000))) // cache prevents log
+                .thenReturn(Instant.ofEpochMilli(10000 + (2 * 3600 * 1000))) // cache expires
+                .thenReturn(null);
+        
+        when(ticker.read())
+                .thenReturn(0L) // 1st run put
+                .thenReturn(3599 * 1_000_000_000L) // 2nd run get, no put
+                .thenReturn(3 * 3600 * 1_000_000_000L) //3rd run get force expiration
+                .thenReturn(1_000_000_000_000_000_000L); // 3rd run put
+
+        when(storage.get(new StatusEventID("foo1"))).thenReturn(Optional.of(event1));
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        verify(logger).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null in state READY " +
+                "has been processing for 1 hours");
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        // this verifies the *previous* log. Would need to add times(2) to verify another log.
+        verify(logger).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null in state READY " +
+                "has been processing for 1 hours");
+        
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        // this verifies the *previous* log. Would need to add times(2) to verify another log.
+        verify(logger).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null in state READY " +
+                "has been processing for 1 hours");
+        verify(logger).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null in state READY " +
+                "has been processing for 2 hours");
+        
+        verify(storage, never()).setProcessingState(any(), any(), any());
+        verify(logger, never()).logError(any(String.class));
+        verify(logger, never()).logError(any(Throwable.class));
     }
 }
