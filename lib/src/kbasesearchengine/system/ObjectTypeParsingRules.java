@@ -25,7 +25,6 @@ public class ObjectTypeParsingRules {
     private ObjectJsonPath pathToSubObjects;
     private List<IndexingRules> indexingRules;
     private ObjectJsonPath primaryKeyPath;
-    private List<RelationRules> relationRules;
     
     public String getGlobalObjectType() {
         return globalObjectType;
@@ -84,15 +83,6 @@ public class ObjectTypeParsingRules {
         this.primaryKeyPath = primaryKeyPath;
     }
     
-    public List<RelationRules> getRelationRules() {
-        return relationRules;
-    }
-    
-    private void setRelationRules(
-            List<RelationRules> foreignKeyLookupRules) {
-        this.relationRules = foreignKeyLookupRules;
-    }
-
     public static ObjectTypeParsingRules fromFile(final File file) 
             throws ObjectParseException, IOException {
         try (final InputStream is = new FileInputStream(file)) {
@@ -188,22 +178,6 @@ public class ObjectTypeParsingRules {
         }
         ret.setPrimaryKeyPath(getPath((String)obj.get("primary-key-path")));
         // Relations
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> relationRules = 
-                (List<Map<String, Object>>)obj.get("relation-rules");
-        if (relationRules != null) {
-            ret.setRelationRules(new ArrayList<>());
-            for (Map<String, Object> rulesObj : relationRules) {
-                RelationRules rules = new RelationRules();
-                String pathText = (String)rulesObj.get("path");
-                if (pathText != null) {
-                    rules.setPath(new ObjectJsonPath(pathText));
-                }
-                rules.setTargetObjectType((String)rulesObj.get("target-object-type"));
-                rules.setRelationType((String)rulesObj.get("relation-type"));
-                ret.getRelationRules().add(rules);
-            }
-        }
         return ret;
     }
     
