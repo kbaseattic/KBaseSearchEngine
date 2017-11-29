@@ -19,6 +19,7 @@ import com.google.common.cache.CacheBuilder;
 import kbasesearchengine.events.EventQueue;
 import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
+import kbasesearchengine.events.StatusEventWithId;
 import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
@@ -187,10 +188,11 @@ public class IndexerCoordinator {
 
     private void logError(
             final int retrycount,
-            final Optional<StoredStatusEvent> event,
+            final Optional<StatusEventWithId> event,
             final RetriableIndexingException e) {
         final String msg;
         if (event.isPresent()) {
+            // no child events here, all ids are for the event itself
             msg = String.format("Retriable error in indexer for event %s %s, retry %s",
                     event.get().getEvent().getEventType(), event.get().getId().getId(),
                     retrycount);
@@ -298,7 +300,7 @@ public class IndexerCoordinator {
 
     /** Returns the number of cycles the indexer has run without pausing (e.g. without the
      * indexer cycle being scheduled). This information is mostly useful for test purposes.
-     * @return 
+     * @return the number of cycles the indexer has run without pausing.
      */
     public int getContinuousCycles() {
         return continuousCycles;

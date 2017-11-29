@@ -233,7 +233,7 @@ public class PerformanceTester {
                         null);
                 long t2 = System.currentTimeMillis();
                 try {
-                    mop.processOneEvent(ev);
+                    mop.processOneEvent(ev.getEvent());
                     processTime += System.currentTimeMillis() - t2;
                 } catch (Exception ex) {
                     ex.printStackTrace();

@@ -19,6 +19,7 @@ import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
+import kbasesearchengine.events.StatusEventWithId;
 import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
@@ -37,13 +38,13 @@ public class RetrierTest {
     private class LogEvent {
         private final Instant time;
         private final int retryCount;
-        private final Optional<StoredStatusEvent> event;
+        private final Optional<StatusEventWithId> event;
         private final RetriableIndexingException exception;
         
         private LogEvent(
                 final Instant time,
                 final int retryCount,
-                final Optional<StoredStatusEvent> optional,
+                final Optional<StatusEventWithId> optional,
                 final RetriableIndexingException exception) {
             this.time = time;
             this.retryCount = retryCount;
@@ -57,7 +58,7 @@ public class RetrierTest {
         private final List<LogEvent> events = new LinkedList<>();
         
         @Override
-        public void log(int retryCount, Optional<StoredStatusEvent> optional,
+        public void log(int retryCount, Optional<StatusEventWithId> optional,
                 RetriableIndexingException e) {
             events.add(new LogEvent(Instant.now(), retryCount, optional, e));
         }

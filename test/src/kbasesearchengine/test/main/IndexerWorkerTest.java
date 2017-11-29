@@ -277,7 +277,7 @@ public class IndexerWorkerTest {
                 StatusEventProcessingState.UNPROC,
                 null,
                 null);
-        mop.processOneEvent(ev);
+        mop.processOneEvent(ev.getEvent());
         PostProcessing pp = new PostProcessing();
         pp.objectInfo = true;
         pp.objectData = true;
@@ -319,7 +319,7 @@ public class IndexerWorkerTest {
                     StatusEventProcessingState.UNPROC,
                     null,
                     null);
-            mop.processOneEvent(ev2);
+            mop.processOneEvent(ev2.getEvent());
         }
     }
     
