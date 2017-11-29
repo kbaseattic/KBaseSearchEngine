@@ -1,5 +1,6 @@
 package kbasesearchengine.events.storage;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
@@ -133,15 +134,29 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     }
 
     private final MongoDatabase db;
+    private final Clock clock;
     
     /** Create the storage system.
      * @param db the mongo database in which to store events.
      * @throws StorageInitException if the storage system could not be initialized.
      */
     public MongoDBStatusEventStorage(final MongoDatabase db) throws StorageInitException {
+        this(db, Clock.systemDefaultZone());
+    }
+    
+    /** A test constructor that allows setting the storage clock. Do not use this constructor for
+     * anything except tests.
+     * @param db the mongo database in which to store events.
+     * @param clock a clock to use for generating timestamps when updating event states.
+     * Usually a mock.
+     * @throws StorageInitException if the storage system could not be initialized.
+     */
+    public MongoDBStatusEventStorage(final MongoDatabase db, final Clock clock)
+            throws StorageInitException {
         Utils.nonNull(db, "db");
         this.db = db;
         ensureIndexes();
+        this.clock = clock;
     }
     
     @Override
@@ -261,7 +276,8 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         }
         try {
             final UpdateResult res = db.getCollection(COL_EVENT).updateOne(query, 
-                    new Document("$set", new Document(FLD_STATUS, newState.toString())));
+                    new Document("$set", new Document(FLD_STATUS, newState.toString())
+                            .append(FLD_UPDATE_TIME, Date.from(clock.instant()))));
             return res.getMatchedCount() == 1;
         } catch (MongoException e) {
             throw new FatalRetriableIndexingException(
@@ -270,25 +286,23 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     }
 
     @Override
-    public Optional<StoredStatusEvent> getAndSetProcessingState(
+    public Optional<StoredStatusEvent> setAndGetProcessingState(
             final StatusEventProcessingState oldState,
             final StatusEventProcessingState newState,
-            final Instant updateTime,
             final String updater)
             throws FatalRetriableIndexingException {
         Utils.nonNull(oldState, "oldState");
         Utils.nonNull(newState, "newState");
-        Utils.nonNull(updateTime, "updateTime");
-        final Document innerQuery = new Document(FLD_STATUS, newState.toString())
-                .append(FLD_UPDATE_TIME, Date.from(updateTime));
+        final Document innerUpdate = new Document(FLD_STATUS, newState.toString())
+                .append(FLD_UPDATE_TIME, Date.from(clock.instant()));
         if (!Utils.isNullOrEmpty(updater)) {
-            innerQuery.append(FLD_UPDATER, updater);
+            innerUpdate.append(FLD_UPDATER, updater);
         }
         final Document ret;
         try {
              ret = db.getCollection(COL_EVENT).findOneAndUpdate(
                      new Document(FLD_STATUS, oldState.toString()),
-                     new Document("$set", innerQuery),
+                     new Document("$set", innerUpdate),
                      new FindOneAndUpdateOptions()
                              .sort(new Document(FLD_TIMESTAMP, 1))
                              .returnDocument(ReturnDocument.AFTER));
