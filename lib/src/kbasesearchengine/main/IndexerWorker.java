@@ -23,8 +23,10 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.google.common.base.Optional;
 
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.events.ChildStatusEvent;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventProcessingState;
+import kbasesearchengine.events.StatusEventWithId;
 import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
@@ -172,20 +174,21 @@ public class IndexerWorker {
     }
 
     private void logError(final String msg, final Throwable e) {
-        final String firstStackLine = e.getStackTrace().length == 0 ? "<not-available>" : 
-                e.getStackTrace()[0].toString();
-        logger.logError(msg + e + ", " + firstStackLine);
-        logger.logError(e); //TODO LOG split into lines with id
+        // TODO LOG make log method that takes msg + e and have the logger figure out how to log it correctly
+        logger.logError(msg + ": " + e);
+        logger.logError(e);
     }
 
     private void logError(
             final int retrycount,
-            final Optional<StoredStatusEvent> event,
+            final Optional<StatusEventWithId> event,
             final RetriableIndexingException e) {
         final String msg;
         if (event.isPresent()) {
-            msg = String.format("Retriable error in indexer for event %s %s, retry %s: ",
-                    event.get().getEvent().getEventType(), event.get().getId().getId(),
+            msg = String.format("Retriable error in indexer for event %s %s%s, retry %s: ",
+                    event.get().getEvent().getEventType(),
+                    event.get().isParentId() ? "with parent ID " : "",
+                    event.get().getId().getId(),
                     retrycount);
         } else {
             msg = String.format("Retriable error in indexer, retry %s: ", retrycount);
@@ -195,21 +198,21 @@ public class IndexerWorker {
     
     private boolean performOneTick() throws InterruptedException, IndexingException {
         final Optional<StoredStatusEvent> optEvent = retrier.retryFunc(
-                s -> s.getAndSetProcessingState(StatusEventProcessingState.READY,
-                        StatusEventProcessingState.PROC, Instant.now(), id),
+                s -> s.setAndGetProcessingState(StatusEventProcessingState.READY,
+                        StatusEventProcessingState.PROC, id),
                 storage, null);
         boolean processedEvent = false;
         if (optEvent.isPresent()) {
             final StoredStatusEvent parentEvent = optEvent.get();
-            //TODO NOW getEventHandler indexing exception should be caught and the event skipped
+            //TODO INDEXER NOW getEventHandler indexing exception should be caught and the event skipped
             if (getEventHandler(parentEvent).isExpandable(parentEvent)) {
                 logger.logInfo(String.format("[Indexer] Expanding event %s %s",
                         parentEvent.getEvent().getEventType(), parentEvent.getId().getId()));
                 try {
-                    final Iterator<StatusEvent> er = retrier.retryFunc(
+                    final Iterator<ChildStatusEvent> er = retrier.retryFunc(
                             e -> getSubEventIterator(e), parentEvent, parentEvent);
                     storage.setProcessingState(parentEvent.getId(),
-                            StatusEventProcessingState.PROC, processEvents(parentEvent, er)); //TODO NOW retry
+                            StatusEventProcessingState.PROC, processEvents(parentEvent, er)); //TODO INDEXER NOW retry
                 } catch (IndexingException e) {
                     markAsVisitedFailedPostError(parentEvent);
                     handleException("Error expanding parent event", parentEvent, e);
@@ -223,7 +226,7 @@ public class IndexerWorker {
             } else {
                 try {
                     storage.setProcessingState(parentEvent.getId(),
-                            StatusEventProcessingState.PROC, processEvent(parentEvent)); //TODO NOW retry
+                            StatusEventProcessingState.PROC, processEvent(parentEvent)); //TODO INDEXER NOW retry
                 } catch (FatalIndexingException e) {
                     markAsVisitedFailedPostError(parentEvent);
                     throw e;
@@ -240,7 +243,7 @@ public class IndexerWorker {
         return processedEvent;
     }
     
-    private Iterator<StatusEvent> getSubEventIterator(final StoredStatusEvent ev)
+    private Iterator<ChildStatusEvent> getSubEventIterator(final StoredStatusEvent ev)
             throws IndexingException, RetriableIndexingException {
         try {
             return getEventHandler(ev).expand(ev).iterator();
@@ -256,7 +259,7 @@ public class IndexerWorker {
     private void markAsVisitedFailedPostError(final StoredStatusEvent parentEvent)
             throws FatalIndexingException {
         try {
-            storage.setProcessingState(parentEvent.getId(), null, StatusEventProcessingState.FAIL); //TODO NOW retry
+            storage.setProcessingState(parentEvent.getId(), null, StatusEventProcessingState.FAIL); //TODO INDEXER NOW retry
         } catch (Exception e) {
             //ok then we're screwed
             throw new FatalIndexingException("Can't mark events as failed: " + e.getMessage(), e);
@@ -266,24 +269,16 @@ public class IndexerWorker {
     // returns whether processing was successful or not.
     private StatusEventProcessingState processEvents(
             final StoredStatusEvent parentEvent,
-            final Iterator<StatusEvent> expanditer)
+            final Iterator<ChildStatusEvent> expanditer)
             throws InterruptedException, FatalIndexingException {
         StatusEventProcessingState allsuccess = StatusEventProcessingState.INDX;
         while (expanditer.hasNext()) {
-            //TODO EVENT insert sub event into db - need to ensure not inserted twice on reprocess - use parent id
             final StatusEventProcessingState res;
             try {
-                final StatusEvent subev = retrier.retryFunc(
+                final ChildStatusEvent subev = retrier.retryFunc(
                         i -> getNextSubEvent(i), expanditer, parentEvent);
-                //TODO NOW store parent ID
-                final StoredStatusEvent ev = retrier.retryFunc(
-                        s -> s.store(subev, StatusEventProcessingState.PROC), //TODO QUEUE WORKER store ID
-                        storage, parentEvent);
-                res = processEvent(ev);
-                retrier.retryFunc(s -> s.setProcessingState(
-                        ev.getId(), StatusEventProcessingState.PROC, res), storage, ev);
+                res = processEvent(subev);
             } catch (IndexingException e) {
-                // TODO EVENT mark sub event as failed
                 handleException("Error getting event from data storage", parentEvent, e);
                 return StatusEventProcessingState.FAIL;
             }
@@ -294,7 +289,7 @@ public class IndexerWorker {
         return allsuccess;
     }
 
-    private StatusEventProcessingState processEvent(final StoredStatusEvent ev)
+    private StatusEventProcessingState processEvent(final StatusEventWithId ev)
             throws InterruptedException, FatalIndexingException {
         final Optional<StorageObjectType> type = ev.getEvent().getStorageObjectType();
         if (type.isPresent() && !isStorageTypeSupported(ev)) {
@@ -306,7 +301,7 @@ public class IndexerWorker {
                 toLogString(type) + ev.getEvent().toGUID() + "...");
         final long time = System.currentTimeMillis();
         try {
-            retrier.retryCons(e -> processOneEvent(e), ev, ev);
+            retrier.retryCons(e -> processOneEvent(e), ev.getEvent(), ev);
         } catch (IndexingException e) {
             handleException("Error processing event", ev, e);
             return StatusEventProcessingState.FAIL;
@@ -315,7 +310,7 @@ public class IndexerWorker {
         return StatusEventProcessingState.INDX;
     }
     
-    private StatusEvent getNextSubEvent(Iterator<StatusEvent> iter)
+    private ChildStatusEvent getNextSubEvent(Iterator<ChildStatusEvent> iter)
             throws IndexingException, RetriableIndexingException {
         try {
             return iter.next();
@@ -328,14 +323,16 @@ public class IndexerWorker {
     
     private void handleException(
             final String error,
-            final StoredStatusEvent event,
+            final StatusEventWithId event,
             final IndexingException exception)
             throws FatalIndexingException {
         if (exception instanceof FatalIndexingException) {
             throw (FatalIndexingException) exception;
         } else {
-            final String msg = error + String.format(" for event %s %s: ",
-                    event.getEvent().getEventType(), event.getId().getId());
+            final String msg = error + String.format(" for event %s %s%s: ",
+                    event.getEvent().getEventType(),
+                    event.isParentId() ? "with parent ID " : "",
+                    event.getId().getId());
             logError(msg, exception);
         }
     }
@@ -375,10 +372,9 @@ public class IndexerWorker {
         return eventHandlers.get(storageCode);
     }
 
-    public void processOneEvent(final StoredStatusEvent evid)
+    public void processOneEvent(final StatusEvent ev)
             throws IndexingException, InterruptedException, RetriableIndexingException {
         try {
-            final StatusEvent ev = evid.getEvent();
             switch (ev.getEventType()) {
             case NEW_VERSION:
                 GUID pguid = ev.toGUID();
@@ -437,7 +433,7 @@ public class IndexerWorker {
     }
 
     // returns false if a non-fatal error prevents retrieving the info
-    public boolean isStorageTypeSupported(final StoredStatusEvent ev)
+    public boolean isStorageTypeSupported(final StatusEventWithId ev)
             throws InterruptedException, FatalIndexingException {
         try {
             return retrier.retryFunc(

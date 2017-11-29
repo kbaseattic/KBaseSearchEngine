@@ -11,7 +11,7 @@ import kbasesearchengine.tools.Utils;
  * @author gaprice@lbl.gov
  *
  */
-public class StoredStatusEvent {
+public class StoredStatusEvent implements StatusEventWithId {
     
     private final StatusEvent event;
     private final StatusEventID id;
@@ -50,18 +50,19 @@ public class StoredStatusEvent {
         }
     }
 
-    /** Get the status event.
-     * @return the id.
-     */
+    @Override
     public StatusEvent getEvent() {
         return event;
     }
 
-    /** Get the id.
-     * @return the id.
-     */
+    @Override
     public StatusEventID getId() {
         return id;
+    }
+    
+    @Override
+    public boolean isParentId() {
+        return false;
     }
 
     /** Return the state of the stored event the last time it was accessed.

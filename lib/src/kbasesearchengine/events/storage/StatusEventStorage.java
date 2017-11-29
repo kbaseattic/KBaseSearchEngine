@@ -1,6 +1,5 @@
 package kbasesearchengine.events.storage;
 
-import java.time.Instant;
 import java.util.List;
 
 import com.google.common.base.Optional;
@@ -49,16 +48,14 @@ public interface StatusEventStorage {
      * Returns the event that matches the processing state with the earliest timestamp.
      * @param oldState the state of the event to find.
      * @param newState the state to which the event will be updated.
-     * @param updateTime the time to set as the event update time. Usually {@link Instant#now()}.
      * @param updater an optional (e.g. nullable) id or name to associate with the state change.
      * Only the most recent state change is recorded.
      * @return the updated event or absent if no events are in the requested state.
      * @throws FatalRetriableIndexingException
      */
-    Optional<StoredStatusEvent> getAndSetProcessingState(
+    Optional<StoredStatusEvent> setAndGetProcessingState(
             StatusEventProcessingState oldState,
             StatusEventProcessingState newState,
-            Instant updateTime,
             String updater)
             throws FatalRetriableIndexingException;
     
