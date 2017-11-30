@@ -22,6 +22,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Ticker;
@@ -33,6 +35,7 @@ import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
+import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.main.LineLogger;
@@ -98,6 +101,21 @@ public class IndexerCoordinatorTest {
     
     @Test
     public void stopIndexer() throws Exception {
+        assertStopIndexerCorrect(0, 0);
+    }
+    
+    @Test
+    public void stopIndexerWithNegativeWaitTime() throws Exception {
+        assertStopIndexerCorrect(-1, 0);
+    }
+    
+    @Test
+    public void stopIndexerWithLargeWaitTime() throws Exception {
+        assertStopIndexerCorrect(100_000_000, 100_000_000);
+    }
+
+    private void assertStopIndexerCorrect(final int wait, final int expectedWait)
+            throws InterruptedException, IndexingException {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
@@ -105,11 +123,75 @@ public class IndexerCoordinatorTest {
         final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor,
                 MT, ST, SC);
         
-        coord.stopIndexer();
+        coord.stop(wait);
         
         verify(executor).shutdown();
+        verify(executor).awaitTermination(expectedWait, TimeUnit.MILLISECONDS);
     }
     
+    @Test
+    public void stopIndexerWithContinousLoopRunning() throws Exception {
+        /* tests the case when shutdown is called when the loop would normally continue running
+         * because there's events flowing into the event storage
+         */
+        
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor,
+                MT, ST, SC);
+        
+        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                "WS", Instant.ofEpochMilli(10000), StatusEventType.UNPUBLISH_ACCESS_GROUP)
+                .withNullableAccessGroupID(2)
+                .build(),
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
+        
+        final StoredStatusEvent ready1 = to(event1, StatusEventProcessingState.READY);
+        
+        final Runnable coordRunner = getIndexerRunnable(executor, coord);
+        
+        when(storage.get(eq(StatusEventProcessingState.UNPROC), anyInt()))
+                .thenReturn(Arrays.asList(changeID(event1, "foo1")))
+                .thenReturn(Arrays.asList(changeID(event1, "foo2")))
+                .thenReturn(Collections.emptyList()) // end first cycle
+                .thenAnswer(new Answer<List<StoredStatusEvent>>() {
+
+                    @Override
+                    public List<StoredStatusEvent> answer(final InvocationOnMock foo)
+                            throws Throwable {
+                        coord.stop(1000);
+                        return Arrays.asList(changeID(event1, "foo3"));
+                    }
+                }) // cycle should end here because the coordinator has been stopped
+                .thenReturn(Arrays.asList(changeID(event1, "foo4")));
+        
+        when(storage.get(new StatusEventID("foo1"))).thenReturn(Optional.of(ready1));
+        when(storage.get(new StatusEventID("foo2")))
+                .thenReturn(Optional.of(changeID(ready1, "foo2")));
+        when(storage.get(new StatusEventID("foo3")))
+                .thenReturn(Optional.of(changeID(ready1, "foo3")));
+
+        coordRunner.run();
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(3));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(2));
+        
+        coordRunner.run(); // stop is called on first cycle
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(3));
+        
+        coordRunner.run(); // indexer is stopped
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(0));
+        assertThat("incorrect queue size", coord.getQueueSize(), is(3));
+        
+        verify(storage, never()).get(new StatusEventID("foo4"));
+    }
+    
+    private StoredStatusEvent changeID(final StoredStatusEvent event, final String id) {
+        return new StoredStatusEvent(event.getEvent(), new StatusEventID(id), event.getState(),
+                event.getUpdateTime().orNull(), event.getUpdater().orNull());
+    }
+
     private Runnable getIndexerRunnable(
             final ScheduledExecutorService executorMock,
             final IndexerCoordinator coord) {

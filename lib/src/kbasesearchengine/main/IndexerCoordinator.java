@@ -38,7 +38,7 @@ import kbasesearchengine.tools.Utils;
  * @author gaprice@lbl.gov
  *
  */
-public class IndexerCoordinator {
+public class IndexerCoordinator implements Stoppable {
     
     private static final int RETRY_COUNT = 5;
     private static final int RETRY_SLEEP_MS = 1000;
@@ -55,6 +55,7 @@ public class IndexerCoordinator {
     
     private final int maxQueueSize;
     private int continuousCycles = 0;
+    private boolean stopRunner = false;
     
     private final Retrier retrier;
 
@@ -140,6 +141,7 @@ public class IndexerCoordinator {
     
     /** Start the indexer. */
     public void startIndexer() {
+        stopRunner = false;
         // may want to make this configurable
         executor.scheduleAtFixedRate(new IndexerRunner(), 0, 1000, TimeUnit.MILLISECONDS);
     }
@@ -159,11 +161,14 @@ public class IndexerCoordinator {
         }
     }
     
-    /** Stop the indexer. The current indexer cycle will complete and the indexer will then
-     * process no more events.
-     */
-    public void stopIndexer() {
+    @Override
+    public void stop(long millisToWait) throws InterruptedException {
+        if (millisToWait < 0) {
+            millisToWait = 0;
+        }
+        stopRunner = true;
         executor.shutdown();
+        executor.awaitTermination(millisToWait, TimeUnit.MILLISECONDS);
     }
     
     private enum ErrorType {
@@ -211,7 +216,7 @@ public class IndexerCoordinator {
          */
         continuousCycles = 0;
         boolean noWait = true;
-        while (noWait) {
+        while (!stopRunner && noWait) {
             final boolean loadedEvents = loadEventsIntoQueue();
             queue.moveToReady();
             setEventsAsReadyInStorage();
