@@ -204,43 +204,75 @@ public class IndexerWorker {
         boolean processedEvent = false;
         if (optEvent.isPresent()) {
             final StoredStatusEvent parentEvent = optEvent.get();
-            //TODO INDEXER NOW getEventHandler indexing exception should be caught and the event skipped
-            if (getEventHandler(parentEvent).isExpandable(parentEvent)) {
-                logger.logInfo(String.format("[Indexer] Expanding event %s %s",
-                        parentEvent.getEvent().getEventType(), parentEvent.getId().getId()));
-                try {
-                    final Iterator<ChildStatusEvent> er = retrier.retryFunc(
-                            e -> getSubEventIterator(e), parentEvent, parentEvent);
-                    storage.setProcessingState(parentEvent.getId(),
-                            StatusEventProcessingState.PROC, processEvents(parentEvent, er)); //TODO INDEXER NOW retry
-                } catch (IndexingException e) {
-                    markAsVisitedFailedPostError(parentEvent);
-                    handleException("Error expanding parent event", parentEvent, e);
-                } catch (InterruptedException e) {
-                    throw e;
-                } catch (Exception e) {
-                    // don't know how to respond to anything else, so mark event failed and keep going
-                    logError(ErrorType.UNEXPECTED, e);
-                    markAsVisitedFailedPostError(parentEvent);
-                }
+            final EventHandler handler;
+            try {
+                handler = getEventHandler(parentEvent);
+            } catch (UnprocessableEventIndexingException e) {
+                logError(ErrorType.STD, e);
+                markEventProcessed(parentEvent, StatusEventProcessingState.FAIL);
+                return true;
+            }
+            if (handler.isExpandable(parentEvent)) {
+                expandAndProcess(parentEvent);
             } else {
-                try {
-                    storage.setProcessingState(parentEvent.getId(),
-                            StatusEventProcessingState.PROC, processEvent(parentEvent)); //TODO INDEXER NOW retry
-                } catch (FatalIndexingException e) {
-                    markAsVisitedFailedPostError(parentEvent);
-                    throw e;
-                } catch (InterruptedException e) {
-                    throw e;
-                } catch (Exception e) {
-                    // don't know how to respond to anything else, so mark event failed and keep going
-                    logError(ErrorType.UNEXPECTED, e);
-                    markAsVisitedFailedPostError(parentEvent);
-                }
+                markEventProcessed(parentEvent, processEvent(parentEvent));
             }
             processedEvent = true;
         }
         return processedEvent;
+    }
+
+    private void markEventProcessed(
+            final StoredStatusEvent parentEvent,
+            final StatusEventProcessingState result)
+            throws InterruptedException, FatalIndexingException {
+        try {
+            // should only throw fatal
+            retrier.retryCons(s -> s.setProcessingState(parentEvent.getId(),
+                    StatusEventProcessingState.PROC, result), storage, parentEvent);
+        } catch (FatalIndexingException | InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            // don't know how to respond to anything else, so mark event failed and keep going
+            logError(ErrorType.UNEXPECTED, e);
+            markAsVisitedFailedPostError(parentEvent);
+        }
+    }
+
+    private void expandAndProcess(final StoredStatusEvent parentEvent)
+            throws FatalIndexingException, InterruptedException {
+        logger.logInfo(String.format("[Indexer] Expanding event %s %s",
+                parentEvent.getEvent().getEventType(), parentEvent.getId().getId()));
+        final Iterator<ChildStatusEvent> childIter;
+        try {
+            childIter = retrier.retryFunc(e -> getSubEventIterator(e), parentEvent, parentEvent);
+        } catch (IndexingException e) {
+            markAsVisitedFailedPostError(parentEvent);
+            handleException("Error expanding parent event", parentEvent, e);
+            return;
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            // don't know how to respond to anything else, so mark event failed and keep going
+            logError(ErrorType.UNEXPECTED, e);
+            markAsVisitedFailedPostError(parentEvent);
+            return;
+        }
+        StatusEventProcessingState parentResult = StatusEventProcessingState.INDX;
+        while (childIter.hasNext()) {
+            ChildStatusEvent subev = null;
+            try {
+                subev = retrier.retryFunc(i -> getNextSubEvent(i), childIter, parentEvent);
+            } catch (IndexingException e) {
+                handleException("Error getting event information from data storage",
+                        parentEvent, e);
+                parentResult = StatusEventProcessingState.FAIL;
+            }
+            if (subev != null && StatusEventProcessingState.FAIL.equals(processEvent(subev))) {
+                parentResult = StatusEventProcessingState.FAIL;
+            }
+        }
+        markEventProcessed(parentEvent, parentResult);
     }
     
     private Iterator<ChildStatusEvent> getSubEventIterator(final StoredStatusEvent ev)
@@ -259,34 +291,11 @@ public class IndexerWorker {
     private void markAsVisitedFailedPostError(final StoredStatusEvent parentEvent)
             throws FatalIndexingException {
         try {
-            storage.setProcessingState(parentEvent.getId(), null, StatusEventProcessingState.FAIL); //TODO INDEXER NOW retry
+            storage.setProcessingState(parentEvent.getId(), null, StatusEventProcessingState.FAIL);
         } catch (Exception e) {
             //ok then we're screwed
             throw new FatalIndexingException("Can't mark events as failed: " + e.getMessage(), e);
         }
-    }
-
-    // returns whether processing was successful or not.
-    private StatusEventProcessingState processEvents(
-            final StoredStatusEvent parentEvent,
-            final Iterator<ChildStatusEvent> expanditer)
-            throws InterruptedException, FatalIndexingException {
-        StatusEventProcessingState allsuccess = StatusEventProcessingState.INDX;
-        while (expanditer.hasNext()) {
-            final StatusEventProcessingState res;
-            try {
-                final ChildStatusEvent subev = retrier.retryFunc(
-                        i -> getNextSubEvent(i), expanditer, parentEvent);
-                res = processEvent(subev);
-            } catch (IndexingException e) {
-                handleException("Error getting event from data storage", parentEvent, e);
-                return StatusEventProcessingState.FAIL;
-            }
-            if (StatusEventProcessingState.FAIL.equals(res)) {
-                allsuccess = StatusEventProcessingState.FAIL;
-            }
-        }
-        return allsuccess;
     }
 
     private StatusEventProcessingState processEvent(final StatusEventWithId ev)
