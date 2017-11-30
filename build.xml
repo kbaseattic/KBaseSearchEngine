@@ -47,7 +47,7 @@
     <include name="apache_commons/http/httpcore-nio-4.4.5.jar"/>
     <include name="apache_commons/commons-codec-1.10.jar"/>
     <include name="elasticsearch/rest-5.3.0.jar"/>
-    <include name="mongo/mongo-java-driver-3.4.2.jar"/>
+    <include name="mongo/mongo-java-driver-3.3.0.jar"/>
     <include name="google/guava-18.0.jar"/>
     <include name="jcommander/jcommander-1.48.jar"/>
     <include name="snakeyaml/snakeyaml-1.18.jar"/>

@@ -1,4 +1,6 @@
 test_local
+elasticsearch-6.0.0
+data
 sdk.cfg
 bin
 /temp_test/

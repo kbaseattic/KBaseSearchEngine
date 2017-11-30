@@ -37,7 +37,7 @@ if __name__ == "__main__":
                 props += param_name + " = " + os.environ.get(key) + "\n"
         config.readfp(StringIO.StringIO(props))
     else:
-        raise ValueError('Neither ' + sys.argv[2] + ' file nor KBASE_ENDPOINT env-variable found')
+        raise ValueError('Neither ' + sys.argv[2] + ' file nor KBASE_ENDPOINT env-variable found.')
     props = dict(config.items("global"))
     output = t.render(props)
     with open(sys.argv[1] + ".orig", 'w') as f:

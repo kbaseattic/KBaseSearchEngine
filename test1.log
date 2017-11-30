@@ -1,0 +1,10 @@
+kb-sdk compile KBaseSearchEngine.spec \
+		--out lib \
+		--plclname KBaseSearchEngine::KBaseSearchEngineClient \
+		--jsclname javascript/Client \
+		--pyclname KBaseSearchEngine.KBaseSearchEngineClient \
+		--javasrc src \
+		--java \
+		--javasrv \
+		--javapackage .;
+KBase SDK version 1.0.17 (commit d4e496a3c272a87dd26167558e5c3954963a97ac)
