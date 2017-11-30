@@ -266,9 +266,9 @@ public class IndexerCoordinator {
                         !state.equals(StatusEventProcessingState.READY)) {
                     queue.setProcessingComplete(e);
                     logger.logInfo(String.format(
-                            "Event %s %s %s completed processing with state %s",
+                            "Event %s %s %s completed processing with state %s on worker %s",
                             e.getId().getId(), e.getEvent().getEventType(),
-                            e.getEvent().toGUID(), state));
+                            e.getEvent().toGUID(), state, e.getUpdater().orNull()));
                 } else {
                     logDelayedEvent(e);
                 }
@@ -291,9 +291,10 @@ public class IndexerCoordinator {
                 cache.put(e.getId(), now);
                 final long hours = Duration.between(lastStateChange, now).toHours();
                 logger.logInfo(String.format(
-                            "Event %s %s %s in state %s has been processing for %s hours",
+                            "Event %s %s %s in state %s has been processing for %s hours " + 
+                            "on worker %s",
                             e.getId().getId(), e.getEvent().getEventType(),
-                            e.getEvent().toGUID(), e.getState(), hours));
+                            e.getEvent().toGUID(), e.getState(), hours, e.getUpdater().orNull()));
             }
         }
     }
