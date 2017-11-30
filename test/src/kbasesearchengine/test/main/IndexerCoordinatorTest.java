@@ -125,8 +125,15 @@ public class IndexerCoordinatorTest {
     private StoredStatusEvent to(
             final StoredStatusEvent sse,
             final StatusEventProcessingState state) {
+        return to(sse, state, null);
+    }
+    
+    private StoredStatusEvent to(
+            final StoredStatusEvent sse,
+            final StatusEventProcessingState state,
+            final String updater) {
         return new StoredStatusEvent(sse.getEvent(), sse.getId(), state,
-                Instant.now(), sse.getUpdater().orNull());
+                Instant.now(), updater == null ? sse.getUpdater().orNull() : updater);
     }
     
     @Test(timeout = 2000) // in case the coordinator loops forever
@@ -159,9 +166,9 @@ public class IndexerCoordinatorTest {
                 new StatusEventID("foo2"), StatusEventProcessingState.UNPROC, null, null);
         
         final StoredStatusEvent ready1 = to(event1, StatusEventProcessingState.READY);
-        final StoredStatusEvent proc1 = to(event1, StatusEventProcessingState.PROC);
-        final StoredStatusEvent idx1 = to(event1, StatusEventProcessingState.INDX);
-        final StoredStatusEvent ready2 = to(event1, StatusEventProcessingState.READY);
+        final StoredStatusEvent proc1 = to(ready1, StatusEventProcessingState.PROC, "work1");
+        final StoredStatusEvent idx1 = to(proc1, StatusEventProcessingState.INDX);
+        final StoredStatusEvent ready2 = to(event2, StatusEventProcessingState.READY);
         
         final Runnable coordRunner = getIndexerRunnable(executor, coord);
         
@@ -188,7 +195,7 @@ public class IndexerCoordinatorTest {
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
         
         verify(logger).logInfo("Event foo1 UNPUBLISH_ACCESS_GROUP WS:2/null completed " +
-                "processing with state INDX");
+                "processing with state INDX on worker work1");
         
         verify(storage, never()).setProcessingState(new StatusEventID("foo2"),
                 StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY);
@@ -337,8 +344,8 @@ public class IndexerCoordinatorTest {
                 .build(),
                 new StatusEventID("foo2"), StatusEventProcessingState.PROC, Instant.now(), null);
         
-        final StoredStatusEvent unidx1 = to(event1, StatusEventProcessingState.UNINDX);
-        final StoredStatusEvent fail2 = to(event2, StatusEventProcessingState.FAIL);
+        final StoredStatusEvent unidx1 = to(event1, StatusEventProcessingState.UNINDX, "work1");
+        final StoredStatusEvent fail2 = to(event2, StatusEventProcessingState.FAIL, "work2");
         
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
@@ -367,13 +374,13 @@ public class IndexerCoordinatorTest {
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
         verify(logger).logInfo("Event foo2 RENAME_ALL_VERSIONS WS:2/2 completed " +
-                "processing with state FAIL");
+                "processing with state FAIL on worker work2");
         
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(0));
         verify(logger).logInfo("Event foo1 PUBLISH_ALL_VERSIONS WS:2/1 completed " +
-                "processing with state UNINDX");
+                "processing with state UNINDX on worker work1");
         
         verify(storage, never()).setProcessingState(any(), any(), any());
         verify(logger, never()).logError(any(String.class));
@@ -388,7 +395,7 @@ public class IndexerCoordinatorTest {
                 .build(),
                 new StatusEventID("foo1"), StatusEventProcessingState.READY, Instant.now(), null);
         
-        final StoredStatusEvent idx1 = to(event1, StatusEventProcessingState.INDX);
+        final StoredStatusEvent idx1 = to(event1, StatusEventProcessingState.INDX, "work1");
         
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
@@ -418,7 +425,7 @@ public class IndexerCoordinatorTest {
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(0));
         verify(logger).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null completed " +
-                "processing with state INDX");
+                "processing with state INDX on worker work1");
         
         verify(storage, never()).setProcessingState(any(), any(), any());
         verify(logger, never()).logError(any(String.class));
@@ -656,7 +663,7 @@ public class IndexerCoordinatorTest {
                 .withNullableAccessGroupID(2)
                 .build(),
                 new StatusEventID("foo1"), StatusEventProcessingState.PROC,
-                Instant.ofEpochMilli(10000), null);
+                Instant.ofEpochMilli(10000), "work1");
         
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
@@ -689,19 +696,19 @@ public class IndexerCoordinatorTest {
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
         verify(logger).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null in state PROC " +
-                "has been processing for 1 hours");
+                "has been processing for 1 hours on worker work1");
         
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
         verify(logger, never()).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null in state " +
-                "PROC has been processing for 2 hours");
+                "PROC has been processing for 2 hours on worker work1");
         
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
         verify(logger).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null in state PROC " +
-                "has been processing for 2 hours");
+                "has been processing for 2 hours on worker work1");
 
         verify(storage, never()).setProcessingState(any(), any(), any());
         verify(logger, never()).logError(any(String.class));
@@ -715,7 +722,7 @@ public class IndexerCoordinatorTest {
                 .withNullableAccessGroupID(2)
                 .build(),
                 new StatusEventID("foo1"), StatusEventProcessingState.READY,
-                Instant.ofEpochMilli(10000), null);
+                Instant.ofEpochMilli(10000), "work1");
         
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
@@ -749,23 +756,23 @@ public class IndexerCoordinatorTest {
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
         verify(logger).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null in state READY " +
-                "has been processing for 1 hours");
+                "has been processing for 1 hours on worker work1");
         
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
         // this verifies the *previous* log. Would need to add times(2) to verify another log.
         verify(logger).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null in state READY " +
-                "has been processing for 1 hours");
+                "has been processing for 1 hours on worker work1");
         
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
         // this verifies the *previous* log. Would need to add times(2) to verify another log.
         verify(logger).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null in state READY " +
-                "has been processing for 1 hours");
+                "has been processing for 1 hours on worker work1");
         verify(logger).logInfo("Event foo1 PUBLISH_ACCESS_GROUP WS:2/null in state READY " +
-                "has been processing for 2 hours");
+                "has been processing for 2 hours on worker work1");
         
         verify(storage, never()).setProcessingState(any(), any(), any());
         verify(logger, never()).logError(any(String.class));
