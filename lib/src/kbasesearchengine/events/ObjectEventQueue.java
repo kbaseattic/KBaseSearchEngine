@@ -245,7 +245,7 @@ public class ObjectEventQueue {
     }
     
     /** Returns true if at least one event is in the ready or processing state.
-     * @return true if the queue has events in the ready or processsing state.
+     * @return true if the queue has events in the ready or processing state.
      */
     public boolean isProcessingOrReady() {
         return isProcessing() || hasReady();

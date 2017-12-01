@@ -1,6 +1,7 @@
 package kbasesearchengine.system;
 
 import kbasesearchengine.common.ObjectJsonPath;
+import kbasesearchengine.parse.ObjectParseException;
 
 /**
  * This class defines the rules for parsing source data, collecting portions
@@ -19,14 +20,9 @@ import kbasesearchengine.common.ObjectJsonPath;
  *
  */
 public class IndexingRules {
-    // supported transformations
-    public static final String TRANSFORM_LOCATION = "location";
-    public static final String TRANSFORM_LENGTH = "length";
-    public static final String TRANSFORM_VALUES = "values";
-    public static final String TRANSFORM_STRING = "string";
-    public static final String TRANSFORM_INTEGER = "integer";
-    public static final String TRANSFORM_GUID = "guid";
-    public static final String TRANSFORM_LOOKUP = "lookup";
+    
+    //TODO JAVADOC
+    //TODO TEST
 
     /**
      * Path to an element of the source object from which to form the keyword.
@@ -73,10 +69,14 @@ public class IndexingRules {
     /** An optional transformation applied to values coming from a [sub-]object
      * or source keyword. The value of this property has the format of
      * <transform>[.<ret-prop>], where second part (including dot) is optional
-     * and used in some of transformations.
+     * and used in some of transformations. The value is split into an enum for the transform
+     * type and a string for the ret-prop or transform property.
      *
      */
-    private String transform = null;
+    private TransformType transform = null;
+    private String transformProperty = null;
+    
+    // TODO NNOW this means the parent type must have the key in source key. The parent type is the ObjectTypeParsingRules with the same data source type (and version if type mappings are being used) with no innersubtype specified.
     /**
      * An optional attribute that indicates that the value is extracted from the
      * parent object rather that from the sub-object.
@@ -112,6 +112,7 @@ public class IndexingRules {
      *
      */
     private String targetObjectType = null;
+    // TODO NNOW subobjectIdKey constrains the target type to be a subtype. Add a check in the creation context to check this. 
     /**
      * An optional attribute that can be defined for derived keywords only.
      * Works together with "target-object-type". Is used in "guid" transform mode
@@ -134,6 +135,7 @@ public class IndexingRules {
      * supposed to be visible via UI though it could be used in API search queries.
      */
     private boolean uiHidden = false;
+    // TODO NNOW this should point to another indexing rule that is a guid.
     /**
      * An optional pointer to a paired keyword coupled with given one providing
      * GUID for making clickable URL for value provided.
@@ -156,7 +158,7 @@ public class IndexingRules {
                     toString());
         }
         if (derivedKey && path != null) {
-            throw new ValidationException("Specify either derivedKey=true or " +
+            throw new ValidationException("Specify either derivedKey=true and " +
                     "sourceKey or path, but not both: " + toString());
         }
         if (derivedKey && sourceKey == null) {
@@ -168,19 +170,7 @@ public class IndexingRules {
             throw new ValidationException("Specify either fullText=true or " +
                     "sourceKey, but not both: " + toString());
         }
-        if (transform != null && !(transform.startsWith("location") ||
-                transform.startsWith(TRANSFORM_LENGTH) ||
-                transform.startsWith(TRANSFORM_VALUES) ||
-                transform.startsWith(TRANSFORM_STRING) ||
-                transform.startsWith(TRANSFORM_INTEGER) ||
-                transform.startsWith(TRANSFORM_GUID) ||
-                transform.startsWith(TRANSFORM_LOOKUP))) {
-            throw new ValidationException("Unsupported transformation. Must be " +
-                    "one of location, length, values, string, integer, guid: "
-                    + toString());
-        }
-        if (targetObjectType != null &&
-                (transform == null || !transform.startsWith("guid"))) {
+        if (targetObjectType != null && !TransformType.guid.equals(transform)) {
             throw new ValidationException("targetObjectType must be" +
                     "used with guid transform only. Transform is either null or" +
                     "not a guid transform: " + toString());
@@ -188,10 +178,9 @@ public class IndexingRules {
         if (subobjectIdKey != null && !derivedKey) {
             throw new ValidationException("subobjectIdKey can be" +
                     "defined for derivedKey only, but derivedKey is set to " +
-                    "false!: " + toString());
+                    "false: " + toString());
         }
-        if (subobjectIdKey != null &&
-                (transform == null || !transform.startsWith("guid"))) {
+        if (subobjectIdKey != null && !TransformType.guid.equals(transform)) {
             throw new ValidationException("subobjectIdKey must be" +
                     "used with guid transform only. Transform is either null or" +
                     "not a guid transform: " + toString());
@@ -230,12 +219,25 @@ public class IndexingRules {
         this.keyName = keyName;
     }
     
-    public String getTransform() {
+    public TransformType getTransform() {
         return transform;
     }
     
-    public void setTransform(String transform) {
-        this.transform = transform;
+    public String getTransformProperty() {
+        return transformProperty;
+    }
+    
+    public void setTransform(final String transform) throws ObjectParseException {
+        if (transform != null) {
+            final String[] tranSplt = transform.split("\\.", 2);
+            try {
+                this.transform = TransformType.valueOf(tranSplt[0]);
+            } catch (IllegalArgumentException e) {
+                // TODO CODE this exception type seems wrong
+                throw new ObjectParseException(e.getMessage(), e);
+            }
+            this.transformProperty = tranSplt.length == 1 ? null : tranSplt[1];
+        }
     }
     
     public boolean isFromParent() {
