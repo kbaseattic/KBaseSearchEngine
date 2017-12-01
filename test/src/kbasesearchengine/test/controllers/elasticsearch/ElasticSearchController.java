@@ -39,7 +39,6 @@ public class ElasticSearchController {
     
     private final Process es;
     private final int port;
-    private Exception startupError = null;
 
     //TODO TEST set location of indexes to temp dir so they can be cleaned up
 
@@ -63,6 +62,7 @@ public class ElasticSearchController {
                 .redirectOutput(tempDir.resolve("es.log").toFile());
         
         es = servpb.start();
+        Exception startupError = null;
         for (int i = 0; i < 40; i++) {
             Thread.sleep(1000); //wait for server to start up
             try (InputStream is = new URL("http://localhost:" + port).openStream()) {
@@ -84,6 +84,9 @@ public class ElasticSearchController {
                 startupError = e;
             }
         }
+        if (startupError != null) {
+            throw startupError;
+        }
     }
 
     public int getServerPort() {
@@ -92,10 +95,6 @@ public class ElasticSearchController {
     
     public Path getTempDir() {
         return tempDir;
-    }
-    
-    public Exception getStartupError() {
-        return startupError;
     }
     
     public void destroy(boolean deleteTempFiles) throws IOException {

@@ -1,13 +1,11 @@
 package kbasesearchengine.parse;
 
 import java.io.IOException;
-import java.util.List;
 
 import com.fasterxml.jackson.core.JsonParser;
 
 import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.events.exceptions.IndexingException;
-import kbasesearchengine.system.RelationRules;
 
 /**
  * Extraction of primary/foreign key values based on JSON token stream.
@@ -30,19 +28,14 @@ public class IdMapper {
 	 * @throws InterruptedException 
 	 * @throws IndexingException 
 	 */
-	public static void mapKeys(ObjectJsonPath pathToPrimary, 
-	        List<RelationRules> foreignKeyRules, JsonParser jts, IdConsumer consumer) 
-	        throws IOException, ObjectParseException, IndexingException, InterruptedException {
-		//if the selection is empty, we return without adding anything
+    public static void mapKeys(
+            final ObjectJsonPath pathToPrimary,
+            final JsonParser jts,
+            final IdConsumer consumer) 
+            throws IOException, ObjectParseException, IndexingException, InterruptedException {
+        //if the selection is empty, we return without adding anything
 		ValueCollectingNode<IdMappingRules> root = new ValueCollectingNode<>();
-		root.addPath(pathToPrimary, new IdMappingRules(true));
-		if (foreignKeyRules != null) {
-		    for (RelationRules relRule: foreignKeyRules) {
-		        if (relRule.getPath() != null) {
-		            root.addPath(relRule.getPath(), new IdMappingRules(relRule));
-		        }
-		    }
-		}
+		root.addPath(pathToPrimary, new IdMappingRules());
 		new ValueCollector<IdMappingRules>().mapKeys(root, jts, consumer);
 	}
 	
