@@ -1,4 +1,4 @@
-package kbasesearchengine.test.main;
+package kbasesearchengine.test.integration;
 
 import java.io.IOException;
 import java.net.URL;
@@ -64,7 +64,11 @@ import workspace.RegisterTypespecParams;
 import workspace.SaveObjectsParams;
 import workspace.WorkspaceClient;
 
-public class IndexerWorkerTest {
+public class IndexerWorkerIntegrationTest {
+    
+    /* these tests bring up mongodb, elasticsearch, and the workspace and test the worker
+     * interactions with those services.
+     */
 	
     private static IndexerWorker mop = null;
     private static MongoController mongo;
