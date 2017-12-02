@@ -219,10 +219,10 @@ public class IndexerIntegrationTest {
     @AfterClass
     public static void tearDownClass() throws Exception {
         if (coord != null) {
-            coord.stopIndexer();
+            coord.stop(0);
         }
         if (worker != null) {
-            worker.stopIndexer();
+            worker.stop(0);
         }
         
         final boolean deleteTempFiles = TestCommon.getDeleteTempFiles();

@@ -51,7 +51,10 @@ import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.tools.Utils;
 
-public class IndexerWorker {
+public class IndexerWorker implements Stoppable {
+    
+    //TODO JAVADOC
+    //TODO TESTS
     
     private static final int RETRY_COUNT = 5;
     private static final int RETRY_SLEEP_MS = 1000;
@@ -66,6 +69,7 @@ public class IndexerWorker {
     private final LineLogger logger;
     private final Map<String, EventHandler> eventHandlers = new HashMap<>();
     private ScheduledExecutorService executor = null;
+    private boolean stopRunner = false;
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
             RETRY_FATAL_BACKOFF_MS,
@@ -124,6 +128,7 @@ public class IndexerWorker {
     }
     
     public void startIndexer() {
+        stopRunner = false;
         //TODO TEST add a way to inject an executor for testing purposes
         executor = Executors.newSingleThreadScheduledExecutor();
         // may want to make this configurable
@@ -135,7 +140,7 @@ public class IndexerWorker {
         @Override
         public void run() {
             boolean processedEvent = true;
-            while (processedEvent) {
+            while (!stopRunner && processedEvent) {
                 processedEvent = false;
                 try {
                     // keep processing events until there are none left
@@ -150,8 +155,14 @@ public class IndexerWorker {
         }
     }
     
-    public void stopIndexer() {
+    @Override
+    public void stop(long millisToWait) throws InterruptedException {
+        if (millisToWait < 0) {
+            millisToWait = 0;
+        }
+        stopRunner = true;
         executor.shutdown();
+        executor.awaitTermination(millisToWait, TimeUnit.MILLISECONDS);
     }
     
     private enum ErrorType {
