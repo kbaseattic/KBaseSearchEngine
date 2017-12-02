@@ -39,6 +39,7 @@ import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.IndexerWorker;
 import kbasesearchengine.search.AccessFilter;
 import kbasesearchengine.search.ElasticIndexingStorage;
+import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.MatchFilter;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
@@ -71,6 +72,7 @@ public class IndexerWorkerIntegrationTest {
      */
 	
     private static IndexerWorker mop = null;
+    private static IndexingStorage storage = null;
     private static MongoController mongo;
     private static MongoClient mc;
     private static MongoDatabase db;
@@ -157,7 +159,7 @@ public class IndexerWorkerIntegrationTest {
                 "yaml", new YAMLTypeMappingParser());
         final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
         
-        final StatusEventStorage storage = new MongoDBStatusEventStorage(db);
+        final StatusEventStorage eventStorage = new MongoDBStatusEventStorage(db);
         final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, wsadmintoken);
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
         
@@ -166,8 +168,9 @@ public class IndexerWorkerIntegrationTest {
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
                 IndexerWorker.getTempSubDir(tempDir.toFile(), "esbulk"));
         esStorage.setIndexNamePrefix(esIndexPrefix);
+        storage = esStorage;
         
-        mop = new IndexerWorker("test", Arrays.asList(weh), storage, esStorage,
+        mop = new IndexerWorker("test", Arrays.asList(weh), eventStorage, esStorage,
                 ss, tempDir.resolve("MainObjectProcessor").toFile(), logger);
         loadTypes(wsUrl, wsadmintoken);
         wsid = (int) loadTestData(wsUrl, userToken);
@@ -286,12 +289,12 @@ public class IndexerWorkerIntegrationTest {
         pp.objectInfo = true;
         pp.objectData = true;
         pp.objectKeys = true;
-        System.out.println("Genome: " + mop.getIndexingStorage("*").getObjectsByIds(
-                mop.getIndexingStorage("*").searchIds("Genome", 
+        System.out.println("Genome: " + storage.getObjectsByIds(
+                storage.searchIds("Genome", 
                         MatchFilter.create().withFullTextInAll("test"), null, 
                         AccessFilter.create().withAdmin(true), null).guids, pp).get(0));
         String query = "TrkA";
-        Map<String, Integer> typeToCount = mop.getIndexingStorage("*").searchTypes(
+        Map<String, Integer> typeToCount = storage.searchTypes(
                 MatchFilter.create().withFullTextInAll(query), 
                 AccessFilter.create().withAdmin(true));
         System.out.println("Counts per type: " + typeToCount);
@@ -299,11 +302,11 @@ public class IndexerWorkerIntegrationTest {
             return;
         }
         String type = typeToCount.keySet().iterator().next();
-        Set<GUID> guids = mop.getIndexingStorage("*").searchIds(type, 
+        Set<GUID> guids = storage.searchIds(type, 
                 MatchFilter.create().withFullTextInAll(query), null, 
                 AccessFilter.create().withAdmin(true), null).guids;
         System.out.println("GUIDs found: " + guids);
-        ObjectData obj = mop.getIndexingStorage("*").getObjectsByIds(guids, pp).get(0);
+        ObjectData obj = storage.getObjectsByIds(guids, pp).get(0);
         System.out.println("Feature: " + obj);
     }
 
@@ -329,7 +332,7 @@ public class IndexerWorkerIntegrationTest {
     
     private void checkSearch(int expectedCount, String type, String query, int accessGroupId,
             boolean debugOutput) throws Exception {
-        Set<GUID> ids = mop.getIndexingStorage("*").searchIds(type, 
+        Set<GUID> ids = storage.searchIds(type, 
                 MatchFilter.create().withFullTextInAll(query), null, 
                 AccessFilter.create().withAccessGroups(accessGroupId), null).guids;
         if (debugOutput) {
@@ -337,7 +340,7 @@ public class IndexerWorkerIntegrationTest {
             pp.objectInfo = true;
             pp.objectData = true;
             pp.objectKeys = true;
-            System.out.println("DEBUG: " + mop.getIndexingStorage("*").getObjectsByIds(ids, pp));
+            System.out.println("DEBUG: " + storage.getObjectsByIds(ids, pp));
         }
         Assert.assertEquals(1, ids.size());
     }

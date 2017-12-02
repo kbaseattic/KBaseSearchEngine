@@ -34,6 +34,7 @@ import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.IndexerWorker;
 import kbasesearchengine.search.AccessFilter;
 import kbasesearchengine.search.ElasticIndexingStorage;
+import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.MatchFilter;
 import kbasesearchengine.search.MatchValue;
 import kbasesearchengine.system.TypeFileStorage;
@@ -66,6 +67,7 @@ public class PerformanceTester {
     private static File tempDir = null;
     private static URL wsUrl = null;
     private static IndexerWorker mop = null;
+    private static IndexingStorage storage = null;
     private static List<long[]> timeStats = new ArrayList<>();
     
     @BeforeClass
@@ -164,7 +166,7 @@ public class PerformanceTester {
             esStorage.setEsPassword(esPassword);
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
-        
+        storage = esStorage;
         mop = new IndexerWorker("test", esStorage, ss, tempDir, logger);
     }
     
@@ -258,7 +260,7 @@ public class PerformanceTester {
     }
     
     private int countGenomes() throws Exception {
-        return mop.getIndexingStorage("*").searchIds("Genome", 
+        return storage.searchIds("Genome", 
                 MatchFilter.create().withLookupInKey("features", new MatchValue(1, null)), null,
                 AccessFilter.create().withPublic(true).withAdmin(true), null).total;
     }
@@ -268,7 +270,7 @@ public class PerformanceTester {
     public void testCommonStats() throws Exception {
         String query = "Bacteria";
         int genomes = countGenomes();
-        Map<String, Integer> typeAggr = mop.getIndexingStorage("*").searchTypes(
+        Map<String, Integer> typeAggr = storage.searchTypes(
                 MatchFilter.create(), AccessFilter.create().withPublic(true)
                 .withAccessGroups(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         Integer features = typeAggr.get("GenomeFeature");
@@ -276,7 +278,7 @@ public class PerformanceTester {
         System.out.println("Total genomes/contigs/features processed: " + genomes + "/" + 
                 contigs + "/" + features);
         long t1 = System.currentTimeMillis();
-        Map<String, Integer> typeToCount = mop.getIndexingStorage("*").searchTypes(
+        Map<String, Integer> typeToCount = storage.searchTypes(
                 MatchFilter.create().withFullTextInAll(query), 
                 AccessFilter.create().withPublic(true)
                 .withAccessGroups(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
