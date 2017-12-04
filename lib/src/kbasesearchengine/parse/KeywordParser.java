@@ -179,8 +179,7 @@ public class KeywordParser {
         }
         values.notIndexed = rule.isNotIndexed();
         if (rule.getTransform() != null) {
-            valueFinal = transform(valueFinal, rule.getTransform(), rule, keywords,
-                    lookup, objectRefPath);
+            valueFinal = transform(valueFinal, rule, keywords, lookup, objectRefPath);
         }
         addOrAddAll(valueFinal, values.values);
     }
@@ -202,18 +201,12 @@ public class KeywordParser {
     }
 
     @SuppressWarnings("unchecked")
-    private static Object transform(Object value, String transform, IndexingRules rule,
+    private static Object transform(Object value, IndexingRules rule,
             Map<String, InnerKeyValue> sourceKeywords, ObjectLookupProvider lookup,
             List<GUID> objectRefPath)
             throws IndexingException, InterruptedException, ObjectParseException {
-        String retProp = null;
-        if (transform.contains(".")) {
-            int dotPos = transform.indexOf('.');
-            retProp = transform.substring(dotPos + 1);
-            transform = transform.substring(0, dotPos);
-        }
-        switch (transform) {
-        case "location":
+        switch (rule.getTransform()) {
+        case location:
             List<List<Object>> loc = (List<List<Object>>)value;
             Map<String, Object> retLoc = new LinkedHashMap<>();
             retLoc.put("contig_id", loc.get(0).get(0));
@@ -224,11 +217,11 @@ public class KeywordParser {
             retLoc.put("length", len);
             retLoc.put("start", strand.equals("+") ? start : (start - len + 1));
             retLoc.put("stop", strand.equals("+") ? (start + len - 1) : start);
-            if (retProp == null) {
+            if (rule.getTransformProperty() == null) {
                 return retLoc;
             }
-            return retLoc.get(retProp);
-        case "values":
+            return retLoc.get(rule.getTransformProperty());
+        case values:
             if (value == null) {
                 return null;
             }
@@ -236,8 +229,7 @@ public class KeywordParser {
                 List<Object> input = (List<Object>)value;
                 List<Object> ret = new ArrayList<>();
                 for (Object item : input) {
-                    addOrAddAll(transform(item, transform, rule, sourceKeywords, lookup, 
-                            objectRefPath), ret);
+                    addOrAddAll(transform(item, rule, sourceKeywords, lookup, objectRefPath), ret);
                 }
                 return ret;
             }
@@ -245,17 +237,16 @@ public class KeywordParser {
                 Map<String, Object> input = (Map<String, Object>)value;
                 List<Object> ret = new ArrayList<>();
                 for (Object item : input.values()) {
-                    addOrAddAll(transform(item, transform, rule, sourceKeywords, lookup,
-                            objectRefPath), ret);
+                    addOrAddAll(transform(item, rule, sourceKeywords, lookup, objectRefPath), ret);
                 }
                 return ret;
             }
             return String.valueOf(value);
-        case "string":
+        case string:
             return String.valueOf(value);
-        case "integer":
+        case integer:
             return Integer.parseInt(String.valueOf(value));
-        case "guid":
+        case guid:
             String type = rule.getTargetObjectType();
             if (type == null) {
                 throw new IllegalStateException("Target object type should be set for 'guid' " +
@@ -304,7 +295,8 @@ public class KeywordParser {
                 }
             }
             return guids.stream().map(GUID::toString).collect(Collectors.toList());
-        case "lookup":
+        case lookup:
+            final String retProp = rule.getTransformProperty();
             if (retProp == null) {
                 throw new IllegalStateException("No sub-property defined for lookup transform");
             }
@@ -322,7 +314,8 @@ public class KeywordParser {
             }
             return ret;
         default:
-            throw new IllegalStateException("Unsupported transformation type: " + transform);
+            // java whines unless this is here, but transform is guaranteed to be one of the above
+            throw new RuntimeException("someone did something naughty");
         }
     }
 
