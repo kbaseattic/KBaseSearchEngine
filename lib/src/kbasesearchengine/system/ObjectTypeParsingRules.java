@@ -157,7 +157,6 @@ public class ObjectTypeParsingRules {
                 rules.setSourceKey((String)rulesObj.get("source-key"));
                 rules.setTargetObjectType((String)rulesObj.get("source-key"));
                 rules.setSubobjectIdKey((String)rulesObj.get("subobject-id-key"));
-                rules.setConstantValue(rulesObj.get("constant-value"));
                 rules.setOptionalDefaultValue(rulesObj.get("optional-default-value"));
                 rules.setTargetObjectType((String)rulesObj.get("target-object-type"));
                 rules.setUiName((String)rulesObj.get("ui-name"));

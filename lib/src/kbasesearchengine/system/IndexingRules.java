@@ -126,10 +126,6 @@ public class IndexingRules {
      */
     private Object optionalDefaultValue = null;
     /**
-     * TODO figure this one out
-     */
-    private Object constantValue = null;
-    /**
      * Name of keyword displayed by UI.
      */
     private String uiName = null;
@@ -290,14 +286,6 @@ public class IndexingRules {
         this.subobjectIdKey = subobjectIdKey;
     }
     
-    public Object getConstantValue() {
-        return constantValue;
-    }
-    
-    public void setConstantValue(Object constantValue) {
-        this.constantValue = constantValue;
-    }
-    
     public Object getOptionalDefaultValue() {
         return optionalDefaultValue;
     }
@@ -339,7 +327,7 @@ public class IndexingRules {
                 + ", sourceKey=" + sourceKey + ", targetObjectType="
                 + targetObjectType + ", subobjectIdKey=" + subobjectIdKey
                 + ", optionalDefaultValue=" + optionalDefaultValue
-                + ", constantValue=" + constantValue + ", uiName=" + uiName
+                + ", uiName=" + uiName
                 + ", uiHidden=" + uiHidden + ", uiLinkKey=" + uiLinkKey + "]";
     }
 }
