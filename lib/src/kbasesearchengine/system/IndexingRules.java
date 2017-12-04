@@ -1,7 +1,6 @@
 package kbasesearchengine.system;
 
 import kbasesearchengine.common.ObjectJsonPath;
-import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.tools.Utils;
 
 /**
@@ -67,15 +66,10 @@ public class IndexingRules {
      *
      */
     private final String keyName;
-    /** An optional transformation applied to values coming from a [sub-]object
-     * or source keyword. The value of this property has the format of
-     * <transform>[.<ret-prop>], where second part (including dot) is optional
-     * and used in some of transformations. The value is split into an enum for the transform
-     * type and a string for the ret-prop or transform property.
+    /** An optional transformation applied to a value.
      *
      */
-    private final TransformType transform;
-    private final String transformProperty;
+    private final Transform transform;
     
     /**
      * An optional attribute that indicates that the value is extracted from the
@@ -96,25 +90,6 @@ public class IndexingRules {
      */
     private final String sourceKey;
 
-    /** An optional attribute.
-     * It is used in "guid" transform mode only. This property provides the type
-     * descriptor name of [sub-]object where resulting GUID points to. In
-     * addition to the validation purpose target type helps form sub-object part
-     * of GUID where we need to know not only sub-object ID
-     * (coming from "subobject-id-key") but also sub-object inner type which
-     * is extracted from this target type descriptor.
-     *
-     */
-    private final String targetObjectType;
-    // TODO NNOW subobjectIdKey constrains the target type to be a subtype. Add a check in the creation context to check this. 
-    /**
-     * An optional attribute.
-     * Works together with "target-object-type". Is used in "guid" transform mode
-     * only. This property points to keywords providing value for sub-object
-     * inner ID in order to construct full GUID for sub-object.
-     *
-     */
-    private final String subobjectIdKey;
     /**
      * An optional value which is used for the keyword in case the resulting
      * array of values extracted from the document [sub-]object is empty.
@@ -150,13 +125,10 @@ public class IndexingRules {
             final boolean fullText,
             final String keywordType,
             final String keyName,
-            final TransformType transform,
-            final String transformProperty,
+            final Transform transform,
             final boolean fromParent,
             final boolean notIndexed,
             final String sourceKey,
-            final String targetObjectType,
-            final String subobjectIdKey,
             final Object defaultValue,
             String uiName,
             final boolean uiHidden,
@@ -166,12 +138,9 @@ public class IndexingRules {
         this.keywordType = keywordType;
         this.keyName = keyName;
         this.transform = transform;
-        this.transformProperty = transformProperty;
         this.fromParent = fromParent;
         this.notIndexed = notIndexed;
         this.sourceKey = sourceKey;
-        this.targetObjectType = targetObjectType;
-        this.subobjectIdKey = subobjectIdKey;
         this.defaultValue = defaultValue;
         if (uiName == null) {
             uiName = keyName.substring(0, 1).toUpperCase() + keyName.substring(1);
@@ -197,12 +166,8 @@ public class IndexingRules {
         return keyName;
     }
     
-    public TransformType getTransform() {
+    public Transform getTransform() {
         return transform;
-    }
-    
-    public String getTransformProperty() {
-        return transformProperty;
     }
     
     public boolean isFromParent() {
@@ -219,14 +184,6 @@ public class IndexingRules {
     
     public String getSourceKey() {
         return sourceKey;
-    }
-    
-    public String getTargetObjectType() {
-        return targetObjectType;
-    }
-    
-    public String getSubobjectIdKey() {
-        return subobjectIdKey;
     }
     
     public Object getDefaultValue() {
@@ -251,8 +208,7 @@ public class IndexingRules {
                 + ", keywordType=" + keywordType + ", keyName=" + keyName
                 + ", transform=" + transform + ", fromParent=" + fromParent
                 + ", notIndexed=" + notIndexed
-                + ", sourceKey=" + sourceKey + ", targetObjectType="
-                + targetObjectType + ", subobjectIdKey=" + subobjectIdKey
+                + ", sourceKey=" + sourceKey
                 + ", defaultValue=" + defaultValue
                 + ", uiName=" + uiName
                 + ", uiHidden=" + uiHidden + ", uiLinkKey=" + uiLinkKey + "]";
@@ -274,10 +230,7 @@ public class IndexingRules {
         private String keyName;
         private boolean fullText = false;
         private String keywordType = "keyword";
-        private TransformType transform = null;
-        private String transformProperty = null;
-        private String targetObjectType = null;
-        private String subobjectIdKey = null;
+        private Transform transform = null;
         private boolean fromParent = false;
         private boolean notIndexed = false;
         private Object defaultValue = null;
@@ -318,94 +271,10 @@ public class IndexingRules {
             return this;
         }
         
-        public Builder withTransform(final TransformType type) {
-            Utils.nonNull(type, "type");
-            this.transform = type;
-            this.transformProperty = null;
-            this.targetObjectType = null;
-            this.subobjectIdKey = null;
+        public Builder withTransform(final Transform transform) {
+            Utils.nonNull(transform, "transform");
+            this.transform = transform;
             return this;
-        }
-        
-        public Builder withTransform(final TransformType type, String transformProperty) {
-            Utils.nonNull(type, "type");
-            if (TransformType.guid.equals(type)) {
-                throw new IllegalArgumentException(
-                        "Use the specialized guid transform method for adding guid transforms");
-            }
-            //TODO CODE check transform property matches transform type?
-            // e.g. enum of props for location, any string for lookup
-            if (Utils.isNullOrEmpty(transformProperty)) {
-                transformProperty = null;
-            }
-            this.transform = type;
-            this.transformProperty = transformProperty;
-            this.targetObjectType = null;
-            this.subobjectIdKey = null;
-            return this;
-        }
-        
-        public Builder withGUIDTransform(final String targetObjectType) {
-            Utils.notNullOrEmpty(targetObjectType,
-                    "targetObjectType cannot be null or whitespace");
-            this.targetObjectType = targetObjectType;
-            this.subobjectIdKey = null;
-            this.transform = TransformType.guid;
-            this.transformProperty = null;
-            return this;
-        }
-        
-        public Builder withGUIDTransform(
-                final String targetObjectType,
-                final String subObjectIDKey) {
-            Utils.notNullOrEmpty(targetObjectType,
-                    "targetObjectType cannot be null or whitespace");
-            Utils.notNullOrEmpty(subObjectIDKey,
-                    "subObjectIDKey cannot be null or whitespace");
-            this.targetObjectType = targetObjectType;
-            this.subobjectIdKey = subObjectIDKey;
-            this.transform = TransformType.guid;
-            this.transformProperty = null;
-            return this;
-        }
-        
-        public Builder withNullableUnknownTransform(
-                final String transform,
-                String targetObjectType,
-                String subObjectIDKey)
-                throws ObjectParseException {
-            if (Utils.isNullOrEmpty(transform)) {
-                return this;
-            }
-            if (Utils.isNullOrEmpty(targetObjectType)) {
-                targetObjectType = null;
-            }
-            if (Utils.isNullOrEmpty(subObjectIDKey)) {
-                subObjectIDKey = null;
-            }
-            final String[] tranSplt = transform.split("\\.", 2);
-            final TransformType type;
-            try {
-                type = TransformType.valueOf(tranSplt[0]);
-            } catch (IllegalArgumentException e) {
-                // TODO CODE this exception type seems wrong
-                throw new ObjectParseException(e.getMessage(), e);
-            }
-            final String transProp = tranSplt.length == 1 ? null : tranSplt[1];
-            if (TransformType.guid.equals(type)) {
-                //TODO CODE throw an error if transProp != null?
-                if (subObjectIDKey != null) {
-                    return withGUIDTransform(targetObjectType, subObjectIDKey);
-                } else {
-                    return withGUIDTransform(targetObjectType);
-                }
-            }
-            if (transProp != null) {
-                //TODO CODE throw an error if guid transform params != null? 
-                return withTransform(type, transProp);
-            } else {
-                return withTransform(type);
-            }
         }
         
         public Builder withNotIndexed() {
@@ -444,8 +313,8 @@ public class IndexingRules {
         
         public IndexingRules build() {
             return new IndexingRules(path, fullText, keywordType, keyName,
-                    transform, transformProperty, fromParent, notIndexed, sourceKey,
-                    targetObjectType, subobjectIdKey, defaultValue, uiName, uiHidden, uiLinkKey);
+                    transform, fromParent, notIndexed, sourceKey,
+                    defaultValue, uiName, uiHidden, uiLinkKey);
         }
         
     }

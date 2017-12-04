@@ -18,7 +18,9 @@ import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.system.IndexingRules;
+import kbasesearchengine.system.LocationTransformType;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.Transform;
 import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.UObject;
 
@@ -131,9 +133,9 @@ public class KeywordParser {
         }
         List<Object> values = processDerivedRule(type, ruleMap, sourceKey, keywords, lookup, 
                 keysWaitingInStack, objectRefPath);
-        if (rule.getSubobjectIdKey() != null) {
-            processDerivedRule(type, ruleMap, rule.getSubobjectIdKey(), keywords, lookup, 
-                    keysWaitingInStack, objectRefPath);
+        if (rule.getTransform() != null && rule.getTransform().getSubobjectIdKey().isPresent()) {
+            processDerivedRule(type, ruleMap, rule.getTransform().getSubobjectIdKey().get(),
+                    keywords, lookup, keysWaitingInStack, objectRefPath);
         }
         for (Object value : values) {
             processRule(type, rule, key, value, keywords, lookup, objectRefPath);
@@ -191,22 +193,24 @@ public class KeywordParser {
             Map<String, InnerKeyValue> sourceKeywords, ObjectLookupProvider lookup,
             List<GUID> objectRefPath)
             throws IndexingException, InterruptedException, ObjectParseException {
-        switch (rule.getTransform()) {
+        final Transform transform = rule.getTransform();
+        switch (transform.getType()) {
         case location:
             List<List<Object>> loc = (List<List<Object>>)value;
-            Map<String, Object> retLoc = new LinkedHashMap<>();
-            retLoc.put("contig_id", loc.get(0).get(0));
+            Map<LocationTransformType, Object> retLoc = new LinkedHashMap<>();
+            retLoc.put(LocationTransformType.contig_id, loc.get(0).get(0));
             String strand = (String)loc.get(0).get(2);
-            retLoc.put("strand", strand);
+            retLoc.put(LocationTransformType.strand, strand);
             int start = (Integer)loc.get(0).get(1);
             int len = (Integer)loc.get(0).get(3);
-            retLoc.put("length", len);
-            retLoc.put("start", strand.equals("+") ? start : (start - len + 1));
-            retLoc.put("stop", strand.equals("+") ? (start + len - 1) : start);
-            if (rule.getTransformProperty() == null) {
+            retLoc.put(LocationTransformType.length, len);
+            retLoc.put(LocationTransformType.start,
+                    strand.equals("+") ? start : (start - len + 1));
+            retLoc.put(LocationTransformType.stop, strand.equals("+") ? (start + len - 1) : start);
+            if (!transform.getLocation().isPresent()) {
                 return retLoc;
             }
-            return retLoc.get(rule.getTransformProperty());
+            return retLoc.get(transform.getLocation().get());
         case values:
             if (value == null) {
                 return null;
@@ -233,7 +237,7 @@ public class KeywordParser {
         case integer:
             return Integer.parseInt(String.valueOf(value));
         case guid:
-            String type = rule.getTargetObjectType();
+            String type = transform.getTargetObjectType().get();
             if (type == null) {
                 throw new IllegalStateException("Target object type should be set for 'guid' " +
                         "transform");
@@ -250,12 +254,13 @@ public class KeywordParser {
             }
             Set<GUID> guids = lookup.resolveRefs(objectRefPath, unresolvedGUIDs);
             Set<String> subIds = null;
-            if (rule.getSubobjectIdKey() != null) {
+            if (transform.getSubobjectIdKey().isPresent()) {
                 if (typeDescr.getInnerSubType() == null) {
                     throw new IllegalStateException("Subobject GUID transform should correspond " +
                             "to subobject type descriptor: " + rule);
                 }
-                subIds = toStringSet(sourceKeywords.get(rule.getSubobjectIdKey()).values);
+                subIds = toStringSet(
+                        sourceKeywords.get(transform.getSubobjectIdKey().get()).values);
                 if (guids.size() != 1) {
                     throw new IllegalStateException("In subobject IDs case source keyword " + 
                             "should point to value with only one parent object reference");
@@ -282,10 +287,8 @@ public class KeywordParser {
             }
             return guids.stream().map(GUID::toString).collect(Collectors.toList());
         case lookup:
-            final String retProp = rule.getTransformProperty();
-            if (retProp == null) {
-                throw new IllegalStateException("No sub-property defined for lookup transform");
-            }
+            /* TODO CODE or DOCUMENTATION it appears that this only works if sourceKey = true and the sourceKey is a GUID transform. Check and document. */
+            final String retProp = transform.getTargetKey().get();
             Set<String> guidText = toStringSet(value);
             Map<GUID, ObjectData> guidToObj = lookup.lookupObjectsByGuid(
                     guidText.stream().map(GUID::new).collect(Collectors.toSet()));
@@ -331,7 +334,8 @@ public class KeywordParser {
                 throw new IllegalStateException("Path should be defined for non-derived " +
                         "indexing rules");
             }
-            if (rules.getSubobjectIdKey() != null) {
+            if (rules.getTransform() != null &&
+                    rules.getTransform().getSubobjectIdKey().isPresent()) {
                 throw new IllegalStateException("Subobject ID key can only be set for derived " +
                         "keywords: " + rules.getKeyName());
             }

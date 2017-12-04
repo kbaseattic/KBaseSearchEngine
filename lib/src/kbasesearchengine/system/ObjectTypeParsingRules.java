@@ -158,10 +158,15 @@ public class ObjectTypeParsingRules {
                         builder.withKeywordType(keywordType);
                     }
                     final String transform = (String) rulesObj.get("transform");
-                    final String subObjectIDKey = (String) rulesObj.get("subobject-id-key");
-                    final String targetObjectType = (String) rulesObj.get("target-object-type");
-                    builder.withNullableUnknownTransform(
-                            transform, targetObjectType, subObjectIDKey);
+                    if (!Utils.isNullOrEmpty(transform)) {
+                        final String subObjectIDKey = (String) rulesObj.get("subobject-id-key");
+                        final String targetObjectType =
+                                (String) rulesObj.get("target-object-type");
+                        final String[] tranSplt = transform.split("\\.", 2);
+                        final String transProp = tranSplt.length == 1 ? null : tranSplt[1];
+                        builder.withTransform(Transform.unknown(
+                                tranSplt[0], transProp, targetObjectType, subObjectIDKey));
+                    }
                     if (getBool(rulesObj.get("not-indexed"))) {
                         builder.withNotIndexed();
                     }
