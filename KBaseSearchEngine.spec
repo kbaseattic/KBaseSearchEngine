@@ -1,5 +1,5 @@
 /*
-A KBase module: KBaseRelationEngine
+A KBase module: KBaseSearchEngine
 */
 
 module KBaseSearchEngine {
@@ -232,7 +232,7 @@ module KBaseSearchEngine {
 
     /*
       Description of searchable object type including details about keywords.
-      TODO: add more details like parent type, relations, primary key, ...
+      TODO: add more details like parent type, primary key, ...
     */
     typedef structure {
         string type_name;
