@@ -51,7 +51,10 @@ import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.tools.Utils;
 
-public class IndexerWorker {
+public class IndexerWorker implements Stoppable {
+    
+    //TODO JAVADOC
+    //TODO TESTS
     
     private static final int RETRY_COUNT = 5;
     private static final int RETRY_SLEEP_MS = 1000;
@@ -66,6 +69,7 @@ public class IndexerWorker {
     private final LineLogger logger;
     private final Map<String, EventHandler> eventHandlers = new HashMap<>();
     private ScheduledExecutorService executor = null;
+    private boolean stopRunner = false;
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
             RETRY_FATAL_BACKOFF_MS,
@@ -124,6 +128,7 @@ public class IndexerWorker {
     }
     
     public void startIndexer() {
+        stopRunner = false;
         //TODO TEST add a way to inject an executor for testing purposes
         executor = Executors.newSingleThreadScheduledExecutor();
         // may want to make this configurable
@@ -135,7 +140,7 @@ public class IndexerWorker {
         @Override
         public void run() {
             boolean processedEvent = true;
-            while (processedEvent) {
+            while (!stopRunner && processedEvent) {
                 processedEvent = false;
                 try {
                     // keep processing events until there are none left
@@ -150,8 +155,14 @@ public class IndexerWorker {
         }
     }
     
-    public void stopIndexer() {
+    @Override
+    public void stop(long millisToWait) throws InterruptedException {
+        if (millisToWait < 0) {
+            millisToWait = 0;
+        }
+        stopRunner = true;
         executor.shutdown();
+        executor.awaitTermination(millisToWait, TimeUnit.MILLISECONDS);
     }
     
     private enum ErrorType {
@@ -442,7 +453,7 @@ public class IndexerWorker {
     }
 
     // returns false if a non-fatal error prevents retrieving the info
-    public boolean isStorageTypeSupported(final StatusEventWithId ev)
+    private boolean isStorageTypeSupported(final StatusEventWithId ev)
             throws InterruptedException, FatalIndexingException {
         try {
             return retrier.retryFunc(
@@ -594,37 +605,37 @@ public class IndexerWorker {
         return parentJson;
     }
     
-//    public void share(GUID guid, int accessGroupId) throws IOException {
+//    private void share(GUID guid, int accessGroupId) throws IOException {
 //        indexingStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId, 
 //                false);
 //    }
     
-    public void undeleteAllVersions(final GUID guid) throws IOException {
+    private void undeleteAllVersions(final GUID guid) throws IOException {
         indexingStorage.undeleteAllVersions(guid);
     }
 
-//    public void unshare(GUID guid, int accessGroupId) throws IOException {
+//    private void unshare(GUID guid, int accessGroupId) throws IOException {
 //        indexingStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
 //    }
 
-    public void deleteAllVersions(final GUID guid) throws IOException {
+    private void deleteAllVersions(final GUID guid) throws IOException {
         indexingStorage.deleteAllVersions(guid);
     }
 
-    public void publish(GUID guid) throws IOException {
+    private void publish(GUID guid) throws IOException {
         indexingStorage.publishObjects(new LinkedHashSet<>(Arrays.asList(guid)));
     }
     
-    public void publishAllVersions(final GUID guid) throws IOException {
+    private void publishAllVersions(final GUID guid) throws IOException {
         indexingStorage.publishAllVersions(guid);
         //TODO DP need to handle objects in datapalette
     }
 
-    public void unpublish(GUID guid) throws IOException {
+    private void unpublish(GUID guid) throws IOException {
         indexingStorage.unpublishObjects(new LinkedHashSet<>(Arrays.asList(guid)));
     }
     
-    public void unpublishAllVersions(final GUID guid) throws IOException {
+    private void unpublishAllVersions(final GUID guid) throws IOException {
         indexingStorage.unpublishAllVersions(guid);
         //TODO DP need to handle objects in datapalette
     }
@@ -633,10 +644,6 @@ public class IndexerWorker {
         indexingStorage.setNameOnAllObjectVersions(guid, newName);
     }
 
-    public IndexingStorage getIndexingStorage(String objectType) {
-        return indexingStorage;
-    }
-    
     private class MOPLookupProvider implements ObjectLookupProvider {
         // storage code -> full ref path -> resolved guid
         private Map<String, Map<String, GUID>> refResolvingCache = new LinkedHashMap<>();

@@ -69,9 +69,6 @@ public class ElasticIndexingStorageTest {
         tempDir = tdir.resolve("ElasticIndexingStorageTest").toFile();
         FileUtils.deleteQuietly(tempDir);
         es = new ElasticSearchController(TestCommon.getElasticSearchExe(), tdir);
-        if (es.getStartupError() != null) {
-            throw es.getStartupError();
-        }
         String indexNamePrefix = "test_" + System.currentTimeMillis() + ".";
         indexStorage = new ElasticIndexingStorage(
                 new HttpHost("localhost", es.getServerPort()), tempDir);
@@ -184,10 +181,9 @@ public class ElasticIndexingStorageTest {
         for (ObjectJsonPath path : pathToJson.keySet()) {
             String subJson = pathToJson.get(path);
             SimpleIdConsumer idConsumer = new SimpleIdConsumer();
-            if (parsingRules.getPrimaryKeyPath() != null || parsingRules.getRelationRules() != null) {
+            if (parsingRules.getPrimaryKeyPath() != null) {
                 try (JsonParser subJts = UObject.getMapper().getFactory().createParser(subJson)) {
-                    IdMapper.mapKeys(parsingRules.getPrimaryKeyPath(), 
-                            parsingRules.getRelationRules(), subJts, idConsumer);
+                    IdMapper.mapKeys(parsingRules.getPrimaryKeyPath(), subJts, idConsumer);
                 }
             }
             GUID id = ObjectParser.prepareGUID(parsingRules, ref, path, idConsumer);

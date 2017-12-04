@@ -43,6 +43,7 @@ import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.events.storage.StorageInitException;
 import kbasesearchengine.main.LineLogger;
+import kbasesearchengine.main.Stoppable;
 import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.main.IndexerWorker;
 import kbasesearchengine.parse.ObjectParseException;
@@ -179,24 +180,26 @@ public class SearchTools {
         }
         if (a.startCoordinator) {
             try {
-                runCoordinator(cfg, out, err);
+                final IndexerCoordinator coord = runCoordinator(cfg, out, err);
                 noCommand = false; 
+                waitForReturn(coord);
             } catch (StorageInitException | IndexingException | InterruptedException e) {
                 printError(e, a.verbose);
                 return 1;
             }
-            waitForReturn();
         }
         if (startWorker) {
             try {
-                runWorker(cfg, a.startWorker, out, err);
+                
+                final IndexerWorker work = runWorker(cfg, a.startWorker, out, err);
                 noCommand = false;
+                waitForReturn(work);
             } catch (IOException | AuthException | ObjectParseException | TypeParseException |
-                    UnauthorizedException | StorageInitException | IllegalArgumentException e) {
+                    UnauthorizedException | StorageInitException | IllegalArgumentException |
+                    InterruptedException e) {
                 printError(e, a.verbose);
                 return 1;
             }
-            waitForReturn();
         }
         if (a.genWSEvents) {
             try {
@@ -215,12 +218,14 @@ public class SearchTools {
         return 0;
     }
     
-    private void waitForReturn() {
+    private void waitForReturn(final Stoppable stoppable) throws InterruptedException {
         out.println("Press return to shut down process.");
         console.readLine();
+        System.out.println("Waiting for task to stop");
+        stoppable.stop(10 * 60 * 1000); // 10 mins
     }
     
-    private void runCoordinator(
+    private IndexerCoordinator runCoordinator(
             final SearchToolsConfig cfg,
             final PrintStream logTarget,
             final PrintStream errTarget)
@@ -231,9 +236,10 @@ public class SearchTools {
         
         final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, MAX_Q_SIZE);
         coord.startIndexer();
+        return coord;
     }
     
-    private void runWorker(
+    private IndexerWorker runWorker(
             final SearchToolsConfig cfg,
             final String id,
             final PrintStream logTarget,
@@ -263,6 +269,7 @@ public class SearchTools {
         final IndexerWorker wrk = new IndexerWorker(
                 getID(id), Arrays.asList(weh), storage, indexStore, ss, tempDir, logger);
         wrk.startIndexer();
+        return wrk;
     }
 
     private String getID(String id) {

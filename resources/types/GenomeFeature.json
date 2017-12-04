@@ -98,16 +98,5 @@
 			"not-indexed": true
 		}
 	],
-	"primary-key-path": "id",
-	"relation-rules": [
-		{
-			"path": "ontology_terms/SSO/*/id",
-			"target-object-type": "SeedOntologyTerm",
-			"relation-type": "feature-to-seed"
-		},
-		{
-			"key-name": "contig_giud",
-			"relation-type": "feature-to-contig"
-		}
-	]
+	"primary-key-path": "id"
 }
