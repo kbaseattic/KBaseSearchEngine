@@ -10,6 +10,7 @@ import java.util.Map;
 
 import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.parse.ObjectParseException;
+import kbasesearchengine.system.IndexingRules.Builder;
 import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.UObject;
 
@@ -109,85 +110,109 @@ public class ObjectTypeParsingRules {
             final Map<String, Object> obj,
             final String sourceInfo) 
             throws ObjectParseException {
-        //TODO CODE wrap this in a try/c and append the source info to any messages
-        ObjectTypeParsingRules ret = new ObjectTypeParsingRules();
-        ret.setGlobalObjectType((String)obj.get("global-object-type"));
-        ret.setUiTypeName((String)obj.get("ui-type-name"));
-        final String storageCode = (String)obj.get("storage-type");
-        final String type = (String)obj.get("storage-object-type");
-        if (Utils.isNullOrEmpty(storageCode)) {
-            throw new ObjectParseException(getMissingKeyParseMessage(
-                    "storage-type", sourceInfo));
-        }
-        if (Utils.isNullOrEmpty(type)) {
-            throw new ObjectParseException(getMissingKeyParseMessage(
-                    "storage-object-type", sourceInfo));
-        }
-        ret.setStorageObjectType(new StorageObjectType(storageCode, type));
-        ret.setInnerSubType((String)obj.get("inner-sub-type"));
-        ret.setPathToSubObjects(getPath((String)obj.get("path-to-sub-objects")));
-        // Indexing
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> indexingRules = 
-                (List<Map<String, Object>>)obj.get("indexing-rules");
-        if (indexingRules != null) {
-            ret.setIndexingRules(new ArrayList<>());
-            for (Map<String, Object> rulesObj : indexingRules) {
-                IndexingRules rules = new IndexingRules();
-                String path = (String)rulesObj.get("path");
-                if (path != null) {
-                    rules.setPath(new ObjectJsonPath(path));
-                }
-                Boolean fullText = (Boolean)rulesObj.get("full-text");
-                if (fullText != null) {
-                    rules.setFullText(fullText);
-                }
-                rules.setKeywordType((String)rulesObj.get("keyword-type"));
-                rules.setKeyName((String)rulesObj.get("key-name"));
-                rules.setTransform((String) rulesObj.get("transform"));
-                Boolean fromParent = (Boolean)rulesObj.get("from-parent");
-                if (fromParent != null) {
-                    rules.setFromParent(fromParent);
-                }
-                Boolean derivedKey = (Boolean)rulesObj.get("derived-key");
-                if (derivedKey != null) {
-                    rules.setDerivedKey(derivedKey);
-                }
-                Boolean notIndexed = (Boolean)rulesObj.get("not-indexed");
-                if (notIndexed != null) {
-                    rules.setNotIndexed(notIndexed);
-                }
-                rules.setSourceKey((String)rulesObj.get("source-key"));
-                rules.setTargetObjectType((String)rulesObj.get("source-key"));
-                rules.setSubobjectIdKey((String)rulesObj.get("subobject-id-key"));
-                rules.setOptionalDefaultValue(rulesObj.get("optional-default-value"));
-                rules.setTargetObjectType((String)rulesObj.get("target-object-type"));
-                rules.setUiName((String)rulesObj.get("ui-name"));
-                Boolean uiHidden = (Boolean)rulesObj.get("ui-hidden");
-                if (uiHidden != null) {
-                    rules.setUiHidden(uiHidden);
-                }
-                rules.setUiLinkKey((String)rulesObj.get("ui-link-key"));
-
-                try {
-                    rules.validate();
-                } catch (ValidationException ex) {
-                    throw new IllegalArgumentException("Unable to build parsing rules", ex);
-                }
-
-                ret.getIndexingRules().add(rules);
+        try {
+            ObjectTypeParsingRules ret = new ObjectTypeParsingRules();
+            ret.setGlobalObjectType((String)obj.get("global-object-type"));
+            ret.setUiTypeName((String)obj.get("ui-type-name"));
+            final String storageCode = (String)obj.get("storage-type");
+            final String type = (String)obj.get("storage-object-type");
+            if (Utils.isNullOrEmpty(storageCode)) {
+                throw new ObjectParseException(getMissingKeyParseMessage("storage-type"));
             }
+            if (Utils.isNullOrEmpty(type)) {
+                throw new ObjectParseException(getMissingKeyParseMessage("storage-object-type"));
+            }
+            ret.setStorageObjectType(new StorageObjectType(storageCode, type));
+            ret.setInnerSubType((String)obj.get("inner-sub-type"));
+            ret.setPathToSubObjects(getPath((String)obj.get("path-to-sub-objects")));
+            // Indexing
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> indexingRules =
+                    (List<Map<String, Object>>)obj.get("indexing-rules");
+            if (indexingRules != null) {
+                ret.setIndexingRules(new ArrayList<>());
+                for (Map<String, Object> rulesObj : indexingRules) {
+                    final String path = (String) rulesObj.get("path");
+                    final String keyName = (String) rulesObj.get("key-name");
+                    final Builder builder;
+                    if (Utils.isNullOrEmpty(path)) {
+                        final String sourceKey = (String)rulesObj.get("source-key");
+                        builder = IndexingRules.fromSourceKey(sourceKey, keyName);
+                    } else {
+                        //TODO CODE throw exception if sourceKey != null?
+                        builder = IndexingRules.fromPath(new ObjectJsonPath(path));
+                        if (!Utils.isNullOrEmpty(keyName)) {
+                            builder.withKeyName(keyName);
+                        }
+                    }
+                    if (getBool((Boolean) rulesObj.get("from-parent"))) {
+                        //TODO NNOW throw exception if not a sub type
+                        builder.withFromParent();
+                    }
+                    if (getBool(rulesObj.get("full-text"))) {
+                        builder.withFullText();
+                    }
+                    final String keywordType = (String)rulesObj.get("keyword-type");
+                    if (!Utils.isNullOrEmpty(keywordType)) {
+                        //TODO CODE throw an error if fullText is true?
+                        builder.withKeywordType(keywordType);
+                    }
+                    final String transform = (String) rulesObj.get("transform");
+                    final String subObjectIDKey = (String) rulesObj.get("subobject-id-key");
+                    final String targetObjectType = (String) rulesObj.get("target-object-type");
+                    builder.withNullableUnknownTransform(
+                            transform, targetObjectType, subObjectIDKey);
+                    if (getBool(rulesObj.get("not-indexed"))) {
+                        builder.withNotIndexed();
+                    }
+                    builder.withNullableDefaultValue(rulesObj.get("optional-default-value"));
+                    builder.withNullableUIName((String) rulesObj.get("ui-name"));
+                    if (getBool(rulesObj.get("ui-hidden"))) {
+                        builder.withUIHidden();
+                    }
+                    builder.withNullableUILinkKey((String) rulesObj.get("ui-link-key"));
+                    ret.getIndexingRules().add(builder.build());
+                }
+            }
+            ret.setPrimaryKeyPath(getPath((String)obj.get("primary-key-path")));
+            return ret;
+        } catch (ObjectParseException | IllegalArgumentException | NullPointerException e) {
+            throw new ObjectParseException(String.format("Error in source %s: %s",
+                    sourceInfo, e.getMessage()), e);
         }
-        ret.setPrimaryKeyPath(getPath((String)obj.get("primary-key-path")));
-        return ret;
     }
     
-    private static String getMissingKeyParseMessage(final String key, final String sourceInfo) {
-        return String.format("Missing key %s.%s", key, Utils.isNullOrEmpty(sourceInfo) ?
-                "" : "Source : " + sourceInfo);
+    private static boolean getBool(final Object putativeBool) {
+        //TODO CODE precheck cast exception
+        return putativeBool != null && (Boolean) putativeBool; 
+    }
+    
+    private static String getMissingKeyParseMessage(final String key) {
+        return String.format("Missing key %s", key);
     }
 
     private static ObjectJsonPath getPath(String path) throws ObjectParseException {
         return path == null ? null : new ObjectJsonPath(path);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("ObjectTypeParsingRules [globalObjectType=");
+        builder.append(globalObjectType);
+        builder.append(", uiTypeName=");
+        builder.append(uiTypeName);
+        builder.append(", storageObjectType=");
+        builder.append(storageObjectType);
+        builder.append(", innerSubType=");
+        builder.append(innerSubType);
+        builder.append(", pathToSubObjects=");
+        builder.append(pathToSubObjects);
+        builder.append(", indexingRules=");
+        builder.append(indexingRules);
+        builder.append(", primaryKeyPath=");
+        builder.append(primaryKeyPath);
+        builder.append("]");
+        return builder.toString();
     }
 }

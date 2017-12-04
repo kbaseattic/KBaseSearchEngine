@@ -19,7 +19,6 @@ import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
-import kbasesearchengine.system.ValidationException;
 import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.UObject;
 
@@ -41,21 +40,13 @@ public class KeywordParser {
 
         Utils.nonNull(indexingRules, "indexingRules is a required parameter");
 
-        for (IndexingRules rule: indexingRules) {
-            try {
-                rule.validate();
-            } catch (ValidationException ex) {
-                throw new IllegalArgumentException("Unable to extract keywords", ex);
-            }
-        }
-
         Map<String, InnerKeyValue> keywords = new LinkedHashMap<>();
         ValueConsumer<List<IndexingRules>> consumer = new ValueConsumer<List<IndexingRules>>() {
             @Override
             public void addValue(List<IndexingRules> rulesList, Object value)
                     throws IndexingException, InterruptedException, ObjectParseException {
                 for (IndexingRules rule : rulesList) {
-                    processRule(type, rule, getKeyName(rule), value, keywords, lookup, 
+                    processRule(type, rule, rule.getKeyName(), value, keywords, lookup, 
                             objectRefPath);
                 }
             }
@@ -67,7 +58,7 @@ public class KeywordParser {
             extractIndexingPart(parentJson, true, indexingRules, consumer);
         }
         Map<String, List<IndexingRules>> ruleMap = indexingRules.stream().collect(
-                Collectors.groupingBy(rule -> getKeyName(rule)));
+                Collectors.groupingBy(rule -> rule.getKeyName()));
         for (String key : ruleMap.keySet()) {
             for (IndexingRules rule : ruleMap.get(key)) {
                 if (!rule.isDerivedKey()) {
@@ -149,8 +140,8 @@ public class KeywordParser {
         }
         keysWaitingInStack.remove(key);
         List<Object> ret = keywords.containsKey(key) ? keywords.get(key).values : new ArrayList<>();
-        if (isEmpty(ret) && rule.getOptionalDefaultValue() != null) {
-            addOrAddAll(rule.getOptionalDefaultValue(), ret);
+        if (isEmpty(ret) && rule.getDefaultValue() != null) {
+            addOrAddAll(rule.getDefaultValue(), ret);
         }
         return ret;
     }
@@ -165,8 +156,8 @@ public class KeywordParser {
             throws IndexingException, InterruptedException, ObjectParseException {
         Object valueFinal = value;
         if (valueFinal == null) {
-            if (rule.getOptionalDefaultValue() != null) {
-                valueFinal = rule.getOptionalDefaultValue();
+            if (rule.getDefaultValue() != null) {
+                valueFinal = rule.getDefaultValue();
             } else {
                 valueFinal = Collections.EMPTY_LIST;
             }
@@ -184,11 +175,6 @@ public class KeywordParser {
         addOrAddAll(valueFinal, values.values);
     }
     
-    public static String getKeyName(IndexingRules rules) {
-        return rules.getKeyName() != null ? rules.getKeyName():
-            rules.getPath().getPathItems()[0];
-    }
-
     @SuppressWarnings("unchecked")
     private static void addOrAddAll(Object valueFinal, List<Object> values) {
         if (valueFinal != null) {
@@ -347,7 +333,7 @@ public class KeywordParser {
             }
             if (rules.getSubobjectIdKey() != null) {
                 throw new IllegalStateException("Subobject ID key can only be set for derived " +
-                        "keywords: " + getKeyName(rules));
+                        "keywords: " + rules.getKeyName());
             }
             if (rules.isFromParent() != fromParent) {
                 continue;

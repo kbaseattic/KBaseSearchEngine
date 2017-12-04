@@ -1422,11 +1422,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return ret;
     }
     
-    private String getKeyName(IndexingRules rules) {
-        return rules.getKeyName() != null ? rules.getKeyName():
-            rules.getPath().getPathItems()[0];
-    }
-    
     private String getKeyProperty(String keyName) {
         return "key." + keyName;
     }
@@ -1662,7 +1657,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 if (rules.getKeywordType() == null && !rules.isFullText()) {
                     continue;
                 }
-                String propName = getKeyProperty(getKeyName(rules));
+                String propName = getKeyProperty(rules.getKeyName());
                 String propType = getEsType(rules.isFullText(), rules.getKeywordType());
                 props.put(propName, new LinkedHashMap<String, Object>() {{
                     put("type", propType);

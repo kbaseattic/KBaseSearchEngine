@@ -31,7 +31,6 @@ import kbasesearchengine.SortingRule;
 import kbasesearchengine.TypeDescriptor;
 import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.common.GUID;
-import kbasesearchengine.parse.KeywordParser;
 import kbasesearchengine.search.FoundHits;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.system.IndexingRules;
@@ -337,14 +336,11 @@ public class SearchMethods {
                 if (ir.isNotIndexed()) {
                     continue;
                 }
-                String keyName = KeywordParser.getKeyName(ir);
+                String keyName = ir.getKeyName();
                 String uiKeyName = ir.getUiName();
-                if (uiKeyName == null) {
-                    uiKeyName = guessUIName(keyName);
-                }
                 String keyValueType = ir.getKeywordType();
                 if (keyValueType == null) {
-                    keyValueType = "string";
+                    keyValueType = "string"; //TODO CODE this seems wrong for fulltext, which is the only case where keyWordtype is null
                 }
                 long hidden = ir.isUiHidden() ? 1L : 0L;
                 KeyDescription kd = new KeyDescription().withKeyName(keyName)
