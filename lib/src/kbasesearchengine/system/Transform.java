@@ -15,8 +15,6 @@ import kbasesearchengine.tools.Utils;
  */
 public class Transform {
     
-    //TODO TESTS
-    
     private static final List<TransformType> SIMPLE_TYPES = Arrays.asList(
             TransformType.integer, TransformType.string, TransformType.values);
     
@@ -119,7 +117,7 @@ public class Transform {
      * @return the new transform.
      */
     public static Transform lookup(final String targetKey) {
-        Utils.notNullOrEmpty(targetKey, "targetKey cannot be null or empty");
+        Utils.notNullOrEmpty(targetKey, "targetKey cannot be null or whitespace");
         return new Transform(TransformType.lookup, null, targetKey, null, null);
     }
     
@@ -128,7 +126,7 @@ public class Transform {
      * @return the new transform.
      */
     public static Transform guid(final String targetObjectType) {
-        Utils.notNullOrEmpty(targetObjectType, "targetObjectType cannot be null or empty");
+        Utils.notNullOrEmpty(targetObjectType, "targetObjectType cannot be null or whitespace");
         return new Transform(TransformType.guid, null, null, targetObjectType, null);
     }
     
@@ -140,7 +138,8 @@ public class Transform {
      * @return the new transform.
      */
     public static Transform guid(final String targetObjectType, final String subObjectIDKey) {
-        Utils.notNullOrEmpty(targetObjectType, "targetObjectType cannot be null or empty");
+        Utils.notNullOrEmpty(targetObjectType, "targetObjectType cannot be null or whitespace");
+        Utils.notNullOrEmpty(subObjectIDKey, "subObjectIDKey cannot be null or whitespace");
         return new Transform(TransformType.guid, null, null, targetObjectType, subObjectIDKey);
     }
     
@@ -174,12 +173,12 @@ public class Transform {
         }
         if (type.equals(TransformType.location)) {
             Utils.notNullOrEmpty(locationOrTargetKey,
-                    "location tranform location type cannot be null or whitespace");
+                    "location transform location type cannot be null or whitespace");
             try {
                 return new Transform(type, LocationTransformType.valueOf(locationOrTargetKey),
                         null, null, null);
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Illegal tranform location: " +
+                throw new IllegalArgumentException("Illegal transform location: " +
                         locationOrTargetKey);
             }
         }
@@ -197,4 +196,65 @@ public class Transform {
         }
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result
+                + ((location == null) ? 0 : location.hashCode());
+        result = prime * result
+                + ((subObjectIdKey == null) ? 0 : subObjectIdKey.hashCode());
+        result = prime * result
+                + ((targetKey == null) ? 0 : targetKey.hashCode());
+        result = prime * result + ((targetObjectType == null) ? 0
+                : targetObjectType.hashCode());
+        result = prime * result + ((type == null) ? 0 : type.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        Transform other = (Transform) obj;
+        if (location == null) {
+            if (other.location != null) {
+                return false;
+            }
+        } else if (!location.equals(other.location)) {
+            return false;
+        }
+        if (subObjectIdKey == null) {
+            if (other.subObjectIdKey != null) {
+                return false;
+            }
+        } else if (!subObjectIdKey.equals(other.subObjectIdKey)) {
+            return false;
+        }
+        if (targetKey == null) {
+            if (other.targetKey != null) {
+                return false;
+            }
+        } else if (!targetKey.equals(other.targetKey)) {
+            return false;
+        }
+        if (targetObjectType == null) {
+            if (other.targetObjectType != null) {
+                return false;
+            }
+        } else if (!targetObjectType.equals(other.targetObjectType)) {
+            return false;
+        }
+        if (type != other.type) {
+            return false;
+        }
+        return true;
+    }
 }
