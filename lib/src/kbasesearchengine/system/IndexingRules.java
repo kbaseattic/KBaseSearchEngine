@@ -119,7 +119,6 @@ public class IndexingRules {
      */
     private final Optional<String> uiLinkKey;
     
-    //TODO NNOW return optionals instead of nulls
     private IndexingRules(
             final ObjectJsonPath path,
             final boolean fullText,
@@ -273,6 +272,12 @@ public class IndexingRules {
         
         public Builder withTransform(final Transform transform) {
             Utils.nonNull(transform, "transform");
+            // not clear why this is required, but this constraint was in original code
+            if (transform.getSubobjectIdKey().isPresent() && path != null) {
+                throw new IllegalArgumentException(
+                        "A transform with a subobject ID key is not compatible with a path." +
+                        "Path is: " + path);
+            }
             this.transform = transform;
             return this;
         }

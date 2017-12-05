@@ -330,12 +330,6 @@ public class KeywordParser {
                 throw new IllegalStateException("Path should be defined for non-derived " +
                         "indexing rules");
             }
-            if (rules.getTransform().isPresent() &&
-                    rules.getTransform().get().getSubobjectIdKey().isPresent()) {
-                //TODO NNOW CODE not sure why this needs to be true but add constraint & docs to indexing rule
-                throw new IllegalStateException("Subobject ID key can only be set for derived " +
-                        "keywords: " + rules.getKeyName());
-            }
             if (rules.isFromParent() != fromParent) {
                 continue;
             }
