@@ -126,15 +126,11 @@ public class KeywordParser {
                     type + "/" + key);
         }
         keysWaitingInStack.add(key);
-        String sourceKey = rule.getSourceKey();
-        if (sourceKey == null) {
-            throw new IllegalStateException("Source-key not defined for derived keyword: " + 
-                    type + "/" + key);
-        }
-        List<Object> values = processDerivedRule(type, ruleMap, sourceKey, keywords, lookup, 
-                keysWaitingInStack, objectRefPath);
-        if (rule.getTransform() != null && rule.getTransform().getSubobjectIdKey().isPresent()) {
-            processDerivedRule(type, ruleMap, rule.getTransform().getSubobjectIdKey().get(),
+        List<Object> values = processDerivedRule(type, ruleMap, rule.getSourceKey().get(),
+                keywords, lookup, keysWaitingInStack, objectRefPath);
+        if (rule.getTransform().isPresent() &&
+                rule.getTransform().get().getSubobjectIdKey().isPresent()) {
+            processDerivedRule(type, ruleMap, rule.getTransform().get().getSubobjectIdKey().get(),
                     keywords, lookup, keysWaitingInStack, objectRefPath);
         }
         for (Object value : values) {
@@ -142,8 +138,8 @@ public class KeywordParser {
         }
         keysWaitingInStack.remove(key);
         List<Object> ret = keywords.containsKey(key) ? keywords.get(key).values : new ArrayList<>();
-        if (isEmpty(ret) && rule.getDefaultValue() != null) {
-            addOrAddAll(rule.getDefaultValue(), ret);
+        if (isEmpty(ret) && rule.getDefaultValue().isPresent()) {
+            addOrAddAll(rule.getDefaultValue().get(), ret);
         }
         return ret;
     }
@@ -158,8 +154,8 @@ public class KeywordParser {
             throws IndexingException, InterruptedException, ObjectParseException {
         Object valueFinal = value;
         if (valueFinal == null) {
-            if (rule.getDefaultValue() != null) {
-                valueFinal = rule.getDefaultValue();
+            if (rule.getDefaultValue().isPresent()) {
+                valueFinal = rule.getDefaultValue().get();
             } else {
                 valueFinal = Collections.EMPTY_LIST;
             }
@@ -171,7 +167,7 @@ public class KeywordParser {
             keywords.put(key, values);
         }
         values.notIndexed = rule.isNotIndexed();
-        if (rule.getTransform() != null) {
+        if (rule.getTransform().isPresent()) {
             valueFinal = transform(valueFinal, rule, keywords, lookup, objectRefPath);
         }
         addOrAddAll(valueFinal, values.values);
@@ -193,7 +189,7 @@ public class KeywordParser {
             Map<String, InnerKeyValue> sourceKeywords, ObjectLookupProvider lookup,
             List<GUID> objectRefPath)
             throws IndexingException, InterruptedException, ObjectParseException {
-        final Transform transform = rule.getTransform();
+        final Transform transform = rule.getTransform().get();
         switch (transform.getType()) {
         case location:
             List<List<Object>> loc = (List<List<Object>>)value;
@@ -330,26 +326,25 @@ public class KeywordParser {
             if (rules.isDerivedKey()) {
                 continue;
             }
-            if (rules.getPath() == null) {
+            if (!rules.getPath().isPresent()) {
                 throw new IllegalStateException("Path should be defined for non-derived " +
                         "indexing rules");
             }
-            if (rules.getTransform() != null &&
-                    rules.getTransform().getSubobjectIdKey().isPresent()) {
+            if (rules.getTransform().isPresent() &&
+                    rules.getTransform().get().getSubobjectIdKey().isPresent()) {
+                //TODO NNOW CODE not sure why this needs to be true but add constraint & docs to indexing rule
                 throw new IllegalStateException("Subobject ID key can only be set for derived " +
                         "keywords: " + rules.getKeyName());
             }
             if (rules.isFromParent() != fromParent) {
                 continue;
             }
-            if (rules.isFullText() || rules.getKeywordType() != null) {
-                List<IndexingRules> rulesList = pathToRules.get(rules.getPath());
-                if (rulesList == null) {
-                    rulesList = new ArrayList<>();
-                    pathToRules.put(rules.getPath(), rulesList);
-                }
-                rulesList.add(rules);
+            List<IndexingRules> rulesList = pathToRules.get(rules.getPath().get());
+            if (rulesList == null) {
+                rulesList = new ArrayList<>();
+                pathToRules.put(rules.getPath().get(), rulesList);
             }
+            rulesList.add(rules);
         }
         ValueCollectingNode<List<IndexingRules>> root = new ValueCollectingNode<>();
         for (ObjectJsonPath path : pathToRules.keySet()) {

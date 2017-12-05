@@ -1,5 +1,7 @@
 package kbasesearchengine.system;
 
+import com.google.common.base.Optional;
+
 import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.tools.Utils;
 
@@ -15,8 +17,6 @@ import kbasesearchengine.tools.Utils;
  * content of the object (or sub-object) that it is to be indexed by the rules.
  * An indexing rule may also be based on a key-value pair formed by another
  * indexing rule.
- *
- * See {@link #validate()} for instructions on building unambigious indexing rules.
  *
  */
 public class IndexingRules {
@@ -37,7 +37,7 @@ public class IndexingRules {
      * element.
      *
      */
-    private final ObjectJsonPath path;
+    private final Optional<ObjectJsonPath> path;
     /**
      * fullText=true implies the use of the "text" type in ElasticSearch,
      * which stands for full text search (search on individual tokens) on the
@@ -69,7 +69,7 @@ public class IndexingRules {
     /** An optional transformation applied to a value.
      *
      */
-    private final Transform transform;
+    private final Optional<Transform> transform;
     
     /**
      * An optional attribute that indicates that the value is extracted from the
@@ -88,13 +88,13 @@ public class IndexingRules {
      * another (source) keyword which is set in "source-key".
      *
      */
-    private final String sourceKey;
+    private final Optional<String> sourceKey;
 
     /**
      * An optional value which is used for the keyword in case the resulting
      * array of values extracted from the document [sub-]object is empty.
      */
-    private final Object defaultValue;
+    private final Optional<Object> defaultValue;
     /**
      * Name of keyword displayed by UI.
      */
@@ -117,7 +117,7 @@ public class IndexingRules {
      * of the link, while the field provided in the uiLinkKey is expected to be a reference
      * to an object in a data store.
      */
-    private final String uiLinkKey;
+    private final Optional<String> uiLinkKey;
     
     //TODO NNOW return optionals instead of nulls
     private IndexingRules(
@@ -133,24 +133,24 @@ public class IndexingRules {
             String uiName,
             final boolean uiHidden,
             final String uiLinkKey) {
-        this.path = path;
+        this.path = Optional.fromNullable(path);
         this.fullText = fullText;
         this.keywordType = keywordType;
         this.keyName = keyName;
-        this.transform = transform;
+        this.transform = Optional.fromNullable(transform);
         this.fromParent = fromParent;
         this.notIndexed = notIndexed;
-        this.sourceKey = sourceKey;
-        this.defaultValue = defaultValue;
+        this.sourceKey = Optional.fromNullable(sourceKey);
+        this.defaultValue = Optional.fromNullable(defaultValue);
         if (uiName == null) {
             uiName = keyName.substring(0, 1).toUpperCase() + keyName.substring(1);
         }
         this.uiName = uiName;
         this.uiHidden = uiHidden;
-        this.uiLinkKey = uiLinkKey;
+        this.uiLinkKey = Optional.fromNullable(uiLinkKey);
     }
 
-    public ObjectJsonPath getPath() {
+    public Optional<ObjectJsonPath> getPath() {
         return path;
     }
     
@@ -166,7 +166,7 @@ public class IndexingRules {
         return keyName;
     }
     
-    public Transform getTransform() {
+    public Optional<Transform> getTransform() {
         return transform;
     }
     
@@ -175,18 +175,18 @@ public class IndexingRules {
     }
     
     public boolean isDerivedKey() {
-        return sourceKey != null;
+        return sourceKey.isPresent();
     }
     
     public boolean isNotIndexed() {
         return notIndexed;
     }
     
-    public String getSourceKey() {
+    public Optional<String> getSourceKey() {
         return sourceKey;
     }
     
-    public Object getDefaultValue() {
+    public Optional<Object> getDefaultValue() {
         return defaultValue;
     }
     
@@ -198,7 +198,7 @@ public class IndexingRules {
         return uiHidden;
     }
     
-    public String getUiLinkKey() {
+    public Optional<String> getUiLinkKey() {
         return uiLinkKey;
     }
     

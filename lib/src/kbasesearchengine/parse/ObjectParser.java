@@ -76,7 +76,8 @@ public class ObjectParser {
             if (!rules.isFromParent()) {
                 continue;
             }
-            indexingPaths.add(rules.getPath());
+            //TODO CODE this seems wrong. Why adding null paths?
+            indexingPaths.add(rules.getPath().orNull());
         }
         if (indexingPaths.size() == 0) {
             return null;
@@ -96,8 +97,8 @@ public class ObjectParser {
             if (rules.isFromParent()) {
                 continue;
             }
-            if (rules.getPath() != null) {
-                indexingPaths.add(rules.getPath());
+            if (rules.getPath().isPresent()) {
+                indexingPaths.add(rules.getPath().get());
             }
         }
         ObjectJsonPath pathToSubObjects = parsingRules.getPathToSubObjects() == null ?

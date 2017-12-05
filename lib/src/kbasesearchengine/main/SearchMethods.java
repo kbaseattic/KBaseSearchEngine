@@ -346,7 +346,7 @@ public class SearchMethods {
                 KeyDescription kd = new KeyDescription().withKeyName(keyName)
                         .withKeyUiTitle(uiKeyName).withKeyValueType(keyValueType)
                         .withKeyValueType(keyValueType).withHidden(hidden)
-                        .withLinkKey(ir.getUiLinkKey());
+                        .withLinkKey(ir.getUiLinkKey().orNull());
                 keys.add(kd);
             }
             TypeDescriptor td = new TypeDescriptor().withTypeName(typeName)
