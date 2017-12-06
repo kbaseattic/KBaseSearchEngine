@@ -213,14 +213,33 @@ public class IndexingRules {
                 + ", uiHidden=" + uiHidden + ", uiLinkKey=" + uiLinkKey + "]";
     }
     
+    /** Get a builder for an {@link IndexingRules} instance based on a JSON path into an object.
+     * The key name (see {@link #getKeyName()} and {@link Builder#withKeyName(String)} is set
+     * as the first portion of the path, but can be changed with
+     * {@link Builder#withKeyName(String)}.
+     * @param path the path to the value of interest in the object for the new
+     * {@link IndexingRules}.
+     * @return a new builder.
+     */
     public static Builder fromPath(final ObjectJsonPath path) {
         return new Builder(path);
     }
     
+    //TODO CODE do source key rules have to occur later in the ordering than their target key?
+    /** Get a builder for an {@link IndexingRules} instance based on another {@link IndexingRules}
+     * specified by a the sourceKey.
+     * @param sourceKey the keyName of the {@link IndexingRules} of the value of interest.
+     * @param keyName the name of the key (see {@link #getKeyName()} for this indexing rule.
+     * @return a new builder.
+     */
     public static Builder fromSourceKey(final String sourceKey, final String keyName) {
         return new Builder(sourceKey, keyName);
     }
     
+    /** A builder for {@link IndexingRules}.
+     * @author gaprice@lbl.gov
+     *
+     */
     public static class Builder {
         
         private String uiName = null;
@@ -251,18 +270,31 @@ public class IndexingRules {
             this.keyName = keyName;
         }
         
+        /** Change the key name for this indexing rule.
+         * @param keyName the new key name.
+         * @return this builder.
+         */
         public Builder withKeyName(final String keyName) {
             Utils.notNullOrEmpty(keyName, "keyName cannot be null or whitespace");
             this.keyName = keyName;
             return this;
         }
         
+        /** Set this indexing rule to a full text rule. This means that
+         * {@link IndexingRules#getKeywordType()} will return absent.
+         * @return this builder.
+         */
         public Builder withFullText() {
             this.keywordType = null;
             this.fullText = true;
             return this;
         }
         
+        /** Set the type of the key word to be indexed. Default is "keyword." Absent if full text
+         * is set.
+         * @param keywordType the keyword type.
+         * @return this builder.
+         */
         public Builder withKeywordType(final String keywordType) {
             Utils.notNullOrEmpty(keywordType, "keywordType cannot be null or whitespace");
             this.keywordType = keywordType;
@@ -270,6 +302,12 @@ public class IndexingRules {
             return this;
         }
         
+        /** Add a transform to this indexing rule. Note that GUID transforms with subobject ID keys
+         * are only allowed with source key based indexing rules (i.e. the builder creation
+         * method was {@link IndexingRules#fromSourceKey(String, String)}).
+         * @param transform the transform to add.
+         * @return this builder.
+         */
         public Builder withTransform(final Transform transform) {
             Utils.nonNull(transform, "transform");
             // not clear why this is required, but this constraint was in original code
@@ -282,16 +320,28 @@ public class IndexingRules {
             return this;
         }
         
+        /** Specify that the value produced by this indexing rule should not be indexed.
+         * @return this builder.
+         */
         public Builder withNotIndexed() {
             this.notIndexed = true;
             return this;
         }
         
+        /** Set a default value for this indexing rule.
+         * @param value the default value.
+         * @return this builder.
+         */
         public Builder withNullableDefaultValue(final Object value) {
             this.defaultValue = value;
             return this;
         }
         
+        /** Set the ui name for this indexing rule. If the ui name is not provided, it is
+         * created by capitalizing the first character of the key name.
+         * @param uiName the ui name.
+         * @return this builder.
+         */
         public Builder withNullableUIName(final String uiName) {
             this.uiName = checkString(uiName);
             return this;
@@ -301,21 +351,40 @@ public class IndexingRules {
             return Utils.isNullOrEmpty(s) ? null : s;
         }
 
+        /** Specify that the value associated with the indexing rule should not be displayed in
+         * a UI.
+         * @return this builder.
+         */
         public Builder withUIHidden() {
             this.uiHidden = true;
             return this;
         }
         
+        /** Specify that the source key or path should be applied to extract a value from the
+         * parent object of a sub object, rather than from the sub object.
+         * @return this builder.
+         */
         public Builder withFromParent() {
             this.fromParent = true;
             return this;
         }
         
+        //TODO CODE must the target indexing rule be a GUID transform?
+        /** Specify that the value associated with this indexing rule should be used as the text
+         * for a link to a data object specified by a GUID associated with another indexing rule
+         * which is specified by uiLinkKey.
+         * @param uiLinkKey the source key of the {@link IndexingRules} containing a GUID that 
+         * is the address of the data object that is the target of the link.
+         * @return this builder.
+         */
         public Builder withNullableUILinkKey(final String uiLinkKey) {
             this.uiLinkKey = checkString(uiLinkKey);
             return this;
         }
         
+        /** Build the {@link IndexingRules}.
+         * @return the rules.
+         */
         public IndexingRules build() {
             return new IndexingRules(path, fullText, keywordType, keyName,
                     transform, fromParent, notIndexed, sourceKey,
