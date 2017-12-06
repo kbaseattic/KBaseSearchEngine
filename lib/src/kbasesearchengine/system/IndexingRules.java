@@ -21,8 +21,6 @@ import kbasesearchengine.tools.Utils;
  */
 public class IndexingRules {
     
-    //TODO TEST
-
     /**
      * Path to an element of the source object from which to form the keyword.
      * The path may contain "*" or "[*]" to collect an array of values for the
@@ -58,7 +56,7 @@ public class IndexingRules {
      * fullText=false.
      *
      */
-    private final String keywordType;
+    private final Optional<String> keywordType;
     /**
      * Key name for keyword. If it is not specified, then first item between
      * slashes in "path" is used.
@@ -133,7 +131,7 @@ public class IndexingRules {
             final String uiLinkKey) {
         this.path = Optional.fromNullable(path);
         this.fullText = fullText;
-        this.keywordType = keywordType;
+        this.keywordType = Optional.fromNullable(keywordType);
         this.keyName = keyName;
         this.transform = Optional.fromNullable(transform);
         this.fromParent = fromParent;
@@ -169,7 +167,7 @@ public class IndexingRules {
      * will return false.
      * @return the keyword type.
      */
-    public String getKeywordType() {
+    public Optional<String> getKeywordType() {
         return keywordType;
     }
     
@@ -257,6 +255,113 @@ public class IndexingRules {
         return uiLinkKey;
     }
     
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result
+                + ((defaultValue == null) ? 0 : defaultValue.hashCode());
+        result = prime * result + (fromParent ? 1231 : 1237);
+        result = prime * result + (fullText ? 1231 : 1237);
+        result = prime * result + ((keyName == null) ? 0 : keyName.hashCode());
+        result = prime * result
+                + ((keywordType == null) ? 0 : keywordType.hashCode());
+        result = prime * result + (notIndexed ? 1231 : 1237);
+        result = prime * result + ((path == null) ? 0 : path.hashCode());
+        result = prime * result
+                + ((sourceKey == null) ? 0 : sourceKey.hashCode());
+        result = prime * result
+                + ((transform == null) ? 0 : transform.hashCode());
+        result = prime * result + (uiHidden ? 1231 : 1237);
+        result = prime * result
+                + ((uiLinkKey == null) ? 0 : uiLinkKey.hashCode());
+        result = prime * result + ((uiName == null) ? 0 : uiName.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        IndexingRules other = (IndexingRules) obj;
+        if (defaultValue == null) {
+            if (other.defaultValue != null) {
+                return false;
+            }
+        } else if (!defaultValue.equals(other.defaultValue)) {
+            return false;
+        }
+        if (fromParent != other.fromParent) {
+            return false;
+        }
+        if (fullText != other.fullText) {
+            return false;
+        }
+        if (keyName == null) {
+            if (other.keyName != null) {
+                return false;
+            }
+        } else if (!keyName.equals(other.keyName)) {
+            return false;
+        }
+        if (keywordType == null) {
+            if (other.keywordType != null) {
+                return false;
+            }
+        } else if (!keywordType.equals(other.keywordType)) {
+            return false;
+        }
+        if (notIndexed != other.notIndexed) {
+            return false;
+        }
+        if (path == null) {
+            if (other.path != null) {
+                return false;
+            }
+        } else if (!path.equals(other.path)) {
+            return false;
+        }
+        if (sourceKey == null) {
+            if (other.sourceKey != null) {
+                return false;
+            }
+        } else if (!sourceKey.equals(other.sourceKey)) {
+            return false;
+        }
+        if (transform == null) {
+            if (other.transform != null) {
+                return false;
+            }
+        } else if (!transform.equals(other.transform)) {
+            return false;
+        }
+        if (uiHidden != other.uiHidden) {
+            return false;
+        }
+        if (uiLinkKey == null) {
+            if (other.uiLinkKey != null) {
+                return false;
+            }
+        } else if (!uiLinkKey.equals(other.uiLinkKey)) {
+            return false;
+        }
+        if (uiName == null) {
+            if (other.uiName != null) {
+                return false;
+            }
+        } else if (!uiName.equals(other.uiName)) {
+            return false;
+        }
+        return true;
+    }
+
     /** Get a builder for an {@link IndexingRules} instance based on a JSON path into an object.
      * The key name (see {@link #getKeyName()} and {@link Builder#withKeyName(String)} is set
      * as the first portion of the path, but can be changed with
@@ -334,6 +439,7 @@ public class IndexingRules {
             return this;
         }
         
+        //TODO CODE this might be a candidate for an enum
         /** Set the type of the key word to be indexed. Default is "keyword." Absent if full text
          * is set.
          * @param keywordType the keyword type.
@@ -357,7 +463,7 @@ public class IndexingRules {
             // not clear why this is required, but this constraint was in original code
             if (transform.getSubobjectIdKey().isPresent() && path != null) {
                 throw new IllegalArgumentException(
-                        "A transform with a subobject ID key is not compatible with a path." +
+                        "A transform with a subobject ID key is not compatible with a path. " +
                         "Path is: " + path);
             }
             this.transform = transform;
@@ -382,7 +488,8 @@ public class IndexingRules {
         }
         
         /** Set the ui name for this indexing rule. If the ui name is not provided, it is
-         * created by capitalizing the first character of the key name.
+         * created by capitalizing the first character of the key name. Nulls and whitespace
+         * strings are ignored.
          * @param uiName the ui name.
          * @return this builder.
          */
@@ -416,7 +523,7 @@ public class IndexingRules {
         //TODO CODE must the target indexing rule be a GUID transform?
         /** Specify that the value associated with this indexing rule should be used as the text
          * for a link to a data object specified by a GUID associated with another indexing rule
-         * which is specified by uiLinkKey.
+         * which is specified by uiLinkKey. Nulls and whitespace strings are ignored.
          * @param uiLinkKey the source key of the {@link IndexingRules} containing a GUID that 
          * is the address of the data object that is the target of the link.
          * @return this builder.

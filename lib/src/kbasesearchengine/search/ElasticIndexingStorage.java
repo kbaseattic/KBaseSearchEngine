@@ -40,6 +40,7 @@ import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 
 import kbasesearchengine.common.GUID;
@@ -1530,14 +1531,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
     }
 
-    private String getEsType(boolean fullText, String keywordType) {
+    private String getEsType(boolean fullText, Optional<String> keywordType) {
         if (fullText) {
             return "text";
         }
-        if (keywordType == null || keywordType.equals("string")) {
-            return "keyword";
+        if (keywordType.get().equals("string")) {
+            return "keyword"; //TODO CODE why? why? why? 
         }
-        return keywordType;
+        return keywordType.get();
     }
     
     private String getDataTableName() {
@@ -1654,9 +1655,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
             }});
         } else {
             for (IndexingRules rules : indexingRules) {
-                if (rules.getKeywordType() == null && !rules.isFullText()) {
-                    continue;
-                }
                 String propName = getKeyProperty(rules.getKeyName());
                 String propType = getEsType(rules.isFullText(), rules.getKeywordType());
                 props.put(propName, new LinkedHashMap<String, Object>() {{

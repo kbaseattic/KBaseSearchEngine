@@ -264,7 +264,6 @@ public class ElasticIndexingStorageTest {
         Assert.assertTrue(genomeIndex.keyProps.containsKey("features"));
         Assert.assertEquals("3", "" + genomeIndex.keyProps.get("features"));
         Assert.assertEquals("1", "" + genomeIndex.keyProps.get("contigs"));
-        Assert.assertEquals("MyAssembly.1", genomeIndex.keyProps.get("assembly"));
         String assemblyGuidText = genomeIndex.keyProps.get("assembly_guid");
         Assert.assertNotNull(assemblyGuidText);
         ObjectData assemblyIndex = getIndexedObject(new GUID(assemblyGuidText));

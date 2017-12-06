@@ -18,6 +18,14 @@ public class Transform {
     private static final List<TransformType> SIMPLE_TYPES = Arrays.asList(
             TransformType.integer, TransformType.string, TransformType.values);
     
+    private static final Transform VALUES =
+            new Transform(TransformType.values, null, null, null, null);
+    private static final Transform INTEGER =
+            new Transform(TransformType.integer, null, null, null, null);
+    private static final Transform STRING =
+            new Transform(TransformType.string, null, null, null, null);
+    
+    
     private final TransformType type;
     private final Optional<LocationTransformType> location;
     private final Optional<String> targetKey;
@@ -84,21 +92,21 @@ public class Transform {
      * @return the new transform.
      */
     public static Transform values() {
-        return new Transform(TransformType.values, null, null, null, null);
+        return VALUES;
     }
     
     /** Create a {@link TransformType#string} transform.
      * @return the new transform.
      */
     public static Transform string() {
-        return new Transform(TransformType.string, null, null, null, null);
+        return STRING;
     }
     
     /** Create a {@link TransformType#integer} transform.
      * @return the new transform.
      */
     public static Transform integer() {
-        return new Transform(TransformType.integer, null, null, null, null);
+        return INTEGER;
     }
     
     /** Create a {@link TransformType#location} transform.

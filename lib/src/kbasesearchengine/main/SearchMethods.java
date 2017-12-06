@@ -338,7 +338,7 @@ public class SearchMethods {
                 }
                 String keyName = ir.getKeyName();
                 String uiKeyName = ir.getUiName();
-                String keyValueType = ir.getKeywordType();
+                String keyValueType = ir.getKeywordType().orNull();
                 if (keyValueType == null) {
                     keyValueType = "string"; //TODO CODE this seems wrong for fulltext, which is the only case where keyWordtype is null
                 }
