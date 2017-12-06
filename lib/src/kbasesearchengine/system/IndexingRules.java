@@ -21,7 +21,6 @@ import kbasesearchengine.tools.Utils;
  */
 public class IndexingRules {
     
-    //TODO JAVADOC
     //TODO TEST
 
     /**
@@ -149,68 +148,113 @@ public class IndexingRules {
         this.uiLinkKey = Optional.fromNullable(uiLinkKey);
     }
 
+    /** Returns the path into an object to a value that is the target of this indexing rule.
+     * If a path is provided, {@link #getSourceKey()} will return absent.
+     * @return the path.
+     */
     public Optional<ObjectJsonPath> getPath() {
         return path;
     }
     
+    /** Returns true if the value associated with this indexing rule should be indexed as full
+     * text rather than a keyword. If true, {@link #getKeywordType()} will return absent.
+     * @return true if this is a full text indexing rule.
+     */
     public boolean isFullText() {
         return fullText;
     }
     
+    /** Get the keyword type (e.g. integer, boolean, keyword, etc.) that specifies how the value
+     * associated with this indexing rule should be indexed. If non-absent, {@link #isFullText()}
+     * will return false.
+     * @return the keyword type.
+     */
     public String getKeywordType() {
         return keywordType;
     }
     
+    /** Get the name of the key under which the result of this indexing rule will be indexed.
+     * @return the name of the key.
+     */
     public String getKeyName() {
         return keyName;
     }
     
+    /** Get the transform associated with this indexing rule, if any.
+     * @return the transform.
+     */
     public Optional<Transform> getTransform() {
         return transform;
     }
     
+    /** Returns true if the operations specified with this indexing rule should be applied to
+     * the parent object of a subobject rather than the subobject itself.
+     * @return true if the operations should be applied to the parent object.
+     */
     public boolean isFromParent() {
         return fromParent;
     }
     
+    /** Returns true if the value associated with this indexing rule is derived from another
+     * indexing rule. In this case, {@link #getSourceKey()} will return the name of the key of the
+     * value of interest in the target indexing rule, and {@link #getPath()} will return absent.
+     * @return true if this is indexing rule operates on a value associated with another indexing
+     * rule.
+     */
     public boolean isDerivedKey() {
         return sourceKey.isPresent();
     }
     
+    /** Returns true if the value associated with this key should not be indexed.
+     * @return true if the value this indexing rule produces should not be indexed.
+     */
     public boolean isNotIndexed() {
         return notIndexed;
     }
     
+    /** Get the key name of the indexing rule associated with the value upon which this value
+     * will operate. If this method returns a non-absent value, {@link #isDerivedKey()} will
+     * return true.
+     * @return the key name for the data source for this indexing rule.
+     */
     public Optional<String> getSourceKey() {
         return sourceKey;
     }
     
+    /** Get the default value for this indexing rule if no value is available, if any.
+     * @return the default value or absent if no default value was set.
+     */
     public Optional<Object> getDefaultValue() {
         return defaultValue;
     }
     
+    /** Get the name for this indexing rule to be show in a UI context.
+     * @return the UI name.
+     */
     public String getUiName() {
         return uiName;
     }
     
+    /** Returns true if the value for this indexing rule should not be displayed in a UI
+     * context.
+     * @return true if the value should not be displayed.
+     */
     public boolean isUiHidden() {
         return uiHidden;
     }
     
+    //TODO CODE does this have to point to an indexing rule with a GUID, e.g. the indexing rule has a GUID transform?
+    /** Get, if present, the key name of an indexing rule that contains a GUID addressing a
+     * data object to which the value associated with this indexing rule should be linked in a UI
+     * context. For example, the value associated with this indexing rule might contain a product
+     * name, while the indexing rule specified by the key name returned by this method is
+     * associated with a GUID with the data store address of a data object. In the UI, the a link
+     * would be created with the target being the data store address and the name of the link
+     * the value associated with this indexing rule.
+     * @return the key name of an indexing rule associated with a GUID.
+     */
     public Optional<String> getUiLinkKey() {
         return uiLinkKey;
-    }
-    
-    @Override
-    public String toString() {
-        return "IndexingRules [path=" + path + ", fullText=" + fullText
-                + ", keywordType=" + keywordType + ", keyName=" + keyName
-                + ", transform=" + transform + ", fromParent=" + fromParent
-                + ", notIndexed=" + notIndexed
-                + ", sourceKey=" + sourceKey
-                + ", defaultValue=" + defaultValue
-                + ", uiName=" + uiName
-                + ", uiHidden=" + uiHidden + ", uiLinkKey=" + uiLinkKey + "]";
     }
     
     /** Get a builder for an {@link IndexingRules} instance based on a JSON path into an object.
