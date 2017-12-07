@@ -33,7 +33,8 @@ sys.path.insert(0, os.path.abspath('_ext'))
 # ones.
 extensions = [
 'sphinx.ext.autosectionlabel',
-'jsonlexer']
+'jsonlexer',
+'numfig']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
