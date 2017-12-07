@@ -1,2 +1,2 @@
-NonFunctional Requirement
+NonFunctional Requirements
 ==========================
