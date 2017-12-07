@@ -194,6 +194,7 @@ public class KeywordParser {
         case location:
             List<List<Object>> loc = (List<List<Object>>)value;
             Map<LocationTransformType, Object> retLoc = new LinkedHashMap<>();
+            //TODO CODE if the subobject stuff in the ObjectParsingRules is left out this throws an indexing exception. Need to figure out cause.
             retLoc.put(LocationTransformType.contig_id, loc.get(0).get(0));
             String strand = (String)loc.get(0).get(2);
             retLoc.put(LocationTransformType.strand, strand);

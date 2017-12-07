@@ -4,86 +4,79 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.parse.ObjectParseException;
-import kbasesearchengine.system.IndexingRules.Builder;
 import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.UObject;
 
 public class ObjectTypeParsingRules {
     
     //TODO TEST
-    //TODO CODE make fields final and use builder instead of setters
     //TODO CODE not sure if throwing ObjectParseException makes sense here
     //TODO NNOW what if there are two parent types for a single type? need to error out?
+    //TODO NNOW return optionals vs. nulls
     
-    private String globalObjectType;
-    private String uiTypeName;
-    private StorageObjectType storageObjectType;
-    private String innerSubType;
-    private ObjectJsonPath pathToSubObjects;
-    private List<IndexingRules> indexingRules;
-    private ObjectJsonPath primaryKeyPath;
+    private final String globalObjectType;
+    private final String uiTypeName;
+    private final StorageObjectType storageObjectType;
+    private final String innerSubType;
+    private final ObjectJsonPath pathToSubObjects;
+    private final List<IndexingRules> indexingRules;
+    private final ObjectJsonPath primaryKeyPath;
     
+    
+    private ObjectTypeParsingRules(
+            final String globalObjectType,
+            String uiTypeName,
+            final StorageObjectType storageObjectType,
+            final String innerSubType,
+            final ObjectJsonPath pathToSubObjects,
+            final List<IndexingRules> indexingRules,
+            final ObjectJsonPath primaryKeyPath) {
+        this.globalObjectType = globalObjectType;
+        if (uiTypeName == null) {
+            uiTypeName = globalObjectType.substring(0, 1).toUpperCase() +
+                    globalObjectType.substring(1);
+        }
+        this.uiTypeName = uiTypeName;
+        this.storageObjectType = storageObjectType;
+        this.innerSubType = innerSubType;
+        this.pathToSubObjects = pathToSubObjects;
+        this.indexingRules = Collections.unmodifiableList(indexingRules);
+        this.primaryKeyPath = primaryKeyPath;
+    }
+
     public String getGlobalObjectType() {
         return globalObjectType;
-    }
-    
-    private void setGlobalObjectType(String globalObjectType) {
-        this.globalObjectType = globalObjectType;
     }
     
     public String getUiTypeName() {
         return uiTypeName;
     }
     
-    private void setUiTypeName(String uiTypeName) {
-        this.uiTypeName = uiTypeName;
-    }
-    
-    // cannot be null
     public StorageObjectType getStorageObjectType() {
         return storageObjectType;
-    }
-    
-    private void setStorageObjectType(StorageObjectType storageObjectType) {
-        this.storageObjectType = storageObjectType;
     }
     
     public String getInnerSubType() {
         return innerSubType;
     }
     
-    private void setInnerSubType(String innerSubType) {
-        this.innerSubType = innerSubType;
-    }
-    
     public ObjectJsonPath getPathToSubObjects() {
         return pathToSubObjects;
     }
     
-    private void setPathToSubObjects(ObjectJsonPath pathToSubObjects) {
-        this.pathToSubObjects = pathToSubObjects;
-    }
-
     public List<IndexingRules> getIndexingRules() {
         return indexingRules;
     }
     
-    private void setIndexingRules(List<IndexingRules> indexingRules) {
-        this.indexingRules = indexingRules;
-    }
-    
     public ObjectJsonPath getPrimaryKeyPath() {
         return primaryKeyPath;
-    }
-    
-    private void setPrimaryKeyPath(ObjectJsonPath primaryKeyPath) {
-        this.primaryKeyPath = primaryKeyPath;
     }
     
     public static ObjectTypeParsingRules fromFile(final File file) 
@@ -111,9 +104,6 @@ public class ObjectTypeParsingRules {
             final String sourceInfo) 
             throws ObjectParseException {
         try {
-            ObjectTypeParsingRules ret = new ObjectTypeParsingRules();
-            ret.setGlobalObjectType((String)obj.get("global-object-type"));
-            ret.setUiTypeName((String)obj.get("ui-type-name"));
             final String storageCode = (String)obj.get("storage-type");
             final String type = (String)obj.get("storage-object-type");
             if (Utils.isNullOrEmpty(storageCode)) {
@@ -122,69 +112,82 @@ public class ObjectTypeParsingRules {
             if (Utils.isNullOrEmpty(type)) {
                 throw new ObjectParseException(getMissingKeyParseMessage("storage-object-type"));
             }
-            ret.setStorageObjectType(new StorageObjectType(storageCode, type));
-            ret.setInnerSubType((String)obj.get("inner-sub-type"));
-            ret.setPathToSubObjects(getPath((String)obj.get("path-to-sub-objects")));
+            final Builder builder = ObjectTypeParsingRules.getBuilder(
+                    (String) obj.get("global-object-type"), //TODO CODE better error if missing
+                    new StorageObjectType(storageCode, type))
+                    .withNullableUITypeName((String)obj.get("ui-type-name"));
+            final String subType = (String)obj.get("inner-sub-type");
+            if (!Utils.isNullOrEmpty(subType)) {
+                builder.toSubObjectRule(
+                        //TODO CODE add checks to ensure these exist
+                        getPath((String)obj.get("path-to-sub-objects")),
+                        getPath((String)obj.get("primary-key-path")),
+                        subType);
+            } // throw exception if the other subobj values exist?
             // Indexing
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> indexingRules =
                     (List<Map<String, Object>>)obj.get("indexing-rules");
             if (indexingRules != null) {
-                ret.setIndexingRules(new ArrayList<>());
                 for (Map<String, Object> rulesObj : indexingRules) {
-                    final String path = (String) rulesObj.get("path");
-                    final String keyName = (String) rulesObj.get("key-name");
-                    final Builder builder;
-                    if (Utils.isNullOrEmpty(path)) {
-                        final String sourceKey = (String)rulesObj.get("source-key");
-                        builder = IndexingRules.fromSourceKey(sourceKey, keyName);
-                    } else {
-                        //TODO CODE throw exception if sourceKey != null?
-                        builder = IndexingRules.fromPath(new ObjectJsonPath(path));
-                        if (!Utils.isNullOrEmpty(keyName)) {
-                            builder.withKeyName(keyName);
-                        }
-                    }
-                    if (getBool((Boolean) rulesObj.get("from-parent"))) {
-                        //TODO NNOW throw exception if not a sub type
-                        builder.withFromParent();
-                    }
-                    if (getBool(rulesObj.get("full-text"))) {
-                        builder.withFullText();
-                    }
-                    final String keywordType = (String)rulesObj.get("keyword-type");
-                    if (!Utils.isNullOrEmpty(keywordType)) {
-                        //TODO CODE throw an error if fullText is true?
-                        builder.withKeywordType(keywordType);
-                    }
-                    final String transform = (String) rulesObj.get("transform");
-                    if (!Utils.isNullOrEmpty(transform)) {
-                        final String subObjectIDKey = (String) rulesObj.get("subobject-id-key");
-                        final String targetObjectType =
-                                (String) rulesObj.get("target-object-type");
-                        final String[] tranSplt = transform.split("\\.", 2);
-                        final String transProp = tranSplt.length == 1 ? null : tranSplt[1];
-                        builder.withTransform(Transform.unknown(
-                                tranSplt[0], transProp, targetObjectType, subObjectIDKey));
-                    }
-                    if (getBool(rulesObj.get("not-indexed"))) {
-                        builder.withNotIndexed();
-                    }
-                    builder.withNullableDefaultValue(rulesObj.get("optional-default-value"));
-                    builder.withNullableUIName((String) rulesObj.get("ui-name"));
-                    if (getBool(rulesObj.get("ui-hidden"))) {
-                        builder.withUIHidden();
-                    }
-                    builder.withNullableUILinkKey((String) rulesObj.get("ui-link-key"));
-                    ret.getIndexingRules().add(builder.build());
+                    builder.withIndexingRule(buildRule(rulesObj));
                 }
             }
-            ret.setPrimaryKeyPath(getPath((String)obj.get("primary-key-path")));
-            return ret;
+            return builder.build();
         } catch (ObjectParseException | IllegalArgumentException | NullPointerException e) {
             throw new ObjectParseException(String.format("Error in source %s: %s",
                     sourceInfo, e.getMessage()), e);
         }
+    }
+
+    private static IndexingRules buildRule(
+            final Map<String, Object> rulesObj)
+            throws ObjectParseException {
+        final String path = (String) rulesObj.get("path");
+        final String keyName = (String) rulesObj.get("key-name");
+        final IndexingRules.Builder irBuilder;
+        if (Utils.isNullOrEmpty(path)) {
+            final String sourceKey = (String)rulesObj.get("source-key");
+            irBuilder = IndexingRules.fromSourceKey(sourceKey, keyName);
+        } else {
+            //TODO CODE throw exception if sourceKey != null?
+            irBuilder = IndexingRules.fromPath(new ObjectJsonPath(path));
+            if (!Utils.isNullOrEmpty(keyName)) {
+                irBuilder.withKeyName(keyName);
+            }
+        }
+        if (getBool((Boolean) rulesObj.get("from-parent"))) {
+            //TODO NNOW throw exception if not a sub type
+            irBuilder.withFromParent();
+        }
+        if (getBool(rulesObj.get("full-text"))) {
+            irBuilder.withFullText();
+        }
+        final String keywordType = (String)rulesObj.get("keyword-type");
+        if (!Utils.isNullOrEmpty(keywordType)) {
+            //TODO CODE throw an error if fullText is true?
+            irBuilder.withKeywordType(keywordType);
+        }
+        final String transform = (String) rulesObj.get("transform");
+        if (!Utils.isNullOrEmpty(transform)) {
+            final String subObjectIDKey = (String) rulesObj.get("subobject-id-key");
+            final String targetObjectType =
+                    (String) rulesObj.get("target-object-type");
+            final String[] tranSplt = transform.split("\\.", 2);
+            final String transProp = tranSplt.length == 1 ? null : tranSplt[1];
+            irBuilder.withTransform(Transform.unknown(
+                    tranSplt[0], transProp, targetObjectType, subObjectIDKey));
+        }
+        if (getBool(rulesObj.get("not-indexed"))) {
+            irBuilder.withNotIndexed();
+        }
+        irBuilder.withNullableDefaultValue(rulesObj.get("optional-default-value"));
+        irBuilder.withNullableUIName((String) rulesObj.get("ui-name"));
+        if (getBool(rulesObj.get("ui-hidden"))) {
+            irBuilder.withUIHidden();
+        }
+        irBuilder.withNullableUILinkKey((String) rulesObj.get("ui-link-key"));
+        return irBuilder.build();
     }
     
     private static boolean getBool(final Object putativeBool) {
@@ -219,5 +222,154 @@ public class ObjectTypeParsingRules {
         builder.append(primaryKeyPath);
         builder.append("]");
         return builder.toString();
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((globalObjectType == null) ? 0
+                : globalObjectType.hashCode());
+        result = prime * result
+                + ((indexingRules == null) ? 0 : indexingRules.hashCode());
+        result = prime * result
+                + ((innerSubType == null) ? 0 : innerSubType.hashCode());
+        result = prime * result + ((pathToSubObjects == null) ? 0
+                : pathToSubObjects.hashCode());
+        result = prime * result
+                + ((primaryKeyPath == null) ? 0 : primaryKeyPath.hashCode());
+        result = prime * result + ((storageObjectType == null) ? 0
+                : storageObjectType.hashCode());
+        result = prime * result
+                + ((uiTypeName == null) ? 0 : uiTypeName.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        ObjectTypeParsingRules other = (ObjectTypeParsingRules) obj;
+        if (globalObjectType == null) {
+            if (other.globalObjectType != null) {
+                return false;
+            }
+        } else if (!globalObjectType.equals(other.globalObjectType)) {
+            return false;
+        }
+        if (indexingRules == null) {
+            if (other.indexingRules != null) {
+                return false;
+            }
+        } else if (!indexingRules.equals(other.indexingRules)) {
+            return false;
+        }
+        if (innerSubType == null) {
+            if (other.innerSubType != null) {
+                return false;
+            }
+        } else if (!innerSubType.equals(other.innerSubType)) {
+            return false;
+        }
+        if (pathToSubObjects == null) {
+            if (other.pathToSubObjects != null) {
+                return false;
+            }
+        } else if (!pathToSubObjects.equals(other.pathToSubObjects)) {
+            return false;
+        }
+        if (primaryKeyPath == null) {
+            if (other.primaryKeyPath != null) {
+                return false;
+            }
+        } else if (!primaryKeyPath.equals(other.primaryKeyPath)) {
+            return false;
+        }
+        if (storageObjectType == null) {
+            if (other.storageObjectType != null) {
+                return false;
+            }
+        } else if (!storageObjectType.equals(other.storageObjectType)) {
+            return false;
+        }
+        if (uiTypeName == null) {
+            if (other.uiTypeName != null) {
+                return false;
+            }
+        } else if (!uiTypeName.equals(other.uiTypeName)) {
+            return false;
+        }
+        return true;
+    }
+    
+    public static Builder getBuilder(
+            final String globalObjectType,
+            final StorageObjectType storageType) {
+        return new Builder(globalObjectType, storageType);
+    }
+    
+    public static class Builder {
+        
+        private final String globalObjectType;
+        private String uiTypeName; 
+        private final StorageObjectType storageObjectType;
+        private String innerSubType = null;
+        private ObjectJsonPath pathToSubObjects = null;
+        private final List<IndexingRules> indexingRules = new LinkedList<>();
+        private ObjectJsonPath primaryKeyPath = null;
+        
+        public Builder(final String globalObjectType, final StorageObjectType storageType) {
+            Utils.notNullOrEmpty(globalObjectType,
+                    "globalObjectType cannot be null or whitespace");
+            Utils.nonNull(storageType, "storageType");
+            this.globalObjectType = globalObjectType;
+            this.storageObjectType = storageType;
+        }
+        
+        public Builder withNullableUITypeName(final String uiTypeName) {
+            if (!Utils.isNullOrEmpty(uiTypeName)) {
+                this.uiTypeName = uiTypeName;
+            }
+            return this;
+        }
+        
+        public Builder withIndexingRule(final IndexingRules rules) {
+            Utils.nonNull(rules, "rules");
+            indexingRules.add(rules);
+            return this;
+        }
+        
+        public Builder toSubObjectRule(
+                final ObjectJsonPath pathToSubObjects,
+                final ObjectJsonPath primaryKeyPath,
+                final String subObjectType) {
+            Utils.nonNull(pathToSubObjects, "pathToSubObjects");
+            Utils.nonNull(primaryKeyPath, "primaryKeyPath");
+            Utils.notNullOrEmpty(subObjectType, "subObjectType cannot be null or whitespace");
+            this.pathToSubObjects = pathToSubObjects;
+            this.primaryKeyPath = primaryKeyPath;
+            this.innerSubType = subObjectType;
+            return this;
+        }
+        
+        public int numberOfIndexingRules() {
+            return indexingRules.size();
+        }
+        
+        public ObjectTypeParsingRules build() {
+            if (indexingRules.isEmpty()) {
+                throw new IllegalStateException("Must supply at least one indexing rule");
+            }
+            
+            return new ObjectTypeParsingRules(globalObjectType, uiTypeName, storageObjectType,
+                    innerSubType, pathToSubObjects, indexingRules, primaryKeyPath);
+        }
     }
 }
