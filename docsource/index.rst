@@ -8,6 +8,7 @@ Welcome to KBaseSearchEngine's documentation!
 
 .. toctree::
    :maxdepth: 2
+   :numbered:
    :caption: Contents:
 
    intro
@@ -15,8 +16,7 @@ Welcome to KBaseSearchEngine's documentation!
    knownIssues
    systemRequirements
    configurationDetails
-   localDeployment
-   productionDeployment
+   installation
    api
    functionalRequirements
    nonFunctionalRequirements
