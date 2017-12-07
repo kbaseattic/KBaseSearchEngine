@@ -7,7 +7,7 @@ Build status (master):
 
 Powers KBase Search MKII.
 
-[Project Documentation](/docsource/KBaseSearchEngine.pdf)
+Download project documentation from [here](/docsource/KBaseSearchEngine.pdf).
 
 
 
