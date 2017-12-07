@@ -505,14 +505,14 @@ public class IndexerWorker implements Stoppable {
                     typeStorage.listObjectTypesByStorageObjectType(storageObjectType);
             for (ObjectTypeParsingRules rule : parsingRules) {
                 final long t2 = System.currentTimeMillis();
-                final Map<GUID, ParsedObject> guidToObj = new LinkedHashMap<>();
-                final String parentJson = parseObjects(guid, indexLookup,
-                        newRefPath, obj, rule, guidToObj);
+                final ParseObjectsRet parsedRet = parseObjects(guid, indexLookup,
+                        newRefPath, obj, rule);
                 long parsingTime = System.currentTimeMillis() - t2;
                 logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", parsing " +
                         "time: " + parsingTime + " ms.");
                 long t3 = System.currentTimeMillis();
-                indexObjectInStorage(guid, timestamp, isPublic, obj, rule, guidToObj, parentJson);
+                indexObjectInStorage(guid, timestamp, isPublic, obj, rule,
+                        parsedRet.guidToObj, parsedRet.parentJson);
                 long indexTime = System.currentTimeMillis() - t3;
                 logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", indexing " +
                         "time: " + indexTime + " ms.");
@@ -555,19 +555,28 @@ public class IndexerWorker implements Stoppable {
         }
     }
 
-    private String parseObjects(
+    private class ParseObjectsRet {
+        public final String parentJson;
+        public final Map<GUID, ParsedObject> guidToObj;
+        
+        private ParseObjectsRet(final String parentJson, final Map<GUID, ParsedObject> guidToObj) {
+            this.parentJson = parentJson;
+            this.guidToObj = guidToObj;
+        }
+    }
+    
+    private ParseObjectsRet parseObjects(
             final GUID guid,
             final ObjectLookupProvider indexLookup,
             final LinkedList<GUID> newRefPath,
             final SourceData obj,
-            final ObjectTypeParsingRules rule,
-            final Map<GUID, ParsedObject> guidToObj)
+            final ObjectTypeParsingRules rule)
             throws IndexingException, InterruptedException {
-        final List<?> inputs = Arrays.asList(guid, indexLookup, newRefPath, obj, rule, guidToObj);
+        final List<?> inputs = Arrays.asList(guid, indexLookup, newRefPath, obj, rule);
         return retrier.retryFunc(i -> parseObjects(i), inputs, null);
     }
     
-    private String parseObjects(final List<?> inputs)
+    private ParseObjectsRet parseObjects(final List<?> inputs)
             throws IndexingException, FatalRetriableIndexingException, InterruptedException {
         // should really wrap these in a class, but meh for now
         final GUID guid = (GUID) inputs.get(0);
@@ -576,9 +585,8 @@ public class IndexerWorker implements Stoppable {
         final List<GUID> newRefPath = (List<GUID>) inputs.get(2);
         final SourceData obj = (SourceData) inputs.get(3);
         final ObjectTypeParsingRules rule = (ObjectTypeParsingRules) inputs.get(4);
-        @SuppressWarnings("unchecked")
-        final Map<GUID, ParsedObject> guidToObj = (Map<GUID, ParsedObject>) inputs.get(5);
-        
+
+        final Map<GUID, ParsedObject> guidToObj = new HashMap<>();
         final String parentJson;
         try {
             try (JsonParser jts = obj.getData().getPlacedStream()) {
@@ -602,7 +610,7 @@ public class IndexerWorker implements Stoppable {
         } catch (IOException e) {
             throw new FatalRetriableIndexingException(e.getMessage(), e);
         }
-        return parentJson;
+        return new ParseObjectsRet(parentJson, guidToObj);
     }
     
 //    private void share(GUID guid, int accessGroupId) throws IOException {

@@ -17,6 +17,8 @@ public class ObjectTypeParsingRules {
     
     //TODO TEST
     //TODO CODE make fields final and use builder instead of setters
+    //TODO CODE not sure if throwing ObjectParseException makes sense here
+    //TODO NNOW what if there are two parent types for a single type? need to error out?
     
     private String globalObjectType;
     private String uiTypeName;
@@ -107,6 +109,7 @@ public class ObjectTypeParsingRules {
             final Map<String, Object> obj,
             final String sourceInfo) 
             throws ObjectParseException {
+        //TODO CODE wrap this in a try/c and append the source info to any messages
         ObjectTypeParsingRules ret = new ObjectTypeParsingRules();
         ret.setGlobalObjectType((String)obj.get("global-object-type"));
         ret.setUiTypeName((String)obj.get("ui-type-name"));
@@ -141,7 +144,7 @@ public class ObjectTypeParsingRules {
                 }
                 rules.setKeywordType((String)rulesObj.get("keyword-type"));
                 rules.setKeyName((String)rulesObj.get("key-name"));
-                rules.setTransform((String)rulesObj.get("transform"));
+                rules.setTransform((String) rulesObj.get("transform"));
                 Boolean fromParent = (Boolean)rulesObj.get("from-parent");
                 if (fromParent != null) {
                     rules.setFromParent(fromParent);
@@ -157,7 +160,6 @@ public class ObjectTypeParsingRules {
                 rules.setSourceKey((String)rulesObj.get("source-key"));
                 rules.setTargetObjectType((String)rulesObj.get("source-key"));
                 rules.setSubobjectIdKey((String)rulesObj.get("subobject-id-key"));
-                rules.setConstantValue(rulesObj.get("constant-value"));
                 rules.setOptionalDefaultValue(rulesObj.get("optional-default-value"));
                 rules.setTargetObjectType((String)rulesObj.get("target-object-type"));
                 rules.setUiName((String)rulesObj.get("ui-name"));
@@ -177,7 +179,6 @@ public class ObjectTypeParsingRules {
             }
         }
         ret.setPrimaryKeyPath(getPath((String)obj.get("primary-key-path")));
-        // Relations
         return ret;
     }
     

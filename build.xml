@@ -1,8 +1,8 @@
-<project name="KBaseRelationEngine" default="compile" basedir="."
+<project name="KBaseSearchEngine" default="compile" basedir="."
          xmlns:jacoco="antlib:org.jacoco.ant">
 
   <description>
-      Build JAR and WAR files for KBaseRelationEngine 
+      Build JAR and WAR files for KBaseSearchEngine 
   </description>
 
   <!-- set global properties for this build -->
