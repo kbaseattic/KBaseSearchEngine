@@ -9,12 +9,12 @@ There is no need to regenerate the makefile.
 
 
 Simply generate html documentation locally in the build dir, use
-
+ $ cd [THIS DIR]
  $ make html
 
 
 To generate pdf documentation locally in the build dir, use
-
+ $ cd [THIS DIR]
  $ make latexpdf
 
 NOTE: Latex is required for generating a pdf. On Ubuntu, latex can be installed using,
