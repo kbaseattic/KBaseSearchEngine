@@ -24,6 +24,7 @@ Welcome to KBaseSearchEngine's documentation!
    architectureLowLevelDesign
    formalSpecs
    performanceEvaluation
+   ops
    todos
    releaseNotes
 
