@@ -10,6 +10,12 @@ import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.tools.Utils;
 
 /**
+ * A set of rules that determine how to extract and transform portions of a data object into
+ * an indexable form.
+ * 
+ * The rules can apply to the parent object or to a subobject contained within the parent object.
+ * There are usually many subobjects with identical fields stored in a list or map inside the
+ * parent object.
  * 
  * @see ObjectTypeParsingRulesUtils
  * @author gaprice@lbl.gov
@@ -24,20 +30,20 @@ public class ObjectTypeParsingRules {
     private final String globalObjectType;
     private final String uiTypeName;
     private final StorageObjectType storageObjectType;
-    private final Optional<String> innerSubType;
-    private final Optional<ObjectJsonPath> pathToSubObjects;
     private final List<IndexingRules> indexingRules;
-    private final Optional<ObjectJsonPath> primaryKeyPath;
+    private final Optional<String> subObjectType;
+    private final Optional<ObjectJsonPath> subObjectPath;
+    private final Optional<ObjectJsonPath> subObjectIDPath;
     
     
     private ObjectTypeParsingRules(
             final String globalObjectType,
             String uiTypeName,
             final StorageObjectType storageObjectType,
-            final String innerSubType,
-            final ObjectJsonPath pathToSubObjects,
             final List<IndexingRules> indexingRules,
-            final ObjectJsonPath primaryKeyPath) {
+            final String subObjectType,
+            final ObjectJsonPath subObjectPath,
+            final ObjectJsonPath subObjectIDPath) {
         this.globalObjectType = globalObjectType;
         if (uiTypeName == null) {
             uiTypeName = globalObjectType.substring(0, 1).toUpperCase() +
@@ -45,59 +51,62 @@ public class ObjectTypeParsingRules {
         }
         this.uiTypeName = uiTypeName;
         this.storageObjectType = storageObjectType;
-        this.innerSubType = Optional.fromNullable(innerSubType);
-        this.pathToSubObjects = Optional.fromNullable(pathToSubObjects);
+        this.subObjectType = Optional.fromNullable(subObjectType);
+        this.subObjectPath = Optional.fromNullable(subObjectPath);
         this.indexingRules = Collections.unmodifiableList(indexingRules);
-        this.primaryKeyPath = Optional.fromNullable(primaryKeyPath);
+        this.subObjectIDPath = Optional.fromNullable(subObjectIDPath);
     }
 
+    /** Get the type of object this rule set applies to as known to the search system.
+     * @return the search object type.
+     */
     public String getGlobalObjectType() {
         return globalObjectType;
     }
     
+    /** Get the name of the type to be displayed to the user interface.
+     * @return the UI name.
+     */
     public String getUiTypeName() {
         return uiTypeName;
     }
     
+    /** Get the type of object this rule set applies to as known to the source of the data.
+     * @return the data source object type.
+     */
     public StorageObjectType getStorageObjectType() {
         return storageObjectType;
     }
     
-    public Optional<String> getInnerSubType() {
-        return innerSubType;
-    }
-    
-    public Optional<ObjectJsonPath> getPathToSubObjects() {
-        return pathToSubObjects;
-    }
-    
+    /** Get the set of indexing rules to apply to the object or subobjects.
+     * @return the indexingn rules.
+     */
     public List<IndexingRules> getIndexingRules() {
         return indexingRules;
     }
-    
-    public Optional<ObjectJsonPath> getPrimaryKeyPath() {
-        return primaryKeyPath;
-    }
 
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("ObjectTypeParsingRules [globalObjectType=");
-        builder.append(globalObjectType);
-        builder.append(", uiTypeName=");
-        builder.append(uiTypeName);
-        builder.append(", storageObjectType=");
-        builder.append(storageObjectType);
-        builder.append(", innerSubType=");
-        builder.append(innerSubType);
-        builder.append(", pathToSubObjects=");
-        builder.append(pathToSubObjects);
-        builder.append(", indexingRules=");
-        builder.append(indexingRules);
-        builder.append(", primaryKeyPath=");
-        builder.append(primaryKeyPath);
-        builder.append("]");
-        return builder.toString();
+    /** Get the type of the subobject as known to the search system, or absent if this rule set
+     * applies to the parent object.
+     * @return the subobject type.
+     */
+    public Optional<String> getSubObjectType() {
+        return subObjectType;
+    }
+    
+    /** Get the path to the subobjects in the parent object, or absent if this rule set applies
+     * to the parent object.
+     * @return the path to the subobjects.
+     */
+    public Optional<ObjectJsonPath> getSubObjectPath() {
+        return subObjectPath;
+    }
+    
+    /** Get the path to the ids of the subobjects, or absent if this rule set applies to the
+     * parent objects. The path is relative to the subobject root.
+     * @return the path to the subobject ids.
+     */
+    public Optional<ObjectJsonPath> getSubObjectIDPath() {
+        return subObjectIDPath;
     }
 
     @Override
@@ -109,11 +118,11 @@ public class ObjectTypeParsingRules {
         result = prime * result
                 + ((indexingRules == null) ? 0 : indexingRules.hashCode());
         result = prime * result
-                + ((innerSubType == null) ? 0 : innerSubType.hashCode());
-        result = prime * result + ((pathToSubObjects == null) ? 0
-                : pathToSubObjects.hashCode());
+                + ((subObjectType == null) ? 0 : subObjectType.hashCode());
+        result = prime * result + ((subObjectPath == null) ? 0
+                : subObjectPath.hashCode());
         result = prime * result
-                + ((primaryKeyPath == null) ? 0 : primaryKeyPath.hashCode());
+                + ((subObjectIDPath == null) ? 0 : subObjectIDPath.hashCode());
         result = prime * result + ((storageObjectType == null) ? 0
                 : storageObjectType.hashCode());
         result = prime * result
@@ -147,25 +156,25 @@ public class ObjectTypeParsingRules {
         } else if (!indexingRules.equals(other.indexingRules)) {
             return false;
         }
-        if (innerSubType == null) {
-            if (other.innerSubType != null) {
+        if (subObjectType == null) {
+            if (other.subObjectType != null) {
                 return false;
             }
-        } else if (!innerSubType.equals(other.innerSubType)) {
+        } else if (!subObjectType.equals(other.subObjectType)) {
             return false;
         }
-        if (pathToSubObjects == null) {
-            if (other.pathToSubObjects != null) {
+        if (subObjectPath == null) {
+            if (other.subObjectPath != null) {
                 return false;
             }
-        } else if (!pathToSubObjects.equals(other.pathToSubObjects)) {
+        } else if (!subObjectPath.equals(other.subObjectPath)) {
             return false;
         }
-        if (primaryKeyPath == null) {
-            if (other.primaryKeyPath != null) {
+        if (subObjectIDPath == null) {
+            if (other.subObjectIDPath != null) {
                 return false;
             }
-        } else if (!primaryKeyPath.equals(other.primaryKeyPath)) {
+        } else if (!subObjectIDPath.equals(other.subObjectIDPath)) {
             return false;
         }
         if (storageObjectType == null) {
@@ -185,6 +194,11 @@ public class ObjectTypeParsingRules {
         return true;
     }
     
+    /** Get a builder for a new {@link ObjectTypeParsingRules} instance.
+     * @param globalObjectType the local, search system type to which the rules apply.
+     * @param storageType the data source type to which the rules apply.
+     * @return a new builder.
+     */
     public static Builder getBuilder(
             final String globalObjectType,
             final StorageObjectType storageType) {
@@ -196,12 +210,12 @@ public class ObjectTypeParsingRules {
         private final String globalObjectType;
         private String uiTypeName; 
         private final StorageObjectType storageObjectType;
-        private String innerSubType = null;
-        private ObjectJsonPath pathToSubObjects = null;
         private final List<IndexingRules> indexingRules = new LinkedList<>();
-        private ObjectJsonPath primaryKeyPath = null;
+        private String subObjectType = null;
+        private ObjectJsonPath subObjectPath = null;
+        private ObjectJsonPath subObjectIDPath = null;
         
-        public Builder(final String globalObjectType, final StorageObjectType storageType) {
+        private Builder(final String globalObjectType, final StorageObjectType storageType) {
             Utils.notNullOrEmpty(globalObjectType,
                     "globalObjectType cannot be null or whitespace");
             Utils.nonNull(storageType, "storageType");
@@ -209,6 +223,14 @@ public class ObjectTypeParsingRules {
             this.storageObjectType = storageType;
         }
         
+        /** Set the name of the type of data associated with this rule set as it should be
+         * displayed in a user interface. Nulls and whitespace are ignored. By default, the name
+         * is set to be the global object type
+         * (see {@link ObjectTypeParsingRules#getBuilder(String, StorageObjectType)}) with the
+         * first character capitalized.
+         * @param uiTypeName the UI type name.
+         * @return this builder.
+         */
         public Builder withNullableUITypeName(final String uiTypeName) {
             if (!Utils.isNullOrEmpty(uiTypeName)) {
                 this.uiTypeName = uiTypeName;
@@ -216,36 +238,55 @@ public class ObjectTypeParsingRules {
             return this;
         }
         
+        /** Add an indexing rule to this builder. At least one rule must be added before the
+         * build can complete.
+         * @param rules the indexing rule.
+         * @return this builder.
+         */
         public Builder withIndexingRule(final IndexingRules rules) {
             Utils.nonNull(rules, "rules");
             indexingRules.add(rules);
             return this;
         }
         
+        /** Convert this rule set to a set that applies to a subobject of the parent object as
+         * opposed to the parent object itself.
+         * @param subObjectType the local, search type of the subobject.
+         * @param subObjectPath the path to the subobjects inside the parent object.
+         * @param subObjectIDPath the path from the root of the subobject to the id to be used
+         * for the subobject.
+         * @return this builder.
+         */
         public Builder toSubObjectRule(
-                final ObjectJsonPath pathToSubObjects,
-                final ObjectJsonPath primaryKeyPath,
-                final String subObjectType) {
-            Utils.nonNull(pathToSubObjects, "pathToSubObjects");
-            Utils.nonNull(primaryKeyPath, "primaryKeyPath");
+                final String subObjectType,
+                final ObjectJsonPath subObjectPath,
+                final ObjectJsonPath subObjectIDPath) {
+            Utils.nonNull(subObjectPath, "subObjectPath");
+            Utils.nonNull(subObjectIDPath, "subObjectIDPath");
             Utils.notNullOrEmpty(subObjectType, "subObjectType cannot be null or whitespace");
-            this.pathToSubObjects = pathToSubObjects;
-            this.primaryKeyPath = primaryKeyPath;
-            this.innerSubType = subObjectType;
+            this.subObjectPath = subObjectPath;
+            this.subObjectIDPath = subObjectIDPath;
+            this.subObjectType = subObjectType;
             return this;
         }
         
+        /** Returns the number of indexing rules added to the builder so far.
+         * @return the indexing rules.
+         */
         public int numberOfIndexingRules() {
             return indexingRules.size();
         }
         
+        /** Build the parsing rule set.
+         * @return the rule set.
+         */
         public ObjectTypeParsingRules build() {
             if (indexingRules.isEmpty()) {
                 throw new IllegalStateException("Must supply at least one indexing rule");
             }
             
             return new ObjectTypeParsingRules(globalObjectType, uiTypeName, storageObjectType,
-                    innerSubType, pathToSubObjects, indexingRules, primaryKeyPath);
+                    indexingRules, subObjectType, subObjectPath, subObjectIDPath);
         }
     }
 }

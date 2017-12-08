@@ -64,10 +64,10 @@ public class ObjectTypeParsingRulesUtils {
             final String subType = (String)obj.get("inner-sub-type");
             if (!Utils.isNullOrEmpty(subType)) {
                 builder.toSubObjectRule(
+                        subType,
                         //TODO CODE add checks to ensure these exist
                         getPath((String)obj.get("path-to-sub-objects")),
-                        getPath((String)obj.get("primary-key-path")),
-                        subType);
+                        getPath((String)obj.get("primary-key-path")));
             } // throw exception if the other subobj values exist?
             // Indexing
             @SuppressWarnings("unchecked")
