@@ -1,4 +1,4 @@
-test_local
+test_local/
 sdk.cfg
 bin
 /temp_test/
@@ -6,3 +6,11 @@ bin
 /search_tools.cfg
 /classes/
 /search_tools.cfg.bak
+test_types/
+docsource/_ext/jsonlexer.pyc
+docsource/_ext/numfig.pyc
+docsource/build/
+elasticsearch-6.0.0/
+kibana-6.0.0-darwin-x86_64/
+lib/src/git.properties
+lib/src/kbasesearchengine/KBaseSearchEngineServer.java.bak-2017-12-08-10-39-27

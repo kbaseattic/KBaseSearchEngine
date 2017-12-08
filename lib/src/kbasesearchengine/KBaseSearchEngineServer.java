@@ -47,14 +47,14 @@ import workspace.WorkspaceClient;
 /**
  * <p>Original spec-file module name: KBaseSearchEngine</p>
  * <pre>
- * A KBase module: KBaseRelationEngine
+ * A KBase module: KBaseSearchEngine
  * </pre>
  */
 public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
-    private static final String version = "";
-    private static final String gitUrl = "";
-    private static final String gitCommitHash = "";
+    private static final String version = "0.0.1";
+    private static final String gitUrl = "https://github.com/tiramisu24/KBaseSearchEngine.git";
+    private static final String gitCommitHash = "daf4a535a62350a45730b3ce0f6d8658c64247eb";
 
     //BEGIN_CLASS_HEADER
     private final SearchMethods search;

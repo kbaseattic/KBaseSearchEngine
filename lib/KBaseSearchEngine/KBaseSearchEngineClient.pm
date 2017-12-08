@@ -26,7 +26,7 @@ KBaseSearchEngine::KBaseSearchEngineClient
 =head1 DESCRIPTION
 
 
-A KBase module: KBaseRelationEngine
+A KBase module: KBaseSearchEngine
 
 
 =cut
@@ -1518,7 +1518,7 @@ link_key has a value which is a string
 =item Description
 
 Description of searchable object type including details about keywords.
-TODO: add more details like parent type, relations, primary key, ...
+TODO: add more details like parent type, primary key, ...
 
 
 =item Definition
