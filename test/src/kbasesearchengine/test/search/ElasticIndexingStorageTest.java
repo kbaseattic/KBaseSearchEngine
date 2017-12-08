@@ -50,6 +50,7 @@ import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.ObjectTypeParsingRulesUtils;
 import kbasesearchengine.test.common.TestCommon;
 import kbasesearchengine.test.controllers.elasticsearch.ElasticSearchController;
 import kbasesearchengine.test.parse.SubObjectExtractorTest;
@@ -111,7 +112,7 @@ public class ElasticIndexingStorageTest {
             public ObjectTypeParsingRules getTypeDescriptor(String type) {
                 try {
                     final File rulesFile = new File("resources/types/" + type + ".json");
-                    return ObjectTypeParsingRules.fromFile(rulesFile);
+                    return ObjectTypeParsingRulesUtils.fromFile(rulesFile);
                 } catch (Exception ex) {
                     throw new IllegalStateException(ex);
                 }
@@ -163,7 +164,7 @@ public class ElasticIndexingStorageTest {
     private static void indexObject(String type, String jsonResource, GUID ref, String objName)
             throws Exception {
         final File file = new File("resources/types/" + type + ".json");
-        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules.fromFile(file);
+        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesUtils.fromFile(file);
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
         String parentJson = null;
