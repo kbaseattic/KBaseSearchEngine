@@ -25,7 +25,7 @@ public class ObjectTypeParsingRules {
     
     //TODO JAVADOC
     //TODO TEST
-    //TODO NNOW what if there are two parent types for a single type? need to error out?
+    //TODO IDXRULE what if there are two parent types for a single type? need to error out?
     
     private final String globalObjectType;
     private final String uiTypeName;
@@ -245,12 +245,19 @@ public class ObjectTypeParsingRules {
          */
         public Builder withIndexingRule(final IndexingRules rules) {
             Utils.nonNull(rules, "rules");
+            if (rules.isFromParent() && subObjectType == null) {
+                throw new IllegalArgumentException("Cannot supply an indexing rule that " +
+                        "extracts data from a parent to a rule set that applies to the parent");
+            }
             indexingRules.add(rules);
             return this;
         }
         
         /** Convert this rule set to a set that applies to a subobject of the parent object as
          * opposed to the parent object itself.
+         * Call this method before adding any indexing rules
+         * ({@link #withIndexingRule(IndexingRules)})
+         * where {@link IndexingRules#isFromParent()} is true.
          * @param subObjectType the local, search type of the subobject.
          * @param subObjectPath the path to the subobjects inside the parent object.
          * @param subObjectIDPath the path from the root of the subobject to the id to be used

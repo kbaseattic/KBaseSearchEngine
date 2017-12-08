@@ -102,7 +102,6 @@ public class ObjectTypeParsingRulesUtils {
             }
         }
         if (getBool((Boolean) rulesObj.get("from-parent"))) {
-            //TODO NNOW throw exception if not a sub type
             irBuilder.withFromParent();
         }
         if (getBool(rulesObj.get("full-text"))) {
