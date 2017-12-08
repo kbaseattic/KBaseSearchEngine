@@ -12,6 +12,8 @@ Simply generate html documentation locally in the build dir, use
  $ cd [THIS DIR]
  $ make html
 
+This is a good way to verify the syntax of the rst files.
+
 
 To generate pdf documentation locally in the build dir, use
  $ cd [THIS DIR]
