@@ -1,12 +1,14 @@
 The documentation in this directory is based on [Sphinx](http://www.sphinx-doc.org/en/stable/).
 
 
-The makefile was generated using,
+The makefile and conf.py was generated using,
 
- $ sphinx-quicksart.
+ $ sphinx-quicksart
+
+There is no need to regenerate the makefile.
 
 
-To generate html documentation locally in the build dir, use
+Simply generate html documentation locally in the build dir, use
 
  $ make html
 
