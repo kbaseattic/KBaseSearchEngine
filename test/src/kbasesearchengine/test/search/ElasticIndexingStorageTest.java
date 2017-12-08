@@ -110,10 +110,8 @@ public class ElasticIndexingStorageTest {
             @Override
             public ObjectTypeParsingRules getTypeDescriptor(String type) {
                 try {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
-                            new File("resources/types/" + type + ".json"), Map.class);
-                    return ObjectTypeParsingRules.fromObject(parsingRulesObj, "test");
+                    final File rulesFile = new File("resources/types/" + type + ".json");
+                    return ObjectTypeParsingRules.fromFile(rulesFile);
                 } catch (Exception ex) {
                     throw new IllegalStateException(ex);
                 }
@@ -162,14 +160,10 @@ public class ElasticIndexingStorageTest {
                 isPublic, indexingRules);
     }
     
-    @SuppressWarnings("unchecked")
     private static void indexObject(String type, String jsonResource, GUID ref, String objName)
             throws Exception {
         final File file = new File("resources/types/" + type + ".json");
-        Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
-                file, Map.class);
-        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules
-                .fromObject(parsingRulesObj, file.toString());
+        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules.fromFile(file);
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
         String parentJson = null;

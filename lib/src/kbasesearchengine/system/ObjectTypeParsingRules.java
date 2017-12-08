@@ -88,20 +88,14 @@ public class ObjectTypeParsingRules {
         }
     }
 
-    public static ObjectTypeParsingRules fromJson(String json) throws ObjectParseException {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> obj = UObject.transformStringToObject(json, Map.class);
-        return fromObject(obj, "json");
-    }
-
-    public static ObjectTypeParsingRules fromStream(InputStream is, String sourceInfo) 
+    private static ObjectTypeParsingRules fromStream(InputStream is, String sourceInfo) 
             throws IOException, ObjectParseException {
         @SuppressWarnings("unchecked")
         Map<String, Object> obj = UObject.getMapper().readValue(is, Map.class);
         return fromObject(obj, sourceInfo);
     }
 
-    public static ObjectTypeParsingRules fromObject(
+    private static ObjectTypeParsingRules fromObject(
             final Map<String, Object> obj,
             final String sourceInfo) 
             throws ObjectParseException {
