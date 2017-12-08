@@ -1,5 +1,6 @@
 test_local
 elasticsearch-6.0.0
+kibana-6.0.0-darwin-x86_64
 data
 sdk.cfg
 bin
