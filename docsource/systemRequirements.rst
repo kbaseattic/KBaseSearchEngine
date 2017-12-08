@@ -5,4 +5,4 @@ System Requirements
 
 2. `ElasticSearch v5.5.2 <https://www.elastic.co/downloads/past-releases/elasticsearch-5-5-2>`_
 
-3. `Kibana v5.5.2 <https://www.elastic.co/guide/en/kibana/5.2/targz.html>`_
+3. `Kibana v5.5.2 <https://www.elastic.co/downloads/past-releases/kibana-5-5-2>`_
