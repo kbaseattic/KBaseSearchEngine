@@ -182,9 +182,9 @@ public class ElasticIndexingStorageTest {
         for (ObjectJsonPath path : pathToJson.keySet()) {
             String subJson = pathToJson.get(path);
             SimpleIdConsumer idConsumer = new SimpleIdConsumer();
-            if (parsingRules.getPrimaryKeyPath() != null) {
+            if (parsingRules.getPrimaryKeyPath().isPresent()) {
                 try (JsonParser subJts = UObject.getMapper().getFactory().createParser(subJson)) {
-                    IdMapper.mapKeys(parsingRules.getPrimaryKeyPath(), subJts, idConsumer);
+                    IdMapper.mapKeys(parsingRules.getPrimaryKeyPath().get(), subJts, idConsumer);
                 }
             }
             GUID id = ObjectParser.prepareGUID(parsingRules, ref, path, idConsumer);

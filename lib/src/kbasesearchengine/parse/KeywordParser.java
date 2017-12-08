@@ -252,7 +252,8 @@ public class KeywordParser {
             Set<GUID> guids = lookup.resolveRefs(objectRefPath, unresolvedGUIDs);
             Set<String> subIds = null;
             if (transform.getSubobjectIdKey().isPresent()) {
-                if (typeDescr.getInnerSubType() == null) {
+                if (!typeDescr.getInnerSubType().isPresent()) {
+                    //TODO CODE check this in parsing rules creation context if possible
                     throw new IllegalStateException("Subobject GUID transform should correspond " +
                             "to subobject type descriptor: " + rule);
                 }
@@ -268,7 +269,7 @@ public class KeywordParser {
                     guids.add(new GUID(typeDescr.getStorageObjectType().getStorageCode(),
                             parentGuid.getAccessGroupId(),
                             parentGuid.getAccessGroupObjectId(), parentGuid.getVersion(), 
-                            typeDescr.getInnerSubType(), subId));
+                            typeDescr.getInnerSubType().get(), subId));
                 }
             }
             Map<GUID, String> guidToType = lookup.getTypesForGuids(guids);

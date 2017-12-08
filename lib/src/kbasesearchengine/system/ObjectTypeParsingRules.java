@@ -9,6 +9,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.base.Optional;
+
 import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.tools.Utils;
@@ -16,18 +18,18 @@ import us.kbase.common.service.UObject;
 
 public class ObjectTypeParsingRules {
     
+    //TODO JAVADOC
     //TODO TEST
     //TODO CODE not sure if throwing ObjectParseException makes sense here
     //TODO NNOW what if there are two parent types for a single type? need to error out?
-    //TODO NNOW return optionals vs. nulls
     
     private final String globalObjectType;
     private final String uiTypeName;
     private final StorageObjectType storageObjectType;
-    private final String innerSubType;
-    private final ObjectJsonPath pathToSubObjects;
+    private final Optional<String> innerSubType;
+    private final Optional<ObjectJsonPath> pathToSubObjects;
     private final List<IndexingRules> indexingRules;
-    private final ObjectJsonPath primaryKeyPath;
+    private final Optional<ObjectJsonPath> primaryKeyPath;
     
     
     private ObjectTypeParsingRules(
@@ -45,10 +47,10 @@ public class ObjectTypeParsingRules {
         }
         this.uiTypeName = uiTypeName;
         this.storageObjectType = storageObjectType;
-        this.innerSubType = innerSubType;
-        this.pathToSubObjects = pathToSubObjects;
+        this.innerSubType = Optional.fromNullable(innerSubType);
+        this.pathToSubObjects = Optional.fromNullable(pathToSubObjects);
         this.indexingRules = Collections.unmodifiableList(indexingRules);
-        this.primaryKeyPath = primaryKeyPath;
+        this.primaryKeyPath = Optional.fromNullable(primaryKeyPath);
     }
 
     public String getGlobalObjectType() {
@@ -63,11 +65,11 @@ public class ObjectTypeParsingRules {
         return storageObjectType;
     }
     
-    public String getInnerSubType() {
+    public Optional<String> getInnerSubType() {
         return innerSubType;
     }
     
-    public ObjectJsonPath getPathToSubObjects() {
+    public Optional<ObjectJsonPath> getPathToSubObjects() {
         return pathToSubObjects;
     }
     
@@ -75,7 +77,7 @@ public class ObjectTypeParsingRules {
         return indexingRules;
     }
     
-    public ObjectJsonPath getPrimaryKeyPath() {
+    public Optional<ObjectJsonPath> getPrimaryKeyPath() {
         return primaryKeyPath;
     }
     
