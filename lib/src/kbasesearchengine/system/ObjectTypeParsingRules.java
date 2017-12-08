@@ -23,8 +23,6 @@ import kbasesearchengine.tools.Utils;
  */
 public class ObjectTypeParsingRules {
     
-    //TODO JAVADOC
-    //TODO TEST
     //TODO IDXRULE what if there are two parent types for a single type? need to error out?
     
     private final String globalObjectType;
