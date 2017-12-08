@@ -50,7 +50,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'KBaseSearchEngine'
-copyright = u'2017, Gavin Price, Arfath Pasha'
+copyright = u'KBase'
 author = u'Gavin Price, Arfath Pasha'
 
 # The version info for the project you're documenting, acts as replacement for

@@ -52,7 +52,7 @@ Make the following changes -
 
 4. Restart the Workspace Service. (See section on `Deploying the Workspace Service locally <https://github.com/kbase/workspace_deluxe/blob/dev-candidate/docsource/developers.rst>`_)
 
-5. Open a new terminal and save the following document as Empty.spec. Then load into ipython and save the object to the Workspace. Saving a new object will cause the Workspace listener to write a new event to the mongo instance.
+5. Open a new terminal and save the following document as Empty.spec. Then load into ipython, register the spec and save an object of this type to the Workspace. Saving a new object will cause the Workspace listener to write a new event to the mongo instance. Note that the ws.administer() command below requires administration privileges on the workspace.
 
 .. code-block:: javascript
 
@@ -76,7 +76,7 @@ Make the following changes -
     In [5]: ws.administer({'command': 'approveModRequest', 'module': 'Empty'})
     In [6]: ws.register_typespec({'spec': spec, 'new_types': ['AType'], 'dryrun': 0})
     Out[7]: {u'Empty.Atype-0.1': ....}
-    In [8]: ws.register_module('Empty')
+    In [8]: ws.release_module('Empty')
     Out[9]: [u'Empty.AType-1.0']
     In [10]: ws.save_objects({'id': 1, 'objects': [{'type': 'Empty.AType', 'data': {'bar': 'baz'}, 'name': 'myobj'}]})
     Out[11]:
@@ -120,7 +120,7 @@ Create a new terminal and start mongo to check to make sure the event has been w
     $ cp search_tools.cfg.example search_tools.cfg
     $ gedit search_tools.cfg
 
-Make the following edits.
+Make the following edits. Note the user for the token used below must have workspace admin privileges.
 
 .. code-block:: cfg
 
@@ -141,7 +141,7 @@ Make the following edits.
 
     $ mkdir test_types
     $ cd test_types
-    $ gedit Emtpy.json
+    $ gedit Empty.json
 
 .. code-block:: json
 
@@ -181,7 +181,8 @@ Make the following edits.
 
     $ bin/search_tools.sh -c search_tools.cfg -s
     Press return to shut down process
-    Moved event xxx NEW_VERSION WS:1/1/1 completed processing with state INDX on worked myworker
+    Moved event xxx NEW_VERSION WS:1/1/1 from UNPROC to READY
+    Moved event xxx NEW_VERSION WS:1/1/1 completed processing with state INDX on myworker
 
 10. Open Kibana in browser with url localhost:/5601/app/kibana#/dev_tools/console?_g=()
 
