@@ -25,7 +25,7 @@
 		},
 		{
 			"path": "read_count",
-			"keywork-type": "integer",
+			"keyword-type": "integer",
 			"ui-name": "Number of reads"
 		},
 		{
