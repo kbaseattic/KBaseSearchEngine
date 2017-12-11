@@ -48,7 +48,7 @@
 		},
 		{
 			"path": "cells/[*]/metadata/kbase/outputCell/jobId",
-			"keywork-type": "string",
+			"keyword-type": "string",
 			"key-name": "job_ids"
 		}
 	]

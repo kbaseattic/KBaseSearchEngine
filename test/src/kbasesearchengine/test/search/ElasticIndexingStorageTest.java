@@ -165,10 +165,11 @@ public class ElasticIndexingStorageTest {
     @SuppressWarnings("unchecked")
     private static void indexObject(String type, String jsonResource, GUID ref, String objName)
             throws Exception {
+        final File file = new File("resources/types/" + type + ".json");
         Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
-                new File("resources/types/" + type + ".json"), Map.class);
+                file, Map.class);
         ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules
-                .fromObject(parsingRulesObj, "test");
+                .fromObject(parsingRulesObj, file.toString());
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
         String parentJson = null;
@@ -238,7 +239,7 @@ public class ElasticIndexingStorageTest {
         Assert.assertTrue(obj.containsKey("type"));
         Assert.assertEquals("NC_000913", featureIndex.keyProps.get("contig_id"));
         String contigGuidText = featureIndex.keyProps.get("contig_guid");
-        Assert.assertNotNull(contigGuidText);
+        Assert.assertNotNull("missing contig_guid", contigGuidText);
         ObjectData contigIndex = getIndexedObject(new GUID(contigGuidText));
         //System.out.println("AssemblyContig index: " + contigIndex);
         Assert.assertEquals("NC_000913", "" + contigIndex.keyProps.get("contig_id"));
@@ -263,7 +264,6 @@ public class ElasticIndexingStorageTest {
         Assert.assertTrue(genomeIndex.keyProps.containsKey("features"));
         Assert.assertEquals("3", "" + genomeIndex.keyProps.get("features"));
         Assert.assertEquals("1", "" + genomeIndex.keyProps.get("contigs"));
-        Assert.assertEquals("MyAssembly.1", genomeIndex.keyProps.get("assembly"));
         String assemblyGuidText = genomeIndex.keyProps.get("assembly_guid");
         Assert.assertNotNull(assemblyGuidText);
         ObjectData assemblyIndex = getIndexedObject(new GUID(assemblyGuidText));
@@ -275,9 +275,8 @@ public class ElasticIndexingStorageTest {
     @Test
     public void testVersions() throws Exception {
         String objType = "Simple";
-        IndexingRules ir = new IndexingRules();
-        ir.setPath(new ObjectJsonPath("prop1"));
-        ir.setFullText(true);
+        IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop1"))
+                .withFullText().build();
         List<IndexingRules> indexingRules= Arrays.asList(ir);
         GUID id11 = new GUID("WS:2/1/1");
         indexObject(id11, objType, "{\"prop1\":\"abc 123\"}", "obj.1", Instant.now(), null,
@@ -333,9 +332,8 @@ public class ElasticIndexingStorageTest {
     @Test
     public void testSharing() throws Exception {
         String objType = "Sharable";
-        IndexingRules ir = new IndexingRules();
-        ir.setPath(new ObjectJsonPath("prop2"));
-        ir.setKeywordType("integer");
+        IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop2"))
+                .withKeywordType("integer").build();
         List<IndexingRules> indexingRules= Arrays.asList(ir);
         GUID id1 = new GUID("WS:10/1/1");
         indexObject(id1, objType, "{\"prop2\": 123}", "obj.1", Instant.now(), null,
@@ -384,9 +382,8 @@ public class ElasticIndexingStorageTest {
     @Test
     public void testPublic() throws Exception {
         String objType = "Publishable";
-        IndexingRules ir = new IndexingRules();
-        ir.setPath(new ObjectJsonPath("prop3"));
-        ir.setFullText(true);
+        IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop3"))
+                .withFullText().build();
         List<IndexingRules> indexingRules= Arrays.asList(ir);
         GUID id1 = new GUID("WS:20/1/1");
         GUID id2 = new GUID("WS:20/2/1");
@@ -437,9 +434,8 @@ public class ElasticIndexingStorageTest {
     @Test
     public void testPublicDataPalettes() throws Exception {
         String objType = "ShareAndPublic";
-        IndexingRules ir = new IndexingRules();
-        ir.setPath(new ObjectJsonPath("prop4"));
-        ir.setKeywordType("integer");
+        IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop4"))
+                .withKeywordType("integer").build();
         List<IndexingRules> indexingRules = Arrays.asList(ir);
         GUID id1 = new GUID("WS:30/1/1");
         indexObject(id1, objType, "{\"prop4\": 123}", "obj.1", Instant.now(), null,
@@ -473,9 +469,8 @@ public class ElasticIndexingStorageTest {
     @Test
     public void testDeleteUndelete() throws Exception {
         String objType = "DelUndel";
-        IndexingRules ir = new IndexingRules();
-        ir.setPath(new ObjectJsonPath("myprop"));
-        ir.setFullText(true);
+        IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("myprop"))
+                .withFullText().build();
         List<IndexingRules> indexingRules= Arrays.asList(ir);
         GUID id1 = new GUID("WS:100/2/1");
         GUID id2 = new GUID("WS:100/2/2");
@@ -520,9 +515,8 @@ public class ElasticIndexingStorageTest {
     public void testPublishAllVersions() throws Exception {
         // tests the all versions method for setting objects public / non-public.
         String objType = "PublishAllVersions";
-        IndexingRules ir = new IndexingRules();
-        ir.setPath(new ObjectJsonPath("myprop"));
-        ir.setFullText(true);
+        IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("myprop"))
+                .withFullText().build();
         List<IndexingRules> indexingRules= Arrays.asList(ir);
         GUID id1 = new GUID("WS:200/2/1");
         GUID id2 = new GUID("WS:200/2/2");
