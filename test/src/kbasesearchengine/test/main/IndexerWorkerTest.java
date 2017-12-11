@@ -1,6 +1,7 @@
 package kbasesearchengine.test.main;
 
 import static kbasesearchengine.test.common.TestCommon.set;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -27,6 +28,7 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventType;
+import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.events.storage.StatusEventStorage;
@@ -144,6 +146,115 @@ public class IndexerWorkerTest {
                 eq(Arrays.asList(
                         IndexingRules.fromPath(new ObjectJsonPath("somedata")).build(),
                         IndexingRules.fromPath(new ObjectJsonPath("id")).build())));
+    }
+    
+    @Test
+    public void idManglingBugFailBadID() throws Exception {
+        /* tests a bug where subobject ids would be mangled when primary-key-path was not
+         * present or incorrect in the spec, or there was no indexing rule that caused the
+         * primary-key-path part of the subobject to be extracted.
+         * This tests an incorrect sub object id.
+         */
+        
+        final StorageObjectType storageObjectType = StorageObjectType
+                .fromNullableVersion("code", "sometype", 3);
+        final ObjectTypeParsingRules rules = ObjectTypeParsingRules.getBuilder(
+                "foo", storageObjectType)
+                .toSubObjectRule("subfoo", new ObjectJsonPath("/subobjs/[*]/"),
+                        new ObjectJsonPath("idx"))
+                .withIndexingRule(IndexingRules.fromPath(
+                        new ObjectJsonPath("somedata"))
+                        .build())
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("id"))
+                        .build())
+                .build();
+        idManglingBugFail(storageObjectType, rules);
+    }
+    
+    @Test
+    public void idManglingBugFailNoIndexingRule() throws Exception {
+        /* tests a bug where subobject ids would be mangled when primary-key-path was not
+         * present or incorrect in the spec, or there was no indexing rule that caused the
+         * primary-key-path part of the subobject to be extracted.
+         * This tests a missing indexing rule for a sub object id.
+         */
+        
+        final StorageObjectType storageObjectType = StorageObjectType
+                .fromNullableVersion("code", "sometype", 3);
+        final ObjectTypeParsingRules rules = ObjectTypeParsingRules.getBuilder(
+                "foo", storageObjectType)
+                .toSubObjectRule("subfoo", new ObjectJsonPath("/subobjs/[*]/"),
+                        new ObjectJsonPath("id"))
+                .withIndexingRule(IndexingRules.fromPath(
+                        new ObjectJsonPath("somedata"))
+                        .build())
+                .build();
+        idManglingBugFail(storageObjectType, rules);
+    }
+
+    private void idManglingBugFail(
+            final StorageObjectType storageObjectType,
+            final ObjectTypeParsingRules rules)
+            throws Exception {
+        final Map<String, Object> data = ImmutableMap.of(
+                "thingy", 1,
+                "thingy2", "foo",
+                "subobjs", Arrays.asList(
+                        ImmutableMap.of("id", "an id", "somedata", "data"),
+                        ImmutableMap.of("id", "an id2", "somedata", "data2")
+                        )
+                );
+        
+        final EventHandler ws = mock(EventHandler.class);
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final IndexingStorage idxStore = mock(IndexingStorage.class);
+        final TypeStorage typeStore = mock(TypeStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        
+        final Path tempDir = Paths.get(TestCommon.getTempDir()).toAbsolutePath()
+                .resolve("IndexerWorkerTest");
+        deleteRecursively(tempDir);
+        
+        when(ws.getStorageCode()).thenReturn("code");
+        
+        final IndexerWorker worker = new IndexerWorker(
+                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger);
+        
+        final GUID guid = new GUID("code:1/2/3");
+        when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
+        
+        when(ws.load(eq(Arrays.asList(guid)), any(Path.class)))
+                .thenAnswer(new Answer<SourceData>() {
+
+                        @Override
+                        public SourceData answer(final InvocationOnMock inv) throws Throwable {
+                            final Path path = inv.getArgument(1);
+                            new ObjectMapper().writeValue(path.toFile(), data);
+                            return SourceData.getBuilder(
+                                    new UObject(path.toFile()), "myobj", "somedude")
+                                    .withNullableMD5("md5")
+                                    .build();
+                        }
+        });
+
+        when(typeStore.listObjectTypesByStorageObjectType(storageObjectType))
+                .thenReturn(Arrays.asList(
+                        rules));
+        try {
+            worker.processOneEvent(StatusEvent.getBuilder(
+                    storageObjectType,
+                    Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                    .withNullableAccessGroupID(1)
+                    .withNullableObjectID("2")
+                    .withNullableVersion(3)
+                    .withNullableisPublic(false)
+                    .build());
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, new UnprocessableEventIndexingException(
+                    "Could not find the subobject id for one or more of the subobjects for " +
+                    "object code:1/2/3 when applying search specification foo"));
+        }
     }
     
     private void deleteRecursively(final Path path) throws Exception {
