@@ -41,9 +41,9 @@ public class ObjectParser {
         for (ObjectJsonPath path : pathToJson.keySet()) {
             String subJson = pathToJson.get(path);
             SimpleIdConsumer idConsumer = new SimpleIdConsumer();
-            if (parsingRules.getPrimaryKeyPath() != null) {
+            if (parsingRules.getSubObjectIDPath().isPresent()) {
                 try (JsonParser subJts = UObject.getMapper().getFactory().createParser(subJson)) {
-                    IdMapper.mapKeys(parsingRules.getPrimaryKeyPath(), subJts, idConsumer);
+                    IdMapper.mapKeys(parsingRules.getSubObjectIDPath().get(), subJts, idConsumer);
                 }
             }
             GUID subid = prepareGUID(parsingRules, guid, path, idConsumer);
@@ -57,18 +57,17 @@ public class ObjectParser {
             SimpleIdConsumer idConsumer) {
         String innerSubType = null;
         String innerID = null;
-        if (parsingRules.getPathToSubObjects() != null) {
+        if (parsingRules.getSubObjectPath().isPresent()) {
             innerID = idConsumer.getPrimaryKey() == null ? path.toString() : 
                 String.valueOf(idConsumer.getPrimaryKey());
-            innerSubType = parsingRules.getInnerSubType() == null ? "_" : 
-                parsingRules.getInnerSubType();
+            innerSubType = parsingRules.getSubObjectType().get();
         }
         return new GUID(guid, innerSubType, innerID);
     }
     
     public static String extractParentFragment(ObjectTypeParsingRules parsingRules,
             JsonParser jts) throws ObjectParseException, IOException {
-        if (parsingRules.getPathToSubObjects() == null) {
+        if (!parsingRules.getSubObjectPath().isPresent()) {
             return null;
         }
         List<ObjectJsonPath> indexingPaths = new ArrayList<>();
@@ -101,8 +100,8 @@ public class ObjectParser {
                 indexingPaths.add(rules.getPath().get());
             }
         }
-        ObjectJsonPath pathToSubObjects = parsingRules.getPathToSubObjects() == null ?
-                new ObjectJsonPath("/") : parsingRules.getPathToSubObjects();
+        ObjectJsonPath pathToSubObjects = parsingRules.getSubObjectPath()
+                .or(new ObjectJsonPath("/"));
         SubObjectExtractor.extract(pathToSubObjects, indexingPaths, jts, subObjConsumer);
     }
 }

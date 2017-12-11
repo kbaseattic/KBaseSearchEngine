@@ -194,6 +194,7 @@ public class KeywordParser {
         case location:
             List<List<Object>> loc = (List<List<Object>>)value;
             Map<LocationTransformType, Object> retLoc = new LinkedHashMap<>();
+            //TODO CODE if the subobject stuff in the ObjectParsingRules is left out this throws an indexing exception. Need to figure out cause.
             retLoc.put(LocationTransformType.contig_id, loc.get(0).get(0));
             String strand = (String)loc.get(0).get(2);
             retLoc.put(LocationTransformType.strand, strand);
@@ -251,7 +252,8 @@ public class KeywordParser {
             Set<GUID> guids = lookup.resolveRefs(objectRefPath, unresolvedGUIDs);
             Set<String> subIds = null;
             if (transform.getSubobjectIdKey().isPresent()) {
-                if (typeDescr.getInnerSubType() == null) {
+                if (!typeDescr.getSubObjectType().isPresent()) {
+                    //TODO CODE check this in parsing rules creation context if possible
                     throw new IllegalStateException("Subobject GUID transform should correspond " +
                             "to subobject type descriptor: " + rule);
                 }
@@ -267,7 +269,7 @@ public class KeywordParser {
                     guids.add(new GUID(typeDescr.getStorageObjectType().getStorageCode(),
                             parentGuid.getAccessGroupId(),
                             parentGuid.getAccessGroupObjectId(), parentGuid.getVersion(), 
-                            typeDescr.getInnerSubType(), subId));
+                            typeDescr.getSubObjectType().get(), subId));
                 }
             }
             Map<GUID, String> guidToType = lookup.getTypesForGuids(guids);

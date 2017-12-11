@@ -30,8 +30,7 @@ public class Transform {
     private final Optional<LocationTransformType> location;
     private final Optional<String> targetKey;
     private final Optional<String> targetObjectType;
-    // TODO NNOW subobjectIdKey constrains the target type to be a subtype. Add a check in the creation context to check this. 
-    
+    // TODO IDXRULE subobjectIdKey constrains the target type to be a subtype. Add a check in the creation context to check this. 
     private final Optional<String> subObjectIdKey;
     
     private Transform(

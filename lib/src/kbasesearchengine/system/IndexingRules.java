@@ -101,7 +101,7 @@ public class IndexingRules {
      * supposed to be visible via UI though it could be used in API search queries.
      */
     private final boolean uiHidden;
-    // TODO NNOW this should point to another indexing rule that is a guid.
+    // TODO IDXRULE this should point to another indexing rule that is a guid.
     /**
      * An optional pointer to a paired keyword coupled with given one providing
      * GUID for making clickable URL for value provided.
@@ -241,7 +241,7 @@ public class IndexingRules {
         return uiHidden;
     }
     
-    //TODO CODE does this have to point to an indexing rule with a GUID, e.g. the indexing rule has a GUID transform?
+    //TODO IDXRULE does this have to point to an indexing rule with a GUID, e.g. the indexing rule has a GUID transform?
     /** Get, if present, the key name of an indexing rule that contains a GUID addressing a
      * data object to which the value associated with this indexing rule should be linked in a UI
      * context. For example, the value associated with this indexing rule might contain a product
@@ -374,7 +374,7 @@ public class IndexingRules {
         return new Builder(path);
     }
     
-    //TODO CODE do source key rules have to occur later in the ordering than their target key?
+    //TODO IDXRULE do source key rules have to occur later in the ordering than their target key?
     /** Get a builder for an {@link IndexingRules} instance based on another {@link IndexingRules}
      * specified by a the sourceKey.
      * @param sourceKey the keyName of the {@link IndexingRules} of the value of interest.
@@ -520,7 +520,7 @@ public class IndexingRules {
             return this;
         }
         
-        //TODO CODE must the target indexing rule be a GUID transform?
+        //TODO IDXRULE must the target indexing rule be a GUID transform?
         /** Specify that the value associated with this indexing rule should be used as the text
          * for a link to a data object specified by a GUID associated with another indexing rule
          * which is specified by uiLinkKey. Nulls and whitespace strings are ignored.

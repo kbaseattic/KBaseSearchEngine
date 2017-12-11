@@ -50,6 +50,7 @@ import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.ObjectTypeParsingRulesUtils;
 import kbasesearchengine.test.common.TestCommon;
 import kbasesearchengine.test.controllers.elasticsearch.ElasticSearchController;
 import kbasesearchengine.test.parse.SubObjectExtractorTest;
@@ -110,10 +111,8 @@ public class ElasticIndexingStorageTest {
             @Override
             public ObjectTypeParsingRules getTypeDescriptor(String type) {
                 try {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
-                            new File("resources/types/" + type + ".json"), Map.class);
-                    return ObjectTypeParsingRules.fromObject(parsingRulesObj, "test");
+                    final File rulesFile = new File("resources/types/" + type + ".json");
+                    return ObjectTypeParsingRulesUtils.fromFile(rulesFile);
                 } catch (Exception ex) {
                     throw new IllegalStateException(ex);
                 }
@@ -162,14 +161,10 @@ public class ElasticIndexingStorageTest {
                 isPublic, indexingRules);
     }
     
-    @SuppressWarnings("unchecked")
     private static void indexObject(String type, String jsonResource, GUID ref, String objName)
             throws Exception {
         final File file = new File("resources/types/" + type + ".json");
-        Map<String, Object> parsingRulesObj = UObject.getMapper().readValue(
-                file, Map.class);
-        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules
-                .fromObject(parsingRulesObj, file.toString());
+        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesUtils.fromFile(file);
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
         String parentJson = null;
@@ -182,9 +177,9 @@ public class ElasticIndexingStorageTest {
         for (ObjectJsonPath path : pathToJson.keySet()) {
             String subJson = pathToJson.get(path);
             SimpleIdConsumer idConsumer = new SimpleIdConsumer();
-            if (parsingRules.getPrimaryKeyPath() != null) {
+            if (parsingRules.getSubObjectIDPath().isPresent()) {
                 try (JsonParser subJts = UObject.getMapper().getFactory().createParser(subJson)) {
-                    IdMapper.mapKeys(parsingRules.getPrimaryKeyPath(), subJts, idConsumer);
+                    IdMapper.mapKeys(parsingRules.getSubObjectIDPath().get(), subJts, idConsumer);
                 }
             }
             GUID id = ObjectParser.prepareGUID(parsingRules, ref, path, idConsumer);
