@@ -476,9 +476,14 @@ public class IndexerWorker implements Stoppable {
             throws IndexingException, InterruptedException, RetriableIndexingException {
         long t1 = System.currentTimeMillis();
         final File tempFile;
+        File dir = getTempSubDir(guid.getStorageCode());
         try {
-            tempFile = ObjectParser.prepareTempFile(getTempSubDir(guid.getStorageCode()));
+            tempFile = ObjectParser.prepareTempFile(dir);
         } catch (IOException e) {
+            throw new FatalRetriableIndexingException(e.getMessage(), e);
+        } catch (SecurityException e) {
+            logger.logError("Security Manager denied access to delete " +
+                    "temporary file in dir: "+dir);
             throw new FatalRetriableIndexingException(e.getMessage(), e);
         }
         if (indexLookup == null) {
