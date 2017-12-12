@@ -478,7 +478,7 @@ public class IndexerWorker implements Stoppable {
         long t1 = System.currentTimeMillis();
         final File tempFile;
         try {
-            FileUtil.getOrCreateCleanSubDir(rootTempDir, guid.getStorageCode());
+            FileUtil.getOrCreateSubDir(rootTempDir, guid.getStorageCode());
             tempFile = File.createTempFile("ws_srv_response_", ".json");
         } catch (IOException e) {
             throw new FatalRetriableIndexingException(e.getMessage(), e);
