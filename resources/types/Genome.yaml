@@ -33,8 +33,8 @@ indexing-rules:
         full-text: true
     -
         # Extract the number of features from a list at the /features path. The special {size}
-        # element directs the parser to return the size of list or mapping. Since this number
-        # will be an integer, the keyword type is set a such.
+        # element directs the parser to return the size of a list or mapping. Since this number
+        # will be an integer, the keyword type is set as such.
         # The key name is explicitly set to features, rather than implicitly set by the first
         # section of the path.
         path: features/{size}

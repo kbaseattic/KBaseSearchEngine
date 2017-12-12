@@ -17,7 +17,6 @@ import kbasesearchengine.tools.Utils;
 
 /** Utilities for creating {@link ObjectTypeParsingRules} from various data sources.
  * 
- * This class is not thread-safe.
  * @author gaprice@lbl.gov
  *
  */
@@ -55,7 +54,7 @@ public class ObjectTypeParsingRulesUtils {
         }
         if (!(predata instanceof Map)) {
             throw new TypeParseException(
-                    "Expected mapping in top level YAML/JSON." + sourceInfo);
+                    "Expected mapping in top level YAML/JSON in source: " + sourceInfo);
         }
         @SuppressWarnings("unchecked")
         Map<String, Object> obj = (Map<String, Object>) predata;
