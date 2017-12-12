@@ -26,6 +26,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
@@ -160,7 +161,8 @@ public class IndexerIntegrationTest {
         final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, wsadmintoken);
         wsClient.setIsInsecureHttpConnectionAllowed(true);
         
-        final WorkspaceEventHandler weh = new WorkspaceEventHandler(wsClient);
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(
+                new CloneableWorkspaceClientImpl(wsClient));
         
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
                 IndexerWorker.getTempSubDir(tempDir.toFile(), "esbulk"));

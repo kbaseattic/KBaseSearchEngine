@@ -37,6 +37,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.exceptions.IndexingException;
+import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
@@ -264,7 +265,8 @@ public class SearchTools {
         final WorkspaceClient wsClient = new WorkspaceClient(
                 cfg.getWorkspaceURL(), kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
-        final EventHandler weh = new WorkspaceEventHandler(wsClient);
+        final EventHandler weh = new WorkspaceEventHandler(
+                new CloneableWorkspaceClientImpl(wsClient));
         
         final IndexerWorker wrk = new IndexerWorker(
                 getID(id), Arrays.asList(weh), storage, indexStore, ss, tempDir, logger);

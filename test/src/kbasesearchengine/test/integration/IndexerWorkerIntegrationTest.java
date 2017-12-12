@@ -32,6 +32,7 @@ import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StoredStatusEvent;
+import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
@@ -163,7 +164,8 @@ public class IndexerWorkerIntegrationTest {
         final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, wsadmintoken);
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
         
-        final WorkspaceEventHandler weh = new WorkspaceEventHandler(wsClient);
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(
+                new CloneableWorkspaceClientImpl(wsClient));
         
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
                 IndexerWorker.getTempSubDir(tempDir.toFile(), "esbulk"));
