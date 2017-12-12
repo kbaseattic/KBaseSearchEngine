@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import kbasesearchengine.common.FileUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.junit.AfterClass;
@@ -81,7 +82,7 @@ public class IndexerWorkerIntegrationTest {
     
     private static int wsid;
     
-    private static Path tempDir;
+    private static Path tempDirPath;
     
     @BeforeClass
     public static void prepare() throws Exception {
@@ -102,22 +103,22 @@ public class IndexerWorkerIntegrationTest {
             throw new TestException("The test tokens are for the same user");
         }
 
-        tempDir = Paths.get(TestCommon.getTempDir()).resolve("MainObjectProcessorTest");
+        tempDirPath = Paths.get(TestCommon.getTempDir()).resolve("MainObjectProcessorTest");
         // should refactor to just use NIO at some point
-        FileUtils.deleteQuietly(tempDir.toFile());
-        tempDir.toFile().mkdirs();
+        FileUtils.deleteQuietly(tempDirPath.toFile());
+        tempDirPath.toFile().mkdirs();
 
         // set up mongo
         mongo = new MongoController(
                 TestCommon.getMongoExe(),
-                tempDir,
+                tempDirPath,
                 TestCommon.useWiredTigerEngine());
         mc = new MongoClient("localhost:" + mongo.getServerPort());
         final String dbName = "DataStatus";
         db = mc.getDatabase(dbName);
         
         // set up elastic search
-        es = new ElasticSearchController(TestCommon.getElasticSearchExe(), tempDir);
+        es = new ElasticSearchController(TestCommon.getElasticSearchExe(), tempDirPath);
         
         // set up Workspace
         ws = new WorkspaceController(
@@ -128,7 +129,7 @@ public class IndexerWorkerIntegrationTest {
                 dbName,
                 wsadmintoken.getUserName(),
                 authServiceRootURL,
-                tempDir);
+                tempDirPath);
         System.out.println("Started workspace on port " + ws.getServerPort());
         
         final Path typesDir = Paths.get(TestCommon.TYPES_REPO_DIR);
@@ -166,12 +167,12 @@ public class IndexerWorkerIntegrationTest {
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(wsClient);
         
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
-                IndexerWorker.getTempSubDir(tempDir.toFile(), "esbulk"));
+                FileUtil.getOrCreateSubDir(tempDirPath.toFile(), "esbulk"));
         esStorage.setIndexNamePrefix(esIndexPrefix);
         storage = esStorage;
         
         mop = new IndexerWorker("test", Arrays.asList(weh), eventStorage, esStorage,
-                ss, tempDir.resolve("MainObjectProcessor").toFile(), logger);
+                ss, tempDirPath.resolve("MainObjectProcessor").toFile(), logger);
         loadTypes(wsUrl, wsadmintoken);
         wsid = (int) loadTestData(wsUrl, userToken);
     }
@@ -259,8 +260,8 @@ public class IndexerWorkerIntegrationTest {
         if (es != null) {
             es.destroy(deleteTempFiles);
         }
-        if (tempDir != null && tempDir.toFile().exists() && deleteTempFiles) {
-            FileUtils.deleteQuietly(tempDir.toFile());
+        if (tempDirPath != null && tempDirPath.toFile().exists() && deleteTempFiles) {
+            FileUtils.deleteQuietly(tempDirPath.toFile());
         }
     }
     

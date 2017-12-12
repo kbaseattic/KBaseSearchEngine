@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.common.base.Optional;
 
+import kbasesearchengine.common.FileUtil;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.ChildStatusEvent;
 import kbasesearchengine.events.StatusEvent;
@@ -114,19 +115,7 @@ public class IndexerWorker implements Stoppable {
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
     }
-    
-    private File getTempSubDir(final String subName) {
-        return getTempSubDir(rootTempDir, subName);
-    }
-    
-    public static File getTempSubDir(final File rootTempDir, String subName) {
-        File ret = new File(rootTempDir, subName);
-        if (!ret.exists()) {
-            ret.mkdirs();
-        }
-        return ret;
-    }
-    
+
     public void startIndexer() {
         stopRunner = false;
         //TODO TEST add a way to inject an executor for testing purposes
@@ -465,7 +454,19 @@ public class IndexerWorker implements Stoppable {
             return false;
         }
     }
-    
+
+    /** Index the object with the specified guid.
+     *
+     * @param guid an id that uniquely identifies the object that is to be indexed.
+     * @param storageObjectType type of object that is to be indexed.
+     * @param timestamp time at which this object was updated.
+     * @param isPublic object access level (true if public, else false).
+     * @param indexLookup
+     * @param objectRefPath
+     * @throws IndexingException
+     * @throws InterruptedException
+     * @throws RetriableIndexingException
+     */
     private void indexObject(
             final GUID guid,
             final StorageObjectType storageObjectType,
@@ -476,14 +477,10 @@ public class IndexerWorker implements Stoppable {
             throws IndexingException, InterruptedException, RetriableIndexingException {
         long t1 = System.currentTimeMillis();
         final File tempFile;
-        File dir = getTempSubDir(guid.getStorageCode());
         try {
-            tempFile = ObjectParser.prepareTempFile(dir);
+            FileUtil.getOrCreateCleanSubDir(rootTempDir, guid.getStorageCode());
+            tempFile = File.createTempFile("ws_srv_response_", ".json");
         } catch (IOException e) {
-            throw new FatalRetriableIndexingException(e.getMessage(), e);
-        } catch (SecurityException e) {
-            logger.logError("Security Manager denied access to delete " +
-                    "temporary file in dir: "+dir);
             throw new FatalRetriableIndexingException(e.getMessage(), e);
         }
         if (indexLookup == null) {
@@ -649,6 +646,9 @@ public class IndexerWorker implements Stoppable {
         indexingStorage.setNameOnAllObjectVersions(guid, newName);
     }
 
+    /** A lookup provider
+     *
+     */
     private class MOPLookupProvider implements ObjectLookupProvider {
         // storage code -> full ref path -> resolved guid
         private Map<String, Map<String, GUID>> refResolvingCache = new LinkedHashMap<>();

@@ -15,30 +15,10 @@ import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import org.apache.commons.io.FileUtils;
 import us.kbase.common.service.UObject;
 
 public class ObjectParser {
-    private static final String TEMP_FILE_PREFIX = "ws_srv_response_";
-    private static final String TEMP_FILE_SUFFIX = ".json";
-
-    /** Creates a temporary file in the specified directory. The file is deleted
-     * when the virtual machine terminates.
-     *
-     * @param tempDir
-     * @return temporaray file.
-     * @throws IOException If file cannot be created.
-     * @throws SecurityException If Security Manager denies access to delete the
-     * temporary file.
-     */
-    public static File prepareTempFile(File tempDir)
-            throws IOException, SecurityException {
-        if (!tempDir.exists()) {
-            tempDir.mkdirs();
-        }
-        File tempFile = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX, tempDir);
-        tempFile.deleteOnExit();
-        return tempFile;
-    }
 
     public static Map<GUID, String> parseSubObjects(
             final SourceData obj,
