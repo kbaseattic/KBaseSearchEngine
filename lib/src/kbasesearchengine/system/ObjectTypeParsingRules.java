@@ -24,6 +24,7 @@ import kbasesearchengine.tools.Utils;
 public class ObjectTypeParsingRules {
     
     //TODO IDXRULE what if there are two parent types for a single type? need to error out?
+    //TODO IDXRULE if subobject spec, there must be a path based indexing rule that matches the subobject id path. Make this automatic in some way?
     
     private final String globalObjectType;
     private final String uiTypeName;
