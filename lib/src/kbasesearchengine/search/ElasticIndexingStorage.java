@@ -142,8 +142,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
     }
     
-    private String checkIndex(SearchObjectType objectType, List<IndexingRules> indexingRules,
-            boolean allowAnyType) throws IOException {
+    private String checkIndex(
+            final SearchObjectType objectType,
+            final List<IndexingRules> indexingRules,
+            final boolean allowAnyType)
+            throws IOException {
         if (objectType == null) {
             if (allowAnyType) {
                 return getAnyIndexPattern();
@@ -1444,7 +1447,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public Set<String> listIndeces() throws IOException {
         Set<String> ret = new TreeSet<>();
         Map<String, Object> data = UObject.getMapper().readValue(
-                makeRequest("GET", "/_all/_settings", null).getEntity().getContent(), Map.class);
+                makeRequest("GET", "/_aliases", null).getEntity().getContent(), Map.class);
         ret.addAll(data.keySet());
         return ret;
     }
