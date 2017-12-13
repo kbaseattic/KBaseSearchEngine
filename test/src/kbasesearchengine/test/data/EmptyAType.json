@@ -1,12 +1,12 @@
 {
-	"global-object-type": "EmptyAType",
-	"ui-type-name": "A Type",
-	"storage-type": "WS",
-	"storage-object-type": "Empty.AType",
-	"indexing-rules": [
-		{
-			"path": "whee",
-			"keyword-type": "string"
-		}
-	]
+    "global-object-type": "EmptyAType",
+    "ui-type-name": "A Type",
+    "storage-type": "WS",
+    "storage-object-type": "Empty.AType",
+    "indexing-rules": [
+        {
+            "path": "whee",
+            "keyword-type": "string"
+        }
+    ]
 }

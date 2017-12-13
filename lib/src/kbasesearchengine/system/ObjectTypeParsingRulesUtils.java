@@ -7,19 +7,22 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+
 import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.system.ObjectTypeParsingRules.Builder;
 import kbasesearchengine.tools.Utils;
-import us.kbase.common.service.UObject;
 
 /** Utilities for creating {@link ObjectTypeParsingRules} from various data sources.
+ * 
+ * This class is not thread-safe.
  * @author gaprice@lbl.gov
  *
  */
 public class ObjectTypeParsingRulesUtils {
 
-    //TODO CODE not sure if throwing ObjectParseException makes sense here
     //TODO TEST
 
     /** Create an ObjectTypeParsingRules instance from a file.
@@ -27,27 +30,42 @@ public class ObjectTypeParsingRulesUtils {
      * TODO document the file structure.
      * @param file the file containing the parsing rules.
      * @return a new set of parsing rules.
-     * @throws ObjectParseException if the file contains erroneous parsing rules.
      * @throws IOException if an IO error occurs reading the file.
+     * @throws TypeParseException if the file contains erroneous parsing rules.
      */
     public static ObjectTypeParsingRules fromFile(final File file) 
-            throws ObjectParseException, IOException {
+            throws IOException, TypeParseException {
         try (final InputStream is = new FileInputStream(file)) {
             return fromStream(is, file.toString());
         }
     }
 
     private static ObjectTypeParsingRules fromStream(InputStream is, String sourceInfo) 
-            throws IOException, ObjectParseException {
+            throws IOException, TypeParseException {
+        final Yaml yaml = new Yaml(new SafeConstructor());
+        final Object predata;
+        try {
+            predata = yaml.load(is);
+        } catch (Exception e) {
+            // wtf snakeyaml authors, not using checked exceptions is bad enough, but not
+            // documenting any exceptions and overriding toString so you can't tell what
+            // exception is being thrown is something else
+            throw new TypeParseException(String.format("Error parsing source %s: %s %s",
+                    sourceInfo, e.getClass(), e.getMessage()), e);
+        }
+        if (!(predata instanceof Map)) {
+            throw new TypeParseException(
+                    "Expected mapping in top level YAML/JSON." + sourceInfo);
+        }
         @SuppressWarnings("unchecked")
-        Map<String, Object> obj = UObject.getMapper().readValue(is, Map.class);
+        Map<String, Object> obj = (Map<String, Object>) predata;
         return fromObject(obj, sourceInfo);
     }
 
     private static ObjectTypeParsingRules fromObject(
             final Map<String, Object> obj,
             final String sourceInfo) 
-            throws ObjectParseException {
+            throws TypeParseException {
         try {
             final String storageCode = (String)obj.get("storage-type");
             final String type = (String)obj.get("storage-object-type");
@@ -80,7 +98,7 @@ public class ObjectTypeParsingRulesUtils {
             }
             return builder.build();
         } catch (ObjectParseException | IllegalArgumentException | NullPointerException e) {
-            throw new ObjectParseException(String.format("Error in source %s: %s",
+            throw new TypeParseException(String.format("Error in source %s: %s",
                     sourceInfo, e.getMessage()), e);
         }
     }

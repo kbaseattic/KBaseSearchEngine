@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,9 @@ public class TypeFileStorage implements TypeStorage {
     //TODO TEST
     
     private static final String TYPE_STORAGE = "[TypeStorage]";
+    // as opposed to file types for mappings
+    private static final Set<String> ALLOWED_FILE_TYPES_FOR_TYPES =
+            new HashSet<>(Arrays.asList(".json", ".yaml"));
     
     private final Map<String, ObjectTypeParsingRules> searchTypes = new HashMap<>();
     private final Map<CodeAndType, TypeMapping> storageTypes;
@@ -35,7 +40,7 @@ public class TypeFileStorage implements TypeStorage {
         final Map<CodeAndType, TypeMapping.Builder> storageTypes = new HashMap<>(); 
         // this is gross, but works. https://stackoverflow.com/a/20130475/643675
         for (Path file : (Iterable<Path>) Files.list(typesDir)::iterator) {
-            if (Files.isRegularFile(file) && file.toString().endsWith(".json")) {
+            if (Files.isRegularFile(file) && isAllowedFileType(file)) {
                 final ObjectTypeParsingRules type = ObjectTypeParsingRulesUtils
                         .fromFile(file.toFile());
                 final String searchType = type.getGlobalObjectType();
@@ -65,6 +70,16 @@ public class TypeFileStorage implements TypeStorage {
         final Map<CodeAndType, TypeMapping> ret = new HashMap<>();
         storageTypes.keySet().stream().forEach(k -> ret.put(k, storageTypes.get(k).build()));
         return ret;
+    }
+
+    private boolean isAllowedFileType(final Path file) {
+        final String path = file.toString();
+        for (final String allowedExtension: ALLOWED_FILE_TYPES_FOR_TYPES) {
+            if (path.endsWith(allowedExtension)) {
+                return true;
+            }
+        }
+        return false;
     }
     
     private static class CodeAndType {

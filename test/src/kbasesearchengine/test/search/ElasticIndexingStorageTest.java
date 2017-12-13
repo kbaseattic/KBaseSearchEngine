@@ -163,7 +163,9 @@ public class ElasticIndexingStorageTest {
     
     private static void indexObject(String type, String jsonResource, GUID ref, String objName)
             throws Exception {
-        final File file = new File("resources/types/" + type + ".json");
+        // yuck
+        final String extension = type.equals("Genome") ? ".yaml" : ".json";
+        final File file = new File("resources/types/" + type + extension);
         ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesUtils.fromFile(file);
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
