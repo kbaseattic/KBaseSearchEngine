@@ -84,7 +84,7 @@ public class ObjectParser {
      * @param parsingRules
      *            instance of ObjectTypeParsingRules used to form subObjectType
      *            instance variable of returned GUID object
-     * @param parent_guid
+     * @param guid
      *            parent GUID object
      * @param path
      *            instance of ObjectJsonPath used to form subObjectId instance
@@ -95,7 +95,7 @@ public class ObjectParser {
      * @return GUID object
      */
     public static GUID prepareGUID(ObjectTypeParsingRules parsingRules,
-            GUID parent_guid, ObjectJsonPath path,
+            GUID guid, ObjectJsonPath path,
             SimpleIdConsumer idConsumer) {
         String innerSubType = null;
         String innerID = null;
@@ -105,7 +105,7 @@ public class ObjectParser {
             innerSubType = parsingRules.getSubObjectType().get();
         }
         
-        return new GUID(parent_guid, subObjectType, subObjectId);
+        return new GUID(guid, innerSubType, innerID);
     }
     
     /**

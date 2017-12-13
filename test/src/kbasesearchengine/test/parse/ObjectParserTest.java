@@ -36,6 +36,7 @@ import kbasesearchengine.parse.SimpleIdConsumer;
 import kbasesearchengine.parse.SimpleSubObjectConsumer;
 import kbasesearchengine.parse.SubObjectConsumer;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.ObjectTypeParsingRulesUtils;
 import kbasesearchengine.test.common.TestCommon;
 import us.kbase.common.service.UObject;
 
@@ -83,11 +84,8 @@ public class ObjectParserTest {
 
     public static String extractParentFragment(String type, String jsonResource) throws Exception {
 
-        @SuppressWarnings("unchecked")
-        final Map<String, Object> parsingRulesObj = UObject.getMapper()
-                .readValue(new File("resources/types/" + type + ".json"), Map.class);
-        final ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules
-                .fromObject(parsingRulesObj, "test");
+        final File file = new File("resources/types/" + type + ".json");
+        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesUtils.fromFile(file);
 
         try (JsonParser jts = SubObjectExtractorTest.getParsedJsonResource(jsonResource)) {
             final String parentJson = ObjectParser.extractParentFragment(parsingRules, jts);
@@ -121,11 +119,8 @@ public class ObjectParserTest {
 
         final ArrayList<GUID> idList = new ArrayList<GUID>();
 
-        @SuppressWarnings("unchecked")
-        final Map<String, Object> parsingRulesObj = UObject.getMapper()
-                .readValue(new File("resources/types/" + type + ".json"), Map.class);
-        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules.fromObject(parsingRulesObj,
-                "test");
+        final File file = new File("resources/types/" + type + ".json");
+        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesUtils.fromFile(file);
         final Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         final SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
 
@@ -136,11 +131,9 @@ public class ObjectParserTest {
         for (ObjectJsonPath path : pathToJson.keySet()) {
             final String subJson = pathToJson.get(path);
             final SimpleIdConsumer idConsumer = new SimpleIdConsumer();
-            if (parsingRules.getPrimaryKeyPath() != null
-                    || parsingRules.getRelationRules() != null) {
+            if (parsingRules.getSubObjectIDPath().isPresent()) {
                 try (JsonParser subJts = UObject.getMapper().getFactory().createParser(subJson)) {
-                    IdMapper.mapKeys(parsingRules.getPrimaryKeyPath(),
-                            parsingRules.getRelationRules(), subJts, idConsumer);
+                    IdMapper.mapKeys(parsingRules.getSubObjectIDPath().get(), subJts, idConsumer);
                 }
             }
             final GUID id = ObjectParser.prepareGUID(parsingRules, ref, path, idConsumer);
@@ -230,12 +223,8 @@ public class ObjectParserTest {
         final String creator = "creator";
 
         final SourceData obj = SourceData.getBuilder(data, name, creator).build();
-
-        @SuppressWarnings("unchecked")
-        final Map<String, Object> parsingRulesObj = UObject.getMapper()
-                .readValue(new File("resources/types/" + type + ".json"), Map.class);
-        final ObjectTypeParsingRules parsingRules = ObjectTypeParsingRules
-                .fromObject(parsingRulesObj, "test");
+        final File file = new File("resources/types/" + type + ".json");
+        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesUtils.fromFile(file);
 
         final Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, guid, parsingRules);
 
