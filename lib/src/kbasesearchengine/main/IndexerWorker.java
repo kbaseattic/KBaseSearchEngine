@@ -3,7 +3,17 @@ package kbasesearchengine.main;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -75,7 +85,8 @@ public class IndexerWorker implements Stoppable {
             final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,
-            final LineLogger logger) throws IOException {
+            final LineLogger logger)
+                throws IOException {
         Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
         Utils.nonNull(logger, "logger");
         Utils.nonNull(indexingStorage, "indexingStorage");
@@ -83,6 +94,8 @@ public class IndexerWorker implements Stoppable {
         this.logger = logger;
         this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
                 id+"_"+ UUID.randomUUID().toString().substring(0,5));
+        logger.logInfo("Created temp dir "+rootTempDir.getAbsolutePath()+
+                                                     " for indexer worker "+id);
         
         eventHandlers.stream().forEach(eh -> this.eventHandlers.put(eh.getStorageCode(), eh));
         this.storage = storage;
@@ -98,13 +111,16 @@ public class IndexerWorker implements Stoppable {
             final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,
-            final LineLogger logger) throws IOException {
+            final LineLogger logger)
+                throws IOException {
         Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
         Utils.nonNull(logger, "logger");
         this.id = id;
         this.storage = null;
         this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
                 id+"_"+ UUID.randomUUID().toString().substring(0,5));
+        logger.logInfo("Created temp dir "+rootTempDir.getAbsolutePath()+
+                " for indexer worker "+id);
         this.logger = logger;
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;

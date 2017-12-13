@@ -38,15 +38,32 @@ public class FileUtilTest {
         FileUtils.deleteDirectory(tempDirPath.toFile());
     }
 
+    /* dir does not exist and needs to be created */
     @Test
-    public void getOrCreateSubDirTest() {
+    public void getOrCreateSubDirTest1() {
         File subDir = FileUtil.getOrCreateSubDir(tempDirPath.toFile(), subDirName);
-        assertTrue("subdir was not created", subDir.isDirectory());
+        assertTrue("subdir was not created", subDir.exists());
+        assertTrue("subdir not a directory", subDir.isDirectory());
+    }
+
+    /* dir already exists */
+    @Test
+    public void getOrCreateSubDirTest2() {
+        File subDir;
+        subDir = new File(tempDirPath.toFile(), subDirName);
+        subDir.mkdirs();
+        assertTrue("subdir was not created", subDir.exists());
+        assertTrue("subdir not a directory", subDir.isDirectory());
+
+        getOrCreateSubDirTest1();
     }
 
     @Test
     public void getOrCreateCleanSubDirTest() {
+
         File subDir = FileUtil.getOrCreateSubDir(tempDirPath.toFile(), subDirName);
+        assertTrue("subdir was not created", subDir.exists());
+        assertTrue("subdir not a directory", subDir.isDirectory());
 
         // add files to subDir
         try {
