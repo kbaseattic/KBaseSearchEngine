@@ -45,6 +45,7 @@ import kbasesearchengine.search.MatchFilter;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
 import kbasesearchengine.system.TypeFileStorage;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.system.TypeMappingParser;
@@ -292,7 +293,7 @@ public class IndexerWorkerIntegrationTest {
         pp.objectData = true;
         pp.objectKeys = true;
         System.out.println("Genome: " + storage.getObjectsByIds(
-                storage.searchIds("Genome", 
+                storage.searchIds(new SearchObjectType("Genome", 1),
                         MatchFilter.create().withFullTextInAll("test"), null, 
                         AccessFilter.create().withAdmin(true), null).guids, pp).get(0));
         String query = "TrkA";
@@ -304,7 +305,7 @@ public class IndexerWorkerIntegrationTest {
             return;
         }
         String type = typeToCount.keySet().iterator().next();
-        Set<GUID> guids = storage.searchIds(type, 
+        Set<GUID> guids = storage.searchIds(new SearchObjectType(type, 1),
                 MatchFilter.create().withFullTextInAll(query), null, 
                 AccessFilter.create().withAdmin(true), null).guids;
         System.out.println("GUIDs found: " + guids);
@@ -332,8 +333,13 @@ public class IndexerWorkerIntegrationTest {
         }
     }
     
-    private void checkSearch(int expectedCount, String type, String query, int accessGroupId,
-            boolean debugOutput) throws Exception {
+    private void checkSearch(
+            final int expectedCount,
+            final SearchObjectType type,
+            final String query,
+            final int accessGroupId,
+            final boolean debugOutput)
+            throws Exception {
         Set<GUID> ids = storage.searchIds(type, 
                 MatchFilter.create().withFullTextInAll(query), null, 
                 AccessFilter.create().withAccessGroups(accessGroupId), null).guids;
@@ -360,8 +366,9 @@ public class IndexerWorkerIntegrationTest {
                 .build();
         indexFewVersions(new StoredStatusEvent(ev, new StatusEventID("-1"),
                 StatusEventProcessingState.UNPROC, null, null));
-        checkSearch(1, "Narrative", "tree", wsid, false);
-        checkSearch(1, "Narrative", "species", wsid, false);
+        final SearchObjectType type = new SearchObjectType("Narrative", 1);
+        checkSearch(1, type, "tree", wsid, false);
+        checkSearch(1, type, "species", wsid, false);
         /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
                 System.currentTimeMillis(), "KBaseNarrative.Narrative", 
                 ObjectStatusEventType.CREATED, false));
@@ -387,8 +394,9 @@ public class IndexerWorkerIntegrationTest {
                 .build();
         indexFewVersions(new StoredStatusEvent(ev, new StatusEventID("-1"),
                 StatusEventProcessingState.UNPROC, null, null));
-        checkSearch(1, "PairedEndLibrary", "Illumina", wsid, true);
-        checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
+        final SearchObjectType type = new SearchObjectType("PairedEndLibrary", 1);
+        checkSearch(1, type, "Illumina", wsid, true);
+        checkSearch(1, type, "sample1se.fastq.gz", wsid, false);
         final StatusEvent ev2 = StatusEvent.getBuilder(
                 new StorageObjectType("WS", "KBaseFile.SingleEndLibrary"),
                 Instant.now(),
@@ -400,7 +408,8 @@ public class IndexerWorkerIntegrationTest {
                 .build();
         indexFewVersions(new StoredStatusEvent(ev2, new StatusEventID("-1"),
                 StatusEventProcessingState.UNPROC, null, null));
-        checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);
-        checkSearch(1, "SingleEndLibrary", "reads.2", wsid, false);
+        final SearchObjectType setype = new SearchObjectType("SingleEndLibrary", 1);
+        checkSearch(1, setype, "PacBio", wsid, true);
+        checkSearch(1, setype, "reads.2", wsid, false);
     }
 }

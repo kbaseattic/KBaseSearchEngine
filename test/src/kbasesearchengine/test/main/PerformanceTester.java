@@ -38,6 +38,7 @@ import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.MatchFilter;
 import kbasesearchengine.search.MatchValue;
 import kbasesearchengine.system.TypeFileStorage;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.system.TypeMappingParser;
@@ -260,7 +261,7 @@ public class PerformanceTester {
     }
     
     private int countGenomes() throws Exception {
-        return storage.searchIds("Genome", 
+        return storage.searchIds(new SearchObjectType("Genome", 1), 
                 MatchFilter.create().withLookupInKey("features", new MatchValue(1, null)), null,
                 AccessFilter.create().withPublic(true).withAdmin(true), null).total;
     }

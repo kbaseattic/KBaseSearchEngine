@@ -10,6 +10,7 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.system.IndexingRules;
+import kbasesearchengine.system.SearchObjectType;
 
 public interface IndexingStorage {
     
@@ -26,16 +27,18 @@ public interface IndexingStorage {
      * @param indexingRules  indexing rules
      * @throws IOException
      */
-    public void indexObject(GUID guid, String objectType, ParsedObject obj, SourceData source,
+    public void indexObject(GUID guid, SearchObjectType objectType, ParsedObject obj, SourceData source,
             Instant timestamp, String parentJsonValue, boolean isPublic,
             List<IndexingRules> indexingRules) throws IOException;
 
-    public void indexObjects(String objectType, SourceData obj, Instant timestamp,
+    public void indexObjects(SearchObjectType objectType, SourceData obj, Instant timestamp,
             String parentJsonValue, GUID pguid, Map<GUID, ParsedObject> idToObj,
             boolean isPublic, List<IndexingRules> indexingRules) 
                     throws IOException;
     
-    public Map<GUID, Boolean> checkParentGuidsExist(String objectType, Set<GUID> parentGuids) 
+    public Map<GUID, Boolean> checkParentGuidsExist(
+            SearchObjectType objectType,
+            Set<GUID> parentGuids) 
             throws IOException;
     
     /** Check that the parent objects (e.g. the access information) exists for a set of GUIDS.
@@ -47,7 +50,7 @@ public interface IndexingStorage {
     public Map<GUID, Boolean> checkParentGuidsExist(Set<GUID> parentGuids)
             throws IOException;
 
-    public void flushIndexing(String objectType) throws IOException;
+    public void flushIndexing(SearchObjectType objectType) throws IOException;
     
     public void shareObjects(Set<GUID> guids, int accessGroupId, boolean isPublicGroup) throws IOException;
 
@@ -69,11 +72,11 @@ public interface IndexingStorage {
     public Map<String, Integer> searchTypes(MatchFilter matchFilter,
             AccessFilter accessFilter) throws IOException;
 
-    public FoundHits searchIds(String objectType, MatchFilter matchFilter, 
+    public FoundHits searchIds(SearchObjectType objectType, MatchFilter matchFilter, 
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination) 
                     throws IOException;
 
-    public FoundHits searchObjects(String objectType, MatchFilter matchFilter, 
+    public FoundHits searchObjects(SearchObjectType objectType, MatchFilter matchFilter, 
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination,
             PostProcessing postProcessing) throws IOException;
 

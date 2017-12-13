@@ -47,6 +47,7 @@ import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.tools.Utils;
@@ -500,19 +501,23 @@ public class IndexerWorker implements Stoppable {
                 final ParseObjectsRet parsedRet = parseObjects(guid, indexLookup,
                         newRefPath, obj, rule);
                 long parsingTime = System.currentTimeMillis() - t2;
-                logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", parsing " +
-                        "time: " + parsingTime + " ms.");
+                logger.logInfo("[Indexer]   " + toVerRep(rule.getGlobalObjectType()) +
+                        ", parsing time: " + parsingTime + " ms.");
                 long t3 = System.currentTimeMillis();
                 indexObjectInStorage(guid, timestamp, isPublic, obj, rule,
                         parsedRet.guidToObj, parsedRet.parentJson);
                 long indexTime = System.currentTimeMillis() - t3;
-                logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", indexing " +
-                        "time: " + indexTime + " ms.");
+                logger.logInfo("[Indexer]   " + toVerRep(rule.getGlobalObjectType()) +
+                        ", indexing time: " + indexTime + " ms.");
                 logger.timeStat(guid, 0, parsingTime, indexTime);
             }
         } finally {
             tempFile.delete();
         }
+    }
+
+    private String toVerRep(final SearchObjectType globalObjectType) {
+        return globalObjectType.getType() + "_" + globalObjectType.getVersion();
     }
 
     private void indexObjectInStorage(

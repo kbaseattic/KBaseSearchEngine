@@ -47,6 +47,7 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.system.IndexingRules;
+import kbasesearchengine.system.SearchObjectType;
 import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.UObject;
 
@@ -126,11 +127,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
         this.skipFullJson = skipFullJson;
     }
     
-    public String getIndex(String objectType) throws IOException {
+    public String getIndex(SearchObjectType objectType) throws IOException {
         return checkIndex(objectType, null);
     }
     
-    private String checkIndex(String objectType, List<IndexingRules> indexingRules) 
+    private String checkIndex(SearchObjectType objectType, List<IndexingRules> indexingRules) 
             throws IOException {
         return checkIndex(objectType, indexingRules, false);
     }
@@ -147,7 +148,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
     }
     
-    private String checkIndex(String objectType, List<IndexingRules> indexingRules,
+    private String checkIndex(SearchObjectType objectType, List<IndexingRules> indexingRules,
             boolean allowAnyType) throws IOException {
         if (objectType == null) {
             if (allowAnyType) {
@@ -156,7 +157,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 throw new IllegalArgumentException("Object type is required");
             }
         }
-        String key = mergeTypes ? "all_types" : objectType;
+        String key = mergeTypes ? "all_types" : objectType.getType(); //TODO VERS take version into account
         String ret = typeToIndex.get(key);
         if (ret == null) {
             ret = (indexNamePrefix + key).toLowerCase();
@@ -175,7 +176,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     // IO exceptions are thrown for failure on creating or writing to file or contacting ES.
     @Override
     public void indexObjects(
-            final String objectType,
+            final SearchObjectType objectType,
             final SourceData data,
             final Instant timestamp, 
             final String parentJsonValue,
@@ -228,7 +229,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     private Map<String, Object> convertObject(
             final GUID id,
-            final String objectType,
+            final SearchObjectType objectType,
             final ParsedObject obj, 
             final SourceData data,
             final Instant timestamp,
@@ -242,7 +243,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.putAll(indexPart);
         doc.put("guid", id.toString());
-        doc.put("otype", objectType);
+        doc.put("otype", objectType.getType()); //TODO VERS take version into account - maybe makes sense to leave this alone
 
         doc.put(OBJ_NAME, data.getName());
         doc.put(OBJ_CREATOR, data.getCreator());
@@ -268,10 +269,18 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return doc;
     }
 
+    // this is only used in tests as of 12/12/17. remove and use indexObjects()?
     @Override
-    public void indexObject(GUID id, String objectType, ParsedObject obj, SourceData data,
-            Instant timestamp, String parentJsonValue, boolean isPublic,
-            List<IndexingRules> indexingRules) throws IOException {
+    public void indexObject(
+            final GUID id,
+            final SearchObjectType objectType,
+            final ParsedObject obj,
+            final SourceData data,
+            final Instant timestamp,
+            final String parentJsonValue,
+            final boolean isPublic,
+            final List<IndexingRules> indexingRules)
+            throws IOException {
         String indexName = checkIndex(objectType, indexingRules);
         GUID parentGUID = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
                 id.getAccessGroupObjectId(), id.getVersion(), null, null);
@@ -296,7 +305,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @Override
-    public void flushIndexing(String objectType) throws IOException {
+    public void flushIndexing(SearchObjectType objectType) throws IOException {
         refreshIndex(getIndex(objectType));
     }
     
@@ -450,7 +459,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     // throws IOexceptions for elastic connection issues & deserializaion issues
     @Override
-    public Map<GUID, Boolean> checkParentGuidsExist(String objectType, Set<GUID> guids) 
+    public Map<GUID, Boolean> checkParentGuidsExist(SearchObjectType objectType, Set<GUID> guids) 
             throws IOException {
         Set<GUID> parentGUIDs = guids.stream().map(guid -> new GUID(guid.getStorageCode(), 
                 guid.getAccessGroupId(), guid.getAccessGroupObjectId(), guid.getVersion(), null, 
@@ -1149,6 +1158,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }};
     }
     
+    //TODO VERS this should return SearchObjectType -> Integer map. Maybe an option to combine versions
     @SuppressWarnings({ "serial", "unchecked" })
     @Override
     public Map<String, Integer> searchTypes(MatchFilter matchFilter,
@@ -1213,7 +1223,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @Override
-    public FoundHits searchIds(String objectType, MatchFilter matchFilter, 
+    public FoundHits searchIds(SearchObjectType objectType, MatchFilter matchFilter, 
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination) 
                     throws IOException {
         return queryHits(objectType, prepareMatchFilters(matchFilter),
@@ -1221,7 +1231,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     @Override
-    public FoundHits searchObjects(String objectType, MatchFilter matchFilter,
+    public FoundHits searchObjects(SearchObjectType objectType, MatchFilter matchFilter,
             List<SortingRule> sorting, AccessFilter accessFilter,
             Pagination pagination, PostProcessing postProcessing)
             throws IOException {
@@ -1229,7 +1239,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 sorting, accessFilter, pagination, postProcessing);
     }
     
-    public Set<GUID> searchIds(String objectType, MatchFilter matchFilter, 
+    public Set<GUID> searchIds(SearchObjectType objectType, MatchFilter matchFilter, 
             List<SortingRule> sorting, AccessFilter accessFilter) throws IOException {
         return searchIds(objectType, matchFilter, sorting, accessFilter, null).guids;
     }
@@ -1332,10 +1342,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }};
     }
     
+    //TODO VERS will need to specify a way to search on all versions of index. checkIndex() is an issue
     @SuppressWarnings({ "serial", "unchecked" })
-    private FoundHits queryHits(String objectType, List<Map<String, Object>> matchFilters, 
-            List<SortingRule> sorting, AccessFilter accessFilter, Pagination pg,
-            PostProcessing pp) throws IOException {
+    private FoundHits queryHits(
+            final SearchObjectType objectType,
+            final List<Map<String, Object>> matchFilters, 
+            List<SortingRule> sorting,
+            final AccessFilter accessFilter,
+            final Pagination pg,
+            final PostProcessing pp) throws IOException {
         int pgStart = pg == null || pg.start == null ? 0 : pg.start;
         int pgCount = pg == null || pg.count == null ? 50 : pg.count;
         Pagination pagination = new Pagination(pgStart, pgCount);
@@ -1450,9 +1465,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
      * @return the response from the ElasticSearch server.
      * @throws IOException if an IO error occurs.
      */
-    public Response refreshIndexByType(final String typeName)
+    public Response refreshIndexByType(final SearchObjectType typeName)
             throws IOException {
-        return refreshIndex((indexNamePrefix + typeName).toLowerCase());
+        //TODO VERS take version into account
+        return refreshIndex((indexNamePrefix + typeName.getType()).toLowerCase());
     }
 
     public Response makeRequest(String reqType, String urlPath, Map<String, ?> doc) 

@@ -75,7 +75,9 @@ public class ObjectTypeParsingRulesUtils {
                 throw new ObjectParseException(getMissingKeyParseMessage("storage-object-type"));
             }
             final Builder builder = ObjectTypeParsingRules.getBuilder(
-                    (String) obj.get("global-object-type"), //TODO CODE better error if missing
+                    new SearchObjectType( //TODO CODE better error if missing elements
+                            (String) obj.get("global-object-type"),
+                            (int) obj.get("global-object-type-version")),
                     new StorageObjectType(storageCode, type))
                     .withNullableUITypeName((String)obj.get("ui-type-name"));
             final String subType = (String)obj.get("inner-sub-type");

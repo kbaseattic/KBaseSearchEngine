@@ -1,5 +1,6 @@
 {
     "global-object-type": "Narrative",
+    "global-object-type-version": 1,
     "storage-type": "WS",
     "storage-object-type": "KBaseNarrative.Narrative",
     "indexing-rules": [

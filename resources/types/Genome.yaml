@@ -3,6 +3,7 @@
 
 # The name of the type in the search system.
 global-object-type: Genome
+global-object-type-version: 1
 # The data source of the objects, in this case the Workspace.
 storage-type: WS
 # The name of the type in the data source.
