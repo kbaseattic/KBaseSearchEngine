@@ -3,16 +3,7 @@ package kbasesearchengine.main;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +42,7 @@ import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.tools.Utils;
+import org.apache.commons.io.FileUtils;
 
 public class IndexerWorker implements Stoppable {
     
@@ -83,13 +75,14 @@ public class IndexerWorker implements Stoppable {
             final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,
-            final LineLogger logger) {
+            final LineLogger logger) throws IOException {
         Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
         Utils.nonNull(logger, "logger");
         Utils.nonNull(indexingStorage, "indexingStorage");
         this.id = id;
         this.logger = logger;
-        this.rootTempDir = tempDir;
+        this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
+                id+"_"+ UUID.randomUUID().toString().substring(0,5));
         
         eventHandlers.stream().forEach(eh -> this.eventHandlers.put(eh.getStorageCode(), eh));
         this.storage = storage;
@@ -105,12 +98,13 @@ public class IndexerWorker implements Stoppable {
             final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,
-            final LineLogger logger) {
+            final LineLogger logger) throws IOException {
         Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
         Utils.nonNull(logger, "logger");
         this.id = id;
         this.storage = null;
-        this.rootTempDir = tempDir;
+        this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
+                id+"_"+ UUID.randomUUID().toString().substring(0,5));
         this.logger = logger;
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
@@ -152,6 +146,14 @@ public class IndexerWorker implements Stoppable {
         stopRunner = true;
         executor.shutdown();
         executor.awaitTermination(millisToWait, TimeUnit.MILLISECONDS);
+
+        try {
+            FileUtils.deleteDirectory(rootTempDir);
+        } catch(IOException ioe) {
+            logger.logError("Unable to delete worker temp dir "+rootTempDir+
+                    " on shutdown of worker with id "+id+
+                    ". Please delete manually. "+ioe.getMessage());
+        }
     }
     
     private enum ErrorType {
