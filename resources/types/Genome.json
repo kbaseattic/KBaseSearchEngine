@@ -35,13 +35,6 @@
 		},
 		{
 			"derived-key": true,
-			"transform": "lookup.oname",
-			"source-key": "assembly_guid",
-			"key-name": "assembly",
-			"ui-link-key": "assembly_guid"
-		},
-		{
-			"derived-key": true,
 			"transform": "lookup.key.contigs",
 			"source-key": "assembly_guid",
 			"keyword-type": "integer",

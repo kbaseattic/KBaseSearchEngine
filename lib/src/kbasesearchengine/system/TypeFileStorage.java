@@ -36,7 +36,8 @@ public class TypeFileStorage implements TypeStorage {
         // this is gross, but works. https://stackoverflow.com/a/20130475/643675
         for (Path file : (Iterable<Path>) Files.list(typesDir)::iterator) {
             if (Files.isRegularFile(file) && file.toString().endsWith(".json")) {
-                final ObjectTypeParsingRules type = ObjectTypeParsingRules.fromFile(file.toFile());
+                final ObjectTypeParsingRules type = ObjectTypeParsingRulesUtils
+                        .fromFile(file.toFile());
                 final String searchType = type.getGlobalObjectType();
                 if (typeToFile.containsKey(searchType)) {
                     throw new TypeParseException(String.format(

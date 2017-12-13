@@ -164,9 +164,13 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
             <include name="kbasesearchengine/test/integration/IndexerIntegrationTest.java"/>
             <include name="kbasesearchengine/test/integration/IndexerWorkerIntegrationTest.java"/>
             <include name="kbasesearchengine/test/search/ElasticIndexingStorageTest.java"/>
+            <include name="kbasesearchengine/test/system/IndexingRulesTest.java"/>
+            <include name="kbasesearchengine/test/system/ObjectTypeParsingRulesTest.java"/>
             <include name="kbasesearchengine/test/system/StorageObjectTypeTest.java"/>
             <include name="kbasesearchengine/test/system/TypeMappingTest.java"/>
+            <include name="kbasesearchengine/test/system/TransformTest.java"/>
             <include name="kbasesearchengine/test/main/IndexerCoordinatorTest.java"/>
+            <include name="kbasesearchengine/test/main/IndexerWorkerTest.java"/>
           </fileset>
         </batchtest>
       </junit>

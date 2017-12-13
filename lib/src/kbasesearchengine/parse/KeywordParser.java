@@ -18,8 +18,9 @@ import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.system.IndexingRules;
+import kbasesearchengine.system.LocationTransformType;
 import kbasesearchengine.system.ObjectTypeParsingRules;
-import kbasesearchengine.system.ValidationException;
+import kbasesearchengine.system.Transform;
 import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.UObject;
 
@@ -41,21 +42,13 @@ public class KeywordParser {
 
         Utils.nonNull(indexingRules, "indexingRules is a required parameter");
 
-        for (IndexingRules rule: indexingRules) {
-            try {
-                rule.validate();
-            } catch (ValidationException ex) {
-                throw new IllegalArgumentException("Unable to extract keywords", ex);
-            }
-        }
-
         Map<String, InnerKeyValue> keywords = new LinkedHashMap<>();
         ValueConsumer<List<IndexingRules>> consumer = new ValueConsumer<List<IndexingRules>>() {
             @Override
             public void addValue(List<IndexingRules> rulesList, Object value)
                     throws IndexingException, InterruptedException, ObjectParseException {
                 for (IndexingRules rule : rulesList) {
-                    processRule(type, rule, getKeyName(rule), value, keywords, lookup, 
+                    processRule(type, rule, rule.getKeyName(), value, keywords, lookup, 
                             objectRefPath);
                 }
             }
@@ -67,7 +60,7 @@ public class KeywordParser {
             extractIndexingPart(parentJson, true, indexingRules, consumer);
         }
         Map<String, List<IndexingRules>> ruleMap = indexingRules.stream().collect(
-                Collectors.groupingBy(rule -> getKeyName(rule)));
+                Collectors.groupingBy(rule -> rule.getKeyName()));
         for (String key : ruleMap.keySet()) {
             for (IndexingRules rule : ruleMap.get(key)) {
                 if (!rule.isDerivedKey()) {
@@ -133,24 +126,20 @@ public class KeywordParser {
                     type + "/" + key);
         }
         keysWaitingInStack.add(key);
-        String sourceKey = rule.getSourceKey();
-        if (sourceKey == null) {
-            throw new IllegalStateException("Source-key not defined for derived keyword: " + 
-                    type + "/" + key);
-        }
-        List<Object> values = processDerivedRule(type, ruleMap, sourceKey, keywords, lookup, 
-                keysWaitingInStack, objectRefPath);
-        if (rule.getSubobjectIdKey() != null) {
-            processDerivedRule(type, ruleMap, rule.getSubobjectIdKey(), keywords, lookup, 
-                    keysWaitingInStack, objectRefPath);
+        List<Object> values = processDerivedRule(type, ruleMap, rule.getSourceKey().get(),
+                keywords, lookup, keysWaitingInStack, objectRefPath);
+        if (rule.getTransform().isPresent() &&
+                rule.getTransform().get().getSubobjectIdKey().isPresent()) {
+            processDerivedRule(type, ruleMap, rule.getTransform().get().getSubobjectIdKey().get(),
+                    keywords, lookup, keysWaitingInStack, objectRefPath);
         }
         for (Object value : values) {
             processRule(type, rule, key, value, keywords, lookup, objectRefPath);
         }
         keysWaitingInStack.remove(key);
         List<Object> ret = keywords.containsKey(key) ? keywords.get(key).values : new ArrayList<>();
-        if (isEmpty(ret) && rule.getOptionalDefaultValue() != null) {
-            addOrAddAll(rule.getOptionalDefaultValue(), ret);
+        if (isEmpty(ret) && rule.getDefaultValue().isPresent()) {
+            addOrAddAll(rule.getDefaultValue().get(), ret);
         }
         return ret;
     }
@@ -165,8 +154,8 @@ public class KeywordParser {
             throws IndexingException, InterruptedException, ObjectParseException {
         Object valueFinal = value;
         if (valueFinal == null) {
-            if (rule.getOptionalDefaultValue() != null) {
-                valueFinal = rule.getOptionalDefaultValue();
+            if (rule.getDefaultValue().isPresent()) {
+                valueFinal = rule.getDefaultValue().get();
             } else {
                 valueFinal = Collections.EMPTY_LIST;
             }
@@ -178,17 +167,12 @@ public class KeywordParser {
             keywords.put(key, values);
         }
         values.notIndexed = rule.isNotIndexed();
-        if (rule.getTransform() != null) {
+        if (rule.getTransform().isPresent()) {
             valueFinal = transform(valueFinal, rule, keywords, lookup, objectRefPath);
         }
         addOrAddAll(valueFinal, values.values);
     }
     
-    public static String getKeyName(IndexingRules rules) {
-        return rules.getKeyName() != null ? rules.getKeyName():
-            rules.getPath().getPathItems()[0];
-    }
-
     @SuppressWarnings("unchecked")
     private static void addOrAddAll(Object valueFinal, List<Object> values) {
         if (valueFinal != null) {
@@ -205,22 +189,25 @@ public class KeywordParser {
             Map<String, InnerKeyValue> sourceKeywords, ObjectLookupProvider lookup,
             List<GUID> objectRefPath)
             throws IndexingException, InterruptedException, ObjectParseException {
-        switch (rule.getTransform()) {
+        final Transform transform = rule.getTransform().get();
+        switch (transform.getType()) {
         case location:
             List<List<Object>> loc = (List<List<Object>>)value;
-            Map<String, Object> retLoc = new LinkedHashMap<>();
-            retLoc.put("contig_id", loc.get(0).get(0));
+            Map<LocationTransformType, Object> retLoc = new LinkedHashMap<>();
+            //TODO CODE if the subobject stuff in the ObjectParsingRules is left out this throws an indexing exception. Need to figure out cause.
+            retLoc.put(LocationTransformType.contig_id, loc.get(0).get(0));
             String strand = (String)loc.get(0).get(2);
-            retLoc.put("strand", strand);
+            retLoc.put(LocationTransformType.strand, strand);
             int start = (Integer)loc.get(0).get(1);
             int len = (Integer)loc.get(0).get(3);
-            retLoc.put("length", len);
-            retLoc.put("start", strand.equals("+") ? start : (start - len + 1));
-            retLoc.put("stop", strand.equals("+") ? (start + len - 1) : start);
-            if (rule.getTransformProperty() == null) {
+            retLoc.put(LocationTransformType.length, len);
+            retLoc.put(LocationTransformType.start,
+                    strand.equals("+") ? start : (start - len + 1));
+            retLoc.put(LocationTransformType.stop, strand.equals("+") ? (start + len - 1) : start);
+            if (!transform.getLocation().isPresent()) {
                 return retLoc;
             }
-            return retLoc.get(rule.getTransformProperty());
+            return retLoc.get(transform.getLocation().get());
         case values:
             if (value == null) {
                 return null;
@@ -247,7 +234,7 @@ public class KeywordParser {
         case integer:
             return Integer.parseInt(String.valueOf(value));
         case guid:
-            String type = rule.getTargetObjectType();
+            String type = transform.getTargetObjectType().get();
             if (type == null) {
                 throw new IllegalStateException("Target object type should be set for 'guid' " +
                         "transform");
@@ -264,12 +251,14 @@ public class KeywordParser {
             }
             Set<GUID> guids = lookup.resolveRefs(objectRefPath, unresolvedGUIDs);
             Set<String> subIds = null;
-            if (rule.getSubobjectIdKey() != null) {
-                if (typeDescr.getInnerSubType() == null) {
+            if (transform.getSubobjectIdKey().isPresent()) {
+                if (!typeDescr.getSubObjectType().isPresent()) {
+                    //TODO CODE check this in parsing rules creation context if possible
                     throw new IllegalStateException("Subobject GUID transform should correspond " +
                             "to subobject type descriptor: " + rule);
                 }
-                subIds = toStringSet(sourceKeywords.get(rule.getSubobjectIdKey()).values);
+                subIds = toStringSet(
+                        sourceKeywords.get(transform.getSubobjectIdKey().get()).values);
                 if (guids.size() != 1) {
                     throw new IllegalStateException("In subobject IDs case source keyword " + 
                             "should point to value with only one parent object reference");
@@ -280,7 +269,7 @@ public class KeywordParser {
                     guids.add(new GUID(typeDescr.getStorageObjectType().getStorageCode(),
                             parentGuid.getAccessGroupId(),
                             parentGuid.getAccessGroupObjectId(), parentGuid.getVersion(), 
-                            typeDescr.getInnerSubType(), subId));
+                            typeDescr.getSubObjectType().get(), subId));
                 }
             }
             Map<GUID, String> guidToType = lookup.getTypesForGuids(guids);
@@ -296,10 +285,8 @@ public class KeywordParser {
             }
             return guids.stream().map(GUID::toString).collect(Collectors.toList());
         case lookup:
-            final String retProp = rule.getTransformProperty();
-            if (retProp == null) {
-                throw new IllegalStateException("No sub-property defined for lookup transform");
-            }
+            /* TODO CODE or DOCUMENTATION it appears that this only works if sourceKey = true and the sourceKey is a GUID transform. Check and document. */
+            final String retProp = transform.getTargetKey().get();
             Set<String> guidText = toStringSet(value);
             Map<GUID, ObjectData> guidToObj = lookup.lookupObjectsByGuid(
                     guidText.stream().map(GUID::new).collect(Collectors.toSet()));
@@ -341,25 +328,19 @@ public class KeywordParser {
             if (rules.isDerivedKey()) {
                 continue;
             }
-            if (rules.getPath() == null) {
+            if (!rules.getPath().isPresent()) {
                 throw new IllegalStateException("Path should be defined for non-derived " +
                         "indexing rules");
-            }
-            if (rules.getSubobjectIdKey() != null) {
-                throw new IllegalStateException("Subobject ID key can only be set for derived " +
-                        "keywords: " + getKeyName(rules));
             }
             if (rules.isFromParent() != fromParent) {
                 continue;
             }
-            if (rules.isFullText() || rules.getKeywordType() != null) {
-                List<IndexingRules> rulesList = pathToRules.get(rules.getPath());
-                if (rulesList == null) {
-                    rulesList = new ArrayList<>();
-                    pathToRules.put(rules.getPath(), rulesList);
-                }
-                rulesList.add(rules);
+            List<IndexingRules> rulesList = pathToRules.get(rules.getPath().get());
+            if (rulesList == null) {
+                rulesList = new ArrayList<>();
+                pathToRules.put(rules.getPath().get(), rulesList);
             }
+            rulesList.add(rules);
         }
         ValueCollectingNode<List<IndexingRules>> root = new ValueCollectingNode<>();
         for (ObjectJsonPath path : pathToRules.keySet()) {

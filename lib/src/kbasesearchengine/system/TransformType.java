@@ -21,8 +21,7 @@ public enum TransformType {
     /** Transforms value to Integer (Integer.parseInt of String.valueOf). */
     integer,
     
-    /** transforms value containing reference to data store object into GUID using the values
-     * {@link IndexingRules#getTargetObjectType()} and {@link IndexingRules#getSubobjectIdKey()}.
+    /** transforms value containing reference to data store object into GUID.
      */
     guid,
     

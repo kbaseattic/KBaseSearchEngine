@@ -44,18 +44,29 @@ public class ObjectParser {
             final GUID guid, 
             final ObjectTypeParsingRules parsingRules)
             throws IOException, ObjectParseException, IndexingException, InterruptedException {
+        /* note that in opposition to the name, objects with no subobject specs get run through
+         * this method.
+         */
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
-        SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
         try (JsonParser jts = obj.getData().getPlacedStream()) {
-            extractSubObjects(parsingRules, subObjConsumer, jts);
+            extractSubObjects(parsingRules, new SimpleSubObjectConsumer(pathToJson), jts);
         }
         Map<GUID, String> guidToJson = new LinkedHashMap<>();
         for (ObjectJsonPath path : pathToJson.keySet()) {
             String subJson = pathToJson.get(path);
             SimpleIdConsumer idConsumer = new SimpleIdConsumer();
-            if (parsingRules.getPrimaryKeyPath() != null) {
+            if (parsingRules.getSubObjectIDPath().isPresent()) {
                 try (JsonParser subJts = UObject.getMapper().getFactory().createParser(subJson)) {
-                    IdMapper.mapKeys(parsingRules.getPrimaryKeyPath(), subJts, idConsumer);
+                    IdMapper.mapKeys(parsingRules.getSubObjectIDPath().get(), subJts, idConsumer);
+                }
+                /* if this if block is outside the parent if block, standard objects without
+                 * subobjects fail to parse
+                 */
+                if (idConsumer.getPrimaryKey() == null) {
+                    throw new ObjectParseException(String.format(
+                            "Could not find the subobject id for one or more of the subobjects " +
+                                    "for object %s when applying search specification %s",
+                                    guid, parsingRules.getGlobalObjectType())); 
                 }
             }
             GUID subid = prepareGUID(parsingRules, guid, path, idConsumer);
@@ -86,13 +97,12 @@ public class ObjectParser {
     public static GUID prepareGUID(ObjectTypeParsingRules parsingRules,
             GUID parent_guid, ObjectJsonPath path,
             SimpleIdConsumer idConsumer) {
-        String subObjectType = null;
-        String subObjectId = null;
-        if (parsingRules.getPathToSubObjects() != null) {
-            subObjectId = idConsumer.getPrimaryKey() == null ? path.toString() :
+        String innerSubType = null;
+        String innerID = null;
+        if (parsingRules.getSubObjectPath().isPresent()) {
+            innerID = idConsumer.getPrimaryKey() == null ? path.toString() : 
                 String.valueOf(idConsumer.getPrimaryKey());
-            subObjectType = parsingRules.getInnerSubType() == null ? "_" :
-                parsingRules.getInnerSubType();
+            innerSubType = parsingRules.getSubObjectType().get();
         }
         
         return new GUID(parent_guid, subObjectType, subObjectId);
@@ -120,7 +130,7 @@ public class ObjectParser {
      */
     public static String extractParentFragment(ObjectTypeParsingRules parsingRules,
             JsonParser jts) throws ObjectParseException, IOException {
-        if (parsingRules.getPathToSubObjects() == null) {
+        if (!parsingRules.getSubObjectPath().isPresent()) {
             return null;
         }
         List<ObjectJsonPath> indexingPaths = new ArrayList<>();
@@ -128,7 +138,8 @@ public class ObjectParser {
             if (!rules.isFromParent()) {
                 continue;
             }
-            indexingPaths.add(rules.getPath());
+            //TODO CODE this seems wrong. Why adding null paths?
+            indexingPaths.add(rules.getPath().orNull());
         }
         if (indexingPaths.size() == 0) {
             return null;
@@ -148,12 +159,12 @@ public class ObjectParser {
             if (rules.isFromParent()) {
                 continue;
             }
-            if (rules.getPath() != null) {
-                indexingPaths.add(rules.getPath());
+            if (rules.getPath().isPresent()) {
+                indexingPaths.add(rules.getPath().get());
             }
         }
-        ObjectJsonPath pathToSubObjects = parsingRules.getPathToSubObjects() == null ?
-                new ObjectJsonPath("/") : parsingRules.getPathToSubObjects();
+        ObjectJsonPath pathToSubObjects = parsingRules.getSubObjectPath()
+                .or(new ObjectJsonPath("/"));
         SubObjectExtractor.extract(pathToSubObjects, indexingPaths, jts, subObjConsumer);
     }
 }
