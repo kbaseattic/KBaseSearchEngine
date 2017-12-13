@@ -71,7 +71,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private String esUser;
     private String esPassword;
     private String indexNamePrefix;
-    private boolean mergeTypes = false;
     private boolean skipFullJson = false;
     private Map<String, String> typeToIndex = new LinkedHashMap<>();
     private RestClient restClient = null;
@@ -113,15 +112,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public void setIndexNamePrefix(String indexNamePrefix) {
         this.indexNamePrefix = indexNamePrefix;
     }
-    
-    public boolean isMergeTypes() {
-        return mergeTypes;
-    }
-    
-    public void setMergeTypes(boolean mergeTypes) {
-        this.mergeTypes = mergeTypes;
-    }
-    
+
     public boolean isSkipFullJson() {
         return skipFullJson;
     }
@@ -160,7 +151,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 throw new IllegalArgumentException("Object type is required");
             }
         }
-        String key = mergeTypes ? "all_types" : objectType.getType(); //TODO VERS take version into account
+        String key = objectType.getType(); //TODO VERS take version into account
         String ret = typeToIndex.get(key);
         if (ret == null) {
             ret = (indexNamePrefix + key).toLowerCase();
@@ -1671,18 +1662,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 put("doc_values", false);
             }});
         }
-        if (mergeTypes) {
-            props.put("all", new LinkedHashMap<String, Object>() {{
-                put("type", "text");
+        for (IndexingRules rules : indexingRules) {
+            String propName = getKeyProperty(rules.getKeyName());
+            String propType = getEsType(rules.isFullText(), rules.getKeywordType());
+            props.put(propName, new LinkedHashMap<String, Object>() {{
+                put("type", propType);
             }});
-        } else {
-            for (IndexingRules rules : indexingRules) {
-                String propName = getKeyProperty(rules.getKeyName());
-                String propType = getEsType(rules.isFullText(), rules.getKeywordType());
-                props.put(propName, new LinkedHashMap<String, Object>() {{
-                    put("type", propType);
-                }});
-            }
         }
         makeRequest("PUT", "/" + indexName, doc);
     }
