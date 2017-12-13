@@ -323,6 +323,7 @@ public class SearchMethods {
     }
     
     public Map<String, TypeDescriptor> listTypes(String uniqueType) throws Exception {
+        //TODO VERS remove keys from TypeDescriptor, document that listObjectTypes only returns the most recent version of each type
         Map<String, TypeDescriptor> ret = new LinkedHashMap<>();
         for (ObjectTypeParsingRules otpr : typeStorage.listObjectTypes()) {
             String typeName = otpr.getGlobalObjectType().getType();

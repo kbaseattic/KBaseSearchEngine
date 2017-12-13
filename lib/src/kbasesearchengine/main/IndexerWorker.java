@@ -46,6 +46,7 @@ import kbasesearchengine.parse.ObjectParser;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
 import kbasesearchengine.search.IndexingStorage;
+import kbasesearchengine.system.NoSuchTypeException;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.StorageObjectType;
@@ -654,7 +655,7 @@ public class IndexerWorker implements Stoppable {
         private Map<String, Map<String, GUID>> refResolvingCache = new LinkedHashMap<>();
         private Map<GUID, kbasesearchengine.search.ObjectData> objLookupCache =
                 new LinkedHashMap<>();
-        private Map<GUID, String> guidToTypeCache = new LinkedHashMap<>();
+        private Map<GUID, SearchObjectType> guidToTypeCache = new LinkedHashMap<>();
         
         @Override
         public Set<GUID> resolveRefs(List<GUID> callerRefPath, Set<GUID> refs)
@@ -797,15 +798,15 @@ public class IndexerWorker implements Stoppable {
         }
         
         @Override
-        public ObjectTypeParsingRules getTypeDescriptor(final String type)
-                throws IndexingException {
+        public ObjectTypeParsingRules getTypeDescriptor(final SearchObjectType type)
+                throws IndexingException, NoSuchTypeException {
             return typeStorage.getObjectType(type);
         }
         
         @Override
-        public Map<GUID, String> getTypesForGuids(Set<GUID> guids)
+        public Map<GUID, SearchObjectType> getTypesForGuids(Set<GUID> guids)
                 throws InterruptedException, IndexingException {
-            Map<GUID, String> ret = new LinkedHashMap<>();
+            Map<GUID, SearchObjectType> ret = new LinkedHashMap<>();
             Set<GUID> guidsToLoad = new LinkedHashSet<>();
             for (GUID guid : guids) {
                 if (guidToTypeCache.containsKey(guid)) {
@@ -817,7 +818,7 @@ public class IndexerWorker implements Stoppable {
             if (guidsToLoad.size() > 0) {
                 final List<kbasesearchengine.search.ObjectData> data =
                         retrier.retryFunc(g -> getObjectsByIds(g), guidsToLoad, null);
-                final Map<GUID, String> loaded = data.stream()
+                final Map<GUID, SearchObjectType> loaded = data.stream()
                         .collect(Collectors.toMap(od -> od.guid, od -> od.type));
                 guidToTypeCache.putAll(loaded);
                 ret.putAll(loaded);

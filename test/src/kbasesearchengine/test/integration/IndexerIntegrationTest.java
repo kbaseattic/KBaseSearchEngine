@@ -36,6 +36,7 @@ import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.ObjectData;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.TypeFileStorage;
 import kbasesearchengine.system.TypeMappingParser;
 import kbasesearchengine.system.TypeStorage;
@@ -291,7 +292,7 @@ public class IndexerIntegrationTest {
         final ObjectData expected = new ObjectData();
         expected.guid = new GUID("WS:1/1/1");
         expected.objectName = "bar";
-        expected.type = "EmptyAType";
+        expected.type = new SearchObjectType("EmptyAType", 1);
         expected.creator = userToken.getUserName();
         expected.module = "serv";
         expected.method = "meth";
