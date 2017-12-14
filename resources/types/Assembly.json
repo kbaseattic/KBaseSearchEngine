@@ -1,5 +1,6 @@
 {
     "global-object-type": "Assembly",
+    "global-object-type-version": 1,
     "storage-type": "WS",
     "storage-object-type": "KBaseGenomeAnnotations.Assembly",
     "indexing-rules": [

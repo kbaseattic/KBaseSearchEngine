@@ -51,6 +51,7 @@ import kbasesearchengine.search.PostProcessing;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.ObjectTypeParsingRulesUtils;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.test.common.TestCommon;
 import kbasesearchengine.test.controllers.elasticsearch.ElasticSearchController;
 import kbasesearchengine.test.parse.SubObjectExtractorTest;
@@ -149,7 +150,7 @@ public class ElasticIndexingStorageTest {
         return MatchFilter.create().withFullTextInAll(fullText);
     }
     
-    private static void indexObject(GUID id, String objectType, String json, String objectName,
+    private static void indexObject(GUID id, SearchObjectType objectType, String json, String objectName,
             Instant timestamp, String parentJsonValue, boolean isPublic,
             List<IndexingRules> indexingRules)
             throws IOException, ObjectParseException, IndexingException, InterruptedException {
@@ -203,8 +204,8 @@ public class ElasticIndexingStorageTest {
         Map<String, Integer> typeToCount = indexStorage.searchTypes(ft("Rfah"), 
                 AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, typeToCount.size());
-        String type = typeToCount.keySet().iterator().next();
-        Assert.assertEquals(1, (int)typeToCount.get(type));
+        SearchObjectType type = new SearchObjectType(typeToCount.keySet().iterator().next(), 1);
+        Assert.assertEquals(1, (int)typeToCount.get(type.getType()));
         GUID expectedGUID = new GUID("WS:1/1/1:feature/NewGenome.CDS.6210");
         // Admin mode
         Set<GUID> ids = indexStorage.searchIds(type, ft("RfaH"), null, 
@@ -253,8 +254,10 @@ public class ElasticIndexingStorageTest {
     public void testGenome() throws Exception {
         System.out.println("*** start testGenome***");
         indexObject("Genome", "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
-        Set<GUID> guids = indexStorage.searchIds("Genome", MatchFilter.create().withLookupInKey(
-                "features", new MatchValue(1, null)), null, AccessFilter.create().withAdmin(true));
+        Set<GUID> guids = indexStorage.searchIds(new SearchObjectType("Genome", 1),
+                MatchFilter.create().withLookupInKey(
+                        "features", new MatchValue(1, null)),
+                null, AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, guids.size());
         ObjectData genomeIndex = indexStorage.getObjectsByIds(guids).get(0);
         //System.out.println("Genome index: " + genomeIndex);
@@ -271,7 +274,7 @@ public class ElasticIndexingStorageTest {
     
     @Test
     public void testVersions() throws Exception {
-        String objType = "Simple";
+        SearchObjectType objType = new SearchObjectType("Simple", 1);
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop1"))
                 .withFullText().build();
         List<IndexingRules> indexingRules= Arrays.asList(ir);
@@ -314,7 +317,7 @@ public class ElasticIndexingStorageTest {
                 AccessFilter.create().withAccessGroups(2).withAllHistory(true)).size());
     }
     
-    private Set<GUID> lookupIdsByKey(String objType, String keyName, Object value, 
+    private Set<GUID> lookupIdsByKey(SearchObjectType objType, String keyName, Object value, 
             AccessFilter af) throws IOException {
         Set<GUID> ret = indexStorage.searchIds(objType, MatchFilter.create().withLookupInKey(
                 keyName, new MatchValue(value)), null, af);
@@ -328,7 +331,7 @@ public class ElasticIndexingStorageTest {
     
     @Test
     public void testSharing() throws Exception {
-        String objType = "Sharable";
+        SearchObjectType objType = new SearchObjectType("Sharable",1 );
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop2"))
                 .withKeywordType("integer").build();
         List<IndexingRules> indexingRules= Arrays.asList(ir);
@@ -378,7 +381,7 @@ public class ElasticIndexingStorageTest {
     
     @Test
     public void testPublic() throws Exception {
-        String objType = "Publishable";
+        SearchObjectType objType = new SearchObjectType("Publishable", 1);
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop3"))
                 .withFullText().build();
         List<IndexingRules> indexingRules= Arrays.asList(ir);
@@ -430,7 +433,7 @@ public class ElasticIndexingStorageTest {
     
     @Test
     public void testPublicDataPalettes() throws Exception {
-        String objType = "ShareAndPublic";
+        SearchObjectType objType = new SearchObjectType("ShareAndPublic", 1);
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop4"))
                 .withKeywordType("integer").build();
         List<IndexingRules> indexingRules = Arrays.asList(ir);
@@ -465,7 +468,7 @@ public class ElasticIndexingStorageTest {
     
     @Test
     public void testDeleteUndelete() throws Exception {
-        String objType = "DelUndel";
+        SearchObjectType objType = new SearchObjectType("DelUndel", 1);
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("myprop"))
                 .withFullText().build();
         List<IndexingRules> indexingRules= Arrays.asList(ir);
@@ -511,7 +514,7 @@ public class ElasticIndexingStorageTest {
     @Test
     public void testPublishAllVersions() throws Exception {
         // tests the all versions method for setting objects public / non-public.
-        String objType = "PublishAllVersions";
+        SearchObjectType objType = new SearchObjectType("PublishAllVersions", 1);
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("myprop"))
                 .withFullText().build();
         List<IndexingRules> indexingRules= Arrays.asList(ir);

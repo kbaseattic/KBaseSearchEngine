@@ -29,21 +29,21 @@ public class TypeFileStorage implements TypeStorage {
     private static final Set<String> ALLOWED_FILE_TYPES_FOR_TYPES =
             new HashSet<>(Arrays.asList(".json", ".yaml"));
     
-    private final Map<String, ObjectTypeParsingRules> searchTypes = new HashMap<>();
+    private final Map<SearchObjectType, ObjectTypeParsingRules> searchTypes = new HashMap<>();
     private final Map<CodeAndType, TypeMapping> storageTypes;
     
     private Map<CodeAndType, TypeMapping> processTypesDir(
             final Path typesDir,
             final LineLogger logger)
             throws IOException, ObjectParseException, TypeParseException {
-        final Map<String, Path> typeToFile = new HashMap<>();
+        final Map<SearchObjectType, Path> typeToFile = new HashMap<>();
         final Map<CodeAndType, TypeMapping.Builder> storageTypes = new HashMap<>(); 
         // this is gross, but works. https://stackoverflow.com/a/20130475/643675
         for (Path file : (Iterable<Path>) Files.list(typesDir)::iterator) {
             if (Files.isRegularFile(file) && isAllowedFileType(file)) {
                 final ObjectTypeParsingRules type = ObjectTypeParsingRulesUtils
                         .fromFile(file.toFile());
-                final String searchType = type.getGlobalObjectType();
+                final SearchObjectType searchType = type.getGlobalObjectType();
                 if (typeToFile.containsKey(searchType)) {
                     throw new TypeParseException(String.format(
                             "Multiple definitions for the same search type %s in files %s and %s",
@@ -54,10 +54,10 @@ public class TypeFileStorage implements TypeStorage {
                 final CodeAndType cnt = new CodeAndType(type);
                 if (!storageTypes.containsKey(cnt)) {
                     storageTypes.put(cnt, TypeMapping.getBuilder(cnt.storageCode, cnt.storageType)
-                            .withNullableDefaultSearchType(searchType)
+                            .withNullableDefaultSearchType(searchType.getType()) //TODO VERS take version into account
                             .withNullableSourceInfo(file.toString()));
                 } else {
-                    storageTypes.get(cnt).withNullableDefaultSearchType(searchType);
+                    storageTypes.get(cnt).withNullableDefaultSearchType(searchType.getType()); //TODO VERS take version into account
                 }
                 logger.logInfo(String.format("%s Processed type tranformation file with storage " +
                         "code %s, storage type %s and search type %s: %s",
@@ -196,6 +196,7 @@ public class TypeFileStorage implements TypeStorage {
                                     ret.get(cnt).getSourceInfo().get(),
                                     map.getSourceInfo().get()));
                         }
+                        //TODO VERS this needs to be version aware
                         for (final String searchType: map.getSearchTypes()) {
                             if (!searchTypes.containsKey(searchType)) {
                                 throw new TypeParseException(String.format(
@@ -225,8 +226,9 @@ public class TypeFileStorage implements TypeStorage {
     
     @Override
     public ObjectTypeParsingRules getObjectType(final String type) {
-        if (searchTypes.containsKey(type)) {
-            return searchTypes.get(type);
+        final SearchObjectType temptype = new SearchObjectType(type, 1); //TODO VERS needs to be version aware
+        if (searchTypes.containsKey(temptype)) {
+            return searchTypes.get(temptype);
         } else {
             return null;
         }
@@ -243,7 +245,8 @@ public class TypeFileStorage implements TypeStorage {
         final Set<String> types = mapping.getSearchTypes(storageObjectType.getVersion());
         final List<ObjectTypeParsingRules> ret = new LinkedList<>();
         for (final String t: types) {
-            ret.add(searchTypes.get(t));
+            final SearchObjectType temptype = new SearchObjectType(t, 1); //TODO VERS needs to be version aware
+            ret.add(searchTypes.get(temptype));
         }
         return ret;
     }
