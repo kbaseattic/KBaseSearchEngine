@@ -48,6 +48,7 @@ import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.SearchObjectType;
+import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.UObject;
 
@@ -121,13 +122,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
         this.skipFullJson = skipFullJson;
     }
     
-    public String getIndex(SearchObjectType objectType) throws IOException {
+    //TODO VERS queryHits needs to get a non-type specific index
+    private String getIndex(SearchObjectType objectType) throws IOException {
         return checkIndex(objectType, null);
-    }
-    
-    private String checkIndex(SearchObjectType objectType, List<IndexingRules> indexingRules) 
-            throws IOException {
-        return checkIndex(objectType, indexingRules, false);
     }
     
     private String getAnyIndexPattern() {
@@ -144,16 +141,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     private String checkIndex(
             final SearchObjectType objectType,
-            final List<IndexingRules> indexingRules,
-            final boolean allowAnyType)
+            final List<IndexingRules> indexingRules)
             throws IOException {
-        if (objectType == null) {
-            if (allowAnyType) {
-                return getAnyIndexPattern();
-            } else {
-                throw new IllegalArgumentException("Object type is required");
-            }
-        }
+        Utils.nonNull(objectType, "objectType");
         String key = objectType.getType(); //TODO VERS take version into account
         String ret = typeToIndex.get(key);
         if (ret == null) {
@@ -452,23 +442,20 @@ public class ElasticIndexingStorage implements IndexingStorage {
     // throws IOexceptions for elastic connection issues & deserializaion issues
     @Override
     public Map<GUID, Boolean> checkParentGuidsExist(final Set<GUID> guids) throws IOException {
-        return checkParentGuidsExist(null, guids);
-    }
-
-    // throws IOexceptions for elastic connection issues & deserializaion issues
-    @Override
-    public Map<GUID, Boolean> checkParentGuidsExist(SearchObjectType objectType, Set<GUID> guids) 
-            throws IOException {
-        Set<GUID> parentGUIDs = guids.stream().map(guid -> new GUID(guid.getStorageCode(), 
-                guid.getAccessGroupId(), guid.getAccessGroupObjectId(), guid.getVersion(), null, 
-                null)).collect(Collectors.toSet());
-        String indexName = checkIndex(objectType, null, true);
+        Set<GUID> parentGUIDs = guids.stream().map(guid -> new GUID(
+                guid.getStorageCode(),
+                guid.getAccessGroupId(),
+                guid.getAccessGroupObjectId(),
+                guid.getVersion(),
+                null, null))
+                .collect(Collectors.toSet());
+        final String indexName = getAnyIndexPattern();
         // In next operation map value may contain one of possible parents in case objectType==null
-        Map<GUID, String> map = lookupParentDocIds(indexName, parentGUIDs);
+        final Map<GUID, String> map = lookupParentDocIds(indexName, parentGUIDs);
         return parentGUIDs.stream().collect(Collectors.toMap(Function.identity(), 
                 guid -> map.containsKey(guid)));
     }
-    
+
     @SuppressWarnings({ "serial", "unchecked" })
     private Integer loadLastVersion(String reqIndexName, GUID parentGUID, 
             Integer processedVersion) throws IOException {

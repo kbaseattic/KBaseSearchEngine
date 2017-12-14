@@ -36,11 +36,6 @@ public interface IndexingStorage {
             boolean isPublic, List<IndexingRules> indexingRules) 
                     throws IOException;
     
-    public Map<GUID, Boolean> checkParentGuidsExist(
-            SearchObjectType objectType,
-            Set<GUID> parentGuids) 
-            throws IOException;
-    
     /** Check that the parent objects (e.g. the access information) exists for a set of GUIDS.
      * Equivalent to {@link #checkParentGuidsExist(String, Set)} with a null String.
      * @param parentGuids the parent guids to check.
