@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
+import kbasesearchengine.common.FileUtil;
 import org.apache.http.HttpHost;
 import org.slf4j.LoggerFactory;
 
@@ -328,7 +329,7 @@ public class SearchTools {
             return;
         }
         final HttpHost esHostPort = new HttpHost(cfg.getElasticHost(), cfg.getElasticPort());
-        final File tempSubDir = IndexerWorker.getTempSubDir(
+        final File tempSubDir = FileUtil.getOrCreateSubDir(
                 new File(cfg.getTempDir()), "esbulk");
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(
                 esHostPort, tempSubDir);

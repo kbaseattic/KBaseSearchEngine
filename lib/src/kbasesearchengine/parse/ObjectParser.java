@@ -15,17 +15,10 @@ import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import org.apache.commons.io.FileUtils;
 import us.kbase.common.service.UObject;
 
 public class ObjectParser {
-    
-    public static File prepareTempFile(File tempDir) throws IOException {
-        if (!tempDir.exists()) {
-            tempDir.mkdirs();
-        }
-        File tempFile = File.createTempFile("ws_srv_response_", ".json", tempDir);
-        return tempFile;
-    }
 
     public static Map<GUID, String> parseSubObjects(
             final SourceData obj,

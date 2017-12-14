@@ -32,7 +32,6 @@ import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.authorization.WorkspaceAccessGroupProvider;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.main.LineLogger;
-import kbasesearchengine.main.IndexerWorker;
 import kbasesearchengine.main.SearchMethods;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.system.TypeFileStorage;
@@ -42,6 +41,8 @@ import kbasesearchengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.ConfigurableAuthService;
 import workspace.WorkspaceClient;
+import kbasesearchengine.common.FileUtil;
+
 //END_HEADER
 
 /**
@@ -133,7 +134,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
                 new WorkspaceAccessGroupProvider(wsClient), 30, 50000 * 1000);
         
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
-                IndexerWorker.getTempSubDir(tempDir, "esbulk"));
+                FileUtil.getOrCreateSubDir(tempDir, "esbulk"));
         if (esUser != null) {
             esStorage.setEsUser(esUser);
             esStorage.setEsPassword(esPassword);

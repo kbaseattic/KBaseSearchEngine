@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.common.base.Optional;
 
+import kbasesearchengine.common.FileUtil;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.ChildStatusEvent;
 import kbasesearchengine.events.StatusEvent;
@@ -50,6 +52,7 @@ import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.tools.Utils;
+import org.apache.commons.io.FileUtils;
 
 public class IndexerWorker implements Stoppable {
     
@@ -82,13 +85,17 @@ public class IndexerWorker implements Stoppable {
             final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,
-            final LineLogger logger) {
+            final LineLogger logger)
+                throws IOException {
         Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
         Utils.nonNull(logger, "logger");
         Utils.nonNull(indexingStorage, "indexingStorage");
         this.id = id;
         this.logger = logger;
-        this.rootTempDir = tempDir;
+        this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
+                id + "_" + UUID.randomUUID().toString().substring(0,5));
+        logger.logInfo("Created temp dir " + rootTempDir.getAbsolutePath() +
+                                                     " for indexer worker " + id);
         
         eventHandlers.stream().forEach(eh -> this.eventHandlers.put(eh.getStorageCode(), eh));
         this.storage = storage;
@@ -104,29 +111,21 @@ public class IndexerWorker implements Stoppable {
             final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,
-            final LineLogger logger) {
+            final LineLogger logger)
+                throws IOException {
         Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
         Utils.nonNull(logger, "logger");
         this.id = id;
         this.storage = null;
-        this.rootTempDir = tempDir;
+        this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
+                id + "_" + UUID.randomUUID().toString().substring(0,5));
+        logger.logInfo("Created temp dir " + rootTempDir.getAbsolutePath() +
+                " for indexer worker " + id);
         this.logger = logger;
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
     }
-    
-    private File getTempSubDir(final String subName) {
-        return getTempSubDir(rootTempDir, subName);
-    }
-    
-    public static File getTempSubDir(final File rootTempDir, String subName) {
-        File ret = new File(rootTempDir, subName);
-        if (!ret.exists()) {
-            ret.mkdirs();
-        }
-        return ret;
-    }
-    
+
     public void startIndexer() {
         stopRunner = false;
         //TODO TEST add a way to inject an executor for testing purposes
@@ -163,6 +162,14 @@ public class IndexerWorker implements Stoppable {
         stopRunner = true;
         executor.shutdown();
         executor.awaitTermination(millisToWait, TimeUnit.MILLISECONDS);
+
+        try {
+            FileUtils.deleteDirectory(rootTempDir);
+        } catch(IOException ioe) {
+            logger.logError("Unable to delete worker temp dir "+rootTempDir+
+                    " on shutdown of worker with id "+id+
+                    ". Please delete manually. "+ioe.getMessage());
+        }
     }
     
     private enum ErrorType {
@@ -465,7 +472,19 @@ public class IndexerWorker implements Stoppable {
             return false;
         }
     }
-    
+
+    /** Index the object with the specified guid.
+     *
+     * @param guid an id that uniquely identifies the object that is to be indexed.
+     * @param storageObjectType type of object that is to be indexed.
+     * @param timestamp time at which this object was updated.
+     * @param isPublic object access level (true if public, else false).
+     * @param indexLookup
+     * @param objectRefPath
+     * @throws IndexingException
+     * @throws InterruptedException
+     * @throws RetriableIndexingException
+     */
     private void indexObject(
             final GUID guid,
             final StorageObjectType storageObjectType,
@@ -477,7 +496,8 @@ public class IndexerWorker implements Stoppable {
         long t1 = System.currentTimeMillis();
         final File tempFile;
         try {
-            tempFile = ObjectParser.prepareTempFile(getTempSubDir(guid.getStorageCode()));
+            FileUtil.getOrCreateSubDir(rootTempDir, guid.getStorageCode());
+            tempFile = File.createTempFile("ws_srv_response_", ".json");
         } catch (IOException e) {
             throw new FatalRetriableIndexingException(e.getMessage(), e);
         }
@@ -644,6 +664,9 @@ public class IndexerWorker implements Stoppable {
         indexingStorage.setNameOnAllObjectVersions(guid, newName);
     }
 
+    /** A lookup provider
+     *
+     */
     private class MOPLookupProvider implements ObjectLookupProvider {
         // storage code -> full ref path -> resolved guid
         private Map<String, Map<String, GUID>> refResolvingCache = new LinkedHashMap<>();

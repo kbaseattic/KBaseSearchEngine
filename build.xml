@@ -149,6 +149,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
           <fileset dir="${test.src}">
             <include name="kbasesearchengine/test/parse/**Test.java"/>
             <include name="kbasesearchengine/test/authorization/AccessGroupCacheTest.java"/>
+            <include name="kbasesearchengine/test/common/FileUtilTest.java"/>
             <include name="kbasesearchengine/test/events/AccessGroupEventQueueTest.java"/>
             <include name="kbasesearchengine/test/events/ChildStatusEventTest.java"/>
             <include name="kbasesearchengine/test/events/EventQueueTest.java"/>
