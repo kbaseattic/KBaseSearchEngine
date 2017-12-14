@@ -1,32 +1,33 @@
 {
     "global-object-type": "Assembly",
-    "global-object-type-version": 1,
     "storage-type": "WS",
     "storage-object-type": "KBaseGenomeAnnotations.Assembly",
-    "indexing-rules": [
-        {
-            "path": "name",
-            "full-text": true
-        },
-        {
-            "path": "dna_size",
-            "keyword-type": "integer",
-            "ui-name": "DNA size"
-        },
-        {
-            "path": "gc_content",
-            "keyword-type": "double",
-            "ui-name": "GC-content"
-        },
-        {
-            "path": "external_source_id",
-            "full-text": true,
-            "ui-name": "External Source"
-        },
-        {
-            "path": "contigs/{size}",
-            "keyword-type": "integer",
-            "key-name": "contigs"
-        }
-    ]
+    "versions": [{
+        "indexing-rules": [
+            {
+                "path": "name",
+                "full-text": true
+            },
+            {
+                "path": "dna_size",
+                "keyword-type": "integer",
+                "ui-name": "DNA size"
+            },
+            {
+                "path": "gc_content",
+                "keyword-type": "double",
+                "ui-name": "GC-content"
+            },
+            {
+                "path": "external_source_id",
+                "full-text": true,
+                "ui-name": "External Source"
+            },
+            {
+                "path": "contigs/{size}",
+                "keyword-type": "integer",
+                "key-name": "contigs"
+            }
+        ]
+    }]
 }

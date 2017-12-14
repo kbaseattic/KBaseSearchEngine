@@ -1369,7 +1369,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
             List<SortingRule> sorting,
             final AccessFilter accessFilter,
             final Pagination pg,
-            final PostProcessing pp) throws IOException {
+            final PostProcessing pp)
+            throws IOException {
         int pgStart = pg == null || pg.start == null ? 0 : pg.start;
         int pgCount = pg == null || pg.count == null ? 50 : pg.count;
         Pagination pagination = new Pagination(pgStart, pgCount);
