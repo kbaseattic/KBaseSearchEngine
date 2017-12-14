@@ -35,6 +35,7 @@ import kbasesearchengine.search.FoundHits;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.TypeStorage;
 import us.kbase.common.service.UObject;
 
@@ -278,8 +279,9 @@ public class SearchMethods {
         kbasesearchengine.search.Pagination pagination = toSearch(params.getPagination());
         kbasesearchengine.search.PostProcessing postProcessing = 
                 toSearch(params.getPostProcessing());
-        FoundHits hits = indexingStorage.searchObjects(params.getObjectType(), matchFilter, 
-                sorting, accessFilter, pagination, postProcessing);
+        FoundHits hits = indexingStorage.searchObjects(
+                new SearchObjectType(params.getObjectType(), 1), //TODO VERS specify that all versions should be searched
+                matchFilter, sorting, accessFilter, pagination, postProcessing);
         SearchObjectsOutput ret = new SearchObjectsOutput();
         ret.withPagination(fromSearch(hits.pagination));
         ret.withSortingRules(hits.sortingRules.stream().map(this::fromSearch).collect(
@@ -323,7 +325,7 @@ public class SearchMethods {
     public Map<String, TypeDescriptor> listTypes(String uniqueType) throws Exception {
         Map<String, TypeDescriptor> ret = new LinkedHashMap<>();
         for (ObjectTypeParsingRules otpr : typeStorage.listObjectTypes()) {
-            String typeName = otpr.getGlobalObjectType();
+            String typeName = otpr.getGlobalObjectType().getType();
             if (uniqueType != null && !uniqueType.equals(typeName)) {
                 continue;
             }

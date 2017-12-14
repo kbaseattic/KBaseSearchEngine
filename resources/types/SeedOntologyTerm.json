@@ -1,5 +1,6 @@
 {
     "global-object-type": "SeedOntologyTerm",
+    "global-object-type-version": 1,
     "storage-type": "SeedOntologyDataSource",
     "storage-object-type": "fake",
     "primary-key-path": "id",

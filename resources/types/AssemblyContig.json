@@ -1,5 +1,6 @@
 {
     "global-object-type": "AssemblyContig",
+    "global-object-type-version": 1,
     "ui-type-name": "Assembly Contig",
     "storage-type": "WS",
     "storage-object-type": "KBaseGenomeAnnotations.Assembly",

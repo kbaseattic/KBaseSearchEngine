@@ -46,8 +46,9 @@ public class ObjectParser {
                 if (idConsumer.getPrimaryKey() == null) {
                     throw new ObjectParseException(String.format(
                             "Could not find the subobject id for one or more of the subobjects " +
-                                    "for object %s when applying search specification %s",
-                                    guid, parsingRules.getGlobalObjectType())); 
+                                    "for object %s when applying search specification %s_%s",
+                                    guid, parsingRules.getGlobalObjectType().getType(),
+                                    parsingRules.getGlobalObjectType().getVersion())); 
                 }
             }
             GUID subid = prepareGUID(parsingRules, guid, path, idConsumer);

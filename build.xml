@@ -159,6 +159,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
             <include name="kbasesearchengine/test/events/StoredStatusEventTest.java"/>
             <include name="kbasesearchengine/test/events/exceptions/RetrierTest.java"/>
             <include name="kbasesearchengine/test/events/exceptions/ExceptionTest.java"/>
+            <include name="kbasesearchengine/test/events/handler/CloneableWorkspaceClientImplTest.java"/>
             <include name="kbasesearchengine/test/events/handler/ResolvedReferenceTest.java"/>
             <include name="kbasesearchengine/test/events/handler/SourceDataTest.java"/>
             <include name="kbasesearchengine/test/events/storage/MongoDBStatusEventStorageTest.java"/>
@@ -167,6 +168,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
             <include name="kbasesearchengine/test/search/ElasticIndexingStorageTest.java"/>
             <include name="kbasesearchengine/test/system/IndexingRulesTest.java"/>
             <include name="kbasesearchengine/test/system/ObjectTypeParsingRulesTest.java"/>
+            <include name="kbasesearchengine/test/system/SearchObjectTypeTest.java"/>
             <include name="kbasesearchengine/test/system/StorageObjectTypeTest.java"/>
             <include name="kbasesearchengine/test/system/TypeMappingTest.java"/>
             <include name="kbasesearchengine/test/system/TransformTest.java"/>
