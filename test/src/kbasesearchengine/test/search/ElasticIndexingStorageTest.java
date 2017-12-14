@@ -110,9 +110,9 @@ public class ElasticIndexingStorageTest {
             }
             
             @Override
-            public ObjectTypeParsingRules getTypeDescriptor(String type) {
+            public ObjectTypeParsingRules getTypeDescriptor(SearchObjectType type) {
                 try {
-                    final File rulesFile = new File("resources/types/" + type + ".json");
+                    final File rulesFile = new File("resources/types/" + type.getType() + ".json");
                     return ObjectTypeParsingRulesUtils.fromFile(rulesFile);
                 } catch (Exception ex) {
                     throw new IllegalStateException(ex);
@@ -120,7 +120,7 @@ public class ElasticIndexingStorageTest {
             }
             
             @Override
-            public Map<GUID, String> getTypesForGuids(Set<GUID> guids)
+            public Map<GUID, SearchObjectType> getTypesForGuids(Set<GUID> guids)
                     throws FatalIndexingException {
                 PostProcessing pp = new PostProcessing();
                 pp.objectData = false;

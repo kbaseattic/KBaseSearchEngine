@@ -11,6 +11,7 @@ import com.google.common.base.Optional;
 import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.IndexingRules.Builder;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.Transform;
 import kbasesearchengine.test.common.TestCommon;
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -272,12 +273,12 @@ public class IndexingRulesTest {
     public void buildTransformWithSubobjectIDKeyAndSourceKey() {
         // check case where sub object id key is allowed in transform
         final IndexingRules ir = IndexingRules.fromSourceKey("k", "n")
-                .withTransform(Transform.guid("type", "idkey"))
+                .withTransform(Transform.guid(new SearchObjectType("type", 1), "idkey"))
                 .build();
         assertThat("incorrect source key", ir.getSourceKey(), is(Optional.of("k")));
         assertThat("incorrect key name", ir.getKeyName(), is("n"));
         assertThat("incorrect transform", ir.getTransform(),
-                is(Optional.of(Transform.guid("type", "idkey"))));
+                is(Optional.of(Transform.guid(new SearchObjectType("type", 1), "idkey"))));
     }
     
     @Test
@@ -289,9 +290,9 @@ public class IndexingRulesTest {
     @Test
     public void buildTransformFailSubObjectIDConstraint() throws Exception {
         failBuildTransform(IndexingRules.fromPath(new ObjectJsonPath("foo")),
-                Transform.guid("type", "idkey"), new IllegalArgumentException(
-                        "A transform with a subobject ID key is not compatible with a path. " +
-                        "Path is: /foo"));
+                Transform.guid(new SearchObjectType("type", 1), "idkey"),
+                new IllegalArgumentException("A transform with a subobject ID key is not " +
+                        "compatible with a path. Path is: /foo"));
     }
     
     private void failBuildTransform(

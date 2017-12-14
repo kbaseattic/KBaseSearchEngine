@@ -136,10 +136,12 @@ public class ObjectTypeParsingRulesUtils {
             final String subObjectIDKey = (String) rulesObj.get("subobject-id-key");
             final String targetObjectType =
                     (String) rulesObj.get("target-object-type");
+            final Integer targetObjectTypeVersion =
+                    (Integer) rulesObj.get("target-object-type-version");
             final String[] tranSplt = transform.split("\\.", 2);
             final String transProp = tranSplt.length == 1 ? null : tranSplt[1];
-            irBuilder.withTransform(Transform.unknown(
-                    tranSplt[0], transProp, targetObjectType, subObjectIDKey));
+            irBuilder.withTransform(Transform.unknown(tranSplt[0], transProp,
+                    targetObjectType, targetObjectTypeVersion, subObjectIDKey));
         }
         if (getBool(rulesObj.get("not-indexed"))) {
             irBuilder.withNotIndexed();

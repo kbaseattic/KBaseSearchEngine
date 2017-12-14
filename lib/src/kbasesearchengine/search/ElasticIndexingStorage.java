@@ -63,6 +63,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private static final String OBJ_COPIER = "copier";
     private static final String OBJ_CREATOR = "creator";
     private static final String OBJ_NAME = "oname";
+    
+    private static final String SEARCH_OBJ_TYPE = "otype";
+    private static final String SEARCH_OBJ_TYPE_VER = "otypever";
 
     private HttpHost esHost;
     private String esUser;
@@ -243,7 +246,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.putAll(indexPart);
         doc.put("guid", id.toString());
-        doc.put("otype", objectType.getType()); //TODO VERS take version into account - maybe makes sense to leave this alone
+        doc.put(SEARCH_OBJ_TYPE, objectType.getType());
+        doc.put(SEARCH_OBJ_TYPE_VER, objectType.getVersion());
 
         doc.put(OBJ_NAME, data.getName());
         doc.put(OBJ_CREATOR, data.getCreator());
@@ -1076,7 +1080,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
             item.moduleVersion = (String) obj.get(OBJ_PROV_MODULE_VERSION);
             item.commitHash = (String) obj.get(OBJ_PROV_COMMIT_HASH);
             item.md5 = (String) obj.get(OBJ_MD5);
-            item.type = (String)obj.get("otype");
+            item.type = new SearchObjectType(
+                    (String) obj.get(SEARCH_OBJ_TYPE),
+                    (Integer) obj.get(SEARCH_OBJ_TYPE_VER));
             Object dateProp = obj.get("timestamp");
             item.timestamp = (dateProp instanceof Long) ? (Long)dateProp : 
                 Long.parseLong(String.valueOf(dateProp));
@@ -1158,7 +1164,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }};
     }
     
-    //TODO VERS this should return SearchObjectType -> Integer map. Maybe an option to combine versions
+    //TODO VERS should this return SearchObjectType -> Integer map? Maybe an option to combine versions
     @SuppressWarnings({ "serial", "unchecked" })
     @Override
     public Map<String, Integer> searchTypes(MatchFilter matchFilter,
@@ -1193,8 +1199,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
             put("bool", bool);
         }};
         Map<String, Object> terms = new LinkedHashMap<String, Object>() {{
-            put("field", "otype");
+            put("field", SEARCH_OBJ_TYPE);
         }};
+        //TODO VERS if this aggregates by type version, need to add the version field to the terms
         Map<String, Object> agg = new LinkedHashMap<String, Object>() {{
             put("terms", terms);
         }};
@@ -1617,13 +1624,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
         props.put("guid", new LinkedHashMap<String, Object>() {{
             put("type", "keyword");
         }});
-        props.put("otype", new LinkedHashMap<String, Object>() {{
-            put("type", "keyword");
-        }});
+        final Map<String, Object> keyword = ImmutableMap.of("type", "keyword");
+        props.put(SEARCH_OBJ_TYPE, keyword);
+        props.put(SEARCH_OBJ_TYPE_VER, ImmutableMap.of("type", "integer"));
         props.put(OBJ_NAME, new LinkedHashMap<String, Object>() {{
             put("type", "text");
         }});
-        final Map<String, Object> keyword = ImmutableMap.of("type", "keyword");
         props.put(OBJ_CREATOR, keyword);
         props.put(OBJ_COPIER, keyword);
         props.put(OBJ_PROV_MODULE, keyword);

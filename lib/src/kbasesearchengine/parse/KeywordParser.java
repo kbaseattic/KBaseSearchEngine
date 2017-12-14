@@ -19,6 +19,7 @@ import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.LocationTransformType;
+import kbasesearchengine.system.NoSuchTypeException;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.Transform;
@@ -252,12 +253,13 @@ public class KeywordParser {
         case integer:
             return Integer.parseInt(String.valueOf(value));
         case guid:
-            String type = transform.getTargetObjectType().get();
-            if (type == null) {
-                throw new IllegalStateException("Target object type should be set for 'guid' " +
-                        "transform");
+            final SearchObjectType type = transform.getTargetObjectType().get();
+            final ObjectTypeParsingRules typeDescr;
+            try {
+                typeDescr = lookup.getTypeDescriptor(type);
+            } catch (NoSuchTypeException e) {
+                throw new ObjectParseException(e.getMessage(), e);
             }
-            final ObjectTypeParsingRules typeDescr = lookup.getTypeDescriptor(type);
             final String storageCode = typeDescr.getStorageObjectType().getStorageCode();
             final Set<String> refs = toStringSet(value);
             final Set<GUID> unresolvedGUIDs;
@@ -290,12 +292,12 @@ public class KeywordParser {
                             typeDescr.getSubObjectType().get(), subId));
                 }
             }
-            Map<GUID, String> guidToType = lookup.getTypesForGuids(guids);
-            for (GUID guid : guids) {
+            final Map<GUID, SearchObjectType> guidToType = lookup.getTypesForGuids(guids);
+            for (final GUID guid : guids) {
                 if (!guidToType.containsKey(guid)) {
                     throw new IllegalStateException("GUID " + guid + " not found");
                 }
-                String actualType = guidToType.get(guid);
+                final SearchObjectType actualType = guidToType.get(guid);
                 if (!actualType.equals(type)) {
                     throw new IllegalStateException("GUID " + guid + " has unexpected type: " + 
                             actualType);
@@ -373,11 +375,12 @@ public class KeywordParser {
     public interface ObjectLookupProvider {
         public Set<GUID> resolveRefs(List<GUID> objectRefPath, Set<GUID> unresolvedGUIDs) 
                 throws IndexingException, InterruptedException;
-        public Map<GUID, String> getTypesForGuids(Set<GUID> guids)
+        public Map<GUID, SearchObjectType> getTypesForGuids(Set<GUID> guids)
                 throws InterruptedException, IndexingException;
         public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids) 
                 throws InterruptedException, IndexingException;
-        public ObjectTypeParsingRules getTypeDescriptor(String type) throws IndexingException;
+        public ObjectTypeParsingRules getTypeDescriptor(SearchObjectType type)
+                throws IndexingException, NoSuchTypeException;
     }
 
     private static class InnerKeyValue {

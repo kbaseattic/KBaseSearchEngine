@@ -51,6 +51,7 @@ indexing-rules:
         # The expected type of the object to which the reference refers is an Assembly. This is
         # a search system type, not a data source type.
         target-object-type: Assembly
+        target-object-type-version: 1
         # If there is no value at the path location, substitute an empty list instead.
         optional-default-value: []
         # Index the transformed GUID as a string.

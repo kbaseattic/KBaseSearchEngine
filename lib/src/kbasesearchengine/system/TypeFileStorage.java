@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -13,6 +14,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -29,14 +31,14 @@ public class TypeFileStorage implements TypeStorage {
     private static final Set<String> ALLOWED_FILE_TYPES_FOR_TYPES =
             new HashSet<>(Arrays.asList(".json", ".yaml"));
     
-    private final Map<SearchObjectType, ObjectTypeParsingRules> searchTypes = new HashMap<>();
+    private final Map<String, ArrayList<ObjectTypeParsingRules>> searchTypes = new HashMap<>();
     private final Map<CodeAndType, TypeMapping> storageTypes;
     
     private Map<CodeAndType, TypeMapping> processTypesDir(
             final Path typesDir,
             final LineLogger logger)
             throws IOException, ObjectParseException, TypeParseException {
-        final Map<SearchObjectType, Path> typeToFile = new HashMap<>();
+        final Map<String, Path> typeToFile = new HashMap<>();
         final Map<CodeAndType, TypeMapping.Builder> storageTypes = new HashMap<>(); 
         // this is gross, but works. https://stackoverflow.com/a/20130475/643675
         for (Path file : (Iterable<Path>) Files.list(typesDir)::iterator) {
@@ -49,8 +51,8 @@ public class TypeFileStorage implements TypeStorage {
                             "Multiple definitions for the same search type %s in files %s and %s",
                             searchType, file, typeToFile.get(searchType)));
                 }
-                typeToFile.put(searchType, file);
-                searchTypes.put(searchType, type);
+                typeToFile.put(searchType.getType(), file);
+                addType(type);
                 final CodeAndType cnt = new CodeAndType(type);
                 if (!storageTypes.containsKey(cnt)) {
                     storageTypes.put(cnt, TypeMapping.getBuilder(cnt.storageCode, cnt.storageType)
@@ -61,15 +63,45 @@ public class TypeFileStorage implements TypeStorage {
                 }
                 logger.logInfo(String.format("%s Processed type tranformation file with storage " +
                         "code %s, storage type %s and search type %s: %s",
-                        TYPE_STORAGE, cnt.storageCode, cnt.storageType, searchType, file));
+                        TYPE_STORAGE, cnt.storageCode, cnt.storageType, searchType.getType(),
+                        file));
             } else {
                 logger.logInfo(TYPE_STORAGE + " Skipping file in type tranformation directory: " +
                         file);
             }
         }
+        verifyNoMissingVersions();
         final Map<CodeAndType, TypeMapping> ret = new HashMap<>();
         storageTypes.keySet().stream().forEach(k -> ret.put(k, storageTypes.get(k).build()));
         return ret;
+    }
+
+    private void verifyNoMissingVersions() throws TypeParseException {
+        for (final String type: searchTypes.keySet()) {
+            final ArrayList<ObjectTypeParsingRules> vers = searchTypes.get(type);
+            for (int i = 0; i < vers.size(); i++) {
+                if (vers.get(i) == null) {
+                    throw new TypeParseException(
+                            String.format("Missing version %s of type %s", i + 1, type));
+                }
+            }
+        }
+    }
+
+    private void addType(final ObjectTypeParsingRules rules) {
+        final String type = rules.getGlobalObjectType().getType();
+        final int version = rules.getGlobalObjectType().getVersion();
+        if (!searchTypes.containsKey(type)) {
+            searchTypes.put(type, new ArrayList<>(version));
+        }
+        // make the list big enough for the version
+        // might want to have a check at some point that there are no nulls when all the files
+        // are processed
+        final ArrayList<ObjectTypeParsingRules> versions = searchTypes.get(type);
+        for (int i = versions.size(); i < version; i++) {
+            versions.add(null);
+        }
+        versions.set(version - 1, rules);
     }
 
     private boolean isAllowedFileType(final Path file) {
@@ -221,16 +253,25 @@ public class TypeFileStorage implements TypeStorage {
 
     @Override
     public List<ObjectTypeParsingRules> listObjectTypes() {
-        return new LinkedList<>(searchTypes.values());
+        //TODO VERS is returning the last version ok? At least document in interface. Provide option?
+        return searchTypes.values().stream().map(l -> l.get(l.size() - 1))
+                .collect(Collectors.toList());
     }
     
     @Override
-    public ObjectTypeParsingRules getObjectType(final String type) {
-        final SearchObjectType temptype = new SearchObjectType(type, 1); //TODO VERS needs to be version aware
-        if (searchTypes.containsKey(temptype)) {
-            return searchTypes.get(temptype);
+    public ObjectTypeParsingRules getObjectType(final SearchObjectType type)
+            throws NoSuchTypeException {
+        //TODO CODE seems like throwing an error here for the guid transform case is a late fail. The check should occur when the OTPRs are being built.
+        if (searchTypes.containsKey(type.getType())) {
+            final ArrayList<ObjectTypeParsingRules> vers = searchTypes.get(type.getType());
+            if (type.getVersion() > vers.size()) {
+                throw new NoSuchTypeException(String.format("No type %s_%s found",
+                        type.getType(), type.getVersion()));
+            }
+            return vers.get(type.getVersion() - 1);
         } else {
-            return null;
+            throw new NoSuchTypeException(String.format("No type %s_%s found",
+                    type.getType(), type.getVersion()));
         }
     }
     
@@ -245,8 +286,7 @@ public class TypeFileStorage implements TypeStorage {
         final Set<String> types = mapping.getSearchTypes(storageObjectType.getVersion());
         final List<ObjectTypeParsingRules> ret = new LinkedList<>();
         for (final String t: types) {
-            final SearchObjectType temptype = new SearchObjectType(t, 1); //TODO VERS needs to be version aware
-            ret.add(searchTypes.get(temptype));
+            ret.add(searchTypes.get(t).get(0));  //TODO VERS needs to be version aware
         }
         return ret;
     }
