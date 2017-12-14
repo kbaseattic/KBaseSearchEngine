@@ -93,9 +93,9 @@ public class IndexerWorker implements Stoppable {
         this.id = id;
         this.logger = logger;
         this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
-                id+"_"+ UUID.randomUUID().toString().substring(0,5));
-        logger.logInfo("Created temp dir "+rootTempDir.getAbsolutePath()+
-                                                     " for indexer worker "+id);
+                id + "_" + UUID.randomUUID().toString().substring(0,5));
+        logger.logInfo("Created temp dir " + rootTempDir.getAbsolutePath() +
+                                                     " for indexer worker " + id);
         
         eventHandlers.stream().forEach(eh -> this.eventHandlers.put(eh.getStorageCode(), eh));
         this.storage = storage;
@@ -118,9 +118,9 @@ public class IndexerWorker implements Stoppable {
         this.id = id;
         this.storage = null;
         this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
-                id+"_"+ UUID.randomUUID().toString().substring(0,5));
-        logger.logInfo("Created temp dir "+rootTempDir.getAbsolutePath()+
-                " for indexer worker "+id);
+                id + "_" + UUID.randomUUID().toString().substring(0,5));
+        logger.logInfo("Created temp dir " + rootTempDir.getAbsolutePath() +
+                " for indexer worker " + id);
         this.logger = logger;
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;

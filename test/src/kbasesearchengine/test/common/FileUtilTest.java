@@ -1,9 +1,5 @@
 package kbasesearchengine.test.common;
 
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 
 import kbasesearchengine.common.FileUtil;
 import org.apache.commons.io.FileUtils;
@@ -17,6 +13,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import static org.junit.Assert.*;
 
 
 /**
@@ -44,6 +42,9 @@ public class FileUtilTest {
         File subDir = FileUtil.getOrCreateSubDir(tempDirPath.toFile(), subDirName);
         assertTrue("subdir was not created", subDir.exists());
         assertTrue("subdir not a directory", subDir.isDirectory());
+        assertEquals( "incorrect subDir path",
+                tempDirPath.toString() + "/" + subDirName, subDir.getAbsolutePath());
+        assertTrue("dir is not empty", subDir.list().length == 0);
     }
 
     /* dir already exists */
@@ -64,6 +65,8 @@ public class FileUtilTest {
         File subDir = FileUtil.getOrCreateSubDir(tempDirPath.toFile(), subDirName);
         assertTrue("subdir was not created", subDir.exists());
         assertTrue("subdir not a directory", subDir.isDirectory());
+        assertEquals( "incorrect subDir path",
+                tempDirPath.toString() + "/" + subDirName, subDir.getAbsolutePath());
 
         // add files to subDir
         try {
