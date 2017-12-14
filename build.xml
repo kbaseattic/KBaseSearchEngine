@@ -6,13 +6,16 @@
   </description>
 
   <!-- set global properties for this build -->
+  <property environment="env"/>
   <property name="src" location="lib/src"/>
   <property name="test.src" location="test/src"/>
   <property name="dist" location="dist"/>
   <property name="classes" location="classes"/>
   <property name="bin" location="bin"/>
   <property name="jar.file" value="KBaseSearchEngine.jar"/>
-  <property name="jars.dir" value="/kb/deployment/lib/jars"/>
+  <condition property="jars.dir" value="${env.JARS_DIR}" else="/kb/deployment/lib/jars">
+    <isset property="env.JARS_DIR"/>
+  </condition>
   <property name="war.file" value="KBaseSearchEngine.war"/>
   <property name="scripts" location="scripts"/>
   <property name="web.xml" location="${scripts}/web.xml"/>
