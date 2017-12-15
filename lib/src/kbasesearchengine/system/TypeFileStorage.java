@@ -43,65 +43,35 @@ public class TypeFileStorage implements TypeStorage {
         // this is gross, but works. https://stackoverflow.com/a/20130475/643675
         for (Path file : (Iterable<Path>) Files.list(typesDir)::iterator) {
             if (Files.isRegularFile(file) && isAllowedFileType(file)) {
-                final ObjectTypeParsingRules type = ObjectTypeParsingRulesUtils
+                final List<ObjectTypeParsingRules> types = ObjectTypeParsingRulesUtils
                         .fromFile(file.toFile());
-                final SearchObjectType searchType = type.getGlobalObjectType();
+                final String searchType = types.get(0).getGlobalObjectType().getType();
                 if (typeToFile.containsKey(searchType)) {
                     throw new TypeParseException(String.format(
                             "Multiple definitions for the same search type %s in files %s and %s",
                             searchType, file, typeToFile.get(searchType)));
                 }
-                typeToFile.put(searchType.getType(), file);
-                addType(type);
-                final CodeAndType cnt = new CodeAndType(type);
+                typeToFile.put(searchType, file);
+                searchTypes.put(searchType, new ArrayList<>(types));
+                final CodeAndType cnt = new CodeAndType(types.get(0).getStorageObjectType());
                 if (!storageTypes.containsKey(cnt)) {
                     storageTypes.put(cnt, TypeMapping.getBuilder(cnt.storageCode, cnt.storageType)
-                            .withNullableDefaultSearchType(searchType.getType()) //TODO VERS take version into account
+                            .withNullableDefaultSearchType(searchType) //TODO VERS take version into account
                             .withNullableSourceInfo(file.toString()));
                 } else {
-                    storageTypes.get(cnt).withNullableDefaultSearchType(searchType.getType()); //TODO VERS take version into account
+                    storageTypes.get(cnt).withNullableDefaultSearchType(searchType); //TODO VERS take version into account
                 }
                 logger.logInfo(String.format("%s Processed type tranformation file with storage " +
                         "code %s, storage type %s and search type %s: %s",
-                        TYPE_STORAGE, cnt.storageCode, cnt.storageType, searchType.getType(),
-                        file));
+                        TYPE_STORAGE, cnt.storageCode, cnt.storageType, searchType, file));
             } else {
                 logger.logInfo(TYPE_STORAGE + " Skipping file in type tranformation directory: " +
                         file);
             }
         }
-        verifyNoMissingVersions();
         final Map<CodeAndType, TypeMapping> ret = new HashMap<>();
         storageTypes.keySet().stream().forEach(k -> ret.put(k, storageTypes.get(k).build()));
         return ret;
-    }
-
-    private void verifyNoMissingVersions() throws TypeParseException {
-        for (final String type: searchTypes.keySet()) {
-            final ArrayList<ObjectTypeParsingRules> vers = searchTypes.get(type);
-            for (int i = 0; i < vers.size(); i++) {
-                if (vers.get(i) == null) {
-                    throw new TypeParseException(
-                            String.format("Missing version %s of type %s", i + 1, type));
-                }
-            }
-        }
-    }
-
-    private void addType(final ObjectTypeParsingRules rules) {
-        final String type = rules.getGlobalObjectType().getType();
-        final int version = rules.getGlobalObjectType().getVersion();
-        if (!searchTypes.containsKey(type)) {
-            searchTypes.put(type, new ArrayList<>(version));
-        }
-        // make the list big enough for the version
-        // might want to have a check at some point that there are no nulls when all the files
-        // are processed
-        final ArrayList<ObjectTypeParsingRules> versions = searchTypes.get(type);
-        for (int i = versions.size(); i < version; i++) {
-            versions.add(null);
-        }
-        versions.set(version - 1, rules);
     }
 
     private boolean isAllowedFileType(final Path file) {
@@ -123,9 +93,9 @@ public class TypeFileStorage implements TypeStorage {
             this.storageType = storageType;
         }
         
-        private CodeAndType(final ObjectTypeParsingRules type) {
-            this.storageCode = type.getStorageObjectType().getStorageCode();
-            this.storageType = type.getStorageObjectType().getType();
+        private CodeAndType(final StorageObjectType type) {
+            this.storageCode = type.getStorageCode();
+            this.storageType = type.getType();
         }
 
         @Override
