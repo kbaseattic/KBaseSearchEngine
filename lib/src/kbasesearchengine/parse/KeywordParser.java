@@ -19,7 +19,9 @@ import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.LocationTransformType;
+import kbasesearchengine.system.NoSuchTypeException;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.Transform;
 import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.UObject;
@@ -29,7 +31,7 @@ public class KeywordParser {
     //TODO EXP handle all exceptions
     
     public static ParsedObject extractKeywords(
-            final String type,
+            final SearchObjectType searchObjectType,
             final String json,
             final String parentJson,
             final List<IndexingRules> indexingRules, 
@@ -48,7 +50,7 @@ public class KeywordParser {
             public void addValue(List<IndexingRules> rulesList, Object value)
                     throws IndexingException, InterruptedException, ObjectParseException {
                 for (IndexingRules rule : rulesList) {
-                    processRule(type, rule, rule.getKeyName(), value, keywords, lookup, 
+                    processRule(rule, rule.getKeyName(), value, keywords, lookup, 
                             objectRefPath);
                 }
             }
@@ -68,7 +70,7 @@ public class KeywordParser {
                     List<Object> values = keywords.containsKey(key) ? keywords.get(key).values : 
                         null;
                     if (isEmpty(values)) {
-                        processRule(type, rule, key, null, keywords, lookup, objectRefPath);
+                        processRule(rule, key, null, keywords, lookup, objectRefPath);
                     }
                 }
             }
@@ -76,7 +78,7 @@ public class KeywordParser {
         for (String key : ruleMap.keySet()) {
             for (IndexingRules rule : ruleMap.get(key)) {
                 if (rule.isDerivedKey()) {
-                    processDerivedRule(type, key, rule, ruleMap, keywords, lookup, 
+                    processDerivedRule(searchObjectType, key, rule, ruleMap, keywords, lookup, 
                             new LinkedHashSet<>(), objectRefPath);
                 }
             }
@@ -88,53 +90,66 @@ public class KeywordParser {
         return ret;
     }
 
-    private static List<Object> processDerivedRule(String type, 
-            Map<String, List<IndexingRules>> ruleMap, String key, 
-            Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup, 
-            Set<String> keysWaitingInStack, List<GUID> callerRefPath)
+    private static List<Object> processDerivedRule(
+            final SearchObjectType searchObjectType, 
+            final Map<String, List<IndexingRules>> ruleMap,
+            final String key, 
+            final Map<String, InnerKeyValue> keywords,
+            final ObjectLookupProvider lookup, 
+            final Set<String> keysWaitingInStack,
+            final List<GUID> callerRefPath)
             throws IndexingException, InterruptedException, ObjectParseException {
         if (!ruleMap.containsKey(key)) {
             throw new IllegalStateException("Unknown source-key in derived keywords: " + 
-                    type + "/" + key);
+                    toVerRep(searchObjectType) + "/" + key);
         }
         List<Object> ret = null;
         for (IndexingRules rule : ruleMap.get(key)) {
-            ret = processDerivedRule(type, key, rule, ruleMap, keywords, lookup, 
+            ret = processDerivedRule(searchObjectType, key, rule, ruleMap, keywords, lookup, 
                     keysWaitingInStack, callerRefPath);
         }
         return ret;
     }
     
-    private static List<Object> processDerivedRule(String type, String key, IndexingRules rule,
-            Map<String, List<IndexingRules>> ruleMap, Map<String, InnerKeyValue> keywords, 
-            ObjectLookupProvider lookup, Set<String> keysWaitingInStack,
-            List<GUID> objectRefPath)
+    private static String toVerRep(final SearchObjectType searchObjectType) {
+        return searchObjectType.getType() + "_" + searchObjectType.getVersion();
+    }
+
+    private static List<Object> processDerivedRule(
+            final SearchObjectType searchObjectType,
+            final String key,
+            final IndexingRules rule,
+            final Map<String, List<IndexingRules>> ruleMap,
+            final Map<String, InnerKeyValue> keywords, 
+            final ObjectLookupProvider lookup,
+            final Set<String> keysWaitingInStack,
+            final List<GUID> objectRefPath)
             throws IndexingException, InterruptedException, ObjectParseException {
         if (!ruleMap.containsKey(key) || rule == null) {
             throw new IllegalStateException("Unknown source-key in derived keywords: " + 
-                    type + "/" + key);
+                    toVerRep(searchObjectType) + "/" + key);
         }
         if (keywords.containsKey(key)) {
             return keywords.get(key).values;
         }
         if (keysWaitingInStack.contains(key)) {
             throw new IllegalStateException("Circular dependency in derived keywords: " +
-                    type + " / " + keysWaitingInStack);
+                    toVerRep(searchObjectType) + " / " + keysWaitingInStack);
         }
         if (!rule.isDerivedKey()) {
             throw new IllegalStateException("Reference to not derived keyword with no value: " +
-                    type + "/" + key);
+                    toVerRep(searchObjectType) + "/" + key);
         }
         keysWaitingInStack.add(key);
-        List<Object> values = processDerivedRule(type, ruleMap, rule.getSourceKey().get(),
+        List<Object> values = processDerivedRule(searchObjectType, ruleMap, rule.getSourceKey().get(),
                 keywords, lookup, keysWaitingInStack, objectRefPath);
         if (rule.getTransform().isPresent() &&
                 rule.getTransform().get().getSubobjectIdKey().isPresent()) {
-            processDerivedRule(type, ruleMap, rule.getTransform().get().getSubobjectIdKey().get(),
+            processDerivedRule(searchObjectType, ruleMap, rule.getTransform().get().getSubobjectIdKey().get(),
                     keywords, lookup, keysWaitingInStack, objectRefPath);
         }
         for (Object value : values) {
-            processRule(type, rule, key, value, keywords, lookup, objectRefPath);
+            processRule(rule, key, value, keywords, lookup, objectRefPath);
         }
         keysWaitingInStack.remove(key);
         List<Object> ret = keywords.containsKey(key) ? keywords.get(key).values : new ArrayList<>();
@@ -148,9 +163,13 @@ public class KeywordParser {
         return value == null || (value instanceof List && ((List<?>)value).isEmpty());
     }
     
-    private static void processRule(String type, IndexingRules rule, String key, Object value,
-            Map<String, InnerKeyValue> keywords, ObjectLookupProvider lookup,
-            List<GUID> objectRefPath)
+    private static void processRule(
+            final IndexingRules rule,
+            final String key,
+            final Object value,
+            final Map<String, InnerKeyValue> keywords,
+            final ObjectLookupProvider lookup,
+            final List<GUID> objectRefPath)
             throws IndexingException, InterruptedException, ObjectParseException {
         Object valueFinal = value;
         if (valueFinal == null) {
@@ -234,12 +253,13 @@ public class KeywordParser {
         case integer:
             return Integer.parseInt(String.valueOf(value));
         case guid:
-            String type = transform.getTargetObjectType().get();
-            if (type == null) {
-                throw new IllegalStateException("Target object type should be set for 'guid' " +
-                        "transform");
+            final SearchObjectType type = transform.getTargetObjectType().get();
+            final ObjectTypeParsingRules typeDescr;
+            try {
+                typeDescr = lookup.getTypeDescriptor(type);
+            } catch (NoSuchTypeException e) {
+                throw new ObjectParseException(e.getMessage(), e);
             }
-            final ObjectTypeParsingRules typeDescr = lookup.getTypeDescriptor(type);
             final String storageCode = typeDescr.getStorageObjectType().getStorageCode();
             final Set<String> refs = toStringSet(value);
             final Set<GUID> unresolvedGUIDs;
@@ -272,12 +292,12 @@ public class KeywordParser {
                             typeDescr.getSubObjectType().get(), subId));
                 }
             }
-            Map<GUID, String> guidToType = lookup.getTypesForGuids(guids);
-            for (GUID guid : guids) {
+            final Map<GUID, SearchObjectType> guidToType = lookup.getTypesForGuids(guids);
+            for (final GUID guid : guids) {
                 if (!guidToType.containsKey(guid)) {
                     throw new IllegalStateException("GUID " + guid + " not found");
                 }
-                String actualType = guidToType.get(guid);
+                final SearchObjectType actualType = guidToType.get(guid);
                 if (!actualType.equals(type)) {
                     throw new IllegalStateException("GUID " + guid + " has unexpected type: " + 
                             actualType);
@@ -355,11 +375,12 @@ public class KeywordParser {
     public interface ObjectLookupProvider {
         public Set<GUID> resolveRefs(List<GUID> objectRefPath, Set<GUID> unresolvedGUIDs) 
                 throws IndexingException, InterruptedException;
-        public Map<GUID, String> getTypesForGuids(Set<GUID> guids)
+        public Map<GUID, SearchObjectType> getTypesForGuids(Set<GUID> guids)
                 throws InterruptedException, IndexingException;
         public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids) 
                 throws InterruptedException, IndexingException;
-        public ObjectTypeParsingRules getTypeDescriptor(String type) throws IndexingException;
+        public ObjectTypeParsingRules getTypeDescriptor(SearchObjectType type)
+                throws IndexingException, NoSuchTypeException;
     }
 
     private static class InnerKeyValue {

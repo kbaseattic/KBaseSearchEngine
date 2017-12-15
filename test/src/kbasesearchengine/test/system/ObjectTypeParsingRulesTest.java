@@ -13,6 +13,7 @@ import com.google.common.base.Optional;
 import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.test.common.TestCommon;
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -27,11 +28,13 @@ public class ObjectTypeParsingRulesTest {
     @Test
     public void buildMinimal() {
         final ObjectTypeParsingRules r = ObjectTypeParsingRules.getBuilder(
-                "foo", new StorageObjectType("bar", "baz"))
+                new SearchObjectType("foo", 1),
+                new StorageObjectType("bar", "baz"))
                 .withIndexingRule(IndexingRules.fromSourceKey("k", "n").build())
                 .build();
         
-        assertThat("incorrect global type", r.getGlobalObjectType(), is("foo"));
+        assertThat("incorrect global type", r.getGlobalObjectType(),
+                is(new SearchObjectType("foo", 1)));
         assertThat("incorrect UI name", r.getUiTypeName(), is("Foo"));
         assertThat("incorrect storage type", r.getStorageObjectType(),
                 is(new StorageObjectType("bar", "baz")));
@@ -45,12 +48,14 @@ public class ObjectTypeParsingRulesTest {
     @Test
     public void buildWithUIName() {
         final ObjectTypeParsingRules r = ObjectTypeParsingRules.getBuilder(
-                "foo", new StorageObjectType("bar", "baz"))
+                new SearchObjectType("foo", 1),
+                new StorageObjectType("bar", "baz"))
                 .withIndexingRule(IndexingRules.fromSourceKey("k", "n").build())
                 .withNullableUITypeName("whee whoo")
                 .build();
         
-        assertThat("incorrect global type", r.getGlobalObjectType(), is("foo"));
+        assertThat("incorrect global type", r.getGlobalObjectType(),
+                is(new SearchObjectType("foo", 1)));
         assertThat("incorrect UI name", r.getUiTypeName(), is("whee whoo"));
         assertThat("incorrect storage type", r.getStorageObjectType(),
                 is(new StorageObjectType("bar", "baz")));
@@ -65,7 +70,8 @@ public class ObjectTypeParsingRulesTest {
     public void buildSubObjectRules() throws Exception {
         // also tests indexing rule with from parent happy path
         final ObjectTypeParsingRules r = ObjectTypeParsingRules.getBuilder(
-                "foo", new StorageObjectType("bar", "baz"))
+                new SearchObjectType("foo", 1),
+                new StorageObjectType("bar", "baz"))
                 .withIndexingRule(IndexingRules.fromSourceKey("k", "n").build())
                 .toSubObjectRule("sotype", new ObjectJsonPath("path"),
                         new ObjectJsonPath("idpath"))
@@ -73,7 +79,8 @@ public class ObjectTypeParsingRulesTest {
                         .withFromParent().build())
                 .build();
         
-        assertThat("incorrect global type", r.getGlobalObjectType(), is("foo"));
+        assertThat("incorrect global type", r.getGlobalObjectType(),
+                is(new SearchObjectType("foo", 1)));
         assertThat("incorrect UI name", r.getUiTypeName(), is("Foo"));
         assertThat("incorrect storage type", r.getStorageObjectType(),
                 is(new StorageObjectType("bar", "baz")));
@@ -96,12 +103,14 @@ public class ObjectTypeParsingRulesTest {
 
     private void buildWithUITypeNameNullOrWhitespace(final String uiTypeName) {
         final ObjectTypeParsingRules r = ObjectTypeParsingRules.getBuilder(
-                "foo", new StorageObjectType("bar", "baz"))
+                new SearchObjectType("foo", 1),
+                new StorageObjectType("bar", "baz"))
                 .withNullableUITypeName(uiTypeName)
                 .withIndexingRule(IndexingRules.fromSourceKey("k", "n").build())
                 .build();
         
-        assertThat("incorrect global type", r.getGlobalObjectType(), is("foo"));
+        assertThat("incorrect global type", r.getGlobalObjectType(),
+                is(new SearchObjectType("foo", 1)));
         assertThat("incorrect UI name", r.getUiTypeName(), is("Foo"));
         assertThat("incorrect storage type", r.getStorageObjectType(),
                 is(new StorageObjectType("bar", "baz")));
@@ -115,7 +124,8 @@ public class ObjectTypeParsingRulesTest {
     @Test
     public void builderSize() {
         final ObjectTypeParsingRules.Builder b = ObjectTypeParsingRules.getBuilder(
-                "foo", new StorageObjectType("bar", "baz"));
+                new SearchObjectType("foo", 1),
+                new StorageObjectType("bar", "baz"));
         
         assertThat("incorrect size", b.numberOfIndexingRules(), is(0));
         
@@ -129,14 +139,13 @@ public class ObjectTypeParsingRulesTest {
     @Test
     public void getBuilderFail() {
         failGetBuilder(null, new StorageObjectType("c", "t"),
-                new IllegalArgumentException("globalObjectType cannot be null or whitespace"));
-        failGetBuilder("  \t   \n ", new StorageObjectType("c", "t"),
-                new IllegalArgumentException("globalObjectType cannot be null or whitespace"));
-        failGetBuilder("t", null, new NullPointerException("storageType"));
+                new NullPointerException("globalObjectType"));
+        failGetBuilder(new SearchObjectType("t", 1), null,
+                new NullPointerException("storageType"));
     }
     
     private void failGetBuilder(
-            final String globalObjectType,
+            final SearchObjectType globalObjectType,
             final StorageObjectType storageType,
             final Exception expected) {
         try {
@@ -157,7 +166,9 @@ public class ObjectTypeParsingRulesTest {
     
     private void failWithIndexingRule(final IndexingRules rule, final Exception expected) {
         try {
-            ObjectTypeParsingRules.getBuilder("t", new StorageObjectType("c", "t"))
+            ObjectTypeParsingRules.getBuilder(
+                    new SearchObjectType("t", 1),
+                    new StorageObjectType("c", "t"))
                     .withIndexingRule(rule);
             fail("expected exception");
         } catch (Exception got) {
@@ -182,7 +193,9 @@ public class ObjectTypeParsingRulesTest {
             final ObjectJsonPath subObjectIDPath,
             final Exception expected) {
         try {
-            ObjectTypeParsingRules.getBuilder("t", new StorageObjectType("c", "t"))
+            ObjectTypeParsingRules.getBuilder(
+                    new SearchObjectType("t", 1),
+                    new StorageObjectType("c", "t"))
                     .toSubObjectRule(subObjectType, subObjectPath, subObjectIDPath);
             fail("expected exception");
         } catch (Exception got) {
@@ -193,7 +206,9 @@ public class ObjectTypeParsingRulesTest {
     @Test
     public void buildFail() {
         try {
-            ObjectTypeParsingRules.getBuilder("t", new StorageObjectType("c", "t")).build();
+            ObjectTypeParsingRules.getBuilder(
+                    new SearchObjectType("t", 1),
+                    new StorageObjectType("c", "t")).build();
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, new IllegalStateException(
@@ -204,7 +219,8 @@ public class ObjectTypeParsingRulesTest {
     @Test
     public void immutable() {
         final ObjectTypeParsingRules r = ObjectTypeParsingRules.getBuilder(
-                "foo", new StorageObjectType("bar", "baz"))
+                new SearchObjectType("foo", 1),
+                new StorageObjectType("bar", "baz"))
                 .withIndexingRule(IndexingRules.fromSourceKey("k", "n").build())
                 .build();
         

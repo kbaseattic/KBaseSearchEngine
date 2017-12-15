@@ -1,13 +1,14 @@
 {
-	"global-object-type": "SeedOntologyTerm",
-	"storage-type": "SeedOntologyDataSource",
-	"storage-object-type": "fake",
-	"primary-key-path": "id",
-	"indexing-rules": [
-		{
-			"path": "id",
-			"keyword-type": "string"
-		}
-	],
-	"primary-key-path": "id"
+    "global-object-type": "SeedOntologyTerm",
+    "global-object-type-version": 1,
+    "storage-type": "SeedOntologyDataSource",
+    "storage-object-type": "fake",
+    "primary-key-path": "id",
+    "indexing-rules": [
+        {
+            "path": "id",
+            "keyword-type": "string"
+        }
+    ],
+    "primary-key-path": "id"
 }

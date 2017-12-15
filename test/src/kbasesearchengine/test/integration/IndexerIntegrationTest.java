@@ -3,6 +3,7 @@ package kbasesearchengine.test.integration;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -14,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import kbasesearchengine.common.FileUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.junit.AfterClass;
@@ -26,6 +28,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
@@ -35,6 +38,7 @@ import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.ObjectData;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.TypeFileStorage;
 import kbasesearchengine.system.TypeMappingParser;
 import kbasesearchengine.system.TypeStorage;
@@ -74,7 +78,7 @@ public class IndexerIntegrationTest {
     private static WorkspaceClient wsCli1;
     private static AuthToken userToken;
     
-    private static Path tempDir;
+    private static Path tempDirPath;
     
     @BeforeClass
     public static void prepare() throws Exception {
@@ -95,24 +99,24 @@ public class IndexerIntegrationTest {
             throw new TestException("The test tokens are for the same user");
         }
 
-        tempDir = Paths.get(TestCommon.getTempDir()).resolve("MainObjectProcessorTest");
+        tempDirPath = Paths.get(TestCommon.getTempDir()).resolve("MainObjectProcessorTest");
         // should refactor to just use NIO at some point
-        FileUtils.deleteQuietly(tempDir.toFile());
-        tempDir.toFile().mkdirs();
-        final Path searchTypesDir = Files.createDirectories(tempDir.resolve("searchtypes"));
+        FileUtils.deleteQuietly(tempDirPath.toFile());
+        tempDirPath.toFile().mkdirs();
+        final Path searchTypesDir = Files.createDirectories(tempDirPath.resolve("searchtypes"));
         installSearchTypes(searchTypesDir);
 
         // set up mongo
         mongo = new MongoController(
                 TestCommon.getMongoExe(),
-                tempDir,
+                tempDirPath,
                 TestCommon.useWiredTigerEngine());
         mc = new MongoClient("localhost:" + mongo.getServerPort());
         final String eventDBName = "DataStatus";
         db = mc.getDatabase(eventDBName);
         
         // set up elastic search
-        es = new ElasticSearchController(TestCommon.getElasticSearchExe(), tempDir);
+        es = new ElasticSearchController(TestCommon.getElasticSearchExe(), tempDirPath);
         
         // set up Workspace
         ws = new WorkspaceController(
@@ -123,7 +127,7 @@ public class IndexerIntegrationTest {
                 eventDBName,
                 wsadmintoken.getUserName(),
                 authServiceRootURL,
-                tempDir);
+                tempDirPath);
         System.out.println("Started workspace on port " + ws.getServerPort());
         wsdb = mc.getDatabase("IndexerIntegTestWSDB");
         
@@ -160,16 +164,19 @@ public class IndexerIntegrationTest {
         final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, wsadmintoken);
         wsClient.setIsInsecureHttpConnectionAllowed(true);
         
-        final WorkspaceEventHandler weh = new WorkspaceEventHandler(wsClient);
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(
+                new CloneableWorkspaceClientImpl(wsClient));
         
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
-                IndexerWorker.getTempSubDir(tempDir.toFile(), "esbulk"));
+                FileUtil.getOrCreateSubDir(tempDirPath.toFile(), "esbulk"));
         esStorage.setIndexNamePrefix(esIndexPrefix);
         indexStorage = esStorage;
         
         System.out.println("Creating indexer worker");
+        File tempDir = tempDirPath.resolve("MainObjectProcessor").toFile();
+        tempDir.mkdirs();
         worker = new IndexerWorker("test", Arrays.asList(weh), storage, indexStorage,
-                ss, tempDir.resolve("MainObjectProcessor").toFile(), logger);
+                ss, tempDir, logger);
         System.out.println("Starting indexer worker");
         worker.startIndexer();
         System.out.println("Creating indexer coordinator");
@@ -238,8 +245,8 @@ public class IndexerIntegrationTest {
         if (es != null) {
             es.destroy(deleteTempFiles);
         }
-        if (tempDir != null && tempDir.toFile().exists() && deleteTempFiles) {
-            FileUtils.deleteQuietly(tempDir.toFile());
+        if (tempDirPath != null && tempDirPath.toFile().exists() && deleteTempFiles) {
+            FileUtils.deleteQuietly(tempDirPath.toFile());
         }
     }
     
@@ -289,7 +296,7 @@ public class IndexerIntegrationTest {
         final ObjectData expected = new ObjectData();
         expected.guid = new GUID("WS:1/1/1");
         expected.objectName = "bar";
-        expected.type = "EmptyAType";
+        expected.type = new SearchObjectType("EmptyAType", 1);
         expected.creator = userToken.getUserName();
         expected.module = "serv";
         expected.method = "meth";

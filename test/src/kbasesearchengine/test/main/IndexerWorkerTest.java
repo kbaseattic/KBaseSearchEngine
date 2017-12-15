@@ -38,6 +38,7 @@ import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.test.common.TestCommon;
@@ -103,7 +104,8 @@ public class IndexerWorkerTest {
         
         when(typeStore.listObjectTypesByStorageObjectType(storageObjectType))
                 .thenReturn(Arrays.asList(
-                        ObjectTypeParsingRules.getBuilder("foo", storageObjectType)
+                        ObjectTypeParsingRules.getBuilder(
+                                new SearchObjectType("foo", 1), storageObjectType)
                                 .toSubObjectRule("subfoo", new ObjectJsonPath("/subobjs/[*]/"),
                                         new ObjectJsonPath("id"))
                                 .withIndexingRule(IndexingRules.fromPath(
@@ -134,7 +136,7 @@ public class IndexerWorkerTest {
                 "id", Arrays.asList("an id2"));
         
         verify(idxStore).indexObjects(
-                eq("foo"),
+                eq(new SearchObjectType("foo", 1)),
                 any(SourceData.class),
                 eq(Instant.ofEpochMilli(10000)),
                 eq(null),
@@ -159,7 +161,7 @@ public class IndexerWorkerTest {
         final StorageObjectType storageObjectType = StorageObjectType
                 .fromNullableVersion("code", "sometype", 3);
         final ObjectTypeParsingRules rules = ObjectTypeParsingRules.getBuilder(
-                "foo", storageObjectType)
+                new SearchObjectType("foo", 1), storageObjectType)
                 .toSubObjectRule("subfoo", new ObjectJsonPath("/subobjs/[*]/"),
                         new ObjectJsonPath("idx"))
                 .withIndexingRule(IndexingRules.fromPath(
@@ -182,7 +184,7 @@ public class IndexerWorkerTest {
         final StorageObjectType storageObjectType = StorageObjectType
                 .fromNullableVersion("code", "sometype", 3);
         final ObjectTypeParsingRules rules = ObjectTypeParsingRules.getBuilder(
-                "foo", storageObjectType)
+                new SearchObjectType("foo", 1), storageObjectType)
                 .toSubObjectRule("subfoo", new ObjectJsonPath("/subobjs/[*]/"),
                         new ObjectJsonPath("id"))
                 .withIndexingRule(IndexingRules.fromPath(
@@ -253,7 +255,7 @@ public class IndexerWorkerTest {
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, new UnprocessableEventIndexingException(
                     "Could not find the subobject id for one or more of the subobjects for " +
-                    "object code:1/2/3 when applying search specification foo"));
+                    "object code:1/2/3 when applying search specification foo_1"));
         }
     }
     

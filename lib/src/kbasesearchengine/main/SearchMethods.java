@@ -278,8 +278,8 @@ public class SearchMethods {
         kbasesearchengine.search.Pagination pagination = toSearch(params.getPagination());
         kbasesearchengine.search.PostProcessing postProcessing = 
                 toSearch(params.getPostProcessing());
-        FoundHits hits = indexingStorage.searchObjects(params.getObjectType(), matchFilter, 
-                sorting, accessFilter, pagination, postProcessing);
+        FoundHits hits = indexingStorage.searchObjects(params.getObjectType(),
+                matchFilter, sorting, accessFilter, pagination, postProcessing);
         SearchObjectsOutput ret = new SearchObjectsOutput();
         ret.withPagination(fromSearch(hits.pagination));
         ret.withSortingRules(hits.sortingRules.stream().map(this::fromSearch).collect(
@@ -321,9 +321,10 @@ public class SearchMethods {
     }
     
     public Map<String, TypeDescriptor> listTypes(String uniqueType) throws Exception {
+        //TODO VERS remove keys from TypeDescriptor, document that listObjectTypes only returns the most recent version of each type
         Map<String, TypeDescriptor> ret = new LinkedHashMap<>();
         for (ObjectTypeParsingRules otpr : typeStorage.listObjectTypes()) {
-            String typeName = otpr.getGlobalObjectType();
+            String typeName = otpr.getGlobalObjectType().getType();
             if (uniqueType != null && !uniqueType.equals(typeName)) {
                 continue;
             }

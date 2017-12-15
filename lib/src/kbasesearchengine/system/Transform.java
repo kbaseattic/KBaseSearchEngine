@@ -29,7 +29,7 @@ public class Transform {
     private final TransformType type;
     private final Optional<LocationTransformType> location;
     private final Optional<String> targetKey;
-    private final Optional<String> targetObjectType;
+    private final Optional<SearchObjectType> targetObjectType;
     // TODO IDXRULE subobjectIdKey constrains the target type to be a subtype. Add a check in the creation context to check this. 
     private final Optional<String> subObjectIdKey;
     
@@ -37,7 +37,7 @@ public class Transform {
             final TransformType type,
             final LocationTransformType location,
             final String targetKey,
-            final String targetObjectType,
+            final SearchObjectType targetObjectType,
             final String subObjectIdKey) {
         this.type = type;
         this.location = Optional.fromNullable(location);
@@ -73,7 +73,7 @@ public class Transform {
      * {@link TransformType#guid} transforms. For all other transforms this value is absent.
      * @return the object type to which the guid created by the transform points.
      */
-    public Optional<String> getTargetObjectType() {
+    public Optional<SearchObjectType> getTargetObjectType() {
         return targetObjectType;
     }
 
@@ -132,8 +132,8 @@ public class Transform {
      * @param targetObjectType the type of the object to which the guid is expected to point.
      * @return the new transform.
      */
-    public static Transform guid(final String targetObjectType) {
-        Utils.notNullOrEmpty(targetObjectType, "targetObjectType cannot be null or whitespace");
+    public static Transform guid(final SearchObjectType targetObjectType) {
+        Utils.nonNull(targetObjectType, "targetObjectType");
         return new Transform(TransformType.guid, null, null, targetObjectType, null);
     }
     
@@ -144,8 +144,10 @@ public class Transform {
      * of the key will be incorporated into the GUID.
      * @return the new transform.
      */
-    public static Transform guid(final String targetObjectType, final String subObjectIDKey) {
-        Utils.notNullOrEmpty(targetObjectType, "targetObjectType cannot be null or whitespace");
+    public static Transform guid(
+            final SearchObjectType targetObjectType,
+            final String subObjectIDKey) {
+        Utils.nonNull(targetObjectType, "targetObjectType");
         Utils.notNullOrEmpty(subObjectIDKey, "subObjectIDKey cannot be null or whitespace");
         return new Transform(TransformType.guid, null, null, targetObjectType, subObjectIDKey);
     }
@@ -158,6 +160,8 @@ public class Transform {
      * @param locationOrTargetKey either the {@link LocationTransformType} as a string or
      * the target key for a {@link TransformType#lookup} transform.
      * @param targetObjectType the target object type for a {@link TransformType#guid} transform.
+     * @param targetObjectTypeVersion the version of the target object type for a
+     * {@link TransformType#guid} transform.
      * @param subObjectIDKey the subobject ID key for a {@link TransformType#guid transform.
      * @return the new transform.
      */
@@ -165,6 +169,7 @@ public class Transform {
             final String transform,
             final String locationOrTargetKey,
             final String targetObjectType,
+            final Integer targetObjectTypeVersion,
             final String subObjectIDKey) {
         Utils.notNullOrEmpty(transform, "transform cannot be null or whitespace");
         final TransformType type;
@@ -196,10 +201,13 @@ public class Transform {
         }
         // ok it's a guid
         Utils.notNullOrEmpty(targetObjectType, "targetObjectType cannot be null or whitespace");
+        Utils.nonNull(targetObjectTypeVersion, "targetObjectTypeVersion cannot be null");
+        final SearchObjectType stype = new SearchObjectType(
+                targetObjectType, targetObjectTypeVersion);
         if (Utils.isNullOrEmpty(subObjectIDKey)) {
-            return new Transform(TransformType.guid, null, null, targetObjectType, null);
+            return new Transform(TransformType.guid, null, null, stype, null);
         } else {
-            return new Transform(TransformType.guid, null, null, targetObjectType, subObjectIDKey);
+            return new Transform(TransformType.guid, null, null, stype, subObjectIDKey);
         }
     }
 
