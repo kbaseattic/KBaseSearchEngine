@@ -204,8 +204,8 @@ public class ElasticIndexingStorageTest {
         Map<String, Integer> typeToCount = indexStorage.searchTypes(ft("Rfah"), 
                 AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, typeToCount.size());
-        SearchObjectType type = new SearchObjectType(typeToCount.keySet().iterator().next(), 1);
-        Assert.assertEquals(1, (int)typeToCount.get(type.getType()));
+        String type = typeToCount.keySet().iterator().next();
+        Assert.assertEquals(1, (int)typeToCount.get(type));
         GUID expectedGUID = new GUID("WS:1/1/1:feature/NewGenome.CDS.6210");
         // Admin mode
         Set<GUID> ids = indexStorage.searchIds(type, ft("RfaH"), null, 
@@ -254,7 +254,7 @@ public class ElasticIndexingStorageTest {
     public void testGenome() throws Exception {
         System.out.println("*** start testGenome***");
         indexObject("Genome", "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
-        Set<GUID> guids = indexStorage.searchIds(new SearchObjectType("Genome", 1),
+        Set<GUID> guids = indexStorage.searchIds("Genome",
                 MatchFilter.create().withLookupInKey(
                         "features", new MatchValue(1, null)),
                 null, AccessFilter.create().withAdmin(true));
@@ -281,7 +281,7 @@ public class ElasticIndexingStorageTest {
         GUID id11 = new GUID("WS:2/1/1");
         indexObject(id11, objType, "{\"prop1\":\"abc 123\"}", "obj.1", Instant.now(), null,
                 false, indexingRules);
-        checkIdInSet(indexStorage.searchIds(objType, ft("abc"), null, 
+        checkIdInSet(indexStorage.searchIds(objType.getType(), ft("abc"), null, 
                 AccessFilter.create().withAccessGroups(2)), 1, id11);
         GUID id2 = new GUID("WS:2/2/1");
         indexObject(id2, objType, "{\"prop1\":\"abd\"}", "obj.2", Instant.now(), null,
@@ -289,35 +289,35 @@ public class ElasticIndexingStorageTest {
         GUID id3 = new GUID("WS:3/1/1");
         indexObject(id3, objType, "{\"prop1\":\"abc\"}", "obj.3", Instant.now(), null,
                 false, indexingRules);
-        checkIdInSet(indexStorage.searchIds(objType, ft("abc"), null, 
+        checkIdInSet(indexStorage.searchIds(objType.getType(), ft("abc"), null, 
                 AccessFilter.create().withAccessGroups(2)), 1, id11);
         GUID id12 = new GUID("WS:2/1/2");
         indexObject(id12, objType, "{\"prop1\":\"abc 124\"}", "obj.1", Instant.now(), null,
                 false, indexingRules);
-        checkIdInSet(indexStorage.searchIds(objType, ft("abc"), null, 
+        checkIdInSet(indexStorage.searchIds(objType.getType(), ft("abc"), null, 
                 AccessFilter.create().withAccessGroups(2)), 1, id12);
         GUID id13 = new GUID("WS:2/1/3");
         indexObject(id13, objType, "{\"prop1\":\"abc 125\"}", "obj.1", Instant.now(), null,
                 false, indexingRules);
         //indexStorage.refreshIndex(indexStorage.getIndex(objType));
-        checkIdInSet(indexStorage.searchIds(objType, ft("abc"), null, 
+        checkIdInSet(indexStorage.searchIds(objType.getType(), ft("abc"), null, 
                 AccessFilter.create().withAccessGroups(2)), 1, id13);
-        checkIdInSet(indexStorage.searchIds(objType, ft("125"), null, 
+        checkIdInSet(indexStorage.searchIds(objType.getType(), ft("125"), null, 
                 AccessFilter.create().withAccessGroups(2)), 1, id13);
-        Assert.assertEquals(0, indexStorage.searchIds(objType, ft("123"), null, 
+        Assert.assertEquals(0, indexStorage.searchIds(objType.getType(), ft("123"), null, 
                 AccessFilter.create().withAccessGroups(2)).size());
-        checkIdInSet(indexStorage.searchIds(objType, ft("abd"), null, 
+        checkIdInSet(indexStorage.searchIds(objType.getType(), ft("abd"), null, 
                 AccessFilter.create().withAccessGroups(2)), 1, id2);
-        checkIdInSet(indexStorage.searchIds(objType, ft("abc"), null, 
+        checkIdInSet(indexStorage.searchIds(objType.getType(), ft("abc"), null, 
                 AccessFilter.create().withAccessGroups(3)), 1, id3);
         // With all history
-        Assert.assertEquals(1, indexStorage.searchIds(objType, ft("123"), null, 
+        Assert.assertEquals(1, indexStorage.searchIds(objType.getType(), ft("123"), null, 
                 AccessFilter.create().withAccessGroups(2).withAllHistory(true)).size());
-        Assert.assertEquals(3, indexStorage.searchIds(objType, ft("abc"), null, 
+        Assert.assertEquals(3, indexStorage.searchIds(objType.getType(), ft("abc"), null, 
                 AccessFilter.create().withAccessGroups(2).withAllHistory(true)).size());
     }
     
-    private Set<GUID> lookupIdsByKey(SearchObjectType objType, String keyName, Object value, 
+    private Set<GUID> lookupIdsByKey(String objType, String keyName, Object value, 
             AccessFilter af) throws IOException {
         Set<GUID> ret = indexStorage.searchIds(objType, MatchFilter.create().withLookupInKey(
                 keyName, new MatchValue(value)), null, af);
@@ -345,38 +345,38 @@ public class ElasticIndexingStorageTest {
         indexObject(id3, objType, "{\"prop2\": 125}", "obj.1", Instant.now(), null,
                 false, indexingRules);
         AccessFilter af10 = AccessFilter.create().withAccessGroups(10);
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 123, af10).size());
-        checkIdInSet(lookupIdsByKey(objType, "prop2", 125, af10), 1, id3);
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop2", 123, af10).size());
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop2", 125, af10), 1, id3);
         indexStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(id1)), 11, false);
         AccessFilter af11 = AccessFilter.create().withAccessGroups(11);
-        checkIdInSet(lookupIdsByKey(objType, "prop2", 123, af11), 1, id1);
-        checkIdInSet(lookupIdsByKey(objType, "prop2", 125, af10), 1, id3);
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 124, af11).size());
-        checkIdInSet(lookupIdsByKey(objType, "prop2", 124, 
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop2", 123, af11), 1, id1);
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop2", 125, af10), 1, id3);
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop2", 124, af11).size());
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop2", 124, 
                 AccessFilter.create().withAccessGroups(10).withAllHistory(true)), 1, id2);       
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 125, af11).size());
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop2", 125, af11).size());
         indexStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(id2)), 11, false);
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 123, af11).size());
-        checkIdInSet(lookupIdsByKey(objType, "prop2", 124, af11), 1, id2);
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 125, af11).size());
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop2", 123, af11).size());
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop2", 124, af11), 1, id2);
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop2", 125, af11).size());
         indexStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(id2)), 11);
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 123, af11).size());
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 124, af11).size());
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 125, af11).size());
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop2", 123, af11).size());
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop2", 124, af11).size());
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop2", 125, af11).size());
         indexStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(id1)), 11, false);
         indexStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(id2)), 12, false);
         AccessFilter af1x = AccessFilter.create().withAccessGroups(11, 12);
-        checkIdInSet(lookupIdsByKey(objType, "prop2", 123, af1x), 1, id1);
-        checkIdInSet(lookupIdsByKey(objType, "prop2", 124, af1x), 1, id2);
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 125, af1x).size());
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop2", 123, af1x), 1, id1);
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop2", 124, af1x), 1, id2);
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop2", 125, af1x).size());
         indexStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(id1)), 11);
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 123, af1x).size());
-        checkIdInSet(lookupIdsByKey(objType, "prop2", 124, af1x), 1, id2);
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 125, af1x).size());
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop2", 123, af1x).size());
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop2", 124, af1x), 1, id2);
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop2", 125, af1x).size());
         indexStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(id2)), 12);
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 123, af1x).size());
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 124, af1x).size());
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop2", 125, af1x).size());
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop2", 123, af1x).size());
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop2", 124, af1x).size());
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop2", 125, af1x).size());
     }
     
     @Test
@@ -391,34 +391,34 @@ public class ElasticIndexingStorageTest {
                 false, indexingRules);
         indexObject(id2, objType, "{\"prop3\": \"public gggg\"}", "obj.2", Instant.now(), null,
                 true, indexingRules);
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop3", "private", 
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop3", "private", 
                 AccessFilter.create().withPublic(true)).size());
-        checkIdInSet(lookupIdsByKey(objType, "prop3", "private", 
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop3", "private", 
                 AccessFilter.create().withAccessGroups(20).withPublic(true)), 1, id1);
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop3", "private", 
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop3", "private", 
                 AccessFilter.create().withAccessGroups(21).withPublic(true)).size());
-        checkIdInSet(lookupIdsByKey(objType, "prop3", "public", 
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop3", "public", 
                 AccessFilter.create().withAccessGroups(21).withPublic(true)), 1, id2);
         indexStorage.publishObjects(new LinkedHashSet<>(Arrays.asList(id1)));
-        checkIdInSet(lookupIdsByKey(objType, "prop3", "private", 
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop3", "private", 
                 AccessFilter.create().withAccessGroups(20).withPublic(true)), 1, id1);
-        checkIdInSet(lookupIdsByKey(objType, "prop3", "private",
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop3", "private",
                 AccessFilter.create().withAccessGroups(21).withPublic(true)), 1, id1);
         indexStorage.unpublishObjects(new LinkedHashSet<>(Arrays.asList(id1)));
-        checkIdInSet(lookupIdsByKey(objType, "prop3", "private", 
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop3", "private", 
                 AccessFilter.create().withAccessGroups(20).withPublic(true)), 1, id1);
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop3", "private", 
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop3", "private", 
                 AccessFilter.create().withAccessGroups(21).withPublic(true)).size());
-        checkIdInSet(lookupIdsByKey(objType, "prop3", "public",
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop3", "public",
                 AccessFilter.create().withAccessGroups(21).withPublic(true)), 1, id2);
         indexStorage.unpublishObjects(new LinkedHashSet<>(Arrays.asList(id2)));
-        checkIdInSet(lookupIdsByKey(objType, "prop3", "private", 
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop3", "private", 
                 AccessFilter.create().withAccessGroups(20).withPublic(true)), 1, id1);
-        checkIdInSet(lookupIdsByKey(objType, "prop3", "public", 
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop3", "public", 
                 AccessFilter.create().withAccessGroups(20).withPublic(true)), 1, id2);
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop3", "private", 
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop3", "private", 
                 AccessFilter.create().withAccessGroups(21).withPublic(true)).size());
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop3", "public", 
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop3", "public", 
                 AccessFilter.create().withAccessGroups(21).withPublic(true)).size());
     }
     
@@ -441,29 +441,29 @@ public class ElasticIndexingStorageTest {
         indexObject(id1, objType, "{\"prop4\": 123}", "obj.1", Instant.now(), null,
                 false, indexingRules);
         AccessFilter af30 = AccessFilter.create().withAccessGroups(30);
-        checkIdInSet(lookupIdsByKey(objType, "prop4", 123, af30), 1, id1);
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop4", 123, af30), 1, id1);
         AccessFilter afPub = AccessFilter.create().withPublic(true);
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop4", 123, afPub).size());
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop4", 123, afPub).size());
         // Let's share object id1 with PUBLIC workspace 31
         indexStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(id1)), 31, true);
         // Should be publicly visible
-        checkIdInSet(lookupIdsByKey(objType, "prop4", 123, afPub), 1, id1);
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop4", 123, afPub), 1, id1);
         // Let's check that unshare (with no call to unpublishObjectsExternally is enough
         indexStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(id1)), 31);
         // Should NOT be publicly visible
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop4", 123, afPub).size());
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop4", 123, afPub).size());
         // Let's share object id1 with NOT public workspace 31
         indexStorage.shareObjects(new LinkedHashSet<>(Arrays.asList(id1)), 31, false);
         // Should NOT be publicly visible
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop4", 123, afPub).size());
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop4", 123, afPub).size());
         // Now let's declare workspace 31 PUBLIC
         indexStorage.publishObjectsExternally(asSet(id1), 31);
         // Should be publicly visible
-        checkIdInSet(lookupIdsByKey(objType, "prop4", 123, afPub), 1, id1);
+        checkIdInSet(lookupIdsByKey(objType.getType(), "prop4", 123, afPub), 1, id1);
         // Now let's declare workspace 31 NOT public
         indexStorage.unpublishObjectsExternally(asSet(id1), 31);
         // Should NOT be publicly visible
-        Assert.assertEquals(0, lookupIdsByKey(objType, "prop4", 123, afPub).size());
+        Assert.assertEquals(0, lookupIdsByKey(objType.getType(), "prop4", 123, afPub).size());
     }
     
     @Test
@@ -484,26 +484,26 @@ public class ElasticIndexingStorageTest {
                 .withAllHistory(true);
 
         // check ids show up before delete
-        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+        assertThat("incorrect ids returned", lookupIdsByKey(objType.getType(), "myprop", "some", 
                 filter), is(set(id2)));
-        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+        assertThat("incorrect ids returned", lookupIdsByKey(objType.getType(), "myprop", "some", 
                 filterAllVers), is(set(id1, id2)));
         
         // check ids show up correctly after delete
         indexStorage.deleteAllVersions(id1);
         indexStorage.refreshIndexByType(objType);
-        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+        assertThat("incorrect ids returned", lookupIdsByKey(objType.getType(), "myprop", "some", 
                 filter), is(set()));
         //TODO NOW these should probaby not show up
-        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+        assertThat("incorrect ids returned", lookupIdsByKey(objType.getType(), "myprop", "some", 
                 filterAllVers), is(set(id1, id2)));
         
         // check ids restored after undelete
         indexStorage.undeleteAllVersions(id1);
         indexStorage.refreshIndexByType(objType);
-        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+        assertThat("incorrect ids returned", lookupIdsByKey(objType.getType(), "myprop", "some", 
                 filter), is(set(id2)));
-        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+        assertThat("incorrect ids returned", lookupIdsByKey(objType.getType(), "myprop", "some", 
                 filterAllVers), is(set(id1, id2)));
         
         /* This doesn't actually test that the access group id is removed from the access
@@ -531,26 +531,26 @@ public class ElasticIndexingStorageTest {
                 .withAllHistory(true).withPublic(true);
 
         // check ids show up before publish
-        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+        assertThat("incorrect ids returned", lookupIdsByKey(objType.getType(), "myprop", "some", 
                 filter), is(set()));
-        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+        assertThat("incorrect ids returned", lookupIdsByKey(objType.getType(), "myprop", "some", 
                 filterPublic), is(set()));
         
         // check ids show up correctly after publish
         indexStorage.publishAllVersions(id1);
         indexStorage.refreshIndexByType(objType);
-        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+        assertThat("incorrect ids returned", lookupIdsByKey(objType.getType(), "myprop", "some", 
                 filter), is(set()));
         //TODO NOW these should probaby not show up
-        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+        assertThat("incorrect ids returned", lookupIdsByKey(objType.getType(), "myprop", "some", 
                 filterPublic), is(set(id1, id2)));
         
         // check ids hidden after unpublish
         indexStorage.unpublishAllVersions(id1);
         indexStorage.refreshIndexByType(objType);
-        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+        assertThat("incorrect ids returned", lookupIdsByKey(objType.getType(), "myprop", "some", 
                 filter), is(set()));
-        assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
+        assertThat("incorrect ids returned", lookupIdsByKey(objType.getType(), "myprop", "some", 
                 filterPublic), is(set()));
     }
 
