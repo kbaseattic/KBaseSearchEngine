@@ -22,7 +22,7 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
 
 ENTRYPOINT [ "/kb/deployment/bin/dockerize" ]
 CMD [ "-template", "/kb/deployment/conf/.templates/deployment.cfg.templ:/kb/deployment/conf/deployment.cfg", \
-      "-template", "/kb/deployment/conf/.templates/start_workspace.sh.templ:/kb/deployment/bin/start_workspace.sh", \
-      "-stdout", "/kb/deployment/services/workspace/glassfish_domain/Workspace/logs/server.log", \
-      "/bin/bash", "/kb/deployment/bin/start_workspace.sh" ]
+      "-template", "/kb/deployment/conf/.templates/start_search.sh.templ:/kb/deployment/bin/start_search.sh", \
+      "-stdout", "/kb/deployment/services/search/logs/server.log", \
+      "/bin/bash", "/kb/deployment/bin/start_search.sh" ]
 
