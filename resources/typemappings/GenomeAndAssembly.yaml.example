@@ -3,12 +3,13 @@
 # parameters).
 
 # Type mappings specified in a mappings file override any equivalent mappings in the type
-# transformation files.
+# transformation files. If no type mappings exist for the transformation files, the latest
+# version of the parsing rules embedded in the file is used.
 
 # Type mappings can be split or combined among files as desired, except that only one storage
 # type can be specified per mapping file.
 
-# Currently only YAML files are supported for type mappings.
+# Currently only YAML-compatible files are supported for type mappings.
 
 # specify the storage type (e.g. the source of the data)
 storage-type: WS
@@ -19,7 +20,14 @@ types:
     # A simple mapping that is a map from the storage object type to the search type(s).
     KBaseGenomeAnnotations.Assembly:
         # if types is present any other fields are ignored.
-        types: [Assembly]
+        types:
+            -
+                type: Assembly
+                version: 1
+            -
+                type: AssemblyContig
+                version: 2
+
     # A more complex mapping that takes versions of the storage object type into account.
     KBaseGenome.Genome:
         # Specify the default search type(s) to use if a specific version of the storage object
@@ -27,10 +35,38 @@ types:
         # specified, the object will not be indexed. Even with a default type, objects may fail
         # to index if the new object type version is not backwards compatible with the default 
         # version.
-        default: [Genome3, GenomeFeature2]
+        default:
+           -
+               type: Genome
+               version: 3
+           -
+               type: GenomeFeature
+               version: 2
+
         # specify versions of the storage type and how they map to the search types.
         versions:
-            1: [Genome1, GenomeFeature1]
-            2: Genome1
-            3: [Genome2, GenomeFeature2]
-            4: [Genome3, GenomeFeature2]
+            1:
+                -
+                    type: Genome
+                    version: 1
+                -
+                    type: GenomeFeature
+                    version: 1
+            2:
+                -
+                    type: Genome
+                    version: 1
+            3:
+                -
+                    type: Genome
+                    version: 2
+                -
+                    type: GenomeFeature
+                    version: 2
+            4:
+                -
+                    type: Genome
+                    version: 3
+                -
+                    type: GenomeFeature
+                    version: 2
