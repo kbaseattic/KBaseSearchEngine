@@ -3,7 +3,6 @@ package kbasesearchengine.system;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,13 +35,13 @@ public class TypeFileStorage implements TypeStorage {
     
     private Map<CodeAndType, TypeMapping> processTypesDir(
             final Path typesDir,
+            final FileLister fileLister,
             final LineLogger logger)
             throws IOException, ObjectParseException, TypeParseException {
         final Map<String, Path> typeToFile = new HashMap<>();
         final Map<CodeAndType, TypeMapping.Builder> storageTypes = new HashMap<>(); 
-        // this is gross, but works. https://stackoverflow.com/a/20130475/643675
-        for (Path file : (Iterable<Path>) Files.list(typesDir)::iterator) {
-            if (Files.isRegularFile(file) && isAllowedFileType(file)) {
+        for (final Path file: fileLister.list(typesDir)) {
+            if (fileLister.isRegularFile(file) && isAllowedFileType(file)) {
                 final List<ObjectTypeParsingRules> types = ObjectTypeParsingRulesUtils
                         .fromFile(file.toFile());
                 final String searchType = types.get(0).getGlobalObjectType().getType();
@@ -155,11 +154,12 @@ public class TypeFileStorage implements TypeStorage {
             final Path typesDir,
             final Path mappingsDir,
             final Map<String, TypeMappingParser> parsers,
+            final FileLister fileLister,
             final LineLogger logger)
             throws IOException, ObjectParseException, TypeParseException {
-        storageTypes = processTypesDir(typesDir, logger);
+        storageTypes = processTypesDir(typesDir, fileLister, logger);
         final Map<CodeAndType, TypeMapping> mappings = processMappingsDir(
-                mappingsDir, parsers, logger);
+                mappingsDir, parsers, fileLister, logger);
         for (final CodeAndType cnt: mappings.keySet()) {
             if (storageTypes.containsKey(cnt)) {
                 logger.logInfo(String.format(
@@ -175,17 +175,17 @@ public class TypeFileStorage implements TypeStorage {
     private Map<CodeAndType, TypeMapping> processMappingsDir(
             final Path mappingsDir,
             final Map<String, TypeMappingParser> parsers,
+            final FileLister fileLister,
             final LineLogger logger)
             throws IOException, TypeParseException {
         final Map<CodeAndType, TypeMapping> ret = new HashMap<>();
-        // this is gross, but works. https://stackoverflow.com/a/20130475/643675
-        for (Path file : (Iterable<Path>) Files.list(mappingsDir)::iterator) {
-            if (Files.isRegularFile(file)) {
+        for (Path file : fileLister.list(mappingsDir)) {
+            if (fileLister.isRegularFile(file)) {
                 final String ext = FilenameUtils.getExtension(file.toString());
                 final TypeMappingParser parser = parsers.get(ext);
                 if (parser != null) {
                     final Set<TypeMapping> mappings;
-                    try (final InputStream is = Files.newInputStream(file)) {
+                    try (final InputStream is = fileLister.newInputStream(file)) {
                         mappings = parser.parse(new BufferedInputStream(is), file.toString());
                     }
                     for (final TypeMapping map: mappings) {

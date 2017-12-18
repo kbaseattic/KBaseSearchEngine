@@ -51,6 +51,7 @@ import kbasesearchengine.main.IndexerWorker;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.IndexingStorage;
+import kbasesearchengine.system.FileLister;
 import kbasesearchengine.system.TypeFileStorage;
 import kbasesearchengine.system.TypeMappingParser;
 import kbasesearchengine.system.TypeParseException;
@@ -259,7 +260,8 @@ public class SearchTools {
                 "yaml", new YAMLTypeMappingParser());
         final Path typesDir = Paths.get(cfg.getTypesDirectory());
         final Path mappingsDir = Paths.get(cfg.getTypeMappingsDirectory());
-        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
+        final TypeStorage ss = new TypeFileStorage(
+                typesDir, mappingsDir, parsers, new FileLister(), logger);
         
         final StatusEventStorage storage = new MongoDBStatusEventStorage(searchDB);
         

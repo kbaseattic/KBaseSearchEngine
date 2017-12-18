@@ -39,6 +39,7 @@ import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.MatchFilter;
 import kbasesearchengine.search.MatchValue;
 import kbasesearchengine.system.TypeFileStorage;
+import kbasesearchengine.system.FileLister;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.system.TypeMappingParser;
@@ -158,7 +159,8 @@ public class PerformanceTester {
         };
         final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
                 "yaml", new YAMLTypeMappingParser());
-        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
+        final TypeStorage ss = new TypeFileStorage(
+                typesDir, mappingsDir, parsers, new FileLister(), logger);
         
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
                 FileUtil.getOrCreateSubDir(tempDir, "esbulk"));
