@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /** A utility class for listing directories and opening and testing files. The purpose of this
- * class is to allow mocking for testing {@link TypeFileStorage}.
+ * class is to allow mocking file interactions for testing {@link TypeFileStorage}.
  * @author gaprice@lbl.gov
  *
  */
