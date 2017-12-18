@@ -21,11 +21,11 @@ import kbasesearchengine.tools.Utils;
  * @author gaprice@lbl.gov
  *
  */
-public class ObjectTypeParsingRulesUtils {
+public class ObjectTypeParsingRulesFileParser {
 
     //TODO TEST
 
-    /** Create a set ObjectTypeParsingRules version instances from a file.
+    /** Create a set of ObjectTypeParsingRules version instances from a file.
      * 
      * The rules will have the same storage object type, search type, and ui name.
      * 
@@ -40,6 +40,23 @@ public class ObjectTypeParsingRulesUtils {
         try (final InputStream is = new FileInputStream(file)) {
             return fromStream(is, file.toString());
         }
+    }
+    
+    /** Create a set of ObjectTypeParsingRules versions from a stream.
+     *
+     * The rules will have the same storage object type, search type, and ui name.
+     *
+     * @param is the stream to parse.
+     * @param sourceInfo information about the source of the stream, usually a file name.
+     * @return a new set of parsing rules ordered by version.
+     * @throws IOException if an IO error occurs reading the stream.
+     * @throws TypeParseException if the stream contains erroneous parsing rules.
+     */
+    public List<ObjectTypeParsingRules> parseStream(
+            final InputStream is,
+            final String sourceInfo)
+            throws IOException, TypeParseException {
+        return fromStream(is, sourceInfo);
     }
 
     private static List<ObjectTypeParsingRules> fromStream(InputStream is, String sourceInfo) 

@@ -19,6 +19,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.parse.ObjectParseException;
+import kbasesearchengine.tools.Utils;
 
 public class TypeFileStorage implements TypeStorage {
     
@@ -35,6 +36,7 @@ public class TypeFileStorage implements TypeStorage {
     
     private Map<CodeAndType, TypeMapping> processTypesDir(
             final Path typesDir,
+            final ObjectTypeParsingRulesFileParser searchSpecParser,
             final FileLister fileLister,
             final LineLogger logger)
             throws IOException, ObjectParseException, TypeParseException {
@@ -42,8 +44,11 @@ public class TypeFileStorage implements TypeStorage {
         final Map<CodeAndType, TypeMapping.Builder> storageTypes = new HashMap<>(); 
         for (final Path file: fileLister.list(typesDir)) {
             if (fileLister.isRegularFile(file) && isAllowedFileType(file)) {
-                final List<ObjectTypeParsingRules> types = ObjectTypeParsingRulesUtils
-                        .fromFile(file.toFile());
+                final List<ObjectTypeParsingRules> types;
+                try (final InputStream is = fileLister.newInputStream(file)) {
+                    types = searchSpecParser.parseStream(
+                            new BufferedInputStream(is), file.toString());
+                }
                 final String searchType = types.get(0).getGlobalObjectType().getType();
                 if (typeToFile.containsKey(searchType)) {
                     throw new TypeParseException(String.format(
@@ -150,16 +155,24 @@ public class TypeFileStorage implements TypeStorage {
         }
     }
     
+    // could make a simpler constructor with default args for the parsers and lister
     public TypeFileStorage(
             final Path typesDir,
             final Path mappingsDir,
-            final Map<String, TypeMappingParser> parsers,
+            final ObjectTypeParsingRulesFileParser searchSpecParser,
+            final Map<String, TypeMappingParser> mappingParsers,
             final FileLister fileLister,
             final LineLogger logger)
             throws IOException, ObjectParseException, TypeParseException {
-        storageTypes = processTypesDir(typesDir, fileLister, logger);
+        Utils.nonNull(typesDir, "typesDir");
+        Utils.nonNull(mappingsDir, "mappingsDir");
+        Utils.nonNull(searchSpecParser, "searchSpecParser");
+        Utils.nonNull(mappingParsers, "mappingParsers");
+        Utils.nonNull(fileLister, "fileLister");
+        Utils.nonNull(logger, "logger");
+        storageTypes = processTypesDir(typesDir, searchSpecParser, fileLister, logger);
         final Map<CodeAndType, TypeMapping> mappings = processMappingsDir(
-                mappingsDir, parsers, fileLister, logger);
+                mappingsDir, mappingParsers, fileLister, logger);
         for (final CodeAndType cnt: mappings.keySet()) {
             if (storageTypes.containsKey(cnt)) {
                 logger.logInfo(String.format(
