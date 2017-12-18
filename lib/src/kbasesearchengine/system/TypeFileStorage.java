@@ -18,12 +18,20 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FilenameUtils;
 
 import kbasesearchengine.main.LineLogger;
-import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.tools.Utils;
 
+/** Flat file based storage for search transformation specifications and
+ * storage type / version -> search transformation type / version mappings.
+ * 
+ * @see ObjectTypeParsingRulesFileParser
+ * @see TypeMappingParser
+ * @see TypeMapping
+ * 
+ * @author gaprice@lbl.gov
+ *
+ */
 public class TypeFileStorage implements TypeStorage {
     
-    //TODO JAVADOC
     //TODO TEST
     
     private static final String TYPE_STORAGE = "[TypeStorage]";
@@ -39,7 +47,7 @@ public class TypeFileStorage implements TypeStorage {
             final ObjectTypeParsingRulesFileParser searchSpecParser,
             final FileLister fileLister,
             final LineLogger logger)
-            throws IOException, ObjectParseException, TypeParseException {
+            throws IOException, TypeParseException {
         final Map<String, Path> typeToFile = new HashMap<>();
         final Map<CodeAndType, TypeMapping.Builder> storageTypes = new HashMap<>(); 
         for (final Path file: fileLister.list(typesDir)) {
@@ -156,6 +164,17 @@ public class TypeFileStorage implements TypeStorage {
     }
     
     // could make a simpler constructor with default args for the parsers and lister
+    /** Create a new type storage system.
+     * @param typesDir the directory in which to find transformation specifications.
+     * @param mappingsDir the directory in which to find type mappings.
+     * @param searchSpecParser the parser for transformation specifications.
+     * @param mappingParsers one or more parsers for type mappings. The map maps from file
+     * extension (e.g. "yaml") to mapper implementation.
+     * @param fileLister a file handler instance.
+     * @param logger a logger.
+     * @throws IOException if errors occur when reading a file.
+     * @throws TypeParseException if a file could not be parsed.
+     */
     public TypeFileStorage(
             final Path typesDir,
             final Path mappingsDir,
@@ -163,7 +182,7 @@ public class TypeFileStorage implements TypeStorage {
             final Map<String, TypeMappingParser> mappingParsers,
             final FileLister fileLister,
             final LineLogger logger)
-            throws IOException, ObjectParseException, TypeParseException {
+            throws IOException, TypeParseException {
         Utils.nonNull(typesDir, "typesDir");
         Utils.nonNull(mappingsDir, "mappingsDir");
         Utils.nonNull(searchSpecParser, "searchSpecParser");
@@ -245,7 +264,6 @@ public class TypeFileStorage implements TypeStorage {
 
     @Override
     public List<ObjectTypeParsingRules> listObjectTypes() {
-        //TODO VERS is returning the last version ok? At least document in interface. Provide option?
         return searchTypes.values().stream().map(l -> l.get(l.size() - 1))
                 .collect(Collectors.toList());
     }
