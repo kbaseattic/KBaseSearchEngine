@@ -20,11 +20,26 @@ import us.kbase.common.service.UObject;
 
 public class ObjectParser {
 
+    /** Uses the specified parsing rules to extract data from the given source data
+     * object.
+     *
+     * @param obj source data from which to extract
+     * @param guid GUID of the source given source data
+     * @param parsingRules parsing rules
+     * @return A map from GUID to extracted data.
+     * @throws IOException
+     * @throws ObjectParseException
+     * @throws IndexingException
+     * @throws InterruptedException
+     */
     public static Map<GUID, String> parseSubObjects(
             final SourceData obj,
             final GUID guid, 
             final ObjectTypeParsingRules parsingRules)
-            throws IOException, ObjectParseException, IndexingException, InterruptedException {
+            throws IOException,
+                   ObjectParseException,
+                   IndexingException,
+                   InterruptedException {
         /* note that in opposition to the name, objects with no subobject specs get run through
          * this method.
          */
@@ -57,21 +72,47 @@ public class ObjectParser {
         return guidToJson;
     }
 
-    public static GUID prepareGUID(ObjectTypeParsingRules parsingRules,
-            GUID guid, ObjectJsonPath path,
+    /** Appends the sub-object path and id to the specified GUID if the parsing
+     * rules define the extraction of data from a sub-object.
+     *
+     *
+     * @param parsingRules parsing rules
+     * @param guid GUID without the sub-object path and id
+     * @param path
+     * @param idConsumer
+     * @return GUID with sub-object path and id if data needs to be extracted
+     * from sub-object, lese GUID with just main object information.
+     */
+    public static GUID prepareGUID(
+            ObjectTypeParsingRules parsingRules,
+            GUID guid,
+            ObjectJsonPath path,
             SimpleIdConsumer idConsumer) {
-        String innerSubType = null;
-        String innerID = null;
+        String subObjectType = null;
+        String subObjectID = null;
         if (parsingRules.getSubObjectPath().isPresent()) {
-            innerID = idConsumer.getPrimaryKey() == null ? path.toString() : 
+            subObjectID = idConsumer.getPrimaryKey() == null ? path.toString() :
                 String.valueOf(idConsumer.getPrimaryKey());
-            innerSubType = parsingRules.getSubObjectType().get();
+            subObjectType = parsingRules.getSubObjectType().get();
         }
-        return new GUID(guid, innerSubType, innerID);
+        return new GUID(guid, subObjectType, subObjectID);
     }
-    
-    public static String extractParentFragment(ObjectTypeParsingRules parsingRules,
-            JsonParser jts) throws ObjectParseException, IOException {
+
+    /** Returns null if the specified parsing rules do not have rules for
+     * extracting parent elements. Else returns "/" for the root path of the
+     * parent json object.
+     *
+     * @param parsingRules
+     * @param jts
+     * @return
+     * @throws ObjectParseException
+     * @throws IOException
+     */
+    public static String extractParentFragment(
+            ObjectTypeParsingRules parsingRules,
+            JsonParser jts)
+            throws ObjectParseException,
+                   IOException {
         if (!parsingRules.getSubObjectPath().isPresent()) {
             return null;
         }
@@ -80,7 +121,8 @@ public class ObjectParser {
             if (!rules.isFromParent()) {
                 continue;
             }
-            //TODO CODE this seems wrong. Why adding null paths?
+            // This list add is simply a check to see if at least one rule for
+            // extracting a parent element exists.
             indexingPaths.add(rules.getPath().orNull());
         }
         if (indexingPaths.size() == 0) {
@@ -93,9 +135,22 @@ public class ObjectParser {
         return pathToJson.get(pathToJson.keySet().iterator().next());
     }
 
-    public static void extractSubObjects(ObjectTypeParsingRules parsingRules,
-            SubObjectConsumer subObjConsumer, JsonParser jts)
-            throws ObjectParseException, IOException {
+    /** Uses the given JsonParser to extract sub-object data based on the specified
+     * parsing rules and populates the given SubObjectConsumer object with the
+     * extracted data.
+     *
+     * @param parsingRules
+     * @param subObjConsumer
+     * @param jts
+     * @throws ObjectParseException
+     * @throws IOException
+     */
+    public static void extractSubObjects(
+            ObjectTypeParsingRules parsingRules,
+            SubObjectConsumer subObjConsumer,
+            JsonParser jts)
+            throws ObjectParseException,
+                   IOException {
         List<ObjectJsonPath> indexingPaths = new ArrayList<>();
         for (IndexingRules rules : parsingRules.getIndexingRules()) {
             if (rules.isFromParent()) {
