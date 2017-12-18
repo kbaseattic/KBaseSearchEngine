@@ -1,5 +1,8 @@
 package kbasesearchengine.parse;
 
+/**
+ * Signals that an error has been reached unexpectedly while parsing.
+ */
 public class ObjectParseException extends Exception {
 	private static final long serialVersionUID = 1L;
 
