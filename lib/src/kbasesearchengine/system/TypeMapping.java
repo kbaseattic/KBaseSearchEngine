@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import com.google.common.base.Optional;
 
@@ -24,20 +25,20 @@ public class TypeMapping {
     private final String storageCode;
     private final String storageType;
     private final Optional<String> sourceInfo;
-    private final Set<String> defaultSearchTypes;
-    private final Map<Integer, Set<String>> versions;
+    private final Set<SearchObjectType> defaultSearchTypes;
+    private final Map<Integer, Set<SearchObjectType>> versions;
     
     private TypeMapping(
             final String storageCode,
             final String storageType,
             final Optional<String> sourceInfo,
-            final Set<String> defaultSearchTypes,
-            final Map<Integer, Set<String>> versions) {
+            final Set<SearchObjectType> defaultSearchTypes,
+            final Map<Integer, Set<SearchObjectType>> versions) {
         this.storageCode = storageCode;
         this.storageType = storageType;
         this.sourceInfo = sourceInfo;
         this.defaultSearchTypes = Collections.unmodifiableSet(defaultSearchTypes);
-        final Map<Integer, Set<String>> immut = new HashMap<>();
+        final Map<Integer, Set<SearchObjectType>> immut = new HashMap<>();
         versions.keySet().stream().forEach(
                 k -> immut.put(k, Collections.unmodifiableSet(versions.get(k))));
         this.versions = Collections.unmodifiableMap(immut);
@@ -69,7 +70,7 @@ public class TypeMapping {
      * @param version the version number, or absent if there is no version.
      * @return the mapped search types, or an empty set if no search type mapping is available.
      */
-    public Set<String> getSearchTypes(final Optional<Integer> version) {
+    public Set<SearchObjectType> getSearchTypes(final Optional<Integer> version) {
         Utils.nonNull(version, "version");
         if (version.isPresent() && version.get() < 0) {
             throw new IllegalArgumentException("version must be at least 0");
@@ -85,28 +86,11 @@ public class TypeMapping {
      * the version specific types.
      * @return all the types in this mapping.
      */
-    public Set<String> getSearchTypes() {
-        final Set<String> ret = new HashSet<>();
+    public Set<SearchObjectType> getSearchTypes() {
+        final Set<SearchObjectType> ret = new HashSet<>();
         ret.addAll(defaultSearchTypes);
         versions.values().stream().forEach(s -> ret.addAll(s));
         return ret;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder builder2 = new StringBuilder();
-        builder2.append("TypeMapping [storageCode=");
-        builder2.append(storageCode);
-        builder2.append(", storageType=");
-        builder2.append(storageType);
-        builder2.append(", sourceInfo=");
-        builder2.append(sourceInfo);
-        builder2.append(", defaultSearchTypes=");
-        builder2.append(defaultSearchTypes);
-        builder2.append(", versions=");
-        builder2.append(versions);
-        builder2.append("]");
-        return builder2.toString();
     }
 
     @Override
@@ -194,8 +178,8 @@ public class TypeMapping {
         private final String storageCode;
         private final String storageType;
         private Optional<String> sourceInfo = Optional.absent();
-        private Set<String> defaultSearchTypes = new HashSet<>();
-        private final Map<Integer, Set<String>> versions = new TreeMap<>();
+        private Map<String, Integer> defaultSearchTypes = new HashMap<>();
+        private final Map<Integer, Map<String, Integer>> versions = new TreeMap<>();
         
         private Builder(final String storageCode, final String storageType) {
             Utils.notNullOrEmpty(storageCode, "storageCode cannot be null or the empty string");
@@ -219,33 +203,33 @@ public class TypeMapping {
         }
         
         /** Add a default search type to map to the storage type when a version specific
-         * mapping is not available. Multiple default types may be added and duplicates will be
-         * ignored. Null or whitespace only entries will be ignored.
+         * mapping is not available. Multiple default types may be added and duplicate types
+         * will cause the previous version to be overwritten with the new version.
          * @param searchType a default search type.
          * @return this builder.
          */
-        public Builder withNullableDefaultSearchType(final String searchType) {
-            if (!Utils.isNullOrEmpty(searchType)) {
-                defaultSearchTypes.add(searchType);
-            }
+        public Builder withDefaultSearchType(final SearchObjectType searchType) {
+            Utils.nonNull(searchType, "searchType");
+            defaultSearchTypes.put(searchType.getType(), searchType.getVersion());
             return this;
         }
         
         /** Specify a mapping for a specific version of the storage type to a search type.
-         * Multiple types may be added per version and duplicates will be ignored.
+         * Multiple types may be added per version and duplicate types
+         * will cause the previous version to be overwritten with the new version.
          * @param version the version of the storage type.
          * @param searchType the search type to which the version will be mapped.
          * @return this builder.
          */
-        public Builder withVersion(final int version, final String searchType) {
+        public Builder withVersion(final int version, final SearchObjectType searchType) {
             if (version < 0) {
                 throw new IllegalArgumentException("version must be at least 0");
             }
-            Utils.notNullOrEmpty(searchType, "searchType cannot be null or the empty string");
+            Utils.nonNull(searchType, "searchType");
             if (!versions.containsKey(version)) {
-                versions.put(version, new HashSet<>());
+                versions.put(version, new HashMap<>());
             }
-            versions.get(version).add(searchType);
+            versions.get(version).put(searchType.getType(), searchType.getVersion());
             return this;
         }
         
@@ -265,7 +249,19 @@ public class TypeMapping {
                 throw new IllegalStateException("No type mappings were supplied");
             }
             return new TypeMapping(
-                    storageCode, storageType, sourceInfo, defaultSearchTypes, versions);
+                    storageCode,
+                    storageType,
+                    sourceInfo,
+                    toTypeSet(defaultSearchTypes),
+                    versions.entrySet().stream().collect(Collectors.toMap(
+                            e -> e.getKey(), e -> toTypeSet(e.getValue())))
+                    );
+        }
+        
+        private Set<SearchObjectType> toTypeSet(final Map<String, Integer> types) {
+            return types.entrySet().stream()
+                    .map(e -> new SearchObjectType(e.getKey(), e.getValue()))
+                    .collect(Collectors.toSet());
         }
         
     }

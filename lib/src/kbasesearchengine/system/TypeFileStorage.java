@@ -56,10 +56,11 @@ public class TypeFileStorage implements TypeStorage {
                 final CodeAndType cnt = new CodeAndType(types.get(0).getStorageObjectType());
                 if (!storageTypes.containsKey(cnt)) {
                     storageTypes.put(cnt, TypeMapping.getBuilder(cnt.storageCode, cnt.storageType)
-                            .withNullableDefaultSearchType(searchType) //TODO VERS take version into account
+                            .withDefaultSearchType(new SearchObjectType(searchType, types.size()))
                             .withNullableSourceInfo(file.toString()));
                 } else {
-                    storageTypes.get(cnt).withNullableDefaultSearchType(searchType); //TODO VERS take version into account
+                    storageTypes.get(cnt)
+                            .withDefaultSearchType(new SearchObjectType(searchType, types.size()));
                 }
                 logger.logInfo(String.format("%s Processed type tranformation file with storage " +
                         "code %s, storage type %s and search type %s: %s",
@@ -198,13 +199,21 @@ public class TypeFileStorage implements TypeStorage {
                                     ret.get(cnt).getSourceInfo().get(),
                                     map.getSourceInfo().get()));
                         }
-                        //TODO VERS this needs to be version aware
-                        for (final String searchType: map.getSearchTypes()) {
-                            if (!searchTypes.containsKey(searchType)) {
+                        for (final SearchObjectType searchType: map.getSearchTypes()) {
+                            if (!searchTypes.containsKey(searchType.getType())) {
                                 throw new TypeParseException(String.format(
                                         "The search type %s specified in source code/type %s/%s " +
                                         "does not have an equivalent tranform type. File: %s",
-                                        searchType, cnt.storageCode, cnt.storageType,
+                                        searchType.getType(), cnt.storageCode, cnt.storageType,
+                                        map.getSourceInfo().get()));
+                            }
+                            if (searchTypes.get(searchType.getType()).size() <
+                                    searchType.getVersion()) {
+                                throw new TypeParseException(String.format(
+                                        "The version %s of search type %s specified in " +
+                                        "source code/type %s/%s does not exist. File: %s",
+                                        searchType.getVersion(), searchType.getType(),
+                                        cnt.storageCode, cnt.storageType,
                                         map.getSourceInfo().get()));
                             }
                         }
@@ -253,10 +262,10 @@ public class TypeFileStorage implements TypeStorage {
         if (mapping == null) {
             return Collections.emptyList();
         }
-        final Set<String> types = mapping.getSearchTypes(storageObjectType.getVersion());
+        final Set<SearchObjectType> types = mapping.getSearchTypes(storageObjectType.getVersion());
         final List<ObjectTypeParsingRules> ret = new LinkedList<>();
-        for (final String t: types) {
-            ret.add(searchTypes.get(t).get(0));  //TODO VERS needs to be version aware
+        for (final SearchObjectType t: types) {
+            ret.add(searchTypes.get(t.getType()).get(t.getVersion() - 1));
         }
         return ret;
     }
