@@ -35,6 +35,7 @@ import kbasesearchengine.events.exceptions.RetriableIndexingException;
 import kbasesearchengine.events.exceptions.RetriableIndexingExceptionUncheckedWrapper;
 import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
 import kbasesearchengine.system.StorageObjectType;
+import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple9;
@@ -83,12 +84,13 @@ public class WorkspaceEventHandler implements EventHandler {
                     new TypeReference<Tuple9<Long, String, String, String, Long, String, String,
                             String,Map<String,String>>>() {};
     
-    private final WorkspaceClient ws;
+    private final CloneableWorkspaceClient ws;
     
     /** Create a handler.
      * @param wsClient a workspace client to use when contacting the workspace service.
      */
-    public WorkspaceEventHandler(final WorkspaceClient wsClient) {
+    public WorkspaceEventHandler(final CloneableWorkspaceClient wsClient) {
+        Utils.nonNull(wsClient, "wsClient");
         ws = wsClient;
     }
     
@@ -110,15 +112,7 @@ public class WorkspaceEventHandler implements EventHandler {
         // create a new client since we're setting a file for the next response
         // fixes race conditions
         // a clone method would be handy
-        final WorkspaceClient wc;
-        try {
-            wc = new WorkspaceClient(ws.getURL(), ws.getToken());
-        } catch (IOException e) {
-            throw handleException(e);
-        } catch (UnauthorizedException e) {
-            throw new FatalIndexingException(e.getMessage(), e);
-        }
-        wc.setIsInsecureHttpConnectionAllowed(ws.isInsecureHttpConnectionAllowed());
+        final WorkspaceClient wc = ws.getClientClone();
         wc.setStreamingModeOn(true);
         wc._setFileForNextRpcResponse(file.toFile());
         final Map<String, Object> command = new HashMap<>();
@@ -222,7 +216,8 @@ public class WorkspaceEventHandler implements EventHandler {
         
         final GetObjectInfo3Results res;
         try {
-            res = ws.administer(new UObject(command)).asClassInstance(GetObjectInfo3Results.class);
+            res = ws.getClient().administer(new UObject(command))
+                    .asClassInstance(GetObjectInfo3Results.class);
         } catch (IOException e) {
             throw handleException(e);
         } catch (JsonClientException e) {
@@ -311,7 +306,7 @@ public class WorkspaceEventHandler implements EventHandler {
         
         final long objcount;
         try {
-            objcount = ws.administer(new UObject(command))
+            objcount = ws.getClient().administer(new UObject(command))
                     .asClassInstance(WS_INFO_TYPEREF).getE5();
         } catch (IOException e) {
             throw handleException(e);
@@ -385,7 +380,7 @@ public class WorkspaceEventHandler implements EventHandler {
 
             @Override
             public Iterator<ChildStatusEvent> iterator() {
-                return new WorkspaceIterator(ws, event);
+                return new WorkspaceIterator(ws.getClient(), event);
             }
             
         };
@@ -522,7 +517,7 @@ public class WorkspaceEventHandler implements EventHandler {
                 .withWsid((long) event.getAccessGroupId().get())
                 .withObjid(objid));
         try {
-            return buildEvents(eventWID, ws.administer(new UObject(command))
+            return buildEvents(eventWID, ws.getClient().administer(new UObject(command))
                     .asClassInstance(OBJ_TYPEREF));
         } catch (IOException e) {
             throw handleException(e);

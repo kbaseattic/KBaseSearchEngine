@@ -1,6 +1,5 @@
 package kbasesearchengine.parse;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -18,24 +17,18 @@ import kbasesearchengine.system.ObjectTypeParsingRules;
 import us.kbase.common.service.UObject;
 
 public class ObjectParser {
-    
-    public static File prepareTempFile(File tempDir) throws IOException {
-        if (!tempDir.exists()) {
-            tempDir.mkdirs();
-        }
-        File tempFile = File.createTempFile("ws_srv_response_", ".json", tempDir);
-        return tempFile;
-    }
 
     public static Map<GUID, String> parseSubObjects(
             final SourceData obj,
             final GUID guid, 
             final ObjectTypeParsingRules parsingRules)
             throws IOException, ObjectParseException, IndexingException, InterruptedException {
+        /* note that in opposition to the name, objects with no subobject specs get run through
+         * this method.
+         */
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
-        SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
         try (JsonParser jts = obj.getData().getPlacedStream()) {
-            extractSubObjects(parsingRules, subObjConsumer, jts);
+            extractSubObjects(parsingRules, new SimpleSubObjectConsumer(pathToJson), jts);
         }
         Map<GUID, String> guidToJson = new LinkedHashMap<>();
         for (ObjectJsonPath path : pathToJson.keySet()) {
@@ -44,6 +37,16 @@ public class ObjectParser {
             if (parsingRules.getSubObjectIDPath().isPresent()) {
                 try (JsonParser subJts = UObject.getMapper().getFactory().createParser(subJson)) {
                     IdMapper.mapKeys(parsingRules.getSubObjectIDPath().get(), subJts, idConsumer);
+                }
+                /* if this if block is outside the parent if block, standard objects without
+                 * subobjects fail to parse
+                 */
+                if (idConsumer.getPrimaryKey() == null) {
+                    throw new ObjectParseException(String.format(
+                            "Could not find the subobject id for one or more of the subobjects " +
+                                    "for object %s when applying search specification %s_%s",
+                                    guid, parsingRules.getGlobalObjectType().getType(),
+                                    parsingRules.getGlobalObjectType().getVersion())); 
                 }
             }
             GUID subid = prepareGUID(parsingRules, guid, path, idConsumer);

@@ -6,7 +6,8 @@ import kbasesearchengine.events.exceptions.IndexingException;
 
 public interface TypeStorage {
     
-    ObjectTypeParsingRules getObjectType(String type) throws IndexingException;
+    ObjectTypeParsingRules getObjectType(SearchObjectType type)
+            throws IndexingException, NoSuchTypeException;
 
     List<ObjectTypeParsingRules> listObjectTypes() throws IndexingException;
     

@@ -1,0 +1,78 @@
+# This specification describes how a Workspace Genome object is transformed into a document that is
+# indexed by the KBaseSeachEngine.
+
+# The name of the type in the search system.
+global-object-type: Genome
+# The data source of the objects, in this case the Workspace.
+storage-type: WS
+# The name of the type in the data source.
+storage-object-type: KBaseGenomes.Genome
+
+# This list contains the versions of the specification, ordered by version.
+versions:
+    -
+        # The following rules describe which fields are extracted from the source object and
+        # transforms performed upon said fields.
+        indexing-rules:
+            -
+                # Extract a string from the /id path. The key name will be id.
+                path: id
+                keyword-type: string
+            -
+                # Extract a string from the /domain path. The key name will be domain.
+                path: domain
+                keyword-type: string
+            -
+                # Extract a full-text search field from the /taxonomy path. A full-text field is
+                # parsed into tokens which can be searched on individually, as opposed to a string
+                # field which is an opaque block and must be matched in its entirety.
+                # The key name will be taxonomy.
+                path: taxonomy
+                full-text: true
+            -
+                # Extract a full-text search field from the /scientific_name path.
+                # The key name will be scientific_name.
+                path: scientific_name
+                full-text: true
+            -
+                # Extract the number of features from a list at the /features path. The special
+                # {size} element directs the parser to return the size of a list or mapping. Since
+                # this number will be an integer, the keyword type is set as such.
+                # The key name is explicitly set to features, rather than implicitly set by the
+                # first section of the path.
+                path: features/{size}
+                keyword-type: integer
+                key-name: features
+            -
+                # Extract a reference to an Assembly object and transform it into a Globally
+                # Unique ID (GUID).
+                # The reference is at the /assembly_ref path.
+                path: assembly_ref
+                # The reference will be transformed into a GUID.
+                transform: guid
+                # The expected type of the object to which the reference refers is an Assembly.
+                # This is a search system type, not a data source type.
+                target-object-type: Assembly
+                target-object-type-version: 1
+                # If there is no value at the path location, substitute an empty list instead.
+                optional-default-value: []
+                # Index the transformed GUID as a string.
+                keyword-type: string
+                # The key for the transformed GUID in the search document will be assembly_guid.
+                key-name: assembly_guid
+                # Don't show the guid in any UI context when displaying search data.
+                ui-hidden: true
+            -
+                # Extract a value from an object referred to by the object that is currently being
+                # indexed, and include it in the current object.
+                # The object can be found via the GUID in the assembly_guid key above. The source
+                # key must match the key name of another indexing rule in this spec that produces
+                # a GUID.
+                source-key: assembly_guid
+                # Extract the contigs field from the target object. 'contigs' must match a key
+                # name in the search type for the target object.
+                transform: lookup.key.contigs
+                # Index the extracted field as an integer.
+                keyword-type: integer
+                # The key for the extracted field will be contigs.
+                key-name: contigs

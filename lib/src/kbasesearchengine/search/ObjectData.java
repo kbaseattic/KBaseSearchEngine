@@ -3,6 +3,7 @@ package kbasesearchengine.search;
 import java.util.Map;
 
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.system.SearchObjectType;
 
 public class ObjectData {
     
@@ -13,7 +14,7 @@ public class ObjectData {
     public GUID guid;
     public GUID parentGuid;
     public String objectName;
-    public String type;
+    public SearchObjectType type;
     public String creator;
     public String copier;
     public String module;

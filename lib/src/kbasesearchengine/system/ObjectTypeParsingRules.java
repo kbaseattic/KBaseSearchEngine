@@ -24,8 +24,9 @@ import kbasesearchengine.tools.Utils;
 public class ObjectTypeParsingRules {
     
     //TODO IDXRULE what if there are two parent types for a single type? need to error out?
+    //TODO IDXRULE if subobject spec, there must be a path based indexing rule that matches the subobject id path. Make this automatic in some way?
     
-    private final String globalObjectType;
+    private final SearchObjectType globalObjectType;
     private final String uiTypeName;
     private final StorageObjectType storageObjectType;
     private final List<IndexingRules> indexingRules;
@@ -35,7 +36,7 @@ public class ObjectTypeParsingRules {
     
     
     private ObjectTypeParsingRules(
-            final String globalObjectType,
+            final SearchObjectType globalObjectType,
             String uiTypeName,
             final StorageObjectType storageObjectType,
             final List<IndexingRules> indexingRules,
@@ -44,8 +45,8 @@ public class ObjectTypeParsingRules {
             final ObjectJsonPath subObjectIDPath) {
         this.globalObjectType = globalObjectType;
         if (uiTypeName == null) {
-            uiTypeName = globalObjectType.substring(0, 1).toUpperCase() +
-                    globalObjectType.substring(1);
+            uiTypeName = globalObjectType.getType().substring(0, 1).toUpperCase() +
+                    globalObjectType.getType().substring(1);
         }
         this.uiTypeName = uiTypeName;
         this.storageObjectType = storageObjectType;
@@ -58,7 +59,7 @@ public class ObjectTypeParsingRules {
     /** Get the type of object this rule set applies to as known to the search system.
      * @return the search object type.
      */
-    public String getGlobalObjectType() {
+    public SearchObjectType getGlobalObjectType() {
         return globalObjectType;
     }
     
@@ -198,14 +199,14 @@ public class ObjectTypeParsingRules {
      * @return a new builder.
      */
     public static Builder getBuilder(
-            final String globalObjectType,
+            final SearchObjectType globalObjectType,
             final StorageObjectType storageType) {
         return new Builder(globalObjectType, storageType);
     }
     
     public static class Builder {
         
-        private final String globalObjectType;
+        private final SearchObjectType globalObjectType;
         private String uiTypeName; 
         private final StorageObjectType storageObjectType;
         private final List<IndexingRules> indexingRules = new LinkedList<>();
@@ -213,9 +214,8 @@ public class ObjectTypeParsingRules {
         private ObjectJsonPath subObjectPath = null;
         private ObjectJsonPath subObjectIDPath = null;
         
-        private Builder(final String globalObjectType, final StorageObjectType storageType) {
-            Utils.notNullOrEmpty(globalObjectType,
-                    "globalObjectType cannot be null or whitespace");
+        private Builder(final SearchObjectType globalObjectType, final StorageObjectType storageType) {
+            Utils.nonNull(globalObjectType, "globalObjectType");
             Utils.nonNull(storageType, "storageType");
             this.globalObjectType = globalObjectType;
             this.storageObjectType = storageType;
