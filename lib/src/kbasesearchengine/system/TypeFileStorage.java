@@ -194,11 +194,12 @@ public class TypeFileStorage implements TypeStorage {
                 mappingsDir, mappingParsers, fileLister, logger);
         for (final CodeAndType cnt: mappings.keySet()) {
             if (storageTypes.containsKey(cnt)) {
+                final String mappingSource = mappings.get(cnt).getSourceInfo().orNull();
                 logger.logInfo(String.format(
                         "%s Overriding type mapping for storage code %s and storage type %s " +
-                        "from type transformation file with definition from type mapping file %s",
+                        "from type transformation file with definition from type mapping file%s",
                         TYPE_STORAGE, cnt.storageCode, cnt.storageType,
-                        mappings.get(cnt).getSourceInfo().get()));
+                        mappingSource == null ? "" : mappingSource));
             }
             storageTypes.put(cnt, mappings.get(cnt));
         }
