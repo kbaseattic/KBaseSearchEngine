@@ -121,7 +121,7 @@ public class ObjectParser {
             if (!rules.isFromParent()) {
                 continue;
             }
-
+            //TODO CODE this seems wrong. Why adding null paths?
             indexingPaths.add(rules.getPath().orNull());
         }
         if (indexingPaths.size() == 0) {
