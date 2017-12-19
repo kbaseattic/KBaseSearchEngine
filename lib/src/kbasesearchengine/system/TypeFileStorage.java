@@ -263,13 +263,13 @@ public class TypeFileStorage implements TypeStorage {
     }
 
     @Override
-    public List<ObjectTypeParsingRules> listObjectTypes() {
+    public List<ObjectTypeParsingRules> listObjectTypeParsingRules() {
         return searchTypes.values().stream().map(l -> l.get(l.size() - 1))
                 .collect(Collectors.toList());
     }
     
     @Override
-    public ObjectTypeParsingRules getObjectType(final SearchObjectType type)
+    public ObjectTypeParsingRules getObjectTypeParsingRules(final SearchObjectType type)
             throws NoSuchTypeException {
         //TODO CODE seems like throwing an error here for the guid transform case is a late fail. The check should occur when the OTPRs are being built.
         if (searchTypes.containsKey(type.getType())) {
@@ -286,7 +286,7 @@ public class TypeFileStorage implements TypeStorage {
     }
     
     @Override
-    public List<ObjectTypeParsingRules> listObjectTypesByStorageObjectType(
+    public List<ObjectTypeParsingRules> listObjectTypeParsingRules(
             final StorageObjectType storageObjectType) {
         final TypeMapping mapping = storageTypes.get(
                 new CodeAndType(storageObjectType.getStorageCode(), storageObjectType.getType()));

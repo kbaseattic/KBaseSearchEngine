@@ -2,8 +2,9 @@ package kbasesearchengine.system;
 
 import java.util.List;
 
-/** Stores type documents that describe how to transform an object from a a data source into
- * one or more documents that can be indexed by search and mappings from data source type versions
+/** Stores a) type documents ({@link ObjectTypeParsingRules}) that describe how to transform an
+ * object from a data source into one or more documents that can be indexed by search and
+ * b) mappings ({@link TypeMapping}) from data source type versions ({@link StorageObjectType})
  * to search transformation document versions.
  * @author gaprice@lbl.gov
  *
@@ -15,13 +16,13 @@ public interface TypeStorage {
      * @return the transformation document.
      * @throws NoSuchTypeException if no such type exists.
      */
-    ObjectTypeParsingRules getObjectType(SearchObjectType type)
+    ObjectTypeParsingRules getObjectTypeParsingRules(SearchObjectType type)
             throws NoSuchTypeException;
 
     /** Returns the latest version of all the search transformation types in the system.
      * @return the system types.
      */
-    List<ObjectTypeParsingRules> listObjectTypes();
+    List<ObjectTypeParsingRules> listObjectTypeParsingRules();
     
     /** Returns a list of search transformation specifications that apply to a given data source
      * storage object type. If there are no type mappings provided for the storage type, the
@@ -33,6 +34,5 @@ public interface TypeStorage {
      * @return the transformation specifications or an empty list if no specifications are
      * available for the type.
      */
-    List<ObjectTypeParsingRules> listObjectTypesByStorageObjectType(
-            StorageObjectType storageObjectType);
+    List<ObjectTypeParsingRules> listObjectTypeParsingRules(StorageObjectType storageObjectType);
 }

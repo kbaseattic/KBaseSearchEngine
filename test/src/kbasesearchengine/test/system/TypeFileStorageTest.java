@@ -89,14 +89,14 @@ public class TypeFileStorageTest {
                 fileLister,
                 logger);
         
-        assertThat("incorrect types", tfs.listObjectTypes(), is(Arrays.asList(rule)));
-        assertThat("couldn't get type", tfs.getObjectType(new SearchObjectType("foo", 1)),
-                is(rule));
+        assertThat("incorrect types", tfs.listObjectTypeParsingRules(), is(Arrays.asList(rule)));
+        assertThat("couldn't get type", tfs.getObjectTypeParsingRules(
+                new SearchObjectType("foo", 1)), is(rule));
         assertThat("object type translation failed",
-                tfs.listObjectTypesByStorageObjectType(new StorageObjectType("CD", "storefoo")),
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storefoo")),
                 is(Arrays.asList(rule)));
         assertThat("object type translation failed",
-                tfs.listObjectTypesByStorageObjectType(new StorageObjectType("CD", "storefoo", 1)),
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storefoo", 1)),
                 is(Arrays.asList(rule)));
                 
         verify(logger).logInfo("[TypeStorage] Processed type tranformation file with storage " +
