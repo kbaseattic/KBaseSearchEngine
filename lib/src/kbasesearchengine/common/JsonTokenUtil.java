@@ -165,12 +165,4 @@ public class JsonTokenUtil {
             throw new ObjectParseException("Unexpected token type: " + t);
         }
     }
-
-    public static String prettyPrint(Object obj) throws IOException {
-            StringWriter ret = new StringWriter();
-            ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-            mapper.writeValue(ret, obj);
-            ret.close();
-            return ret.toString();
-    }
 }
