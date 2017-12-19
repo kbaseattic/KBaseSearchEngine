@@ -99,8 +99,8 @@ public class ObjectParser {
     }
 
     /** Returns null if the specified parsing rules do not have rules for
-     * extracting parent elements. Else returns "/" for the root path of the
-     * parent json object.
+     * extracting parent elements. Else returns a JSON string containing the
+     * extracted portions of the parent object.
      *
      * @param parsingRules
      * @param jts
@@ -121,8 +121,7 @@ public class ObjectParser {
             if (!rules.isFromParent()) {
                 continue;
             }
-            // This list add is simply a check to see if at least one rule for
-            // extracting a parent element exists.
+
             indexingPaths.add(rules.getPath().orNull());
         }
         if (indexingPaths.size() == 0) {
