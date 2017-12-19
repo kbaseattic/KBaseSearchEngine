@@ -50,10 +50,11 @@ build-startup-script:
 		-DKB_DEPLOYMENT_CONFIG=$$script_dir/../deploy.cfg -Djetty.port=5000 org.eclipse.jetty.start.Main jetty.xml' >> $(SCRIPTS_DIR)/$(STARTUP_SCRIPT_NAME)
 	chmod +x $(SCRIPTS_DIR)/$(STARTUP_SCRIPT_NAME)
 
-docker_image: build build-executable-script build-startup-script
-	cp $(LBIN_DIR)/$(EXECUTABLE_SCRIPT_NAME) deployment/bin
-	cp $(SCRIPTS_DIR)/*.sh deployment/bin
-	mkdir -p deployment/services/search/lib
+docker_image: build build-executable-script
+	cp $(LBIN_DIR)/* deployment/bin
+	-mkdir deployment/lib
+	cp dist/KBaseSearchEngine.war deployment/lib 
+	-mkdir -p deployment/services/search/lib
 	cp dist/* deployment/services/search/lib
 	build/build_docker_image.sh
 

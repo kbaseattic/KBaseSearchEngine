@@ -16,5 +16,5 @@ elastic-port = {{ default .Env.elastic_port "" }}
 elastic-user = {{ default .Env.elastic_user "" }}
 elastic-password = {{ default .Env.elastic_password "" }}
 elastic-namespace = kbase.1
-types-dir = /kb/module/resources/types
-type-mappings-dir = /kb/module/resources/mappings
+types-dir={{ default .Env.types_dir "/kb/module/resources/types" }}
+type-mappings-dir={{ default .Env.type_mappings_dir "/kb/module/resources/typemappings" }}
