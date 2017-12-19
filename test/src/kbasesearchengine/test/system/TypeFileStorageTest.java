@@ -39,6 +39,37 @@ import kbasesearchengine.system.TypeMappingParser;
 
 public class TypeFileStorageTest {
     
+    @Test
+    public void noFiles() throws Exception {
+        
+        final ObjectTypeParsingRulesFileParser typeParser =
+                mock(ObjectTypeParsingRulesFileParser.class);
+        final FileLister fileLister = mock(FileLister.class);
+        final LineLogger logger = mock(LineLogger.class);
+        
+        when(fileLister.list(Paths.get("types"))).thenReturn(Collections.emptyList());
+        when(fileLister.list(Paths.get("mappings"))).thenReturn(Collections.emptyList());
+        
+        final TypeFileStorage tfs = new TypeFileStorage(
+                Paths.get("types"),
+                Paths.get("mappings"),
+                typeParser,
+                Collections.emptyMap(),
+                fileLister,
+                logger);
+        
+        assertThat("incorrect types", tfs.listObjectTypeParsingRules(),
+                is(Collections.emptyList()));
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storefoo")),
+                is(Collections.emptyList()));
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storefoo", 1)),
+                is(Collections.emptyList()));
+                
+        verify(logger, never()).logInfo(any());
+    }
+    
     private class StreamMatcher implements ArgumentMatcher<InputStream> {
 
         private final String expected;
