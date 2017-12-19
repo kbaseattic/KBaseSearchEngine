@@ -9,13 +9,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -197,12 +191,23 @@ public class ElasticIndexingStorageTest {
     private static ObjectData getIndexedObject(GUID guid) throws Exception {
         return indexStorage.getObjectsByIds(new LinkedHashSet<>(Arrays.asList(guid))).get(0);
     }
+
+    @Test
+    public void test_buildingQuery() throws IOException {
+        String reqType = "GET";
+        String urlPath = "/stuff/1/2";
+        Map<String, String> doc = new HashMap<>();
+        doc.put("query", "my_query");
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("attr1", "attr1Value");
+        indexStorage.makeRequest(reqType, urlPath, doc, attributes);
+    }
     
     @SuppressWarnings("unchecked")
     @Test
     public void testFeatures() throws Exception {
         indexObject("GenomeFeature", "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
-        Map<String, Integer> typeToCount = indexStorage.searchTypes(ft("Rfah"), 
+        Map<String, Integer> typeToCount = indexStorage.searchTypes(ft("Rfah"),
                 AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, typeToCount.size());
         String type = typeToCount.keySet().iterator().next();
