@@ -38,5 +38,5 @@ CMD [ "-template", "/kb/deployment/conf/.templates/deployment.cfg.templ:/kb/depl
       "-template", "/kb/deployment/conf/.templates/logging.properties.templ:/kb/deployment/services/search/tomcat/conf/logging.properties", \
       "-template", "/kb/deployment/conf/.templates/setenv.sh.templ:/kb/deployment/services/search/tomcat/bin/setenv.sh", \
       "-stdout", "/kb/deployment/services/search/tomcat/logs/server.log", \
-      "/bin/bash", "/kb/deployment/bin/start_search.sh" ]
+      "/kb/deployment/bin/entrypoint.sh" ]
 

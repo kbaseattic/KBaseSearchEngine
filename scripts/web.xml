@@ -2,7 +2,7 @@
 <web-app>
     <servlet>
         <servlet-name>JsonRpcServlet</servlet-name>
-        <servlet-class>kbaserelationengine.KBaseRelationEngineServer</servlet-class>
+        <servlet-class>kbasesearchengine.KBaseSearchEngineServer</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>JsonRpcServlet</servlet-name>
