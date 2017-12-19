@@ -261,8 +261,12 @@ public class KeywordParser {
             final String storageCode = typeDescr.getStorageObjectType().getStorageCode();
             final Set<String> refs = toStringSet(value);
             final Set<GUID> unresolvedGUIDs;
-            unresolvedGUIDs = refs.stream().map(r -> GUID.fromRef(storageCode, r))
+            try {
+                unresolvedGUIDs = refs.stream().map(r -> GUID.fromRef(storageCode, r))
                         .collect(Collectors.toSet());
+            } catch (IllegalArgumentException e) {
+                throw new ObjectParseException(e.getMessage(), e);
+            }
             Set<GUID> guids = lookup.resolveRefs(objectRefPath, unresolvedGUIDs);
             Set<String> subIds = null;
             if (transform.getSubobjectIdKey().isPresent()) {
