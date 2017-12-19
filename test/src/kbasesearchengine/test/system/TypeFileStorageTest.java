@@ -37,6 +37,30 @@ import kbasesearchengine.system.TypeMappingParser;
 
 public class TypeFileStorageTest {
     
+    private class StreamMatcher implements ArgumentMatcher<InputStream> {
+
+        private final String expected;
+        
+        public StreamMatcher(final String expectedStreamContents) {
+            this.expected = expectedStreamContents;
+        }
+        
+        @Override
+        public boolean matches(final InputStream is) {
+            final String contents;
+            try {
+                contents = IOUtils.toString(is);
+            } catch (IOException e) {
+                e.printStackTrace();
+                fail("got exception reading inputstream: " + e.getMessage());
+                throw new RuntimeException(); // will never be executed
+            }
+            assertThat("incorrect input stream contents", contents, is(expected));
+            return true; // test will have failed if this should be false
+        }
+        
+    }
+    
     @Test
     public void loadSingleType() throws Exception {
         
@@ -60,23 +84,7 @@ public class TypeFileStorageTest {
                 .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee")).build())
                 .build();
         
-        final ArgumentMatcher<InputStream> streamMatcher = new ArgumentMatcher<InputStream>() {
-
-            @Override
-            public boolean matches(final InputStream isWrapper) {
-                final String value;
-                try {
-                    value = IOUtils.toString(isWrapper);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    fail("got exception reading inputstream: " + e.getMessage());
-                    throw new RuntimeException(); // will never be executed
-                }
-                assertThat("incorrect input stream contents", value, is("testvalue"));
-                return true; // test will have failed if this should be false
-            }
-        };
-        when(typeParser.parseStream(argThat(streamMatcher), eq("foo.yaml")))
+        when(typeParser.parseStream(argThat(new StreamMatcher("testvalue")), eq("foo.yaml")))
                 .thenReturn(Arrays.asList(rule));
         
         when(fileLister.list(Paths.get("mappings"))).thenReturn(Collections.emptyList());
