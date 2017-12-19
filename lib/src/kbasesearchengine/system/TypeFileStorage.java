@@ -3,7 +3,6 @@ package kbasesearchengine.system;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,11 +18,20 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FilenameUtils;
 
 import kbasesearchengine.main.LineLogger;
-import kbasesearchengine.parse.ObjectParseException;
+import kbasesearchengine.tools.Utils;
 
+/** Flat file based storage for search transformation specifications and
+ * storage type / version -> search transformation type / version mappings.
+ * 
+ * @see ObjectTypeParsingRulesFileParser
+ * @see TypeMappingParser
+ * @see TypeMapping
+ * 
+ * @author gaprice@lbl.gov
+ *
+ */
 public class TypeFileStorage implements TypeStorage {
     
-    //TODO JAVADOC
     //TODO TEST
     
     private static final String TYPE_STORAGE = "[TypeStorage]";
@@ -36,15 +44,19 @@ public class TypeFileStorage implements TypeStorage {
     
     private Map<CodeAndType, TypeMapping> processTypesDir(
             final Path typesDir,
+            final ObjectTypeParsingRulesFileParser searchSpecParser,
+            final FileLister fileLister,
             final LineLogger logger)
-            throws IOException, ObjectParseException, TypeParseException {
+            throws IOException, TypeParseException {
         final Map<String, Path> typeToFile = new HashMap<>();
         final Map<CodeAndType, TypeMapping.Builder> storageTypes = new HashMap<>(); 
-        // this is gross, but works. https://stackoverflow.com/a/20130475/643675
-        for (Path file : (Iterable<Path>) Files.list(typesDir)::iterator) {
-            if (Files.isRegularFile(file) && isAllowedFileType(file)) {
-                final List<ObjectTypeParsingRules> types = ObjectTypeParsingRulesUtils
-                        .fromFile(file.toFile());
+        for (final Path file: fileLister.list(typesDir)) {
+            if (fileLister.isRegularFile(file) && isAllowedFileType(file)) {
+                final List<ObjectTypeParsingRules> types;
+                try (final InputStream is = fileLister.newInputStream(file)) {
+                    types = searchSpecParser.parseStream(
+                            new BufferedInputStream(is), file.toString());
+                }
                 final String searchType = types.get(0).getGlobalObjectType().getType();
                 if (typeToFile.containsKey(searchType)) {
                     throw new TypeParseException(String.format(
@@ -151,15 +163,35 @@ public class TypeFileStorage implements TypeStorage {
         }
     }
     
+    // could make a simpler constructor with default args for the parsers and lister
+    /** Create a new type storage system.
+     * @param typesDir the directory in which to find transformation specifications.
+     * @param mappingsDir the directory in which to find type mappings.
+     * @param searchSpecParser the parser for transformation specifications.
+     * @param mappingParsers one or more parsers for type mappings. The map maps from file
+     * extension (e.g. "yaml") to mapper implementation.
+     * @param fileLister a file handler instance.
+     * @param logger a logger.
+     * @throws IOException if errors occur when reading a file.
+     * @throws TypeParseException if a file could not be parsed.
+     */
     public TypeFileStorage(
             final Path typesDir,
             final Path mappingsDir,
-            final Map<String, TypeMappingParser> parsers,
+            final ObjectTypeParsingRulesFileParser searchSpecParser,
+            final Map<String, TypeMappingParser> mappingParsers,
+            final FileLister fileLister,
             final LineLogger logger)
-            throws IOException, ObjectParseException, TypeParseException {
-        storageTypes = processTypesDir(typesDir, logger);
+            throws IOException, TypeParseException {
+        Utils.nonNull(typesDir, "typesDir");
+        Utils.nonNull(mappingsDir, "mappingsDir");
+        Utils.nonNull(searchSpecParser, "searchSpecParser");
+        Utils.nonNull(mappingParsers, "mappingParsers");
+        Utils.nonNull(fileLister, "fileLister");
+        Utils.nonNull(logger, "logger");
+        storageTypes = processTypesDir(typesDir, searchSpecParser, fileLister, logger);
         final Map<CodeAndType, TypeMapping> mappings = processMappingsDir(
-                mappingsDir, parsers, logger);
+                mappingsDir, mappingParsers, fileLister, logger);
         for (final CodeAndType cnt: mappings.keySet()) {
             if (storageTypes.containsKey(cnt)) {
                 logger.logInfo(String.format(
@@ -175,17 +207,17 @@ public class TypeFileStorage implements TypeStorage {
     private Map<CodeAndType, TypeMapping> processMappingsDir(
             final Path mappingsDir,
             final Map<String, TypeMappingParser> parsers,
+            final FileLister fileLister,
             final LineLogger logger)
             throws IOException, TypeParseException {
         final Map<CodeAndType, TypeMapping> ret = new HashMap<>();
-        // this is gross, but works. https://stackoverflow.com/a/20130475/643675
-        for (Path file : (Iterable<Path>) Files.list(mappingsDir)::iterator) {
-            if (Files.isRegularFile(file)) {
+        for (Path file : fileLister.list(mappingsDir)) {
+            if (fileLister.isRegularFile(file)) {
                 final String ext = FilenameUtils.getExtension(file.toString());
                 final TypeMappingParser parser = parsers.get(ext);
                 if (parser != null) {
                     final Set<TypeMapping> mappings;
-                    try (final InputStream is = Files.newInputStream(file)) {
+                    try (final InputStream is = fileLister.newInputStream(file)) {
                         mappings = parser.parse(new BufferedInputStream(is), file.toString());
                     }
                     for (final TypeMapping map: mappings) {
@@ -231,14 +263,13 @@ public class TypeFileStorage implements TypeStorage {
     }
 
     @Override
-    public List<ObjectTypeParsingRules> listObjectTypes() {
-        //TODO VERS is returning the last version ok? At least document in interface. Provide option?
+    public List<ObjectTypeParsingRules> listObjectTypeParsingRules() {
         return searchTypes.values().stream().map(l -> l.get(l.size() - 1))
                 .collect(Collectors.toList());
     }
     
     @Override
-    public ObjectTypeParsingRules getObjectType(final SearchObjectType type)
+    public ObjectTypeParsingRules getObjectTypeParsingRules(final SearchObjectType type)
             throws NoSuchTypeException {
         //TODO CODE seems like throwing an error here for the guid transform case is a late fail. The check should occur when the OTPRs are being built.
         if (searchTypes.containsKey(type.getType())) {
@@ -255,7 +286,7 @@ public class TypeFileStorage implements TypeStorage {
     }
     
     @Override
-    public List<ObjectTypeParsingRules> listObjectTypesByStorageObjectType(
+    public List<ObjectTypeParsingRules> listObjectTypeParsingRules(
             final StorageObjectType storageObjectType) {
         final TypeMapping mapping = storageTypes.get(
                 new CodeAndType(storageObjectType.getStorageCode(), storageObjectType.getType()));

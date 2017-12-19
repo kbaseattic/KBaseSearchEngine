@@ -38,6 +38,8 @@ import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.ObjectData;
+import kbasesearchengine.system.FileLister;
+import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.TypeFileStorage;
 import kbasesearchengine.system.TypeMappingParser;
@@ -158,7 +160,8 @@ public class IndexerIntegrationTest {
         };
         final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
                 "yaml", new YAMLTypeMappingParser());
-        final TypeStorage ss = new TypeFileStorage(searchTypesDir, mappingsDir, parsers, logger);
+        final TypeStorage ss = new TypeFileStorage(searchTypesDir, mappingsDir,
+                new ObjectTypeParsingRulesFileParser(), parsers, new FileLister(), logger);
         
         final StatusEventStorage storage = new MongoDBStatusEventStorage(db);
         final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, wsadmintoken);

@@ -466,7 +466,7 @@ public class IndexerWorker implements Stoppable {
             throws InterruptedException, FatalIndexingException {
         try {
             return retrier.retryFunc(
-                    t -> !typeStorage.listObjectTypesByStorageObjectType(
+                    t -> !typeStorage.listObjectTypeParsingRules(
                             ev.getEvent().getStorageObjectType().get()).isEmpty(),
                     ev, ev);
         } catch (IndexingException e) {
@@ -516,7 +516,7 @@ public class IndexerWorker implements Stoppable {
             logger.logInfo("[Indexer]   " + guid + ", loading time: " + loadTime + " ms.");
             logger.timeStat(guid, loadTime, 0, 0);
             List<ObjectTypeParsingRules> parsingRules = 
-                    typeStorage.listObjectTypesByStorageObjectType(storageObjectType);
+                    typeStorage.listObjectTypeParsingRules(storageObjectType);
             for (ObjectTypeParsingRules rule : parsingRules) {
                 final long t2 = System.currentTimeMillis();
                 final ParseObjectsRet parsedRet = parseObjects(guid, indexLookup,
@@ -823,7 +823,7 @@ public class IndexerWorker implements Stoppable {
         @Override
         public ObjectTypeParsingRules getTypeDescriptor(final SearchObjectType type)
                 throws IndexingException, NoSuchTypeException {
-            return typeStorage.getObjectType(type);
+            return typeStorage.getObjectTypeParsingRules(type);
         }
         
         @Override

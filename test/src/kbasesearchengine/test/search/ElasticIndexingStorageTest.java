@@ -51,7 +51,7 @@ import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
-import kbasesearchengine.system.ObjectTypeParsingRulesUtils;
+import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.test.common.TestCommon;
 import kbasesearchengine.test.controllers.elasticsearch.ElasticSearchController;
@@ -114,7 +114,7 @@ public class ElasticIndexingStorageTest {
             public ObjectTypeParsingRules getTypeDescriptor(SearchObjectType type) {
                 try {
                     final File rulesFile = new File("resources/types/" + type.getType() + ".json");
-                    return ObjectTypeParsingRulesUtils.fromFile(rulesFile)
+                    return ObjectTypeParsingRulesFileParser.fromFile(rulesFile)
                             .get(type.getVersion() - 1);
                 } catch (Exception ex) {
                     throw new IllegalStateException(ex);
@@ -175,7 +175,7 @@ public class ElasticIndexingStorageTest {
         // yuck
         final String extension = type.equals("Genome") ? ".yaml" : ".json";
         final File file = new File("resources/types/" + type + extension);
-        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesUtils.fromFile(file).get(0);
+        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesFileParser.fromFile(file).get(0);
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
         String parentJson = null;
