@@ -1,6 +1,5 @@
 package kbasesearchengine.parse;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -15,7 +14,6 @@ import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
-import org.apache.commons.io.FileUtils;
 import us.kbase.common.service.UObject;
 
 public class ObjectParser {

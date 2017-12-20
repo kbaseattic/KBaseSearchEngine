@@ -46,7 +46,8 @@ import kbasesearchengine.search.MatchFilter;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
 import kbasesearchengine.system.TypeFileStorage;
-import kbasesearchengine.system.SearchObjectType;
+import kbasesearchengine.system.FileLister;
+import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.system.TypeMappingParser;
@@ -105,7 +106,7 @@ public class IndexerWorkerIntegrationTest {
             throw new TestException("The test tokens are for the same user");
         }
 
-        tempDirPath = Paths.get(TestCommon.getTempDir()).resolve("MainObjectProcessorTest");
+        tempDirPath = Paths.get(TestCommon.getTempDir()).resolve("IndexerWorkerIntegrationTest");
         // should refactor to just use NIO at some point
         FileUtils.deleteQuietly(tempDirPath.toFile());
         tempDirPath.toFile().mkdirs();
@@ -160,7 +161,8 @@ public class IndexerWorkerIntegrationTest {
         };
         final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
                 "yaml", new YAMLTypeMappingParser());
-        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
+        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir,
+                new ObjectTypeParsingRulesFileParser(), parsers, new FileLister(), logger);
         
         final StatusEventStorage eventStorage = new MongoDBStatusEventStorage(db);
         final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, wsadmintoken);
@@ -294,7 +296,7 @@ public class IndexerWorkerIntegrationTest {
         pp.objectData = true;
         pp.objectKeys = true;
         System.out.println("Genome: " + storage.getObjectsByIds(
-                storage.searchIds(new SearchObjectType("Genome", 1),
+                storage.searchIds("Genome",
                         MatchFilter.create().withFullTextInAll("test"), null, 
                         AccessFilter.create().withAdmin(true), null).guids, pp).get(0));
         String query = "TrkA";
@@ -306,7 +308,7 @@ public class IndexerWorkerIntegrationTest {
             return;
         }
         String type = typeToCount.keySet().iterator().next();
-        Set<GUID> guids = storage.searchIds(new SearchObjectType(type, 1),
+        Set<GUID> guids = storage.searchIds(type,
                 MatchFilter.create().withFullTextInAll(query), null, 
                 AccessFilter.create().withAdmin(true), null).guids;
         System.out.println("GUIDs found: " + guids);
@@ -336,7 +338,7 @@ public class IndexerWorkerIntegrationTest {
     
     private void checkSearch(
             final int expectedCount,
-            final SearchObjectType type,
+            final String type,
             final String query,
             final int accessGroupId,
             final boolean debugOutput)
@@ -367,9 +369,8 @@ public class IndexerWorkerIntegrationTest {
                 .build();
         indexFewVersions(new StoredStatusEvent(ev, new StatusEventID("-1"),
                 StatusEventProcessingState.UNPROC, null, null));
-        final SearchObjectType type = new SearchObjectType("Narrative", 1);
-        checkSearch(1, type, "tree", wsid, false);
-        checkSearch(1, type, "species", wsid, false);
+        checkSearch(1, "Narrative", "tree", wsid, false);
+        checkSearch(1, "Narrative", "species", wsid, false);
         /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
                 System.currentTimeMillis(), "KBaseNarrative.Narrative", 
                 ObjectStatusEventType.CREATED, false));
@@ -395,9 +396,8 @@ public class IndexerWorkerIntegrationTest {
                 .build();
         indexFewVersions(new StoredStatusEvent(ev, new StatusEventID("-1"),
                 StatusEventProcessingState.UNPROC, null, null));
-        final SearchObjectType type = new SearchObjectType("PairedEndLibrary", 1);
-        checkSearch(1, type, "Illumina", wsid, true);
-        checkSearch(1, type, "sample1se.fastq.gz", wsid, false);
+        checkSearch(1, "PairedEndLibrary", "Illumina", wsid, true);
+        checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
         final StatusEvent ev2 = StatusEvent.getBuilder(
                 new StorageObjectType("WS", "KBaseFile.SingleEndLibrary"),
                 Instant.now(),
@@ -409,8 +409,7 @@ public class IndexerWorkerIntegrationTest {
                 .build();
         indexFewVersions(new StoredStatusEvent(ev2, new StatusEventID("-1"),
                 StatusEventProcessingState.UNPROC, null, null));
-        final SearchObjectType setype = new SearchObjectType("SingleEndLibrary", 1);
-        checkSearch(1, setype, "PacBio", wsid, true);
-        checkSearch(1, setype, "reads.2", wsid, false);
+        checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);
+        checkSearch(1, "SingleEndLibrary", "reads.2", wsid, false);
     }
 }

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -20,26 +21,45 @@ import kbasesearchengine.tools.Utils;
  * @author gaprice@lbl.gov
  *
  */
-public class ObjectTypeParsingRulesUtils {
+public class ObjectTypeParsingRulesFileParser {
 
     //TODO TEST
 
-    /** Create an ObjectTypeParsingRules instance from a file.
+    /** Create a set of ObjectTypeParsingRules version instances from a file.
+     * 
+     * The rules will have the same storage object type, search type, and ui name.
      * 
      * TODO document the file structure.
      * @param file the file containing the parsing rules.
-     * @return a new set of parsing rules.
+     * @return a new set of parsing rules ordered by version.
      * @throws IOException if an IO error occurs reading the file.
      * @throws TypeParseException if the file contains erroneous parsing rules.
      */
-    public static ObjectTypeParsingRules fromFile(final File file) 
+    public static List<ObjectTypeParsingRules> fromFile(final File file) 
             throws IOException, TypeParseException {
         try (final InputStream is = new FileInputStream(file)) {
             return fromStream(is, file.toString());
         }
     }
+    
+    /** Create a set of ObjectTypeParsingRules versions from a stream.
+     *
+     * The rules will have the same storage object type, search type, and ui name.
+     *
+     * @param is the stream to parse.
+     * @param sourceInfo information about the source of the stream, usually a file name.
+     * @return a new set of parsing rules ordered by version.
+     * @throws IOException if an IO error occurs reading the stream.
+     * @throws TypeParseException if the stream contains erroneous parsing rules.
+     */
+    public List<ObjectTypeParsingRules> parseStream(
+            final InputStream is,
+            final String sourceInfo)
+            throws IOException, TypeParseException {
+        return fromStream(is, sourceInfo);
+    }
 
-    private static ObjectTypeParsingRules fromStream(InputStream is, String sourceInfo) 
+    private static List<ObjectTypeParsingRules> fromStream(InputStream is, String sourceInfo) 
             throws IOException, TypeParseException {
         final Yaml yaml = new Yaml(new SafeConstructor());
         final Object predata;
@@ -61,7 +81,8 @@ public class ObjectTypeParsingRulesUtils {
         return fromObject(obj, sourceInfo);
     }
 
-    private static ObjectTypeParsingRules fromObject(
+    //TODO CODE should look at json schema for validating the object data prior to building objects, avoids a lot of typechecking code
+    private static List<ObjectTypeParsingRules> fromObject(
             final Map<String, Object> obj,
             final String sourceInfo) 
             throws TypeParseException {
@@ -74,34 +95,50 @@ public class ObjectTypeParsingRulesUtils {
             if (Utils.isNullOrEmpty(type)) {
                 throw new ObjectParseException(getMissingKeyParseMessage("storage-object-type"));
             }
-            final Builder builder = ObjectTypeParsingRules.getBuilder(
-                    new SearchObjectType( //TODO CODE better error if missing elements
-                            (String) obj.get("global-object-type"),
-                            (int) obj.get("global-object-type-version")),
-                    new StorageObjectType(storageCode, type))
-                    .withNullableUITypeName((String)obj.get("ui-type-name"));
-            final String subType = (String)obj.get("inner-sub-type");
-            if (!Utils.isNullOrEmpty(subType)) {
-                builder.toSubObjectRule(
-                        subType,
-                        //TODO CODE add checks to ensure these exist
-                        getPath((String)obj.get("path-to-sub-objects")),
-                        getPath((String)obj.get("primary-key-path")));
-            } // throw exception if the other subobj values exist?
-            // Indexing
+            final StorageObjectType storageType = new StorageObjectType(storageCode, type);
+            //TODO CODE better error if missing elements
+            final String searchType = (String) obj.get("global-object-type");
+            final String uiTypeName = (String) obj.get("ui-type-name");
             @SuppressWarnings("unchecked")
-            List<Map<String, Object>> indexingRules =
-                    (List<Map<String, Object>>)obj.get("indexing-rules");
-            if (indexingRules != null) {
-                for (Map<String, Object> rulesObj : indexingRules) {
-                    builder.withIndexingRule(buildRule(rulesObj));
-                }
+            final List<Map<String, Object>> versions =
+                    (List<Map<String, Object>>) obj.get("versions");
+            final List<ObjectTypeParsingRules> ret = new LinkedList<>();
+            for (int i = 0; i < versions.size(); i++) {
+                final Builder builder = ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType(searchType, i + 1), storageType)
+                        .withNullableUITypeName(uiTypeName);
+                ret.add(processVersion(builder, versions.get(i)));
             }
-            return builder.build();
+            return ret;
         } catch (ObjectParseException | IllegalArgumentException | NullPointerException e) {
             throw new TypeParseException(String.format("Error in source %s: %s",
                     sourceInfo, e.getMessage()), e);
         }
+    }
+
+    private static ObjectTypeParsingRules processVersion(
+            final Builder builder,
+            final Map<String, Object> versionObj)
+            throws ObjectParseException {
+        
+        final String subType = (String) versionObj.get("inner-sub-type");
+        if (!Utils.isNullOrEmpty(subType)) {
+            builder.toSubObjectRule(
+                    subType,
+                    //TODO CODE add checks to ensure these exist
+                    getPath((String) versionObj.get("path-to-sub-objects")),
+                    getPath((String) versionObj.get("primary-key-path")));
+        } // throw exception if the other subobj values exist?
+        // Indexing
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> indexingRules =
+                (List<Map<String, Object>>) versionObj.get("indexing-rules");
+        if (indexingRules != null) {
+            for (Map<String, Object> rulesObj : indexingRules) {
+                builder.withIndexingRule(buildRule(rulesObj));
+            }
+        }
+        return builder.build();
     }
 
     private static IndexingRules buildRule(
@@ -136,10 +173,12 @@ public class ObjectTypeParsingRulesUtils {
             final String subObjectIDKey = (String) rulesObj.get("subobject-id-key");
             final String targetObjectType =
                     (String) rulesObj.get("target-object-type");
+            final Integer targetObjectTypeVersion =
+                    (Integer) rulesObj.get("target-object-type-version");
             final String[] tranSplt = transform.split("\\.", 2);
             final String transProp = tranSplt.length == 1 ? null : tranSplt[1];
-            irBuilder.withTransform(Transform.unknown(
-                    tranSplt[0], transProp, targetObjectType, subObjectIDKey));
+            irBuilder.withTransform(Transform.unknown(tranSplt[0], transProp,
+                    targetObjectType, targetObjectTypeVersion, subObjectIDKey));
         }
         if (getBool(rulesObj.get("not-indexed"))) {
             irBuilder.withNotIndexed();

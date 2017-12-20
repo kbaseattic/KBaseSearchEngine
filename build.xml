@@ -6,13 +6,17 @@
   </description>
 
   <!-- set global properties for this build -->
+  <property environment="env"/>
   <property name="src" location="lib/src"/>
   <property name="test.src" location="test/src"/>
   <property name="dist" location="dist"/>
   <property name="classes" location="classes"/>
   <property name="bin" location="bin"/>
   <property name="jar.file" value="KBaseSearchEngine.jar"/>
-  <property name="jars.dir" value="/kb/deployment/lib/jars"/>
+  <condition property="jars.dir" value="${env.JARS_DIR}" else="/kb/deployment/lib/jars">
+    <isset property="env.JARS_DIR" />
+  </condition>
+  <!-- <property name="jars.dir" value="/kb/deployment/lib/jars"/> -->
   <property name="war.file" value="KBaseSearchEngine.war"/>
   <property name="scripts" location="scripts"/>
   <property name="web.xml" location="${scripts}/web.xml"/>
@@ -170,6 +174,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
             <include name="kbasesearchengine/test/system/ObjectTypeParsingRulesTest.java"/>
             <include name="kbasesearchengine/test/system/SearchObjectTypeTest.java"/>
             <include name="kbasesearchengine/test/system/StorageObjectTypeTest.java"/>
+            <include name="kbasesearchengine/test/system/TypeFileStorageTest.java"/>
             <include name="kbasesearchengine/test/system/TypeMappingTest.java"/>
             <include name="kbasesearchengine/test/system/TransformTest.java"/>
             <include name="kbasesearchengine/test/main/IndexerCoordinatorTest.java"/>

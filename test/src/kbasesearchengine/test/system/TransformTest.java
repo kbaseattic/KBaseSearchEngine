@@ -9,6 +9,7 @@ import org.junit.Test;
 import com.google.common.base.Optional;
 
 import kbasesearchengine.system.LocationTransformType;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.Transform;
 import kbasesearchengine.system.TransformType;
 import kbasesearchengine.test.common.TestCommon;
@@ -99,42 +100,40 @@ public class TransformTest {
     
     @Test
     public void guid() {
-        final Transform t = Transform.guid("foo");
+        final Transform t = Transform.guid(new SearchObjectType("foo", 1));
         assertThat("incorrect type", t.getType(), is(TransformType.guid));
         assertThat("incorrect location", t.getLocation(), is(Optional.absent()));
         assertThat("incorrect targetKey", t.getTargetKey(), is(Optional.absent()));
-        assertThat("incorrect targetObjectType", t.getTargetObjectType(), is(Optional.of("foo")));
+        assertThat("incorrect targetObjectType", t.getTargetObjectType(),
+                is(Optional.of(new SearchObjectType("foo", 1))));
         assertThat("incorrect subObjectIDKey", t.getSubobjectIdKey(), is(Optional.absent()));
     }
     
     @Test
     public void guidWithSubobject() {
-        final Transform t = Transform.guid("foo", "bar");
+        final Transform t = Transform.guid(new SearchObjectType("foo", 1), "bar");
         assertThat("incorrect type", t.getType(), is(TransformType.guid));
         assertThat("incorrect location", t.getLocation(), is(Optional.absent()));
         assertThat("incorrect targetKey", t.getTargetKey(), is(Optional.absent()));
-        assertThat("incorrect targetObjectType", t.getTargetObjectType(), is(Optional.of("foo")));
+        assertThat("incorrect targetObjectType", t.getTargetObjectType(),
+                is(Optional.of(new SearchObjectType("foo", 1))));
         assertThat("incorrect subObjectIDKey", t.getSubobjectIdKey(), is(Optional.of("bar")));
     }
     
     @Test
     public void guidFail() {
         failGuid(null,
-                new IllegalArgumentException("targetObjectType cannot be null or whitespace"));
-        failGuid("   \n   \t  ",
-                new IllegalArgumentException("targetObjectType cannot be null or whitespace"));
+                new NullPointerException("targetObjectType"));
         failGuid(null, "foo",
-                new IllegalArgumentException("targetObjectType cannot be null or whitespace"));
-        failGuid("   \n   \t  ", "foo",
-                new IllegalArgumentException("targetObjectType cannot be null or whitespace"));
-        failGuid("foo", null,
+                new NullPointerException("targetObjectType"));
+        failGuid(new SearchObjectType("foo", 1), null,
                 new IllegalArgumentException("subObjectIDKey cannot be null or whitespace"));
-        failGuid("foo", "  \n   \t  ",
+        failGuid(new SearchObjectType("foo", 1), "  \n   \t  ",
                 new IllegalArgumentException("subObjectIDKey cannot be null or whitespace"));
     }
     
     private void failGuid(
-            final String targetObjectType,
+            final SearchObjectType targetObjectType,
             final Exception expected) {
         try {
             Transform.guid(targetObjectType);
@@ -145,7 +144,7 @@ public class TransformTest {
     }
     
     private void failGuid(
-            final String targetObjectType,
+            final SearchObjectType targetObjectType,
             final String subObjectIDKey,
             final Exception expected) {
         try {
@@ -158,28 +157,28 @@ public class TransformTest {
     
     @Test
     public void unknownValues() {
-        final Transform t = Transform.unknown("values", "foo", "bar", "baz");
+        final Transform t = Transform.unknown("values", "foo", "bar", null, "baz");
         assertThat("incorrect type", t.getType(), is(TransformType.values));
         assertEmptyFields(t);
     }
     
     @Test
     public void unknownString() {
-        final Transform t = Transform.unknown("string", "foo", "bar", "baz");
+        final Transform t = Transform.unknown("string", "foo", "bar", 1, "baz");
         assertThat("incorrect type", t.getType(), is(TransformType.string));
         assertEmptyFields(t);
     }
     
     @Test
     public void unknownInteger() {
-        final Transform t = Transform.unknown("integer", "foo", "bar", "baz");
+        final Transform t = Transform.unknown("integer", "foo", "bar", -23, "baz");
         assertThat("incorrect type", t.getType(), is(TransformType.integer));
         assertEmptyFields(t);
     }
     
     @Test
     public void unknownLocation() {
-        final Transform t = Transform.unknown("location", "start", "bar", "baz");
+        final Transform t = Transform.unknown("location", "start", "bar", null, "baz");
         assertThat("incorrect type", t.getType(), is(TransformType.location));
         assertThat("incorrect location", t.getLocation(),
                 is(Optional.of(LocationTransformType.start)));
@@ -190,7 +189,7 @@ public class TransformTest {
     
     @Test
     public void unknownLookup() {
-        final Transform t = Transform.unknown("lookup", "whee", "bar", "baz");
+        final Transform t = Transform.unknown("lookup", "whee", "bar", null, "baz");
         assertThat("incorrect type", t.getType(), is(TransformType.lookup));
         assertThat("incorrect location", t.getLocation(), is(Optional.absent()));
         assertThat("incorrect targetKey", t.getTargetKey(), is(Optional.of("whee")));
@@ -205,70 +204,74 @@ public class TransformTest {
     }
 
     private void unknownGuid(final String subObjectIDKey) {
-        final Transform t = Transform.unknown("guid", "foo", "whoo", subObjectIDKey);
+        final Transform t = Transform.unknown("guid", "foo", "whoo", 1, subObjectIDKey);
         assertThat("incorrect type", t.getType(), is(TransformType.guid));
         assertThat("incorrect location", t.getLocation(), is(Optional.absent()));
         assertThat("incorrect targetKey", t.getTargetKey(), is(Optional.absent()));
         assertThat("incorrect targetObjectType", t.getTargetObjectType(),
-                is(Optional.of("whoo")));
+                is(Optional.of(new SearchObjectType("whoo", 1))));
         assertThat("incorrect subObjectIDKey", t.getSubobjectIdKey(), is(Optional.absent()));
     }
     
     @Test
     public void unknownGuidWithSubObjectIDKey() {
-        final Transform t = Transform.unknown("guid", "foo", "whoo", "whoop");
+        final Transform t = Transform.unknown("guid", "foo", "whoo", 6, "whoop");
         assertThat("incorrect type", t.getType(), is(TransformType.guid));
         assertThat("incorrect location", t.getLocation(), is(Optional.absent()));
         assertThat("incorrect targetKey", t.getTargetKey(), is(Optional.absent()));
         assertThat("incorrect targetObjectType", t.getTargetObjectType(),
-                is(Optional.of("whoo")));
+                is(Optional.of(new SearchObjectType("whoo", 6))));
         assertThat("incorrect subObjectIDKey", t.getSubobjectIdKey(), is(Optional.of("whoop")));
     }
     
     @Test
     public void unknownFailTransformType() {
-        failUnknown(null, null, null, null,
+        failUnknown(null, null, null, null, null,
                 new IllegalArgumentException("transform cannot be null or whitespace"));
-        failUnknown("   \t  \n  ", null, null, null,
+        failUnknown("   \t  \n  ", null, null, null, null,
                 new IllegalArgumentException("transform cannot be null or whitespace"));
-        failUnknown("foo", null, null, null,
+        failUnknown("foo", null, null, null, null,
                 new IllegalArgumentException("Illegal transform type: foo"));
     }
     
     @Test
     public void unknownFailLocation() {
-        failUnknown("location", null, "foo", "bar", new IllegalArgumentException(
+        failUnknown("location", null, "foo", null, "bar", new IllegalArgumentException(
                 "location transform location type cannot be null or whitespace"));
-        failUnknown("location", "   \t   \n  ", "foo", "bar", new IllegalArgumentException(
+        failUnknown("location", "   \t   \n  ", "foo", null, "bar", new IllegalArgumentException(
                 "location transform location type cannot be null or whitespace"));
-        failUnknown("location", "badloc", "foo", "bar", new IllegalArgumentException(
+        failUnknown("location", "badloc", "foo", 1, "bar", new IllegalArgumentException(
                 "Illegal transform location: badloc"));
     }
     
     @Test
     public void unknownFailLookup() {
-        failUnknown("lookup", null, "foo", "bar", new IllegalArgumentException(
+        failUnknown("lookup", null, "foo", null, "bar", new IllegalArgumentException(
                 "lookup transform target key cannot be null or whitespace"));
-        failUnknown("lookup", "   \t   \n  ", "foo", "bar", new IllegalArgumentException(
+        failUnknown("lookup", "   \t   \n  ", "foo", 2, "bar", new IllegalArgumentException(
                 "lookup transform target key cannot be null or whitespace"));
     }
     
     @Test
     public void unknownFailGuid() {
-        failUnknown("guid", "bleah", null, "bar", new IllegalArgumentException(
+        failUnknown("guid", "bleah", null, 1, "bar", new IllegalArgumentException(
                 "targetObjectType cannot be null or whitespace"));
-        failUnknown("guid", "bleah", "  \t   \n  ", "bar", new IllegalArgumentException(
+        failUnknown("guid", "bleah", "  \t   \n  ", 1, "bar", new IllegalArgumentException(
                 "targetObjectType cannot be null or whitespace"));
+        failUnknown("guid", "bleah", "type", null, "bar", new NullPointerException(
+                "targetObjectTypeVersion cannot be null"));
     }
     
     private void failUnknown(
             final String transform,
             final String locationOrTargetKey,
             final String targetObjectType,
+            final Integer targetObjectTypeVer,
             final String subObjectIDKey,
             final Exception expected) {
         try {
-            Transform.unknown(transform, locationOrTargetKey, targetObjectType, subObjectIDKey);
+            Transform.unknown(transform, locationOrTargetKey,
+                    targetObjectType, targetObjectTypeVer, subObjectIDKey);
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
