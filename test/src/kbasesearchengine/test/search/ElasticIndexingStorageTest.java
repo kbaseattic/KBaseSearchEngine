@@ -191,17 +191,6 @@ public class ElasticIndexingStorageTest {
     private static ObjectData getIndexedObject(GUID guid) throws Exception {
         return indexStorage.getObjectsByIds(new LinkedHashSet<>(Arrays.asList(guid))).get(0);
     }
-
-    @Test
-    public void test_buildingQuery() throws IOException {
-        String reqType = "GET";
-        String urlPath = "/stuff/1/2";
-        Map<String, String> doc = new HashMap<>();
-        doc.put("query", "my_query");
-        Map<String, String> attributes = new HashMap<>();
-        attributes.put("attr1", "attr1Value");
-        indexStorage.makeRequest(reqType, urlPath, doc, attributes);
-    }
     
     @SuppressWarnings("unchecked")
     @Test
