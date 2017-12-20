@@ -39,16 +39,14 @@ import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.system.IndexingRules;
-import kbasesearchengine.system.SearchObjectType;
-import kbasesearchengine.tools.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.UObject;
 
@@ -64,16 +62,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private static final String OBJ_COPIER = "copier";
     private static final String OBJ_CREATOR = "creator";
     private static final String OBJ_NAME = "oname";
-    
-    private static final String SEARCH_OBJ_TYPE = "otype";
-    private static final String SEARCH_OBJ_TYPE_VER = "otypever";
 
     private HttpHost esHost;
     private String esUser;
     private String esPassword;
     private String indexNamePrefix;
+    private boolean mergeTypes = false;
     private boolean skipFullJson = false;
-    private Map<SearchObjectType, String> typeVerToIndex = new LinkedHashMap<>();
     private Map<String, String> typeToIndex = new LinkedHashMap<>();
     private RestClient restClient = null;
     private File tempDir;
@@ -114,13 +109,30 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public void setIndexNamePrefix(String indexNamePrefix) {
         this.indexNamePrefix = indexNamePrefix;
     }
-
+    
+    public boolean isMergeTypes() {
+        return mergeTypes;
+    }
+    
+    public void setMergeTypes(boolean mergeTypes) {
+        this.mergeTypes = mergeTypes;
+    }
+    
     public boolean isSkipFullJson() {
         return skipFullJson;
     }
     
     public void setSkipFullJson(boolean skipFullJson) {
         this.skipFullJson = skipFullJson;
+    }
+    
+    public String getIndex(String objectType) throws IOException {
+        return checkIndex(objectType, null);
+    }
+    
+    private String checkIndex(String objectType, List<IndexingRules> indexingRules) 
+            throws IOException {
+        return checkIndex(objectType, indexingRules, false);
     }
     
     private String getAnyIndexPattern() {
@@ -135,46 +147,19 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
     }
     
-    /* checks that at least one index exists for a type, and throws an exception otherwise.
-     * Returns a index string that matches any version of the type.
-     */
-    private String checkIndex(final String objectType) throws IOException {
-        String ret = typeToIndex.get(objectType);
-        if (ret == null) {
-            ensureAtLeastOneIndexExists(objectType);
-            ret = getAnyTypePattern(objectType);
-            typeToIndex.put(objectType, ret);
-        }
-        return ret;
-    }
-    
-    private void ensureAtLeastOneIndexExists(final String objectType) throws IOException {
-        //TODO VERS need to check there aren't duplicate type names based on case
-        final String prefix = (indexNamePrefix + objectType + "_").toLowerCase();
-        for (final String index: listIndeces()) {
-            if (index.startsWith(prefix)) {
-                return;
+    private String checkIndex(String objectType, List<IndexingRules> indexingRules,
+            boolean allowAnyType) throws IOException {
+        if (objectType == null) {
+            if (allowAnyType) {
+                return getAnyIndexPattern();
+            } else {
+                throw new IllegalArgumentException("Object type is required");
             }
         }
-        throw new IOException("No indexes exist for search type " + objectType);
-    }
-
-    private String getAnyTypePattern(final String objectType) {
-        return (indexNamePrefix + objectType + "_*").toLowerCase();
-    }
-
-    /* checks that an index exists for a specific version of a type. If the index does not exist
-     * and indexing rules are provided, creates the index, otherwise throws exception.
-     * Returns the elastic search index name.
-     */ 
-    private String checkIndex(
-            final SearchObjectType objectType,
-            final List<IndexingRules> indexingRules)
-            throws IOException {
-        Utils.nonNull(objectType, "objectType");
-        String ret = typeVerToIndex.get(objectType);
+        String key = mergeTypes ? "all_types" : objectType;
+        String ret = typeToIndex.get(key);
         if (ret == null) {
-            ret = toIndexString(objectType);
+            ret = (indexNamePrefix + key).toLowerCase();
             if (!listIndeces().contains(ret)) {
                 if (indexingRules == null) {
                     throw new IOException("Index wasn't created for type " + objectType);
@@ -182,20 +167,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 System.out.println("Creating Elasticsearch index: " + ret);
                 createTables(ret, indexingRules);
             }
-            typeVerToIndex.put(objectType, ret);
+            typeToIndex.put(key, ret);
         }
         return ret;
-    }
-
-    private String toIndexString(final SearchObjectType objectType) {
-        return (indexNamePrefix + objectType.getType() + "_" + objectType.getVersion())
-                .toLowerCase();
     }
     
     // IO exceptions are thrown for failure on creating or writing to file or contacting ES.
     @Override
     public void indexObjects(
-            final SearchObjectType objectType,
+            final String objectType,
             final SourceData data,
             final Instant timestamp, 
             final String parentJsonValue,
@@ -248,7 +228,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     private Map<String, Object> convertObject(
             final GUID id,
-            final SearchObjectType objectType,
+            final String objectType,
             final ParsedObject obj, 
             final SourceData data,
             final Instant timestamp,
@@ -262,8 +242,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.putAll(indexPart);
         doc.put("guid", id.toString());
-        doc.put(SEARCH_OBJ_TYPE, objectType.getType());
-        doc.put(SEARCH_OBJ_TYPE_VER, objectType.getVersion());
+        doc.put("otype", objectType);
 
         doc.put(OBJ_NAME, data.getName());
         doc.put(OBJ_CREATOR, data.getCreator());
@@ -289,18 +268,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return doc;
     }
 
-    // this is only used in tests as of 12/12/17. remove and use indexObjects()?
     @Override
-    public void indexObject(
-            final GUID id,
-            final SearchObjectType objectType,
-            final ParsedObject obj,
-            final SourceData data,
-            final Instant timestamp,
-            final String parentJsonValue,
-            final boolean isPublic,
-            final List<IndexingRules> indexingRules)
-            throws IOException {
+    public void indexObject(GUID id, String objectType, ParsedObject obj, SourceData data,
+            Instant timestamp, String parentJsonValue, boolean isPublic,
+            List<IndexingRules> indexingRules) throws IOException {
         String indexName = checkIndex(objectType, indexingRules);
         GUID parentGUID = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
                 id.getAccessGroupObjectId(), id.getVersion(), null, null);
@@ -325,8 +296,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @Override
-    public void flushIndexing(SearchObjectType objectType) throws IOException {
-        refreshIndex(checkIndex(objectType, null));
+    public void flushIndexing(String objectType) throws IOException {
+        refreshIndex(getIndex(objectType));
     }
     
     @SuppressWarnings({ "serial", "unchecked" })
@@ -474,20 +445,23 @@ public class ElasticIndexingStorage implements IndexingStorage {
     // throws IOexceptions for elastic connection issues & deserializaion issues
     @Override
     public Map<GUID, Boolean> checkParentGuidsExist(final Set<GUID> guids) throws IOException {
-        Set<GUID> parentGUIDs = guids.stream().map(guid -> new GUID(
-                guid.getStorageCode(),
-                guid.getAccessGroupId(),
-                guid.getAccessGroupObjectId(),
-                guid.getVersion(),
-                null, null))
-                .collect(Collectors.toSet());
-        final String indexName = getAnyIndexPattern();
+        return checkParentGuidsExist(null, guids);
+    }
+
+    // throws IOexceptions for elastic connection issues & deserializaion issues
+    @Override
+    public Map<GUID, Boolean> checkParentGuidsExist(String objectType, Set<GUID> guids) 
+            throws IOException {
+        Set<GUID> parentGUIDs = guids.stream().map(guid -> new GUID(guid.getStorageCode(), 
+                guid.getAccessGroupId(), guid.getAccessGroupObjectId(), guid.getVersion(), null, 
+                null)).collect(Collectors.toSet());
+        String indexName = checkIndex(objectType, null, true);
         // In next operation map value may contain one of possible parents in case objectType==null
-        final Map<GUID, String> map = lookupParentDocIds(indexName, parentGUIDs);
+        Map<GUID, String> map = lookupParentDocIds(indexName, parentGUIDs);
         return parentGUIDs.stream().collect(Collectors.toMap(Function.identity(), 
                 guid -> map.containsKey(guid)));
     }
-
+    
     @SuppressWarnings({ "serial", "unchecked" })
     private Integer loadLastVersion(String reqIndexName, GUID parentGUID, 
             Integer processedVersion) throws IOException {
@@ -1057,11 +1031,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }};
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
+
         }};
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
             //put("_source", Arrays.asList("ojson"));
         }};
+
         String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
@@ -1093,9 +1069,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             item.moduleVersion = (String) obj.get(OBJ_PROV_MODULE_VERSION);
             item.commitHash = (String) obj.get(OBJ_PROV_COMMIT_HASH);
             item.md5 = (String) obj.get(OBJ_MD5);
-            item.type = new SearchObjectType(
-                    (String) obj.get(SEARCH_OBJ_TYPE),
-                    (Integer) obj.get(SEARCH_OBJ_TYPE_VER));
+            item.type = (String)obj.get("otype");
             Object dateProp = obj.get("timestamp");
             item.timestamp = (dateProp instanceof Long) ? (Long)dateProp : 
                 Long.parseLong(String.valueOf(dateProp));
@@ -1128,7 +1102,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         return item;
     }
-    
+
     @SuppressWarnings("serial")
     private Map<String, Object> createPublicShouldBlock(boolean withAllHistory) {
         List<Object> must0List = new ArrayList<>();
@@ -1177,7 +1151,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }};
     }
     
-    //TODO VERS should this return SearchObjectType -> Integer map? Maybe an option to combine versions
     @SuppressWarnings({ "serial", "unchecked" })
     @Override
     public Map<String, Integer> searchTypes(MatchFilter matchFilter,
@@ -1193,8 +1166,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (accessFilter.withPublic && !accessFilter.isAdmin) {
             shouldList.add(createPublicShouldBlock(accessFilter.withAllHistory));
         }
+
         // Owner block
         shouldList.add(createOwnerShouldBlock(accessFilter));
+
         // Shared block
         shouldList.add(createSharedShouldBlock(mustForShared));
         // Rest of query
@@ -1203,18 +1178,20 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }};
         Map<String, Object> filter = new LinkedHashMap<String, Object>() {{
             put("bool", filterBool);
+
         }};
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
             put("must", matchFilters);
             put("filter", Arrays.asList(filter));
+
+
         }};
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
         }};
         Map<String, Object> terms = new LinkedHashMap<String, Object>() {{
-            put("field", SEARCH_OBJ_TYPE);
+            put("field", "otype");
         }};
-        //TODO VERS if this aggregates by type version, need to add the version field to the terms
         Map<String, Object> agg = new LinkedHashMap<String, Object>() {{
             put("terms", terms);
         }};
@@ -1267,7 +1244,17 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private List<Map<String, Object>> prepareMatchFilters(MatchFilter matchFilter) {
         List<Map<String, Object>> ret = new ArrayList<>();
         if (matchFilter.fullTextInAll != null) {
-            ret.add(createFilter("match", "_all", matchFilter.fullTextInAll));
+            LinkedHashMap<String, Object> query = new LinkedHashMap<String, Object>() {{
+                put("query", matchFilter.fullTextInAll);
+                put("operator", "and");
+            }};
+            LinkedHashMap<String, Object> allQuery = new LinkedHashMap<String, Object>() {{
+                put("_all", query);
+            }};
+            LinkedHashMap<String, Object> match = new LinkedHashMap<String, Object>() {{
+                put("match",allQuery);
+            }};
+            ret.add(match);
         }
         /*if (matchFilter.accessGroupId != null) {
             ret.add(createAccessMustBlock(new LinkedHashSet<>(Arrays.asList(
@@ -1363,14 +1350,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @SuppressWarnings({ "serial", "unchecked" })
-    private FoundHits queryHits(
-            final String objectType,
-            final List<Map<String, Object>> matchFilters, 
-            List<SortingRule> sorting,
-            final AccessFilter accessFilter,
-            final Pagination pg,
-            final PostProcessing pp)
-            throws IOException {
+    private FoundHits queryHits(String objectType, List<Map<String, Object>> matchFilters, 
+            List<SortingRule> sorting, AccessFilter accessFilter, Pagination pg,
+            PostProcessing pp) throws IOException {
         int pgStart = pg == null || pg.start == null ? 0 : pg.start;
         int pgCount = pg == null || pg.count == null ? 50 : pg.count;
         Pagination pagination = new Pagination(pgStart, pgCount);
@@ -1434,7 +1416,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 put(keyProp, sortOrder);
             }});
         }
-        String indexName = objectType == null ? getAnyIndexPattern() : checkIndex(objectType);
+        String indexName = objectType == null ? getAnyIndexPattern() : getIndex(objectType);
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
@@ -1458,6 +1440,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return ret;
     }
     
+    private String getKeyName(IndexingRules rules) {
+        return rules.getKeyName() != null ? rules.getKeyName():
+            rules.getPath().getPathItems()[0];
+    }
+    
     private String getKeyProperty(String keyName) {
         return "key." + keyName;
     }
@@ -1466,7 +1453,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public Set<String> listIndeces() throws IOException {
         Set<String> ret = new TreeSet<>();
         Map<String, Object> data = UObject.getMapper().readValue(
-                makeRequest("GET", "/_aliases", null).getEntity().getContent(), Map.class);
+                makeRequest("GET", "/_all/_settings", null).getEntity().getContent(), Map.class);
         ret.addAll(data.keySet());
         return ret;
     }
@@ -1485,9 +1472,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
      * @return the response from the ElasticSearch server.
      * @throws IOException if an IO error occurs.
      */
-    public Response refreshIndexByType(final SearchObjectType typeName)
+    public Response refreshIndexByType(final String typeName)
             throws IOException {
-        return refreshIndex(toIndexString(typeName));
+        return refreshIndex((indexNamePrefix + typeName).toLowerCase());
     }
 
     public Response makeRequest(String reqType, String urlPath, Map<String, ?> doc) 
@@ -1566,14 +1553,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
     }
 
-    private String getEsType(boolean fullText, Optional<String> keywordType) {
+    private String getEsType(boolean fullText, String keywordType) {
         if (fullText) {
             return "text";
         }
-        if (keywordType.get().equals("string")) {
-            return "keyword"; //TODO CODE why? why? why? 
+        if (keywordType == null || keywordType.equals("string")) {
+            return "keyword";
         }
-        return keywordType.get();
+        return keywordType;
     }
     
     private String getDataTableName() {
@@ -1585,7 +1572,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @SuppressWarnings("serial")
-    private void createAccessTable(Map<String, Object> mappings) {
+    private void createAccessTable(String indexName, Map<String, Object> mappings) {
         String tableName = getAccessTableName();
         Map<String, Object> table = new LinkedHashMap<>();
         mappings.put(tableName, table);
@@ -1623,7 +1610,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> mappings = new LinkedHashMap<>();
         doc.put("mappings", mappings);
         // Access (parent)
-        createAccessTable(mappings);
+        createAccessTable(indexName, mappings);
         // Now data (child)
         String tableName = getDataTableName();
         Map<String, Object> table = new LinkedHashMap<>();
@@ -1636,12 +1623,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         props.put("guid", new LinkedHashMap<String, Object>() {{
             put("type", "keyword");
         }});
-        final Map<String, Object> keyword = ImmutableMap.of("type", "keyword");
-        props.put(SEARCH_OBJ_TYPE, keyword);
-        props.put(SEARCH_OBJ_TYPE_VER, ImmutableMap.of("type", "integer"));
+        props.put("otype", new LinkedHashMap<String, Object>() {{
+            put("type", "keyword");
+        }});
         props.put(OBJ_NAME, new LinkedHashMap<String, Object>() {{
             put("type", "text");
         }});
+        final Map<String, Object> keyword = ImmutableMap.of("type", "keyword");
         props.put(OBJ_CREATOR, keyword);
         props.put(OBJ_COPIER, keyword);
         props.put(OBJ_PROV_MODULE, keyword);
@@ -1683,12 +1671,21 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 put("doc_values", false);
             }});
         }
-        for (IndexingRules rules : indexingRules) {
-            String propName = getKeyProperty(rules.getKeyName());
-            String propType = getEsType(rules.isFullText(), rules.getKeywordType());
-            props.put(propName, new LinkedHashMap<String, Object>() {{
-                put("type", propType);
+        if (mergeTypes) {
+            props.put("all", new LinkedHashMap<String, Object>() {{
+                put("type", "text");
             }});
+        } else {
+            for (IndexingRules rules : indexingRules) {
+                if (rules.getKeywordType() == null && !rules.isFullText()) {
+                    continue;
+                }
+                String propName = getKeyProperty(getKeyName(rules));
+                String propType = getEsType(rules.isFullText(), rules.getKeywordType());
+                props.put(propName, new LinkedHashMap<String, Object>() {{
+                    put("type", propType);
+                }});
+            }
         }
         makeRequest("PUT", "/" + indexName, doc);
     }
