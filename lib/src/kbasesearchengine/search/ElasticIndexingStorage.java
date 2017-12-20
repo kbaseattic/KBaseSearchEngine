@@ -45,6 +45,8 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.system.IndexingRules;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.UObject;
 
@@ -1029,11 +1031,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }};
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
+
         }};
         Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
             put("query", query);
             //put("_source", Arrays.asList("ojson"));
         }};
+
         String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         Map<String, Object> data = UObject.getMapper().readValue(
@@ -1098,7 +1102,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         return item;
     }
-    
+
     @SuppressWarnings("serial")
     private Map<String, Object> createPublicShouldBlock(boolean withAllHistory) {
         List<Object> must0List = new ArrayList<>();
@@ -1162,8 +1166,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (accessFilter.withPublic && !accessFilter.isAdmin) {
             shouldList.add(createPublicShouldBlock(accessFilter.withAllHistory));
         }
+
         // Owner block
         shouldList.add(createOwnerShouldBlock(accessFilter));
+
         // Shared block
         shouldList.add(createSharedShouldBlock(mustForShared));
         // Rest of query
@@ -1172,10 +1178,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }};
         Map<String, Object> filter = new LinkedHashMap<String, Object>() {{
             put("bool", filterBool);
+
         }};
         Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
             put("must", matchFilters);
             put("filter", Arrays.asList(filter));
+
+
         }};
         Map<String, Object> query = new LinkedHashMap<String, Object>() {{
             put("bool", bool);
@@ -1235,7 +1244,17 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private List<Map<String, Object>> prepareMatchFilters(MatchFilter matchFilter) {
         List<Map<String, Object>> ret = new ArrayList<>();
         if (matchFilter.fullTextInAll != null) {
-            ret.add(createFilter("match", "_all", matchFilter.fullTextInAll));
+            LinkedHashMap<String, Object> query = new LinkedHashMap<String, Object>() {{
+                put("query", matchFilter.fullTextInAll);
+                put("operator", "and");
+            }};
+            LinkedHashMap<String, Object> allQuery = new LinkedHashMap<String, Object>() {{
+                put("_all", query);
+            }};
+            LinkedHashMap<String, Object> match = new LinkedHashMap<String, Object>() {{
+                put("match",allQuery);
+            }};
+            ret.add(match);
         }
         /*if (matchFilter.accessGroupId != null) {
             ret.add(createAccessMustBlock(new LinkedHashSet<>(Arrays.asList(

@@ -173,7 +173,9 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     public SearchObjectsOutput searchObjects(SearchObjectsInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         SearchObjectsOutput returnVal = null;
         //BEGIN search_objects
+//        returnVal = search.searchObjects(params, authPart.getUserName());
         returnVal = search.searchObjects(params, authPart.getUserName());
+
         //END search_objects
         return returnVal;
     }

@@ -274,12 +274,44 @@ public class SearchMethods {
             sorting = params.getSortingRules().stream().map(this::toSearch).collect(
                     Collectors.toList());
         }
-        kbasesearchengine.search.AccessFilter accessFilter = toSearch(params.getAccessFilter(),
-                user);
+//        kbasesearchengine.search.AccessFilter accessFilter = toSearch(params.getAccessFilter(),
+//                user);
+        kbasesearchengine.search.AccessFilter accessFilter = kbasesearchengine.search.AccessFilter.create().withAdmin(true);
         kbasesearchengine.search.Pagination pagination = toSearch(params.getPagination());
         kbasesearchengine.search.PostProcessing postProcessing = 
                 toSearch(params.getPostProcessing());
         FoundHits hits = indexingStorage.searchObjects(params.getObjectType(), matchFilter, 
+                sorting, accessFilter, pagination, postProcessing);
+        SearchObjectsOutput ret = new SearchObjectsOutput();
+        ret.withPagination(fromSearch(hits.pagination));
+        ret.withSortingRules(hits.sortingRules.stream().map(this::fromSearch).collect(
+                Collectors.toList()));
+        if (hits.objects == null) {
+            ret.withObjects(hits.guids.stream().map(guid -> new kbasesearchengine.ObjectData().
+                    withGuid(guid.toString())).collect(Collectors.toList()));
+        } else {
+            ret.withObjects(hits.objects.stream().map(this::fromSearch).collect(
+                    Collectors.toList()));
+        }
+        ret.withTotal((long)hits.total);
+        ret.withSearchTime(System.currentTimeMillis() - t1);
+        return ret;
+    }
+    //for testing purposes. Access set to admin
+    public SearchObjectsOutput searchObjects(SearchObjectsInput params)
+            throws Exception {
+        long t1 = System.currentTimeMillis();
+        kbasesearchengine.search.MatchFilter matchFilter = toSearch(params.getMatchFilter());
+        List<kbasesearchengine.search.SortingRule> sorting = null;
+        if (params.getSortingRules() != null) {
+            sorting = params.getSortingRules().stream().map(this::toSearch).collect(
+                    Collectors.toList());
+        }
+        kbasesearchengine.search.AccessFilter accessFilter = kbasesearchengine.search.AccessFilter.create().withAdmin(true);
+        kbasesearchengine.search.Pagination pagination = toSearch(params.getPagination());
+        kbasesearchengine.search.PostProcessing postProcessing =
+                toSearch(params.getPostProcessing());
+        FoundHits hits = indexingStorage.searchObjects(params.getObjectType(), matchFilter,
                 sorting, accessFilter, pagination, postProcessing);
         SearchObjectsOutput ret = new SearchObjectsOutput();
         ret.withPagination(fromSearch(hits.pagination));
