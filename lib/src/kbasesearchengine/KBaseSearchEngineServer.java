@@ -44,13 +44,12 @@ import us.kbase.auth.AuthConfig;
 import us.kbase.auth.ConfigurableAuthService;
 import workspace.WorkspaceClient;
 import kbasesearchengine.common.FileUtil;
-
 //END_HEADER
 
 /**
  * <p>Original spec-file module name: KBaseSearchEngine</p>
  * <pre>
- * A KBase module: KBaseRelationEngine
+ * A KBase module: KBaseSearchEngine
  * </pre>
  */
 public class KBaseSearchEngineServer extends JsonServerServlet {
