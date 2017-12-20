@@ -268,19 +268,19 @@ class KBaseSearchEngine(object):
            list_types method.) -> structure: parameter "types" of mapping
            from String to type "TypeDescriptor" (Description of searchable
            object type including details about keywords. TODO: add more
-           details like parent type, relations, primary key, ...) ->
-           structure: parameter "type_name" of String, parameter
-           "type_ui_title" of String, parameter "keys" of list of type
-           "KeyDescription" (Description of searchable type keyword. -
-           key_value_type can be one of {'string', 'integer', 'double',
-           'boolean'}, - hidden - if true then this keyword provides values
-           for other keywords (like in 'link_key') and is not supposed to be
-           shown. - link_key - optional field pointing to another keyword
-           (which is often hidden) providing GUID to build external URL to.)
-           -> structure: parameter "key_name" of String, parameter
-           "key_ui_title" of String, parameter "key_value_type" of String,
-           parameter "hidden" of type "boolean" (A boolean. 0 = false, other
-           = true.), parameter "link_key" of String
+           details like parent type, primary key, ...) -> structure:
+           parameter "type_name" of String, parameter "type_ui_title" of
+           String, parameter "keys" of list of type "KeyDescription"
+           (Description of searchable type keyword. - key_value_type can be
+           one of {'string', 'integer', 'double', 'boolean'}, - hidden - if
+           true then this keyword provides values for other keywords (like in
+           'link_key') and is not supposed to be shown. - link_key - optional
+           field pointing to another keyword (which is often hidden)
+           providing GUID to build external URL to.) -> structure: parameter
+           "key_name" of String, parameter "key_ui_title" of String,
+           parameter "key_value_type" of String, parameter "hidden" of type
+           "boolean" (A boolean. 0 = false, other = true.), parameter
+           "link_key" of String
         """
         return self._client.call_method(
             'KBaseSearchEngine.list_types',
