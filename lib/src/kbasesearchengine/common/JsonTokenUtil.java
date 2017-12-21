@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import kbasesearchengine.parse.ObjectParseException;
 
 public class JsonTokenUtil {
 
@@ -64,7 +65,7 @@ public class JsonTokenUtil {
      * we read field token before processing value block.
      */
     public static void writeTokensFromCurrent(final JsonParser jts, final JsonToken current,
-            final JsonGenerator jgen) throws IOException {
+            final JsonGenerator jgen) throws ObjectParseException, IOException {
         JsonToken t = current;
         writeCurrentToken(jts, t, jgen);
         if (t == JsonToken.START_OBJECT) {
@@ -75,7 +76,7 @@ public class JsonTokenUtil {
                     break;
                 }
                 if (t != JsonToken.FIELD_NAME) {
-                    throw new IOException(
+                    throw new ObjectParseException(
                             "Error parsing json format: " + t.asString());
                 }
                 t = jts.nextToken();
@@ -97,7 +98,7 @@ public class JsonTokenUtil {
      * Method processes (writes into output token stream - jts) only one token.
      */
     public static JsonToken writeCurrentToken(JsonParser jts, JsonToken current, 
-            JsonGenerator jgen) throws IOException {
+            JsonGenerator jgen) throws ObjectParseException, IOException {
         JsonToken t = current;
         if (t == JsonToken.START_ARRAY) {
             jgen.writeStartArray();
@@ -142,13 +143,13 @@ public class JsonTokenUtil {
         } else if (t == JsonToken.VALUE_TRUE) {
             jgen.writeBoolean(true);
         } else {
-            throw new IOException("Unexpected token type: " + t);
+            throw new ObjectParseException("Unexpected token type: " + t);
         }
         return t;
     }
 
     public static Object getCurrentTokenPrimitive(JsonParser jts, 
-            JsonToken current) throws IOException {
+            JsonToken current) throws ObjectParseException, IOException {
         JsonToken t = current;
         if (t == JsonToken.VALUE_NUMBER_INT || t == JsonToken.VALUE_NUMBER_FLOAT) {
             return jts.getNumberValue();
@@ -161,19 +162,7 @@ public class JsonTokenUtil {
         } else if (t == JsonToken.VALUE_TRUE) {
             return true;
         } else {
-            throw new IOException("Unexpected token type: " + t);
-        }
-    }
-
-    public static String prettyPrint(Object obj) {
-        try {
-            StringWriter ret = new StringWriter();
-            ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-            mapper.writeValue(ret, obj);
-            ret.close();
-            return ret.toString();
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
+            throw new ObjectParseException("Unexpected token type: " + t);
         }
     }
 }
