@@ -10,6 +10,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static kbasesearchengine.test.common.TestCommon.set;
 
 import java.io.ByteArrayInputStream;
@@ -378,5 +379,93 @@ public class TypeFileStorageTest {
                 "storage type storefoo from type transformation file with definition from " +
                 "type mapping file map source file");
     }
+    
+    @Test
+    public void mapNewStorageTypeToSearchType() throws Exception {
+        /* Tests the case where a type mapping includes a previously unseen storage type
+         * that maps to a search type with a different storage type
+         */
+        final ObjectTypeParsingRulesFileParser typeParser =
+                mock(ObjectTypeParsingRulesFileParser.class);
+        final FileLister fileLister = mock(FileLister.class);
+        final TypeMappingParser mappingParser = mock(TypeMappingParser.class);
+        final LineLogger logger = mock(LineLogger.class);
+        
+        when(fileLister.list(Paths.get("types"))).thenReturn(Arrays.asList(
+                Paths.get("foo.yaml")));
+        when(fileLister.isRegularFile(Paths.get("foo.yaml"))).thenReturn(true);
+        
+        when(fileLister.newInputStream(Paths.get("foo.yaml")))
+                .thenReturn(new ByteArrayInputStream("testvalue".getBytes()));
+        final ObjectTypeParsingRules rule1 = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1),
+                new StorageObjectType("CD", "storefoo"))
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee")).build())
+                .build();
+        final ObjectTypeParsingRules rule2 = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 2),
+                new StorageObjectType("CD", "storefoo"))
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whoo")).build())
+                .build();
+        
+        when(typeParser.parseStream(argThat(new StreamMatcher("testvalue")), eq("foo.yaml")))
+                .thenReturn(Arrays.asList(rule1, rule2));
+
+        when(fileLister.list(Paths.get("mappings"))).thenReturn(Arrays.asList(
+                Paths.get("mappings.yaml")));
+        when(fileLister.isRegularFile(Paths.get("mappings.yaml"))).thenReturn(true);
+        when(fileLister.newInputStream(Paths.get("mappings.yaml")))
+                .thenReturn(new ByteArrayInputStream("mappingvalue".getBytes()));
+        
+        when(mappingParser.parse(argThat(new StreamMatcher("mappingvalue")), eq("mappings.yaml")))
+                .thenReturn(set(TypeMapping.getBuilder("CD", "storebar")
+                        .withVersion(1, new SearchObjectType("foo", 1))
+                        .withDefaultSearchType(new SearchObjectType("foo", 2))
+                        .build()));
+
+        final TypeFileStorage tfs = new TypeFileStorage(
+                Paths.get("types"),
+                Paths.get("mappings"),
+                typeParser,
+                ImmutableMap.of("yaml", mappingParser),
+                fileLister,
+                logger);
+        
+        assertThat("incorrect types", tfs.listObjectTypeParsingRules(), is(Arrays.asList(rule2)));
+        assertThat("couldn't get type", tfs.getObjectTypeParsingRules(
+                new SearchObjectType("foo", 1)), is(rule1));
+        assertThat("couldn't get type", tfs.getObjectTypeParsingRules(
+                new SearchObjectType("foo", 2)), is(rule2));
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storefoo")),
+                is(Arrays.asList(rule2)));
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storefoo", 1)),
+                is(Arrays.asList(rule2)));
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storefoo", 2)),
+                is(Arrays.asList(rule2)));
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storefoo", 3)),
+                is(Arrays.asList(rule2)));
+
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storebar")),
+                is(Arrays.asList(rule2)));
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storebar", 1)),
+                is(Arrays.asList(rule1)));
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storebar", 2)),
+                is(Arrays.asList(rule2)));
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storebar", 3)),
+                is(Arrays.asList(rule2)));
+        
+        verify(logger).logInfo("[TypeStorage] Processed type tranformation file with storage " +
+                        "code CD, storage type storefoo and search type foo: foo.yaml");
+        verifyNoMoreInteractions(logger);
+    }
+    
 
 }
