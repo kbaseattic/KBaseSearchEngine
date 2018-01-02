@@ -3,6 +3,7 @@ package kbasesearchengine.test.search;
 import static kbasesearchengine.test.common.TestCommon.set;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,11 +14,11 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import kbasesearchengine.search.*;
+import kbasesearchengine.system.TypeStorage;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import com.fasterxml.jackson.core.JsonParser;
 
@@ -36,17 +37,12 @@ import kbasesearchengine.parse.SimpleIdConsumer;
 import kbasesearchengine.parse.SimpleSubObjectConsumer;
 import kbasesearchengine.parse.SubObjectConsumer;
 import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
-import kbasesearchengine.search.AccessFilter;
-import kbasesearchengine.search.ElasticIndexingStorage;
-import kbasesearchengine.search.MatchFilter;
-import kbasesearchengine.search.MatchValue;
-import kbasesearchengine.search.ObjectData;
-import kbasesearchengine.search.PostProcessing;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.test.common.TestCommon;
 import kbasesearchengine.test.controllers.elasticsearch.ElasticSearchController;
 import kbasesearchengine.test.parse.SubObjectExtractorTest;
+import org.mockito.Mock;
 import us.kbase.common.service.UObject;
 
 public class ElasticIndexingStorageTest {
@@ -552,6 +548,61 @@ public class ElasticIndexingStorageTest {
                 filter), is(set()));
         assertThat("incorrect ids returned", lookupIdsByKey(objType, "myprop", "some", 
                 filterPublic), is(set()));
+    }
+
+    private void prepareDatabase() throws ObjectParseException {
+        String objectType = "Simple";
+        IndexingRules ir = new IndexingRules();
+        ir.setPath(new ObjectJsonPath("prop1"));
+        ir.setFullText(true);
+        List<IndexingRules> indexingRules= Arrays.asList(ir);
+        try {
+            indexObject(new GUID("WS:11/1/1"), objectType, "{\"prop1\":\"multiWordInSearchMethod1 multiWordInSearchMethod2\"}", "multiword.1", Instant.now(), null,
+                    true, indexingRules);
+            indexObject(new GUID("WS:11/2/1"), objectType, "{\"prop1\":\"multiWordInSearchMethod2\"}", "multiword.2", Instant.now(), null,
+                    true, indexingRules);
+            indexObject(new GUID("WS:11/3/1"), objectType, "{\"prop1\":\"multiWordInSearchMethod1\"}", "multiword.3", Instant.now(), null,
+                    true, indexingRules);
+        } catch (Exception ignore) {
+            // HTTP 409 Conflict when you run tests repeatedly due to
+            // already indexed object with identical GUID
+            // Should add an @After to clean this up
+        }
+
+    }
+
+
+    @Test
+    public void testMultiwordSearch() throws Exception{
+        prepareDatabase();
+        final kbasesearchengine.search.MatchFilter filter = new kbasesearchengine.search.MatchFilter();
+
+        List<kbasesearchengine.search.SortingRule> sorting = null;
+        AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
+
+        filter.withFullTextInAll("multiWordInSearchMethod1 multiWordInSearchMethod2");
+        FoundHits hits1 = indexStorage.searchObjects(null, filter,sorting, accessFilter
+                , null, null);
+
+        filter.withFullTextInAll("multiWordInSearchMethod1");
+        FoundHits hits2 = indexStorage.searchObjects(null, filter,sorting, accessFilter
+                , null, null);
+
+
+        filter.withFullTextInAll("multiWordInSearchMethod2");
+        FoundHits hits3 = indexStorage.searchObjects(null, filter,sorting, accessFilter
+                , null, null);
+
+        int size1 = hits1.guids.size();
+        int size2 = hits2.guids.size();
+        int size3 = hits3.guids.size();
+
+        assertTrue(size1 > 0);
+        assertTrue(size2 > 0);
+        assertTrue(size3 > 0);
+
+        assertTrue(size3 > size1);
+        assertTrue(size2 > size1);
     }
 
 }
