@@ -101,9 +101,9 @@ public class TypeFileStorage implements TypeStorage {
         private final String storageCode;
         private final String storageType;
         
-        private CodeAndType(final String storageCode, final String storageType) {
-            this.storageCode = storageCode;
-            this.storageType = storageType;
+        private CodeAndType(final TypeMapping type) {
+            this.storageCode = type.getStorageCode();
+            this.storageType = type.getStorageType();
         }
         
         private CodeAndType(final StorageObjectType type) {
@@ -126,10 +126,8 @@ public class TypeFileStorage implements TypeStorage {
         public int hashCode() {
             final int prime = 31;
             int result = 1;
-            result = prime * result
-                    + ((storageCode == null) ? 0 : storageCode.hashCode());
-            result = prime * result
-                    + ((storageType == null) ? 0 : storageType.hashCode());
+            result = prime * result + storageCode.hashCode();
+            result = prime * result + storageType.hashCode();
             return result;
         }
 
@@ -138,25 +136,11 @@ public class TypeFileStorage implements TypeStorage {
             if (this == obj) {
                 return true;
             }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
             CodeAndType other = (CodeAndType) obj;
-            if (storageCode == null) {
-                if (other.storageCode != null) {
-                    return false;
-                }
-            } else if (!storageCode.equals(other.storageCode)) {
+            if (!storageCode.equals(other.storageCode)) {
                 return false;
             }
-            if (storageType == null) {
-                if (other.storageType != null) {
-                    return false;
-                }
-            } else if (!storageType.equals(other.storageType)) {
+            if (!storageType.equals(other.storageType)) {
                 return false;
             }
             return true;
@@ -222,8 +206,7 @@ public class TypeFileStorage implements TypeStorage {
                         mappings = parser.parse(new BufferedInputStream(is), file.toString());
                     }
                     for (final TypeMapping map: mappings) {
-                        final CodeAndType cnt = new CodeAndType(
-                                map.getStorageCode(), map.getStorageType());
+                        final CodeAndType cnt = new CodeAndType(map);
                         if (ret.containsKey(cnt)) {
                             throw new TypeParseException(String.format(
                                     "Type collision for type %s in storage %s. " +
@@ -289,8 +272,7 @@ public class TypeFileStorage implements TypeStorage {
     @Override
     public List<ObjectTypeParsingRules> listObjectTypeParsingRules(
             final StorageObjectType storageObjectType) {
-        final TypeMapping mapping = storageTypes.get(
-                new CodeAndType(storageObjectType.getStorageCode(), storageObjectType.getType()));
+        final TypeMapping mapping = storageTypes.get(new CodeAndType(storageObjectType));
         if (mapping == null) {
             return Collections.emptyList();
         }
