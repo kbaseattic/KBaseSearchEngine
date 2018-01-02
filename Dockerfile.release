@@ -10,7 +10,7 @@ ARG BRANCH=develop
 RUN mkdir /kb/module
 
 COPY deployment/ /kb/deployment/
-COPY resources /kb/module/
+COPY resources /kb/module/resources/
 
 RUN /usr/bin/tomcat8-instance-create /kb/deployment/services/search/tomcat && \
     mv /kb/deployment/lib/KBaseSearchEngine.war /kb/deployment/services/search/tomcat/webapps/ROOT.war && \

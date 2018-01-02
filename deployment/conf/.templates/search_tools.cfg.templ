@@ -2,10 +2,10 @@
 
 # search MongoDB information. This is used when running any event generators or starting
 # the indexer coordinator or workers.
-search-mongo-host=
-search-mongo-db=
-search-mongo-user=
-search-mongo-pwd=
+search-mongo-host={{ default .Env.search_mongo_host "" }}
+search-mongo-db={{ default .Env.search_mongo_db "" }}
+search-mongo-user={{ default .Env.search_mongo_user "" }}
+search-mongo-pwd={{ default .Env.search_mongo_pwd "" }}
 
 # INDEXER
 
@@ -14,7 +14,7 @@ elastic-host={{ default .Env.elastic_host "" }}
 elastic-port={{ default .Env.elastic_port "" }}
 elastic-user={{ default .Env.elastic_user "" }}
 elastic-password={{ default .Env.elastic_password "" }}
-elastic-namespace=kbase.1
+elastic-namespace={{ default .Env.elastic_namespace "kbase.1" }}
 scratch={{ default .Env.scratch "/tmp" }}
 
 # Workspace and auth urls and token information. This is used when starting the indexer
