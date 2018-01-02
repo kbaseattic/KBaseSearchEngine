@@ -329,83 +329,88 @@ public class ElasticIndexingStorage implements IndexingStorage {
         refreshIndex(checkIndex(objectType, null));
     }
     
-    @SuppressWarnings({ "serial", "unchecked" })
     private Map<GUID, String> lookupDocIds(String indexName, Set<GUID> guids) throws IOException {
         // terms = {"guid": [guids]}
-        Map<String, Object> terms = new LinkedHashMap();
+        Map<String, Object> terms = new LinkedHashMap<>();
         terms.put("guid", guids.stream().map(u -> u.toString()).collect(Collectors.toList()));
 
         // filter = {"terms": {"guid": [guids]}}
-        Map<String, Object> filter = new LinkedHashMap();
+        Map<String, Object> filter = new LinkedHashMap<>();
         filter.put("terms", terms);
 
         // bool = {"filter": [{"terms": {"guid": [guids]}}]}
-        Map<String, Object> bool = new LinkedHashMap();
+        Map<String, Object> bool = new LinkedHashMap<>();
         bool.put("filter", Arrays.asList(filter));
 
         // query = {"bool": {"filter": [{"terms": {"guid": [guids]}}]}}
-        Map<String, Object> query = new LinkedHashMap();
+        Map<String, Object> query = new LinkedHashMap<>();
         query.put("bool", bool);
 
         // doc = {"query": {"bool": {"filter": [{"terms": {"guid": [guids]}}]}}}
-        Map<String, Object> doc = new LinkedHashMap();
+        Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
 
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
+        @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         Map<GUID, String> ret = new LinkedHashMap<>();
-        Map<String, Object> hitMap = (Map<String, Object>)data.get("hits");
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             String id = (String)hit.get("_id");
-            Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
-            GUID guid = new GUID((String)obj.get("guid"));
+            @SuppressWarnings("unchecked")
+            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
+            GUID guid = new GUID((String) obj.get("guid"));
             ret.put(guid, id);
         }
         return ret;
     }
 
-    @SuppressWarnings({ "serial", "unchecked" })
     private Map<GUID, String> lookupParentDocIds(String indexName, Set<GUID> guids) throws IOException {
         // terms = {"pguid": [guids]}
-        Map<String, Object> terms = new LinkedHashMap();
+        Map<String, Object> terms = new LinkedHashMap<>();
         terms.put("pguid", guids.stream().map(u -> u.toString()).collect(Collectors.toList()));
 
         // filter = {"terms": {"pguid": [guids]}}
-        Map<String, Object> filter = new LinkedHashMap();
+        Map<String, Object> filter = new LinkedHashMap<>();
         filter.put("terms", terms);
 
         // bool = {"filter": [{"terms": {"pguid": [guids]}}]}
-        Map<String, Object> bool = new LinkedHashMap();
+        Map<String, Object> bool = new LinkedHashMap<>();
         bool.put("filter", Arrays.asList(filter));
 
         // query = {"bool": {"filter": [{"terms": {"pguid": [guids]}}]}}
-        Map<String, Object> query = new LinkedHashMap();
+        Map<String, Object> query = new LinkedHashMap<>();
         query.put("bool", bool);
 
         // doc = {"query": {"bool": {"filter": [{"terms": {"pguid": [guids]}}]}}}
-        Map<String, Object> doc = new LinkedHashMap();
+        Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
 
         String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
+        @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         Map<GUID, String> ret = new LinkedHashMap<>();
-        Map<String, Object> hitMap = (Map<String, Object>)data.get("hits");
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             String id = (String)hit.get("_id");
-            Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
             GUID guid = new GUID((String)obj.get("pguid"));
             ret.put(guid, id);
         }
         return ret;
     }
 
-    @SuppressWarnings({ "serial", "unchecked" })
     public Map<String, Set<GUID>> groupParentIdsByIndex(Set<GUID> ids) throws IOException {
         Set<String> parentIds = new LinkedHashSet<>();
         for (GUID guid : ids) {
@@ -413,34 +418,37 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString());
         }
         // terms = {"pguid": [ids]}
-        Map<String, Object> terms = new LinkedHashMap();
+        Map<String, Object> terms = new LinkedHashMap<>();
         terms.put("pguid", parentIds);
 
         // filter = {"terms: ": {"pguid": [ids]}}
-        Map<String, Object> filter = new LinkedHashMap();
+        Map<String, Object> filter = new LinkedHashMap<>();
         filter.put("terms", terms);
 
         // bool = {"filter": {"terms: ": {"pguid": [ids]}}}
-        Map<String, Object> bool = new LinkedHashMap();
+        Map<String, Object> bool = new LinkedHashMap<>();
         bool.put("filter", filter);
 
         // query = {"bool": {"filter": {"terms: ": {"pguid": [ids]}}}}
-        Map<String, Object> query = new LinkedHashMap();
+        Map<String, Object> query = new LinkedHashMap<>();
         query.put("bool", bool);
 
         // doc = {"query": {"bool": {"filter": {"terms: ": {"pguid": [ids]}}}},
         //        "_source": ["pguid"]}
-        Map<String, Object> doc = new LinkedHashMap();
+        Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
         doc.put("_source", Arrays.asList("pguid"));
 
         String urlPath = "/" + indexNamePrefix + "*/" + getAccessTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
+        @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         Map<String, Set<GUID>> ret = new LinkedHashMap<>();
-        Map<String, Object> hitMap = (Map<String, Object>)data.get("hits");
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             String indexName = (String)hit.get("_index");
             Set<GUID> retSet = ret.get(indexName);
@@ -448,28 +456,27 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 retSet = new LinkedHashSet<>();
                 ret.put(indexName, retSet);
             }
-            Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
             GUID guid = new GUID((String)obj.get("pguid"));
             retSet.add(guid);
         }
         return ret;
     }
 
-    @SuppressWarnings("serial")
     private Map<String, Object> createFilter(String queryType, String keyName, Object value) {
-        Map<String, Object> term = new LinkedHashMap();
+        Map<String, Object> term = new LinkedHashMap<>();
         // term = {keyname: value}?
         if (keyName != null) {
             term.put(keyName, value);
         }
 
-        Map<String, Object> termWrapper = new LinkedHashMap();
+        Map<String, Object> termWrapper = new LinkedHashMap<>();
         termWrapper.put(queryType, term);
         // return = {queryType: {keyname: value}?}
         return termWrapper;
     }
 
-    @SuppressWarnings("serial")
     private Map<String, Object> createRangeFilter(String keyName, Object gte, Object lte) {
         Map<String, Object> range = new LinkedHashMap<>();
         if (gte != null) {
@@ -478,10 +485,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (lte != null) {
             range.put("lte", lte);
         }
-        Map<String, Object> term = new LinkedHashMap();
+        Map<String, Object> term = new LinkedHashMap<>();
         term.put(keyName, range);
 
-        Map<String, Object> termWrapper = new LinkedHashMap();
+        Map<String, Object> termWrapper = new LinkedHashMap<>();
         termWrapper.put("range", term);
         return termWrapper;
     }
@@ -503,7 +510,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 guid -> map.containsKey(guid)));
     }
 
-    @SuppressWarnings({ "serial", "unchecked" })
     private Integer loadLastVersion(String reqIndexName, GUID parentGUID, 
             Integer processedVersion) throws IOException {
         if (reqIndexName == null) {
@@ -512,34 +518,38 @@ public class ElasticIndexingStorage implements IndexingStorage {
         String prefix = toGUIDPrefix(parentGUID);
 
         // term = {"prefix": prefix}
-        Map<String, Object> term = new LinkedHashMap();
+        Map<String, Object> term = new LinkedHashMap<>();
         term.put("prefix", prefix);
 
         // filter = {"term": {"prefix": prefix}}
-        Map<String, Object> filter = new LinkedHashMap();
+        Map<String, Object> filter = new LinkedHashMap<>();
         filter.put("term", term);
 
         // bool = {"filter": [{"term": {"prefix": prefix}}]}
-        Map<String, Object> bool = new LinkedHashMap();
+        Map<String, Object> bool = new LinkedHashMap<>();
         bool.put("filter", Arrays.asList(filter));
 
         // query = {"bool": {"filter": [{"term": {"prefix": prefix}}]}}
-        Map<String, Object> query = new LinkedHashMap();
+        Map<String, Object> query = new LinkedHashMap<>();
         query.put("bool", bool);
 
         // doc = {"query": {"bool": {"filter": [{"term": {"prefix": prefix}}]}}}
-        Map<String, Object> doc = new LinkedHashMap();
+        Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
 
         String urlPath = "/" + reqIndexName + "/" + getAccessTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
+        @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
-        Map<String, Object> hitMap = (Map<String, Object>)data.get("hits");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
         Integer ret = null;
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
-            Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
             int version = (Integer)obj.get("version");
             if (ret == null || ret < version) {
                 ret = version;
@@ -551,7 +561,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return ret;
     }
     
-    @SuppressWarnings({ "serial", "unchecked" })
     private int updateLastVersionsInData(String indexName, GUID parentGUID,
             int lastVersion) throws IOException {
         if (indexName == null) {
@@ -559,19 +568,19 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         // {"prefix": prefix}
         String prefix = toGUIDPrefix(parentGUID);
-        Map<String, Object> term = new LinkedHashMap();
+        Map<String, Object> term = new LinkedHashMap<>();
         term.put("prefix", prefix);
 
         // filter = {"term": {"prefix": prefix}}
-        Map<String, Object> filter = new LinkedHashMap();
+        Map<String, Object> filter = new LinkedHashMap<>();
         filter.put("term", term);
 
         // bool = {"filter": [{"term": {"prefix": prefix}}]}
-        Map<String, Object> bool = new LinkedHashMap();
+        Map<String, Object> bool = new LinkedHashMap<>();
         bool.put("filter", Arrays.asList(filter));
 
         // query = {"bool": {"filter": [{"term": {"prefix": prefix}}]}}
-        Map<String, Object> query = new LinkedHashMap();
+        Map<String, Object> query = new LinkedHashMap<>();
         query.put("bool", bool);
 
         // params = {"lastver": lastVersion}
@@ -580,25 +589,25 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         // script = {"inline": "ctx._source.islast = (ctx._source.version == params.lastver)",
         //           "params": {"lastver": lastVersion}}
-        Map<String, Object> script = new LinkedHashMap();
+        Map<String, Object> script = new LinkedHashMap<>();
         script.put("inline", "ctx._source.islast = (ctx._source.version == params.lastver);");
         script.put("params", params);
 
         // doc = {"query": {"bool": {"filter": [{"term": {"prefix": prefix}}]}},
         //        "script": {"inline": "ctx._source.islast = (ctx._source.version == params.lastver)",
         //                   "params": {"lastver": lastVersion}}}
-        Map<String, Object> doc = new LinkedHashMap();
+        Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
         doc.put("script", script);
 
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_update_by_query";
         Response resp = makeRequest("POST", urlPath, doc);
+        @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         return (Integer)data.get("updated");
     }
 
-    @SuppressWarnings("unchecked")
     private Map<GUID, String> checkParentDoc(String indexName, Set<GUID> parentGUIDs, 
             boolean isPublic, int lastVersion) throws IOException {
         boolean changed = false;
@@ -627,6 +636,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             doc.put("extpub", new ArrayList<Integer>());
             Response resp = makeRequest("POST", "/" + indexName + "/" + getAccessTableName() + "/", 
                     doc);
+            @SuppressWarnings("unchecked")
             Map<String, Object> data = UObject.getMapper().readValue(
                     resp.getEntity().getContent(), Map.class);
             ret.put(parentGUID, (String)data.get("_id"));
@@ -659,7 +669,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     //IO exception thrown for deserialization & elasticsearch contact errors
     /* calling this method with accessGroupId == null and both booleans false is an error. */
-    @SuppressWarnings({ "serial", "unchecked" })
     private boolean updateAccessGroupForVersions(
             String indexName,
             final GUID guid,
@@ -676,11 +685,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         String prefix = toGUIDPrefix(guid);
         // bool = {"must": [{"term": {"prefix": prefix}?}]}
-        Map<String, Object> bool = new LinkedHashMap();
+        Map<String, Object> bool = new LinkedHashMap<>();
         bool.put("must", Arrays.asList(createFilter("term", "prefix", prefix)));
 
         // query = {"bool": {"must": [{"term": {"prefix": prefix}?}]}}
-        Map<String, Object> query = new LinkedHashMap();
+        Map<String, Object> query = new LinkedHashMap<>();
         query.put("bool", bool);
 
         // params = {"lastver": lastVersion,
@@ -702,7 +711,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             inline.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "adminaccgrp"));
             params.put("adminaccgrp", ADMIN_ACCESS_GROUP);
         }
-        Map<String, Object> script = new LinkedHashMap();
+        Map<String, Object> script = new LinkedHashMap<>();
         script.put("inline", inline.toString());
         script.put("params", params);
 
@@ -712,12 +721,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_update_by_query";
         Response resp = makeRequest("POST", urlPath, doc);
+        @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         return (Integer)data.get("updated") > 0;
     }
 
-    @SuppressWarnings({ "serial", "unchecked" })
     private boolean removeAccessGroupForVersion(String indexName, GUID guid, 
             int accessGroupId) throws IOException {
         if (indexName == null) {
@@ -727,7 +736,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         boolean fromAllGroups = accessGroupId != guid.getAccessGroupId();
         String pguid = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString();
-        Map<String, Object> bool = new LinkedHashMap();
+        Map<String, Object> bool = new LinkedHashMap<>();
         bool.put("must", Arrays.asList(createFilter("term", "pguid", pguid),
                 createFilter("term", "lastin", accessGroupId)));
 
@@ -736,7 +745,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         final HashMap<String, Object> params = new HashMap<>();
         params.put("accgrp", accessGroupId);
-        Map<String, Object> script = new LinkedHashMap();
+        Map<String, Object> script = new LinkedHashMap<>();
         script.put("inline", "" +
                 "ctx._source.lastin.remove(ctx._source.lastin.indexOf(params.accgrp));\n" +
                 "if (ctx._source.extpub.indexOf(params.accgrp) >= 0) {\n" +
@@ -749,44 +758,45 @@ public class ElasticIndexingStorage implements IndexingStorage {
                                 "}\n") : ""));
         script.put("params", params);
 
-        Map<String, Object> doc = new LinkedHashMap();
+        Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
         doc.put("script", script);
 
         String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_update_by_query";
         Response resp = makeRequest("POST", urlPath, doc);
+        @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         return (Integer)data.get("updated") > 0;
     }
 
-    @SuppressWarnings({ "serial", "unchecked" })
     private boolean updateBooleanFieldInData(String indexName, GUID parentGUID,
             String field, boolean value) throws IOException {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
         String prefix = toGUIDPrefix(parentGUID);
-        Map<String, Object> bool = new LinkedHashMap();
+        Map<String, Object> bool = new LinkedHashMap<>();
         bool.put("must", Arrays.asList(createFilter("term", "prefix", prefix),
                 createFilter("term", "version", parentGUID.getVersion())));
 
-        Map<String, Object> query = new LinkedHashMap();
+        Map<String, Object> query = new LinkedHashMap<>();
         query.put("bool", bool);
 
         final Map<String, Object> params = new HashMap<>();
         params.put("field", field);
         params.put("value", value);
-        Map<String, Object> script = new LinkedHashMap();
+        Map<String, Object> script = new LinkedHashMap<>();
         script.put("inline", "ctx._source[params.field] = params.value;");
         script.put("params", params);
 
-        Map<String, Object> doc = new LinkedHashMap();
+        Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
         doc.put("script", script);
 
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_update_by_query";
         Response resp = makeRequest("POST", urlPath, doc);
+        @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         return (Integer)data.get("updated") > 0;
@@ -964,7 +974,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         setFieldOnObject(guid, "public", false, true);
     }
 
-    @SuppressWarnings({ "serial", "unchecked" })
     private boolean addExtPubForVersion(String indexName, GUID guid, 
             int accessGroupId) throws IOException {
         // Check that we work with other than physical access group this object exists in.
@@ -976,27 +985,28 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         String pguid = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString();
-        Map<String, Object> bool = new LinkedHashMap();
+        Map<String, Object> bool = new LinkedHashMap<>();
         bool.put("must", Arrays.asList(createFilter("term", "pguid", pguid)));
 
-        Map<String, Object> query = new LinkedHashMap();
+        Map<String, Object> query = new LinkedHashMap<>();
         query.put("bool", bool);
 
         final HashMap<String, Object> params = new HashMap<>();
         params.put("accgrp", accessGroupId);
-        Map<String, Object> script = new LinkedHashMap();
+        Map<String, Object> script = new LinkedHashMap<>();
         script.put("inline", "" +
                 "if (ctx._source.extpub.indexOf(params.accgrp) < 0) {\n" +
                 "  ctx._source.extpub.add(params.accgrp);\n" +
                 "}\n");
         script.put("params", params);
 
-        Map<String, Object> doc = new LinkedHashMap();
+        Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
         doc.put("script", script);
 
         String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_update_by_query";
         Response resp = makeRequest("POST", urlPath, doc);
+        @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         return (Integer)data.get("updated") > 0;
@@ -1018,7 +1028,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
     }
 
-    @SuppressWarnings({ "serial", "unchecked" })
     private boolean removeExtPubForVersion(String indexName, GUID guid, 
             int accessGroupId) throws IOException {
         // Check that we work with other than physical access group this object exists in.
@@ -1030,26 +1039,27 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         String pguid = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString();
-        Map<String, Object> bool = new LinkedHashMap();
+        Map<String, Object> bool = new LinkedHashMap<>();
         bool.put("must", Arrays.asList(createFilter("term", "pguid", pguid),
                 createFilter("term", "extpub", accessGroupId)));
 
-        Map<String, Object> query = new LinkedHashMap();
+        Map<String, Object> query = new LinkedHashMap<>();
         query.put("bool", bool);
 
         final HashMap<String, Object> params = new HashMap<>();
         params.put("accgrp", accessGroupId);
-        Map<String, Object> script = new LinkedHashMap();
+        Map<String, Object> script = new LinkedHashMap<>();
         script.put("inline", "" +
                 "ctx._source.extpub.remove(ctx._source.extpub.indexOf(params.accgrp));\n");
         script.put("params", params);
 
-        Map<String, Object> doc = new LinkedHashMap();
+        Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
         doc.put("script", script);
 
         String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_update_by_query";
         Response resp = makeRequest("POST", urlPath, doc);
+        @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         return (Integer)data.get("updated") > 0;
@@ -1080,35 +1090,38 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return getObjectsByIds(ids, pp);
     }
     
-    @SuppressWarnings({ "serial", "unchecked" })
     @Override
     public List<ObjectData> getObjectsByIds(Set<GUID> ids, PostProcessing pp) 
             throws IOException {
-        Map<String, Object> terms = new LinkedHashMap();
+        Map<String, Object> terms = new LinkedHashMap<>();
         terms.put("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList()));
 
-        Map<String, Object> filter = new LinkedHashMap();
+        Map<String, Object> filter = new LinkedHashMap<>();
         filter.put("terms", terms);
 
-        Map<String, Object> bool = new LinkedHashMap();
+        Map<String, Object> bool = new LinkedHashMap<>();
         bool.put("filter", filter);
 
-        Map<String, Object> query = new LinkedHashMap();
+        Map<String, Object> query = new LinkedHashMap<>();
         query.put("bool", bool);
 
-        Map<String, Object> doc = new LinkedHashMap();
+        Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
         //doc.put("_source", Arrays.asList("ojson"));
 
         String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
+        @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         List<ObjectData> ret = new ArrayList<>();
-        Map<String, Object> hitMap = (Map<String, Object>)data.get("hits");
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
-            Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
             ObjectData item = buildObjectData(obj, pp.objectInfo, pp.objectKeys, 
                     pp.objectData, pp.objectDataIncludes);
             ret.add(item);
@@ -1116,7 +1129,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return ret;
     }
 
-    @SuppressWarnings("unchecked")
     private ObjectData buildObjectData(Map<String, Object> obj, boolean info, boolean keys, 
             boolean json, List<String> objectDataIncludes) {
         // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
@@ -1154,7 +1166,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     Object objValue = obj.get(key);
                     String textValue = null;
                     if (objValue instanceof List) {
-                        textValue = ((List<Object>)objValue).stream().map(Object::toString)
+                        @SuppressWarnings("unchecked")
+                        final List<Object> objValue2 = (List<Object>) objValue;
+                        textValue = objValue2.stream().map(Object::toString)
                                 .collect(Collectors.joining(", "));
                     } else {
                         textValue = String.valueOf(objValue);
@@ -1167,14 +1181,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return item;
     }
     
-    @SuppressWarnings("serial")
     private Map<String, Object> createPublicShouldBlock(boolean withAllHistory) {
         List<Object> must0List = new ArrayList<>();
         must0List.add(createFilter("term", "public", true));
         if (!withAllHistory) {
             must0List.add(createFilter("term", "islast", true));
         }
-        Map<String, Object> bool0 = new LinkedHashMap();
+        Map<String, Object> bool0 = new LinkedHashMap<>();
         bool0.put("must", must0List);
 
         LinkedHashMap<String, Object> bool0Wrapper = new LinkedHashMap<>();
@@ -1182,7 +1195,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return bool0Wrapper;
     }
     
-    @SuppressWarnings("serial")
     private Map<String, Object> createOwnerShouldBlock(AccessFilter accessFilter) {
         List<Object> must1List = new ArrayList<>();
         if (!accessFilter.isAdmin) {
@@ -1195,7 +1207,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (!accessFilter.withAllHistory) {
             must1List.add(createFilter("term", "islast", true));
         }
-        Map<String, Object> bool1 = new LinkedHashMap();
+        Map<String, Object> bool1 = new LinkedHashMap<>();
         bool1.put("must", must1List);
 
         LinkedHashMap<String, Object> bool1Wrapper = new LinkedHashMap<>();
@@ -1204,11 +1216,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return bool1Wrapper;
     }
     
-    @SuppressWarnings("serial")
     private Map<String, Object> createSharedShouldBlock(Map<String, Object> mustForShared) {
         List<Object> must2List = new ArrayList<>(Arrays.asList(
                 createFilter("term", "shared", true), mustForShared));
-        Map<String, Object> bool2 = new LinkedHashMap();
+        Map<String, Object> bool2 = new LinkedHashMap<>();
         bool2.put("must", must2List);
 
         LinkedHashMap<String, Object> bool2Wrapper = new LinkedHashMap<>();
@@ -1217,7 +1228,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     //TODO VERS should this return SearchObjectType -> Integer map? Maybe an option to combine versions
-    @SuppressWarnings({ "serial", "unchecked" })
     @Override
     public Map<String, Integer> searchTypes(MatchFilter matchFilter,
             AccessFilter accessFilter) throws IOException {
@@ -1237,41 +1247,45 @@ public class ElasticIndexingStorage implements IndexingStorage {
         // Shared block
         shouldList.add(createSharedShouldBlock(mustForShared));
         // Rest of query
-        Map<String, Object> filterBool = new LinkedHashMap() ;
+        Map<String, Object> filterBool = new LinkedHashMap<>() ;
         filterBool.put("should", shouldList);
 
-        Map<String, Object> filter = new LinkedHashMap();
+        Map<String, Object> filter = new LinkedHashMap<>();
         filter.put("bool", filterBool);
 
-        Map<String, Object> bool = new LinkedHashMap();
+        Map<String, Object> bool = new LinkedHashMap<>();
         bool.put("must", matchFilters);
         bool.put("filter", Arrays.asList(filter));
 
-        Map<String, Object> query = new LinkedHashMap();
+        Map<String, Object> query = new LinkedHashMap<>();
         query.put("bool", bool);
 
-        Map<String, Object> terms = new LinkedHashMap();
+        Map<String, Object> terms = new LinkedHashMap<>();
         terms.put("field", SEARCH_OBJ_TYPE);
 
         //TODO VERS if this aggregates by type version, need to add the version field to the terms
-        Map<String, Object> agg = new LinkedHashMap();
+        Map<String, Object> agg = new LinkedHashMap<>();
         agg.put("terms", terms);
 
-        Map<String, Object> aggs = new LinkedHashMap();
+        Map<String, Object> aggs = new LinkedHashMap<>();
         aggs.put("types", agg);
 
-        Map<String, Object> doc = new LinkedHashMap();
+        Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
         doc.put("aggregations", aggs);
         doc.put("size", 0);
 
         String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
+        @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
-        Map<String, Object> aggMap = (Map<String, Object>)data.get("aggregations");
-        Map<String, Object> typeMap = (Map<String, Object>)aggMap.get("types");
-        List<Map<String, Object>> buckets = (List<Map<String, Object>>)typeMap.get("buckets");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> aggMap = (Map<String, Object>) data.get("aggregations");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> typeMap = (Map<String, Object>) aggMap.get("types");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> buckets = (List<Map<String, Object>>) typeMap.get("buckets");
         Map<String, Integer> ret = new TreeMap<>();
         for (Map<String, Object> bucket : buckets) {
             String objType = (String)bucket.get("key");
@@ -1360,7 +1374,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 accessFilter.withPublic);
     }
     
-    @SuppressWarnings("serial")
     private Map<String, Object> createAccessMustBlock(Set<Integer> accessGroupIds, 
             boolean withAllHistory, boolean withPublic) {
         // should = []
@@ -1368,11 +1381,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         // match = {groupListProp: [accessGroupIds]}
         String groupListProp = withAllHistory ? "groups" : "lastin";  // I think lastin means last version even though version is orthogonal to the concept of groups?
-        Map<String, Object> match = new LinkedHashMap();
+        Map<String, Object> match = new LinkedHashMap<>();
         match.put(groupListProp, accessGroupIds);
 
         // terms = {"terms": { groupListProp: [accessGroupIds]}}
-        Map<String, Object> terms = new LinkedHashMap();
+        Map<String, Object> terms = new LinkedHashMap<>();
         terms.put("terms", match);
 
 
@@ -1387,11 +1400,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
             // through DataPalettes. If it's >0 (which is the same as existence of keywords 
             // in 'extpub') then it's visible.
             // exists = {"field", "extpub"}
-            Map<String, Object> exists = new LinkedHashMap();
+            Map<String, Object> exists = new LinkedHashMap<>();
             exists.put("field", "extpub");
 
             // existsWrapper = {"exists": {"field", "extpub"}}
-            Map<String, Object> existwrapper = new LinkedHashMap();
+            Map<String, Object> existwrapper = new LinkedHashMap<>();
             existwrapper.put("exists", exists);
 
             // should = [{"terms": {groupListProp: [accessGroupIds]}}
@@ -1400,30 +1413,29 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         // bool = {"should": [{"terms": {groupListProp: [accessGroupIds]}}
         //                    {"exists": {"field", "extpub"}}?]}
-        Map<String, Object> bool = new LinkedHashMap();
+        Map<String, Object> bool = new LinkedHashMap<>();
         bool.put("should", should);
 
         // query = {"bool": {"should": [{"terms": {groupListProp: [accessGroupIds]}}
         //                  {"exists": {"field", "extpub"}}?]}}
-        Map<String, Object> query = new LinkedHashMap();
+        Map<String, Object> query = new LinkedHashMap<>();
         query.put("bool", bool);
 
         // hasParent = {"parent_type": "access",
         //              "query": {"bool": {"should": [{"terms": {groupListProp: [accessGroupIds]}}
         //                                {"exists": {"field", "extpub"}}?]}}}
-        Map<String, Object> hasParent = new LinkedHashMap();
+        Map<String, Object> hasParent = new LinkedHashMap<>();
         hasParent.put("parent_type", getAccessTableName());
         hasParent.put("query", query);
 
         // hasParentWrapper = {"hasParent": {"parent_type": "access",
         //                                   "query": {"bool": {"should": [{"terms": {groupListProp: [accessGroupIds]}}
         //                                                     {"exists": {"field", "extpub"}}?]}}}}
-        Map<String, Object> hasParentWrapper = new LinkedHashMap();
+        Map<String, Object> hasParentWrapper = new LinkedHashMap<>();
         hasParentWrapper.put("has_parent", hasParent);
         return hasParentWrapper;
     }
     
-    @SuppressWarnings({ "serial", "unchecked" })
     private FoundHits queryHits(
             final String objectType,
             final List<Map<String, Object>> matchFilters, 
@@ -1463,20 +1475,20 @@ public class ElasticIndexingStorage implements IndexingStorage {
         // Shared block
         shouldList.add(createSharedShouldBlock(mustForShared));
         // Rest of query
-        Map<String, Object> filterBool = new LinkedHashMap();
+        Map<String, Object> filterBool = new LinkedHashMap<>();
         filterBool.put("should", shouldList);
 
-        Map<String, Object> filter = new LinkedHashMap();
+        Map<String, Object> filter = new LinkedHashMap<>();
         filter.put("bool", filterBool);
 
-        Map<String, Object> bool = new LinkedHashMap();
+        Map<String, Object> bool = new LinkedHashMap<>();
         bool.put("must", matchFilters);
         bool.put("filter", Arrays.asList(filter));
 
-        Map<String, Object> query = new LinkedHashMap();
+        Map<String, Object> query = new LinkedHashMap<>();
         query.put("bool", bool);
 
-        Map<String, Object> doc = new LinkedHashMap();
+        Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
         doc.put("from", pagination.start);
         doc.put("size", pagination.count);
@@ -1490,27 +1502,31 @@ public class ElasticIndexingStorage implements IndexingStorage {
         for (SortingRule sr : sorting) {
             String keyProp = sr.isTimestamp ? "timestamp" : (sr.isObjectName ? OBJ_NAME : 
                 getKeyProperty(sr.keyName));
-            Map<String, Object> sortOrder = new LinkedHashMap();
+            Map<String, Object> sortOrder = new LinkedHashMap<>();
             sortOrder.put("order", sr.ascending ? "asc" : "desc");
 
-            Map<String, Object> sortOrderWrapper = new LinkedHashMap();
+            Map<String, Object> sortOrderWrapper = new LinkedHashMap<>();
             sortOrderWrapper.put(keyProp, sortOrder);
             sort.add(sortOrderWrapper);
         }
         String indexName = objectType == null ? getAnyIndexPattern() : checkIndex(objectType);
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
+        @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         ret.guids = new LinkedHashSet<>();
-        Map<String, Object> hitMap = (Map<String, Object>)data.get("hits");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
         ret.total = (Integer)hitMap.get("total");
         if (loadObjects) {
             ret.objects = new ArrayList<ObjectData>();
         }
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>)hitMap.get("hits");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
-            Map<String, Object> obj = (Map<String, Object>)hit.get("_source");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
             String guidText = (String)obj.get("guid");
             ret.guids.add(new GUID(guidText));
             if (loadObjects) {
@@ -1525,9 +1541,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return "key." + keyName;
     }
 
-    @SuppressWarnings("unchecked")
     public Set<String> listIndeces() throws IOException {
         Set<String> ret = new TreeSet<>();
+        @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 makeRequest("GET", "/_aliases", null).getEntity().getContent(), Map.class);
         ret.addAll(data.keySet());
@@ -1647,7 +1663,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return "access";
     }
     
-    @SuppressWarnings("serial")
     private void createAccessTable(Map<String, Object> mappings) {
         String tableName = getAccessTableName();
         // mappings = {"access": {}}
@@ -1659,14 +1674,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
         table.put("properties", props);
 
         // props = {"properties": {}, "pguid": {"type": "keyword"}}
-        Map<String, Object> tmp = new LinkedHashMap();
+        Map<String, Object> tmp = new LinkedHashMap<>();
         tmp.put("type", "keyword");
         props.put("pguid", tmp);
 
         // props = {"properties": {},
         //          "pguid": {"type": "keyword"},
         //          "prefix": {"type": "keyword"}}
-        tmp = new LinkedHashMap();
+        tmp = new LinkedHashMap<>();
         tmp.put("type", "keyword");
         props.put("prefix", tmp);
 
@@ -1674,7 +1689,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         //          "pguid": {"type": "keyword"},
         //          "prefix": {"type": "keyword"},
         //          "version": {"type": "integer"}}
-        tmp = new LinkedHashMap();
+        tmp = new LinkedHashMap<>();
         tmp.put("type", "integer");
         props.put("version", tmp);
 
@@ -1683,7 +1698,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         //          "prefix": {"type": "keyword"},
         //          "version": {"type": "integer"},
         //          "lastin": {"type": "integer"}}
-        tmp = new LinkedHashMap();
+        tmp = new LinkedHashMap<>();
         tmp.put("type", "integer");
         props.put("lastin", tmp);
 
@@ -1693,7 +1708,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         //          "version": {"type": "integer"},
         //          "lastin": {"type": "integer"},
         //          "groups": {"type": "integer"}}
-        tmp = new LinkedHashMap();
+        tmp = new LinkedHashMap<>();
         tmp.put("type", "integer");
         props.put("groups", tmp);
 
@@ -1711,12 +1726,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
         //          "lastin": {"type": "integer"},
         //          "groups": {"type": "integer"},
         //          "extpub": {"type": "integer"}}
-        tmp = new LinkedHashMap();
+        tmp = new LinkedHashMap<>();
         tmp.put("type", "integer");
         props.put("extpub", tmp);
     }
     
-    @SuppressWarnings("serial")
     private void createTables(String indexName, List<IndexingRules> indexingRules) throws IOException {
         Map<String, Object> doc = new LinkedHashMap<>();
         Map<String, Object> mappings = new LinkedHashMap<>();
@@ -1730,7 +1744,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         mappings.put(tableName, table);
 
         // table = {"data": {}, "_parent": {"type": "access"}}
-        Map<String, Object> tmp = new LinkedHashMap();
+        Map<String, Object> tmp = new LinkedHashMap<>();
         tmp.put("type", getAccessTableName());
         table.put("_parent", tmp);
 
@@ -1738,7 +1752,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         //          "_parent": { "type": "access"},
         //                       "properties": {"guid": {"type": "keyword"}}}
         Map<String, Object> props = new LinkedHashMap<>();
-        tmp = new LinkedHashMap();
+        tmp = new LinkedHashMap<>();
         tmp.put("type", "keyword");
         props.put("guid", tmp);
         table.put("properties", props);
@@ -1755,7 +1769,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         props.put(SEARCH_OBJ_TYPE, keyword);
         props.put(SEARCH_OBJ_TYPE_VER, ImmutableMap.of("type", "integer"));
 
-        tmp = new LinkedHashMap();
+        tmp = new LinkedHashMap<>();
         tmp.put("type", "text");
         props.put(OBJ_NAME, tmp);
         props.put(OBJ_CREATOR, keyword);
@@ -1766,44 +1780,44 @@ public class ElasticIndexingStorage implements IndexingStorage {
         props.put(OBJ_PROV_COMMIT_HASH, keyword);
         props.put(OBJ_MD5, keyword);
 
-        tmp = new LinkedHashMap();
+        tmp = new LinkedHashMap<>();
         tmp.put("type", "date");
         props.put("timestamp", tmp);
 
-        tmp = new LinkedHashMap();
+        tmp = new LinkedHashMap<>();
         tmp.put("type", "keyword");
         props.put("prefix", tmp);
 
         props.put("str_cde", keyword);
 
-        tmp = new LinkedHashMap();
+        tmp = new LinkedHashMap<>();
         tmp.put("type", "integer");
         props.put("accgrp", tmp);
 
-        tmp = new LinkedHashMap();
+        tmp = new LinkedHashMap<>();
         tmp.put("type", "integer");
         props.put("version", tmp);
 
-        tmp = new LinkedHashMap();
+        tmp = new LinkedHashMap<>();
         tmp.put("type", "boolean");
         props.put("islast", tmp);
 
-        tmp = new LinkedHashMap();
+        tmp = new LinkedHashMap<>();
         tmp.put("type", "boolean");
         props.put("public", tmp);
 
-        tmp = new LinkedHashMap();
+        tmp = new LinkedHashMap<>();
         tmp.put("type", "boolean");
         props.put("shared", tmp);
 
         if (!skipFullJson) {
-            tmp = new LinkedHashMap();
+            tmp = new LinkedHashMap<>();
             tmp.put("type", "keyword");
             tmp.put("index", false);
             tmp.put("doc_values", false);
             props.put("ojson", tmp);
 
-            tmp = new LinkedHashMap();
+            tmp = new LinkedHashMap<>();
             tmp.put("type", "keyword");
             tmp.put("index", false);
             tmp.put("doc_values", false);
@@ -1813,7 +1827,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             String propName = getKeyProperty(rules.getKeyName());
             String propType = getEsType(rules.isFullText(), rules.getKeywordType());
 
-            tmp = new LinkedHashMap();
+            tmp = new LinkedHashMap<>();
             tmp.put("type", propType);
             props.put(propName, tmp);
         }
