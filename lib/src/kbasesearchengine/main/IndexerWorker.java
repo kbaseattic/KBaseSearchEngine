@@ -515,7 +515,7 @@ public class IndexerWorker implements Stoppable {
             long loadTime = System.currentTimeMillis() - t1;
             logger.logInfo("[Indexer]   " + guid + ", loading time: " + loadTime + " ms.");
             logger.timeStat(guid, loadTime, 0, 0);
-            List<ObjectTypeParsingRules> parsingRules = 
+            Set<ObjectTypeParsingRules> parsingRules = 
                     typeStorage.listObjectTypeParsingRules(storageObjectType);
             for (ObjectTypeParsingRules rule : parsingRules) {
                 final long t2 = System.currentTimeMillis();
