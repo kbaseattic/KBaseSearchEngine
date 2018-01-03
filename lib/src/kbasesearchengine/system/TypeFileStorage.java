@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -109,17 +110,6 @@ public class TypeFileStorage implements TypeStorage {
         }
 
         @Override
-        public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("CodeAndType [storageCode=");
-            builder.append(storageCode);
-            builder.append(", storageType=");
-            builder.append(storageType);
-            builder.append("]");
-            return builder.toString();
-        }
-
-        @Override
         public int hashCode() {
             final int prime = 31;
             int result = 1;
@@ -206,12 +196,7 @@ public class TypeFileStorage implements TypeStorage {
                     for (final TypeMapping map: mappings) {
                         final CodeAndType cnt = new CodeAndType(map);
                         if (ret.containsKey(cnt)) {
-                            throw new TypeParseException(String.format(
-                                    "Type collision for type %s in storage %s. " +
-                                    "Type is specified in both files %s and %s.",
-                                    cnt.storageType, cnt.storageCode,
-                                    ret.get(cnt).getSourceInfo().get(),
-                                    map.getSourceInfo().get()));
+                            throw typeMappingCollisionException(map, ret.get(cnt));
                         }
                         for (final SearchObjectType searchType: map.getSearchTypes()) {
                             if (!searchTypes.containsKey(searchType.getType())) {
@@ -243,6 +228,27 @@ public class TypeFileStorage implements TypeStorage {
             }
         }
         return ret;
+    }
+
+    private TypeParseException typeMappingCollisionException(
+            final TypeMapping map,
+            final TypeMapping priorMapping) {
+        final String source = map.getSourceInfo().orNull();
+        final String priorSource = priorMapping.getSourceInfo().orNull();
+        String exception = String.format("Type collision for type %s in storage %s.",
+                map.getStorageType(), map.getStorageCode());
+        final List<String> files = new LinkedList<>();
+        if (source != null) {
+            files.add(source);
+        }
+        if (priorSource != null) {
+            files.add(priorSource);
+        }
+        if (!files.isEmpty()) {
+            Collections.sort(files);
+            exception += " (" + String.join(", ", files) + ")";
+        }
+        return new TypeParseException(exception);
     }
 
     @Override
