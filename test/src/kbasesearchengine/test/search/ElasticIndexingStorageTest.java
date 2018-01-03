@@ -131,7 +131,7 @@ public class ElasticIndexingStorageTest {
                 pp.objectInfo = true;
                 try {
                     return indexStorage.getObjectsByIds(guids, pp).stream().collect(
-                            Collectors.toMap(od -> od.getGUID(), od -> od.getType()));
+                            Collectors.toMap(od -> od.getGUID(), od -> od.getType().get()));
                 } catch (IOException e) {
                     throw new FatalIndexingException(e.getMessage(), e);
                 }
@@ -239,7 +239,7 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals(1, objList.size());
         ObjectData featureIndex = objList.get(0);
         //System.out.println("GenomeFeature index: " + featureIndex);
-        Map<String, Object> obj = (Map<String, Object>)featureIndex.getData();
+        Map<String, Object> obj = (Map<String, Object>)featureIndex.getData().get();
         Assert.assertTrue(obj.containsKey("id"));
         Assert.assertTrue(obj.containsKey("location"));
         Assert.assertTrue(obj.containsKey("function"));

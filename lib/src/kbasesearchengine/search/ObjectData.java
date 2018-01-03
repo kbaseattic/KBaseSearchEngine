@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.common.base.Optional;
+
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.tools.Utils;
@@ -13,22 +15,21 @@ public class ObjectData {
     
     //TODO JAVADOC
     //TODO TESTS
-    //TODO NNOW Optionals vs. nulls
     
     private final GUID guid;
-    private final GUID parentGuid;
-    private final String objectName;
-    private final SearchObjectType type;
-    private final String creator;
-    private final String copier;
-    private final String module;
-    private final String method;
-    private final String commitHash;
-    private final String moduleVersion;
-    private final String md5;
-    private final Instant timestamp;
-    private final Object parentData;
-    private final Object data;
+    private final Optional<GUID> parentGuid;
+    private final Optional<String> objectName;
+    private final Optional<SearchObjectType> type;
+    private final Optional<String> creator;
+    private final Optional<String> copier;
+    private final Optional<String> module;
+    private final Optional<String> method;
+    private final Optional<String> commitHash;
+    private final Optional<String> moduleVersion;
+    private final Optional<String> md5;
+    private final Optional<Instant> timestamp;
+    private final Optional<Object> parentData;
+    private final Optional<Object> data;
     private final Map<String, String> keyProps;
     
     private ObjectData(
@@ -48,22 +49,22 @@ public class ObjectData {
             final Map<String, String> keyProps) {
         this.guid = guid;
         if (parentData != null) {
-            this.parentGuid = new GUID(guid, null, null);
+            this.parentGuid = Optional.fromNullable(new GUID(guid, null, null));
         } else {
-            this.parentGuid = null;
+            this.parentGuid = Optional.absent();
         }
-        this.objectName = objectName;
-        this.type = type;
-        this.creator = creator;
-        this.copier = copier;
-        this.module = module;
-        this.method = method;
-        this.commitHash = commitHash;
-        this.moduleVersion = moduleVersion;
-        this.md5 = md5;
-        this.timestamp = timestamp;
-        this.parentData = parentData;
-        this.data = data;
+        this.objectName = Optional.fromNullable(objectName);
+        this.type = Optional.fromNullable(type);
+        this.creator = Optional.fromNullable(creator);
+        this.copier = Optional.fromNullable(copier);
+        this.module = Optional.fromNullable(module);
+        this.method = Optional.fromNullable(method);
+        this.commitHash = Optional.fromNullable(commitHash);
+        this.moduleVersion = Optional.fromNullable(moduleVersion);
+        this.md5 = Optional.fromNullable(md5);
+        this.timestamp = Optional.fromNullable(timestamp);
+        this.parentData = Optional.fromNullable(parentData);
+        this.data = Optional.fromNullable(data);
         this.keyProps = Collections.unmodifiableMap(keyProps);
     }
 
@@ -71,58 +72,60 @@ public class ObjectData {
         return guid;
     }
 
-    public GUID getParentGUID() {
+    public Optional<GUID> getParentGUID() {
         return parentGuid;
     }
 
-    public String getObjectName() {
+    public Optional<String> getObjectName() {
         return objectName;
     }
 
-    public SearchObjectType getType() {
+    public Optional<SearchObjectType> getType() {
         return type;
     }
 
-    public String getCreator() {
+    public Optional<String> getCreator() {
         return creator;
     }
 
-    public String getCopier() {
+    public Optional<String> getCopier() {
         return copier;
     }
 
-    public String getModule() {
+    public Optional<String> getModule() {
         return module;
     }
 
-    public String getMethod() {
+    public Optional<String> getMethod() {
         return method;
     }
 
-    public String getCommitHash() {
+    public Optional<String> getCommitHash() {
         return commitHash;
     }
 
-    public String getModuleVersion() {
+    public Optional<String> getModuleVersion() {
         return moduleVersion;
     }
 
-    public String getMd5() {
+    public Optional<String> getMd5() {
         return md5;
     }
 
-    public Instant getTimestamp() {
+    public Optional<Instant> getTimestamp() {
         return timestamp;
     }
 
-    public Object getParentData() {
+    public Optional<Object> getParentData() {
         return parentData;
     }
 
-    public Object getData() {
+    public Optional<Object> getData() {
         return data;
     }
 
+    //TODO NNOW change to getKeyProperties, add getKeyProperty(key)
+    
     public Map<String, String> getKeyProps() {
         return keyProps;
     }

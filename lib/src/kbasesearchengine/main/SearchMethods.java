@@ -224,26 +224,26 @@ public class SearchMethods {
         final kbasesearchengine.ObjectData ret = new kbasesearchengine.ObjectData();
         ret.withGuid(od.getGUID().toString());
         ret.withObjectProps(new HashMap<>());
-        if (od.getParentGUID() != null) {
-            ret.withParentGuid(od.getParentGUID().toString());
+        if (od.getParentGUID().isPresent()) {
+            ret.withParentGuid(od.getParentGUID().get().toString());
         }
-        if (od.getTimestamp() != null) {
-            ret.withTimestamp(od.getTimestamp().toEpochMilli());
+        if (od.getTimestamp().isPresent()) {
+            ret.withTimestamp(od.getTimestamp().get().toEpochMilli());
         }
-        if (od.getData() != null) {
-            ret.withData(new UObject(od.getData()));
+        if (od.getData().isPresent()) {
+            ret.withData(new UObject(od.getData().get()));
         }
-        if (od.getParentData() != null) {
-            ret.withParentData(new UObject(od.getParentData()));
+        if (od.getParentData().isPresent()) {
+            ret.withParentData(new UObject(od.getParentData().get()));
         }
-        ret.withObjectName(od.getObjectName());
+        ret.withObjectName(od.getObjectName().orNull());
         ret.withKeyProps(od.getKeyProps());
-        addObjectProp(ret, od.getCreator(), "creator");
-        addObjectProp(ret, od.getCopier(), "copied");
-        addObjectProp(ret, od.getModule(), "module");
-        addObjectProp(ret, od.getMethod(), "method");
-        addObjectProp(ret, od.getModuleVersion(), "module_ver");
-        addObjectProp(ret, od.getCommitHash(), "commmit");
+        addObjectProp(ret, od.getCreator().orNull(), "creator");
+        addObjectProp(ret, od.getCopier().orNull(), "copied");
+        addObjectProp(ret, od.getModule().orNull(), "module");
+        addObjectProp(ret, od.getMethod().orNull(), "method");
+        addObjectProp(ret, od.getModuleVersion().orNull(), "module_ver");
+        addObjectProp(ret, od.getCommitHash().orNull(), "commmit");
         return ret;
     }
     

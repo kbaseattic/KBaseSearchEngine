@@ -316,7 +316,7 @@ public class KeywordParser {
                     String key = retProp.substring(4);
                     ret.add(obj.getKeyProps().get(key));
                 } else if (retProp.equals("oname")) {
-                    ret.add(obj.getObjectName());
+                    ret.add(obj.getObjectName().get());
                 }
             }
             return ret;

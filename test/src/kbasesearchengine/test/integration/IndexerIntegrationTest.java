@@ -305,7 +305,7 @@ public class IndexerIntegrationTest {
                 .withNullableCommitHash("commit")
                 .withNullableModuleVersion("servver")
                 .withNullableMD5("3c6e8d4dde8a26a0bfca203228cc6a36")
-                .withNullableTimestamp(indexedObj.getTimestamp())
+                .withNullableTimestamp(indexedObj.getTimestamp().get())
                 .withNullableData(ImmutableMap.of("whee", "wugga"))
                 .withKeyProperty("whee", "wugga")
                 .build();
@@ -325,7 +325,7 @@ public class IndexerIntegrationTest {
          */
         
         TestCommon.assertCloseMS(
-                Instant.ofEpochMilli(timestamp), indexedObj.getTimestamp(), 0, 100);
+                Instant.ofEpochMilli(timestamp), indexedObj.getTimestamp().get(), 0, 100);
     }
     
 }

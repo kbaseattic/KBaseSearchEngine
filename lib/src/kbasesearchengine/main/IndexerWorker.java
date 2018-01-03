@@ -842,7 +842,7 @@ public class IndexerWorker implements Stoppable {
                 final List<kbasesearchengine.search.ObjectData> data =
                         retrier.retryFunc(g -> getObjectsByIds(g), guidsToLoad, null);
                 final Map<GUID, SearchObjectType> loaded = data.stream()
-                        .collect(Collectors.toMap(od -> od.getGUID(), od -> od.getType()));
+                        .collect(Collectors.toMap(od -> od.getGUID(), od -> od.getType().get()));
                 guidToTypeCache.putAll(loaded);
                 ret.putAll(loaded);
             }
