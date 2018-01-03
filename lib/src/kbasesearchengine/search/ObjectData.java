@@ -1,32 +1,71 @@
 package kbasesearchengine.search;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.system.SearchObjectType;
+import kbasesearchengine.tools.Utils;
 
 public class ObjectData {
     
     //TODO JAVADOC
     //TODO TESTS
-    //TODO IMMUTABLE needs a builder? Probably more readable than a huge constructor
+    //TODO NNOW Optionals vs. nulls
     
-    public GUID guid;
-    public GUID parentGuid;
-    public String objectName;
-    public SearchObjectType type;
-    public String creator;
-    public String copier;
-    public String module;
-    public String method;
-    public String commitHash;
-    public String moduleVersion;
-    public String md5;
-    public Instant timestamp;
-    public Object parentData;
-    public Object data;
-    public Map<String, String> keyProps;
+    private final GUID guid;
+    private final GUID parentGuid;
+    private final String objectName;
+    private final SearchObjectType type;
+    private final String creator;
+    private final String copier;
+    private final String module;
+    private final String method;
+    private final String commitHash;
+    private final String moduleVersion;
+    private final String md5;
+    private final Instant timestamp;
+    private final Object parentData;
+    private final Object data;
+    private final Map<String, String> keyProps;
+    
+    private ObjectData(
+            final GUID guid,
+            final String objectName,
+            final SearchObjectType type,
+            final String creator,
+            final String copier,
+            final String module,
+            final String method,
+            final String commitHash,
+            final String moduleVersion,
+            final String md5,
+            final Instant timestamp,
+            final Object parentData,
+            final Object data,
+            final Map<String, String> keyProps) {
+        this.guid = guid;
+        if (parentData != null) {
+            this.parentGuid = new GUID(guid, null, null);
+        } else {
+            this.parentGuid = null;
+        }
+        this.objectName = objectName;
+        this.type = type;
+        this.creator = creator;
+        this.copier = copier;
+        this.module = module;
+        this.method = method;
+        this.commitHash = commitHash;
+        this.moduleVersion = moduleVersion;
+        this.md5 = md5;
+        this.timestamp = timestamp;
+        this.parentData = parentData;
+        this.data = data;
+        this.keyProps = Collections.unmodifiableMap(keyProps);
+    }
 
     public GUID getGUID() {
         return guid;
@@ -272,5 +311,126 @@ public class ObjectData {
             return false;
         }
         return true;
+    }
+    
+    public static Builder getBuilder(final GUID guid) {
+        return new Builder(guid);
+    }
+    
+    public static class Builder {
+        
+        private final GUID guid;
+        private String objectName;
+        private SearchObjectType type;
+        private String creator;
+        private String copier;
+        private String module;
+        private String method;
+        private String commitHash;
+        private String moduleVersion;
+        private String md5;
+        private Instant timestamp;
+        private Object parentData;
+        private Object data;
+        private Map<String, String> keyProps = new HashMap<>();
+        
+        private Builder(final GUID guid) {
+            this.guid = guid;
+        }
+        
+        public ObjectData build() {
+            return new ObjectData(guid, objectName, type, creator, copier, module, method,
+                    commitHash, moduleVersion, md5, timestamp, parentData, data, keyProps);
+        }
+        
+        public Builder withNullableObjectName(final String objectName) {
+            if (!Utils.isNullOrEmpty(objectName)) {
+                this.objectName = objectName;
+            }
+            return this;
+        }
+        
+        public Builder withNullableType(final SearchObjectType type) {
+            if (type != null) {
+                this.type = type;
+            }
+            return this;
+        }
+        
+        public Builder withNullableCreator(final String creator) {
+            if (!Utils.isNullOrEmpty(creator)) {
+                this.creator = creator;
+            }
+            return this;
+        }
+        
+        public Builder withNullableCopier(final String copier) {
+            if (!Utils.isNullOrEmpty(copier)) {
+                this.copier = copier;
+            }
+            return this;
+        }
+        
+        public Builder withNullableModule(final String module) {
+            if (!Utils.isNullOrEmpty(module)) {
+                this.module = module;
+            }
+            return this;
+        }
+        
+        public Builder withNullableMethod(final String method) {
+            if (!Utils.isNullOrEmpty(method)) {
+                this.method = method;
+            }
+            return this;
+        }
+        
+        public Builder withNullableCommitHash(final String commitHash) {
+            if (!Utils.isNullOrEmpty(commitHash)) {
+                this.commitHash = commitHash;
+            }
+            return this;
+        }
+        
+        public Builder withNullableModuleVersion(final String moduleVersion) {
+            if (!Utils.isNullOrEmpty(moduleVersion)) {
+                this.moduleVersion = moduleVersion;
+            }
+            return this;
+        }
+        
+        public Builder withNullableMD5(final String md5) {
+            if (!Utils.isNullOrEmpty(md5)) {
+                this.md5 = md5;
+            }
+            return this;
+        }
+        
+        public Builder withNullableTimestamp(final Instant timestamp) {
+            if (timestamp != null) {
+                this.timestamp = timestamp;
+            }
+            return this;
+        }
+        
+        public Builder withNullableParentData(final Object parentData) {
+            if (parentData != null) {
+                this.parentData = parentData;
+            }
+            return this;
+        }
+        
+        public Builder withNullableData(final Object data) {
+            if (data != null) {
+                this.data = data;
+            }
+            return this;
+        }
+        
+        public Builder withKeyProperty(final String key, final String property) {
+            Utils.notNullOrEmpty(key, "key cannot be null or whitespace");
+            keyProps.put(key, property);
+            return this;
+        }
     }
 }

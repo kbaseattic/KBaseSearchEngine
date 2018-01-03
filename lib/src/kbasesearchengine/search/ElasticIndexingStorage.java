@@ -1130,39 +1130,40 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return ret;
     }
 
-    private ObjectData buildObjectData(Map<String, Object> obj, boolean info, boolean keys, 
-            boolean json, List<String> objectDataIncludes) {
+    private ObjectData buildObjectData(
+            final Map<String, Object> obj,
+            final boolean info,
+            final boolean keys, 
+            final boolean json,
+            final List<String> objectDataIncludes) {
         // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
-        ObjectData item = new ObjectData();
-        item.guid = new GUID((String)obj.get("guid"));
+        final ObjectData.Builder b = ObjectData.getBuilder(new GUID((String) obj.get("guid")));
         if (info) {
-            item.objectName = (String)obj.get(OBJ_NAME);
-            item.creator = (String) obj.get(OBJ_CREATOR);
-            item.copier = (String) obj.get(OBJ_COPIER);
-            item.module = (String) obj.get(OBJ_PROV_MODULE);
-            item.method = (String) obj.get(OBJ_PROV_METHOD);
-            item.moduleVersion = (String) obj.get(OBJ_PROV_MODULE_VERSION);
-            item.commitHash = (String) obj.get(OBJ_PROV_COMMIT_HASH);
-            item.md5 = (String) obj.get(OBJ_MD5);
-            item.type = new SearchObjectType(
+            b.withNullableObjectName((String) obj.get(OBJ_NAME));
+            b.withNullableCreator((String) obj.get(OBJ_CREATOR));
+            b.withNullableCopier((String) obj.get(OBJ_COPIER));
+            b.withNullableModule((String) obj.get(OBJ_PROV_MODULE));
+            b.withNullableMethod((String) obj.get(OBJ_PROV_METHOD));
+            b.withNullableModuleVersion((String) obj.get(OBJ_PROV_MODULE_VERSION));
+            b.withNullableCommitHash((String) obj.get(OBJ_PROV_COMMIT_HASH));
+            b.withNullableMD5((String) obj.get(OBJ_MD5));
+            b.withNullableType(new SearchObjectType(
                     (String) obj.get(SEARCH_OBJ_TYPE),
-                    (Integer) obj.get(SEARCH_OBJ_TYPE_VER));
-            item.timestamp = Instant.ofEpochMilli((long) obj.get(OBJ_TIMESTAMP));
+                    (Integer) obj.get(SEARCH_OBJ_TYPE_VER)));
+            b.withNullableTimestamp(Instant.ofEpochMilli((long) obj.get(OBJ_TIMESTAMP)));
         }
         if (json) {
-            item.data = UObject.transformStringToObject((String)obj.get("ojson"), Object.class);
-            String pjson = (String)obj.get("pjson");
+            b.withNullableData(UObject.transformStringToObject(
+                    (String) obj.get("ojson"), Object.class));
+            final String pjson = (String) obj.get("pjson");
             if (pjson != null) {
-                item.parentData = UObject.transformStringToObject(pjson, Object.class);
-                item.parentGuid = new GUID(item.guid.getStorageCode(), item.guid.getAccessGroupId(),
-                        item.guid.getAccessGroupObjectId(), item.guid.getVersion(), null, null);
+                b.withNullableParentData(UObject.transformStringToObject(pjson, Object.class));
             }
         }
         if (keys) {
-            Map<String, String> keyProps = new LinkedHashMap<>();
-            for (String key : obj.keySet()) {
+            for (final String key : obj.keySet()) {
                 if (key.startsWith("key.")) {
-                    Object objValue = obj.get(key);
+                    final Object objValue = obj.get(key);
                     String textValue = null;
                     if (objValue instanceof List) {
                         @SuppressWarnings("unchecked")
@@ -1172,12 +1173,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     } else {
                         textValue = String.valueOf(objValue);
                     }
-                    keyProps.put(key.substring(4), textValue);
+                    b.withKeyProperty(key.substring(4), textValue);
                 }
             }
-            item.keyProps = keyProps;
         }
-        return item;
+        return b.build();
     }
     
     private Map<String, Object> createPublicShouldBlock(boolean withAllHistory) {

@@ -585,39 +585,29 @@ public class ElasticIndexingStorageTest {
         final ObjectData indexedObj1 =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/2/3"))).get(0);
         
-        final ObjectData expected1 = new ObjectData();
-        expected1.guid = new GUID("WS:1/2/3");
-        expected1.objectName = "o1";
-        expected1.type = type1;
-        expected1.creator = "creator";
-        expected1.module = null;
-        expected1.method = null;
-        expected1.commitHash = null;
-        expected1.moduleVersion = null;
-        expected1.md5 = null;
-        expected1.timestamp = now;
-        expected1.data = ImmutableMap.of("bar", 1);
-        expected1.keyProps = ImmutableMap.of("bar", "1");
+        final ObjectData expected1 = ObjectData.getBuilder(new GUID("WS:1/2/3"))
+                .withNullableObjectName("o1")
+                .withNullableType(type1)
+                .withNullableCreator("creator")
+                .withNullableTimestamp(now)
+                .withNullableData(ImmutableMap.of("bar", 1))
+                .withKeyProperty("bar", "1")
+                .build();
         
         assertThat("incorrect indexed object", indexedObj1, is(expected1));
         
         final ObjectData indexedObj2 =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:4/5/6"))).get(0);
-        
-        final ObjectData expected2 = new ObjectData();
-        expected2.guid = new GUID("WS:4/5/6");
-        expected2.objectName = "o2";
-        expected2.type = type2;
-        expected2.creator = "creator";
-        expected2.module = null;
-        expected2.method = null;
-        expected2.commitHash = null;
-        expected2.moduleVersion = null;
-        expected2.md5 = null;
-        expected2.timestamp = now;
-        expected2.data = ImmutableMap.of("bar", "whee");
-        expected2.keyProps = ImmutableMap.of("bar", "whee");
-        
+
+        final ObjectData expected2 = ObjectData.getBuilder(new GUID("WS:4/5/6"))
+                .withNullableObjectName("o2")
+                .withNullableType(type2)
+                .withNullableCreator("creator")
+                .withNullableTimestamp(now)
+                .withNullableData(ImmutableMap.of("bar", "whee"))
+                .withKeyProperty("bar", "whee")
+                .build();
+
         assertThat("incorrect indexed object", indexedObj2, is(expected2));
         
     }
