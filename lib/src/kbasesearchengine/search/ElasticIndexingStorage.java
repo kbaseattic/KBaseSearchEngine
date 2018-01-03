@@ -1526,7 +1526,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         
-        System.out.println(doc);
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
