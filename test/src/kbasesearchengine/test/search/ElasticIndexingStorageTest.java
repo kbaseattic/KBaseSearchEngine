@@ -15,7 +15,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import kbasesearchengine.search.*;
-import kbasesearchengine.system.TypeStorage;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.junit.*;
@@ -557,13 +556,18 @@ public class ElasticIndexingStorageTest {
         ir.setFullText(true);
         List<IndexingRules> indexingRules= Arrays.asList(ir);
         try {
-            indexObject(new GUID("WS:11/1/1"), objectType, "{\"prop1\":\"multiWordInSearchMethod1 multiWordInSearchMethod2\"}", "multiword.1", Instant.now(), null,
+            indexObject(new GUID("WS:11/1/2"), objectType, "{\"prop1\":\"multiWordInSearchMethod1 multiWordInSearchMethod2\"}", "multiword.1", Instant.ofEpochSecond(1514939000), null,
                     true, indexingRules);
-            indexObject(new GUID("WS:11/2/1"), objectType, "{\"prop1\":\"multiWordInSearchMethod2\"}", "multiword.2", Instant.now(), null,
+            indexObject(new GUID("WS:11/2/2"), objectType, "{\"prop1\":\"multiWordInSearchMethod2\"}", "multiword.2", Instant.ofEpochSecond(1514939000), null,
                     true, indexingRules);
-            indexObject(new GUID("WS:11/3/1"), objectType, "{\"prop1\":\"multiWordInSearchMethod1\"}", "multiword.3", Instant.now(), null,
+            indexObject(new GUID("WS:11/3/2"), objectType, "{\"prop1\":\"multiWordInSearchMethod1\"}", "multiword.3", Instant.ofEpochSecond(1514939000), null,
+                    true, indexingRules);
+            indexObject(new GUID("WS:11/4/1"), objectType, "{\"prop1\":\"test filters\"}", "multiword.4", Instant.ofEpochMilli(1514939111), null,
+                    true, indexingRules);
+            indexObject(new GUID("WS:11/5/1"), objectType, "{\"prop1\":\"test filters later time\"}", "multiword.5", Instant.now(), null,
                     true, indexingRules);
         } catch (Exception ignore) {
+            System.out.println("skipped");
             // HTTP 409 Conflict when you run tests repeatedly due to
             // already indexed object with identical GUID
             // Should add an @After to clean this up
@@ -597,12 +601,39 @@ public class ElasticIndexingStorageTest {
         int size2 = hits2.guids.size();
         int size3 = hits3.guids.size();
 
+
         assertTrue(size1 > 0);
         assertTrue(size2 > 0);
         assertTrue(size3 > 0);
 
         assertTrue(size3 > size1);
         assertTrue(size2 > size1);
+    }
+
+    @Test
+    public void testMutliFilterCondition() throws Exception{
+        prepareDatabase();
+
+        List<kbasesearchengine.search.SortingRule> sorting = null;
+        AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
+
+
+
+        //1514939111
+        MatchValue specificDate = new MatchValue(1514939111);
+        MatchValue range1 = new MatchValue(1514939000, 1514940000);
+
+        MatchFilter filter =  MatchFilter.create().withLookupInKey(
+                "prop1", "test filters");
+
+
+        System.out.println(filter.lookupInKeys);
+        FoundHits hits1 = indexStorage.searchObjects(null, filter,sorting, accessFilter
+                , null, null);
+
+        System.out.println(hits1.guids);
+//        Instant.ofEpochSecond(1514939000)
+
     }
 
 }

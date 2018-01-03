@@ -1416,6 +1416,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         String indexName = objectType == null ? getAnyIndexPattern() : getIndex(objectType);
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
+        System.out.println(doc);
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         ret.guids = new LinkedHashSet<>();
