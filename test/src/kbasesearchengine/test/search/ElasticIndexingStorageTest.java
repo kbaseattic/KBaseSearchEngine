@@ -616,11 +616,10 @@ public class ElasticIndexingStorageTest {
         
     }
 
-    private void prepareDatabase() throws ObjectParseException {
-        String objectType = "Simple";
-        IndexingRules ir = new IndexingRules();
-        ir.setPath(new ObjectJsonPath("prop1"));
-        ir.setFullText(true);
+    private void prepareTestMultiwordSearch() throws ObjectParseException {
+        SearchObjectType objectType = new SearchObjectType("Simple", 1);
+        IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop1"))
+                .withFullText().build();
         List<IndexingRules> indexingRules= Arrays.asList(ir);
         try {
             indexObject(new GUID("WS:11/1/2"), objectType, "{\"prop1\":\"multiWordInSearchMethod1 multiWordInSearchMethod2\"}", "multiword.1", Instant.ofEpochSecond(1514939000), null,
@@ -645,7 +644,7 @@ public class ElasticIndexingStorageTest {
 
     @Test
     public void testMultiwordSearch() throws Exception{
-        prepareDatabase();
+        prepareTestMultiwordSearch();
         final kbasesearchengine.search.MatchFilter filter = new kbasesearchengine.search.MatchFilter();
 
         List<kbasesearchengine.search.SortingRule> sorting = null;
@@ -677,29 +676,91 @@ public class ElasticIndexingStorageTest {
         assertTrue(size2 > size1);
     }
 
-    @Test
-    public void testMutliFilterCondition() throws Exception{
-        prepareDatabase();
+    private void prepareDatabase() throws ObjectParseException {
+        SearchObjectType objType = new SearchObjectType("SimpleNumber",1 );
+        IndexingRules ir1 = IndexingRules.fromPath(new ObjectJsonPath("num1"))
+                .withKeywordType("integer").build();
+        IndexingRules ir2 = IndexingRules.fromPath(new ObjectJsonPath("num2"))
+                .withKeywordType("integer").build();
+        List<IndexingRules> indexingRules= Arrays.asList(ir1,ir2);
 
+        try {
+            indexObject(new GUID("WS:12/1/1"), objType, "{\"num1\": 123, \"num2\": 123}", "number.1", Instant.now(), null,
+                    false, indexingRules);
+            indexObject(new GUID("WS:12/2/1"), objType, "{\"num1\": 1234, \"num2\": 1234}", "number.2", Instant.now(), null,
+                    false, indexingRules);
+            indexObject(new GUID("WS:12/3/1"), objType, "{\"num1\": 1235, \"num2\": 1235}", "number.3", Instant.now(), null,
+                    false, indexingRules);
+            indexObject(new GUID("WS:12/4/1"), objType, "{\"num1\": 1236, \"num2\": 1236}", "number.4", Instant.now(), null,
+                    false, indexingRules);
+        } catch (Exception ignore) {
+            System.out.println("skipped");
+
+        }
+
+
+    }
+    @Test
+    public void testLookupInKey() throws Exception{
+        prepareDatabase();
         List<kbasesearchengine.search.SortingRule> sorting = null;
         AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
 
+        //key, value pair lookup
+        MatchFilter filter0 =  MatchFilter.create().withLookupInKey(
+                "num1", "123");
+        FoundHits hits0 = indexStorage.searchObjects(null, filter0,sorting, accessFilter
+                , null, null);
+        assertTrue(hits0.guids.size() > 0);
+
+        //key, range lookup
+        MatchValue range1 = new MatchValue(100, 200);
+        MatchValue range2 = new MatchValue(1000, 2000);
+        MatchValue range3 = new MatchValue(100, 1234);
 
 
-        //1514939111
-        MatchValue specificDate = new MatchValue(1514939111);
-        MatchValue range1 = new MatchValue(1514939000, 1514940000);
-
-        MatchFilter filter =  MatchFilter.create().withLookupInKey(
-                "prop1", "test filters");
+        MatchFilter filter1 =  MatchFilter.create().withLookupInKey("num1", range1);
+        MatchFilter filter2 =  MatchFilter.create().withLookupInKey("num2", range2);
+        MatchFilter filter3 =  MatchFilter.create().withLookupInKey("num1", range3);
 
 
-        System.out.println(filter.lookupInKeys);
-        FoundHits hits1 = indexStorage.searchObjects(null, filter,sorting, accessFilter
+        FoundHits hits1 = indexStorage.searchObjects(null, filter1,sorting, accessFilter
+                , null, null);
+        FoundHits hits2 = indexStorage.searchObjects(null, filter2,sorting, accessFilter
+                , null, null);
+        FoundHits hits3 = indexStorage.searchObjects(null, filter3,sorting, accessFilter
                 , null, null);
 
-        System.out.println(hits1.guids);
-//        Instant.ofEpochSecond(1514939000)
+        int size1 = hits1.guids.size();
+        int size2 = hits2.guids.size();
+        int size3 = hits3.guids.size();
+
+        assertTrue(size1 > 0);
+        assertTrue(size2 > 0);
+        assertTrue(size3 > 0);
+
+        assertTrue(size3 > size1);
+
+        //conflicting filters should return nothing
+        MatchFilter filter4 =  MatchFilter.create().withLookupInKey("num1", range1);
+        filter4.withLookupInKey("num2", range2);
+        FoundHits hits4 = indexStorage.searchObjects(null, filter4,sorting, accessFilter
+                , null, null);
+        assertTrue(hits4.guids.size() == 0);
+
+        // overlapping filters should return intersection
+        MatchFilter filter5 =  MatchFilter.create().withLookupInKey("num1", range3);
+        filter5.withLookupInKey("num2", range2);
+        FoundHits hits5 = indexStorage.searchObjects(null, filter5,sorting, accessFilter
+                , null, null);
+        int size5 = hits5.guids.size();
+
+        assertTrue(size5 < (size1 + size2));
+        assertTrue(size5 < size2);
+
+
+
+
 
     }
 
