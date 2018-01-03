@@ -198,22 +198,23 @@ public class TypeFileStorage implements TypeStorage {
                         if (ret.containsKey(cnt)) {
                             throw typeMappingCollisionException(map, ret.get(cnt));
                         }
+                        final String source = map.getSourceInfo().orNull();
                         for (final SearchObjectType searchType: map.getSearchTypes()) {
                             if (!searchTypes.containsKey(searchType.getType())) {
                                 throw new TypeParseException(String.format(
                                         "The search type %s specified in source code/type %s/%s " +
-                                        "does not have an equivalent tranform type. File: %s",
+                                        "does not have an equivalent transform type.%s",
                                         searchType.getType(), cnt.storageCode, cnt.storageType,
-                                        map.getSourceInfo().get()));
+                                        source == null ? "" : " File: " + source));
                             }
                             if (searchTypes.get(searchType.getType()).size() <
                                     searchType.getVersion()) {
                                 throw new TypeParseException(String.format(
-                                        "The version %s of search type %s specified in " +
-                                        "source code/type %s/%s does not exist. File: %s",
+                                        "Version %s of search type %s specified in " +
+                                        "source code/type %s/%s does not exist.%s",
                                         searchType.getVersion(), searchType.getType(),
                                         cnt.storageCode, cnt.storageType,
-                                        map.getSourceInfo().get()));
+                                        source == null ? "" : " File: " + source));
                             }
                         }
                         ret.put(cnt, map);
