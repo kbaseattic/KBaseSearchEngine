@@ -14,7 +14,6 @@ import kbasesearchengine.tools.Utils;
 public class ObjectData {
     
     //TODO JAVADOC
-    //TODO TESTS
     
     private final GUID guid;
     private final Optional<GUID> parentGuid;
@@ -124,47 +123,8 @@ public class ObjectData {
         return data;
     }
 
-    //TODO NNOW change to getKeyProperties, add getKeyProperty(key)
-    
-    public Map<String, String> getKeyProps() {
+    public Map<String, String> getKeyProperties() {
         return keyProps;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("ObjectData [guid=");
-        builder.append(guid);
-        builder.append(", parentGuid=");
-        builder.append(parentGuid);
-        builder.append(", objectName=");
-        builder.append(objectName);
-        builder.append(", type=");
-        builder.append(type);
-        builder.append(", creator=");
-        builder.append(creator);
-        builder.append(", copier=");
-        builder.append(copier);
-        builder.append(", module=");
-        builder.append(module);
-        builder.append(", method=");
-        builder.append(method);
-        builder.append(", commitHash=");
-        builder.append(commitHash);
-        builder.append(", moduleVersion=");
-        builder.append(moduleVersion);
-        builder.append(", md5=");
-        builder.append(md5);
-        builder.append(", timestamp=");
-        builder.append(timestamp);
-        builder.append(", parentData=");
-        builder.append(parentData);
-        builder.append(", data=");
-        builder.append(data);
-        builder.append(", keyProps=");
-        builder.append(keyProps);
-        builder.append("]");
-        return builder.toString();
     }
 
     @Override
@@ -338,6 +298,7 @@ public class ObjectData {
         private Map<String, String> keyProps = new HashMap<>();
         
         private Builder(final GUID guid) {
+            Utils.nonNull(guid, "guid");
             this.guid = guid;
         }
         

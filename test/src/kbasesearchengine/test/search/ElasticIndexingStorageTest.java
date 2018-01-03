@@ -244,12 +244,12 @@ public class ElasticIndexingStorageTest {
         Assert.assertTrue(obj.containsKey("location"));
         Assert.assertTrue(obj.containsKey("function"));
         Assert.assertTrue(obj.containsKey("type"));
-        Assert.assertEquals("NC_000913", featureIndex.getKeyProps().get("contig_id"));
-        String contigGuidText = featureIndex.getKeyProps().get("contig_guid");
+        Assert.assertEquals("NC_000913", featureIndex.getKeyProperties().get("contig_id"));
+        String contigGuidText = featureIndex.getKeyProperties().get("contig_guid");
         Assert.assertNotNull("missing contig_guid", contigGuidText);
         ObjectData contigIndex = getIndexedObject(new GUID(contigGuidText));
         //System.out.println("AssemblyContig index: " + contigIndex);
-        Assert.assertEquals("NC_000913", "" + contigIndex.getKeyProps().get("contig_id"));
+        Assert.assertEquals("NC_000913", "" + contigIndex.getKeyProperties().get("contig_id"));
         // Search by keyword
         ids = indexStorage.searchIds(type, MatchFilter.create().withLookupInKey(
                 "ontology_terms", "SSO:000008186"), null,
@@ -270,14 +270,14 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals(1, guids.size());
         ObjectData genomeIndex = indexStorage.getObjectsByIds(guids).get(0);
         //System.out.println("Genome index: " + genomeIndex);
-        Assert.assertTrue(genomeIndex.getKeyProps().containsKey("features"));
-        Assert.assertEquals("3", "" + genomeIndex.getKeyProps().get("features"));
-        Assert.assertEquals("1", "" + genomeIndex.getKeyProps().get("contigs"));
-        String assemblyGuidText = genomeIndex.getKeyProps().get("assembly_guid");
+        Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("features"));
+        Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("features"));
+        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contigs"));
+        String assemblyGuidText = genomeIndex.getKeyProperties().get("assembly_guid");
         Assert.assertNotNull(assemblyGuidText);
         ObjectData assemblyIndex = getIndexedObject(new GUID(assemblyGuidText));
         //System.out.println("Assembly index: " + genomeIndex);
-        Assert.assertEquals("1", "" + assemblyIndex.getKeyProps().get("contigs"));
+        Assert.assertEquals("1", "" + assemblyIndex.getKeyProperties().get("contigs"));
         System.out.println("*** end testGenome***");
     }
     

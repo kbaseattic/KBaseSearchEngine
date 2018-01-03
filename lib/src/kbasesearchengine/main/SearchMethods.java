@@ -237,7 +237,7 @@ public class SearchMethods {
             ret.withParentData(new UObject(od.getParentData().get()));
         }
         ret.withObjectName(od.getObjectName().orNull());
-        ret.withKeyProps(od.getKeyProps());
+        ret.withKeyProps(od.getKeyProperties());
         addObjectProp(ret, od.getCreator().orNull(), "creator");
         addObjectProp(ret, od.getCopier().orNull(), "copied");
         addObjectProp(ret, od.getModule().orNull(), "module");
