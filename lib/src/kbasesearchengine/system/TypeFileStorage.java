@@ -31,8 +31,6 @@ import kbasesearchengine.tools.Utils;
  */
 public class TypeFileStorage implements TypeStorage {
     
-    //TODO TEST
-    
     private static final String TYPE_STORAGE = "[TypeStorage]";
     // as opposed to file types for mappings
     private static final Set<String> ALLOWED_FILE_TYPES_FOR_TYPES =
