@@ -27,6 +27,66 @@ public class ObjectData {
     public Object data;
     public Map<String, String> keyProps;
 
+    public GUID getGUID() {
+        return guid;
+    }
+
+    public GUID getParentGUID() {
+        return parentGuid;
+    }
+
+    public String getObjectName() {
+        return objectName;
+    }
+
+    public SearchObjectType getType() {
+        return type;
+    }
+
+    public String getCreator() {
+        return creator;
+    }
+
+    public String getCopier() {
+        return copier;
+    }
+
+    public String getModule() {
+        return module;
+    }
+
+    public String getMethod() {
+        return method;
+    }
+
+    public String getCommitHash() {
+        return commitHash;
+    }
+
+    public String getModuleVersion() {
+        return moduleVersion;
+    }
+
+    public String getMd5() {
+        return md5;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public Object getParentData() {
+        return parentData;
+    }
+
+    public Object getData() {
+        return data;
+    }
+
+    public Map<String, String> getKeyProps() {
+        return keyProps;
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();

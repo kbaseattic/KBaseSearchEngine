@@ -314,9 +314,9 @@ public class KeywordParser {
             for (ObjectData obj : guidToObj.values()) {
                 if (retProp.startsWith("key.")) {
                     String key = retProp.substring(4);
-                    ret.add(obj.keyProps.get(key));
+                    ret.add(obj.getKeyProps().get(key));
                 } else if (retProp.equals("oname")) {
-                    ret.add(obj.objectName);
+                    ret.add(obj.getObjectName());
                 }
             }
             return ret;

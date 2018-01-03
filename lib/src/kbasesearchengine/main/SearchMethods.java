@@ -222,28 +222,28 @@ public class SearchMethods {
     private kbasesearchengine.ObjectData fromSearch(
             final kbasesearchengine.search.ObjectData od) {
         final kbasesearchengine.ObjectData ret = new kbasesearchengine.ObjectData();
-        ret.withGuid(od.guid.toString());
+        ret.withGuid(od.getGUID().toString());
         ret.withObjectProps(new HashMap<>());
-        if (od.parentGuid != null) {
-            ret.withParentGuid(od.parentGuid.toString());
+        if (od.getParentGUID() != null) {
+            ret.withParentGuid(od.getParentGUID().toString());
         }
-        if (od.timestamp > 0) {
-            ret.withTimestamp(od.timestamp);
+        if (od.getTimestamp() > 0) {
+            ret.withTimestamp(od.getTimestamp());
         }
-        if (od.data != null) {
-            ret.withData(new UObject(od.data));
+        if (od.getData() != null) {
+            ret.withData(new UObject(od.getData()));
         }
-        if (od.parentData != null) {
-            ret.withParentData(new UObject(od.parentData));
+        if (od.getParentData() != null) {
+            ret.withParentData(new UObject(od.getParentData()));
         }
-        ret.withObjectName(od.objectName);
-        ret.withKeyProps(od.keyProps);
-        addObjectProp(ret, od.creator, "creator");
-        addObjectProp(ret, od.copier, "copied");
-        addObjectProp(ret, od.module, "module");
-        addObjectProp(ret, od.method, "method");
-        addObjectProp(ret, od.moduleVersion, "module_ver");
-        addObjectProp(ret, od.commitHash, "commmit");
+        ret.withObjectName(od.getObjectName());
+        ret.withKeyProps(od.getKeyProps());
+        addObjectProp(ret, od.getCreator(), "creator");
+        addObjectProp(ret, od.getCopier(), "copied");
+        addObjectProp(ret, od.getModule(), "module");
+        addObjectProp(ret, od.getMethod(), "method");
+        addObjectProp(ret, od.getModuleVersion(), "module_ver");
+        addObjectProp(ret, od.getCommitHash(), "commmit");
         return ret;
     }
     
