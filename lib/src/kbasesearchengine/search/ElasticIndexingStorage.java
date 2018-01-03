@@ -41,6 +41,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 
 import com.google.common.base.Optional;
+
 import com.google.common.collect.ImmutableMap;
 
 import kbasesearchengine.common.GUID;
@@ -49,6 +50,7 @@ import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.tools.Utils;
+
 import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.UObject;
 
@@ -1093,6 +1095,25 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public List<ObjectData> getObjectsByIds(Set<GUID> ids, PostProcessing pp) 
             throws IOException {
+<<<<<<< HEAD
+        Map<String, Object> terms = new LinkedHashMap<String, Object>() {{
+            put("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList()));
+        }};
+        Map<String, Object> filter = new LinkedHashMap<String, Object>() {{
+            put("terms", terms);
+        }};
+        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+            put("filter", filter);
+        }};
+        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+            put("bool", bool);
+
+        }};
+        Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
+            put("query", query);
+            //put("_source", Arrays.asList("ojson"));
+        }};
+=======
         Map<String, Object> terms = new LinkedHashMap<>();
         terms.put("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList()));
 
@@ -1108,6 +1129,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
         //doc.put("_source", Arrays.asList("ojson"));
+>>>>>>> 4a089dc8e3a921e660680aac2e94bb934f6b163e
 
         String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
@@ -1180,7 +1202,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         return item;
     }
+<<<<<<< HEAD
+
+    @SuppressWarnings("serial")
+=======
     
+>>>>>>> 4a089dc8e3a921e660680aac2e94bb934f6b163e
     private Map<String, Object> createPublicShouldBlock(boolean withAllHistory) {
         List<Object> must0List = new ArrayList<>();
         must0List.add(createFilter("term", "public", true));
@@ -1242,11 +1269,34 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (accessFilter.withPublic && !accessFilter.isAdmin) {
             shouldList.add(createPublicShouldBlock(accessFilter.withAllHistory));
         }
+
         // Owner block
         shouldList.add(createOwnerShouldBlock(accessFilter));
+
         // Shared block
         shouldList.add(createSharedShouldBlock(mustForShared));
         // Rest of query
+<<<<<<< HEAD
+        Map<String, Object> filterBool = new LinkedHashMap<String, Object>() {{
+            put("should", shouldList);
+        }};
+        Map<String, Object> filter = new LinkedHashMap<String, Object>() {{
+            put("bool", filterBool);
+
+        }};
+        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
+            put("must", matchFilters);
+            put("filter", Arrays.asList(filter));
+
+
+        }};
+        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
+            put("bool", bool);
+        }};
+        Map<String, Object> terms = new LinkedHashMap<String, Object>() {{
+            put("field", SEARCH_OBJ_TYPE);
+        }};
+=======
         Map<String, Object> filterBool = new LinkedHashMap<>() ;
         filterBool.put("should", shouldList);
 
@@ -1263,6 +1313,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> terms = new LinkedHashMap<>();
         terms.put("field", SEARCH_OBJ_TYPE);
 
+>>>>>>> 4a089dc8e3a921e660680aac2e94bb934f6b163e
         //TODO VERS if this aggregates by type version, need to add the version field to the terms
         Map<String, Object> agg = new LinkedHashMap<>();
         agg.put("terms", terms);
@@ -1320,7 +1371,17 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private List<Map<String, Object>> prepareMatchFilters(MatchFilter matchFilter) {
         List<Map<String, Object>> ret = new ArrayList<>();
         if (matchFilter.fullTextInAll != null) {
-            ret.add(createFilter("match", "_all", matchFilter.fullTextInAll));
+            LinkedHashMap<String, Object> query = new LinkedHashMap<String, Object>() {{
+                put("query", matchFilter.fullTextInAll);
+                put("operator", "and");
+            }};
+            LinkedHashMap<String, Object> allQuery = new LinkedHashMap<String, Object>() {{
+                put("_all", query);
+            }};
+            LinkedHashMap<String, Object> match = new LinkedHashMap<String, Object>() {{
+                put("match",allQuery);
+            }};
+            ret.add(match);
         }
         /*if (matchFilter.accessGroupId != null) {
             ret.add(createAccessMustBlock(new LinkedHashSet<>(Arrays.asList(
