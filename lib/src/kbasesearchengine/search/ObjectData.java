@@ -1,5 +1,6 @@
 package kbasesearchengine.search;
 
+import java.time.Instant;
 import java.util.Map;
 
 import kbasesearchengine.common.GUID;
@@ -22,7 +23,7 @@ public class ObjectData {
     public String commitHash;
     public String moduleVersion;
     public String md5;
-    public long timestamp;
+    public Instant timestamp;
     public Object parentData;
     public Object data;
     public Map<String, String> keyProps;
@@ -71,7 +72,7 @@ public class ObjectData {
         return md5;
     }
 
-    public long getTimestamp() {
+    public Instant getTimestamp() {
         return timestamp;
     }
 
@@ -147,7 +148,8 @@ public class ObjectData {
                 + ((parentData == null) ? 0 : parentData.hashCode());
         result = prime * result
                 + ((parentGuid == null) ? 0 : parentGuid.hashCode());
-        result = prime * result + (int) (timestamp ^ (timestamp >>> 32));
+        result = prime * result
+                + ((timestamp == null) ? 0 : timestamp.hashCode());
         result = prime * result + ((type == null) ? 0 : type.hashCode());
         return result;
     }
@@ -255,7 +257,11 @@ public class ObjectData {
         } else if (!parentGuid.equals(other.parentGuid)) {
             return false;
         }
-        if (timestamp != other.timestamp) {
+        if (timestamp == null) {
+            if (other.timestamp != null) {
+                return false;
+            }
+        } else if (!timestamp.equals(other.timestamp)) {
             return false;
         }
         if (type == null) {

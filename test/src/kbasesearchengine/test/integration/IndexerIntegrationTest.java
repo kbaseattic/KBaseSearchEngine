@@ -324,8 +324,7 @@ public class IndexerIntegrationTest {
          * has millisecond info.
          */
         
-        TestCommon.assertCloseMS(Instant.ofEpochMilli(timestamp),
-                Instant.ofEpochMilli(indexedObj.timestamp), 0, 100);
+        TestCommon.assertCloseMS(Instant.ofEpochMilli(timestamp), indexedObj.timestamp, 0, 100);
     }
     
 }

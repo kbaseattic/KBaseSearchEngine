@@ -227,8 +227,8 @@ public class SearchMethods {
         if (od.getParentGUID() != null) {
             ret.withParentGuid(od.getParentGUID().toString());
         }
-        if (od.getTimestamp() > 0) {
-            ret.withTimestamp(od.getTimestamp());
+        if (od.getTimestamp() != null) {
+            ret.withTimestamp(od.getTimestamp().toEpochMilli());
         }
         if (od.getData() != null) {
             ret.withData(new UObject(od.getData()));

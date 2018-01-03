@@ -56,6 +56,7 @@ import us.kbase.common.service.UObject;
 
 public class ElasticIndexingStorage implements IndexingStorage {
 
+    private static final String OBJ_TIMESTAMP = "timestamp";
     private static final String OBJ_PROV_COMMIT_HASH = "prv_cmt";
     private static final String OBJ_PROV_MODULE_VERSION = "prv_ver";
     private static final String OBJ_PROV_METHOD = "prv_meth";
@@ -274,7 +275,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put(OBJ_PROV_COMMIT_HASH, data.getCommitHash().orNull());
         doc.put(OBJ_MD5, data.getMD5().orNull());
         
-        doc.put("timestamp", timestamp.toEpochMilli());
+        doc.put(OBJ_TIMESTAMP, timestamp.toEpochMilli());
         doc.put("prefix", toGUIDPrefix(id));
         doc.put("str_cde", id.getStorageCode());
         doc.put("accgrp", id.getAccessGroupId());
@@ -1146,9 +1147,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             item.type = new SearchObjectType(
                     (String) obj.get(SEARCH_OBJ_TYPE),
                     (Integer) obj.get(SEARCH_OBJ_TYPE_VER));
-            Object dateProp = obj.get("timestamp");
-            item.timestamp = (dateProp instanceof Long) ? (Long)dateProp : 
-                Long.parseLong(String.valueOf(dateProp));
+            item.timestamp = Instant.ofEpochMilli((long) obj.get(OBJ_TIMESTAMP));
         }
         if (json) {
             item.data = UObject.transformStringToObject((String)obj.get("ojson"), Object.class);
@@ -1345,7 +1344,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             }
         }
         if (matchFilter.timestamp != null) {
-            ret.add(createRangeFilter("timestamp", matchFilter.timestamp.minDate, 
+            ret.add(createRangeFilter(OBJ_TIMESTAMP, matchFilter.timestamp.minDate, 
                     matchFilter.timestamp.maxDate));
         }
         // TODO: support parent guid (reduce search scope to one object, e.g. features of one geneom)
@@ -1500,7 +1499,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         List<Object> sort = new ArrayList<>();
         doc.put("sort", sort);
         for (SortingRule sr : sorting) {
-            String keyProp = sr.isTimestamp ? "timestamp" : (sr.isObjectName ? OBJ_NAME : 
+            String keyProp = sr.isTimestamp ? OBJ_TIMESTAMP : (sr.isObjectName ? OBJ_NAME : 
                 getKeyProperty(sr.keyName));
             Map<String, Object> sortOrder = new LinkedHashMap<>();
             sortOrder.put("order", sr.ascending ? "asc" : "desc");
@@ -1782,7 +1781,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         tmp = new LinkedHashMap<>();
         tmp.put("type", "date");
-        props.put("timestamp", tmp);
+        props.put(OBJ_TIMESTAMP, tmp);
 
         tmp = new LinkedHashMap<>();
         tmp.put("type", "keyword");

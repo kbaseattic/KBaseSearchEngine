@@ -595,7 +595,7 @@ public class ElasticIndexingStorageTest {
         expected1.commitHash = null;
         expected1.moduleVersion = null;
         expected1.md5 = null;
-        expected1.timestamp = now.toEpochMilli();
+        expected1.timestamp = now;
         expected1.data = ImmutableMap.of("bar", 1);
         expected1.keyProps = ImmutableMap.of("bar", "1");
         
@@ -614,7 +614,7 @@ public class ElasticIndexingStorageTest {
         expected2.commitHash = null;
         expected2.moduleVersion = null;
         expected2.md5 = null;
-        expected2.timestamp = now.toEpochMilli();
+        expected2.timestamp = now;
         expected2.data = ImmutableMap.of("bar", "whee");
         expected2.keyProps = ImmutableMap.of("bar", "whee");
         
