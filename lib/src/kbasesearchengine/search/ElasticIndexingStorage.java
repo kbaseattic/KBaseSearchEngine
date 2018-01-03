@@ -45,8 +45,6 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.system.IndexingRules;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.UObject;
 
@@ -1244,16 +1242,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private List<Map<String, Object>> prepareMatchFilters(MatchFilter matchFilter) {
         List<Map<String, Object>> ret = new ArrayList<>();
         if (matchFilter.fullTextInAll != null) {
-            LinkedHashMap<String, Object> query = new LinkedHashMap<String, Object>() {{
-                put("query", matchFilter.fullTextInAll);
-                put("operator", "and");
-            }};
-            LinkedHashMap<String, Object> allQuery = new LinkedHashMap<String, Object>() {{
-                put("_all", query);
-            }};
-            LinkedHashMap<String, Object> match = new LinkedHashMap<String, Object>() {{
-                put("match",allQuery);
-            }};
+            LinkedHashMap<String, Object> query = new LinkedHashMap<>();
+            query.put("query", matchFilter.fullTextInAll);
+            query.put("operator", "and");
+
+            LinkedHashMap<String, Object> allQuery = new LinkedHashMap<>();
+            allQuery.put("_all", query);
+
+            LinkedHashMap<String, Object> match = new LinkedHashMap<>();
+            match.put("match",allQuery);
             ret.add(match);
         }
         /*if (matchFilter.accessGroupId != null) {
