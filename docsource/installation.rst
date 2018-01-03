@@ -39,7 +39,7 @@ Follow these instructions for a local deployment once the :ref:`System Requireme
 
     $ gedit [PATH_TO_YOUR_WORKSPACE_DIR]/deploy.cfg
 
-Make the following changes -
+Add the following lines under the listener configuration section -
 
 .. code-block:: cfg
 
@@ -115,12 +115,12 @@ Create a new terminal and start mongo to check to make sure the event has been w
 .. code-block:: bash
 
     $ cd [PATH_TO_YOUR_KBaseSearchEngine_DIR]
-    $ git checkout develop
+    $ git checkout master
     $ git pull
     $ cp search_tools.cfg.example search_tools.cfg
     $ gedit search_tools.cfg
 
-Make the following edits. Note the user for the token used below must have workspace admin privileges.
+Make the following edits. Note: the user for the token used below must have workspace admin privileges.
 
 .. code-block:: cfg
 
@@ -128,7 +128,7 @@ Make the following edits. Note the user for the token used below must have works
     search-mongo-db=Search_test
     elastic-host=localhost
     elastic-port=9200
-    scratch=/home/apasha/dev/kbase/KBaseSearchEngine/temp_scratch
+    scratch=[PATH_TO_DIR_WHERE_TEMP_FILES_CAN_BE_STORED_BY_APP]
     workspace-url=http://localhost:7058
     auth-service-url=https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login
     indexer-token=[YOUR_CI_TOKEN]
@@ -182,7 +182,7 @@ Make the following edits. Note the user for the token used below must have works
     $ bin/search_tools.sh -c search_tools.cfg -s
     Press return to shut down process
     Moved event xxx NEW_VERSION WS:1/1/1 from UNPROC to READY
-    Moved event xxx NEW_VERSION WS:1/1/1 completed processing with state INDX on myworker
+    Event xxx NEW_VERSION WS:1/1/1 completed processing with state INDX on myworker
 
 10. Open Kibana in browser with url localhost:/5601/app/kibana#/dev_tools/console?_g=()
 

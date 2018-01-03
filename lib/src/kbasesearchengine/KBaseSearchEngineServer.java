@@ -32,9 +32,10 @@ import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.authorization.WorkspaceAccessGroupProvider;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.main.LineLogger;
-import kbasesearchengine.main.IndexerWorker;
 import kbasesearchengine.main.SearchMethods;
 import kbasesearchengine.search.ElasticIndexingStorage;
+import kbasesearchengine.system.FileLister;
+import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
 import kbasesearchengine.system.TypeFileStorage;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.system.TypeMappingParser;
@@ -42,6 +43,7 @@ import kbasesearchengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.ConfigurableAuthService;
 import workspace.WorkspaceClient;
+import kbasesearchengine.common.FileUtil;
 //END_HEADER
 
 /**
@@ -52,9 +54,9 @@ import workspace.WorkspaceClient;
  */
 public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
-    private static final String version = "0.0.1";
-    private static final String gitUrl = "https://github.com/tiramisu24/KBaseSearchEngine.git";
-    private static final String gitCommitHash = "c7f65db541f5bb6947336333887800757f166d76";
+    private static final String version = "";
+    private static final String gitUrl = "";
+    private static final String gitCommitHash = "";
 
     //BEGIN_CLASS_HEADER
     private final SearchMethods search;
@@ -122,7 +124,8 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         
         final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
                 "yaml", new YAMLTypeMappingParser());
-        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
+        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir,
+                new ObjectTypeParsingRulesFileParser(), parsers, new FileLister(), logger);
         
         
         final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, kbaseIndexerToken);
@@ -133,7 +136,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
                 new WorkspaceAccessGroupProvider(wsClient), 30, 50000 * 1000);
         
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
-                IndexerWorker.getTempSubDir(tempDir, "esbulk"));
+                FileUtil.getOrCreateSubDir(tempDir, "esbulk"));
         if (esUser != null) {
             esStorage.setEsUser(esUser);
             esStorage.setEsPassword(esPassword);
@@ -173,9 +176,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     public SearchObjectsOutput searchObjects(SearchObjectsInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         SearchObjectsOutput returnVal = null;
         //BEGIN search_objects
-//        returnVal = search.searchObjects(params, authPart.getUserName());
         returnVal = search.searchObjects(params, authPart.getUserName());
-
         //END search_objects
         return returnVal;
     }

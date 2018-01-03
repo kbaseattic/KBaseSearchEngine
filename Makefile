@@ -8,13 +8,11 @@ SCRIPTS_DIR = scripts
 TEST_DIR = test
 LBIN_DIR = bin
 TARGET ?= /kb/deployment
-JARS_DIR = $(TARGET)/lib/jars
+JARS_DIR ?= $(TARGET)/lib/jars
 EXECUTABLE_SCRIPT_NAME = run_$(SERVICE_CAPS)_async_job.sh
 STARTUP_SCRIPT_NAME = start_server.sh
 TEST_SCRIPT_NAME = run_tests.sh
-KB_RUNTIME ?= /kb/runtime
-ANT_HOME ?= $(KB_RUNTIME)/ant
-ANT = $(ANT_HOME)/bin/ant
+ANT ?= ant
 
 .PHONY: test
 

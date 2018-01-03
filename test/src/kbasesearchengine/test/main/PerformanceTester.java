@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import kbasesearchengine.common.FileUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.ini4j.Ini;
@@ -38,6 +39,8 @@ import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.MatchFilter;
 import kbasesearchengine.search.MatchValue;
 import kbasesearchengine.system.TypeFileStorage;
+import kbasesearchengine.system.FileLister;
+import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.system.TypeMappingParser;
@@ -157,10 +160,11 @@ public class PerformanceTester {
         };
         final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
                 "yaml", new YAMLTypeMappingParser());
-        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
+        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir,
+                new ObjectTypeParsingRulesFileParser(), parsers, new FileLister(), logger);
         
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
-                IndexerWorker.getTempSubDir(tempDir, "esbulk"));
+                FileUtil.getOrCreateSubDir(tempDir, "esbulk"));
         if (esUser != null) {
             esStorage.setEsUser(esUser);
             esStorage.setEsPassword(esPassword);

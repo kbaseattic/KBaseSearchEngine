@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
+import kbasesearchengine.common.FileUtil;
 import org.apache.http.HttpHost;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +38,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.exceptions.IndexingException;
+import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
@@ -49,6 +51,8 @@ import kbasesearchengine.main.IndexerWorker;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.IndexingStorage;
+import kbasesearchengine.system.FileLister;
+import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
 import kbasesearchengine.system.TypeFileStorage;
 import kbasesearchengine.system.TypeMappingParser;
 import kbasesearchengine.system.TypeParseException;
@@ -257,14 +261,16 @@ public class SearchTools {
                 "yaml", new YAMLTypeMappingParser());
         final Path typesDir = Paths.get(cfg.getTypesDirectory());
         final Path mappingsDir = Paths.get(cfg.getTypeMappingsDirectory());
-        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
+        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir,
+                new ObjectTypeParsingRulesFileParser(), parsers, new FileLister(), logger);
         
         final StatusEventStorage storage = new MongoDBStatusEventStorage(searchDB);
         
         final WorkspaceClient wsClient = new WorkspaceClient(
                 cfg.getWorkspaceURL(), kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
-        final EventHandler weh = new WorkspaceEventHandler(wsClient);
+        final EventHandler weh = new WorkspaceEventHandler(
+                new CloneableWorkspaceClientImpl(wsClient));
         
         final IndexerWorker wrk = new IndexerWorker(
                 getID(id), Arrays.asList(weh), storage, indexStore, ss, tempDir, logger);
@@ -326,7 +332,7 @@ public class SearchTools {
             return;
         }
         final HttpHost esHostPort = new HttpHost(cfg.getElasticHost(), cfg.getElasticPort());
-        final File tempSubDir = IndexerWorker.getTempSubDir(
+        final File tempSubDir = FileUtil.getOrCreateSubDir(
                 new File(cfg.getTempDir()), "esbulk");
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(
                 esHostPort, tempSubDir);

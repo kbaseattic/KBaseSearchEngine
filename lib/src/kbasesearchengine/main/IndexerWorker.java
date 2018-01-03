@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.common.base.Optional;
 
+import kbasesearchengine.common.FileUtil;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.ChildStatusEvent;
 import kbasesearchengine.events.StatusEvent;
@@ -46,10 +48,13 @@ import kbasesearchengine.parse.ObjectParser;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
 import kbasesearchengine.search.IndexingStorage;
+import kbasesearchengine.system.NoSuchTypeException;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.tools.Utils;
+import org.apache.commons.io.FileUtils;
 
 public class IndexerWorker implements Stoppable {
     
@@ -82,13 +87,17 @@ public class IndexerWorker implements Stoppable {
             final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,
-            final LineLogger logger) {
+            final LineLogger logger)
+                throws IOException {
         Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
         Utils.nonNull(logger, "logger");
         Utils.nonNull(indexingStorage, "indexingStorage");
         this.id = id;
         this.logger = logger;
-        this.rootTempDir = tempDir;
+        this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
+                id + "_" + UUID.randomUUID().toString().substring(0,5));
+        logger.logInfo("Created temp dir " + rootTempDir.getAbsolutePath() +
+                                                     " for indexer worker " + id);
         
         eventHandlers.stream().forEach(eh -> this.eventHandlers.put(eh.getStorageCode(), eh));
         this.storage = storage;
@@ -104,29 +113,21 @@ public class IndexerWorker implements Stoppable {
             final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,
-            final LineLogger logger) {
+            final LineLogger logger)
+                throws IOException {
         Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
         Utils.nonNull(logger, "logger");
         this.id = id;
         this.storage = null;
-        this.rootTempDir = tempDir;
+        this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
+                id + "_" + UUID.randomUUID().toString().substring(0,5));
+        logger.logInfo("Created temp dir " + rootTempDir.getAbsolutePath() +
+                " for indexer worker " + id);
         this.logger = logger;
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
     }
-    
-    private File getTempSubDir(final String subName) {
-        return getTempSubDir(rootTempDir, subName);
-    }
-    
-    public static File getTempSubDir(final File rootTempDir, String subName) {
-        File ret = new File(rootTempDir, subName);
-        if (!ret.exists()) {
-            ret.mkdirs();
-        }
-        return ret;
-    }
-    
+
     public void startIndexer() {
         stopRunner = false;
         //TODO TEST add a way to inject an executor for testing purposes
@@ -163,6 +164,14 @@ public class IndexerWorker implements Stoppable {
         stopRunner = true;
         executor.shutdown();
         executor.awaitTermination(millisToWait, TimeUnit.MILLISECONDS);
+
+        try {
+            FileUtils.deleteDirectory(rootTempDir);
+        } catch(IOException ioe) {
+            logger.logError("Unable to delete worker temp dir "+rootTempDir+
+                    " on shutdown of worker with id "+id+
+                    ". Please delete manually. "+ioe.getMessage());
+        }
     }
     
     private enum ErrorType {
@@ -457,7 +466,7 @@ public class IndexerWorker implements Stoppable {
             throws InterruptedException, FatalIndexingException {
         try {
             return retrier.retryFunc(
-                    t -> !typeStorage.listObjectTypesByStorageObjectType(
+                    t -> !typeStorage.listObjectTypeParsingRules(
                             ev.getEvent().getStorageObjectType().get()).isEmpty(),
                     ev, ev);
         } catch (IndexingException e) {
@@ -465,7 +474,19 @@ public class IndexerWorker implements Stoppable {
             return false;
         }
     }
-    
+
+    /** Index the object with the specified guid.
+     *
+     * @param guid an id that uniquely identifies the object that is to be indexed.
+     * @param storageObjectType type of object that is to be indexed.
+     * @param timestamp time at which this object was updated.
+     * @param isPublic object access level (true if public, else false).
+     * @param indexLookup
+     * @param objectRefPath
+     * @throws IndexingException
+     * @throws InterruptedException
+     * @throws RetriableIndexingException
+     */
     private void indexObject(
             final GUID guid,
             final StorageObjectType storageObjectType,
@@ -477,7 +498,8 @@ public class IndexerWorker implements Stoppable {
         long t1 = System.currentTimeMillis();
         final File tempFile;
         try {
-            tempFile = ObjectParser.prepareTempFile(getTempSubDir(guid.getStorageCode()));
+            FileUtil.getOrCreateSubDir(rootTempDir, guid.getStorageCode());
+            tempFile = File.createTempFile("ws_srv_response_", ".json");
         } catch (IOException e) {
             throw new FatalRetriableIndexingException(e.getMessage(), e);
         }
@@ -494,25 +516,29 @@ public class IndexerWorker implements Stoppable {
             logger.logInfo("[Indexer]   " + guid + ", loading time: " + loadTime + " ms.");
             logger.timeStat(guid, loadTime, 0, 0);
             List<ObjectTypeParsingRules> parsingRules = 
-                    typeStorage.listObjectTypesByStorageObjectType(storageObjectType);
+                    typeStorage.listObjectTypeParsingRules(storageObjectType);
             for (ObjectTypeParsingRules rule : parsingRules) {
                 final long t2 = System.currentTimeMillis();
                 final ParseObjectsRet parsedRet = parseObjects(guid, indexLookup,
                         newRefPath, obj, rule);
                 long parsingTime = System.currentTimeMillis() - t2;
-                logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", parsing " +
-                        "time: " + parsingTime + " ms.");
+                logger.logInfo("[Indexer]   " + toVerRep(rule.getGlobalObjectType()) +
+                        ", parsing time: " + parsingTime + " ms.");
                 long t3 = System.currentTimeMillis();
                 indexObjectInStorage(guid, timestamp, isPublic, obj, rule,
                         parsedRet.guidToObj, parsedRet.parentJson);
                 long indexTime = System.currentTimeMillis() - t3;
-                logger.logInfo("[Indexer]   " + rule.getGlobalObjectType() + ", indexing " +
-                        "time: " + indexTime + " ms.");
+                logger.logInfo("[Indexer]   " + toVerRep(rule.getGlobalObjectType()) +
+                        ", indexing time: " + indexTime + " ms.");
                 logger.timeStat(guid, 0, parsingTime, indexTime);
             }
         } finally {
             tempFile.delete();
         }
+    }
+
+    private String toVerRep(final SearchObjectType globalObjectType) {
+        return globalObjectType.getType() + "_" + globalObjectType.getVersion();
     }
 
     private void indexObjectInStorage(
@@ -644,12 +670,15 @@ public class IndexerWorker implements Stoppable {
         indexingStorage.setNameOnAllObjectVersions(guid, newName);
     }
 
+    /** A lookup provider
+     *
+     */
     private class MOPLookupProvider implements ObjectLookupProvider {
         // storage code -> full ref path -> resolved guid
         private Map<String, Map<String, GUID>> refResolvingCache = new LinkedHashMap<>();
         private Map<GUID, kbasesearchengine.search.ObjectData> objLookupCache =
                 new LinkedHashMap<>();
-        private Map<GUID, String> guidToTypeCache = new LinkedHashMap<>();
+        private Map<GUID, SearchObjectType> guidToTypeCache = new LinkedHashMap<>();
         
         @Override
         public Set<GUID> resolveRefs(List<GUID> callerRefPath, Set<GUID> refs)
@@ -792,15 +821,15 @@ public class IndexerWorker implements Stoppable {
         }
         
         @Override
-        public ObjectTypeParsingRules getTypeDescriptor(final String type)
-                throws IndexingException {
-            return typeStorage.getObjectType(type);
+        public ObjectTypeParsingRules getTypeDescriptor(final SearchObjectType type)
+                throws IndexingException, NoSuchTypeException {
+            return typeStorage.getObjectTypeParsingRules(type);
         }
         
         @Override
-        public Map<GUID, String> getTypesForGuids(Set<GUID> guids)
+        public Map<GUID, SearchObjectType> getTypesForGuids(Set<GUID> guids)
                 throws InterruptedException, IndexingException {
-            Map<GUID, String> ret = new LinkedHashMap<>();
+            Map<GUID, SearchObjectType> ret = new LinkedHashMap<>();
             Set<GUID> guidsToLoad = new LinkedHashSet<>();
             for (GUID guid : guids) {
                 if (guidToTypeCache.containsKey(guid)) {
@@ -812,7 +841,7 @@ public class IndexerWorker implements Stoppable {
             if (guidsToLoad.size() > 0) {
                 final List<kbasesearchengine.search.ObjectData> data =
                         retrier.retryFunc(g -> getObjectsByIds(g), guidsToLoad, null);
-                final Map<GUID, String> loaded = data.stream()
+                final Map<GUID, SearchObjectType> loaded = data.stream()
                         .collect(Collectors.toMap(od -> od.guid, od -> od.type));
                 guidToTypeCache.putAll(loaded);
                 ret.putAll(loaded);

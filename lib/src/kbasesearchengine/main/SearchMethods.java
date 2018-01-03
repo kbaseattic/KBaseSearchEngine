@@ -31,7 +31,6 @@ import kbasesearchengine.SortingRule;
 import kbasesearchengine.TypeDescriptor;
 import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.common.GUID;
-import kbasesearchengine.parse.KeywordParser;
 import kbasesearchengine.search.FoundHits;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.system.IndexingRules;
@@ -279,7 +278,38 @@ public class SearchMethods {
         kbasesearchengine.search.Pagination pagination = toSearch(params.getPagination());
         kbasesearchengine.search.PostProcessing postProcessing = 
                 toSearch(params.getPostProcessing());
-        FoundHits hits = indexingStorage.searchObjects(params.getObjectType(), matchFilter, 
+        FoundHits hits = indexingStorage.searchObjects(params.getObjectType(),
+                matchFilter, sorting, accessFilter, pagination, postProcessing);
+        SearchObjectsOutput ret = new SearchObjectsOutput();
+        ret.withPagination(fromSearch(hits.pagination));
+        ret.withSortingRules(hits.sortingRules.stream().map(this::fromSearch).collect(
+                Collectors.toList()));
+        if (hits.objects == null) {
+            ret.withObjects(hits.guids.stream().map(guid -> new kbasesearchengine.ObjectData().
+                    withGuid(guid.toString())).collect(Collectors.toList()));
+        } else {
+            ret.withObjects(hits.objects.stream().map(this::fromSearch).collect(
+                    Collectors.toList()));
+        }
+        ret.withTotal((long)hits.total);
+        ret.withSearchTime(System.currentTimeMillis() - t1);
+        return ret;
+    }
+     //for testing purposes. Access set to admin
+    public SearchObjectsOutput searchObjects(SearchObjectsInput params)
+            throws Exception {
+        long t1 = System.currentTimeMillis();
+        kbasesearchengine.search.MatchFilter matchFilter = toSearch(params.getMatchFilter());
+        List<kbasesearchengine.search.SortingRule> sorting = null;
+        if (params.getSortingRules() != null) {
+            sorting = params.getSortingRules().stream().map(this::toSearch).collect(
+                    Collectors.toList());
+        }
+        kbasesearchengine.search.AccessFilter accessFilter = kbasesearchengine.search.AccessFilter.create().withAdmin(true);
+        kbasesearchengine.search.Pagination pagination = toSearch(params.getPagination());
+        kbasesearchengine.search.PostProcessing postProcessing =
+                toSearch(params.getPostProcessing());
+        FoundHits hits = indexingStorage.searchObjects(params.getObjectType(), matchFilter,
                 sorting, accessFilter, pagination, postProcessing);
         SearchObjectsOutput ret = new SearchObjectsOutput();
         ret.withPagination(fromSearch(hits.pagination));
@@ -322,9 +352,10 @@ public class SearchMethods {
     }
     
     public Map<String, TypeDescriptor> listTypes(String uniqueType) throws Exception {
+        //TODO VERS remove keys from TypeDescriptor, document that listObjectTypes only returns the most recent version of each type
         Map<String, TypeDescriptor> ret = new LinkedHashMap<>();
-        for (ObjectTypeParsingRules otpr : typeStorage.listObjectTypes()) {
-            String typeName = otpr.getGlobalObjectType();
+        for (ObjectTypeParsingRules otpr : typeStorage.listObjectTypeParsingRules()) {
+            String typeName = otpr.getGlobalObjectType().getType();
             if (uniqueType != null && !uniqueType.equals(typeName)) {
                 continue;
             }
@@ -337,20 +368,17 @@ public class SearchMethods {
                 if (ir.isNotIndexed()) {
                     continue;
                 }
-                String keyName = KeywordParser.getKeyName(ir);
+                String keyName = ir.getKeyName();
                 String uiKeyName = ir.getUiName();
-                if (uiKeyName == null) {
-                    uiKeyName = guessUIName(keyName);
-                }
-                String keyValueType = ir.getKeywordType();
+                String keyValueType = ir.getKeywordType().orNull();
                 if (keyValueType == null) {
-                    keyValueType = "string";
+                    keyValueType = "string"; //TODO CODE this seems wrong for fulltext, which is the only case where keyWordtype is null
                 }
                 long hidden = ir.isUiHidden() ? 1L : 0L;
                 KeyDescription kd = new KeyDescription().withKeyName(keyName)
                         .withKeyUiTitle(uiKeyName).withKeyValueType(keyValueType)
                         .withKeyValueType(keyValueType).withHidden(hidden)
-                        .withLinkKey(ir.getUiLinkKey());
+                        .withLinkKey(ir.getUiLinkKey().orNull());
                 keys.add(kd);
             }
             TypeDescriptor td = new TypeDescriptor().withTypeName(typeName)
