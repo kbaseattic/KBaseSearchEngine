@@ -6,4 +6,8 @@ bin
 /search_tools.cfg
 /classes/
 /search_tools.cfg.bak
+
+
 .idea/
+Dockerfile
+
