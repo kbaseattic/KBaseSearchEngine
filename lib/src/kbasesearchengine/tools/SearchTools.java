@@ -108,7 +108,6 @@ public class SearchTools {
         nonNull(args, "args");
         nonNull(out, "out");
         nonNull(err, "err");
-        nonNull(console, "console");
         this.args = args;
         this.out = out;
         this.err = err;
@@ -223,10 +222,27 @@ public class SearchTools {
     }
     
     private void waitForReturn(final Stoppable stoppable) throws InterruptedException {
-        out.println("Press return to shut down process.");
-        console.readLine();
-        System.out.println("Waiting for task to stop");
-        stoppable.stop(10 * 60 * 1000); // 10 mins
+        if (console == null) {
+            out.println("No console detected - process must be manually killed to stop.");
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                
+                @Override
+                public void run() {
+                    System.out.println("Waiting for task to stop");
+                    try {
+                        stoppable.stop(10 * 60 * 1000); // 10 mins
+                    } catch (InterruptedException e) {
+                        // do nothing, things are going down anyway
+                    }
+                }
+            });
+            Thread.currentThread().join(); // waits forever
+        } else {
+            out.println("Press return to shut down process.");
+            console.readLine();
+            System.out.println("Waiting for task to stop");
+            stoppable.stop(10 * 60 * 1000); // 10 mins
+        }
     }
     
     private IndexerCoordinator runCoordinator(
