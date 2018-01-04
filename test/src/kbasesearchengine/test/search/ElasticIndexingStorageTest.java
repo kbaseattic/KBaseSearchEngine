@@ -3,8 +3,6 @@ package kbasesearchengine.test.search;
 import static kbasesearchengine.test.common.TestCommon.set;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.equalTo;
-
-//import static org.hamcrest.Matcher.greaterThan;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
