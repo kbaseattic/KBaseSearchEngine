@@ -105,12 +105,14 @@ public class IndexerIntegrationTest {
             throw new TestException("The test tokens are for the same user");
         }
 
-        tempDirPath = Paths.get(TestCommon.getTempDir()).resolve("MainObjectProcessorTest");
+        tempDirPath = Paths.get(TestCommon.getTempDir()).resolve("IndexerIntegrationTest");
         // should refactor to just use NIO at some point
         FileUtils.deleteQuietly(tempDirPath.toFile());
         tempDirPath.toFile().mkdirs();
         final Path searchTypesDir = Files.createDirectories(tempDirPath.resolve("searchtypes"));
         installSearchTypes(searchTypesDir);
+        final Path mappingsDir = Files.createDirectories(tempDirPath.resolve("searchmappings"));
+        installSearchMappings(mappingsDir);
 
         // set up mongo
         mongo = new MongoController(
@@ -136,8 +138,6 @@ public class IndexerIntegrationTest {
                 tempDirPath);
         System.out.println("Started workspace on port " + ws.getServerPort());
         wsdb = mc.getDatabase("IndexerIntegTestWSDB");
-        
-        final Path mappingsDir = Paths.get(TestCommon.TYPE_MAP_REPO_DIR);
         
         URL wsUrl = new URL("http://localhost:" + ws.getServerPort());
         wsCli1 = new WorkspaceClient(wsUrl, userToken);
@@ -194,14 +194,18 @@ public class IndexerIntegrationTest {
     }
     
     private static void installSearchTypes(final Path target) throws IOException {
-        installSearchType("EmptyAType.json", target);
-        installSearchType("TwoVersions.yaml", target);
+        installTestFile("EmptyAType.json", target);
+        installTestFile("TwoVersions.yaml", target);
     }
     
-    private static void installSearchType(final String fileName, final Path target)
+    private static void installTestFile(final String fileName, final Path target)
             throws IOException {
         final String file = TestDataLoader.load(fileName);
         Files.write(target.resolve(fileName), file.getBytes());
+    }
+    
+    private static void installSearchMappings(final Path target) throws IOException {
+        installTestFile("TwoVersionsMapping.yaml", target);
     }
     
     private static void loadWSTypes(final URL wsURL, final AuthToken wsadmintoken)
@@ -210,9 +214,12 @@ public class IndexerIntegrationTest {
         wc.setIsInsecureHttpConnectionAllowed(true);
         ownModule(wc, "Empty");
         ownModule(wc, "TwoVersions");
+        ownModule(wc, "TwoVersionsMapped");
         loadType(wc, "Empty", "Empty.spec", Arrays.asList("AType"));
         loadType(wc, "TwoVersions", "TwoVersions1.spec", Arrays.asList("Type"));
         loadType(wc, "TwoVersions", "TwoVersions2.spec", Collections.emptyList());
+        loadType(wc, "TwoVersionsMapped", "TwoVersionsMapped1.spec", Arrays.asList("Type"));
+        loadType(wc, "TwoVersionsMapped", "TwoVersionsMapped2.spec", Collections.emptyList());
     }
     
     private static void ownModule(final WorkspaceClient wc, final String module)
