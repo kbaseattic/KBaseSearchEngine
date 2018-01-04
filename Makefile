@@ -51,7 +51,6 @@ build-startup-script:
 	chmod +x $(SCRIPTS_DIR)/$(STARTUP_SCRIPT_NAME)
 
 docker_image: build build-executable-script
-	cp $(LBIN_DIR)/* deployment/bin
 	-mkdir deployment/lib
 	cp dist/KBaseSearchEngine.war deployment/lib 
 	-mkdir -p deployment/services/search/lib
