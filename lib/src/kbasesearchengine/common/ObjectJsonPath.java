@@ -5,6 +5,10 @@ import java.util.List;
 
 import kbasesearchengine.parse.ObjectParseException;
 
+/**
+ * This class represents a specific path to a specific element in a json object.
+ * (no wildcards "*" in the path).
+ */
 public class ObjectJsonPath {
     private final String[] pathItems;
     

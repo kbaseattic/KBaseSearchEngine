@@ -17,7 +17,7 @@ import kbasesearchengine.tools.Utils;
  * There are usually many subobjects with identical fields stored in a list or map inside the
  * parent object.
  * 
- * @see ObjectTypeParsingRulesUtils
+ * @see ObjectTypeParsingRulesFileParser
  * @author gaprice@lbl.gov
  *
  */

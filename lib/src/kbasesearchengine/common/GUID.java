@@ -4,6 +4,16 @@ import java.util.regex.Pattern;
 
 import kbasesearchengine.tools.Utils;
 
+/**
+ * A GUID that uniquely identifies an object or an element within an object
+ * (a sub-object). The format is,
+ *
+ *  {storageCode}:[{AccessGroupID}/]{accessGroupObjectId}[/{version}][:{subObjectType}/{subObjectId}]
+ *
+ *  where,
+ *  storageCode is the code of the datasource in which the object resides.
+ *
+ */
 public class GUID {
     
     //TODO JAVADOC

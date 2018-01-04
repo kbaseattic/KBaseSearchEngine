@@ -100,7 +100,7 @@ public class KeywordParser {
             final List<GUID> callerRefPath)
             throws IndexingException, InterruptedException, ObjectParseException {
         if (!ruleMap.containsKey(key)) {
-            throw new IllegalStateException("Unknown source-key in derived keywords: " + 
+            throw new ObjectParseException("Unknown source-key in derived keywords: " +
                     toVerRep(searchObjectType) + "/" + key);
         }
         List<Object> ret = null;
@@ -126,18 +126,18 @@ public class KeywordParser {
             final List<GUID> objectRefPath)
             throws IndexingException, InterruptedException, ObjectParseException {
         if (!ruleMap.containsKey(key) || rule == null) {
-            throw new IllegalStateException("Unknown source-key in derived keywords: " + 
+            throw new ObjectParseException("Unknown source-key in derived keywords: " +
                     toVerRep(searchObjectType) + "/" + key);
         }
         if (keywords.containsKey(key)) {
             return keywords.get(key).values;
         }
         if (keysWaitingInStack.contains(key)) {
-            throw new IllegalStateException("Circular dependency in derived keywords: " +
+            throw new ObjectParseException("Circular dependency in derived keywords: " +
                     toVerRep(searchObjectType) + " / " + keysWaitingInStack);
         }
         if (!rule.isDerivedKey()) {
-            throw new IllegalStateException("Reference to not derived keyword with no value: " +
+            throw new ObjectParseException("Reference to not derived keyword with no value: " +
                     toVerRep(searchObjectType) + "/" + key);
         }
         keysWaitingInStack.add(key);
@@ -274,13 +274,13 @@ public class KeywordParser {
             if (transform.getSubobjectIdKey().isPresent()) {
                 if (!typeDescr.getSubObjectType().isPresent()) {
                     //TODO CODE check this in parsing rules creation context if possible
-                    throw new IllegalStateException("Subobject GUID transform should correspond " +
+                    throw new ObjectParseException("Subobject GUID transform should correspond " +
                             "to subobject type descriptor: " + rule);
                 }
                 subIds = toStringSet(
                         sourceKeywords.get(transform.getSubobjectIdKey().get()).values);
                 if (guids.size() != 1) {
-                    throw new IllegalStateException("In subobject IDs case source keyword " + 
+                    throw new ObjectParseException("In subobject IDs case source keyword " +
                             "should point to value with only one parent object reference");
                 }
                 GUID parentGuid = guids.iterator().next();
@@ -295,11 +295,11 @@ public class KeywordParser {
             final Map<GUID, SearchObjectType> guidToType = lookup.getTypesForGuids(guids);
             for (final GUID guid : guids) {
                 if (!guidToType.containsKey(guid)) {
-                    throw new IllegalStateException("GUID " + guid + " not found");
+                    throw new ObjectParseException("GUID " + guid + " not found");
                 }
                 final SearchObjectType actualType = guidToType.get(guid);
                 if (!actualType.equals(type)) {
-                    throw new IllegalStateException("GUID " + guid + " has unexpected type: " + 
+                    throw new ObjectParseException("GUID " + guid + " has unexpected type: " +
                             actualType);
                 }
             }
@@ -349,7 +349,7 @@ public class KeywordParser {
                 continue;
             }
             if (!rules.getPath().isPresent()) {
-                throw new IllegalStateException("Path should be defined for non-derived " +
+                throw new ObjectParseException("Path should be defined for non-derived " +
                         "indexing rules");
             }
             if (rules.isFromParent() != fromParent) {

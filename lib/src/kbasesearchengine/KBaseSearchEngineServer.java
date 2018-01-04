@@ -34,6 +34,8 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.SearchMethods;
 import kbasesearchengine.search.ElasticIndexingStorage;
+import kbasesearchengine.system.FileLister;
+import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
 import kbasesearchengine.system.TypeFileStorage;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.system.TypeMappingParser;
@@ -42,13 +44,12 @@ import us.kbase.auth.AuthConfig;
 import us.kbase.auth.ConfigurableAuthService;
 import workspace.WorkspaceClient;
 import kbasesearchengine.common.FileUtil;
-
 //END_HEADER
 
 /**
  * <p>Original spec-file module name: KBaseSearchEngine</p>
  * <pre>
- * A KBase module: KBaseRelationEngine
+ * A KBase module: KBaseSearchEngine
  * </pre>
  */
 public class KBaseSearchEngineServer extends JsonServerServlet {
@@ -123,7 +124,8 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         
         final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
                 "yaml", new YAMLTypeMappingParser());
-        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
+        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir,
+                new ObjectTypeParsingRulesFileParser(), parsers, new FileLister(), logger);
         
         
         final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, kbaseIndexerToken);

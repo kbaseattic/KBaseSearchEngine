@@ -26,6 +26,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.google.common.collect.ImmutableMap;
 
 import junit.framework.Assert;
 import kbasesearchengine.common.GUID;
@@ -50,7 +51,7 @@ import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
-import kbasesearchengine.system.ObjectTypeParsingRulesUtils;
+import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.test.common.TestCommon;
 import kbasesearchengine.test.controllers.elasticsearch.ElasticSearchController;
@@ -113,7 +114,7 @@ public class ElasticIndexingStorageTest {
             public ObjectTypeParsingRules getTypeDescriptor(SearchObjectType type) {
                 try {
                     final File rulesFile = new File("resources/types/" + type.getType() + ".json");
-                    return ObjectTypeParsingRulesUtils.fromFile(rulesFile)
+                    return ObjectTypeParsingRulesFileParser.fromFile(rulesFile)
                             .get(type.getVersion() - 1);
                 } catch (Exception ex) {
                     throw new IllegalStateException(ex);
@@ -151,9 +152,15 @@ public class ElasticIndexingStorageTest {
         return MatchFilter.create().withFullTextInAll(fullText);
     }
     
-    private static void indexObject(GUID id, SearchObjectType objectType, String json, String objectName,
-            Instant timestamp, String parentJsonValue, boolean isPublic,
-            List<IndexingRules> indexingRules)
+    private static void indexObject(
+            final GUID id,
+            final SearchObjectType objectType,
+            final String json,
+            final String objectName,
+            final Instant timestamp,
+            final String parentJsonValue,
+            final boolean isPublic,
+            final List<IndexingRules> indexingRules)
             throws IOException, ObjectParseException, IndexingException, InterruptedException {
         ParsedObject obj = KeywordParser.extractKeywords(objectType, json, parentJsonValue, 
                 indexingRules, objLookup, null);
@@ -168,7 +175,7 @@ public class ElasticIndexingStorageTest {
         // yuck
         final String extension = type.equals("Genome") ? ".yaml" : ".json";
         final File file = new File("resources/types/" + type + extension);
-        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesUtils.fromFile(file).get(0);
+        ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesFileParser.fromFile(file).get(0);
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
         String parentJson = null;
@@ -518,7 +525,7 @@ public class ElasticIndexingStorageTest {
         SearchObjectType objType = new SearchObjectType("PublishAllVersions", 1);
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("myprop"))
                 .withFullText().build();
-        List<IndexingRules> indexingRules= Arrays.asList(ir);
+        List<IndexingRules> indexingRules = Arrays.asList(ir);
         GUID id1 = new GUID("WS:200/2/1");
         GUID id2 = new GUID("WS:200/2/2");
         indexObject(id1, objType, "{\"myprop\": \"some stuff\"}", "myobj", Instant.now(), null,
@@ -553,6 +560,65 @@ public class ElasticIndexingStorageTest {
                 filter), is(set()));
         assertThat("incorrect ids returned", lookupIdsByKey(objType.getType(), "myprop", "some", 
                 filterPublic), is(set()));
+    }
+    
+    @Test
+    public void testTypeVersions() throws Exception {
+        /* test that types with incompatible fields but different versions index successfully. */
+        final SearchObjectType type1 = new SearchObjectType("TypeVers", 5);
+        // changing 10 -> 5 makes the test fail due to elasticsearch exception
+        final SearchObjectType type2 = new SearchObjectType("TypeVers", 10);
+        final List<IndexingRules> idxRules1 = Arrays.asList(
+                IndexingRules.fromPath(new ObjectJsonPath("bar"))
+                        .withKeywordType("integer").build());
+        final List<IndexingRules> idxRules2 = Arrays.asList(
+                IndexingRules.fromPath(new ObjectJsonPath("bar"))
+                        .withKeywordType("keyword").build());
+        final Instant now = Instant.now();
+        
+        indexObject(new GUID("WS:1/2/3"), type1, "{\"bar\": 1}", "o1", now,
+                null, false, idxRules1);
+        indexObject(new GUID("WS:4/5/6"), type2, "{\"bar\": \"whee\"}", "o2", now,
+                null, false, idxRules2);
+        
+        final ObjectData indexedObj1 =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/2/3"))).get(0);
+        
+        final ObjectData expected1 = new ObjectData();
+        expected1.guid = new GUID("WS:1/2/3");
+        expected1.objectName = "o1";
+        expected1.type = type1;
+        expected1.creator = "creator";
+        expected1.module = null;
+        expected1.method = null;
+        expected1.commitHash = null;
+        expected1.moduleVersion = null;
+        expected1.md5 = null;
+        expected1.timestamp = now.toEpochMilli();
+        expected1.data = ImmutableMap.of("bar", 1);
+        expected1.keyProps = ImmutableMap.of("bar", "1");
+        
+        assertThat("incorrect indexed object", indexedObj1, is(expected1));
+        
+        final ObjectData indexedObj2 =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:4/5/6"))).get(0);
+        
+        final ObjectData expected2 = new ObjectData();
+        expected2.guid = new GUID("WS:4/5/6");
+        expected2.objectName = "o2";
+        expected2.type = type2;
+        expected2.creator = "creator";
+        expected2.module = null;
+        expected2.method = null;
+        expected2.commitHash = null;
+        expected2.moduleVersion = null;
+        expected2.md5 = null;
+        expected2.timestamp = now.toEpochMilli();
+        expected2.data = ImmutableMap.of("bar", "whee");
+        expected2.keyProps = ImmutableMap.of("bar", "whee");
+        
+        assertThat("incorrect indexed object", indexedObj2, is(expected2));
+        
     }
 
 }

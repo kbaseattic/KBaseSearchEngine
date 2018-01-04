@@ -51,6 +51,8 @@ import kbasesearchengine.main.IndexerWorker;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.IndexingStorage;
+import kbasesearchengine.system.FileLister;
+import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
 import kbasesearchengine.system.TypeFileStorage;
 import kbasesearchengine.system.TypeMappingParser;
 import kbasesearchengine.system.TypeParseException;
@@ -106,7 +108,6 @@ public class SearchTools {
         nonNull(args, "args");
         nonNull(out, "out");
         nonNull(err, "err");
-        nonNull(console, "console");
         this.args = args;
         this.out = out;
         this.err = err;
@@ -221,10 +222,27 @@ public class SearchTools {
     }
     
     private void waitForReturn(final Stoppable stoppable) throws InterruptedException {
-        out.println("Press return to shut down process.");
-        console.readLine();
-        System.out.println("Waiting for task to stop");
-        stoppable.stop(10 * 60 * 1000); // 10 mins
+        if (console == null) {
+            out.println("No console detected - process must be manually killed to stop.");
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                
+                @Override
+                public void run() {
+                    System.out.println("Waiting for task to stop");
+                    try {
+                        stoppable.stop(10 * 60 * 1000); // 10 mins
+                    } catch (InterruptedException e) {
+                        // do nothing, things are going down anyway
+                    }
+                }
+            });
+            Thread.currentThread().join(); // waits forever
+        } else {
+            out.println("Press return to shut down process.");
+            console.readLine();
+            System.out.println("Waiting for task to stop");
+            stoppable.stop(10 * 60 * 1000); // 10 mins
+        }
     }
     
     private IndexerCoordinator runCoordinator(
@@ -259,7 +277,8 @@ public class SearchTools {
                 "yaml", new YAMLTypeMappingParser());
         final Path typesDir = Paths.get(cfg.getTypesDirectory());
         final Path mappingsDir = Paths.get(cfg.getTypeMappingsDirectory());
-        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
+        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir,
+                new ObjectTypeParsingRulesFileParser(), parsers, new FileLister(), logger);
         
         final StatusEventStorage storage = new MongoDBStatusEventStorage(searchDB);
         

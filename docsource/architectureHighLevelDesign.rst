@@ -20,8 +20,10 @@ Data Flow
 
 3. The workers pull events that are READY for processing, set their state to PROCESSING in the database instance and begin processing the event.
 
-4. If the processing of an event fails due to network connectivity or other such recoverable issues, the event is reprocessed using a Retrier. The Retrier retries an event a finite number of times before setting the event processing state as FAILED in the mongo instance. A log is written out when processing of an event fails.
+4. When necessary (like for new version events for example) the workers make requests to the workspace to get object data for processing.
 
-5. Once the event has been processed successfully, the corresponding object is (re-)indexed into the ElasticSearch index and the event state in the mongo instance is set to INDX (or indexed).
+5. If the processing of an event fails due to network connectivity or other such recoverable issues, the event is reprocessed using a Retrier. The Retrier retries an event a finite number of times before setting the event processing state as FAILED in the mongo instance. A log is written out when processing of an event fails.
 
-6&7. Queries from the narrative UI are serviced by the search API which in turn makes queries to the ElasticSearch index.
+6. Once the event has been processed successfully, the corresponding object is (re-)indexed into the ElasticSearch index and the event state in the mongo instance is set to INDX (or indexed).
+
+7&8. Queries from the narrative UI are serviced by the search API which in turn makes queries to the ElasticSearch index.

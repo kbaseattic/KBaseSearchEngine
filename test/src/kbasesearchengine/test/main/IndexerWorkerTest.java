@@ -102,7 +102,7 @@ public class IndexerWorkerTest {
         final StorageObjectType storageObjectType = StorageObjectType
                 .fromNullableVersion("code", "sometype", 3);
         
-        when(typeStore.listObjectTypesByStorageObjectType(storageObjectType))
+        when(typeStore.listObjectTypeParsingRules(storageObjectType))
                 .thenReturn(Arrays.asList(
                         ObjectTypeParsingRules.getBuilder(
                                 new SearchObjectType("foo", 1), storageObjectType)
@@ -239,7 +239,7 @@ public class IndexerWorkerTest {
                         }
         });
 
-        when(typeStore.listObjectTypesByStorageObjectType(storageObjectType))
+        when(typeStore.listObjectTypeParsingRules(storageObjectType))
                 .thenReturn(Arrays.asList(
                         rules));
         try {

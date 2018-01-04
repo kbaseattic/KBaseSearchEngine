@@ -1,4 +1,5 @@
 {
+    # a test spec.
     "global-object-type": "EmptyAType",
     "ui-type-name": "A Type",
     "storage-type": "WS",

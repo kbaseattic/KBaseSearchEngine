@@ -8,7 +8,15 @@ storage-type: WS
 # The name of the type in the data source.
 storage-object-type: KBaseGenomes.Genome
 
-# This list contains the versions of the specification, ordered by version.
+# IMPORTANT NOTE: Once a type version is established in the search system, the type version
+# CANNOT be changed or given a new version number (i.e. by changing the ordering of the versions)
+# without dropping the ElasticSearch indexes for the type.
+
+# This list contains different versions of the parsing rules used to parse the specified
+# storage-object-type. The list is ordered by version number. Each parsing rule version results
+# in a corresponding search type version. The mapping between the source storage-object-type
+# version and the target search type version is specified by the type mappings.
+# If no type mapping is specified for this type, the latest version is used.
 versions:
     -
         # The following rules describe which fields are extracted from the source object and
