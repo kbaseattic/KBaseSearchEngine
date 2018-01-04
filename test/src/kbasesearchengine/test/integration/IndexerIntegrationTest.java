@@ -304,10 +304,7 @@ public class IndexerIntegrationTest {
                         ))
                 ))
         );
-        final long timestamp = wsCli1.getObjects2(new GetObjects2Params()
-                .withNoData(1L)
-                .withObjects(Arrays.asList(new ObjectSpecification()
-                        .withRef("1/1/1")))).getData().get(0).getEpoch();
+        final long timestamp = getWSTimeStamp("1/1/1");
         
         System.out.println("waiting 5s for event to trickle through the system");
         Thread.sleep(5000); // wait for the indexer & worker to process the event
@@ -379,14 +376,8 @@ public class IndexerIntegrationTest {
                 ))
         );
         
-        final long timestamp1 = wsCli1.getObjects2(new GetObjects2Params()
-                .withNoData(1L)
-                .withObjects(Arrays.asList(new ObjectSpecification()
-                        .withRef("1/1/1")))).getData().get(0).getEpoch();
-        final long timestamp2 = wsCli1.getObjects2(new GetObjects2Params()
-                .withNoData(1L)
-                .withObjects(Arrays.asList(new ObjectSpecification()
-                        .withRef("1/2/1")))).getData().get(0).getEpoch();
+        final long timestamp1 = getWSTimeStamp("1/1/1");
+        final long timestamp2 = getWSTimeStamp("1/2/1");
         
         System.out.println("waiting 5s for events to trickle through the system");
         Thread.sleep(5000); // wait for the indexer & worker to process the event
@@ -453,14 +444,8 @@ public class IndexerIntegrationTest {
                 ))
         );
         
-        final long timestamp1 = wsCli1.getObjects2(new GetObjects2Params()
-                .withNoData(1L)
-                .withObjects(Arrays.asList(new ObjectSpecification()
-                        .withRef("1/1/1")))).getData().get(0).getEpoch();
-        final long timestamp2 = wsCli1.getObjects2(new GetObjects2Params()
-                .withNoData(1L)
-                .withObjects(Arrays.asList(new ObjectSpecification()
-                        .withRef("1/2/1")))).getData().get(0).getEpoch();
+        final long timestamp1 = getWSTimeStamp("1/1/1");
+        final long timestamp2 = getWSTimeStamp("1/2/1");
         
         System.out.println("waiting 5s for events to trickle through the system");
         Thread.sleep(5000); // wait for the indexer & worker to process the event
@@ -499,6 +484,13 @@ public class IndexerIntegrationTest {
         
         assertThat("incorrect indexed object", indexedObj2, is(expected2));
         assertWSTimestampCloseToIndexedTimestamp(timestamp2, indexedTimestamp2);
+    }
+
+    private long getWSTimeStamp(final String ref) throws IOException, JsonClientException {
+        return wsCli1.getObjects2(new GetObjects2Params()
+                .withNoData(1L)
+                .withObjects(Arrays.asList(new ObjectSpecification().withRef(ref))))
+                .getData().get(0).getEpoch();
     }
     
 }
