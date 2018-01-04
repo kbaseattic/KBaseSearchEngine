@@ -8,4 +8,3 @@ bin
 /search_tools.cfg.bak
 .idea/
 test/ .idea/
-KBaseSearchEngine.iml
