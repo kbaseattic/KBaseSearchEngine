@@ -134,6 +134,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 deleteIndex(indexName);
             }
         }
+        typeToIndex.clear();
+        typeVerToIndex.clear();
     }
     
     /* checks that at least one index exists for a type, and throws an exception otherwise.

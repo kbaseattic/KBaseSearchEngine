@@ -388,7 +388,7 @@ public class IndexerIntegrationTest {
                 .withObjects(Arrays.asList(new ObjectSpecification()
                         .withRef("1/2/1")))).getData().get(0).getEpoch();
         
-        System.out.println("waiting 5s for event2 to trickle through the system");
+        System.out.println("waiting 5s for events to trickle through the system");
         Thread.sleep(5000); // wait for the indexer & worker to process the event
         
         final ObjectData indexedObj1 =
@@ -408,6 +408,79 @@ public class IndexerIntegrationTest {
                 .withNullableData(ImmutableMap.of("whee", "wugga", "whoo", "thingy"))
                 .withKeyProperty("whee", "wugga")
                 .withKeyProperty("whoo", "thingy")
+                .build();
+        
+        final ObjectData expected2 = ObjectData.getBuilder(new GUID("WS:1/2/1"))
+                .withNullableObjectName("obj2")
+                .withNullableType(new SearchObjectType("TwoVers", 2))
+                .withNullableCreator(userToken.getUserName())
+                .withNullableMD5("51368afbd22bcf7987b98ca28607c67d")
+                .withNullableTimestamp(indexedTimestamp2)
+                .withNullableData(ImmutableMap.of("whee", "whug", "whoo", "gofasterstripes"))
+                .withKeyProperty("whee", "whug")
+                .withKeyProperty("whoo", "gofasterstripes")
+                .build();
+        
+        assertThat("incorrect indexed object", indexedObj1, is(expected1));
+        assertWSTimestampCloseToIndexedTimestamp(timestamp1, indexedTimestamp1);
+        
+        assertThat("incorrect indexed object", indexedObj2, is(expected2));
+        assertWSTimestampCloseToIndexedTimestamp(timestamp2, indexedTimestamp2);
+    }
+    
+    @Test
+    public void twoVersionsWithMapping() throws Exception {
+        
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("foo"));
+        wsCli1.saveObjects(new SaveObjectsParams()
+                .withWorkspace("foo")
+                .withObjects(Arrays.asList(
+                        new ObjectSaveData()
+                                .withData(new UObject(ImmutableMap.of(
+                                        "whee", "wugga",
+                                        "whoo", "thingy",
+                                        "req", "one")))
+                                .withName("obj1")
+                                .withType("TwoVersionsMapped.Type-1.0"),
+                        new ObjectSaveData()
+                                .withData(new UObject(ImmutableMap.of(
+                                        "whee", "whug",
+                                        "whoo", "gofasterstripes",
+                                        "req", 1)))
+                                .withName("obj2")
+                                .withType("TwoVersionsMapped.Type-2.0")
+                ))
+        );
+        
+        final long timestamp1 = wsCli1.getObjects2(new GetObjects2Params()
+                .withNoData(1L)
+                .withObjects(Arrays.asList(new ObjectSpecification()
+                        .withRef("1/1/1")))).getData().get(0).getEpoch();
+        final long timestamp2 = wsCli1.getObjects2(new GetObjects2Params()
+                .withNoData(1L)
+                .withObjects(Arrays.asList(new ObjectSpecification()
+                        .withRef("1/2/1")))).getData().get(0).getEpoch();
+        
+        System.out.println("waiting 5s for events to trickle through the system");
+        Thread.sleep(5000); // wait for the indexer & worker to process the event
+        
+        final ObjectData indexedObj1 =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/1/1"))).get(0);
+        final Instant indexedTimestamp1 = indexedObj1.getTimestamp().get();
+        
+        final ObjectData indexedObj2 =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/2/1"))).get(0);
+        final Instant indexedTimestamp2 = indexedObj2.getTimestamp().get();
+        
+        final ObjectData expected1 = ObjectData.getBuilder(new GUID("WS:1/1/1"))
+                .withNullableObjectName("obj1")
+                .withNullableType(new SearchObjectType("TwoVers", 1))
+                .withNullableCreator(userToken.getUserName())
+                .withNullableMD5("d20dd9b7a7cd69471b2b13ae7593de90")
+                .withNullableTimestamp(indexedTimestamp1)
+                .withNullableData(ImmutableMap.of("whee", "wugga"))
+                .withKeyProperty("whee", "wugga")
                 .build();
         
         final ObjectData expected2 = ObjectData.getBuilder(new GUID("WS:1/2/1"))
