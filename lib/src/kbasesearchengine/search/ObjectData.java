@@ -11,9 +11,12 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.tools.Utils;
 
+/** Data about an object in the search system. Contains a minimum of the object GUID, and may
+ * contain more fields depending on the specification of which fields to include.
+ * @author gaprice@lbl.gov
+ *
+ */
 public class ObjectData {
-    
-    //TODO JAVADOC
     
     private final GUID guid;
     private final Optional<GUID> parentGuid;
@@ -67,62 +70,110 @@ public class ObjectData {
         this.keyProps = Collections.unmodifiableMap(keyProps);
     }
 
+    /** Get the object's GUID.
+     * @return the GUID.
+     */
     public GUID getGUID() {
         return guid;
     }
 
+    /** Get the parent object's GUID (e.g. the object guid without the subobject type or id).
+     * Only present if the parent object's data is present (see {@link #getParentData()}).
+     * @return the parent GUID.
+     */
     public Optional<GUID> getParentGUID() {
         return parentGuid;
     }
 
+    /** Get the name of the object, if present.
+     * @return the object name.
+     */
     public Optional<String> getObjectName() {
         return objectName;
     }
 
+    /** Get the type of the object, if present. 
+     * @return the object type.
+     */
     public Optional<SearchObjectType> getType() {
         return type;
     }
 
+    /** Get the username of the creator of the object, if present.
+     * @return the object's creator.
+     */
     public Optional<String> getCreator() {
         return creator;
     }
 
+    /** Get the username of copier of the object, if present.
+     * @return the user that copied the object.
+     */
     public Optional<String> getCopier() {
         return copier;
     }
 
+    /** Get the name of the software module used to create the object, if present.
+     * @return the module name.
+     */
     public Optional<String> getModule() {
         return module;
     }
 
+    /** Get the name of the software method used to create the object, if present.
+     * @return the method name.
+     */
     public Optional<String> getMethod() {
         return method;
     }
 
+    /** Get the commit hash of the software used to create the object, if present.
+     * @return the commit hash.
+     */
     public Optional<String> getCommitHash() {
         return commitHash;
     }
 
+    /** Get the version of the software module used to create the object, if present.
+     * @return the module version.
+     */
     public Optional<String> getModuleVersion() {
         return moduleVersion;
     }
 
+    /** Get the md5 digest of the object, if present.
+     * @return the md5.
+     */
     public Optional<String> getMd5() {
         return md5;
     }
 
+    /** Get the timestamp of the creation of the object, if present.
+     * @return the timestamp.
+     */
     public Optional<Instant> getTimestamp() {
         return timestamp;
     }
 
+    /** Get the data associated with the parent of the object, if present. If present, the 
+     * parent GUID will also be available (see {@link #getParentGUID()}).
+     * @return the parent object data.
+     */
     public Optional<Object> getParentData() {
         return parentData;
     }
 
+    /** Get the data associated with the object, if present.
+     * @return the object data.
+     */
     public Optional<Object> getData() {
         return data;
     }
 
+    /** Get the properties extracted from the object data and stored as searchable keys in the
+     * search system.
+     * @return the key properties.
+     */
     public Map<String, String> getKeyProperties() {
         return keyProps;
     }
@@ -276,10 +327,18 @@ public class ObjectData {
         return true;
     }
     
+    /** Get a builder for an {@link ObjectData} instance.
+     * @param guid the GUID fro the object.
+     * @return a new builder.
+     */
     public static Builder getBuilder(final GUID guid) {
         return new Builder(guid);
     }
     
+    /** An {@link ObjectData} builder.
+     * @author gaprice@lbl.gov
+     *
+     */
     public static class Builder {
         
         private final GUID guid;
@@ -302,11 +361,19 @@ public class ObjectData {
             this.guid = guid;
         }
         
+        /** Build the new ObjectData.
+         * @return the object data.
+         */
         public ObjectData build() {
             return new ObjectData(guid, objectName, type, creator, copier, module, method,
                     commitHash, moduleVersion, md5, timestamp, parentData, data, keyProps);
         }
         
+        /** Set the object name in the builder. Replaces any previous object name. Nulls and
+         * whitespace only names are ignored.
+         * @param objectName the object name.
+         * @return this builder.
+         */
         public Builder withNullableObjectName(final String objectName) {
             if (!Utils.isNullOrEmpty(objectName)) {
                 this.objectName = objectName;
@@ -314,6 +381,10 @@ public class ObjectData {
             return this;
         }
         
+        /** Set the object type in the builder. Replaces any previous type. Null is ignored.
+         * @param type the object type.
+         * @return this builder.
+         */
         public Builder withNullableType(final SearchObjectType type) {
             if (type != null) {
                 this.type = type;
@@ -321,6 +392,11 @@ public class ObjectData {
             return this;
         }
         
+        /** Set the creator's user name in the builder. Replaces any previous creator. Nulls and
+         * whitespace only names are ignored.
+         * @param creator the creator's user name.
+         * @return this builder.
+         */
         public Builder withNullableCreator(final String creator) {
             if (!Utils.isNullOrEmpty(creator)) {
                 this.creator = creator;
@@ -328,6 +404,11 @@ public class ObjectData {
             return this;
         }
         
+        /** Set the user name of the user that copied the object in the builder.
+         * Replaces any previous copier name. Nulls and whitespace only names are ignored.
+         * @param copier the copier's user name.
+         * @return this builder.
+         */
         public Builder withNullableCopier(final String copier) {
             if (!Utils.isNullOrEmpty(copier)) {
                 this.copier = copier;
@@ -335,6 +416,11 @@ public class ObjectData {
             return this;
         }
         
+        /** Set the name of the software module used to create the object in the builder.
+         * Replaces any previous module name. Nulls and whitespace only names are ignored.
+         * @param module the module name.
+         * @return this builder.
+         */
         public Builder withNullableModule(final String module) {
             if (!Utils.isNullOrEmpty(module)) {
                 this.module = module;
@@ -342,6 +428,11 @@ public class ObjectData {
             return this;
         }
         
+        /** Set the name of the software method used to create the object in the builder.
+         * Replaces any previous object name. Nulls and whitespace only names are ignored.
+         * @param method the method name.
+         * @return this builder.
+         */
         public Builder withNullableMethod(final String method) {
             if (!Utils.isNullOrEmpty(method)) {
                 this.method = method;
@@ -349,6 +440,11 @@ public class ObjectData {
             return this;
         }
         
+        /** Set the commit hash of the software module used to create the object in the builder.
+         * Replaces any previous hash. Nulls and whitespace only hashes are ignored.
+         * @param commitHash the commit hash.
+         * @return this builder.
+         */
         public Builder withNullableCommitHash(final String commitHash) {
             if (!Utils.isNullOrEmpty(commitHash)) {
                 this.commitHash = commitHash;
@@ -356,6 +452,11 @@ public class ObjectData {
             return this;
         }
         
+        /** Set the version of the software module used to create the object in the builder.
+         * Replaces any previous version. Nulls and whitespace only versions are ignored.
+         * @param moduleVersion the module version.
+         * @return this builder.
+         */
         public Builder withNullableModuleVersion(final String moduleVersion) {
             if (!Utils.isNullOrEmpty(moduleVersion)) {
                 this.moduleVersion = moduleVersion;
@@ -363,6 +464,11 @@ public class ObjectData {
             return this;
         }
         
+        /** Set the MD5 digest of the object.
+         * Replaces any previous MD5s. Nulls and whitespace only MD5s are ignored.
+         * @param md5 the MD5.
+         * @return this builder.
+         */
         public Builder withNullableMD5(final String md5) {
             if (!Utils.isNullOrEmpty(md5)) {
                 this.md5 = md5;
@@ -370,6 +476,11 @@ public class ObjectData {
             return this;
         }
         
+        /** Set the object's creation timestamp. in the builder. Replaces any previous timestamp.
+         * Null is ignored.
+         * @param timestamp the timestamp.
+         * @return this builder.
+         */
         public Builder withNullableTimestamp(final Instant timestamp) {
             if (timestamp != null) {
                 this.timestamp = timestamp;
@@ -377,6 +488,12 @@ public class ObjectData {
             return this;
         }
         
+        /** Set the data of the parent object in the builder. Replaces any previous parent data.
+         * Null is ignored. If the parent data is present, the parent GUID
+         * (see {@link ObjectData#getParentGUID()}) will be available.
+         * @param parentData the parent object's data.
+         * @return this builder.
+         */
         public Builder withNullableParentData(final Object parentData) {
             if (parentData != null) {
                 this.parentData = parentData;
@@ -384,6 +501,11 @@ public class ObjectData {
             return this;
         }
         
+        /** Set the data of the object in the builder. Replaces any previous data.
+         * Null is ignored.
+         * @param data the object's data.
+         * @return this builder.
+         */
         public Builder withNullableData(final Object data) {
             if (data != null) {
                 this.data = data;
@@ -391,6 +513,13 @@ public class ObjectData {
             return this;
         }
         
+        /** Adds a searchable key and value to the builder. Keys must be non-null and consist of at
+         * least one non-whitespace character. Adding a duplicate key will overwrite the value of
+         * the previous key.
+         * @param key the key.
+         * @param property the value.
+         * @return this builder.
+         */
         public Builder withKeyProperty(final String key, final String property) {
             Utils.notNullOrEmpty(key, "key cannot be null or whitespace");
             keyProps.put(key, property);
