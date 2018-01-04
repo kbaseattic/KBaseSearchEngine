@@ -108,7 +108,6 @@ public class SearchTools {
         nonNull(args, "args");
         nonNull(out, "out");
         nonNull(err, "err");
-        nonNull(console, "console");
         this.args = args;
         this.out = out;
         this.err = err;
