@@ -1095,6 +1095,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public List<ObjectData> getObjectsByIds(Set<GUID> ids, PostProcessing pp) 
             throws IOException {
+
         Map<String, Object> terms = new LinkedHashMap<>();
         terms.put("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList()));
 
@@ -1182,7 +1183,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         return item;
     }
-    
     private Map<String, Object> createPublicShouldBlock(boolean withAllHistory) {
         List<Object> must0List = new ArrayList<>();
         must0List.add(createFilter("term", "public", true));
@@ -1251,6 +1251,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         // Shared block
         shouldList.add(createSharedShouldBlock(mustForShared));
         // Rest of query
+
         Map<String, Object> filterBool = new LinkedHashMap<>() ;
         filterBool.put("should", shouldList);
 
@@ -1525,7 +1526,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         String indexName = objectType == null ? getAnyIndexPattern() : checkIndex(objectType);
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
-        
+
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
