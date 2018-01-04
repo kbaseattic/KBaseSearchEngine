@@ -1,0 +1,19 @@
+# a test spec.
+
+global-object-type: TwoVers
+storage-type: WS
+storage-object-type: TwoVersions.Type
+versions:
+    -
+        indexing-rules:
+            -
+                path: whee
+                keyword-type: string
+    -
+        indexing-rules:
+            -
+                path: whee
+                keyword-type: string
+            -
+                path: whoo
+                keyword-type: string
