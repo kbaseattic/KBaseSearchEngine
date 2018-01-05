@@ -736,7 +736,7 @@ public class ElasticIndexingStorageTest {
         FoundHits hits5 = indexStorage.searchObjects(null, filter5,sorting, accessFilter
                 , null, null);
 
-        assertThat("overlapping ranges did not return intersection", hits5.guids, is(set(guid1)));
+        assertThat("overlapping ranges did not return intersection", hits5.guids, is(set(guid2)));
     }
 
 }
