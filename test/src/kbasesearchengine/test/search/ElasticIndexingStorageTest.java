@@ -710,9 +710,9 @@ public class ElasticIndexingStorageTest {
         MatchValue range2 = new MatchValue(1000, 2000);
         MatchValue range3 = new MatchValue(100, 1234);
 
-        MatchFilter filter1 =  MatchFilter.create().withLookupInKey("num1", range1);
-        MatchFilter filter2 =  MatchFilter.create().withLookupInKey("num2", range2);
-        MatchFilter filter3 =  MatchFilter.create().withLookupInKey("num1", range3);
+        MatchFilter filter1 = MatchFilter.create().withLookupInKey("num1", range1);
+        MatchFilter filter2 = MatchFilter.create().withLookupInKey("num2", range2);
+        MatchFilter filter3 = MatchFilter.create().withLookupInKey("num1", range3);
 
         FoundHits hits1 = indexStorage.searchObjects(null, filter1,sorting, accessFilter, null, null);
         FoundHits hits2 = indexStorage.searchObjects(null, filter2,sorting, accessFilter, null, null);
@@ -723,7 +723,7 @@ public class ElasticIndexingStorageTest {
         assertThat("did not find object1 and object3 using LookupInKey with range", hits3.guids, is(set(guid1, guid2)));
 
         //conflicting filters should return nothing
-        MatchFilter filter4 =  MatchFilter.create().withLookupInKey("num1", range1);
+        MatchFilter filter4 = MatchFilter.create().withLookupInKey("num1", range1);
         filter4.withLookupInKey("num2", range2);
         FoundHits hits4 = indexStorage.searchObjects(null, filter4,sorting, accessFilter, null, null);
 
@@ -731,7 +731,7 @@ public class ElasticIndexingStorageTest {
 
 
         // overlapping filters should return intersection
-        MatchFilter filter5 =  MatchFilter.create().withLookupInKey("num1", range3);
+        MatchFilter filter5 = MatchFilter.create().withLookupInKey("num1", range3);
         filter5.withLookupInKey("num2", range2);
         FoundHits hits5 = indexStorage.searchObjects(null, filter5,sorting, accessFilter
                 , null, null);
