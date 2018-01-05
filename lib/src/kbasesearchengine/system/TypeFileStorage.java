@@ -1,6 +1,5 @@
 package kbasesearchengine.system;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -9,7 +8,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,8 +52,7 @@ public class TypeFileStorage implements TypeStorage {
             if (fileLister.isRegularFile(file) && isAllowedFileType(file)) {
                 final List<ObjectTypeParsingRules> types;
                 try (final InputStream is = fileLister.newInputStream(file)) {
-                    types = searchSpecParser.parseStream(
-                            new BufferedInputStream(is), file.toString());
+                    types = searchSpecParser.parseStream(is, file.toString());
                 }
                 final String searchType = types.get(0).getGlobalObjectType().getType();
                 if (typeToFile.containsKey(searchType)) {
@@ -197,14 +194,14 @@ public class TypeFileStorage implements TypeStorage {
             final LineLogger logger)
             throws IOException, TypeParseException {
         final Map<CodeAndType, TypeMapping> ret = new HashMap<>();
-        for (Path file : fileLister.list(mappingsDir)) {
+        for (final Path file : fileLister.list(mappingsDir)) {
             if (fileLister.isRegularFile(file)) {
                 final String ext = FilenameUtils.getExtension(file.toString());
                 final TypeMappingParser parser = parsers.get(ext);
                 if (parser != null) {
                     final Set<TypeMapping> mappings;
                     try (final InputStream is = fileLister.newInputStream(file)) {
-                        mappings = parser.parse(new BufferedInputStream(is), file.toString());
+                        mappings = parser.parse(is, file.toString());
                     }
                     for (final TypeMapping map: mappings) {
                         final CodeAndType cnt = new CodeAndType(map);
@@ -249,9 +246,9 @@ public class TypeFileStorage implements TypeStorage {
     }
 
     @Override
-    public List<ObjectTypeParsingRules> listObjectTypeParsingRules() {
+    public Set<ObjectTypeParsingRules> listObjectTypeParsingRules() {
         return searchTypes.values().stream().map(l -> l.get(l.size() - 1))
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
     }
     
     @Override
@@ -272,14 +269,14 @@ public class TypeFileStorage implements TypeStorage {
     }
     
     @Override
-    public List<ObjectTypeParsingRules> listObjectTypeParsingRules(
+    public Set<ObjectTypeParsingRules> listObjectTypeParsingRules(
             final StorageObjectType storageObjectType) {
         final TypeMapping mapping = storageTypes.get(new CodeAndType(storageObjectType));
         if (mapping == null) {
-            return Collections.emptyList();
+            return Collections.emptySet();
         }
         final Set<SearchObjectType> types = mapping.getSearchTypes(storageObjectType.getVersion());
-        final List<ObjectTypeParsingRules> ret = new LinkedList<>();
+        final Set<ObjectTypeParsingRules> ret = new HashSet<>();
         for (final SearchObjectType t: types) {
             ret.add(searchTypes.get(t.getType()).get(t.getVersion() - 1));
         }

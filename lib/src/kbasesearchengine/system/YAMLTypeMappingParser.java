@@ -1,5 +1,6 @@
 package kbasesearchengine.system;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -33,9 +34,12 @@ public class YAMLTypeMappingParser implements TypeMappingParser {
     private static final String TYPES_PATH = "/types";
     
     @Override
-    public Set<TypeMapping> parse(final InputStream input, String sourceInfo)
+    public Set<TypeMapping> parse(InputStream input, String sourceInfo)
             throws TypeParseException {
         Utils.nonNull(input, "input");
+        if (!(input instanceof BufferedInputStream)) {
+            input = new BufferedInputStream(input);
+        }
         if (Utils.isNullOrEmpty(sourceInfo)) {
             sourceInfo = null;
         }
