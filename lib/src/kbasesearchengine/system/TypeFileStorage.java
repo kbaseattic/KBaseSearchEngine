@@ -183,8 +183,9 @@ public class TypeFileStorage implements TypeStorage {
                         "%s Overriding type mapping for storage code %s and storage type %s " +
                         "from type transformation file with definition from type mapping file%s",
                         TYPE_STORAGE, cnt.storageCode, cnt.storageType,
-                        mappingSource == null ? "" : mappingSource));
-            }
+                        mappingSource == null ? "" : " " + mappingSource));
+            } // ok to set up a mapping for a storage type not explicitly listed in a search
+              // type file, so we don't throw an exception here
             storageTypes.put(cnt, mappings.get(cnt));
         }
     }
@@ -240,7 +241,8 @@ public class TypeFileStorage implements TypeStorage {
                             file);
                 }
             } else {
-                logger.logInfo(TYPE_STORAGE + "Skipping entry in type mapping directory: " + file);
+                logger.logInfo(TYPE_STORAGE +
+                        " Skipping entry in type mapping directory: " + file);
             }
         }
         return ret;
