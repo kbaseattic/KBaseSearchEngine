@@ -45,6 +45,8 @@ RUN ln -s /kb/runtime/bin/ant /kb/deployment/bin/ant
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 
+RUN ln -sf /kb/runtime/bin/ant /kb/deployment/bin/ant
+
 # -----------------------------------------
 
 COPY ./ /kb/module
