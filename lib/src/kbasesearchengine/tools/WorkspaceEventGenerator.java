@@ -143,7 +143,18 @@ public class WorkspaceEventGenerator {
 
     public void generateEvents() throws EventGeneratorException {
         if (ws > 0) {
-            processWorkspace(ws);
+            final boolean tempNarr;
+            try {
+                final Document wsdoc = wsDB.getCollection(WS_COL_WORKSPACES).find(
+                        new Document(WS_KEY_WS_ID, ws)).first();
+                if (wsdoc == null) {
+                    return;
+                }
+                tempNarr = isTemporaryNarrative(wsdoc);
+            } catch (MongoException e) {
+                throw convert(e, "workspace");
+            }
+            processWorkspace(ws, tempNarr);
         } else {
             try {
                 // don't pull all workspaces at once to try and avoid race conditions
@@ -152,6 +163,7 @@ public class WorkspaceEventGenerator {
                 for (final Document ws: cur) {
                     final int id = Math.toIntExact(ws.getLong(WS_KEY_WS_ID));
                     final String wsname = ws.getString(WS_KEY_WS_NAME);
+                    final boolean tempNarr = isTemporaryNarrative(ws);
                     if (wsBlackList.contains(new WorkspaceIdentifier(id)) ||
                             wsBlackList.contains(new WorkspaceIdentifier(wsname))) {
                         log(String.format("Skipping blacklisted workspace %s (%s)",
@@ -159,7 +171,7 @@ public class WorkspaceEventGenerator {
                     } else if (ws.getBoolean(WS_KEY_WS_DEL)) {
                         log(String.format("Skipping deleted workspace %s (%s)", id, wsname));
                     } else {
-                        processWorkspace(id);
+                        processWorkspace(id, tempNarr);
                     }
                 }
             } catch (MongoException e) {
@@ -168,8 +180,15 @@ public class WorkspaceEventGenerator {
         }
         log("Finished processing.");
     }
+
+    private boolean isTemporaryNarrative(final Document doc) {
+        @SuppressWarnings("unchecked")
+        final Map<String, String> meta = metaMongoArrayToHash((List<Object>) doc.get(WS_KEY_META));
+        return TRUE.equals(meta.get(IS_TEMP_NARRATIVE));
+    }
     
-    private void processWorkspace(final int wsid) throws EventGeneratorException {
+    private void processWorkspace(final int wsid, final boolean tempNarr)
+            throws EventGeneratorException {
         final boolean pub = isPub(wsid);
         final Document query = new Document(WS_KEY_WS_ID, wsid);
         if (obj > 0) {
@@ -189,25 +208,28 @@ public class WorkspaceEventGenerator {
 
         Versions vers = new Versions(vercur, 10000);
         while (!vers.isEmpty()) {
-            processVers(wsid, vers, pub);
+            processVers(wsid, vers, pub, tempNarr);
             vers = new Versions(vercur, 10000);
         }
     }
 
-    private void processVers(final int wsid, final Versions vers, final boolean pub)
+    private void processVers(
+            final int wsid,
+            final Versions vers,
+            final boolean pub,
+            final boolean tempNarr)
             throws EventGeneratorException {
         final Map<Integer, Document> objects = getObjects(wsid, vers.minObjId, vers.maxObjId);
         for (final Document ver: vers.versions) {
             final int objid = Math.toIntExact(ver.getLong(WS_KEY_OBJ_ID));
             final Document obj = objects.get(objid);
-            @SuppressWarnings("unchecked")
-            final Map<String, String> meta = metaMongoArrayToHash(
-                    (List<Object>) ver.get(WS_KEY_META));
             final int version = ver.getInteger(WS_KEY_VER);
             if (obj.getBoolean(WS_KEY_OBJ_DEL)) {
                 log(String.format("Skipping deleted object %s/%s/%s", wsid, objid, version));
             } else if (ver.getString(WS_KEY_TYPE).startsWith(NARRATIVE_TYPE) &&
-                    TRUE.equals(meta.get(IS_TEMP_NARRATIVE))) {
+                    // isTemporaryNarrative uses the new key in the object metadata
+                    // tempNarr is the key from the workspace metadata for older objects
+                    (isTemporaryNarrative(ver) || tempNarr)) {
                 log(String.format("Skipping temporary narrative %s/%s/%s", wsid, objid, version));
             } else {
                 generateEvent(wsid, pub, ver);
