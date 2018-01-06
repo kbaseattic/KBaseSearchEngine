@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 
 import org.bson.Document;
 
+import com.mongodb.DBObject;
 import com.mongodb.MongoException;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
@@ -42,6 +43,11 @@ import kbasesearchengine.system.StorageObjectType;
  */
 public class WorkspaceEventGenerator {
     
+    private static final String META_KEY = "k";
+    private static final String META_VALUE = "v";
+    private static final String TRUE = "true";
+    private static final String IS_TEMP_NARRATIVE = "is_temporary";
+    private static final String NARRATIVE_TYPE = "KBaseNarrative.Narrative";
     private static final int WS_COMPATIBLE_SCHEMA = 1;
     private static final String WS_COL_CONFIG = "config";
     private static final String WS_COL_WORKSPACES = "workspaces";
@@ -54,6 +60,7 @@ public class WorkspaceEventGenerator {
     private static final String WS_KEY_WS_NAME = "name";
     private static final String WS_KEY_OBJ_ID = "id";
     private static final String WS_KEY_VER = "ver";
+    private static final String WS_KEY_META = "meta";
     private static final String WS_KEY_TYPE = "type";
     private static final String WS_KEY_SAVEDATE = "savedate";
     private static final String WS_KEY_WS_ACL_ID = "id";
@@ -193,15 +200,41 @@ public class WorkspaceEventGenerator {
         for (final Document ver: vers.versions) {
             final int objid = Math.toIntExact(ver.getLong(WS_KEY_OBJ_ID));
             final Document obj = objects.get(objid);
+            @SuppressWarnings("unchecked")
+            final Map<String, String> meta = metaMongoArrayToHash(
+                    (List<Object>) ver.get(WS_KEY_META));
+            final int version = ver.getInteger(WS_KEY_VER);
             if (obj.getBoolean(WS_KEY_OBJ_DEL)) {
-                final int version = ver.getInteger(WS_KEY_VER);
                 log(String.format("Skipping deleted object %s/%s/%s", wsid, objid, version));
+            } else if (ver.getString(WS_KEY_TYPE).startsWith(NARRATIVE_TYPE) &&
+                    TRUE.equals(meta.get(IS_TEMP_NARRATIVE))) {
+                log(String.format("Skipping temporary narrative %s/%s/%s", wsid, objid, version));
             } else {
                 generateEvent(wsid, pub, ver);
             }
         }
     }
 
+    private static Map<String, String> metaMongoArrayToHash(final List<? extends Object> meta) {
+        final Map<String, String> ret = new HashMap<String, String>();
+        if (meta != null) {
+            for (final Object o: meta) {
+                //frigging mongo
+                if (o instanceof DBObject) {
+                    final DBObject dbo = (DBObject) o;
+                    ret.put((String) dbo.get(META_KEY),
+                            (String) dbo.get(META_VALUE));
+                } else {
+                    @SuppressWarnings("unchecked")
+                    final Map<String, String> m = (Map<String, String>) o;
+                    ret.put(m.get(META_KEY),
+                            m.get(META_VALUE));
+                }
+            }
+        }
+        return ret;
+    }
+    
     private void generateEvent(final int wsid, final boolean pub, final Document ver)
             throws EventGeneratorException {
         final int objid = Math.toIntExact(ver.getLong(WS_KEY_OBJ_ID));
