@@ -34,6 +34,7 @@ import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.system.FileLister;
 import kbasesearchengine.system.IndexingRules;
+import kbasesearchengine.system.NoSuchTypeException;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
 import kbasesearchengine.system.SearchObjectType;
@@ -533,6 +534,7 @@ public class TypeFileStorageTest {
                 .parseStream(argThat(new StreamMatcher("testvaluebar")), eq("bar.yaml"));
         
         when(fileLister.list(Paths.get("mappings"))).thenReturn(Collections.emptyList());
+        
         final TypeFileStorage tfs = new TypeFileStorage(
                 Paths.get("types"),
                 Paths.get("mappings"),
@@ -742,4 +744,243 @@ public class TypeFileStorageTest {
                 new TypeParseException(exception));
     }
 
+    @Test
+    public void constructFailMissingSearchType() throws Exception {
+        constructFailMissingSearchType(null, "The search type bar specified in source code/type " +
+                "CD/storefoo does not have an equivalent transform type.");
+        constructFailMissingSearchType("whee", "The search type bar specified in source " +
+                "code/type CD/storefoo does not have an equivalent transform type. File: whee");
+    }
+
+    private void constructFailMissingSearchType(
+            final String source,
+            final String exception)
+            throws IOException, ObjectParseException, TypeParseException {
+        final ObjectTypeParsingRulesFileParser typeParser =
+                mock(ObjectTypeParsingRulesFileParser.class);
+        final FileLister fileLister = mock(FileLister.class);
+        final TypeMappingParser mappingParser = mock(TypeMappingParser.class);
+        final LineLogger logger = mock(LineLogger.class);
+        
+        when(fileLister.list(Paths.get("types"))).thenReturn(Arrays.asList(
+                Paths.get("foo.yaml")));
+        when(fileLister.isRegularFile(Paths.get("foo.yaml"))).thenReturn(true);
+        
+        when(fileLister.newInputStream(Paths.get("foo.yaml")))
+                .thenReturn(new ByteArrayInputStream("testvalue".getBytes()));
+        final ObjectTypeParsingRules rule1 = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1),
+                new StorageObjectType("CD", "storefoo"))
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee")).build())
+                .build();
+        
+        when(typeParser.parseStream(argThat(new StreamMatcher("testvalue")), eq("foo.yaml")))
+                .thenReturn(Arrays.asList(rule1));
+        
+        when(fileLister.list(Paths.get("mappings"))).thenReturn(Arrays.asList(
+                Paths.get("mappings.yaml")));
+        when(fileLister.isRegularFile(Paths.get("mappings.yaml"))).thenReturn(true);
+        when(fileLister.newInputStream(Paths.get("mappings.yaml")))
+                .thenReturn(new ByteArrayInputStream("mappingvalue".getBytes()));
+        
+        when(mappingParser.parse(argThat(new StreamMatcher("mappingvalue")), eq("mappings.yaml")))
+                .thenReturn(set(TypeMapping.getBuilder("CD", "storefoo")
+                        .withDefaultSearchType(new SearchObjectType("bar", 1))
+                        .withNullableSourceInfo(source)
+                        .build()));
+        
+        failConstruct(
+                Paths.get("types"),
+                Paths.get("mappings"),
+                typeParser,
+                ImmutableMap.of("yaml", mappingParser),
+                fileLister,
+                logger,
+                new TypeParseException(exception));
+    }
+    
+    @Test
+    public void constructFailMissingSearchTypeVersion() throws Exception {
+        constructFailMissingSearchTypeVersion(null, "Version 2 of search type foo specified in " +
+                "source code/type CD/storefoo does not exist.");
+        constructFailMissingSearchTypeVersion("whee", "Version 2 of search type foo specified " +
+                "in source code/type CD/storefoo does not exist. File: whee");
+    }
+
+    private void constructFailMissingSearchTypeVersion(
+            final String source,
+            final String exception)
+            throws IOException, ObjectParseException, TypeParseException {
+        final ObjectTypeParsingRulesFileParser typeParser =
+                mock(ObjectTypeParsingRulesFileParser.class);
+        final FileLister fileLister = mock(FileLister.class);
+        final TypeMappingParser mappingParser = mock(TypeMappingParser.class);
+        final LineLogger logger = mock(LineLogger.class);
+        
+        when(fileLister.list(Paths.get("types"))).thenReturn(Arrays.asList(
+                Paths.get("foo.yaml")));
+        when(fileLister.isRegularFile(Paths.get("foo.yaml"))).thenReturn(true);
+        
+        when(fileLister.newInputStream(Paths.get("foo.yaml")))
+                .thenReturn(new ByteArrayInputStream("testvalue".getBytes()));
+        final ObjectTypeParsingRules rule1 = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1),
+                new StorageObjectType("CD", "storefoo"))
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee")).build())
+                .build();
+        
+        when(typeParser.parseStream(argThat(new StreamMatcher("testvalue")), eq("foo.yaml")))
+                .thenReturn(Arrays.asList(rule1));
+        
+        when(fileLister.list(Paths.get("mappings"))).thenReturn(Arrays.asList(
+                Paths.get("mappings.yaml")));
+        when(fileLister.isRegularFile(Paths.get("mappings.yaml"))).thenReturn(true);
+        when(fileLister.newInputStream(Paths.get("mappings.yaml")))
+                .thenReturn(new ByteArrayInputStream("mappingvalue".getBytes()));
+        
+        when(mappingParser.parse(argThat(new StreamMatcher("mappingvalue")), eq("mappings.yaml")))
+                .thenReturn(set(TypeMapping.getBuilder("CD", "storefoo")
+                        .withDefaultSearchType(new SearchObjectType("foo", 2))
+                        .withNullableSourceInfo(source)
+                        .build()));
+        
+        failConstruct(
+                Paths.get("types"),
+                Paths.get("mappings"),
+                typeParser,
+                ImmutableMap.of("yaml", mappingParser),
+                fileLister,
+                logger,
+                new TypeParseException(exception));
+    }
+    
+    @Test
+    public void getTypeFailNoType() throws Exception {
+        final ObjectTypeParsingRulesFileParser typeParser =
+                mock(ObjectTypeParsingRulesFileParser.class);
+        final FileLister fileLister = mock(FileLister.class);
+        final TypeMappingParser mappingParser = mock(TypeMappingParser.class);
+        final LineLogger logger = mock(LineLogger.class);
+        
+        when(fileLister.list(Paths.get("types"))).thenReturn(Arrays.asList(
+                Paths.get("foo.yaml")));
+        when(fileLister.isRegularFile(Paths.get("foo.yaml"))).thenReturn(true);
+        
+        when(fileLister.newInputStream(Paths.get("foo.yaml")))
+                .thenReturn(new ByteArrayInputStream("testvalue".getBytes()));
+        final ObjectTypeParsingRules rule1 = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1),
+                new StorageObjectType("CD", "storefoo"))
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee")).build())
+                .build();
+        
+        when(typeParser.parseStream(argThat(new StreamMatcher("testvalue")), eq("foo.yaml")))
+                .thenReturn(Arrays.asList(rule1));
+        
+        when(fileLister.list(Paths.get("mappings"))).thenReturn(Collections.emptyList());
+        
+        final TypeFileStorage tfs = new TypeFileStorage(
+                Paths.get("types"),
+                Paths.get("mappings"),
+                typeParser,
+                ImmutableMap.of("yaml", mappingParser),
+                fileLister,
+                logger);
+        
+        assertThat("couldn't get type", tfs.getObjectTypeParsingRules(
+                new SearchObjectType("foo", 1)), is(rule1));
+        
+        failGetType(tfs, new SearchObjectType("bar", 1),
+                new NoSuchTypeException("No type bar_1 found"));
+        failGetType(tfs, new SearchObjectType("foo", 2),
+                new NoSuchTypeException("No type foo_2 found"));
+    }
+    
+    private void failGetType(
+            final TypeFileStorage tfs,
+            final SearchObjectType type,
+            final Exception expected) {
+        try {
+            tfs.getObjectTypeParsingRules(type);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
+    
+    @Test
+    public void getTypesFromStorageTypeWithoutDefaultMapping() throws Exception {
+     // also tests ignoring files that are not regular files
+        final ObjectTypeParsingRulesFileParser typeParser =
+                mock(ObjectTypeParsingRulesFileParser.class);
+        final FileLister fileLister = mock(FileLister.class);
+        final TypeMappingParser mappingParser = mock(TypeMappingParser.class);
+        final LineLogger logger = mock(LineLogger.class);
+        
+        when(fileLister.list(Paths.get("types"))).thenReturn(Arrays.asList(
+                Paths.get("foo.yaml"), Paths.get("foo2.yaml")));
+        when(fileLister.isRegularFile(Paths.get("foo.yaml"))).thenReturn(true);
+        when(fileLister.isRegularFile(Paths.get("foo2.yaml"))).thenReturn(false);
+        
+        when(fileLister.newInputStream(Paths.get("foo.yaml")))
+                .thenReturn(new ByteArrayInputStream("testvalue".getBytes()));
+        final ObjectTypeParsingRules rule1 = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1),
+                new StorageObjectType("CD", "storefoo"))
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee")).build())
+                .build();
+        final ObjectTypeParsingRules rule2 = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 2),
+                new StorageObjectType("CD", "storefoo"))
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whoo")).build())
+                .build();
+        
+        when(typeParser.parseStream(argThat(new StreamMatcher("testvalue")), eq("foo.yaml")))
+                .thenReturn(Arrays.asList(rule1, rule2));
+        
+        when(fileLister.list(Paths.get("mappings"))).thenReturn(Arrays.asList(
+                Paths.get("mappings.yaml"), Paths.get("mappings2.yaml")));
+        when(fileLister.isRegularFile(Paths.get("mappings.yaml"))).thenReturn(true);
+        when(fileLister.isRegularFile(Paths.get("mappings2.yaml"))).thenReturn(false);
+        when(fileLister.newInputStream(Paths.get("mappings.yaml")))
+                .thenReturn(new ByteArrayInputStream("mappingvalue".getBytes()));
+        
+        when(mappingParser.parse(argThat(new StreamMatcher("mappingvalue")), eq("mappings.yaml")))
+                .thenReturn(set(TypeMapping.getBuilder("CD", "storefoo")
+                        .withVersion(2, new SearchObjectType("foo", 1))
+                        .withVersion(3, new SearchObjectType("foo", 2))
+                        .build()));
+        
+        final TypeFileStorage tfs = new TypeFileStorage(
+                Paths.get("types"),
+                Paths.get("mappings"),
+                typeParser,
+                ImmutableMap.of("yaml", mappingParser),
+                fileLister,
+                logger);
+        
+        assertThat("incorrect types", tfs.listObjectTypeParsingRules(), is(set(rule2)));
+        assertThat("couldn't get type", tfs.getObjectTypeParsingRules(
+                new SearchObjectType("foo", 1)), is(rule1));
+        assertThat("couldn't get type", tfs.getObjectTypeParsingRules(
+                new SearchObjectType("foo", 2)), is(rule2));
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storefoo")),
+                is(set()));
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storefoo", 1)),
+                is(set()));
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storefoo", 2)),
+                is(set(rule1)));
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storefoo", 3)),
+                is(set(rule2)));
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storefoo", 4)),
+                is(set()));
+        assertThat("object type translation failed",
+                tfs.listObjectTypeParsingRules(new StorageObjectType("CD", "storefoo", 7)),
+                is(set()));
+    }
 }
