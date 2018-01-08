@@ -163,8 +163,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return (indexNamePrefix + objectType + "_*").toLowerCase();
     }
 
-    /* checks that an index exists for a specific version of a type. If the index does not exist
-     * and indexing rules are provided, creates the index, otherwise throws exception.
+    /* checks that an index exists for a specific version of a type. If the index
+     * does not exist and indexing rules are provided, creates the index, otherwise
+     * throws exception.
+     *
      * Returns the elastic search index name.
      */ 
     private String checkIndex(
@@ -368,7 +370,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     private Map<GUID, String> lookupParentDocIds(String indexName, Set<GUID> guids) throws IOException {
         // terms = {"pguid": [guids]}
-        Map<String, Object> terms = ImmutableMap.of("pguid", guids.stream().map(u -> u.toString()).collect(Collectors.toList()));
+        Map<String, Object> terms = ImmutableMap.of("pguid",
+                guids.stream().map(u -> u.toString()).collect(Collectors.toList()));
 
         // filter = {"terms": {"pguid": [guids]}}
         Map<String, Object> filter = ImmutableMap.of("terms", terms);
@@ -951,7 +954,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         String pguid = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString();
-        Map<String, Object> bool = ImmutableMap.of("must", Arrays.asList(createFilter("term", "pguid", pguid)));
+        Map<String, Object> bool = ImmutableMap.of("must",
+                                         Arrays.asList(createFilter("term", "pguid", pguid)));
 
         Map<String, Object> query = ImmutableMap.of("bool", bool);
 
@@ -1001,7 +1005,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         String pguid = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString();
-        Map<String, Object> bool = ImmutableMap.of("must", Arrays.asList(createFilter("term", "pguid", pguid),
+        Map<String, Object> bool = ImmutableMap.of("must",
+                                       Arrays.asList(createFilter("term", "pguid", pguid),
                 createFilter("term", "extpub", accessGroupId)));
 
         Map<String, Object> query = ImmutableMap.of("bool", bool);
