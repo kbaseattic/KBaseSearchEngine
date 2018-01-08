@@ -332,21 +332,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     private Map<GUID, String> lookupDocIds(String indexName, Set<GUID> guids) throws IOException {
-        // terms = {"guid": [guids]}
-        Map<String, Object> terms = ImmutableMap.of("guid",
-                guids.stream().map(u -> u.toString()).collect(Collectors.toList()));
-
-        // filter = {"terms": {"guid": [guids]}}
-        Map<String, Object> filter = ImmutableMap.of("terms", terms);
-
-        // bool = {"filter": [{"terms": {"guid": [guids]}}]}
-        Map<String, Object> bool = ImmutableMap.of("filter", Arrays.asList(filter));
-
-        // query = {"bool": {"filter": [{"terms": {"guid": [guids]}}]}}
-        Map<String, Object> query = ImmutableMap.of("bool", bool);
 
         // doc = {"query": {"bool": {"filter": [{"terms": {"guid": [guids]}}]}}}
-        Map<String, Object> doc = ImmutableMap.of("query", query);
+        Map<String, Object> doc = ImmutableMap.of("query", ImmutableMap.of(
+                                                    "bool", ImmutableMap.of(
+                                                      "filter", Arrays.asList(ImmutableMap.of("terms",
+                                                         ImmutableMap.of("guid",
+                                     guids.stream().map(u -> u.toString()).collect(Collectors.toList())))))));
 
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
@@ -369,21 +361,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     private Map<GUID, String> lookupParentDocIds(String indexName, Set<GUID> guids) throws IOException {
-        // terms = {"pguid": [guids]}
-        Map<String, Object> terms = ImmutableMap.of("pguid",
-                guids.stream().map(u -> u.toString()).collect(Collectors.toList()));
-
-        // filter = {"terms": {"pguid": [guids]}}
-        Map<String, Object> filter = ImmutableMap.of("terms", terms);
-
-        // bool = {"filter": [{"terms": {"pguid": [guids]}}]}
-        Map<String, Object> bool = ImmutableMap.of("filter", Arrays.asList(filter));
-
-        // query = {"bool": {"filter": [{"terms": {"pguid": [guids]}}]}}
-        Map<String, Object> query = ImmutableMap.of("bool", bool);
-
         // doc = {"query": {"bool": {"filter": [{"terms": {"pguid": [guids]}}]}}}
-        Map<String, Object> doc = ImmutableMap.of("query", query);
+        Map<String, Object> doc =
+                ImmutableMap.of("query",
+                  ImmutableMap.of("bool",
+                    ImmutableMap.of("filter",
+                      Arrays.asList(ImmutableMap.of("terms",
+                                      ImmutableMap.of("pguid",
+                        guids.stream().map(u -> u.toString()).collect(Collectors.toList())))))));
 
         String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
@@ -411,22 +396,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
             parentIds.add(new GUID(guid.getStorageCode(), guid.getAccessGroupId(), 
                     guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString());
         }
-        // terms = {"pguid": [ids]}
-        Map<String, Object> terms = ImmutableMap.of("pguid", parentIds);
-
-        // filter = {"terms: ": {"pguid": [ids]}}
-        Map<String, Object> filter = ImmutableMap.of("terms", terms);
-
-        // bool = {"filter": {"terms: ": {"pguid": [ids]}}}
-        Map<String, Object> bool = ImmutableMap.of("filter", filter);
-
-        // query = {"bool": {"filter": {"terms: ": {"pguid": [ids]}}}}
-        Map<String, Object> query = ImmutableMap.of("bool", bool);
 
         // doc = {"query": {"bool": {"filter": {"terms: ": {"pguid": [ids]}}}},
         //        "_source": ["pguid"]}
-        Map<String, Object> doc = ImmutableMap.of("query", query,
-                                                  "_source", Arrays.asList("pguid"));
+        Map<String, Object> doc =
+                ImmutableMap.of("query",
+                   ImmutableMap.of("bool",
+                      ImmutableMap.of("filter",
+                         ImmutableMap.of("terms",
+                            ImmutableMap.of("pguid", parentIds)))),
+                                            "_source", Arrays.asList("pguid"));
 
         String urlPath = "/" + indexNamePrefix + "*/" + getAccessTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
@@ -474,9 +453,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (lte != null) {
             range.put("lte", lte);
         }
-        Map<String, Object> term = ImmutableMap.of(keyName, ImmutableMap.copyOf(range));
 
-        Map<String, Object> termWrapper = ImmutableMap.of("range", term);
+        Map<String, Object> termWrapper = ImmutableMap.of("range",
+                                             ImmutableMap.of(keyName, ImmutableMap.copyOf(range)));
 
         return termWrapper;
     }
@@ -505,20 +484,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         String prefix = toGUIDPrefix(parentGUID);
 
-        // term = {"prefix": prefix}
-        Map<String, Object> term = ImmutableMap.of("prefix", prefix);
-
-        // filter = {"term": {"prefix": prefix}}
-        Map<String, Object> filter = ImmutableMap.of("term", term);
-
-        // bool = {"filter": [{"term": {"prefix": prefix}}]}
-        Map<String, Object> bool = ImmutableMap.of("filter", Arrays.asList(filter));
-
-        // query = {"bool": {"filter": [{"term": {"prefix": prefix}}]}}
-        Map<String, Object> query = ImmutableMap.of("bool", bool);
-
         // doc = {"query": {"bool": {"filter": [{"term": {"prefix": prefix}}]}}}
-        Map<String, Object> doc = ImmutableMap.of("query", query);
+        Map<String, Object> doc = ImmutableMap.of("query",
+                                     ImmutableMap.of("bool",
+                                        ImmutableMap.of("filter",
+                                           Arrays.asList(ImmutableMap.of(
+                                              "term",
+                                                  ImmutableMap.of("prefix", prefix))))));
 
         String urlPath = "/" + reqIndexName + "/" + getAccessTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
@@ -549,18 +521,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
-        // {"prefix": prefix}
-        String prefix = toGUIDPrefix(parentGUID);
-        Map<String, Object> term = ImmutableMap.of("prefix", prefix);
-
-        // filter = {"term": {"prefix": prefix}}
-        Map<String, Object> filter = ImmutableMap.of("term", term);
-
-        // bool = {"filter": [{"term": {"prefix": prefix}}]}
-        Map<String, Object> bool = ImmutableMap.of("filter", Arrays.asList(filter));
 
         // query = {"bool": {"filter": [{"term": {"prefix": prefix}}]}}
-        Map<String, Object> query = ImmutableMap.of("bool", bool);
+        Map<String, Object> query = ImmutableMap.of("bool",
+                                       ImmutableMap.of("filter",
+                                               Arrays.asList(ImmutableMap.of("term",
+                                                       ImmutableMap.of("prefix",
+                                                               toGUIDPrefix(parentGUID))))));
 
         // params = {"lastver": lastVersion}
         final Map<String, Object> params = ImmutableMap.of("lastver", lastVersion);
@@ -660,13 +627,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
-        String prefix = toGUIDPrefix(guid);
-        // bool = {"must": [{"term": {"prefix": prefix}?}]}
-        Map<String, Object> bool = ImmutableMap.of(
-                "must", Arrays.asList(createFilter("term", "prefix", prefix)));
 
         // query = {"bool": {"must": [{"term": {"prefix": prefix}?}]}}
-        Map<String, Object> query = ImmutableMap.of("bool", bool);
+        Map<String, Object> query = ImmutableMap.of("bool",
+                ImmutableMap.of("must",
+                        Arrays.asList(
+                                createFilter("term", "prefix", toGUIDPrefix(guid)))));
 
         // params = {"lastver": lastVersion,
         //           ("accgrp": accessGroupId)?,
@@ -711,11 +677,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         boolean fromAllGroups = accessGroupId != guid.getAccessGroupId();
         String pguid = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString();
-        Map<String, Object> bool = new LinkedHashMap<>();
-        bool.put("must", Arrays.asList(createFilter("term", "pguid", pguid),
-                createFilter("term", "lastin", accessGroupId)));
 
-        Map<String, Object> query = ImmutableMap.of("bool", bool);
+
+        Map<String, Object> query = ImmutableMap.of("bool",
+                                       ImmutableMap.of("must",
+                                          Arrays.asList(
+                                                  createFilter("term", "pguid", pguid),
+                                                  createFilter("term", "lastin", accessGroupId))));
 
         final Map<String, Object> params = ImmutableMap.of("accgrp", accessGroupId);
         Map<String, Object> script = ImmutableMap.of(
@@ -747,12 +715,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
-        String prefix = toGUIDPrefix(parentGUID);
-        Map<String, Object> bool = ImmutableMap.of("must",
-                Arrays.asList(createFilter("term", "prefix", prefix),
-                createFilter("term", "version", parentGUID.getVersion())));
 
-        Map<String, Object> query = ImmutableMap.of("bool", bool);
+        Map<String, Object> query = ImmutableMap.of("bool",
+                                       ImmutableMap.of("must",
+                Arrays.asList(createFilter("term", "prefix", toGUIDPrefix(parentGUID)),
+                              createFilter("term", "version", parentGUID.getVersion()))));
 
         final Map<String, Object> params = ImmutableMap.of("field", field,
                                                            "value", value);
@@ -954,10 +921,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         String pguid = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString();
-        Map<String, Object> bool = ImmutableMap.of("must",
-                                         Arrays.asList(createFilter("term", "pguid", pguid)));
 
-        Map<String, Object> query = ImmutableMap.of("bool", bool);
+        Map<String, Object> query = ImmutableMap.of("bool",
+                                       ImmutableMap.of("must",
+                          Arrays.asList(createFilter("term", "pguid", pguid))));
 
         final Map<String, Object> params = ImmutableMap.of("accgrp", accessGroupId);
         Map<String, Object> script = ImmutableMap.of(
@@ -1005,11 +972,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         String pguid = new GUID(guid.getStorageCode(), guid.getAccessGroupId(),
                 guid.getAccessGroupObjectId(), guid.getVersion(), null, null).toString();
-        Map<String, Object> bool = ImmutableMap.of("must",
-                                       Arrays.asList(createFilter("term", "pguid", pguid),
-                createFilter("term", "extpub", accessGroupId)));
 
-        Map<String, Object> query = ImmutableMap.of("bool", bool);
+        Map<String, Object> query = ImmutableMap.of("bool",
+                                       ImmutableMap.of("must",
+                             Arrays.asList(createFilter("term", "pguid", pguid),
+                                           createFilter("term", "extpub", accessGroupId))));
 
         final Map<String, Object> params = ImmutableMap.of("accgrp", accessGroupId);
         Map<String, Object> script = ImmutableMap.of(
@@ -1056,16 +1023,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public List<ObjectData> getObjectsByIds(Set<GUID> ids, PostProcessing pp) 
             throws IOException {
-        Map<String, Object> terms = ImmutableMap.of("guid",
-                ids.stream().map(u -> u.toString()).collect(Collectors.toList()));
 
-        Map<String, Object> filter = ImmutableMap.of("terms", terms);
-
-        Map<String, Object> bool = ImmutableMap.of("filter", filter);
-
-        Map<String, Object> query = ImmutableMap.of("bool", bool);
-
-        Map<String, Object> doc = ImmutableMap.of("query", query);
+        Map<String, Object> doc = ImmutableMap.of("query",
+                                     ImmutableMap.of("bool",
+                                        ImmutableMap.of("filter",
+                                           ImmutableMap.of("terms",
+                ImmutableMap.of("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList()))))));
         //doc.put("_source", Arrays.asList("ojson"));
 
         String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
@@ -1146,9 +1109,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (!withAllHistory) {
             must0List.add(createFilter("term", "islast", true));
         }
-        Map<String, Object> bool0 = ImmutableMap.of("must", must0List);
 
-        Map<String, Object> bool0Wrapper = ImmutableMap.of("bool", bool0);
+        Map<String, Object> bool0Wrapper = ImmutableMap.of("bool",
+                                              ImmutableMap.of("must", must0List));
         return bool0Wrapper;
     }
     
@@ -1164,9 +1127,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (!accessFilter.withAllHistory) {
             must1List.add(createFilter("term", "islast", true));
         }
-        Map<String, Object> bool1 = ImmutableMap.of("must", must1List);
 
-        Map<String, Object> bool1Wrapper = ImmutableMap.of("bool", bool1);
+        Map<String, Object> bool1Wrapper = ImmutableMap.of("bool",
+                                              ImmutableMap.of("must", must1List));
 
         return bool1Wrapper;
     }
@@ -1174,9 +1137,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private Map<String, Object> createSharedShouldBlock(Map<String, Object> mustForShared) {
         List<Object> must2List = new ArrayList<>(Arrays.asList(
                 createFilter("term", "shared", true), mustForShared));
-        Map<String, Object> bool2 = ImmutableMap.of("must", must2List);
 
-        Map<String, Object> bool2Wrapper = ImmutableMap.of("bool", bool2);
+        Map<String, Object> bool2Wrapper = ImmutableMap.of("bool",
+                                              ImmutableMap.of("must", must2List));
         return bool2Wrapper;
     }
     
@@ -1200,21 +1163,17 @@ public class ElasticIndexingStorage implements IndexingStorage {
         // Shared block
         shouldList.add(createSharedShouldBlock(mustForShared));
         // Rest of query
-        Map<String, Object> filterBool = ImmutableMap.of("should", shouldList);
+        Map<String, Object> query =
+                ImmutableMap.of("bool",
+                   ImmutableMap.of("must", matchFilters,
+                                   "filter", Arrays.asList(ImmutableMap.of("bool",
+                                                              ImmutableMap.of("should", shouldList)))));
 
-        Map<String, Object> filter = ImmutableMap.of("bool", filterBool);
-
-        Map<String, Object> bool = ImmutableMap.of("must", matchFilters,
-                                                   "filter", Arrays.asList(filter));
-
-        Map<String, Object> query = ImmutableMap.of("bool", bool);
-
-        Map<String, Object> terms = ImmutableMap.of("field", SEARCH_OBJ_TYPE);
 
         //TODO VERS if this aggregates by type version, need to add the version field to the terms
-        Map<String, Object> agg = ImmutableMap.of("terms", terms);
-
-        Map<String, Object> aggs = ImmutableMap.of("types", agg);
+        Map<String, Object> aggs = ImmutableMap.of("types",
+                                      ImmutableMap.of("terms",
+                                         ImmutableMap.of("field", SEARCH_OBJ_TYPE)));
 
         Map<String, Object> doc = ImmutableMap.of("query", query,
                                                   "aggregations", aggs,
@@ -1326,10 +1285,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         // match = {groupListProp: [accessGroupIds]}
         String groupListProp = withAllHistory ? "groups" : "lastin";  // I think lastin means last version even though version is orthogonal to the concept of groups?
-        Map<String, Object> match = ImmutableMap.of(groupListProp, accessGroupIds);
 
         // terms = {"terms": { groupListProp: [accessGroupIds]}}
-        Map<String, Object> terms = ImmutableMap.of("terms", match);
+        Map<String, Object> terms = ImmutableMap.of("terms",
+                                       ImmutableMap.of(groupListProp, accessGroupIds));
 
 
         // should = [{"terms": {groupListProp: [accessGroupIds]}}]
@@ -1343,33 +1302,23 @@ public class ElasticIndexingStorage implements IndexingStorage {
             // through DataPalettes. If it's >0 (which is the same as existence of keywords 
             // in 'extpub') then it's visible.
             // exists = {"field", "extpub"}
-            Map<String, Object> exists = ImmutableMap.of("field", "extpub");
 
             // existsWrapper = {"exists": {"field", "extpub"}}
-            Map<String, Object> existwrapper = ImmutableMap.of("exists", exists);
+            Map<String, Object> existwrapper = ImmutableMap.of("exists",
+                                                  ImmutableMap.of("field", "extpub"));
 
             // should = [{"terms": {groupListProp: [accessGroupIds]}}
             //           {"exists": {"field", "extpub"}}]
             should.add(existwrapper);
         }
-        // bool = {"should": [{"terms": {groupListProp: [accessGroupIds]}}
-        //                    {"exists": {"field", "extpub"}}?]}
-        Map<String, Object> bool = ImmutableMap.of("should", should);
-
-        // query = {"bool": {"should": [{"terms": {groupListProp: [accessGroupIds]}}
-        //                  {"exists": {"field", "extpub"}}?]}}
-        Map<String, Object> query = ImmutableMap.of("bool", bool);
-
-        // hasParent = {"parent_type": "access",
-        //              "query": {"bool": {"should": [{"terms": {groupListProp: [accessGroupIds]}}
-        //                                {"exists": {"field", "extpub"}}?]}}}
-        Map<String, Object> hasParent = ImmutableMap.of("parent_type", getAccessTableName(),
-                                                        "query", query);
 
         // hasParentWrapper = {"hasParent": {"parent_type": "access",
         //                                   "query": {"bool": {"should": [{"terms": {groupListProp: [accessGroupIds]}}
         //                                                     {"exists": {"field", "extpub"}}?]}}}}
-        Map<String, Object> hasParentWrapper = ImmutableMap.of("has_parent", hasParent);
+        Map<String, Object> hasParentWrapper = ImmutableMap.of("has_parent",
+                                                  ImmutableMap.of("parent_type", getAccessTableName(),
+                                                                  "query", ImmutableMap.of("bool",
+                                                                              ImmutableMap.of("should", should))));
         return hasParentWrapper;
     }
     
@@ -1412,14 +1361,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
         // Shared block
         shouldList.add(createSharedShouldBlock(mustForShared));
         // Rest of query
-        Map<String, Object> filterBool = ImmutableMap.of("should", shouldList);
-
-        Map<String, Object> filter = ImmutableMap.of("bool", filterBool);
-
-        Map<String, Object> bool = ImmutableMap.of("must", matchFilters,
-                                                   "filter", Arrays.asList(filter));
-
-        Map<String, Object> query = ImmutableMap.of("bool", bool);
+        Map<String, Object> query =
+                ImmutableMap.of("bool",
+                   ImmutableMap.of("must", matchFilters,
+                                   "filter", Arrays.asList(
+                                           ImmutableMap.of("bool",
+                                              ImmutableMap.of("should", shouldList)))));
 
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
@@ -1435,9 +1382,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
         for (SortingRule sr : sorting) {
             String keyProp = sr.isTimestamp ? "timestamp" : (sr.isObjectName ? OBJ_NAME : 
                 getKeyProperty(sr.keyName));
-            Map<String, Object> sortOrder = ImmutableMap.of("order", sr.ascending ? "asc" : "desc");
 
-            Map<String, Object> sortOrderWrapper = ImmutableMap.of(keyProp, sortOrder);
+            Map<String, Object> sortOrderWrapper = ImmutableMap.of(keyProp,
+                                                      ImmutableMap.of("order",
+                                                                      sr.ascending ? "asc" : "desc"));
             sort.add(sortOrderWrapper);
         }
         String indexName = objectType == null ? getAnyIndexPattern() : checkIndex(objectType);
@@ -1621,10 +1569,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
         props.put("groups", tmp);
 
         // List of external workspaces containing DataPalette pointing to this object
-        // This is the way to check how many public workspaces (external comparing to 
-        // home workspace of an object) have DataPalettes referencing given object (and 
-        // version). If this number is 0 then object+version is not visible as public 
-        // through DataPalettes. If it's >0 (which is the same as existence of keywords 
+        // This is the way to check how many public workspaces (external comparing to
+        // home workspace of an object) have DataPalettes referencing given object (and
+        // version). If this number is 0 then object+version is not visible as public
+        // through DataPalettes. If it's >0 (which is the same as existence of keywords
         // in 'extpub') then it's visible.
 
         tmp = ImmutableMap.of("type", "integer");
@@ -1642,10 +1590,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private void createTables(String indexName, List<IndexingRules> indexingRules) throws IOException {
 
         Map<String, Object> props = new LinkedHashMap<>();
-        Map<String, Object> tmp = ImmutableMap.of("type", "keyword");
-        props.put("guid", tmp);
-
         final Map<String, Object> keyword = ImmutableMap.of("type", "keyword");
+        Map<String, Object> tmp;
+        props.put("guid", keyword);
+
         props.put(SEARCH_OBJ_TYPE, keyword);
         props.put(SEARCH_OBJ_TYPE_VER, ImmutableMap.of("type", "integer"));
 
@@ -1663,8 +1611,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         tmp = ImmutableMap.of("type", "date");
         props.put("timestamp", tmp);
 
-        tmp = ImmutableMap.of("type", "keyword");
-        props.put("prefix", tmp);
+        props.put("prefix", keyword);
 
         props.put("str_cde", keyword);
 
