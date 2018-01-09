@@ -67,11 +67,11 @@ public interface IndexingStorage {
     public Map<String, Integer> searchTypes(MatchFilter matchFilter,
             AccessFilter accessFilter) throws IOException;
 
-    public FoundHits searchIds(String objectType, MatchFilter matchFilter, 
+    public FoundHits searchIds(List<String> objectType, MatchFilter matchFilter,
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination) 
                     throws IOException;
 
-    public FoundHits searchObjects(String objectType, MatchFilter matchFilter, 
+    public FoundHits searchObjects(List<String> objectType, MatchFilter matchFilter,
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination,
             PostProcessing postProcessing) throws IOException;
 

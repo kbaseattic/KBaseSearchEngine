@@ -7,18 +7,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -1200,7 +1189,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @Override
-    public FoundHits searchIds(String objectType, MatchFilter matchFilter, 
+    public FoundHits searchIds(List<String> objectType, MatchFilter matchFilter,
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination) 
                     throws IOException {
         return queryHits(objectType, prepareMatchFilters(matchFilter),
@@ -1208,17 +1197,17 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     @Override
-    public FoundHits searchObjects(String objectType, MatchFilter matchFilter,
+    public FoundHits searchObjects(List<String> objectTypes, MatchFilter matchFilter,
             List<SortingRule> sorting, AccessFilter accessFilter,
             Pagination pagination, PostProcessing postProcessing)
             throws IOException {
-        return queryHits(objectType, prepareMatchFilters(matchFilter),
+        return queryHits(objectTypes, prepareMatchFilters(matchFilter),
                 sorting, accessFilter, pagination, postProcessing);
     }
     
-    public Set<GUID> searchIds(String objectType, MatchFilter matchFilter, 
+    public Set<GUID> searchIds(List<String> objectTypes, MatchFilter matchFilter,
             List<SortingRule> sorting, AccessFilter accessFilter) throws IOException {
-        return searchIds(objectType, matchFilter, sorting, accessFilter, null).guids;
+        return searchIds(objectTypes, matchFilter, sorting, accessFilter, null).guids;
     }
 
     private List<Map<String, Object>> prepareMatchFilters(MatchFilter matchFilter) {
@@ -1323,7 +1312,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     private FoundHits queryHits(
-            final String objectType,
+            final List<String> objectTypes,
             final List<Map<String, Object>> matchFilters, 
             List<SortingRule> sorting,
             final AccessFilter accessFilter,
@@ -1388,8 +1377,22 @@ public class ElasticIndexingStorage implements IndexingStorage {
                                                                       sr.ascending ? "asc" : "desc"));
             sort.add(sortOrderWrapper);
         }
-        String indexName = objectType == null ? getAnyIndexPattern() : checkIndex(objectType);
-        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
+
+        StringBuffer indexName = new StringBuffer();
+        for(int ii=0; ii<objectTypes.size(); ii++) {
+
+            String objectType = objectTypes.get(ii);
+
+            indexName.append(
+                    objectType == null ? getAnyIndexPattern() : checkIndex(objectType)
+            );
+
+            if( ii < objectTypes.size()-1 )
+                indexName.append(",");
+        }
+
+
+        String urlPath = "/" + indexName.toString() + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, ImmutableMap.copyOf(doc));
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(

@@ -278,7 +278,7 @@ public class SearchMethods {
         kbasesearchengine.search.Pagination pagination = toSearch(params.getPagination());
         kbasesearchengine.search.PostProcessing postProcessing = 
                 toSearch(params.getPostProcessing());
-        FoundHits hits = indexingStorage.searchObjects(params.getObjectType(),
+        FoundHits hits = indexingStorage.searchObjects(params.getObjectTypes(),
                 matchFilter, sorting, accessFilter, pagination, postProcessing);
         SearchObjectsOutput ret = new SearchObjectsOutput();
         ret.withPagination(fromSearch(hits.pagination));

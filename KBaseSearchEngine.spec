@@ -83,7 +83,7 @@ module KBaseSearchEngine {
     } SearchTypesOutput;
 
     /*
-      Search for number of objects of each type matching constrains.
+      Search for number of objects of each type matching constraints.
     */
     funcdef search_types(SearchTypesInput params) 
         returns (SearchTypesOutput) authentication required;
@@ -132,7 +132,7 @@ module KBaseSearchEngine {
       Input parameters for 'search_objects' method.
     */
     typedef structure {
-        string object_type;
+        list<string> object_types;
         MatchFilter match_filter;
         list<SortingRule> sorting_rules;
         AccessFilter access_filter;
@@ -178,7 +178,7 @@ module KBaseSearchEngine {
     } SearchObjectsOutput;
 
     /*
-      Search for objects of particular type matching constrains.
+      Search for objects of particular type matching constraints.
     */
     funcdef search_objects(SearchObjectsInput params)
         returns (SearchObjectsOutput) authentication required;
