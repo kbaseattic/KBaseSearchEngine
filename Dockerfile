@@ -41,7 +41,7 @@ RUN cd /opt \
 	&& tar xfz mongodb-linux-x86_64-2.6.12.tgz \
 	&& ln -s mongodb-linux-x86_64-2.6.12 mongo
 	
-RUN ln -s /kb/runtime/bin/ant /kb/deployment/bin/ant
+RUN ln -sf /kb/runtime/bin/ant /kb/deployment/bin/ant
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 
