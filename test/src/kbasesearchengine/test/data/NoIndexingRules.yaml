@@ -1,0 +1,8 @@
+# a test spec.
+
+global-object-type: NoIndexRules
+storage-type: WS
+storage-object-type: NoIndexingRules.Type
+versions:
+    -
+        indexing-rules: []

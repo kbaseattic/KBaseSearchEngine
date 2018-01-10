@@ -31,8 +31,12 @@ public class SubObjectExtractor {
      * a mapping or array.
      * @throws ObjectParseException
      */
-    public static void extract(ObjectJsonPath pathToSub, List<ObjectJsonPath> objpaths,
-            JsonParser jts, SubObjectConsumer consumer) throws IOException, ObjectParseException {
+    public static void extract(
+            final ObjectJsonPath pathToSub,
+            final List<ObjectJsonPath> objpaths,
+            final JsonParser jts,
+            final SubObjectConsumer consumer)
+            throws IOException, ObjectParseException {
         //if the selection is empty, we return without adding anything
         SubObjectExtractionNode root = new SubObjectExtractionNode();
         SubObjectExtractionNode sub = root.addPath(pathToSub, true, false);
@@ -42,8 +46,11 @@ public class SubObjectExtractor {
         extract(root, jts, consumer);
     }
     
-    public static void extract(SubObjectExtractionNode tree, JsonParser jts,
-            SubObjectConsumer consumer) throws IOException, ObjectParseException {
+    public static void extract(
+            final SubObjectExtractionNode tree,
+            final JsonParser jts,
+            final SubObjectConsumer consumer)
+            throws IOException, ObjectParseException {
         JsonToken t = jts.nextToken();
         extractFieldsWithOpenToken(jts, t, tree, consumer, new ArrayList<String>(),
                 false, false, true);
@@ -55,10 +62,16 @@ public class SubObjectExtractor {
      * and making decisions whether or not we need to process this token or block of tokens or
      * just skip it.
      */
-    private static void extractFieldsWithOpenToken(JsonParser jts, JsonToken current,
-            SubObjectExtractionNode selection, SubObjectConsumer consumer,
-            List<String> path, boolean strictMaps, boolean strictArrays,
-            boolean fromSkippedLevel) throws IOException, ObjectParseException {
+    private static void extractFieldsWithOpenToken(
+            final JsonParser jts,
+            final JsonToken current,
+            final SubObjectExtractionNode selection,
+            final SubObjectConsumer consumer,
+            final List<String> path,
+            final boolean strictMaps,
+            final boolean strictArrays,
+            final boolean fromSkippedLevel)
+            throws IOException, ObjectParseException {
         if (fromSkippedLevel && !selection.isSkipLevel()) {
             // It means we're starting sub-object (or whole object is needed)
             consumer.nextObject(ObjectJsonPath.getPathText(path));
