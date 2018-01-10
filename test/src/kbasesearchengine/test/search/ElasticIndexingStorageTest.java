@@ -9,13 +9,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -279,6 +273,61 @@ public class ElasticIndexingStorageTest {
         //System.out.println("Assembly index: " + genomeIndex);
         Assert.assertEquals("1", "" + assemblyIndex.keyProps.get("contigs"));
         System.out.println("*** end testGenome***");
+    }
+
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMultiTypeSearchValidation1() throws Exception {
+
+        // null list of types
+        Set<GUID> guids = indexStorage.searchIds(null,
+                MatchFilter.create().withAccessGroupId(1),
+                null, AccessFilter.create().withAdmin(true));
+    }
+
+    @Test(expected = IOException.class)
+    public void testMultiTypeSearchValidation2() throws Exception {
+
+        // empty list
+        Set<GUID> guids = indexStorage.searchIds(new ArrayList<String>(),
+                MatchFilter.create().withAccessGroupId(1),
+                null, AccessFilter.create().withAdmin(true));
+    }
+
+    @Test(expected = IOException.class)
+    public void testMultiTypeSearchValidation3() throws Exception {
+
+        // list containing a mix of null and non-null types
+        List<String> objectTypes = new ArrayList<>();
+        objectTypes.add(null);
+        objectTypes.add("Narrative");
+        Set<GUID> guids = indexStorage.searchIds(objectTypes,
+                MatchFilter.create().withAccessGroupId(1),
+                null, AccessFilter.create().withAdmin(true));
+    }
+
+    @Test
+    public void testMultiTypeSearchValidation4() throws Exception {
+        List<String> objectTypes;
+        Set<GUID> guids;
+
+        // list with single null element
+        objectTypes = new ArrayList<>();
+        objectTypes.add(null);
+        guids = indexStorage.searchIds(objectTypes,
+                MatchFilter.create().withAccessGroupId(1),
+                null, AccessFilter.create().withAdmin(true));
+
+        Assert.assertTrue(guids.size() > 1);
+
+        // list with single non-null element
+        objectTypes = new ArrayList<>();
+        objectTypes.add("Genome");
+        guids = indexStorage.searchIds(objectTypes,
+                MatchFilter.create().withAccessGroupId(1),
+                null, AccessFilter.create().withAdmin(true));
+
+        Assert.assertEquals(1, guids.size());
     }
 
     @Test

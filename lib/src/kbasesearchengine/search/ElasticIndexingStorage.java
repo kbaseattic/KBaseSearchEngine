@@ -134,9 +134,47 @@ public class ElasticIndexingStorage implements IndexingStorage {
             }
         }
     }
-    
-    /* checks that at least one index exists for a type, and throws an exception otherwise.
-     * Returns a index string that matches any version of the type.
+
+
+    /** The specified list is valid if it,
+     *
+     * 1. contains one-and-only-one null element,
+     * 2. or one or more non-null elements.
+     *
+     * lists 1 represents a list that would map to any index pattern (search unconstrained by type)
+     * list 2 represents a list that would map to one or more specific index patterns (constrained search)
+     *
+     * A an empty list or a mix of 1&2 in a list is considered invalid as it would imply
+     * unconstrained and constrained search.
+     *
+     * @param objectTypes a non-empty list of object types.
+     * @throws IOException if list
+     */
+    private void validateObjectTypes(List<String> objectTypes) throws IOException {
+
+        if(objectTypes== null) {
+            throw new IllegalArgumentException("Invalid list of object types. List is null.");
+        }
+
+        if(objectTypes.isEmpty()) {
+            throw new IOException("Invalid list of object types. Empty list.");
+        }
+
+        if(objectTypes.size() == 1 && objectTypes.contains(null)) {
+            return;
+        }
+
+        if(objectTypes.size() > 1 && objectTypes.contains(null)) {
+            throw new IOException("Invalid list of object types. Contains more than one null element.");
+        }
+    }
+
+
+    /** checks that at least one index exists for a type, and throws an exception otherwise.
+     *
+     * @param objectType
+     * @return an index string that matches any version of the type.
+     * @throws IOException
      */
     private String checkIndex(final String objectType) throws IOException {
         String ret = typeToIndex.get(objectType);
@@ -1389,21 +1427,29 @@ public class ElasticIndexingStorage implements IndexingStorage {
             sort.add(sortOrderWrapper);
         }
 
-        StringBuffer indexName = new StringBuffer();
-        for(int ii=0; ii<objectTypes.size(); ii++) {
+        validateObjectTypes(objectTypes);
 
-            String objectType = objectTypes.get(ii);
+        String indexName;
 
-            indexName.append(
-                    objectType == null ? getAnyIndexPattern() : checkIndex(objectType)
-            );
+        // search unconstrained by object type
+        if( objectTypes.contains(null)) {
+            indexName = getAnyIndexPattern();
+        }
+        // search constrained by object types
+        else {
+            StringBuffer strBuf = new StringBuffer();
+            for(int ii=0; ii<objectTypes.size(); ii++) {
 
-            if( ii < objectTypes.size()-1 )
-                indexName.append(",");
+                strBuf.append( checkIndex( objectTypes.get(ii) ) );
+
+                if( ii < objectTypes.size()-1 )
+                    strBuf.append(",");
+            }
+            indexName = strBuf.toString();
         }
 
 
-        String urlPath = "/" + indexName.toString() + "/" + getDataTableName() + "/_search";
+        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, ImmutableMap.copyOf(doc));
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(

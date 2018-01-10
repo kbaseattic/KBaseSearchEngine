@@ -67,10 +67,33 @@ public interface IndexingStorage {
     public Map<String, Integer> searchTypes(MatchFilter matchFilter,
             AccessFilter accessFilter) throws IOException;
 
+    /**
+     *
+     * @param objectType a non empty list of object types to constrain the search to,
+     *                   or one-and-only-one null element to indicate an unconstrained search.
+     * @param matchFilter
+     * @param sorting
+     * @param accessFilter
+     * @param pagination
+     * @return
+     * @throws IOException
+     */
     public FoundHits searchIds(List<String> objectType, MatchFilter matchFilter,
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination) 
                     throws IOException;
 
+    /**
+     *
+     * @param objectType a non empty list of object types to constrain the search to,
+     *                   or one-and-only-one null element to indicate an unconstrained search.
+     * @param matchFilter
+     * @param sorting
+     * @param accessFilter
+     * @param pagination
+     * @param postProcessing
+     * @return
+     * @throws IOException
+     */
     public FoundHits searchObjects(List<String> objectType, MatchFilter matchFilter,
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination,
             PostProcessing postProcessing) throws IOException;
