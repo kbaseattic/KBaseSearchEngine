@@ -129,17 +129,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     /** The specified list is valid if it,
      *
-     * 1. contains one-and-only-one null element,
+     * 1. is empty,
      * 2. or one or more non-null elements.
      *
-     * lists 1 represents a list that would map to any index pattern (search unconstrained by type)
+     * list 1 represents a list that would map to any index pattern (search unconstrained by type)
      * list 2 represents a list that would map to one or more specific index patterns (constrained search)
      *
-     * A an empty list or a mix of 1&2 in a list is considered invalid as it would imply
-     * unconstrained and constrained search.
      *
      * @param objectTypes a non-empty list of object types.
-     * @throws IOException if list
+     * @throws IOException if list is invalid.
      */
     private void validateObjectTypes(List<String> objectTypes) throws IOException {
 
@@ -148,15 +146,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
 
         if(objectTypes.isEmpty()) {
-            throw new IOException("Invalid list of object types. Empty list.");
-        }
-
-        if(objectTypes.size() == 1 && objectTypes.contains(null)) {
             return;
         }
 
-        if(objectTypes.size() > 1 && objectTypes.contains(null)) {
-            throw new IOException("Invalid list of object types. Contains more than one null element.");
+        if(objectTypes.size() > 0 && objectTypes.contains(null)) {
+            throw new IOException("Invalid list of object types. Contains one or more null elements.");
         }
     }
 
@@ -1423,7 +1417,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         String indexName;
 
         // search unconstrained by object type
-        if( objectTypes.contains(null)) {
+        if( objectTypes.isEmpty()) {
             indexName = getAnyIndexPattern();
         }
         // search constrained by object types

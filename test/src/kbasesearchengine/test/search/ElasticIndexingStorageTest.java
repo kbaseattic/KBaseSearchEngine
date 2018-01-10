@@ -285,13 +285,15 @@ public class ElasticIndexingStorageTest {
                 null, AccessFilter.create().withAdmin(true));
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testMultiTypeSearchValidation2() throws Exception {
 
         // empty list
         Set<GUID> guids = indexStorage.searchIds(new ArrayList<String>(),
                 MatchFilter.create().withAccessGroupId(1),
                 null, AccessFilter.create().withAdmin(true));
+
+        Assert.assertTrue(guids.size() > 1);
     }
 
     @Test(expected = IOException.class)
@@ -310,15 +312,6 @@ public class ElasticIndexingStorageTest {
     public void testMultiTypeSearchValidation4() throws Exception {
         List<String> objectTypes;
         Set<GUID> guids;
-
-        // list with single null element
-        objectTypes = new ArrayList<>();
-        objectTypes.add(null);
-        guids = indexStorage.searchIds(objectTypes,
-                MatchFilter.create().withAccessGroupId(1),
-                null, AccessFilter.create().withAdmin(true));
-
-        Assert.assertTrue(guids.size() > 1);
 
         // list with single non-null element
         objectTypes = new ArrayList<>();
