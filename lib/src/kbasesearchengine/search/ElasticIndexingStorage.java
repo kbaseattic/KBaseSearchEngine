@@ -7,18 +7,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -1439,15 +1428,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         // search constrained by object types
         else {
-            StringBuffer strBuf = new StringBuffer();
-            for(int ii=0; ii<objectTypes.size(); ii++) {
-
-                strBuf.append( checkIndex( objectTypes.get(ii) ) );
-
-                if( ii < objectTypes.size()-1 )
-                    strBuf.append(",");
+            final List<String> rr = new LinkedList<>();
+            for (final String type: objectTypes) {
+                rr.add(checkIndex(type));
             }
-            indexName = strBuf.toString();
+            indexName = String.join(",", rr);
         }
 
 
