@@ -81,6 +81,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public static final int PUBLIC_ACCESS_GROUP = -1;
     public static final int ADMIN_ACCESS_GROUP = -2;
 
+    public static final int MAX_URL_LENGTH = 4096; // ElasticSearch max length of an HTTP URL. Defaults to 4kb
+
     public ElasticIndexingStorage(HttpHost esHost, File tempDir) throws IOException {
         this.esHost = esHost;
         this.indexNamePrefix = "";
@@ -1450,6 +1452,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
 
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
+
+        if( urlPath.getBytes("UTF-8").length > MAX_URL_LENGTH )
+            throw new IOException("Search URL exceeded maximum length of "+MAX_URL_LENGTH+" bytes: " +
+                    urlPath);
+
         Response resp = makeRequest("GET", urlPath, ImmutableMap.copyOf(doc));
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
