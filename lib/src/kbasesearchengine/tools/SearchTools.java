@@ -558,8 +558,8 @@ public class SearchTools {
         private boolean startCoordinator;
         
         @Parameter(names = {"-k", "--start-worker"}, description =
-                "Start an indexer worker with the provided id. Set the id to '-' to " +
-                "generate a random id.")
+                "Start an indexer worker with the provided id. At any given time, all workers " +
+                "MUST have unique ids. Set the id to '-' to generate a random id.")
         private String startWorker;
         
         @Parameter(names = {"-w", "--generate-workspace-events"}, description =
