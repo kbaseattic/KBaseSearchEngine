@@ -188,6 +188,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 .toLowerCase();
     }
     
+    // TODO CODE this function should just take a class rather than a zillion arguments
+    // the class should ensure consistency of the various fields
     // IO exceptions are thrown for failure on creating or writing to file or contacting ES.
     @Override
     public void indexObjects(
@@ -200,8 +202,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final boolean isPublic,
             final List<IndexingRules> indexingRules) 
             throws IOException {
+        final Map<GUID, ParsedObject> idToObjCopy = new HashMap<>(idToObj);
         String indexName = checkIndex(objectType, indexingRules);
-        for (GUID id : idToObj.keySet()) {
+        for (GUID id : idToObjCopy.keySet()) {
             GUID parentGuid = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
                     id.getAccessGroupObjectId(), id.getVersion(), null, null);
             if (!parentGuid.equals(pguid)) {
@@ -214,33 +217,23 @@ public class ElasticIndexingStorage implements IndexingStorage {
             int lastVersion = loadLastVersion(indexName, pguid, pguid.getVersion());
             final String esParentId = checkParentDoc(indexName, new LinkedHashSet<>(
                     Arrays.asList(pguid)), isPublic, lastVersion).get(pguid);
-            if (idToObj.size() > 0) {
-                Map<GUID, String> esIds = lookupDocIds(indexName, idToObj.keySet());
-                for (GUID id : idToObj.keySet()) {
-                    ParsedObject obj = idToObj.get(id);
-                    Map<String, Object> doc = convertObject(id, objectType, obj, data, 
-                            timestamp, parentJsonValue, isPublic, lastVersion);
-                    final Map<String, Object> index = new HashMap<>();
-                    index.put("_index", indexName);
-                    index.put("_type", getDataTableName());
-                    index.put("parent", esParentId);
-                    if (esIds.containsKey(id)) {
-                        index.put("_id", esIds.get(id));
-                    }
-                    Map<String, Object> header = ImmutableMap.of("index", index);
-                    pw.println(UObject.transformObjectToString(header));
-                    pw.println(UObject.transformObjectToString(doc));
-                }
-            } else {
+            if (idToObjCopy.isEmpty()) {
                 // there were no search objects parsed from the source object, so just index
                 // the general object information
-                final Map<String, Object> doc = convertObject(pguid, objectType, null, data,
+                idToObjCopy.put(pguid, null);
+            }
+            Map<GUID, String> esIds = lookupDocIds(indexName, idToObjCopy.keySet());
+            for (GUID id : idToObjCopy.keySet()) {
+                final ParsedObject obj = idToObjCopy.get(id);
+                final Map<String, Object> doc = convertObject(id, objectType, obj, data,
                         timestamp, parentJsonValue, isPublic, lastVersion);
                 final Map<String, Object> index = new HashMap<>();
                 index.put("_index", indexName);
                 index.put("_type", getDataTableName());
                 index.put("parent", esParentId);
-                index.put("_id", esParentId);
+                if (esIds.containsKey(id)) {
+                    index.put("_id", esIds.get(id));
+                }
                 final Map<String, Object> header = ImmutableMap.of("index", index);
                 pw.println(UObject.transformObjectToString(header));
                 pw.println(UObject.transformObjectToString(doc));
@@ -299,7 +292,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return doc;
     }
 
-    // this is only used in tests as of 12/12/17. remove and use indexObjects()?
+    /** this is only used in tests as of 12/12/17. remove and use indexObjects()?
+     * note behavior of indexObjects() has diverged. Don't use this method.
+     */
     @Override
     public void indexObject(
             final GUID id,
