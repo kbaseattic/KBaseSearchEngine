@@ -1074,7 +1074,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
             b.withNullableType(new SearchObjectType(
                     (String) obj.get(SEARCH_OBJ_TYPE),
                     (Integer) obj.get(SEARCH_OBJ_TYPE_VER)));
-            b.withNullableTimestamp(Instant.ofEpochMilli((long) obj.get(OBJ_TIMESTAMP)));
+            // sometimes this is a long, sometimes it's an int
+            b.withNullableTimestamp(Instant.ofEpochMilli(
+                    ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
         }
         if (json) {
             final String ojson = (String) obj.get("ojson");
