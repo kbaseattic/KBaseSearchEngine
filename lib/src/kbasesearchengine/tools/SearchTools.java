@@ -83,8 +83,6 @@ public class SearchTools {
     
     private static final String NAME = "search_tools";
     private static final int MAX_Q_SIZE = 10000;
-    private static final String SPEC_TEMPLATE_FILE = "search_spec.yaml.template";
-    private final MustacheFactory mf = new DefaultMustacheFactory();
 
     /** Runs the CLI.
      * @param args the program arguments.
@@ -173,7 +171,8 @@ public class SearchTools {
         boolean noCommand = true; // this seems dumb...
         if (a.specPath != null) {
             try {
-                generateMinimalSearchSpec(a);
+                new MinimalSpecGenerator().generateMinimalSearchSpec(
+                        Paths.get(a.specPath), a.storageType, a.searchType, a.storageObjectType);
                 noCommand = false;
             } catch (IllegalArgumentException | IOException e) {
                 printError(e, a.verbose);
@@ -238,40 +237,54 @@ public class SearchTools {
         return 0;
     }
     
-    private void generateMinimalSearchSpec(final Args a) throws IOException {
-        final Path fileTarget = Paths.get(a.specPath);
-        if (Utils.isNullOrEmpty(a.storageType)) {
-            throw new IllegalArgumentException("storage type must be provided in arguments");
+    public static class MinimalSpecGenerator {
+        
+        private static final String SPEC_TEMPLATE_FILE = "search_spec.yaml.template";
+        private final MustacheFactory mf = new DefaultMustacheFactory();
+        
+        private final String template;
+        
+        public MinimalSpecGenerator() throws IOException {
+            template = loadTemplate();
         }
-        if (Utils.isNullOrEmpty(a.searchType)) {
-            throw new IllegalArgumentException("search type must be provided in arguments");
-        }
-        if (Utils.isNullOrEmpty(a.storageObjectType)) {
-            throw new IllegalArgumentException(
-                    "storage object type must be provided in arguments");
-        }
-        final String template = loadTemplate();
-        final StringWriter sw = new StringWriter();
-        mf.compile(new StringReader(template), "template").execute(sw, ImmutableMap.of(
-                "search_type", a.searchType,
-                "storage_type", a.storageType,
-                "storage_object_type", a.storageObjectType));
-        Files.write(fileTarget, sw.toString().getBytes());
-    }
-    
-    private String loadTemplate() throws IOException {
-        final InputStream is = getClass().getResourceAsStream(SPEC_TEMPLATE_FILE);
-        if (is == null) {
-            throw new IOException("Can't open file " + SPEC_TEMPLATE_FILE);
-        } else {
+        
+        private String loadTemplate() throws IOException {
+            final InputStream is = getClass().getResourceAsStream(SPEC_TEMPLATE_FILE);
             final Scanner s = new Scanner(is);
             s.useDelimiter("\\A");
-            final String commit = s.hasNext() ? s.next() : "";
+            final String template = s.next();
             s.close();
-            return commit;
+            return template;
+        }
+    
+        public void generateMinimalSearchSpec(
+                final Path specPath,
+                final String storageType,
+                final String searchType,
+                final String storageObjectType)
+                throws IOException {
+            if (specPath == null) {
+                throw new IllegalArgumentException("spec path is missing");
+            }
+            if (Utils.isNullOrEmpty(storageType)) {
+                throw new IllegalArgumentException("storage type must be provided in arguments");
+            }
+            if (Utils.isNullOrEmpty(searchType)) {
+                throw new IllegalArgumentException("search type must be provided in arguments");
+            }
+            if (Utils.isNullOrEmpty(storageObjectType)) {
+                throw new IllegalArgumentException(
+                        "storage object type must be provided in arguments");
+            }
+            final StringWriter sw = new StringWriter();
+            mf.compile(new StringReader(template), "template").execute(sw, ImmutableMap.of(
+                    "search_type", searchType,
+                    "storage_type", storageType,
+                    "storage_object_type", storageObjectType));
+            Files.write(specPath, sw.toString().getBytes());
         }
     }
-
+    
     private void waitForReturn(final Stoppable stoppable) throws InterruptedException {
         if (console == null) {
             out.println("No console detected - process must be manually killed to stop.");
