@@ -1,5 +1,6 @@
 package kbasesearchengine.system;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -61,6 +62,9 @@ public class ObjectTypeParsingRulesFileParser {
 
     private static List<ObjectTypeParsingRules> fromStream(InputStream is, String sourceInfo) 
             throws IOException, TypeParseException {
+        if (!(is instanceof BufferedInputStream)) {
+            is = new BufferedInputStream(is);
+        }
         final Yaml yaml = new Yaml(new SafeConstructor());
         final Object predata;
         try {

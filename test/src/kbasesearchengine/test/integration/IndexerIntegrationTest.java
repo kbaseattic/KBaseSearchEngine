@@ -296,19 +296,19 @@ public class IndexerIntegrationTest {
         final ObjectData indexedObj =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/1/1"))).get(0);
         
-        final ObjectData expected = new ObjectData();
-        expected.guid = new GUID("WS:1/1/1");
-        expected.objectName = "bar";
-        expected.type = new SearchObjectType("EmptyAType", 1);
-        expected.creator = userToken.getUserName();
-        expected.module = "serv";
-        expected.method = "meth";
-        expected.commitHash = "commit";
-        expected.moduleVersion = "servver";
-        expected.md5 = "3c6e8d4dde8a26a0bfca203228cc6a36";
-        expected.timestamp = indexedObj.timestamp;
-        expected.data = ImmutableMap.of("whee", "wugga");
-        expected.keyProps = ImmutableMap.of("whee", "wugga");
+        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:1/1/1"))
+                .withNullableObjectName("bar")
+                .withNullableType(new SearchObjectType("EmptyAType", 1))
+                .withNullableCreator(userToken.getUserName())
+                .withNullableModule("serv")
+                .withNullableMethod("meth")
+                .withNullableCommitHash("commit")
+                .withNullableModuleVersion("servver")
+                .withNullableMD5("3c6e8d4dde8a26a0bfca203228cc6a36")
+                .withNullableTimestamp(indexedObj.getTimestamp().get())
+                .withNullableData(ImmutableMap.of("whee", "wugga"))
+                .withKeyProperty("whee", "wugga")
+                .build();
         
         assertThat("incorrect indexed object", indexedObj, is(expected));
         
@@ -324,8 +324,8 @@ public class IndexerIntegrationTest {
          * has millisecond info.
          */
         
-        TestCommon.assertCloseMS(Instant.ofEpochMilli(timestamp),
-                Instant.ofEpochMilli(indexedObj.timestamp), 0, 100);
+        TestCommon.assertCloseMS(
+                Instant.ofEpochMilli(timestamp), indexedObj.getTimestamp().get(), 0, 100);
     }
     
 }

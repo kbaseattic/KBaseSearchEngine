@@ -103,7 +103,7 @@ public class IndexerWorkerTest {
                 .fromNullableVersion("code", "sometype", 3);
         
         when(typeStore.listObjectTypeParsingRules(storageObjectType))
-                .thenReturn(Arrays.asList(
+                .thenReturn(set(
                         ObjectTypeParsingRules.getBuilder(
                                 new SearchObjectType("foo", 1), storageObjectType)
                                 .toSubObjectRule("subfoo", new ObjectJsonPath("/subobjs/[*]/"),
@@ -240,8 +240,7 @@ public class IndexerWorkerTest {
         });
 
         when(typeStore.listObjectTypeParsingRules(storageObjectType))
-                .thenReturn(Arrays.asList(
-                        rules));
+                .thenReturn(set(rules));
         try {
             worker.processOneEvent(StatusEvent.getBuilder(
                     storageObjectType,
