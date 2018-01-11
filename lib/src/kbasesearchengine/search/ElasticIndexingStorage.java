@@ -1095,25 +1095,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public List<ObjectData> getObjectsByIds(Set<GUID> ids, PostProcessing pp) 
             throws IOException {
-<<<<<<< HEAD
-        Map<String, Object> terms = new LinkedHashMap<String, Object>() {{
-            put("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList()));
-        }};
-        Map<String, Object> filter = new LinkedHashMap<String, Object>() {{
-            put("terms", terms);
-        }};
-        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
-            put("filter", filter);
-        }};
-        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
-            put("bool", bool);
-
-        }};
-        Map<String, Object> doc = new LinkedHashMap<String, Object>() {{
-            put("query", query);
-            //put("_source", Arrays.asList("ojson"));
-        }};
-=======
         Map<String, Object> terms = new LinkedHashMap<>();
         terms.put("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList()));
 
@@ -1129,7 +1110,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
         //doc.put("_source", Arrays.asList("ojson"));
->>>>>>> 4a089dc8e3a921e660680aac2e94bb934f6b163e
 
         String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
@@ -1202,12 +1182,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         return item;
     }
-<<<<<<< HEAD
-
-    @SuppressWarnings("serial")
-=======
     
->>>>>>> 4a089dc8e3a921e660680aac2e94bb934f6b163e
     private Map<String, Object> createPublicShouldBlock(boolean withAllHistory) {
         List<Object> must0List = new ArrayList<>();
         must0List.add(createFilter("term", "public", true));
@@ -1276,27 +1251,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         // Shared block
         shouldList.add(createSharedShouldBlock(mustForShared));
         // Rest of query
-<<<<<<< HEAD
-        Map<String, Object> filterBool = new LinkedHashMap<String, Object>() {{
-            put("should", shouldList);
-        }};
-        Map<String, Object> filter = new LinkedHashMap<String, Object>() {{
-            put("bool", filterBool);
-
-        }};
-        Map<String, Object> bool = new LinkedHashMap<String, Object>() {{
-            put("must", matchFilters);
-            put("filter", Arrays.asList(filter));
-
-
-        }};
-        Map<String, Object> query = new LinkedHashMap<String, Object>() {{
-            put("bool", bool);
-        }};
-        Map<String, Object> terms = new LinkedHashMap<String, Object>() {{
-            put("field", SEARCH_OBJ_TYPE);
-        }};
-=======
         Map<String, Object> filterBool = new LinkedHashMap<>() ;
         filterBool.put("should", shouldList);
 
@@ -1313,7 +1267,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> terms = new LinkedHashMap<>();
         terms.put("field", SEARCH_OBJ_TYPE);
 
->>>>>>> 4a089dc8e3a921e660680aac2e94bb934f6b163e
         //TODO VERS if this aggregates by type version, need to add the version field to the terms
         Map<String, Object> agg = new LinkedHashMap<>();
         agg.put("terms", terms);
