@@ -69,8 +69,8 @@ public interface IndexingStorage {
 
     /**
      *
-     * @param objectType a non empty list of object types to constrain the search to,
-     *                   or one-and-only-one null element to indicate an unconstrained search.
+     * @param objectType a non-null list of object types to constrain the search to.
+     *                   An empty list indicates a search that is unconstrained by object type.
      * @param matchFilter
      * @param sorting
      * @param accessFilter
@@ -84,8 +84,8 @@ public interface IndexingStorage {
 
     /**
      *
-     * @param objectType a non empty list of object types to constrain the search to,
-     *                   or one-and-only-one null element to indicate an unconstrained search.
+     * @param objectType a non-null list of object types to constrain the search to.
+     *                   An empty list indicates a search that is unconstrained by object type.
      * @param matchFilter
      * @param sorting
      * @param accessFilter

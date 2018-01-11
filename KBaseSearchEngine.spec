@@ -51,7 +51,7 @@ module KBaseSearchEngine {
     } MatchFilter;
 
     /*
-      Optional rules of access constrains.
+      Optional rules of access constraints.
         - with_private - include data found in workspaces not marked 
             as public, default value is true,
         - with_public - include data found in public workspaces,
@@ -130,6 +130,14 @@ module KBaseSearchEngine {
 
     /*
       Input parameters for 'search_objects' method.
+      object_types - list of the types of objects to search on (optional). The
+                     function will search on all objects if the list is not specified
+                     or is empty.
+      match_filter - see MatchFilter (optional).
+      sorting_rules - see SortingRule (optional).
+      access_filter - see AccessFilter (optional).
+      pagination - see Pagination (optional).
+      post_processing - see PostProcessing (optional).
     */
     typedef structure {
         list<string> object_types;
