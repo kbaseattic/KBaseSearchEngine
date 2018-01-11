@@ -130,7 +130,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     /** The specified list is valid if it,
      *
      * 1. is empty,
-     * 2. or one or more non-null elements.
+     * 2. or contains one or more non-null elements.
      *
      * list 1 represents a list that would map to any index pattern (search unconstrained by type)
      * list 2 represents a list that would map to one or more specific index patterns (constrained search)
@@ -149,7 +149,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             return;
         }
 
-        if(objectTypes.size() > 0 && objectTypes.contains(null)) {
+        if(objectTypes.contains(null)) {
             throw new IOException("Invalid list of object types. Contains one or more null elements.");
         }
     }
