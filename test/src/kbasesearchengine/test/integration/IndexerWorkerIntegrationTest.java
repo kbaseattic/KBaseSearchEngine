@@ -75,7 +75,7 @@ public class IndexerWorkerIntegrationTest {
      * interactions with those services.
      */
 	
-    private static IndexerWorker mop = null;
+    private static IndexerWorker worker = null;
     private static IndexingStorage storage = null;
     private static MongoController mongo;
     private static MongoClient mc;
@@ -176,7 +176,7 @@ public class IndexerWorkerIntegrationTest {
         esStorage.setIndexNamePrefix(esIndexPrefix);
         storage = esStorage;
         
-        mop = new IndexerWorker("test", Arrays.asList(weh), eventStorage, esStorage,
+        worker = new IndexerWorker("test", Arrays.asList(weh), eventStorage, esStorage,
                 ss, tempDirPath.resolve("MainObjectProcessor").toFile(), logger);
         loadTypes(wsUrl, wsadmintoken);
         wsid = (int) loadTestData(wsUrl, userToken);
@@ -290,7 +290,7 @@ public class IndexerWorkerIntegrationTest {
                 StatusEventProcessingState.UNPROC,
                 null,
                 null);
-        mop.processOneEvent(ev.getEvent());
+        worker.processOneEvent(ev.getEvent());
         PostProcessing pp = new PostProcessing();
         pp.objectInfo = true;
         pp.objectData = true;
@@ -332,7 +332,7 @@ public class IndexerWorkerIntegrationTest {
                     StatusEventProcessingState.UNPROC,
                     null,
                     null);
-            mop.processOneEvent(ev2.getEvent());
+            worker.processOneEvent(ev2.getEvent());
         }
     }
     
