@@ -134,6 +134,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 deleteIndex(indexName);
             }
         }
+        typeToIndex.clear();
+        typeVerToIndex.clear();
     }
     
     /* checks that at least one index exists for a type, and throws an exception otherwise.
@@ -1608,7 +1610,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         props.put(OBJ_MD5, keyword);
 
         tmp = ImmutableMap.of("type", "date");
-        props.put("timestamp", tmp);
+        props.put(OBJ_TIMESTAMP, tmp);
 
         props.put("prefix", keyword);
 
