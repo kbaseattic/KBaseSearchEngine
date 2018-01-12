@@ -180,7 +180,7 @@ public class IndexerIntegrationTest {
         indexStorage = esStorage;
         
         System.out.println("Creating indexer worker");
-        File tempDir = tempDirPath.resolve("MainObjectProcessor").toFile();
+        File tempDir = tempDirPath.resolve("WorkerTemp").toFile();
         tempDir.mkdirs();
         worker = new IndexerWorker("test", Arrays.asList(weh), storage, indexStorage,
                 ss, tempDir, logger);
@@ -196,6 +196,7 @@ public class IndexerIntegrationTest {
     private static void installSearchTypes(final Path target) throws IOException {
         installTestFile("EmptyAType.json", target);
         installTestFile("TwoVersions.yaml", target);
+        installTestFile("NoIndexingRules.yaml", target);
     }
     
     private static void installTestFile(final String fileName, final Path target)
@@ -215,11 +216,13 @@ public class IndexerIntegrationTest {
         ownModule(wc, "Empty");
         ownModule(wc, "TwoVersions");
         ownModule(wc, "TwoVersionsMapped");
+        ownModule(wc, "NoIndexingRules");
         loadType(wc, "Empty", "Empty.spec", Arrays.asList("AType"));
         loadType(wc, "TwoVersions", "TwoVersions1.spec", Arrays.asList("Type"));
         loadType(wc, "TwoVersions", "TwoVersions2.spec", Collections.emptyList());
         loadType(wc, "TwoVersionsMapped", "TwoVersionsMapped1.spec", Arrays.asList("Type"));
         loadType(wc, "TwoVersionsMapped", "TwoVersionsMapped2.spec", Collections.emptyList());
+        loadType(wc, "NoIndexingRules", "NoIndexingRules.spec", Arrays.asList("Type"));
     }
     
     private static void ownModule(final WorkspaceClient wc, final String module)
@@ -484,6 +487,47 @@ public class IndexerIntegrationTest {
         
         assertThat("incorrect indexed object", indexedObj2, is(expected2));
         assertWSTimestampCloseToIndexedTimestamp(timestamp2, indexedTimestamp2);
+    }
+    
+    @Test
+    public void noIndexingRules() throws Exception {
+        // tests that a search spec without any indexing rules still indexes the general object
+        // properties
+        
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("foo"));
+        wsCli1.saveObjects(new SaveObjectsParams()
+                .withWorkspace("foo")
+                .withObjects(Arrays.asList(
+                        new ObjectSaveData()
+                                .withData(new UObject(ImmutableMap.of(
+                                        "whee", "wugga",
+                                        "whoo", "thingy",
+                                        "req", "one")))
+                                .withName("obj1")
+                                .withType("NoIndexingRules.Type-1.0")
+                ))
+        );
+        
+        final long timestamp = getWSTimeStamp("1/1/1");
+        
+        System.out.println("waiting 5s for events to trickle through the system");
+        Thread.sleep(5000); // wait for the indexer & worker to process the event
+        
+        final ObjectData indexedObj =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/1/1"))).get(0);
+        final Instant indexedTimestamp = indexedObj.getTimestamp().get();
+        
+        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:1/1/1"))
+                .withNullableObjectName("obj1")
+                .withNullableType(new SearchObjectType("NoIndexRules", 1))
+                .withNullableCreator(userToken.getUserName())
+                .withNullableMD5("d20dd9b7a7cd69471b2b13ae7593de90")
+                .withNullableTimestamp(indexedTimestamp)
+                .build();
+        
+        assertThat("incorrect indexed object", indexedObj, is(expected));
+        assertWSTimestampCloseToIndexedTimestamp(timestamp, indexedTimestamp);
     }
 
     private long getWSTimeStamp(final String ref) throws IOException, JsonClientException {

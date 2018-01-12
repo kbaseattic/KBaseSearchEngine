@@ -73,7 +73,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private String esUser;
     private String esPassword;
     private String indexNamePrefix;
-    private boolean skipFullJson = false;
     private Map<SearchObjectType, String> typeVerToIndex = new LinkedHashMap<>();
     private Map<String, String> typeToIndex = new LinkedHashMap<>();
     private RestClient restClient = null;
@@ -116,14 +115,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         this.indexNamePrefix = indexNamePrefix;
     }
 
-    public boolean isSkipFullJson() {
-        return skipFullJson;
-    }
-    
-    public void setSkipFullJson(boolean skipFullJson) {
-        this.skipFullJson = skipFullJson;
-    }
-    
     private String getAnyIndexPattern() {
         return indexNamePrefix + "*";
     }
@@ -197,6 +188,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 .toLowerCase();
     }
     
+    // TODO CODE this function should just take a class rather than a zillion arguments
+    // the class should ensure consistency of the various fields
     // IO exceptions are thrown for failure on creating or writing to file or contacting ES.
     @Override
     public void indexObjects(
@@ -209,8 +202,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final boolean isPublic,
             final List<IndexingRules> indexingRules) 
             throws IOException {
+        final Map<GUID, ParsedObject> idToObjCopy = new HashMap<>(idToObj);
         String indexName = checkIndex(objectType, indexingRules);
-        for (GUID id : idToObj.keySet()) {
+        for (GUID id : idToObjCopy.keySet()) {
             GUID parentGuid = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
                     id.getAccessGroupObjectId(), id.getVersion(), null, null);
             if (!parentGuid.equals(pguid)) {
@@ -221,30 +215,32 @@ public class ElasticIndexingStorage implements IndexingStorage {
         try {
             PrintWriter pw = new PrintWriter(tempFile);
             int lastVersion = loadLastVersion(indexName, pguid, pguid.getVersion());
-            Map<GUID, String> parentGuidToEsId = checkParentDoc(indexName, new LinkedHashSet<>(
-                    Arrays.asList(pguid)), isPublic, lastVersion);
-            if (idToObj.size() > 0) {
-                Map<GUID, String> esIds = lookupDocIds(indexName, idToObj.keySet());
-                for (GUID id : idToObj.keySet()) {
-                    String esParentId = parentGuidToEsId.get(pguid);
-                    ParsedObject obj = idToObj.get(id);
-                    Map<String, Object> doc = convertObject(id, objectType, obj, data, 
-                            timestamp, parentJsonValue, isPublic, lastVersion);
-                    final Map<String, Object> index = new HashMap<>();
-                    index.put("_index", indexName);
-                    index.put("_type", getDataTableName());
-                    index.put("parent", esParentId);
-                    if (esIds.containsKey(id)) {
-                        index.put("_id", esIds.get(id));
-                    }
-                    Map<String, Object> header = ImmutableMap.of("index", index);
-                    pw.println(UObject.transformObjectToString(header));
-                    pw.println(UObject.transformObjectToString(doc));
-                }
-                pw.close();
-                makeBulkRequest("POST", indexName, tempFile);
-                updateLastVersionsInData(indexName, pguid, lastVersion);
+            final String esParentId = checkParentDoc(indexName, new LinkedHashSet<>(
+                    Arrays.asList(pguid)), isPublic, lastVersion).get(pguid);
+            if (idToObjCopy.isEmpty()) {
+                // there were no search objects parsed from the source object, so just index
+                // the general object information
+                idToObjCopy.put(pguid, null);
             }
+            Map<GUID, String> esIds = lookupDocIds(indexName, idToObjCopy.keySet());
+            for (GUID id : idToObjCopy.keySet()) {
+                final ParsedObject obj = idToObjCopy.get(id);
+                final Map<String, Object> doc = convertObject(id, objectType, obj, data,
+                        timestamp, parentJsonValue, isPublic, lastVersion);
+                final Map<String, Object> index = new HashMap<>();
+                index.put("_index", indexName);
+                index.put("_type", getDataTableName());
+                index.put("parent", esParentId);
+                if (esIds.containsKey(id)) {
+                    index.put("_id", esIds.get(id));
+                }
+                final Map<String, Object> header = ImmutableMap.of("index", index);
+                pw.println(UObject.transformObjectToString(header));
+                pw.println(UObject.transformObjectToString(doc));
+            }
+            pw.close();
+            makeBulkRequest("POST", indexName, tempFile);
+            updateLastVersionsInData(indexName, pguid, lastVersion);
         } finally {
             tempFile.delete();
         }
@@ -261,8 +257,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final boolean isPublic,
             final int lastVersion) {
         Map<String, List<Object>> indexPart = new LinkedHashMap<>();
-        for (String key : obj.keywords.keySet()) {
-            indexPart.put(getKeyProperty(key), obj.keywords.get(key));
+        if (obj != null) {
+            for (String key : obj.keywords.keySet()) {
+                indexPart.put(getKeyProperty(key), obj.keywords.get(key));
+            }
         }
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.putAll(indexPart);
@@ -287,14 +285,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put("islast", lastVersion == id.getVersion());
         doc.put("public", isPublic);
         doc.put("shared", false);
-        if (!skipFullJson) {
+        if (obj != null) {
             doc.put("ojson", obj.json);
             doc.put("pjson", parentJson);
         }
         return doc;
     }
 
-    // this is only used in tests as of 12/12/17. remove and use indexObjects()?
+    /** this is only used in tests as of 12/12/17. remove and use indexObjects()?
+     * note behavior of indexObjects() has diverged. Don't use this method.
+     */
     @Override
     public void indexObject(
             final GUID id,
@@ -1074,11 +1074,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
             b.withNullableType(new SearchObjectType(
                     (String) obj.get(SEARCH_OBJ_TYPE),
                     (Integer) obj.get(SEARCH_OBJ_TYPE_VER)));
-            b.withNullableTimestamp(Instant.ofEpochMilli((long) obj.get(OBJ_TIMESTAMP)));
+            // sometimes this is a long, sometimes it's an int
+            b.withNullableTimestamp(Instant.ofEpochMilli(
+                    ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
         }
         if (json) {
-            b.withNullableData(UObject.transformStringToObject(
-                    (String) obj.get("ojson"), Object.class));
+            final String ojson = (String) obj.get("ojson");
+            if (ojson != null) {
+                b.withNullableData(UObject.transformStringToObject(
+                        ojson, Object.class));
+            }
             final String pjson = (String) obj.get("pjson");
             if (pjson != null) {
                 b.withNullableParentData(UObject.transformStringToObject(pjson, Object.class));
@@ -1592,14 +1597,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         Map<String, Object> props = new LinkedHashMap<>();
         final Map<String, Object> keyword = ImmutableMap.of("type", "keyword");
-        Map<String, Object> tmp;
+        final ImmutableMap<String, String> integer = ImmutableMap.of("type", "integer");
+        final ImmutableMap<String, Object> bool = ImmutableMap.of("type", "boolean");
+
         props.put("guid", keyword);
 
         props.put(SEARCH_OBJ_TYPE, keyword);
-        props.put(SEARCH_OBJ_TYPE_VER, ImmutableMap.of("type", "integer"));
+        props.put(SEARCH_OBJ_TYPE_VER, integer);
 
-        tmp = ImmutableMap.of("type", "text");
-        props.put(OBJ_NAME, tmp);
+        props.put(OBJ_NAME, ImmutableMap.of("type", "text"));
 
         props.put(OBJ_CREATOR, keyword);
         props.put(OBJ_COPIER, keyword);
@@ -1609,45 +1615,32 @@ public class ElasticIndexingStorage implements IndexingStorage {
         props.put(OBJ_PROV_COMMIT_HASH, keyword);
         props.put(OBJ_MD5, keyword);
 
-        tmp = ImmutableMap.of("type", "date");
-        props.put(OBJ_TIMESTAMP, tmp);
-
+        props.put(OBJ_TIMESTAMP, ImmutableMap.of("type", "date"));
+        
         props.put("prefix", keyword);
-
         props.put("str_cde", keyword);
+        props.put("accgrp", integer);
+        props.put("version", integer);
 
-        tmp = ImmutableMap.of("type", "integer");
-        props.put("accgrp", tmp);
+        props.put("islast", bool);
+        props.put("public", bool);
+        props.put("shared", bool);
 
-        tmp = ImmutableMap.of("type", "integer");
-        props.put("version", tmp);
+        props.put("ojson", ImmutableMap.of(
+                "type", "keyword",
+                "index", false,
+                "doc_values", false));
 
-        tmp = ImmutableMap.of("type", "boolean");
-        props.put("islast", tmp);
-
-        tmp = ImmutableMap.of("type", "boolean");
-        props.put("public", tmp);
-
-        tmp = ImmutableMap.of("type", "boolean");
-        props.put("shared", tmp);
-
-        if (!skipFullJson) {
-            tmp = ImmutableMap.of("type", "keyword",
-                                  "index", false,
-                                  "doc_values", false);
-            props.put("ojson", tmp);
-
-            tmp = ImmutableMap.of("type", "keyword",
-                                  "index", false,
-                                  "doc_values", false);
-            props.put("pjson", tmp);
-        }
+        props.put("pjson", ImmutableMap.of(
+                "type", "keyword",
+                "index", false,
+                "doc_values", false));
+        
+        
         for (IndexingRules rules : indexingRules) {
             String propName = getKeyProperty(rules.getKeyName());
             String propType = getEsType(rules.isFullText(), rules.getKeywordType());
-
-            tmp = ImmutableMap.of("type", propType);
-            props.put(propName, tmp);
+            props.put(propName, ImmutableMap.of("type", propType));
         }
 
         // table = {"data": {},
@@ -1661,8 +1654,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> table = new LinkedHashMap<>();
 
 
-        tmp = ImmutableMap.of("type", getAccessTableName());
-        table.put("_parent", tmp);
+        table.put("_parent", ImmutableMap.of("type", getAccessTableName()));
         table.put("properties", ImmutableMap.copyOf(props));
 
         // Access (parent)

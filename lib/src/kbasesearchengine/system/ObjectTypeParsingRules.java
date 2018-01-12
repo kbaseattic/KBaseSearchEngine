@@ -204,6 +204,10 @@ public class ObjectTypeParsingRules {
         return new Builder(globalObjectType, storageType);
     }
     
+    /** A builder for an {@link ObjectTypeParsingRules}.
+     * @author gaprice@lbl.gov
+     *
+     */
     public static class Builder {
         
         private final SearchObjectType globalObjectType;
@@ -236,8 +240,7 @@ public class ObjectTypeParsingRules {
             return this;
         }
         
-        /** Add an indexing rule to this builder. At least one rule must be added before the
-         * build can complete.
+        /** Add an indexing rule to this builder.
          * @param rules the indexing rule.
          * @return this builder.
          */
@@ -286,10 +289,6 @@ public class ObjectTypeParsingRules {
          * @return the rule set.
          */
         public ObjectTypeParsingRules build() {
-            if (indexingRules.isEmpty()) {
-                throw new IllegalStateException("Must supply at least one indexing rule");
-            }
-            
             return new ObjectTypeParsingRules(globalObjectType, uiTypeName, storageObjectType,
                     indexingRules, subObjectType, subObjectPath, subObjectIDPath);
         }

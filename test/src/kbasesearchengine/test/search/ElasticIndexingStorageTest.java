@@ -10,6 +10,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -340,7 +342,7 @@ public class ElasticIndexingStorageTest {
     
     @Test
     public void testSharing() throws Exception {
-        SearchObjectType objType = new SearchObjectType("Sharable",1 );
+        SearchObjectType objType = new SearchObjectType("Sharable", 1);
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop2"))
                 .withKeywordType("integer").build();
         List<IndexingRules> indexingRules= Arrays.asList(ir);
@@ -610,6 +612,44 @@ public class ElasticIndexingStorageTest {
 
         assertThat("incorrect indexed object", indexedObj2, is(expected2));
         
+    }
+    
+    @Test
+    public void noIndexingRules() throws Exception {
+        indexStorage.indexObjects(
+                new SearchObjectType("NoIndexingRules", 1),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "creator")
+                        .withNullableCommitHash("commit")
+                        .withNullableCopier("cop")
+                        .withNullableMD5("emmdeefive")
+                        .withNullableMethod("meth")
+                        .withNullableModule("mod")
+                        .withNullableVersion("ver")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1000/1/1"),
+                Collections.emptyMap(),
+                false,
+                Collections.emptyList());
+        
+        final ObjectData indexedObj =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1000/1/1"))).get(0);
+        
+        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:1000/1/1"))
+                .withNullableObjectName("objname")
+                .withNullableType(new SearchObjectType("NoIndexingRules", 1))
+                .withNullableCreator("creator")
+                .withNullableCommitHash("commit")
+                .withNullableCopier("cop")
+                .withNullableMD5("emmdeefive")
+                .withNullableMethod("meth")
+                .withNullableModule("mod")
+                .withNullableModuleVersion("ver")
+                .withNullableTimestamp(Instant.ofEpochMilli(10000))
+                .build();
+        
+        assertThat("incorrect indexed object", indexedObj, is(expected));
     }
 
 }

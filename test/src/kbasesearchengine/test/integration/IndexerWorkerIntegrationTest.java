@@ -177,7 +177,7 @@ public class IndexerWorkerIntegrationTest {
         storage = esStorage;
         
         worker = new IndexerWorker("test", Arrays.asList(weh), eventStorage, esStorage,
-                ss, tempDirPath.resolve("MainObjectProcessor").toFile(), logger);
+                ss, tempDirPath.resolve("WorkerTemp").toFile(), logger);
         loadTypes(wsUrl, wsadmintoken);
         wsid = (int) loadTestData(wsUrl, userToken);
     }
