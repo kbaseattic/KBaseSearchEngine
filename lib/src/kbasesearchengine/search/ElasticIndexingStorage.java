@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -49,7 +48,6 @@ import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.tools.Utils;
-import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.UObject;
 
 //TODO CODE remove 'fake' group IDs (-1 public, -2 admin). use alternate mechanism.
@@ -188,6 +186,22 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 .toLowerCase();
     }
     
+    @Override
+    public void indexObject(
+            final GUID id,
+            final SearchObjectType objectType,
+            final ParsedObject obj,
+            final SourceData data,
+            final Instant timestamp,
+            final String parentJsonValue,
+            final boolean isPublic,
+            final List<IndexingRules> indexingRules)
+            throws IOException {
+        final GUID parentID = new GUID(id, null, null);
+        indexObjects(objectType, data, timestamp, parentJsonValue, parentID,
+                ImmutableMap.of(id, obj), isPublic, indexingRules);
+    }
+    
     // TODO CODE this function should just take a class rather than a zillion arguments
     // the class should ensure consistency of the various fields
     // IO exceptions are thrown for failure on creating or writing to file or contacting ES.
@@ -211,6 +225,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 throw new IllegalStateException("Object GUID doesn't match parent GUID");
             }
         }
+        //TODO CODE if there's only a few objects to index, possible speed up by not using tempfile and just making direct API calls
         File tempFile = File.createTempFile("es_bulk_", ".json", tempDir);
         try {
             PrintWriter pw = new PrintWriter(tempFile);
@@ -292,43 +307,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return doc;
     }
 
-    /** this is only used in tests as of 12/12/17. remove and use indexObjects()?
-     * note behavior of indexObjects() has diverged. Don't use this method.
-     */
-    @Override
-    public void indexObject(
-            final GUID id,
-            final SearchObjectType objectType,
-            final ParsedObject obj,
-            final SourceData data,
-            final Instant timestamp,
-            final String parentJsonValue,
-            final boolean isPublic,
-            final List<IndexingRules> indexingRules)
-            throws IOException {
-        String indexName = checkIndex(objectType, indexingRules);
-        GUID parentGUID = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
-                id.getAccessGroupObjectId(), id.getVersion(), null, null);
-        int lastVersion = loadLastVersion(indexName, id, id.getVersion());
-        if (lastVersion != id.getVersion()) {
-            System.out.println("ElasticSearchStorage.indexObject: unexpected versions: " +
-                    lastVersion + " != " + id.getVersion());
-        }
-        String esParentId = checkParentDoc(indexName, new HashSet<>(Arrays.asList(parentGUID)),
-                isPublic, lastVersion).get(parentGUID);
-        Map<String, Object> doc = convertObject(id, objectType, obj, data, timestamp, 
-                parentJsonValue, isPublic, lastVersion);
-        String esId = lookupDocIds(indexName, new HashSet<>(Arrays.asList(id))).get(id);
-        String requestUrl = "/" + indexName + "/" + getDataTableName() + "/";
-        if (esId != null) {
-            requestUrl += esId;
-        }
-        makeRequest("POST", requestUrl, doc, Arrays.asList(
-                new Tuple2<String, String>().withE1("parent").withE2(esParentId)));
-        updateLastVersionsInData(indexName, parentGUID, lastVersion);
-        refreshIndex(indexName);
-    }
-    
     @Override
     public void flushIndexing(SearchObjectType objectType) throws IOException {
         refreshIndex(checkIndex(objectType, null));
@@ -1459,12 +1437,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return makeRequest(reqType, urlPath, doc, Collections.<String, String>emptyMap());
     }
 
-    private Response makeRequest(String reqType, String urlPath, Map<String, ?> doc, 
-            List<Tuple2<String, String>> attributes) throws IOException {
-        return makeRequest(reqType, urlPath, doc, attributes.stream().collect(
-                Collectors.toMap(u -> u.getE1(), u -> u.getE2())));
-    }
-    
     private RestClient getRestClient() {
         if (restClient == null) {
             RestClientBuilder restClientBld = RestClient.builder(esHost);
