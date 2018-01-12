@@ -12,6 +12,7 @@
   <property name="dist" location="dist"/>
   <property name="classes" location="classes"/>
   <property name="bin" location="bin"/>
+  <property name="test.cfg" location="/kb/module/work/test.cfg"/>
   <property name="jar.file" value="KBaseSearchEngine.jar"/>
   <condition property="jars.dir" value="${env.JARS_DIR}" else="/kb/deployment/lib/jars">
     <isset property="env.JARS_DIR" />
@@ -150,6 +151,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
           <path refid="compile.classpath"/>
         </classpath>
         <formatter type="plain" usefile="false" />
+        <sysproperty key="test.cfg" value="${test.cfg}"/>
         <batchtest>
           <fileset dir="${test.src}">
             <include name="kbasesearchengine/test/parse/**Test.java"/>
