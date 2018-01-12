@@ -591,11 +591,14 @@ public class ElasticIndexingStorageTest {
                 .withNullableObjectName("o1")
                 .withNullableType(type1)
                 .withNullableCreator("creator")
-                .withNullableTimestamp(now)
+                .withNullableTimestamp(indexedObj1.getTimestamp().get())
                 .withNullableData(ImmutableMap.of("bar", 1))
                 .withKeyProperty("bar", "1")
                 .build();
         
+        //due to potential truncation of timestamp on mac
+        TestCommon.assertCloseMS(indexedObj1.getTimestamp().get(), now, 0, 10);
+
         assertThat("incorrect indexed object", indexedObj1, is(expected1));
         
         final ObjectData indexedObj2 =
@@ -605,11 +608,11 @@ public class ElasticIndexingStorageTest {
                 .withNullableObjectName("o2")
                 .withNullableType(type2)
                 .withNullableCreator("creator")
-                .withNullableTimestamp(now)
+                .withNullableTimestamp(indexedObj2.getTimestamp().get())
                 .withNullableData(ImmutableMap.of("bar", "whee"))
                 .withKeyProperty("bar", "whee")
                 .build();
-
+        
         assertThat("incorrect indexed object", indexedObj2, is(expected2));
         
     }
