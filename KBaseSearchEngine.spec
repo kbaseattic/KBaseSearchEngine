@@ -132,7 +132,7 @@ module KBaseSearchEngine {
       Input parameters for 'search_objects' method.
       object_types - list of the types of objects to search on (optional). The
                      function will search on all objects if the list is not specified
-                     or is empty.
+                     or is empty. The list size must be less than 50.
       match_filter - see MatchFilter (optional).
       sorting_rules - see SortingRule (optional).
       access_filter - see AccessFilter (optional).

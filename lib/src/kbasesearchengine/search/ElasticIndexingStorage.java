@@ -70,7 +70,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public static final int PUBLIC_ACCESS_GROUP = -1;
     public static final int ADMIN_ACCESS_GROUP = -2;
 
-    public static final int MAX_URL_LENGTH = 4096; // ElasticSearch max length of an HTTP URL. Defaults to 4kb
+    /** ElasticSearch max length of an HTTP URL. Defaults to 4kb
+     * So, MAX_OBJECT_TYPES_SIZE * {@link SearchObjectType#MAX_TYPE_SIZE} << default url length
+     * giving us room for other url attribs like blacklists and subtype search filtering.
+     *
+     * This value is also reflected in the limit specified for SearchObjectsInput.object_types in
+     * KBaseSearchEngine.spec.
+     *
+     */
+    public static final int MAX_OBJECT_TYPES_SIZE = 50;
 
     public ElasticIndexingStorage(HttpHost esHost, File tempDir) throws IOException {
         this.esHost = esHost;
@@ -130,7 +138,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
     /** The specified list is valid if it,
      *
      * 1. is empty,
-     * 2. or contains one or more non-null elements.
+     * 2. or contains one or more non-null elements and size is less than
+     *    {@link ElasticIndexingStorage#MAX_OBJECT_TYPES_SIZE}.
      *
      * list 1 represents a list that would map to any index pattern (search unconstrained by type)
      * list 2 represents a list that would map to one or more specific index patterns (constrained search)
@@ -147,6 +156,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         if(objectTypes.isEmpty()) {
             return;
+        }
+
+        if(objectTypes.size() > MAX_OBJECT_TYPES_SIZE) {
+            throw new IOException("Invalid list of object types. " +
+                    "List size exceeds maximum limit of "+MAX_OBJECT_TYPES_SIZE);
         }
 
         if(objectTypes.contains(null)) {
@@ -1432,9 +1446,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
 
-        if( urlPath.getBytes("UTF-8").length > MAX_URL_LENGTH )
-            throw new IOException("Search URL exceeded maximum length of "+MAX_URL_LENGTH+" bytes: " +
-                    urlPath);
 
         Response resp = makeRequest("GET", urlPath, ImmutableMap.copyOf(doc));
         @SuppressWarnings("unchecked")
