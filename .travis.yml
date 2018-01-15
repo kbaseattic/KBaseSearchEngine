@@ -11,23 +11,11 @@ jdk:
 services:
 - docker
 
-notifications:
-  email:
-    recipients:
-    - arfathpasha@gmail.com
-    on_success: never
-    on_failure: always
-
 env:
   global:
-  # TEST_TOKEN
-  - secure: "vn4sA9+qd4j5oRJSKiXSk8BqKTz9t6MEGRUqHLOTl+Tvd+DXu8z7z8pNtS3AJZdk6UAR+1MUDLcwhhVEcGt+JJzDMeHlXJCYqPjWrjhJ+RNGoUC4zL7tTWSVdBfDBLkDW1Aopl+fqqxJLEzCfaN2lvr02TTRGIh4DGAzQ6rm96H429nYQ/w+u3Zl0W9ib63hjezujgQpJG0ppO1d52GUDCJIy9eskN52yttvm+DvG4ivt1Cx6YWLbPyUTH0ZUn0yXwr0BYg2z6+xw29rT2a7NBql4PsRuJu4jHc7kqAADCXxuoIL+k4NcTnrtVipXXXT5bQ0jfbHq0fqH3DiQLCaNd2SUKACkGnJ/n7nzxpp2TOrOZTNwieOBJgy2qscAlyXeEdQqCg5kv3oxkIX/dd2muHln6VTEyxyiNjY4RSZS8GDP8umkt+FXGwQoq6ltl7TkHlFdo/OZ3Fv7OnKS/uIvPXP6XSQ7f3Znk6yFSbAvqoaE5jnXlLdwjKzNUgp0+mcCP+fKgX7bmUzewXAPZGf1RXPUuvr/HPVSaZlI+rHAV4gFpEdqb2adja3oYZe6GdDslpNwczm01QtUjETnTXc5aPgblp27jh/bumM/LECOHGDqfq30eEWnhhyyeD7ogpwVs+MUey6iLUFptFJJwYQFfUNIjwOwqUTWYLEyc8Xs7c="
-  # TEST_TOKEN2
-  - secure: "x3BwW+pAKdmmoYixUmXW6BFQrPvdQGp5Xxip8VIg1cFj+tv/nSekvFMrn3+Cty9yE58U87HgpG9BJHt2Ne6xZ0Evz+TjvVNPMmD+OlM36rWoSJtN8nbtBezvOkzb9Ly42gmfTCw0jxzIL9Amt5qQH8+DNUVLB5AkQV89dueHUmsA1UkPxZ3pXueIGCuAE+j/mGDuE3w/etZVoJDRecEjPnrYjYS4IUZ0FhWJvuLPh2eI3enoPNh/JZFMv2+OKq0GISWdtB5HjcTc3HmuAj6V68Waf4SYWFaG9GfaqyeI6sQ/8RMNQ1xm1lRgkX7Cxpj3bW65lWzPD2f3N/wNEMJbH9rSgM8tg6ExYSsaLaTNxuXGA+7+r0roTtSv9Flm4K2kOVTGcSlp3PXSOcGrrCxA/DIeDUEPqn9CyHqRD+9Ss+/B0HVlG2ygYnErqNviTCdtI9U55c/lE3G15pfU8xs1T5iJIwK/7p5ZzBZQ7A2x0HjjcdUrH2EVBnuwgsMtBtw3QUm8eVs8FCofD6gXHOK2uyzk4Kv7sTz8pZTqy7zOTdWQXhwlvS9uJtAVaK8EV37ciTHEUseccjUUQ5XksE+j4iZA/CjK64WA+gtOQWKBTtIdv4+twgVzNqszveCRFT8OeTsD5SwI130vJ3VBClkR2b9MWhLWZnbhlFdYexGTwo0="
-  - MONGODB_VER=mongodb-linux-x86_64-2.6.12 ANT_TEST=test WIRED_TIGER=false
+  # TODO make a build matrix with various mongo versions & wired tiger running only the mongo tests
+  - MONGODB_VER=mongodb-linux-x86_64-2.6.12
   - JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
-
-
 
 branches:
   only:
@@ -38,13 +26,13 @@ branches:
 before_install:
 - whoami
 - id -u
-- cd ~
 - pwd
 - docker version
 - javac -version
 - java -version
 
 install:
+- cd ..
 # install elastic search
 - wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.0.tar.gz
 - tar xfz elasticsearch-5.5.0.tar.gz
@@ -54,37 +42,22 @@ install:
 - wget http://fastdl.mongodb.org/linux/$MONGODB_VER.tgz
 - tar xfz $MONGODB_VER.tgz
 - export MONGOD=`pwd`/$MONGODB_VER/bin/mongod
-- ln -s mongodb-linux-x86_64-2.6.12 mongo
 
-# install kb-sdk
-- cd ~
+# install jars
 - git clone https://github.com/kbase/jars
-- git clone https://github.com/kbase/kb_sdk
-- cd kb_sdk
-- make
-- make sdkbase
-- docker images
-- export PATH=$(pwd)/bin:$PATH
 
-# install KBaseSearchEngine
-- cd ~
-- git clone https://github.com/arfathpasha/KBaseSearchEngine.git -b develop
-- cd KBaseSearchEngine
-
-# create test_local dir
-- kb-sdk test || true
-
-# update test.cfg with travis user
-- sed -i "s/test_token=/test_token=$TEST_TOKEN\ntest.token2=$TEST_TOKEN2\n/" test_local/test.cfg
-- sed -i 's\https://appdev.kbase.us/services\https://ci.kbase.us/services\' test_local/test.cfg
-- sed -i 's\https://appdev.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login\'
-  test_local/test.cfg
-- cat test_local/test.cfg
-
+# make test config
+- cd -
+- echo "test.mongo.exe=$MONGOD" > test.cfg
+- echo "test.elasticsearch.exe=../elasticsearch/bin/elasticsearch" >> test.cfg
+- echo "test.jars.dir=../jars/lib/jars" >> test.cfg
+- echo "test.temp.dir=temp_test" >> test.cfg
+- echo "test.temp.dir.keep=false" >> test.cfg
+- cat test.cfg
 
 script:
-- kb-sdk test
+- ant test-report -Dtest.cfg=test.cfg -Djars.dir=../jars/lib/jars/
 
 after_success:
-- ls test_local/workdir/test-reports/
-- bash <(curl -s https://codecov.io/bash) -t 206d1355-c004-4912-9921-92c6d1c003d5 -f test_local/workdir/test-reports/coverage-report.xml
+- ls work/test-reports/
+- bash <(curl -s https://codecov.io/bash) -t 206d1355-c004-4912-9921-92c6d1c003d5 -f work/test-reports/coverage-report.xml
