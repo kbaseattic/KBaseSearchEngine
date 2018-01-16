@@ -141,7 +141,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
     <chmod file="${bin}/${exec.cmd.search_tools}" perm="a+x"/>
   </target>
 	
-  <target name="test" depends="compile" description="run all tests">
+  <target name="test" description="run all tests">
     <delete dir="${test.reports.dir}"/>
     <mkdir dir="${test.reports.dir}"/>
     <jacoco:coverage destfile="${test.reports.dir}/jacoco.exec"
