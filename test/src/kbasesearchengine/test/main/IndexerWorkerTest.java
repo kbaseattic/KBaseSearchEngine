@@ -102,18 +102,17 @@ public class IndexerWorkerTest {
         final StorageObjectType storageObjectType = StorageObjectType
                 .fromNullableVersion("code", "sometype", 3);
         
-        when(typeStore.listObjectTypeParsingRules(storageObjectType))
-                .thenReturn(set(
-                        ObjectTypeParsingRules.getBuilder(
-                                new SearchObjectType("foo", 1), storageObjectType)
-                                .toSubObjectRule("subfoo", new ObjectJsonPath("/subobjs/[*]/"),
-                                        new ObjectJsonPath("id"))
-                                .withIndexingRule(IndexingRules.fromPath(
-                                        new ObjectJsonPath("somedata"))
-                                        .build())
-                                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("id"))
-                                        .build())
-                                .build()));
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1), storageObjectType)
+                .toSubObjectRule("subfoo", new ObjectJsonPath("/subobjs/[*]/"),
+                        new ObjectJsonPath("id"))
+                .withIndexingRule(IndexingRules.fromPath(
+                        new ObjectJsonPath("somedata"))
+                        .build())
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("id"))
+                        .build())
+                .build();
+        when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
         
         worker.processOneEvent(StatusEvent.getBuilder(
                 storageObjectType,
@@ -136,7 +135,7 @@ public class IndexerWorkerTest {
                 "id", Arrays.asList("an id2"));
         
         verify(idxStore).indexObjects(
-                eq(new SearchObjectType("foo", 1)),
+                eq(rule),
                 any(SourceData.class),
                 eq(Instant.ofEpochMilli(10000)),
                 eq(null),
@@ -144,10 +143,7 @@ public class IndexerWorkerTest {
                 eq(ImmutableMap.of(
                         new GUID(guid, "subfoo", "an id2"), po2,
                         new GUID(guid, "subfoo", "an id"), po1)),
-                eq(false),
-                eq(Arrays.asList(
-                        IndexingRules.fromPath(new ObjectJsonPath("somedata")).build(),
-                        IndexingRules.fromPath(new ObjectJsonPath("id")).build())));
+                eq(false));
     }
     
     @Test
