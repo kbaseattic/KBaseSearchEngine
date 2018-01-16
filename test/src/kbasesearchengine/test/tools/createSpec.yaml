@@ -1,0 +1,47 @@
+# This is a minimal generated search transformation specification for the KBase search system.
+# The specification format is YAML (http://yaml.org/).
+
+# The name of the type in the search system.
+global-object-type: Genome
+
+# The name of the type in the search system as it should be displayed in a UI.
+ui-type-name: Genome
+
+# The data source of the objects.
+storage-type: WS
+
+# The name of the type in the data source.
+storage-object-type: KBaseGenomes.Genome
+
+# IMPORTANT NOTE: Once a type version is established in the search system, the type version
+# CANNOT be changed or given a new version number (i.e. by changing the ordering of the versions)
+# without dropping the ElasticSearch indexes for the type.
+
+# This list contains different versions of the parsing rules used to parse the specified
+# storage-object-type. The list is ordered by version number. Each parsing rule version results
+# in a corresponding search type version. The mapping between the source storage-object-type
+# version and the target search type version is specified by the type mappings.
+# If no type mapping is specified for this type, the latest version is used.
+versions:
+    -
+        # The following rules describe which fields are extracted from the source object and
+        # transforms performed upon said fields.
+        indexing-rules: []
+        
+# The indexing rules above are set to an empty list. An examples of a 3 item list of indexing rules
+# is below:
+#           -
+#               # Extract a string from the /id path. The key name will be id.
+#               path: id
+#               keyword-type: string
+#           -
+#               # Extract a string from the /domain path. The key name will be domain.
+#               path: domain
+#               keyword-type: string
+#           -
+#               # Extract a full-text search field from the /taxonomy path. A full-text field is
+#               # parsed into tokens which can be searched on individually, as opposed to a string
+#               # field which is an opaque block and must be matched in its entirety.
+#               # The key name will be taxonomy.
+#               path: taxonomy
+#               full-text: true
