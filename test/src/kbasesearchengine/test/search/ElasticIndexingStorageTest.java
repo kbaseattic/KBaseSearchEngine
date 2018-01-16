@@ -330,6 +330,20 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals(1, guids.size());
     }
 
+    @Test(expected = IOException.class)
+    public void testMultiTypeSearchValidation5() throws Exception {
+
+        // list exceeding max size
+        List<String> objectTypes = new ArrayList<>();
+        for(int ii=0; ii< ElasticIndexingStorage.MAX_OBJECT_TYPES_SIZE+1; ii++) {
+            objectTypes.add("Narrative");
+        }
+
+        Set<GUID> guids = indexStorage.searchIds(objectTypes,
+                MatchFilter.create().withAccessGroupId(1),
+                null, AccessFilter.create().withAdmin(true));
+    }
+
     @Test
     public void testMultiTypeSearch() throws Exception {
         indexObject("Genome", "genome01", new GUID("WS:1/3/1"), "MyGenome.1");

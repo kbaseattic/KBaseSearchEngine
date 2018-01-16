@@ -7,7 +7,19 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.LinkedList;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -70,7 +82,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public static final int PUBLIC_ACCESS_GROUP = -1;
     public static final int ADMIN_ACCESS_GROUP = -2;
 
-    /** ElasticSearch max length of an HTTP URL. Defaults to 4kb
+    /** ElasticSearch max length of an HTTP URL defaults to 4kb.
      * So, MAX_OBJECT_TYPES_SIZE * {@link SearchObjectType#MAX_TYPE_SIZE} << default url length
      * giving us room for other url attribs like blacklists and subtype search filtering.
      *
@@ -145,12 +157,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
      * list 2 represents a list that would map to one or more specific index patterns (constrained search)
      *
      *
-     * @param objectTypes a non-empty list of object types.
+     * @param objectTypes a list of object types.
      * @throws IOException if list is invalid.
      */
     private void validateObjectTypes(List<String> objectTypes) throws IOException {
 
-        if(objectTypes== null) {
+        if(objectTypes == null) {
             throw new IllegalArgumentException("Invalid list of object types. List is null.");
         }
 
@@ -160,7 +172,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         if(objectTypes.size() > MAX_OBJECT_TYPES_SIZE) {
             throw new IOException("Invalid list of object types. " +
-                    "List size exceeds maximum limit of "+MAX_OBJECT_TYPES_SIZE);
+                    "List size exceeds maximum limit of " + MAX_OBJECT_TYPES_SIZE);
         }
 
         if(objectTypes.contains(null)) {
