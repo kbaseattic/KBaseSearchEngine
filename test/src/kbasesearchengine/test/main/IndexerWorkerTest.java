@@ -123,16 +123,16 @@ public class IndexerWorkerTest {
                 .withNullableisPublic(false)
                 .build());
         
-        final ParsedObject po1 = new ParsedObject();
-        po1.json = new ObjectMapper().writeValueAsString(
-                ImmutableMap.of( "id", "an id", "somedata", "data"));
-        po1.keywords = ImmutableMap.of("somedata", Arrays.asList("data"),
-                "id", Arrays.asList("an id"));
-        final ParsedObject po2 = new ParsedObject();
-        po2.json = new ObjectMapper().writeValueAsString(
-                ImmutableMap.of("id", "an id2", "somedata", "data2"));
-        po2.keywords = ImmutableMap.of("somedata", Arrays.asList("data2"),
-                "id", Arrays.asList("an id2"));
+        final ParsedObject po1 = new ParsedObject(
+                new ObjectMapper().writeValueAsString(
+                        ImmutableMap.of( "id", "an id", "somedata", "data")),
+                ImmutableMap.of("somedata", Arrays.asList("data"),
+                        "id", Arrays.asList("an id")));
+        final ParsedObject po2 = new ParsedObject(
+                new ObjectMapper().writeValueAsString(
+                        ImmutableMap.of("id", "an id2", "somedata", "data2")),
+                ImmutableMap.of("somedata", Arrays.asList("data2"),
+                        "id", Arrays.asList("an id2")));
         
         verify(idxStore).indexObjects(
                 eq(rule),

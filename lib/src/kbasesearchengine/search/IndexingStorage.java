@@ -77,13 +77,24 @@ public interface IndexingStorage {
     public Map<String, Integer> searchTypes(MatchFilter matchFilter,
             AccessFilter accessFilter) throws IOException;
 
-    public FoundHits searchIds(String objectType, MatchFilter matchFilter, 
-            List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination) 
-                    throws IOException;
+    public FoundHits searchIds(
+            String objectType,
+            MatchFilter matchFilter,
+            List<SortingRule> sorting,
+            AccessFilter accessFilter,
+            Pagination pagination,
+            boolean excludeSubObjects)
+            throws IOException;
 
-    public FoundHits searchObjects(String objectType, MatchFilter matchFilter, 
-            List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination,
-            PostProcessing postProcessing) throws IOException;
+    public FoundHits searchObjects(
+            String objectType,
+            MatchFilter matchFilter,
+            List<SortingRule> sorting,
+            AccessFilter accessFilter,
+            Pagination pagination,
+            PostProcessing postProcessing,
+            boolean excludeSubObjects)
+            throws IOException;
 
     /** Change the name of all the versions of an object.
      * @param object the GUID of the object. The version field is ignored.

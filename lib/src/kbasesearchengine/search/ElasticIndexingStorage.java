@@ -55,6 +55,8 @@ import us.kbase.common.service.UObject;
 
 public class ElasticIndexingStorage implements IndexingStorage {
 
+    private static final String SUBTYPE_INDEX_SUFFIX = "_sub";
+    private static final String EXCLUDE_SUB_OJBS_URL_SUFFIX = ",-*" + SUBTYPE_INDEX_SUFFIX;
     private static final String OBJ_TIMESTAMP = "timestamp";
     private static final String OBJ_PROV_COMMIT_HASH = "prv_cmt";
     private static final String OBJ_PROV_MODULE_VERSION = "prv_ver";
@@ -182,7 +184,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     private String toIndexString(final ObjectTypeParsingRules rule) {
         final SearchObjectType objectType = rule.getGlobalObjectType();
-        return (indexNamePrefix + objectType.getType() + "_" + objectType.getVersion())
+        return (indexNamePrefix + objectType.getType() + "_" + objectType.getVersion() +
+                (rule.getSubObjectType().isPresent() ? SUBTYPE_INDEX_SUFFIX : ""))
                 .toLowerCase();
     }
     
@@ -271,8 +274,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final int lastVersion) {
         Map<String, List<Object>> indexPart = new LinkedHashMap<>();
         if (obj != null) {
-            for (String key : obj.keywords.keySet()) {
-                indexPart.put(getKeyProperty(key), obj.keywords.get(key));
+            for (String key : obj.getKeywords().keySet()) {
+                indexPart.put(getKeyProperty(key), obj.getKeywords().get(key));
             }
         }
         Map<String, Object> doc = new LinkedHashMap<>();
@@ -299,7 +302,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put("public", isPublic);
         doc.put("shared", false);
         if (obj != null) {
-            doc.put("ojson", obj.json);
+            doc.put("ojson", obj.getJson());
             doc.put("pjson", parentJson);
         }
         return doc;
@@ -1182,25 +1185,53 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @Override
-    public FoundHits searchIds(String objectType, MatchFilter matchFilter, 
-            List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination) 
-                    throws IOException {
+    public FoundHits searchIds(
+            final String objectType,
+            final MatchFilter matchFilter,
+            final List<SortingRule> sorting,
+            final AccessFilter accessFilter,
+            final Pagination pagination,
+            final boolean excludeSubObjects)
+            throws IOException {
         return queryHits(objectType, prepareMatchFilters(matchFilter),
-                sorting, accessFilter, pagination, null);
+                sorting, accessFilter, pagination, null, excludeSubObjects);
     }
 
     @Override
-    public FoundHits searchObjects(String objectType, MatchFilter matchFilter,
-            List<SortingRule> sorting, AccessFilter accessFilter,
-            Pagination pagination, PostProcessing postProcessing)
+    public FoundHits searchObjects(
+            final String objectType,
+            final MatchFilter matchFilter,
+            final List<SortingRule> sorting,
+            final AccessFilter accessFilter,
+            final Pagination pagination,
+            final PostProcessing postProcessing,
+            final boolean excludeSubObjects)
             throws IOException {
         return queryHits(objectType, prepareMatchFilters(matchFilter),
-                sorting, accessFilter, pagination, postProcessing);
+                sorting, accessFilter, pagination, postProcessing, excludeSubObjects);
     }
     
-    public Set<GUID> searchIds(String objectType, MatchFilter matchFilter, 
-            List<SortingRule> sorting, AccessFilter accessFilter) throws IOException {
-        return searchIds(objectType, matchFilter, sorting, accessFilter, null).guids;
+    // this is only used for tests
+    public Set<GUID> searchIds(
+            final String objectType,
+            final MatchFilter matchFilter, 
+            final List<SortingRule> sorting,
+            final AccessFilter accessFilter)
+            throws IOException {
+        return searchIds(objectType, matchFilter, sorting, accessFilter, false);
+        
+    }
+    
+ // this is only used for tests
+    public Set<GUID> searchIds(
+            final String objectType,
+            final MatchFilter matchFilter, 
+            final List<SortingRule> sorting,
+            final AccessFilter accessFilter,
+            final boolean excludeSubObjects)
+            throws IOException {
+        return searchIds(objectType, matchFilter, sorting, accessFilter, null, excludeSubObjects)
+                .guids;
     }
 
     private List<Map<String, Object>> prepareMatchFilters(MatchFilter matchFilter) {
@@ -1310,7 +1341,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
             List<SortingRule> sorting,
             final AccessFilter accessFilter,
             final Pagination pg,
-            final PostProcessing pp)
+            final PostProcessing pp,
+            final boolean excludeSubObjects)
             throws IOException {
         // initialize args
         int pgStart = pg == null || pg.start == null ? 0 : pg.start;
@@ -1371,6 +1403,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
             sort.add(sortOrderWrapper);
         }
         String indexName = objectType == null ? getAnyIndexPattern() : checkIndex(objectType);
+        if (excludeSubObjects) {
+            indexName += EXCLUDE_SUB_OJBS_URL_SUFFIX;
+        }
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, ImmutableMap.copyOf(doc));
         @SuppressWarnings("unchecked")

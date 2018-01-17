@@ -266,7 +266,7 @@ public class PerformanceTester {
     private int countGenomes() throws Exception {
         return storage.searchIds("Genome", 
                 MatchFilter.create().withLookupInKey("features", new MatchValue(1, null)), null,
-                AccessFilter.create().withPublic(true).withAdmin(true), null).total;
+                AccessFilter.create().withPublic(true).withAdmin(true), null, false).total;
     }
     
     @Ignore

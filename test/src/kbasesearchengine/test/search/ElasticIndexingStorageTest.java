@@ -68,6 +68,8 @@ public class ElasticIndexingStorageTest {
     private static ObjectLookupProvider objLookup;
     private static ElasticSearchController es;
     
+    //TODO TEST should delete indexes between every test to keep them independent
+    
     @BeforeClass
     public static void prepare() throws Exception {
         TestCommon.stfuLoggers();
@@ -659,6 +661,56 @@ public class ElasticIndexingStorageTest {
                 .build();
         
         assertThat("incorrect indexed object", indexedObj, is(expected));
+    }
+    
+    @Test
+    public void excludeSubObjects() throws Exception {
+        // regular object
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("ExcludeSubObjectsNorm", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "creator").build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2000/1/1"),
+                ImmutableMap.of(new GUID("WS:2000/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
+                false);
+        
+        // sub object
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("ExcludeSubObjectsSub", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .toSubObjectRule(
+                                "sub", new ObjectJsonPath("subpath"), new ObjectJsonPath("id"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "creator").build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2000/2/1"),
+                ImmutableMap.of(new GUID("WS:2000/2/1:sub/yay"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
+                false);
+        
+        final Set<GUID> res = indexStorage.searchIds(
+                null, MatchFilter.create().withFullTextInAll("imaprettypony"), null,
+                AccessFilter.create().withAccessGroups(2000), false);
+        assertThat("incorrect objects found", res,
+                is(set(new GUID("WS:2000/1/1"), new GUID("WS:2000/2/1:sub/yay"))));
+        
+        final Set<GUID> res2 = indexStorage.searchIds(
+                null, MatchFilter.create().withFullTextInAll("imaprettypony"), null,
+                AccessFilter.create().withAccessGroups(2000), true);
+        assertThat("incorrect objects found", res2, is(set(new GUID("WS:2000/1/1"))));
     }
 
 }

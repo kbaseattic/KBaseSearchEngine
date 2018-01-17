@@ -278,8 +278,9 @@ public class SearchMethods {
         kbasesearchengine.search.Pagination pagination = toSearch(params.getPagination());
         kbasesearchengine.search.PostProcessing postProcessing = 
                 toSearch(params.getPostProcessing());
+        //TODO NNOW exludeSubObjects from input
         FoundHits hits = indexingStorage.searchObjects(params.getObjectType(),
-                matchFilter, sorting, accessFilter, pagination, postProcessing);
+                matchFilter, sorting, accessFilter, pagination, postProcessing, false);
         SearchObjectsOutput ret = new SearchObjectsOutput();
         ret.withPagination(fromSearch(hits.pagination));
         ret.withSortingRules(hits.sortingRules.stream().map(this::fromSearch).collect(
