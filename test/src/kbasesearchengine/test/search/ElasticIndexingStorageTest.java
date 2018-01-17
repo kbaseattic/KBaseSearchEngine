@@ -25,7 +25,9 @@ import java.util.stream.Collectors;
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -68,6 +70,10 @@ public class ElasticIndexingStorageTest {
     private static File tempDir = null;
     private static ObjectLookupProvider objLookup;
     private static ElasticSearchController es;
+
+    public ElasticIndexingStorageTest() {
+
+    }
     
     @BeforeClass
     public static void prepare() throws Exception {
@@ -141,6 +147,11 @@ public class ElasticIndexingStorageTest {
                 }
             }
         };
+    }
+
+    @After
+    public void cleanup() throws Exception {
+        indexStorage.dropData();
     }
     
     @AfterClass
@@ -297,6 +308,7 @@ public class ElasticIndexingStorageTest {
 
     @Test
     public void testMultiTypeSearchValidation2() throws Exception {
+        indexObject("Genome", "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
 
         // empty list
         Set<GUID> guids = indexStorage.searchIds(new ArrayList<String>(),
@@ -320,6 +332,7 @@ public class ElasticIndexingStorageTest {
 
     @Test
     public void testMultiTypeSearchValidation4() throws Exception {
+        indexObject("Genome", "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
         List<String> objectTypes;
         Set<GUID> guids;
 
