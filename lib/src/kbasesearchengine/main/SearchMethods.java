@@ -223,28 +223,28 @@ public class SearchMethods {
     private kbasesearchengine.ObjectData fromSearch(
             final kbasesearchengine.search.ObjectData od) {
         final kbasesearchengine.ObjectData ret = new kbasesearchengine.ObjectData();
-        ret.withGuid(od.guid.toString());
+        ret.withGuid(od.getGUID().toString());
         ret.withObjectProps(new HashMap<>());
-        if (od.parentGuid != null) {
-            ret.withParentGuid(od.parentGuid.toString());
+        if (od.getParentGUID().isPresent()) {
+            ret.withParentGuid(od.getParentGUID().get().toString());
         }
-        if (od.timestamp > 0) {
-            ret.withTimestamp(od.timestamp);
+        if (od.getTimestamp().isPresent()) {
+            ret.withTimestamp(od.getTimestamp().get().toEpochMilli());
         }
-        if (od.data != null) {
-            ret.withData(new UObject(od.data));
+        if (od.getData().isPresent()) {
+            ret.withData(new UObject(od.getData().get()));
         }
-        if (od.parentData != null) {
-            ret.withParentData(new UObject(od.parentData));
+        if (od.getParentData().isPresent()) {
+            ret.withParentData(new UObject(od.getParentData().get()));
         }
-        ret.withObjectName(od.objectName);
-        ret.withKeyProps(od.keyProps);
-        addObjectProp(ret, od.creator, "creator");
-        addObjectProp(ret, od.copier, "copied");
-        addObjectProp(ret, od.module, "module");
-        addObjectProp(ret, od.method, "method");
-        addObjectProp(ret, od.moduleVersion, "module_ver");
-        addObjectProp(ret, od.commitHash, "commmit");
+        ret.withObjectName(od.getObjectName().orNull());
+        ret.withKeyProps(od.getKeyProperties());
+        addObjectProp(ret, od.getCreator().orNull(), "creator");
+        addObjectProp(ret, od.getCopier().orNull(), "copied");
+        addObjectProp(ret, od.getModule().orNull(), "module");
+        addObjectProp(ret, od.getMethod().orNull(), "method");
+        addObjectProp(ret, od.getModuleVersion().orNull(), "module_ver");
+        addObjectProp(ret, od.getCommitHash().orNull(), "commmit");
         return ret;
     }
     
