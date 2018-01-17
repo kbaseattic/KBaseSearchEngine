@@ -1128,7 +1128,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return bool2Wrapper;
     }
     
-    //TODO NNOW support ignore subobjects
     //TODO VERS should this return SearchObjectType -> Integer map? Maybe an option to combine versions
     @Override
     public Map<String, Integer> searchTypes(MatchFilter matchFilter,
@@ -1165,7 +1164,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
                                                   "aggregations", aggs,
                                                   "size", 0);
 
-        String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
+        String urlPath = "/" + indexNamePrefix + "*" +
+                (matchFilter.excludeSubObjects ? EXCLUDE_SUB_OJBS_URL_SUFFIX : "") +
+                "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(

@@ -714,6 +714,22 @@ public class ElasticIndexingStorageTest {
                 null,
                 AccessFilter.create().withAccessGroups(2000));
         assertThat("incorrect objects found", res2, is(set(new GUID("WS:2000/1/1"))));
+        
+        final Map<String, Integer> count = indexStorage.searchTypes(
+                MatchFilter.create().withFullTextInAll("imaprettypony"),
+                AccessFilter.create().withAccessGroups(2000));
+        
+        assertThat("incorrect type count", count, is(ImmutableMap.of(
+                "ExcludeSubObjectsSub", 1,
+                "ExcludeSubObjectsNorm", 1)));
+        
+        final Map<String, Integer> count2 = indexStorage.searchTypes(
+                MatchFilter.create().withFullTextInAll("imaprettypony")
+                        .withExcludeSubObjects(true),
+                AccessFilter.create().withAccessGroups(2000));
+        
+        assertThat("incorrect type count", count2, is(ImmutableMap.of(
+                "ExcludeSubObjectsNorm", 1)));
     }
 
 }
