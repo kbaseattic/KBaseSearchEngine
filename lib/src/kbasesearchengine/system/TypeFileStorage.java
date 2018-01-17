@@ -217,6 +217,13 @@ public class TypeFileStorage implements TypeStorage {
                         }
                         ret.put(cnt, map);
                     }
+                    final String source = mappings.iterator().next().getSourceInfo().orNull();
+                    logger.logInfo(String.format(TYPE_STORAGE +
+                            " Processed type mapping file with storage code %s and types %s.%s",
+                            mappings.iterator().next().getStorageCode(),
+                            String.join(", ", mappings.stream().map(m -> m.getStorageType())
+                                    .sorted().collect(Collectors.toList())),
+                            source == null ? "" : " File: " + source));
                 } else {
                     logger.logInfo(TYPE_STORAGE + " Skipping file in type mapping directory: " +
                             file);

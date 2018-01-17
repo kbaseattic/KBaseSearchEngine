@@ -175,6 +175,7 @@ public class TypeFileStorageTest {
                         "code CD, storage type storefoo and search type foo: foo.yaml");
         verify(logger).logInfo("[TypeStorage] Skipping file in type tranformation directory: " +
                         "ignore.bar");
+        verifyNoMoreInteractions(logger);
         verify(mappingParser1, never()).parse(any(), any());
         verify(mappingParser2, never()).parse(any(), any());
     }
@@ -237,6 +238,7 @@ public class TypeFileStorageTest {
                 
         verify(logger).logInfo("[TypeStorage] Processed type tranformation file with storage " +
                         "code CD, storage type storefoo and search type foo: foo.yaml");
+        verifyNoMoreInteractions(logger);
     }
     
     @Test
@@ -313,6 +315,9 @@ public class TypeFileStorageTest {
         verify(logger).logInfo("[TypeStorage] Overriding type mapping for storage code CD and " +
                 "storage type storefoo from type transformation file with definition from " +
                 "type mapping file");
+        verify(logger).logInfo("[TypeStorage] Processed type mapping file with storage code CD " +
+                "and types storefoo.");
+        verifyNoMoreInteractions(logger);
     }
     
     @Test
@@ -408,6 +413,9 @@ public class TypeFileStorageTest {
         verify(logger).logInfo("[TypeStorage] Overriding type mapping for storage code CD and " +
                 "storage type storefoo from type transformation file with definition from " +
                 "type mapping file map source file");
+        verify(logger).logInfo("[TypeStorage] Processed type mapping file with storage code CD " +
+                "and types storefoo. File: map source file");
+        verifyNoMoreInteractions(logger);
     }
     
     @Test
@@ -494,6 +502,8 @@ public class TypeFileStorageTest {
         
         verify(logger).logInfo("[TypeStorage] Processed type tranformation file with storage " +
                         "code CD, storage type storefoo and search type foo: foo.yaml");
+        verify(logger).logInfo("[TypeStorage] Processed type mapping file with storage code CD " +
+                        "and types storebar.");
         verifyNoMoreInteractions(logger);
     }
     

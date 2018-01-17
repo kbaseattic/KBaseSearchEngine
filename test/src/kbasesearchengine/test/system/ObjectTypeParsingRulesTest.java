@@ -5,6 +5,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import org.junit.Test;
 
@@ -23,6 +24,23 @@ public class ObjectTypeParsingRulesTest {
     @Test
     public void equals() {
         EqualsVerifier.forClass(ObjectTypeParsingRules.class).usingGetClass().verify();
+    }
+    
+    @Test
+    public void buildWithoutIndexingRule() {
+        final ObjectTypeParsingRules r = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1), new StorageObjectType("bar", "baz"))
+                .build();
+        
+        assertThat("incorrect global type", r.getGlobalObjectType(),
+                is(new SearchObjectType("foo", 1)));
+        assertThat("incorrect UI name", r.getUiTypeName(), is("Foo"));
+        assertThat("incorrect storage type", r.getStorageObjectType(),
+                is(new StorageObjectType("bar", "baz")));
+        assertThat("incorrect index rules", r.getIndexingRules(), is(Collections.emptyList()));
+        assertThat("incorrect subobj type", r.getSubObjectType(), is(Optional.absent()));
+        assertThat("incorrect subobj path", r.getSubObjectPath(), is(Optional.absent()));
+        assertThat("incorrect subobj id path", r.getSubObjectIDPath(), is(Optional.absent()));
     }
     
     @Test
@@ -200,19 +218,6 @@ public class ObjectTypeParsingRulesTest {
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
-        }
-    }
-    
-    @Test
-    public void buildFail() {
-        try {
-            ObjectTypeParsingRules.getBuilder(
-                    new SearchObjectType("t", 1),
-                    new StorageObjectType("c", "t")).build();
-            fail("expected exception");
-        } catch (Exception got) {
-            TestCommon.assertExceptionCorrect(got, new IllegalStateException(
-                    "Must supply at least one indexing rule"));
         }
     }
     

@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +69,9 @@ import workspace.WorkspaceClient;
 
 public class IndexerIntegrationTest {
     
+    // should add a setting in the worker and coordinator to shorten the wait time for testing
+    // purposes
+    
     private static IndexerWorker worker = null;
     private static IndexerCoordinator coord = null;
     private static MongoController mongo;
@@ -101,12 +105,14 @@ public class IndexerIntegrationTest {
             throw new TestException("The test tokens are for the same user");
         }
 
-        tempDirPath = Paths.get(TestCommon.getTempDir()).resolve("MainObjectProcessorTest");
+        tempDirPath = Paths.get(TestCommon.getTempDir()).resolve("IndexerIntegrationTest");
         // should refactor to just use NIO at some point
         FileUtils.deleteQuietly(tempDirPath.toFile());
         tempDirPath.toFile().mkdirs();
         final Path searchTypesDir = Files.createDirectories(tempDirPath.resolve("searchtypes"));
         installSearchTypes(searchTypesDir);
+        final Path mappingsDir = Files.createDirectories(tempDirPath.resolve("searchmappings"));
+        installSearchMappings(mappingsDir);
 
         // set up mongo
         mongo = new MongoController(
@@ -132,8 +138,6 @@ public class IndexerIntegrationTest {
                 tempDirPath);
         System.out.println("Started workspace on port " + ws.getServerPort());
         wsdb = mc.getDatabase("IndexerIntegTestWSDB");
-        
-        final Path mappingsDir = Paths.get(TestCommon.TYPE_MAP_REPO_DIR);
         
         URL wsUrl = new URL("http://localhost:" + ws.getServerPort());
         wsCli1 = new WorkspaceClient(wsUrl, userToken);
@@ -176,7 +180,7 @@ public class IndexerIntegrationTest {
         indexStorage = esStorage;
         
         System.out.println("Creating indexer worker");
-        File tempDir = tempDirPath.resolve("MainObjectProcessor").toFile();
+        File tempDir = tempDirPath.resolve("WorkerTemp").toFile();
         tempDir.mkdirs();
         worker = new IndexerWorker("test", Arrays.asList(weh), storage, indexStorage,
                 ss, tempDir, logger);
@@ -190,20 +194,44 @@ public class IndexerIntegrationTest {
     }
     
     private static void installSearchTypes(final Path target) throws IOException {
-        installSearchType("EmptyAType.json", target);
+        installTestFile("EmptyAType.json", target);
+        installTestFile("TwoVersions.yaml", target);
+        installTestFile("NoIndexingRules.yaml", target);
     }
     
-    private static void installSearchType(final String fileName, final Path target)
+    private static void installTestFile(final String fileName, final Path target)
             throws IOException {
         final String file = TestDataLoader.load(fileName);
         Files.write(target.resolve(fileName), file.getBytes());
+    }
+    
+    private static void installSearchMappings(final Path target) throws IOException {
+        installTestFile("TwoVersionsMapping.yaml", target);
     }
     
     private static void loadWSTypes(final URL wsURL, final AuthToken wsadmintoken)
             throws Exception {
         final WorkspaceClient wc = new WorkspaceClient(wsURL, wsadmintoken);
         wc.setIsInsecureHttpConnectionAllowed(true);
+        ownModule(wc, "Empty");
+        ownModule(wc, "TwoVersions");
+        ownModule(wc, "TwoVersionsMapped");
+        ownModule(wc, "NoIndexingRules");
         loadType(wc, "Empty", "Empty.spec", Arrays.asList("AType"));
+        loadType(wc, "TwoVersions", "TwoVersions1.spec", Arrays.asList("Type"));
+        loadType(wc, "TwoVersions", "TwoVersions2.spec", Collections.emptyList());
+        loadType(wc, "TwoVersionsMapped", "TwoVersionsMapped1.spec", Arrays.asList("Type"));
+        loadType(wc, "TwoVersionsMapped", "TwoVersionsMapped2.spec", Collections.emptyList());
+        loadType(wc, "NoIndexingRules", "NoIndexingRules.spec", Arrays.asList("Type"));
+    }
+    
+    private static void ownModule(final WorkspaceClient wc, final String module)
+            throws IOException, JsonClientException {
+        wc.requestModuleOwnership(module);
+        final Map<String, String> cmd = new HashMap<>();
+        cmd.put("command", "approveModRequest");
+        cmd.put("module", module);
+        wc.administer(new UObject(cmd));
     }
 
     private static void loadType(
@@ -214,16 +242,11 @@ public class IndexerIntegrationTest {
             throws IOException, JsonClientException {
         final String typespec = TestDataLoader.load(fileName);
         System.out.println(String.format("Loading type %s to workspace", module));
-        wc.requestModuleOwnership(module);
-        final Map<String, String> cmd = new HashMap<>();
-        cmd.put("command", "approveModRequest");
-        cmd.put("module", module);
-        wc.administer(new UObject(cmd));
         wc.registerTypespec(new RegisterTypespecParams()
                 .withDryrun(0L)
                 .withSpec(typespec)
                 .withNewTypes(types));
-        wc.releaseModule(module);
+        System.out.println("released: " + wc.releaseModule(module));
     }
 
     @AfterClass
@@ -257,15 +280,14 @@ public class IndexerIntegrationTest {
     public void init() throws Exception {
         TestCommon.destroyDB(db);
         TestCommon.destroyDB(wsdb);
-        // should drop elastic indexes as well
+        indexStorage.dropData();
     }
 
     @Test
     public void singleNewVersion() throws Exception {
         // a basic test to ensure all the indexer guts are working together.
+        // also tests provenance
         
-        // should add a setting in the worker and coordinator to shorten the wait time for testing
-        // purposes
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("foo"));
         wsCli1.saveObjects(new SaveObjectsParams()
@@ -285,16 +307,14 @@ public class IndexerIntegrationTest {
                         ))
                 ))
         );
-        final long timestamp = wsCli1.getObjects2(new GetObjects2Params()
-                .withNoData(1L)
-                .withObjects(Arrays.asList(new ObjectSpecification()
-                        .withRef("1/1/1")))).getData().get(0).getEpoch();
+        final long timestamp = getWSTimeStamp("1/1/1");
         
         System.out.println("waiting 5s for event to trickle through the system");
         Thread.sleep(5000); // wait for the indexer & worker to process the event
         
         final ObjectData indexedObj =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/1/1"))).get(0);
+        final Instant indexedTimestamp = indexedObj.getTimestamp().get();
         
         final ObjectData expected = ObjectData.getBuilder(new GUID("WS:1/1/1"))
                 .withNullableObjectName("bar")
@@ -305,13 +325,18 @@ public class IndexerIntegrationTest {
                 .withNullableCommitHash("commit")
                 .withNullableModuleVersion("servver")
                 .withNullableMD5("3c6e8d4dde8a26a0bfca203228cc6a36")
-                .withNullableTimestamp(indexedObj.getTimestamp().get())
+                .withNullableTimestamp(indexedTimestamp)
                 .withNullableData(ImmutableMap.of("whee", "wugga"))
                 .withKeyProperty("whee", "wugga")
                 .build();
         
         assertThat("incorrect indexed object", indexedObj, is(expected));
-        
+        assertWSTimestampCloseToIndexedTimestamp(timestamp, indexedTimestamp);
+    }
+
+    private void assertWSTimestampCloseToIndexedTimestamp(
+            final long workspaceTimestamp,
+            final Instant indexedTimestamp) {
         /* it turns out the ws provenance timestamp and obj_info timestamps are not identical
          * for a freshly saved object since the provenance is saved first. Furthermore, obj_info
          * timestamps have no millisecond info for backwards compatibility reasons
@@ -323,9 +348,193 @@ public class IndexerIntegrationTest {
          * This timestamp is passed to the search service via the NEW_VERSION event, and so
          * has millisecond info.
          */
-        
         TestCommon.assertCloseMS(
-                Instant.ofEpochMilli(timestamp), indexedObj.getTimestamp().get(), 0, 100);
+                Instant.ofEpochMilli(workspaceTimestamp), indexedTimestamp, 0, 100);
+    }
+    
+    @Test
+    public void twoVersionsWithoutMapping() throws Exception {
+        // should always use the 2nd version of the spec for any ws type version
+        // since there are no type mappings
+        
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("foo"));
+        wsCli1.saveObjects(new SaveObjectsParams()
+                .withWorkspace("foo")
+                .withObjects(Arrays.asList(
+                        new ObjectSaveData()
+                                .withData(new UObject(ImmutableMap.of(
+                                        "whee", "wugga",
+                                        "whoo", "thingy",
+                                        "req", "one")))
+                                .withName("obj1")
+                                .withType("TwoVersions.Type-1.0"),
+                        new ObjectSaveData()
+                                .withData(new UObject(ImmutableMap.of(
+                                        "whee", "whug",
+                                        "whoo", "gofasterstripes",
+                                        "req", 1)))
+                                .withName("obj2")
+                                .withType("TwoVersions.Type-2.0")
+                ))
+        );
+        
+        final long timestamp1 = getWSTimeStamp("1/1/1");
+        final long timestamp2 = getWSTimeStamp("1/2/1");
+        
+        System.out.println("waiting 5s for events to trickle through the system");
+        Thread.sleep(5000); // wait for the indexer & worker to process the event
+        
+        final ObjectData indexedObj1 =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/1/1"))).get(0);
+        final Instant indexedTimestamp1 = indexedObj1.getTimestamp().get();
+        
+        final ObjectData indexedObj2 =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/2/1"))).get(0);
+        final Instant indexedTimestamp2 = indexedObj2.getTimestamp().get();
+        
+        final ObjectData expected1 = ObjectData.getBuilder(new GUID("WS:1/1/1"))
+                .withNullableObjectName("obj1")
+                .withNullableType(new SearchObjectType("TwoVers", 2))
+                .withNullableCreator(userToken.getUserName())
+                .withNullableMD5("d20dd9b7a7cd69471b2b13ae7593de90")
+                .withNullableTimestamp(indexedTimestamp1)
+                .withNullableData(ImmutableMap.of("whee", "wugga", "whoo", "thingy"))
+                .withKeyProperty("whee", "wugga")
+                .withKeyProperty("whoo", "thingy")
+                .build();
+        
+        final ObjectData expected2 = ObjectData.getBuilder(new GUID("WS:1/2/1"))
+                .withNullableObjectName("obj2")
+                .withNullableType(new SearchObjectType("TwoVers", 2))
+                .withNullableCreator(userToken.getUserName())
+                .withNullableMD5("51368afbd22bcf7987b98ca28607c67d")
+                .withNullableTimestamp(indexedTimestamp2)
+                .withNullableData(ImmutableMap.of("whee", "whug", "whoo", "gofasterstripes"))
+                .withKeyProperty("whee", "whug")
+                .withKeyProperty("whoo", "gofasterstripes")
+                .build();
+        
+        assertThat("incorrect indexed object", indexedObj1, is(expected1));
+        assertWSTimestampCloseToIndexedTimestamp(timestamp1, indexedTimestamp1);
+        
+        assertThat("incorrect indexed object", indexedObj2, is(expected2));
+        assertWSTimestampCloseToIndexedTimestamp(timestamp2, indexedTimestamp2);
+    }
+    
+    @Test
+    public void twoVersionsWithMapping() throws Exception {
+        
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("foo"));
+        wsCli1.saveObjects(new SaveObjectsParams()
+                .withWorkspace("foo")
+                .withObjects(Arrays.asList(
+                        new ObjectSaveData()
+                                .withData(new UObject(ImmutableMap.of(
+                                        "whee", "wugga",
+                                        "whoo", "thingy",
+                                        "req", "one")))
+                                .withName("obj1")
+                                .withType("TwoVersionsMapped.Type-1.0"),
+                        new ObjectSaveData()
+                                .withData(new UObject(ImmutableMap.of(
+                                        "whee", "whug",
+                                        "whoo", "gofasterstripes",
+                                        "req", 1)))
+                                .withName("obj2")
+                                .withType("TwoVersionsMapped.Type-2.0")
+                ))
+        );
+        
+        final long timestamp1 = getWSTimeStamp("1/1/1");
+        final long timestamp2 = getWSTimeStamp("1/2/1");
+        
+        System.out.println("waiting 5s for events to trickle through the system");
+        Thread.sleep(5000); // wait for the indexer & worker to process the event
+        
+        final ObjectData indexedObj1 =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/1/1"))).get(0);
+        final Instant indexedTimestamp1 = indexedObj1.getTimestamp().get();
+        
+        final ObjectData indexedObj2 =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/2/1"))).get(0);
+        final Instant indexedTimestamp2 = indexedObj2.getTimestamp().get();
+        
+        final ObjectData expected1 = ObjectData.getBuilder(new GUID("WS:1/1/1"))
+                .withNullableObjectName("obj1")
+                .withNullableType(new SearchObjectType("TwoVers", 1))
+                .withNullableCreator(userToken.getUserName())
+                .withNullableMD5("d20dd9b7a7cd69471b2b13ae7593de90")
+                .withNullableTimestamp(indexedTimestamp1)
+                .withNullableData(ImmutableMap.of("whee", "wugga"))
+                .withKeyProperty("whee", "wugga")
+                .build();
+        
+        final ObjectData expected2 = ObjectData.getBuilder(new GUID("WS:1/2/1"))
+                .withNullableObjectName("obj2")
+                .withNullableType(new SearchObjectType("TwoVers", 2))
+                .withNullableCreator(userToken.getUserName())
+                .withNullableMD5("51368afbd22bcf7987b98ca28607c67d")
+                .withNullableTimestamp(indexedTimestamp2)
+                .withNullableData(ImmutableMap.of("whee", "whug", "whoo", "gofasterstripes"))
+                .withKeyProperty("whee", "whug")
+                .withKeyProperty("whoo", "gofasterstripes")
+                .build();
+        
+        assertThat("incorrect indexed object", indexedObj1, is(expected1));
+        assertWSTimestampCloseToIndexedTimestamp(timestamp1, indexedTimestamp1);
+        
+        assertThat("incorrect indexed object", indexedObj2, is(expected2));
+        assertWSTimestampCloseToIndexedTimestamp(timestamp2, indexedTimestamp2);
+    }
+    
+    @Test
+    public void noIndexingRules() throws Exception {
+        // tests that a search spec without any indexing rules still indexes the general object
+        // properties
+        
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("foo"));
+        wsCli1.saveObjects(new SaveObjectsParams()
+                .withWorkspace("foo")
+                .withObjects(Arrays.asList(
+                        new ObjectSaveData()
+                                .withData(new UObject(ImmutableMap.of(
+                                        "whee", "wugga",
+                                        "whoo", "thingy",
+                                        "req", "one")))
+                                .withName("obj1")
+                                .withType("NoIndexingRules.Type-1.0")
+                ))
+        );
+        
+        final long timestamp = getWSTimeStamp("1/1/1");
+        
+        System.out.println("waiting 5s for events to trickle through the system");
+        Thread.sleep(5000); // wait for the indexer & worker to process the event
+        
+        final ObjectData indexedObj =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/1/1"))).get(0);
+        final Instant indexedTimestamp = indexedObj.getTimestamp().get();
+        
+        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:1/1/1"))
+                .withNullableObjectName("obj1")
+                .withNullableType(new SearchObjectType("NoIndexRules", 1))
+                .withNullableCreator(userToken.getUserName())
+                .withNullableMD5("d20dd9b7a7cd69471b2b13ae7593de90")
+                .withNullableTimestamp(indexedTimestamp)
+                .build();
+        
+        assertThat("incorrect indexed object", indexedObj, is(expected));
+        assertWSTimestampCloseToIndexedTimestamp(timestamp, indexedTimestamp);
+    }
+
+    private long getWSTimeStamp(final String ref) throws IOException, JsonClientException {
+        return wsCli1.getObjects2(new GetObjects2Params()
+                .withNoData(1L)
+                .withObjects(Arrays.asList(new ObjectSpecification().withRef(ref))))
+                .getData().get(0).getEpoch();
     }
     
 }
