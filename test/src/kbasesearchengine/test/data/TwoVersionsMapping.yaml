@@ -1,0 +1,13 @@
+storage-type: WS
+
+types:
+    TwoVersionsMapped.Type:
+        versions:
+            1:
+                -
+                    type: TwoVers
+                    version: 1
+            2:
+                -
+                    type: TwoVers
+                    version: 2

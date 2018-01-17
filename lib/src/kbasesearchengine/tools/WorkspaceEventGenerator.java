@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 
 import org.bson.Document;
 
+import com.mongodb.DBObject;
 import com.mongodb.MongoException;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
@@ -42,6 +43,11 @@ import kbasesearchengine.system.StorageObjectType;
  */
 public class WorkspaceEventGenerator {
     
+    private static final String META_KEY = "k";
+    private static final String META_VALUE = "v";
+    private static final String TRUE = "true";
+    private static final String IS_TEMP_NARRATIVE = "is_temporary";
+    private static final String NARRATIVE_TYPE = "KBaseNarrative.Narrative";
     private static final int WS_COMPATIBLE_SCHEMA = 1;
     private static final String WS_COL_CONFIG = "config";
     private static final String WS_COL_WORKSPACES = "workspaces";
@@ -54,6 +60,7 @@ public class WorkspaceEventGenerator {
     private static final String WS_KEY_WS_NAME = "name";
     private static final String WS_KEY_OBJ_ID = "id";
     private static final String WS_KEY_VER = "ver";
+    private static final String WS_KEY_META = "meta";
     private static final String WS_KEY_TYPE = "type";
     private static final String WS_KEY_SAVEDATE = "savedate";
     private static final String WS_KEY_WS_ACL_ID = "id";
@@ -136,7 +143,18 @@ public class WorkspaceEventGenerator {
 
     public void generateEvents() throws EventGeneratorException {
         if (ws > 0) {
-            processWorkspace(ws);
+            final boolean tempNarr;
+            try {
+                final Document wsdoc = wsDB.getCollection(WS_COL_WORKSPACES).find(
+                        new Document(WS_KEY_WS_ID, ws)).first();
+                if (wsdoc == null) {
+                    return;
+                }
+                tempNarr = isTemporaryNarrative(wsdoc);
+            } catch (MongoException e) {
+                throw convert(e, "workspace");
+            }
+            processWorkspace(ws, tempNarr);
         } else {
             try {
                 // don't pull all workspaces at once to try and avoid race conditions
@@ -145,6 +163,7 @@ public class WorkspaceEventGenerator {
                 for (final Document ws: cur) {
                     final int id = Math.toIntExact(ws.getLong(WS_KEY_WS_ID));
                     final String wsname = ws.getString(WS_KEY_WS_NAME);
+                    final boolean tempNarr = isTemporaryNarrative(ws);
                     if (wsBlackList.contains(new WorkspaceIdentifier(id)) ||
                             wsBlackList.contains(new WorkspaceIdentifier(wsname))) {
                         log(String.format("Skipping blacklisted workspace %s (%s)",
@@ -152,7 +171,7 @@ public class WorkspaceEventGenerator {
                     } else if (ws.getBoolean(WS_KEY_WS_DEL)) {
                         log(String.format("Skipping deleted workspace %s (%s)", id, wsname));
                     } else {
-                        processWorkspace(id);
+                        processWorkspace(id, tempNarr);
                     }
                 }
             } catch (MongoException e) {
@@ -161,8 +180,15 @@ public class WorkspaceEventGenerator {
         }
         log("Finished processing.");
     }
+
+    private boolean isTemporaryNarrative(final Document doc) {
+        @SuppressWarnings("unchecked")
+        final Map<String, String> meta = metaMongoArrayToHash((List<Object>) doc.get(WS_KEY_META));
+        return TRUE.equals(meta.get(IS_TEMP_NARRATIVE));
+    }
     
-    private void processWorkspace(final int wsid) throws EventGeneratorException {
+    private void processWorkspace(final int wsid, final boolean tempNarr)
+            throws EventGeneratorException {
         final boolean pub = isPub(wsid);
         final Document query = new Document(WS_KEY_WS_ID, wsid);
         if (obj > 0) {
@@ -182,26 +208,55 @@ public class WorkspaceEventGenerator {
 
         Versions vers = new Versions(vercur, 10000);
         while (!vers.isEmpty()) {
-            processVers(wsid, vers, pub);
+            processVers(wsid, vers, pub, tempNarr);
             vers = new Versions(vercur, 10000);
         }
     }
 
-    private void processVers(final int wsid, final Versions vers, final boolean pub)
+    private void processVers(
+            final int wsid,
+            final Versions vers,
+            final boolean pub,
+            final boolean tempNarr)
             throws EventGeneratorException {
         final Map<Integer, Document> objects = getObjects(wsid, vers.minObjId, vers.maxObjId);
         for (final Document ver: vers.versions) {
             final int objid = Math.toIntExact(ver.getLong(WS_KEY_OBJ_ID));
             final Document obj = objects.get(objid);
+            final int version = ver.getInteger(WS_KEY_VER);
             if (obj.getBoolean(WS_KEY_OBJ_DEL)) {
-                final int version = ver.getInteger(WS_KEY_VER);
                 log(String.format("Skipping deleted object %s/%s/%s", wsid, objid, version));
+            } else if (ver.getString(WS_KEY_TYPE).startsWith(NARRATIVE_TYPE) &&
+                    // isTemporaryNarrative uses the new key in the object metadata
+                    // tempNarr is the key from the workspace metadata for older objects
+                    (isTemporaryNarrative(ver) || tempNarr)) {
+                log(String.format("Skipping temporary narrative %s/%s/%s", wsid, objid, version));
             } else {
                 generateEvent(wsid, pub, ver);
             }
         }
     }
 
+    private static Map<String, String> metaMongoArrayToHash(final List<? extends Object> meta) {
+        final Map<String, String> ret = new HashMap<String, String>();
+        if (meta != null) {
+            for (final Object o: meta) {
+                //frigging mongo
+                if (o instanceof DBObject) {
+                    final DBObject dbo = (DBObject) o;
+                    ret.put((String) dbo.get(META_KEY),
+                            (String) dbo.get(META_VALUE));
+                } else {
+                    @SuppressWarnings("unchecked")
+                    final Map<String, String> m = (Map<String, String>) o;
+                    ret.put(m.get(META_KEY),
+                            m.get(META_VALUE));
+                }
+            }
+        }
+        return ret;
+    }
+    
     private void generateEvent(final int wsid, final boolean pub, final Document ver)
             throws EventGeneratorException {
         final int objid = Math.toIntExact(ver.getLong(WS_KEY_OBJ_ID));

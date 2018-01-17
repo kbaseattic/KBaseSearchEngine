@@ -10,6 +10,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -107,7 +109,8 @@ public class ElasticIndexingStorageTest {
                 } catch (IOException e) {
                     throw new FatalIndexingException(e.getMessage(), e);
                 }
-                return objList.stream().collect(Collectors.toMap(od -> od.guid, Function.identity()));
+                return objList.stream().collect(
+                        Collectors.toMap(od -> od.getGUID(), Function.identity()));
             }
             
             @Override
@@ -130,7 +133,7 @@ public class ElasticIndexingStorageTest {
                 pp.objectInfo = true;
                 try {
                     return indexStorage.getObjectsByIds(guids, pp).stream().collect(
-                            Collectors.toMap(od -> od.guid, od -> od.type));
+                            Collectors.toMap(od -> od.getGUID(), od -> od.getType().get()));
                 } catch (IOException e) {
                     throw new FatalIndexingException(e.getMessage(), e);
                 }
@@ -238,17 +241,17 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals(1, objList.size());
         ObjectData featureIndex = objList.get(0);
         //System.out.println("GenomeFeature index: " + featureIndex);
-        Map<String, Object> obj = (Map<String, Object>)featureIndex.data;
+        Map<String, Object> obj = (Map<String, Object>)featureIndex.getData().get();
         Assert.assertTrue(obj.containsKey("id"));
         Assert.assertTrue(obj.containsKey("location"));
         Assert.assertTrue(obj.containsKey("function"));
         Assert.assertTrue(obj.containsKey("type"));
-        Assert.assertEquals("NC_000913", featureIndex.keyProps.get("contig_id"));
-        String contigGuidText = featureIndex.keyProps.get("contig_guid");
+        Assert.assertEquals("NC_000913", featureIndex.getKeyProperties().get("contig_id"));
+        String contigGuidText = featureIndex.getKeyProperties().get("contig_guid");
         Assert.assertNotNull("missing contig_guid", contigGuidText);
         ObjectData contigIndex = getIndexedObject(new GUID(contigGuidText));
         //System.out.println("AssemblyContig index: " + contigIndex);
-        Assert.assertEquals("NC_000913", "" + contigIndex.keyProps.get("contig_id"));
+        Assert.assertEquals("NC_000913", "" + contigIndex.getKeyProperties().get("contig_id"));
         // Search by keyword
         ids = indexStorage.searchIds(type, MatchFilter.create().withLookupInKey(
                 "ontology_terms", "SSO:000008186"), null,
@@ -269,14 +272,14 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals(1, guids.size());
         ObjectData genomeIndex = indexStorage.getObjectsByIds(guids).get(0);
         //System.out.println("Genome index: " + genomeIndex);
-        Assert.assertTrue(genomeIndex.keyProps.containsKey("features"));
-        Assert.assertEquals("3", "" + genomeIndex.keyProps.get("features"));
-        Assert.assertEquals("1", "" + genomeIndex.keyProps.get("contigs"));
-        String assemblyGuidText = genomeIndex.keyProps.get("assembly_guid");
+        Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("features"));
+        Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("features"));
+        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contigs"));
+        String assemblyGuidText = genomeIndex.getKeyProperties().get("assembly_guid");
         Assert.assertNotNull(assemblyGuidText);
         ObjectData assemblyIndex = getIndexedObject(new GUID(assemblyGuidText));
         //System.out.println("Assembly index: " + genomeIndex);
-        Assert.assertEquals("1", "" + assemblyIndex.keyProps.get("contigs"));
+        Assert.assertEquals("1", "" + assemblyIndex.getKeyProperties().get("contigs"));
         System.out.println("*** end testGenome***");
     }
     
@@ -339,7 +342,7 @@ public class ElasticIndexingStorageTest {
     
     @Test
     public void testSharing() throws Exception {
-        SearchObjectType objType = new SearchObjectType("Sharable",1 );
+        SearchObjectType objType = new SearchObjectType("Sharable", 1);
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop2"))
                 .withKeywordType("integer").build();
         List<IndexingRules> indexingRules= Arrays.asList(ir);
@@ -584,41 +587,69 @@ public class ElasticIndexingStorageTest {
         final ObjectData indexedObj1 =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/2/3"))).get(0);
         
-        final ObjectData expected1 = new ObjectData();
-        expected1.guid = new GUID("WS:1/2/3");
-        expected1.objectName = "o1";
-        expected1.type = type1;
-        expected1.creator = "creator";
-        expected1.module = null;
-        expected1.method = null;
-        expected1.commitHash = null;
-        expected1.moduleVersion = null;
-        expected1.md5 = null;
-        expected1.timestamp = now.toEpochMilli();
-        expected1.data = ImmutableMap.of("bar", 1);
-        expected1.keyProps = ImmutableMap.of("bar", "1");
+        final ObjectData expected1 = ObjectData.getBuilder(new GUID("WS:1/2/3"))
+                .withNullableObjectName("o1")
+                .withNullableType(type1)
+                .withNullableCreator("creator")
+                .withNullableTimestamp(now)
+                .withNullableData(ImmutableMap.of("bar", 1))
+                .withKeyProperty("bar", "1")
+                .build();
         
         assertThat("incorrect indexed object", indexedObj1, is(expected1));
         
         final ObjectData indexedObj2 =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:4/5/6"))).get(0);
-        
-        final ObjectData expected2 = new ObjectData();
-        expected2.guid = new GUID("WS:4/5/6");
-        expected2.objectName = "o2";
-        expected2.type = type2;
-        expected2.creator = "creator";
-        expected2.module = null;
-        expected2.method = null;
-        expected2.commitHash = null;
-        expected2.moduleVersion = null;
-        expected2.md5 = null;
-        expected2.timestamp = now.toEpochMilli();
-        expected2.data = ImmutableMap.of("bar", "whee");
-        expected2.keyProps = ImmutableMap.of("bar", "whee");
-        
+
+        final ObjectData expected2 = ObjectData.getBuilder(new GUID("WS:4/5/6"))
+                .withNullableObjectName("o2")
+                .withNullableType(type2)
+                .withNullableCreator("creator")
+                .withNullableTimestamp(now)
+                .withNullableData(ImmutableMap.of("bar", "whee"))
+                .withKeyProperty("bar", "whee")
+                .build();
+
         assertThat("incorrect indexed object", indexedObj2, is(expected2));
         
+    }
+    
+    @Test
+    public void noIndexingRules() throws Exception {
+        indexStorage.indexObjects(
+                new SearchObjectType("NoIndexingRules", 1),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "creator")
+                        .withNullableCommitHash("commit")
+                        .withNullableCopier("cop")
+                        .withNullableMD5("emmdeefive")
+                        .withNullableMethod("meth")
+                        .withNullableModule("mod")
+                        .withNullableVersion("ver")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1000/1/1"),
+                Collections.emptyMap(),
+                false,
+                Collections.emptyList());
+        
+        final ObjectData indexedObj =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1000/1/1"))).get(0);
+        
+        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:1000/1/1"))
+                .withNullableObjectName("objname")
+                .withNullableType(new SearchObjectType("NoIndexingRules", 1))
+                .withNullableCreator("creator")
+                .withNullableCommitHash("commit")
+                .withNullableCopier("cop")
+                .withNullableMD5("emmdeefive")
+                .withNullableMethod("meth")
+                .withNullableModule("mod")
+                .withNullableModuleVersion("ver")
+                .withNullableTimestamp(Instant.ofEpochMilli(10000))
+                .build();
+        
+        assertThat("incorrect indexed object", indexedObj, is(expected));
     }
 
 }
