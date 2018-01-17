@@ -300,7 +300,7 @@ public class IndexerWorkerIntegrationTest {
         System.out.println("Genome: " + storage.getObjectsByIds(
                 storage.searchIds("Genome",
                         MatchFilter.create().withFullTextInAll("test"), null,
-                        AccessFilter.create().withAdmin(true), null, false).guids, pp).get(0));
+                        AccessFilter.create().withAdmin(true), null).guids, pp).get(0));
         String query = "TrkA";
         Map<String, Integer> typeToCount = storage.searchTypes(
                 MatchFilter.create().withFullTextInAll(query), 
@@ -312,7 +312,7 @@ public class IndexerWorkerIntegrationTest {
         String type = typeToCount.keySet().iterator().next();
         Set<GUID> guids = storage.searchIds(type,
                 MatchFilter.create().withFullTextInAll(query), null,
-                AccessFilter.create().withAdmin(true), null, false).guids;
+                AccessFilter.create().withAdmin(true), null).guids;
         System.out.println("GUIDs found: " + guids);
         ObjectData obj = storage.getObjectsByIds(guids, pp).get(0);
         System.out.println("Feature: " + obj);
@@ -347,7 +347,7 @@ public class IndexerWorkerIntegrationTest {
             throws Exception {
         Set<GUID> ids = storage.searchIds(type, 
                 MatchFilter.create().withFullTextInAll(query), null, 
-                AccessFilter.create().withAccessGroups(accessGroupId), null, false).guids;
+                AccessFilter.create().withAccessGroups(accessGroupId), null).guids;
         if (debugOutput) {
             PostProcessing pp = new PostProcessing();
             pp.objectInfo = true;

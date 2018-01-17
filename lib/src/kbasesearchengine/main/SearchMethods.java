@@ -132,6 +132,7 @@ public class SearchMethods {
     }
     
     private kbasesearchengine.search.MatchFilter toSearch(MatchFilter mf) {
+        //TODO NNOW exludeSubObjects from input
         kbasesearchengine.search.MatchFilter ret = 
                 new kbasesearchengine.search.MatchFilter()
                 .withFullTextInAll(mf.getFullTextInAll())
@@ -278,9 +279,8 @@ public class SearchMethods {
         kbasesearchengine.search.Pagination pagination = toSearch(params.getPagination());
         kbasesearchengine.search.PostProcessing postProcessing = 
                 toSearch(params.getPostProcessing());
-        //TODO NNOW exludeSubObjects from input
         FoundHits hits = indexingStorage.searchObjects(params.getObjectType(),
-                matchFilter, sorting, accessFilter, pagination, postProcessing, false);
+                matchFilter, sorting, accessFilter, pagination, postProcessing);
         SearchObjectsOutput ret = new SearchObjectsOutput();
         ret.withPagination(fromSearch(hits.pagination));
         ret.withSortingRules(hits.sortingRules.stream().map(this::fromSearch).collect(

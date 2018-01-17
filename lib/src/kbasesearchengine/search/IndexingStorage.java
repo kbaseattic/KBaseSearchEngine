@@ -82,8 +82,7 @@ public interface IndexingStorage {
             MatchFilter matchFilter,
             List<SortingRule> sorting,
             AccessFilter accessFilter,
-            Pagination pagination,
-            boolean excludeSubObjects)
+            Pagination pagination)
             throws IOException;
 
     public FoundHits searchObjects(
@@ -92,8 +91,7 @@ public interface IndexingStorage {
             List<SortingRule> sorting,
             AccessFilter accessFilter,
             Pagination pagination,
-            PostProcessing postProcessing,
-            boolean excludeSubObjects)
+            PostProcessing postProcessing)
             throws IOException;
 
     /** Change the name of all the versions of an object.

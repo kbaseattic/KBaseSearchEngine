@@ -703,13 +703,16 @@ public class ElasticIndexingStorageTest {
         
         final Set<GUID> res = indexStorage.searchIds(
                 null, MatchFilter.create().withFullTextInAll("imaprettypony"), null,
-                AccessFilter.create().withAccessGroups(2000), false);
+                AccessFilter.create().withAccessGroups(2000));
         assertThat("incorrect objects found", res,
                 is(set(new GUID("WS:2000/1/1"), new GUID("WS:2000/2/1:sub/yay"))));
         
         final Set<GUID> res2 = indexStorage.searchIds(
-                null, MatchFilter.create().withFullTextInAll("imaprettypony"), null,
-                AccessFilter.create().withAccessGroups(2000), true);
+                null,
+                MatchFilter.create().withFullTextInAll("imaprettypony")
+                        .withExcludeSubObjects(true),
+                null,
+                AccessFilter.create().withAccessGroups(2000));
         assertThat("incorrect objects found", res2, is(set(new GUID("WS:2000/1/1"))));
     }
 

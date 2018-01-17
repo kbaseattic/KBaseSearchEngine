@@ -1128,6 +1128,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return bool2Wrapper;
     }
     
+    //TODO NNOW support ignore subobjects
     //TODO VERS should this return SearchObjectType -> Integer map? Maybe an option to combine versions
     @Override
     public Map<String, Integer> searchTypes(MatchFilter matchFilter,
@@ -1190,11 +1191,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final MatchFilter matchFilter,
             final List<SortingRule> sorting,
             final AccessFilter accessFilter,
-            final Pagination pagination,
-            final boolean excludeSubObjects)
+            final Pagination pagination)
             throws IOException {
-        return queryHits(objectType, prepareMatchFilters(matchFilter),
-                sorting, accessFilter, pagination, null, excludeSubObjects);
+        return queryHits(objectType, matchFilter, sorting, accessFilter, pagination, null);
     }
 
     @Override
@@ -1204,22 +1203,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final List<SortingRule> sorting,
             final AccessFilter accessFilter,
             final Pagination pagination,
-            final PostProcessing postProcessing,
-            final boolean excludeSubObjects)
+            final PostProcessing postProcessing)
             throws IOException {
-        return queryHits(objectType, prepareMatchFilters(matchFilter),
-                sorting, accessFilter, pagination, postProcessing, excludeSubObjects);
-    }
-    
-    // this is only used for tests
-    public Set<GUID> searchIds(
-            final String objectType,
-            final MatchFilter matchFilter, 
-            final List<SortingRule> sorting,
-            final AccessFilter accessFilter)
-            throws IOException {
-        return searchIds(objectType, matchFilter, sorting, accessFilter, false);
-        
+        return queryHits(objectType, matchFilter, sorting, accessFilter, pagination,
+                postProcessing);
     }
     
  // this is only used for tests
@@ -1227,11 +1214,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final String objectType,
             final MatchFilter matchFilter, 
             final List<SortingRule> sorting,
-            final AccessFilter accessFilter,
-            final boolean excludeSubObjects)
+            final AccessFilter accessFilter)
             throws IOException {
-        return searchIds(objectType, matchFilter, sorting, accessFilter, null, excludeSubObjects)
-                .guids;
+        return searchIds(objectType, matchFilter, sorting, accessFilter, null).guids;
     }
 
     private List<Map<String, Object>> prepareMatchFilters(MatchFilter matchFilter) {
@@ -1337,12 +1322,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     private FoundHits queryHits(
             final String objectType,
-            final List<Map<String, Object>> matchFilters, 
+            final MatchFilter matchFilter, 
             List<SortingRule> sorting,
             final AccessFilter accessFilter,
             final Pagination pg,
-            final PostProcessing pp,
-            final boolean excludeSubObjects)
+            final PostProcessing pp)
             throws IOException {
         // initialize args
         int pgStart = pg == null || pg.start == null ? 0 : pg.start;
@@ -1377,7 +1361,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         // Rest of query
         Map<String, Object> query =
                 ImmutableMap.of("bool",
-                   ImmutableMap.of("must", matchFilters,
+                   ImmutableMap.of("must", prepareMatchFilters(matchFilter),
                                    "filter", Arrays.asList(
                                            ImmutableMap.of("bool",
                                               ImmutableMap.of("should", shouldList)))));
@@ -1403,7 +1387,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             sort.add(sortOrderWrapper);
         }
         String indexName = objectType == null ? getAnyIndexPattern() : checkIndex(objectType);
-        if (excludeSubObjects) {
+        if (matchFilter.excludeSubObjects) {
             indexName += EXCLUDE_SUB_OJBS_URL_SUFFIX;
         }
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
