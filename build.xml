@@ -42,6 +42,7 @@
     <include name="servlet/servlet-api-2.5.jar"/>
     <include name="slf4j/slf4j-api-1.7.7.jar"/>
     <include name="syslog4j/syslog4j-0.9.46.jar"/>
+    <include name="mustache/compiler-0.9.3.jar"/>
     <include name="kbase/workspace/WorkspaceClient-0.6.0.jar"/>
     <include name="apache_commons/commons-logging-1.1.1.jar"/>
     <include name="apache_commons/commons-io-2.4.jar"/>
@@ -178,6 +179,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
             <include name="kbasesearchengine/test/system/TypeFileStorageTest.java"/>
             <include name="kbasesearchengine/test/system/TypeMappingTest.java"/>
             <include name="kbasesearchengine/test/system/TransformTest.java"/>
+            <include name="kbasesearchengine/test/tools/SearchToolsTest.java"/>
             <include name="kbasesearchengine/test/main/IndexerCoordinatorTest.java"/>
             <include name="kbasesearchengine/test/main/IndexerWorkerTest.java"/>
           </fileset>

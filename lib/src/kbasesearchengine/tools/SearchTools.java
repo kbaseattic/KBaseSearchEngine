@@ -5,7 +5,10 @@ import static kbasesearchengine.tools.Utils.nonNull;
 import java.io.Console;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
@@ -17,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Scanner;
 import java.util.UUID;
 
 import kbasesearchengine.common.FileUtil;
@@ -26,6 +30,8 @@ import org.slf4j.LoggerFactory;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.github.mustachejava.DefaultMustacheFactory;
+import com.github.mustachejava.MustacheFactory;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.mongodb.MongoClient;
@@ -162,6 +168,17 @@ public class SearchTools {
             printError("For config file " + a.configPath, e, a.verbose);
             return 1;
         }
+        boolean noCommand = true; // this seems dumb...
+        if (a.specPath != null) {
+            try {
+                new MinimalSpecGenerator().generateMinimalSearchSpec(
+                        Paths.get(a.specPath), a.storageType, a.searchType, a.storageObjectType);
+                noCommand = false;
+            } catch (IllegalArgumentException | IOException e) {
+                printError(e, a.verbose);
+                return 1;
+            }
+        }
         try {
             setUpMongoDBs(cfg, a.genWSEvents, a.dropDB || a.startCoordinator || startWorker);
             setUpElasticSearch(cfg, a.dropDB || startWorker);
@@ -169,7 +186,6 @@ public class SearchTools {
             printError(e, a.verbose);
             return 1;
         }
-        boolean noCommand = true; // this seems dumb...
         if (a.dropDB) {
             try {
                 deleteMongoDB();
@@ -219,6 +235,54 @@ public class SearchTools {
             usage(jc);
         }
         return 0;
+    }
+    
+    public static class MinimalSpecGenerator {
+        
+        private static final String SPEC_TEMPLATE_FILE = "search_spec.yaml.template";
+        private final MustacheFactory mf = new DefaultMustacheFactory();
+        
+        private final String template;
+        
+        public MinimalSpecGenerator() throws IOException {
+            template = loadTemplate();
+        }
+        
+        private String loadTemplate() throws IOException {
+            final InputStream is = getClass().getResourceAsStream(SPEC_TEMPLATE_FILE);
+            final Scanner s = new Scanner(is);
+            s.useDelimiter("\\A");
+            final String template = s.next();
+            s.close();
+            return template;
+        }
+    
+        public void generateMinimalSearchSpec(
+                final Path specPath,
+                final String storageType,
+                final String searchType,
+                final String storageObjectType)
+                throws IOException {
+            if (specPath == null) {
+                throw new IllegalArgumentException("spec path is missing");
+            }
+            if (Utils.isNullOrEmpty(storageType)) {
+                throw new IllegalArgumentException("storage type must be provided in arguments");
+            }
+            if (Utils.isNullOrEmpty(searchType)) {
+                throw new IllegalArgumentException("search type must be provided in arguments");
+            }
+            if (Utils.isNullOrEmpty(storageObjectType)) {
+                throw new IllegalArgumentException(
+                        "storage object type must be provided in arguments");
+            }
+            final StringWriter sw = new StringWriter();
+            mf.compile(new StringReader(template), "template").execute(sw, ImmutableMap.of(
+                    "search_type", searchType,
+                    "storage_type", storageType,
+                    "storage_object_type", storageObjectType));
+            Files.write(specPath, sw.toString().getBytes());
+        }
     }
     
     private void waitForReturn(final Stoppable stoppable) throws InterruptedException {
@@ -566,5 +630,27 @@ public class SearchTools {
                 "Generate events for all objects in the workspace service database. " +
                 "Can be used with -r to specify particular workspaces, objects, or versions.")
         private boolean genWSEvents;
+        
+        @Parameter(names = {"--spec"}, description =
+                "Generate a minimal search transformation specification at the provided file " +
+                "location. The --storage-type, --search-type, and --storage-obj-type arguments " +
+                "are required.")
+        private String specPath;
+        
+        @Parameter(names = {"--search-type"}, description =
+                "The search type with which to initialize a new search transformation spec. See " +
+                "--spec.")
+        private String searchType;
+        
+        @Parameter(names = {"--storage-type"}, description =
+                "The storage type (e.g. 'WS') with which to initialize a new search " +
+                "transformation spec. See --spec.")
+        private String storageType;
+        
+        @Parameter(names = {"--storage-object-type"}, description =
+                "The type of the object in a storage system (e.g. 'KBaseGenomes.Genome') with " +
+                "which to initialize a new search transformation spec. See --spec.")
+        private String storageObjectType;
+                        
     }
 }
