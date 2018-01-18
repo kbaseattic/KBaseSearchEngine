@@ -12,10 +12,7 @@ import org.junit.Test;
 
 import kbasesearchengine.events.handler.CloneableWorkspaceClient;
 import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
-import kbasesearchengine.test.common.TestCommon;
-import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
-import us.kbase.auth.ConfigurableAuthService;
 import workspace.WorkspaceClient;
 
 public class CloneableWorkspaceClientImplTest {
@@ -24,10 +21,7 @@ public class CloneableWorkspaceClientImplTest {
     
     @BeforeClass
     public static void getToken() throws Exception {
-        final URL authURL = TestCommon.getAuthUrl();
-        final ConfigurableAuthService authSrv = new ConfigurableAuthService(
-                new AuthConfig().withKBaseAuthServerURL(authURL));
-        userToken = TestCommon.getToken(authSrv);
+        userToken = new AuthToken("fake", "fake");
     }
     
     @Test
