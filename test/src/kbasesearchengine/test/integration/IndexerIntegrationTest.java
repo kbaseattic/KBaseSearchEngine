@@ -50,13 +50,11 @@ import kbasesearchengine.test.common.TestCommon;
 import kbasesearchengine.test.controllers.elasticsearch.ElasticSearchController;
 import kbasesearchengine.test.controllers.workspace.WorkspaceController;
 import kbasesearchengine.test.data.TestDataLoader;
-import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
-import us.kbase.auth.ConfigurableAuthService;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
-import us.kbase.common.test.TestException;
 import us.kbase.common.test.controllers.mongo.MongoController;
+import us.kbase.test.auth2.authcontroller.AuthController;
 import workspace.CreateWorkspaceParams;
 import workspace.GetObjects2Params;
 import workspace.ObjectSaveData;
@@ -72,6 +70,7 @@ public class IndexerIntegrationTest {
     // should add a setting in the worker and coordinator to shorten the wait time for testing
     // purposes
     
+    private static AuthController auth = null;
     private static IndexerWorker worker = null;
     private static IndexerCoordinator coord = null;
     private static MongoController mongo;
@@ -89,21 +88,6 @@ public class IndexerIntegrationTest {
     @BeforeClass
     public static void prepare() throws Exception {
         TestCommon.stfuLoggers();
-        final URL authURL = TestCommon.getAuthUrl();
-        final URL authServiceRootURL;
-        if (authURL.toString().contains("api")) {
-            authServiceRootURL = new URL(authURL.toString().split("api")[0]);
-            System.out.println(String.format("Using %s as auth root URL", authServiceRootURL));
-        } else {
-            authServiceRootURL = authURL;
-        }
-        final ConfigurableAuthService authSrv = new ConfigurableAuthService(
-                new AuthConfig().withKBaseAuthServerURL(authURL));
-        userToken = TestCommon.getToken(authSrv);
-        final AuthToken wsadmintoken = TestCommon.getToken2(authSrv);
-        if (userToken.getUserName().equals(wsadmintoken.getUserName())) {
-            throw new TestException("The test tokens are for the same user");
-        }
 
         tempDirPath = Paths.get(TestCommon.getTempDir()).resolve("IndexerIntegrationTest");
         // should refactor to just use NIO at some point
@@ -123,6 +107,21 @@ public class IndexerIntegrationTest {
         final String eventDBName = "DataStatus";
         db = mc.getDatabase(eventDBName);
         
+        // set up auth
+        auth = new AuthController(
+                TestCommon.getJarsDir(),
+                "localhost:" + mongo.getServerPort(),
+                "IndexerIntTestAuth",
+                tempDirPath);
+        final URL authURL = new URL("http://localhost:" + auth.getServerPort() + "/testmode");
+        System.out.println("started auth server at " + authURL);
+        TestCommon.createAuthUser(authURL, "user1", "display1");
+        TestCommon.createAuthUser(authURL, "user2", "display2");
+        final String token1 = TestCommon.createLoginToken(authURL, "user1");
+        final String token2 = TestCommon.createLoginToken(authURL, "user2");
+        userToken = new AuthToken(token1, "user1");
+        final AuthToken wsadmintoken = new AuthToken(token2, "user2");
+        
         // set up elastic search
         es = new ElasticSearchController(TestCommon.getElasticSearchExe(), tempDirPath);
         
@@ -134,7 +133,7 @@ public class IndexerIntegrationTest {
                 "IndexerIntegTestWSDB",
                 eventDBName,
                 wsadmintoken.getUserName(),
-                authServiceRootURL,
+                authURL,
                 tempDirPath);
         System.out.println("Started workspace on port " + ws.getServerPort());
         wsdb = mc.getDatabase("IndexerIntegTestWSDB");
@@ -261,6 +260,9 @@ public class IndexerIntegrationTest {
         final boolean deleteTempFiles = TestCommon.getDeleteTempFiles();
         if (ws != null) {
             ws.destroy(deleteTempFiles);
+        }
+        if (auth != null) {
+            auth.destroy(deleteTempFiles);
         }
         if (mc != null) {
             mc.close();

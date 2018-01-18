@@ -56,13 +56,11 @@ import kbasesearchengine.test.common.TestCommon;
 import kbasesearchengine.test.controllers.elasticsearch.ElasticSearchController;
 import kbasesearchengine.test.controllers.workspace.WorkspaceController;
 import kbasesearchengine.test.data.TestDataLoader;
-import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
-import us.kbase.auth.ConfigurableAuthService;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
-import us.kbase.common.test.TestException;
 import us.kbase.common.test.controllers.mongo.MongoController;
+import us.kbase.test.auth2.authcontroller.AuthController;
 import workspace.CreateWorkspaceParams;
 import workspace.ObjectSaveData;
 import workspace.RegisterTypespecParams;
@@ -74,7 +72,8 @@ public class IndexerWorkerIntegrationTest {
     /* these tests bring up mongodb, elasticsearch, and the workspace and test the worker
      * interactions with those services.
      */
-	
+
+    private static AuthController auth;
     private static IndexerWorker worker = null;
     private static IndexingStorage storage = null;
     private static MongoController mongo;
@@ -90,21 +89,6 @@ public class IndexerWorkerIntegrationTest {
     @BeforeClass
     public static void prepare() throws Exception {
         TestCommon.stfuLoggers();
-        final URL authURL = TestCommon.getAuthUrl();
-        final URL authServiceRootURL;
-        if (authURL.toString().contains("api")) {
-            authServiceRootURL = new URL(authURL.toString().split("api")[0]);
-            System.out.println(String.format("Using %s as auth root URL", authServiceRootURL));
-        } else {
-            authServiceRootURL = authURL;
-        }
-        final ConfigurableAuthService authSrv = new ConfigurableAuthService(
-                new AuthConfig().withKBaseAuthServerURL(authURL));
-        final AuthToken userToken = TestCommon.getToken(authSrv);
-        final AuthToken wsadmintoken = TestCommon.getToken2(authSrv);
-        if (userToken.getUserName().equals(wsadmintoken.getUserName())) {
-            throw new TestException("The test tokens are for the same user");
-        }
 
         tempDirPath = Paths.get(TestCommon.getTempDir()).resolve("IndexerWorkerIntegrationTest");
         // should refactor to just use NIO at some point
@@ -120,6 +104,21 @@ public class IndexerWorkerIntegrationTest {
         final String dbName = "DataStatus";
         db = mc.getDatabase(dbName);
         
+        // set up auth
+        auth = new AuthController(
+                TestCommon.getJarsDir(),
+                "localhost:" + mongo.getServerPort(),
+                "IndexerIntTestAuth",
+                tempDirPath);
+        final URL authURL = new URL("http://localhost:" + auth.getServerPort() + "/testmode");
+        System.out.println("started auth server at " + authURL);
+        TestCommon.createAuthUser(authURL, "user1", "display1");
+        TestCommon.createAuthUser(authURL, "user2", "display2");
+        final String token1 = TestCommon.createLoginToken(authURL, "user1");
+        final String token2 = TestCommon.createLoginToken(authURL, "user2");
+        final AuthToken userToken = new AuthToken(token1, "user1");
+        final AuthToken wsadmintoken = new AuthToken(token2, "user2");
+        
         // set up elastic search
         es = new ElasticSearchController(TestCommon.getElasticSearchExe(), tempDirPath);
         
@@ -131,7 +130,7 @@ public class IndexerWorkerIntegrationTest {
                 "MOPTestWSDB",
                 dbName,
                 wsadmintoken.getUserName(),
-                authServiceRootURL,
+                authURL,
                 tempDirPath);
         System.out.println("Started workspace on port " + ws.getServerPort());
         
@@ -253,6 +252,9 @@ public class IndexerWorkerIntegrationTest {
     @AfterClass
     public static void tearDownClass() throws Exception {
         final boolean deleteTempFiles = TestCommon.getDeleteTempFiles();
+        if (auth != null) {
+            auth.destroy(deleteTempFiles);
+        }
         if (ws != null) {
             ws.destroy(deleteTempFiles);
         }
