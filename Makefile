@@ -51,6 +51,7 @@ build-startup-script:
 	chmod +x $(SCRIPTS_DIR)/$(STARTUP_SCRIPT_NAME)
 
 docker_image: build build-executable-script
+	ant war
 	-mkdir deployment/lib
 	cp dist/KBaseSearchEngine.war deployment/lib 
 	-mkdir -p deployment/services/search/lib
