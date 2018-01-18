@@ -773,4 +773,27 @@ public class ElasticIndexingStorageTest {
         assertThat("overlapping ranges did not return intersection", hits5.guids, is(set(guid2)));
     }
 
+
+    @Test
+    public void addHighlighting() throws Exception{
+        GUID guid1 = new GUID("WS:11/1/2");
+        GUID guid2 = new GUID("WS:11/2/2");
+        GUID guid3 = new GUID("WS:11/3/2");
+        prepareTestMultiwordSearch(guid1, guid2, guid3);
+        PostProcessing pp = new PostProcessing();
+        pp.objectData = true;
+        pp.objectKeys = false;
+        pp.objectInfo = true;
+
+        final kbasesearchengine.search.MatchFilter filter = new kbasesearchengine.search.MatchFilter();
+        List<kbasesearchengine.search.SortingRule> sorting = null;
+        AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
+
+
+        filter.withFullTextInAll("multiWordInSearchMethod1");
+        FoundHits hits2 = indexStorage.searchObjects(null, filter,sorting, accessFilter, null, pp);
+
+        FoundHits hits3 = indexStorage.searchObjects(null, filter,sorting, accessFilter, null, pp);
+
+    }
 }

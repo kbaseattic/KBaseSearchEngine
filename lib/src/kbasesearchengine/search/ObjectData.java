@@ -1,6 +1,7 @@
 package kbasesearchengine.search;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +34,9 @@ public class ObjectData {
     private final Optional<Object> parentData;
     private final Optional<Object> data;
     private final Map<String, String> keyProps;
-    
+    private Map<String, ArrayList> highlighting;
+
+
     private ObjectData(
             final GUID guid,
             final String objectName,

@@ -21,6 +21,7 @@ import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -1026,15 +1027,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
         for (Map<String, Object> hit : hitList) {
             @SuppressWarnings("unchecked")
             Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
-            ObjectData item = buildObjectData(obj, pp.objectInfo, pp.objectKeys, 
-                    pp.objectData, pp.objectDataIncludes);
-            ret.add(item);
+//            ObjectData item = buildObjectData(obj, pp.objectInfo, pp.objectKeys,
+//                    pp.objectData, pp.objectDataIncludes);
+//            ret.add(item);
         }
         return ret;
     }
 
     private ObjectData buildObjectData(
             final Map<String, Object> obj,
+            final Map<String, ArrayList> highlight,
             final boolean info,
             final boolean keys, 
             final boolean json,
@@ -1363,9 +1365,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
                                    "filter", Arrays.asList(
                                            ImmutableMap.of("bool",
                                               ImmutableMap.of("should", shouldList)))));
+        Map<String, Object> highlight =
+                        ImmutableMap.of("fields",
+                                ImmutableMap.of("*",
+                                        ImmutableMap.of("require_field_match", false)));
 
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
+        doc.put("highlight", highlight);
         doc.put("from", pagination.start);
         doc.put("size", pagination.count);
 
@@ -1388,6 +1395,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, ImmutableMap.copyOf(doc));
         @SuppressWarnings("unchecked")
+//        String results = IOUtils.toString(resp.getEntity().getContent(), "UTF-8");
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         ret.guids = new LinkedHashSet<>();
@@ -1402,13 +1410,27 @@ public class ElasticIndexingStorage implements IndexingStorage {
         for (Map<String, Object> hit : hitList) {
             @SuppressWarnings("unchecked")
             Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
+            Map<String, ArrayList> highlightRes = (Map<String, ArrayList>) hit.get("highlight");
+            Map<String, ArrayList> highlightResEdited = new HashMap<>();
+            for(String key : highlightRes.keySet()){
+                String newKey = key;
+                if(key.startsWith("key.")){
+                    //truncate key. from key
+                    newKey = key.substring(4);
+                }
+                highlightResEdited.put(newKey, highlightRes.get(key));
+
+            }
             String guidText = (String)obj.get("guid");
             ret.guids.add(new GUID(guidText));
             if (loadObjects) {
-                ret.objects.add(buildObjectData(obj, pp.objectInfo, pp.objectKeys, 
+                ret.objects.add(buildObjectData(obj, highlightResEdited, pp.objectInfo, pp.objectKeys,
                     pp.objectData, pp.objectDataIncludes));
             }
         }
+
+
+
         return ret;
     }
     
