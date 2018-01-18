@@ -67,5 +67,5 @@ script:
 after_success:
 - ls work/test-reports/
 - bash <(curl -s https://codecov.io/bash) -t 206d1355-c004-4912-9921-92c6d1c003d5 -f work/test-reports/coverage-report.xml
-- make docker_image
+- JARS_DIR=../jars/lib/jars/ make docker_image
 - IMAGE_NAME=kbase/kb_search build/push2dockerhub.sh
