@@ -25,7 +25,7 @@ public class FileUtilTest {
 
     @BeforeClass
     public static void setup() throws Exception {
-        tempDirPath = Paths.get(TestCommon.getTempDir()).resolve("FileUtilTest");
+        tempDirPath = Paths.get(TestCommon.getTempDir()).resolve("FileUtilTest").toAbsolutePath();
         tempDirPath.toFile().mkdirs();
     }
 
