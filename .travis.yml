@@ -57,7 +57,7 @@ install:
 
 script:
 - pwd
-- and compile -Djars.dir=../jars/lib/jars/
+- ant compile -Djars.dir=../jars/lib/jars/
 - ant test-report -Dtest.cfg=test.cfg -Djars.dir=../jars/lib/jars/
 
 after_success:
