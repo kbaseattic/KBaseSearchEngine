@@ -783,11 +783,11 @@ public class ElasticIndexingStorageTest {
         pp.objectInfo = true;
         pp.objectHighlight = true;
 
-        final kbasesearchengine.search.MatchFilter filter = new kbasesearchengine.search.MatchFilter();
         List<kbasesearchengine.search.SortingRule> sorting = null;
         AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
 
         //searchObjects
+        final kbasesearchengine.search.MatchFilter filter = new kbasesearchengine.search.MatchFilter();
         filter.withFullTextInAll("multiWordInSearchMethod1 multiWordInSearchMethod2");
         FoundHits hits = indexStorage.searchObjects(null, filter,sorting, accessFilter, null, pp);
         Map<String, ArrayList> hitres = hits.objects.get(0).getHighlight();
@@ -796,10 +796,12 @@ public class ElasticIndexingStorageTest {
         assertThat("Incorrect portion highlihgted", hitres.get("prop1").get(0), is("<em>multiWordInSearchMethod1</em> <em>multiWordInSearchMethod2</em>"));
 
         //getObjectsByIds
+        final kbasesearchengine.search.MatchFilter filter2 = new kbasesearchengine.search.MatchFilter();
+        filter2.withLookupInKey("guid", "WS:11/1/2");
         Set<GUID> ids = new HashSet<>();
         ids.add(guid1);
 
-        FoundHits idHits = indexStorage.searchIds(null,filter, sorting, accessFilter,null);
+        FoundHits idHits = indexStorage.searchIds(null,filter2, sorting, accessFilter,null);
 
 
 
