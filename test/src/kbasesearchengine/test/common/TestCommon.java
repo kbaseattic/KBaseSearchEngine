@@ -4,10 +4,11 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.MalformedURLException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,13 +21,13 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
 import org.bson.Document;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.mongodb.client.MongoDatabase;
 
-import us.kbase.auth.AuthException;
-import us.kbase.auth.AuthToken;
-import us.kbase.auth.ConfigurableAuthService;
 import us.kbase.common.test.TestException;
 
 public class TestCommon {
@@ -159,50 +160,6 @@ public class TestCommon {
         return getTestProperty(WS_VER, WS_VER_DEFAULT);
     }
     
-    public static URL getAuthUrl() {
-        return getURL(AUTHSERV, null);
-    }
-    
-    public static URL getGlobusURL() {
-        return getURL(GLOBUS, GLOBUS_DEFAULT);
-    }
-    
-    private static URL getURL(final String prop, final String default_) {
-        try {
-            return new URL(getTestProperty(prop, default_));
-        } catch (MalformedURLException e) {
-            throw new TestException("Property " + prop + " is not a valid url", e);
-        }
-    }
-    
-    public static String getToken() {
-        return getTestProperty(TEST_TOKEN);
-    }
-    
-    public static AuthToken getToken(
-            final ConfigurableAuthService auth) {
-        try {
-            return auth.validateToken(getToken());
-        } catch (AuthException | IOException e) {
-            throw new TestException(String.format(
-                    "Couldn't log in user with token : %s", e.getMessage()), e);
-        }
-    }
-    
-    public static String getToken2() {
-        return getTestProperty(TEST_TOKEN2);
-    }
-    
-    public static AuthToken getToken2(
-            final ConfigurableAuthService auth) {
-        try {
-            return auth.validateToken(getToken2());
-        } catch (AuthException | IOException e) {
-            throw new TestException(String.format(
-                    "Couldn't log in user with token : %s", e.getMessage()), e);
-        }
-    }
-    
     public static void stfuLoggers() {
         java.util.logging.Logger.getLogger("com.mongodb")
                 .setLevel(java.util.logging.Level.OFF);
@@ -237,5 +194,55 @@ public class TestCommon {
         assertThat(String.format("time difference not within bounds: %s %s %s %s %s",
                 start, end, gotDiff, differenceMS, slopMS),
                 Math.abs(gotDiff - differenceMS) < slopMS, is(true));
+    }
+
+    public static void createAuthUser(
+            final URL authURL,
+            final String userName,
+            final String displayName)
+            throws Exception {
+        final URL target = new URL(authURL.toString() + "/api/V2/testmodeonly/user");
+        final HttpURLConnection conn = (HttpURLConnection) target.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("content-type", "application/json");
+        conn.setDoOutput(true);
+        
+        final DataOutputStream writer = new DataOutputStream(conn.getOutputStream());
+        writer.writeBytes(new ObjectMapper().writeValueAsString(ImmutableMap.of(
+                "user", userName,
+                "display", displayName)));
+        writer.flush();
+        writer.close();
+        
+        if (conn.getResponseCode() != 200) {
+            final String err = IOUtils.toString(conn.getErrorStream()); 
+            System.out.println(err);
+            throw new TestException(err.substring(1, 200));
+        }
+    }
+
+    public static String createLoginToken(final URL authURL, String user) throws Exception {
+        final URL target = new URL(authURL.toString() + "/api/V2/testmodeonly/token");
+        final HttpURLConnection conn = (HttpURLConnection) target.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("content-type", "application/json");
+        conn.setDoOutput(true);
+        
+        final DataOutputStream writer = new DataOutputStream(conn.getOutputStream());
+        writer.writeBytes(new ObjectMapper().writeValueAsString(ImmutableMap.of(
+                "user", user,
+                "type", "Login")));
+        writer.flush();
+        writer.close();
+        
+        if (conn.getResponseCode() != 200) {
+            final String err = IOUtils.toString(conn.getErrorStream()); 
+            System.out.println(err);
+            throw new TestException(err.substring(1, 200));
+        }
+        final String out = IOUtils.toString(conn.getInputStream());
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> resp = new ObjectMapper().readValue(out, Map.class);
+        return (String) resp.get("token");
     }
 }
