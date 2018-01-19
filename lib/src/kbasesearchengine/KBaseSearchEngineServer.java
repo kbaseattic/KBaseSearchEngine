@@ -59,6 +59,9 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final String gitCommitHash = "";
 
     //BEGIN_CLASS_HEADER
+    
+    // TODO TEST add integration test that runs server
+    
     private final SearchMethods search;
     
     private void quietLoggers() {

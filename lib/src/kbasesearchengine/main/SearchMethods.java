@@ -51,21 +51,7 @@ public class SearchMethods {
             final TypeStorage typeStorage,
             final Set<String> admins) {
         this.admins = admins == null ? Collections.emptySet() : admins;
-        
-        // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
         this.accessGroupProvider = accessGroupProvider;
-        this.typeStorage = typeStorage;
-        this.indexingStorage = indexingStorage;
-    }
-    
-    /**
-     * For tests only !!!
-     */
-    public SearchMethods(
-            final IndexingStorage indexingStorage,
-            final TypeStorage typeStorage) {
-        this.accessGroupProvider = null;
-        this.admins = Collections.emptySet();
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
     }
@@ -132,14 +118,14 @@ public class SearchMethods {
     }
     
     private kbasesearchengine.search.MatchFilter toSearch(MatchFilter mf) {
-        //TODO NNOW exludeSubObjects from input
         kbasesearchengine.search.MatchFilter ret = 
                 new kbasesearchengine.search.MatchFilter()
                 .withFullTextInAll(mf.getFullTextInAll())
                 .withAccessGroupId(toInteger(mf.getAccessGroupId()))
                 .withObjectName(mf.getObjectName())
                 .withParentGuid(toGUID(mf.getParentGuid()))
-                .withTimestamp(toSearch(mf.getTimestamp(), "timestamp"));
+                .withTimestamp(toSearch(mf.getTimestamp(), "timestamp"))
+                .withExcludeSubObjects(toBool(mf.getExcludeSubobjects()));
         if (mf.getLookupInKeys() != null) {
             Map<String, kbasesearchengine.search.MatchValue> keys =
                     new LinkedHashMap<String, kbasesearchengine.search.MatchValue>();
