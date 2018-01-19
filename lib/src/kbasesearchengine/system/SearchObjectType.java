@@ -30,12 +30,12 @@ public class SearchObjectType {
         Utils.notNullOrEmpty(type, "search type cannot be null or whitespace");
 
         try {
-            if(type.getBytes("UTF-8").length > MAX_TYPE_SIZE) {
+            if (type.getBytes("UTF-8").length > MAX_TYPE_SIZE) {
                 throw new IllegalArgumentException("Search type string size must be less than " +
                         MAX_TYPE_SIZE + " UTF-8 chars");
             }
-        } catch (UnsupportedEncodingException ex ) {
-            throw new IllegalArgumentException("Unsupported encoding for search type string: "+ex.getMessage());
+        } catch (UnsupportedEncodingException ex) {
+            throw new IllegalArgumentException("Unsupported encoding for search type string: " + ex.getMessage());
         }
 
         if (version < 1) {

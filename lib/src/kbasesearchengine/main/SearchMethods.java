@@ -270,7 +270,7 @@ public class SearchMethods {
         long t1 = System.currentTimeMillis();
 
         // validate input
-        if(params.getObjectTypes() == null) {
+        if (params.getObjectTypes() == null) {
             params.setObjectTypes(ImmutableList.of());
         }
 

@@ -80,8 +80,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public static final int PUBLIC_ACCESS_GROUP = -1;
     public static final int ADMIN_ACCESS_GROUP = -2;
 
-    /** ElasticSearch max length of an HTTP URL defaults to 4kb.
-     * So, MAX_OBJECT_TYPES_SIZE * {@link SearchObjectType#MAX_TYPE_SIZE} << default url length
+    /** Maximum number of types that can be fit into the ElasticSearch HTTP URL max
+     * length of 4kb (default).
+     * i.e., MAX_OBJECT_TYPES_SIZE * {@link SearchObjectType#MAX_TYPE_SIZE} << URL length
      * giving us room for other url attribs like blacklists and subtype search filtering.
      *
      * This value is also reflected in the limit specified for SearchObjectsInput.object_types in
@@ -154,20 +155,20 @@ public class ElasticIndexingStorage implements IndexingStorage {
      */
     private void validateObjectTypes(List<String> objectTypes) throws IOException {
 
-        if(objectTypes == null) {
+        if (objectTypes == null) {
             throw new IllegalArgumentException("Invalid list of object types. List is null.");
         }
 
-        if(objectTypes.isEmpty()) {
+        if (objectTypes.isEmpty()) {
             return;
         }
 
-        if(objectTypes.size() > MAX_OBJECT_TYPES_SIZE) {
+        if (objectTypes.size() > MAX_OBJECT_TYPES_SIZE) {
             throw new IOException("Invalid list of object types. " +
                     "List size exceeds maximum limit of " + MAX_OBJECT_TYPES_SIZE);
         }
 
-        if(objectTypes.contains(null)) {
+        if (objectTypes.contains(null)) {
             throw new IOException("Invalid list of object types. Contains one or more null elements.");
         }
     }
@@ -1427,7 +1428,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         String indexName;
 
         // search unconstrained by object type
-        if( objectTypes.isEmpty()) {
+        if (objectTypes.isEmpty()) {
             indexName = getAnyIndexPattern();
         }
         // search constrained by object types
