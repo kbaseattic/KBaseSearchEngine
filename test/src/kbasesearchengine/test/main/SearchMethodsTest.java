@@ -16,6 +16,8 @@ import kbasesearchengine.MatchFilter;
 import kbasesearchengine.Pagination;
 import kbasesearchengine.SearchObjectsInput;
 import kbasesearchengine.SearchObjectsOutput;
+import kbasesearchengine.SearchTypesInput;
+import kbasesearchengine.SearchTypesOutput;
 import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.main.SearchMethods;
 import kbasesearchengine.search.FoundHits;
@@ -103,6 +105,56 @@ public class SearchMethodsTest {
         // don't care about the sorting rules for this test, so just check size
         assertThat("incorrect sorting rules count", res.getSortingRules().size(), is(1));
         assertThat("incorrect total", res.getTotal(), is(1L));
+    }
+    
+    @Test
+    public void searchTypesExcludeSubObjects() throws Exception {
+        // false cases
+        searchTypesExcludeSubObjects(
+                new MatchFilter(),
+                new kbasesearchengine.search.MatchFilter());
+        searchTypesExcludeSubObjects(
+                new MatchFilter().withExcludeSubobjects(null),
+                new kbasesearchengine.search.MatchFilter());
+        searchTypesExcludeSubObjects(
+                new MatchFilter().withExcludeSubobjects(0L),
+                new kbasesearchengine.search.MatchFilter());
+        searchTypesExcludeSubObjects(
+                new MatchFilter().withExcludeSubobjects(2L),
+                new kbasesearchengine.search.MatchFilter());
+        
+        //true case
+        searchTypesExcludeSubObjects(
+                new MatchFilter().withExcludeSubobjects(1L),
+                new kbasesearchengine.search.MatchFilter().withExcludeSubObjects(true));
+    }
+
+    private void searchTypesExcludeSubObjects(
+            final MatchFilter input,
+            final kbasesearchengine.search.MatchFilter expected)
+            throws Exception {
+        final AccessGroupProvider agp = mock(AccessGroupProvider.class);
+        final IndexingStorage is = mock(IndexingStorage.class);
+        final TypeStorage ts = mock(TypeStorage.class);
+        
+        final SearchMethods sm = new SearchMethods(agp, is, ts, Collections.emptySet());
+        
+        // what's returned doesn't matter, we're just checking that indexing storage gets the
+        // right message
+        
+        when(is.searchTypes(
+                expected,
+                new kbasesearchengine.search.AccessFilter().withAccessGroups(set())))
+                .thenReturn(Collections.emptyMap());
+        
+        final SearchTypesOutput res = sm.searchTypes(new SearchTypesInput()
+                .withMatchFilter(input)
+                .withAccessFilter(new AccessFilter()),
+                "auser");
+        
+        assertThat("incorrect counts", res.getTypeToCount(), is(Collections.emptyMap()));
+        // if we want to check search time, need to mock a Clock. Don't bother for now.
+//        assertThat("incorrect objects", res.getSearchTime(), is(20));
     }
     
 }
