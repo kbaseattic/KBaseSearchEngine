@@ -214,7 +214,7 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals(1, (int)typeToCount.get(type));
         GUID expectedGUID = new GUID("WS:1/1/1:feature/NewGenome.CDS.6210");
         // Admin mode
-        Set<GUID> ids = indexStorage.searchIds(type, ft("RfaH"), null, 
+        Set<GUID> ids = indexStorage.searchIds(type, ft("RfaH"), null,
                 AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, ids.size());
         GUID id = ids.iterator().next();
@@ -772,23 +772,36 @@ public class ElasticIndexingStorageTest {
         GUID guid1 = new GUID("WS:11/1/2");
         GUID guid2 = new GUID("WS:11/2/2");
         GUID guid3 = new GUID("WS:11/3/2");
-        prepareTestMultiwordSearch(guid1, guid2, guid3);
+        try {
+            prepareTestMultiwordSearch(guid1, guid2, guid3);
+        }catch(Exception e){
+            //TODO: remove items from each test after completion. Will error if run all sequence in order due to version conflict
+        }
         PostProcessing pp = new PostProcessing();
+
         pp.objectData = true;
-        pp.objectKeys = false;
         pp.objectInfo = true;
+        pp.objectHighlight = true;
 
         final kbasesearchengine.search.MatchFilter filter = new kbasesearchengine.search.MatchFilter();
         List<kbasesearchengine.search.SortingRule> sorting = null;
         AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
 
-        //searchObjects wi
+        //searchObjects
         filter.withFullTextInAll("multiWordInSearchMethod1 multiWordInSearchMethod2");
         FoundHits hits = indexStorage.searchObjects(null, filter,sorting, accessFilter, null, pp);
         Map<String, ArrayList> hitres = hits.objects.get(0).getHighlight();
 
         assertThat("Incorrect field for highlighting", hitres.get("prop1"), is(notNullValue()) );
         assertThat("Incorrect portion highlihgted", hitres.get("prop1").get(0), is("<em>multiWordInSearchMethod1</em> <em>multiWordInSearchMethod2</em>"));
+
+        //getObjectsByIds
+        Set<GUID> ids = new HashSet<>();
+        ids.add(guid1);
+
+        FoundHits idHits = indexStorage.searchIds(null,filter, sorting, accessFilter,null);
+
+
 
     }
 }

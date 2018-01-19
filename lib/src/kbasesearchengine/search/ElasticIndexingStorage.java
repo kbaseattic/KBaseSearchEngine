@@ -1027,23 +1027,39 @@ public class ElasticIndexingStorage implements IndexingStorage {
         for (Map<String, Object> hit : hitList) {
             @SuppressWarnings("unchecked")
             Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
-            ObjectData item = buildObjectData(obj, (Map<String, ArrayList>) hit.get("highlight"), pp.objectInfo, pp.objectKeys,
-                    pp.objectData, pp.objectDataIncludes);
+            Map<String, ArrayList> highlightRes = (Map<String, ArrayList>) hit.get("highlight");
+            ObjectData item = buildObjectData(obj, editHighlightedKeys(highlightRes), pp);
             ret.add(item);
         }
         return ret;
     }
 
+    private Map<String, ArrayList> editHighlightedKeys(Map<String, ArrayList> highlightRes){
+        if(highlightRes == null){
+            return null;
+        }
+        Map<String, ArrayList> highlightResEdited = new HashMap<>();
+        for(String key : highlightRes.keySet()){
+            String newKey = key;
+            if(key.startsWith("key.")){
+                //truncate key. from key
+                newKey = key.substring(4);
+            }
+            highlightResEdited.put(newKey, highlightRes.get(key));
+
+        }
+        return highlightResEdited;
+    }
+
+
     private ObjectData buildObjectData(
             final Map<String, Object> obj,
             final Map<String, ArrayList> highlight,
-            final boolean info,
-            final boolean keys, 
-            final boolean json,
-            final List<String> objectDataIncludes) {
+
+            PostProcessing pp) {
         // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
         final ObjectData.Builder b = ObjectData.getBuilder(new GUID((String) obj.get("guid")));
-        if (info) {
+        if (pp.objectInfo) {
             b.withNullableObjectName((String) obj.get(OBJ_NAME));
             b.withNullableCreator((String) obj.get(OBJ_CREATOR));
             b.withNullableCopier((String) obj.get(OBJ_COPIER));
@@ -1059,7 +1075,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             b.withNullableTimestamp(Instant.ofEpochMilli(
             ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
         }
-        if (json) {
+        if (pp.objectData) {
             final String ojson = (String) obj.get("ojson");
             if (ojson != null) {
                 b.withNullableData(UObject.transformStringToObject(
@@ -1070,7 +1086,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 b.withNullableParentData(UObject.transformStringToObject(pjson, Object.class));
             }
         }
-        if (keys) {
+        if (pp.objectKeys) {
             for (final String key : obj.keySet()) {
                 if (key.startsWith("key.")) {
                     final Object objValue = obj.get(key);
@@ -1087,7 +1103,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 }
             }
         }
-        b.withNullableHighlight(highlight);
+        if(pp.objectHighlight){
+            b.withNullableHighlight(highlight);
+        }
 
         return b.build();
     }
@@ -1413,29 +1431,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
             @SuppressWarnings("unchecked")
             Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
             Map<String, ArrayList> highlightRes = (Map<String, ArrayList>) hit.get("highlight");
-            Map<String, ArrayList> highlightResEdited = new HashMap<>();
-            for(String key : highlightRes.keySet()){
-                String newKey = key;
-                if(key.startsWith("key.")){
-                    //truncate key. from key
-                    newKey = key.substring(4);
-                }
-                highlightResEdited.put(newKey, highlightRes.get(key));
-
-            }
             String guidText = (String)obj.get("guid");
             ret.guids.add(new GUID(guidText));
             if (loadObjects) {
-                ret.objects.add(buildObjectData(obj, highlightResEdited, pp.objectInfo, pp.objectKeys,
-                    pp.objectData, pp.objectDataIncludes));
+                ret.objects.add(buildObjectData(obj, editHighlightedKeys(highlightRes), pp));
             }
         }
-
-
-
         return ret;
     }
-    
+
+
     private String getKeyProperty(String keyName) {
         return "key." + keyName;
     }
