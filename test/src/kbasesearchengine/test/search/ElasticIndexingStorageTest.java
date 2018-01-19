@@ -2,6 +2,7 @@ package kbasesearchengine.test.search;
 
 import static kbasesearchengine.test.common.TestCommon.set;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
@@ -9,15 +10,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -789,11 +782,13 @@ public class ElasticIndexingStorageTest {
         List<kbasesearchengine.search.SortingRule> sorting = null;
         AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
 
+        //searchObjects wi
+        filter.withFullTextInAll("multiWordInSearchMethod1 multiWordInSearchMethod2");
+        FoundHits hits = indexStorage.searchObjects(null, filter,sorting, accessFilter, null, pp);
+        Map<String, ArrayList> hitres = hits.objects.get(0).getHighlight();
 
-        filter.withFullTextInAll("multiWordInSearchMethod1");
-        FoundHits hits2 = indexStorage.searchObjects(null, filter,sorting, accessFilter, null, pp);
-
-        FoundHits hits3 = indexStorage.searchObjects(null, filter,sorting, accessFilter, null, pp);
+        assertThat("Incorrect field for highlighting", hitres.get("prop1"), is(notNullValue()) );
+        assertThat("Incorrect portion highlihgted", hitres.get("prop1").get(0), is("<em>multiWordInSearchMethod1</em> <em>multiWordInSearchMethod2</em>"));
 
     }
 }

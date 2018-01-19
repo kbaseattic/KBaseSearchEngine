@@ -1,5 +1,6 @@
 package kbasesearchengine.search;
 
+import java.lang.reflect.Array;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -546,6 +547,17 @@ public class ObjectData {
         public Builder withKeyProperty(final String key, final String property) {
             Utils.notNullOrEmpty(key, "key cannot be null or whitespace");
             keyProps.put(key, property);
+            return this;
+        }
+
+        /** Adds the highlight fields to the object.
+         * @param highlight the map of fields returned from elasticsearch.
+         * @return this builder.
+         */
+        public Builder withNullableHighlight(final Map<String, ArrayList> highlight) {
+            if(highlight != null){
+                this.highlight = highlight;
+            }
             return this;
         }
     }

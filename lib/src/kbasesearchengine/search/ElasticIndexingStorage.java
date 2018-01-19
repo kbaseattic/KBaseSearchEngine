@@ -1027,9 +1027,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
         for (Map<String, Object> hit : hitList) {
             @SuppressWarnings("unchecked")
             Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
-//            ObjectData item = buildObjectData(obj, pp.objectInfo, pp.objectKeys,
-//                    pp.objectData, pp.objectDataIncludes);
-//            ret.add(item);
+            ObjectData item = buildObjectData(obj, (Map<String, ArrayList>) hit.get("highlight"), pp.objectInfo, pp.objectKeys,
+                    pp.objectData, pp.objectDataIncludes);
+            ret.add(item);
         }
         return ret;
     }
@@ -1057,7 +1057,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     (Integer) obj.get(SEARCH_OBJ_TYPE_VER)));
             // sometimes this is a long, sometimes it's an int
             b.withNullableTimestamp(Instant.ofEpochMilli(
-                    ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
+            ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
         }
         if (json) {
             final String ojson = (String) obj.get("ojson");
@@ -1087,6 +1087,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 }
             }
         }
+        b.withNullableHighlight(highlight);
+
         return b.build();
     }
     
