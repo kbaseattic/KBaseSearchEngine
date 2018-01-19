@@ -29,6 +29,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -62,6 +63,7 @@ import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.test.common.TestCommon;
 import kbasesearchengine.test.controllers.elasticsearch.ElasticSearchController;
 import kbasesearchengine.test.parse.SubObjectExtractorTest;
+import org.junit.rules.ExpectedException;
 import us.kbase.common.service.UObject;
 
 public class ElasticIndexingStorageTest {
@@ -296,9 +298,14 @@ public class ElasticIndexingStorageTest {
         System.out.println("*** end testGenome***");
     }
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
-    @Test(expected = IllegalArgumentException.class)
+
+    @Test
     public void testMultiTypeSearchValidation1() throws Exception {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Invalid list of object types. List is null.");
 
         // null list of types
         Set<GUID> guids = indexStorage.searchIds(null,
@@ -315,11 +322,14 @@ public class ElasticIndexingStorageTest {
                 MatchFilter.create().withAccessGroupId(1),
                 null, AccessFilter.create().withAdmin(true));
 
-        Assert.assertTrue(guids.size() > 1);
+        // genome object + 2 parent guids (see prepare)
+        assertThat("incorrect number of results", guids.size(), is(3));
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testMultiTypeSearchValidation3() throws Exception {
+        expectedException.expect(IOException.class);
+        expectedException.expectMessage("Invalid list of object types. Contains one or more null elements.");
 
         // list containing a mix of null and non-null types
         List<String> objectTypes = new ArrayList<>();
@@ -343,11 +353,13 @@ public class ElasticIndexingStorageTest {
                 MatchFilter.create().withAccessGroupId(1),
                 null, AccessFilter.create().withAdmin(true));
 
-        Assert.assertEquals(1, guids.size());
+        assertThat("incorrect number of results", guids.size(), is(1));
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testMultiTypeSearchValidation5() throws Exception {
+        expectedException.expect(IOException.class);
+        expectedException.expectMessage("Invalid list of object types. List size exceeds maximum limit of 50");
 
         // list exceeding max size
         List<String> objectTypes = new ArrayList<>();
@@ -370,8 +382,13 @@ public class ElasticIndexingStorageTest {
                 MatchFilter.create().withAccessGroupId(1),
                   null, AccessFilter.create().withAdmin(true));
 
-        Assert.assertTrue(guids.contains(GUID.fromRef("WS", "1/3/1")));
-        Assert.assertTrue(guids.contains(GUID.fromRef("WS", "1/4/1")));
+        assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/3/1")), is(true));
+        assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/4/1")), is(true));
+
+        // The extra assembly contig sub-object
+        assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/2/1")), is(true));
+
+        assertThat("result missing expected object", guids.size(), is(3));
     }
     
     @Test
