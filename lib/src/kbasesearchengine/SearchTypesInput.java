@@ -33,6 +33,8 @@ public class SearchTypesInput {
      * including values of keywords or metadata/system properties (like
      * object name, creation time range) or full-text search in all
      * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
      * </pre>
      * 
      */
@@ -63,6 +65,8 @@ public class SearchTypesInput {
      * including values of keywords or metadata/system properties (like
      * object name, creation time range) or full-text search in all
      * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
      * </pre>
      * 
      */
@@ -78,6 +82,8 @@ public class SearchTypesInput {
      * including values of keywords or metadata/system properties (like
      * object name, creation time range) or full-text search in all
      * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
      * </pre>
      * 
      */
