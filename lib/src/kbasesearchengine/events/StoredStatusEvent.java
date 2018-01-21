@@ -21,7 +21,7 @@ public class StoredStatusEvent implements StatusEventWithId {
     private final StatusEventProcessingState state;
     private final Optional<Instant> updateTime;
     private final Optional<String> updater;
-    private final Set<String> tags;
+    private final Set<String> workerCodes;
     
     private StoredStatusEvent(
             final StatusEvent event,
@@ -29,13 +29,13 @@ public class StoredStatusEvent implements StatusEventWithId {
             final StatusEventProcessingState state,
             final Optional<Instant> updateTime,
             final Optional<String> updater,
-            final Set<String> tags) {
+            final Set<String> workerCodes) {
         this.event = event;
         this.id = id;
         this.state = state;
         this.updateTime = updateTime;
         this.updater = updater;
-        this.tags = Collections.unmodifiableSet(tags);
+        this.workerCodes = Collections.unmodifiableSet(workerCodes);
     }
 
     @Override
@@ -74,11 +74,11 @@ public class StoredStatusEvent implements StatusEventWithId {
         return updater;
     }
     
-    /** Return the tags that specify which workers can process the event.
-     * @return the tags.
+    /** Return the codes that specify which workers can process the event.
+     * @return the codes.
      */
-    public Set<String> getTags() {
-        return tags;
+    public Set<String> getWorkerCodes() {
+        return workerCodes;
     }
     
     @Override
@@ -88,7 +88,7 @@ public class StoredStatusEvent implements StatusEventWithId {
         result = prime * result + ((event == null) ? 0 : event.hashCode());
         result = prime * result + ((id == null) ? 0 : id.hashCode());
         result = prime * result + ((state == null) ? 0 : state.hashCode());
-        result = prime * result + ((tags == null) ? 0 : tags.hashCode());
+        result = prime * result + ((workerCodes == null) ? 0 : workerCodes.hashCode());
         result = prime * result
                 + ((updateTime == null) ? 0 : updateTime.hashCode());
         result = prime * result + ((updater == null) ? 0 : updater.hashCode());
@@ -124,11 +124,11 @@ public class StoredStatusEvent implements StatusEventWithId {
         if (state != other.state) {
             return false;
         }
-        if (tags == null) {
-            if (other.tags != null) {
+        if (workerCodes == null) {
+            if (other.workerCodes != null) {
                 return false;
             }
-        } else if (!tags.equals(other.tags)) {
+        } else if (!workerCodes.equals(other.workerCodes)) {
             return false;
         }
         if (updateTime == null) {
@@ -172,7 +172,7 @@ public class StoredStatusEvent implements StatusEventWithId {
         private final StatusEventProcessingState state;
         private Optional<Instant> updateTime = Optional.absent();
         private Optional<String> updater = Optional.absent();
-        private Set<String> tags = new HashSet<>();
+        private Set<String> workerCodes = new HashSet<>();
         
         private Builder(
                 final StatusEvent event,
@@ -186,13 +186,13 @@ public class StoredStatusEvent implements StatusEventWithId {
             this.state = state;
         }
         
-        /** Add a tag that specifies which workers can process this event to the builder.
-         * @param tag the tag.
+        /** Add a code that specifies which workers can process this event to the builder.
+         * @param workerCode the worker code.
          * @return this builder.
          */
-        public Builder withTag(final String tag) {
-            Utils.notNullOrEmpty(tag, "tag cannot be null or whitespace");
-            tags.add(tag);
+        public Builder withWorkerCode(final String workerCode) {
+            Utils.notNullOrEmpty(workerCode, "workerCode cannot be null or whitespace");
+            workerCodes.add(workerCode);
             return this;
         }
         
@@ -218,7 +218,7 @@ public class StoredStatusEvent implements StatusEventWithId {
          * @return the event.
          */
         public StoredStatusEvent build() {
-            return new StoredStatusEvent(event, id, state, updateTime, updater, tags);
+            return new StoredStatusEvent(event, id, state, updateTime, updater, workerCodes);
         }
     }
 }

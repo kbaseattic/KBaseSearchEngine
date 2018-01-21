@@ -42,7 +42,7 @@ public class StoredStatusEventTest {
         assertThat("incorrect updater", sei.getUpdater(), is(Optional.absent()));
         assertThat("incorrect update time", sei.getUpdateTime(), is(Optional.absent()));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
-        assertThat("incorrect tags", sei.getTags(), is(Collections.emptySet()));
+        assertThat("incorrect tags", sei.getWorkerCodes(), is(Collections.emptySet()));
     }
 
     
@@ -62,7 +62,7 @@ public class StoredStatusEventTest {
         assertThat("incorrect updater", sei.getUpdater(), is(Optional.absent()));
         assertThat("incorrect update time", sei.getUpdateTime(), is(Optional.absent()));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
-        assertThat("incorrect tags", sei.getTags(), is(Collections.emptySet()));
+        assertThat("incorrect tags", sei.getWorkerCodes(), is(Collections.emptySet()));
     }
     
     @Test 
@@ -87,7 +87,7 @@ public class StoredStatusEventTest {
         assertThat("incorrect update time", sei.getUpdateTime(),
                 is(Optional.of(Instant.ofEpochMilli(10000))));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
-        assertThat("incorrect tags", sei.getTags(), is(Collections.emptySet()));
+        assertThat("incorrect tags", sei.getWorkerCodes(), is(Collections.emptySet()));
     }
     
     @Test
@@ -108,7 +108,7 @@ public class StoredStatusEventTest {
         assertThat("incorrect update time", sei.getUpdateTime(),
                 is(Optional.of(Instant.ofEpochMilli(20000))));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
-        assertThat("incorrect tags", sei.getTags(), is(Collections.emptySet()));
+        assertThat("incorrect tags", sei.getWorkerCodes(), is(Collections.emptySet()));
     }
     
     @Test
@@ -129,7 +129,7 @@ public class StoredStatusEventTest {
         assertThat("incorrect update time", sei.getUpdateTime(),
                 is(Optional.of(Instant.ofEpochMilli(20000))));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
-        assertThat("incorrect tags", sei.getTags(), is(Collections.emptySet()));
+        assertThat("incorrect tags", sei.getWorkerCodes(), is(Collections.emptySet()));
     }
     
     @Test
@@ -140,8 +140,8 @@ public class StoredStatusEventTest {
         final StoredStatusEvent sei = StoredStatusEvent.getBuilder(se, new StatusEventID("foo"),
                 StatusEventProcessingState.UNPROC)
                 .withNullableUpdate(Instant.ofEpochMilli(20000), "foo")
-                .withTag("foo")
-                .withTag("bar")
+                .withWorkerCode("foo")
+                .withWorkerCode("bar")
                 .build();
         assertThat("incorrect id", sei.getId(), is(new StatusEventID("foo")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
@@ -151,7 +151,7 @@ public class StoredStatusEventTest {
         assertThat("incorrect update time", sei.getUpdateTime(),
                 is(Optional.of(Instant.ofEpochMilli(20000))));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
-        assertThat("incorrect tags", sei.getTags(), is(set("foo", "bar")));
+        assertThat("incorrect tags", sei.getWorkerCodes(), is(set("foo", "bar")));
     }
     
     @Test
@@ -162,12 +162,12 @@ public class StoredStatusEventTest {
         final StoredStatusEvent sei = StoredStatusEvent.getBuilder(se, new StatusEventID("foo"),
                 StatusEventProcessingState.UNPROC)
                 .withNullableUpdate(Instant.ofEpochMilli(20000), "foo")
-                .withTag("foo")
-                .withTag("bar")
+                .withWorkerCode("foo")
+                .withWorkerCode("bar")
                 .build();
         
         try {
-            sei.getTags().add("whee");
+            sei.getWorkerCodes().add("whee");
             fail("expected exception");
         } catch (UnsupportedOperationException e) {
             //pass
@@ -188,9 +188,10 @@ public class StoredStatusEventTest {
     
     @Test
     public void buildFailTag() {
-        failBuildTag(null, new IllegalArgumentException("tag cannot be null or whitespace"));
+        failBuildTag(null,
+                new IllegalArgumentException("workerCode cannot be null or whitespace"));
         failBuildTag("   \t   \n ",
-                new IllegalArgumentException("tag cannot be null or whitespace"));
+                new IllegalArgumentException("workerCode cannot be null or whitespace"));
     }
     
     private void failBuildTag(final String tag, final Exception expected) {
@@ -199,7 +200,7 @@ public class StoredStatusEventTest {
         try {
             StoredStatusEvent.getBuilder(event, new StatusEventID("foo"),
                     StatusEventProcessingState.UNINDX)
-                    .withTag(tag);
+                    .withWorkerCode(tag);
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
