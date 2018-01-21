@@ -224,7 +224,7 @@ public class PerformanceTester {
                 String[] parts = ref.split("/");
                 int wsId = Integer.parseInt(parts[0]);
                 int version = Integer.parseInt(parts[2]);
-                final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
+                final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                         new StorageObjectType("WS", "KBaseGenomes.Genome"),
                         Instant.now(),
                         StatusEventType.NEW_VERSION)
@@ -234,9 +234,8 @@ public class PerformanceTester {
                         .withNullableisPublic(true)
                         .build(),
                         new StatusEventID("-1"),
-                        StatusEventProcessingState.UNPROC,
-                        null,
-                        null);
+                        StatusEventProcessingState.UNPROC)
+                        .build();
                 long t2 = System.currentTimeMillis();
                 try {
                     mop.processOneEvent(ev.getEvent());

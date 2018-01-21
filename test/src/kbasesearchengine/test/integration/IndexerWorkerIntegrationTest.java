@@ -279,7 +279,7 @@ public class IndexerWorkerIntegrationTest {
     
     @Test
     public void testGenomeManually() throws Exception {
-        final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 new StorageObjectType("WS", "KBaseGenomes.Genome"),
                 Instant.now(),
                 StatusEventType.NEW_VERSION)
@@ -289,9 +289,8 @@ public class IndexerWorkerIntegrationTest {
                 .withNullableisPublic(false)
                 .build(),
                 new StatusEventID("-1"),
-                StatusEventProcessingState.UNPROC,
-                null,
-                null);
+                StatusEventProcessingState.UNPROC)
+                .build();
         worker.processOneEvent(ev.getEvent());
         PostProcessing pp = new PostProcessing();
         pp.objectInfo = true;
@@ -321,7 +320,7 @@ public class IndexerWorkerIntegrationTest {
     private void indexFewVersions(final StoredStatusEvent evid) throws Exception {
         final StatusEvent ev = evid.getEvent();
         for (int i = Math.max(1, ev.getVersion().get() - 5); i <= ev.getVersion().get(); i++) {
-            final StoredStatusEvent ev2 = new StoredStatusEvent(StatusEvent.getBuilder(
+            final StoredStatusEvent ev2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                     ev.getStorageObjectType().get(),
                     ev.getTimestamp(),
                     ev.getEventType())
@@ -331,9 +330,8 @@ public class IndexerWorkerIntegrationTest {
                     .withNullableisPublic(ev.isPublic().get())
                     .build(),
                     evid.getId(),
-                    StatusEventProcessingState.UNPROC,
-                    null,
-                    null);
+                    StatusEventProcessingState.UNPROC)
+                    .build();
             worker.processOneEvent(ev2.getEvent());
         }
     }
@@ -369,8 +367,8 @@ public class IndexerWorkerIntegrationTest {
                 .withNullableVersion(5)
                 .withNullableisPublic(false)
                 .build();
-        indexFewVersions(new StoredStatusEvent(ev, new StatusEventID("-1"),
-                StatusEventProcessingState.UNPROC, null, null));
+        indexFewVersions(StoredStatusEvent.getBuilder(ev, new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC).build());
         checkSearch(1, "Narrative", "tree", wsid, false);
         checkSearch(1, "Narrative", "species", wsid, false);
         /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
@@ -396,8 +394,8 @@ public class IndexerWorkerIntegrationTest {
                 .withNullableVersion(1)
                 .withNullableisPublic(false)
                 .build();
-        indexFewVersions(new StoredStatusEvent(ev, new StatusEventID("-1"),
-                StatusEventProcessingState.UNPROC, null, null));
+        indexFewVersions(StoredStatusEvent.getBuilder(ev, new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC).build());
         checkSearch(1, "PairedEndLibrary", "Illumina", wsid, true);
         checkSearch(1, "PairedEndLibrary", "sample1se.fastq.gz", wsid, false);
         final StatusEvent ev2 = StatusEvent.getBuilder(
@@ -409,8 +407,8 @@ public class IndexerWorkerIntegrationTest {
                 .withNullableVersion(1)
                 .withNullableisPublic(false)
                 .build();
-        indexFewVersions(new StoredStatusEvent(ev2, new StatusEventID("-1"),
-                StatusEventProcessingState.UNPROC, null, null));
+        indexFewVersions(StoredStatusEvent.getBuilder(ev2, new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC).build());
         checkSearch(1, "SingleEndLibrary", "PacBio", wsid, true);
         checkSearch(1, "SingleEndLibrary", "reads.2", wsid, false);
     }

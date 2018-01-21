@@ -21,9 +21,9 @@ public class ExceptionTest {
     
     @Test
     public void noSuchEventException() {
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "sc", Instant.ofEpochMilli(1000), StatusEventType.COPY_ACCESS_GROUP).build(),
-                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+                new StatusEventID("foo"), StatusEventProcessingState.READY).build();
         
         final NoSuchEventException e = new NoSuchEventException(sse);
         assertThat("incorrect message", e.getMessage(), is("Event with ID foo not found"));
