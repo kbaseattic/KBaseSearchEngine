@@ -614,7 +614,9 @@ public class ElasticIndexingStorageTest {
                 .withNullableData(ImmutableMap.of("bar", "whee"))
                 .withKeyProperty("bar", "whee")
                 .build();
-        
+
+        TestCommon.assertCloseMS(indexedObj2.getTimestamp().get(), now, 0, 10);
+
         assertThat("incorrect indexed object", indexedObj2, is(expected2));
         
     }
@@ -726,7 +728,7 @@ public class ElasticIndexingStorageTest {
         GUID guid1 = new GUID("WS:12/1/2");
         GUID guid2 = new GUID("WS:12/2/2");
         GUID guid3 = new GUID("WS:12/3/2");
-        prepareTestLookupInKey(guid1,guid2,guid3);
+        prepareTestLookupInKey(guid1, guid2, guid3);
 
         List<kbasesearchengine.search.SortingRule> sorting = null;
         AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
