@@ -21,19 +21,11 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import kbasesearchengine.search.AccessFilter;
-import kbasesearchengine.search.ElasticIndexingStorage;
-import kbasesearchengine.search.MatchFilter;
-import kbasesearchengine.search.MatchValue;
-import kbasesearchengine.search.ObjectData;
-import kbasesearchengine.search.PostProcessing;
-import kbasesearchengine.search.FoundHits;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.common.collect.ImmutableMap;
@@ -53,6 +45,12 @@ import kbasesearchengine.parse.SimpleIdConsumer;
 import kbasesearchengine.parse.SimpleSubObjectConsumer;
 import kbasesearchengine.parse.SubObjectConsumer;
 import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
+import kbasesearchengine.search.AccessFilter;
+import kbasesearchengine.search.ElasticIndexingStorage;
+import kbasesearchengine.search.MatchFilter;
+import kbasesearchengine.search.MatchValue;
+import kbasesearchengine.search.ObjectData;
+import kbasesearchengine.search.PostProcessing;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
