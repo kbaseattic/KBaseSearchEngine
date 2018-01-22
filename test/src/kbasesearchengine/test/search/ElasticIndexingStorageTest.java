@@ -374,21 +374,45 @@ public class ElasticIndexingStorageTest {
 
     @Test
     public void testMultiTypeSearch() throws Exception {
+        // search for Genome objects
         indexObject("Genome", "genome01", new GUID("WS:1/3/1"), "MyGenome.1");
-        indexObject("Assembly", "assembly01", new GUID("WS:1/4/1"), "MyAssembly.1");
 
-        // saerch for Genome and Assembly types
-        Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Genome", "Assembly"),
+        Set<GUID> guids;
+
+        guids = indexStorage.searchIds(ImmutableList.of("Genome"),
                 MatchFilter.create().withAccessGroupId(1),
-                  null, AccessFilter.create().withAdmin(true));
+                null, AccessFilter.create().withAdmin(true));
 
-        assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/3/1")), is(true));
-        assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/4/1")), is(true));
+        assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/3/1")),
+                                                                                            is(true));
+        assertThat("incorrect number of objects in results", guids.size(), is(1));
 
-        // The extra assembly contig sub-object
-        assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/2/1")), is(true));
+        // search for Genome and Assembly objects (assembly object from prepare method)
+        guids = indexStorage.searchIds(ImmutableList.of("Genome", "Assembly"),
+                MatchFilter.create().withAccessGroupId(1),
+                null, AccessFilter.create().withAdmin(true));
 
-        assertThat("result missing expected object", guids.size(), is(3));
+        assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/3/1")),
+                is(true));
+
+        assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/2/1")),
+                is(true));
+        assertThat("incorrect number of objects in results", guids.size(), is(2));
+
+
+        // search for Genome, Assembly and AssemblyContig objects (assembly and contig objects from prepare method)
+        guids = indexStorage.searchIds(ImmutableList.of("Genome", "Assembly", "AssemblyContig"),
+                MatchFilter.create().withAccessGroupId(1),
+                null, AccessFilter.create().withAdmin(true));
+
+        assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/3/1")),
+                is(true));
+
+        assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/2/1")),
+                is(true));
+        assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "WS:1/2/1:contig/NC_000913")),
+                is(true));
+        assertThat("incorrect number of objects in results", guids.size(), is(3));
     }
     
     @Test
