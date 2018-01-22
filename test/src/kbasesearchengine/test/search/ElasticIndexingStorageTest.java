@@ -790,18 +790,14 @@ public class ElasticIndexingStorageTest {
         final kbasesearchengine.search.MatchFilter filter = new kbasesearchengine.search.MatchFilter();
         filter.withFullTextInAll("multiWordInSearchMethod1 multiWordInSearchMethod2");
         FoundHits hits = indexStorage.searchObjects(null, filter,sorting, accessFilter, null, pp);
-        Map<String, ArrayList> hitres = hits.objects.get(0).getHighlight();
+        Map<String, ArrayList> hitRes = hits.objects.get(0).getHighlight();
 
-        assertThat("Incorrect field for highlighting", hitres.get("prop1"), is(notNullValue()) );
-        assertThat("Incorrect portion highlihgted", hitres.get("prop1").get(0), is("<em>multiWordInSearchMethod1</em> <em>multiWordInSearchMethod2</em>"));
+        assertThat("Incorrect field for highlighting", hitRes.get("prop1"), is(notNullValue()) );
+        assertThat("Incorrect portion highlighted", hitRes.get("prop1").get(0), is("<em>multiWordInSearchMethod1</em> <em>multiWordInSearchMethod2</em>"));
 
-        //getObjectsByIds
-        final kbasesearchengine.search.MatchFilter filter2 = new kbasesearchengine.search.MatchFilter();
-        filter2.withLookupInKey("guid", "WS:11/1/2");
-        Set<GUID> ids = new HashSet<>();
-        ids.add(guid1);
+        //searchIds does not return object data and so will not be highlight
+        //searchTypes returns the number of items per type that match that
 
-        FoundHits idHits = indexStorage.searchIds(null,filter2, sorting, accessFilter,null);
 
 
 
