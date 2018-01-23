@@ -41,6 +41,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 
 import com.google.common.base.Optional;
+
 import com.google.common.collect.ImmutableMap;
 
 import kbasesearchengine.common.GUID;
@@ -1192,8 +1193,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (accessFilter.withPublic && !accessFilter.isAdmin) {
             shouldList.add(createPublicShouldBlock(accessFilter.withAllHistory));
         }
+
         // Owner block
         shouldList.add(createOwnerShouldBlock(accessFilter));
+
         // Shared block
         shouldList.add(createSharedShouldBlock(mustForShared));
         // Rest of query
@@ -1258,7 +1261,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private List<Map<String, Object>> prepareMatchFilters(MatchFilter matchFilter) {
         List<Map<String, Object>> ret = new ArrayList<>();
         if (matchFilter.fullTextInAll != null) {
-            ret.add(createFilter("match", "_all", matchFilter.fullTextInAll));
+            LinkedHashMap<String, Object> query = new LinkedHashMap<>();
+            query.put("query", matchFilter.fullTextInAll);
+            query.put("operator", "and");
+
+            LinkedHashMap<String, Object> allQuery = new LinkedHashMap<>();
+            allQuery.put("_all", query);
+
+            LinkedHashMap<String, Object> match = new LinkedHashMap<>();
+            match.put("match",allQuery);
+            ret.add(match);
         }
         /*if (matchFilter.accessGroupId != null) {
             ret.add(createAccessMustBlock(new LinkedHashSet<>(Arrays.asList(
