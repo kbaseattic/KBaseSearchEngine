@@ -51,7 +51,7 @@ module KBaseSearchEngine {
     } MatchFilter;
 
     /*
-      Optional rules of access constrains.
+      Optional rules of access constraints.
         - with_private - include data found in workspaces not marked 
             as public, default value is true,
         - with_public - include data found in public workspaces,
@@ -83,7 +83,7 @@ module KBaseSearchEngine {
     } SearchTypesOutput;
 
     /*
-      Search for number of objects of each type matching constrains.
+      Search for number of objects of each type matching constraints.
     */
     funcdef search_types(SearchTypesInput params) 
         returns (SearchTypesOutput) authentication required;
@@ -130,9 +130,17 @@ module KBaseSearchEngine {
 
     /*
       Input parameters for 'search_objects' method.
+      object_types - list of the types of objects to search on (optional). The
+                     function will search on all objects if the list is not specified
+                     or is empty. The list size must be less than 50.
+      match_filter - see MatchFilter (optional).
+      sorting_rules - see SortingRule (optional).
+      access_filter - see AccessFilter (optional).
+      pagination - see Pagination (optional).
+      post_processing - see PostProcessing (optional).
     */
     typedef structure {
-        string object_type;
+        list<string> object_types;
         MatchFilter match_filter;
         list<SortingRule> sorting_rules;
         AccessFilter access_filter;
@@ -178,7 +186,7 @@ module KBaseSearchEngine {
     } SearchObjectsOutput;
 
     /*
-      Search for objects of particular type matching constrains.
+      Search for objects of particular type matching constraints.
     */
     funcdef search_objects(SearchObjectsInput params)
         returns (SearchObjectsOutput) authentication required;
