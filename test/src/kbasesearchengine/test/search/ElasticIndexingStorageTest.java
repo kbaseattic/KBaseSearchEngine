@@ -823,19 +823,21 @@ public class ElasticIndexingStorageTest {
         GUID guid3 = new GUID("WS:11/3/2");
         prepareTestMultiwordSearch(guid1, guid2, guid3);
 
+        List<String> emtpy = new ArrayList<>();
+
         final kbasesearchengine.search.MatchFilter filter = new kbasesearchengine.search.MatchFilter();
         List<kbasesearchengine.search.SortingRule> sorting = null;
         AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
 
         filter.withFullTextInAll("multiWordInSearchMethod1 multiWordInSearchMethod2");
-        FoundHits hits1 = indexStorage.searchObjects(null, filter,sorting, accessFilter, null, null);
+        FoundHits hits1 = indexStorage.searchObjects(emtpy, filter,sorting, accessFilter, null, null);
 
         filter.withFullTextInAll("multiWordInSearchMethod1");
-        FoundHits hits2 = indexStorage.searchObjects(null, filter,sorting, accessFilter, null, null);
+        FoundHits hits2 = indexStorage.searchObjects(emtpy, filter,sorting, accessFilter, null, null);
 
 
         filter.withFullTextInAll("multiWordInSearchMethod2");
-        FoundHits hits3 = indexStorage.searchObjects(null, filter,sorting, accessFilter, null, null);
+        FoundHits hits3 = indexStorage.searchObjects(emtpy, filter,sorting, accessFilter, null, null);
 
         assertThat("did not find object1", hits1.guids, is(set(guid1)));
         assertThat("did not find object1 and object3", hits2.guids, is(set(guid1,guid3)));
@@ -868,6 +870,8 @@ public class ElasticIndexingStorageTest {
         GUID guid2 = new GUID("WS:12/2/2");
         GUID guid3 = new GUID("WS:12/3/2");
         prepareTestLookupInKey(guid1, guid2, guid3);
+        List<String> emtpy = new ArrayList<>();
+
 
         List<kbasesearchengine.search.SortingRule> sorting = null;
         AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
@@ -875,7 +879,7 @@ public class ElasticIndexingStorageTest {
         //key, value pair lookup
         MatchFilter filter0 = MatchFilter.create().withLookupInKey(
                 "num1", "123");
-        FoundHits hits0 = indexStorage.searchObjects(null, filter0,sorting, accessFilter
+        FoundHits hits0 = indexStorage.searchObjects(emtpy, filter0,sorting, accessFilter
                 , null, null);
         assertThat("did not find object1 using LookupInKey with value", hits0.guids, is(set(guid1)));
 
@@ -889,9 +893,9 @@ public class ElasticIndexingStorageTest {
         MatchFilter filter2 = MatchFilter.create().withLookupInKey("num2", range2);
         MatchFilter filter3 = MatchFilter.create().withLookupInKey("num1", range3);
 
-        FoundHits hits1 = indexStorage.searchObjects(null, filter1,sorting, accessFilter, null, null);
-        FoundHits hits2 = indexStorage.searchObjects(null, filter2,sorting, accessFilter, null, null);
-        FoundHits hits3 = indexStorage.searchObjects(null, filter3,sorting, accessFilter, null, null);
+        FoundHits hits1 = indexStorage.searchObjects(emtpy, filter1,sorting, accessFilter, null, null);
+        FoundHits hits2 = indexStorage.searchObjects(emtpy, filter2,sorting, accessFilter, null, null);
+        FoundHits hits3 = indexStorage.searchObjects(emtpy, filter3,sorting, accessFilter, null, null);
 
         assertThat("did not find object1 using LookupInKey with range", hits1.guids, is(set(guid1)));
         assertThat("did not find object2 and object3 using LookupInKey with range", hits2.guids, is(set(guid2, guid3)));
@@ -900,7 +904,7 @@ public class ElasticIndexingStorageTest {
         //conflicting filters should return nothing
         MatchFilter filter4 = MatchFilter.create().withLookupInKey("num1", range1);
         filter4.withLookupInKey("num2", range2);
-        FoundHits hits4 = indexStorage.searchObjects(null, filter4,sorting, accessFilter, null, null);
+        FoundHits hits4 = indexStorage.searchObjects(emtpy, filter4,sorting, accessFilter, null, null);
 
         assertThat("conflicting ranges should produce 0 results", hits4.guids.isEmpty(), is(true));
 
@@ -908,7 +912,7 @@ public class ElasticIndexingStorageTest {
         // overlapping filters should return intersection
         MatchFilter filter5 = MatchFilter.create().withLookupInKey("num1", range3);
         filter5.withLookupInKey("num2", range2);
-        FoundHits hits5 = indexStorage.searchObjects(null, filter5,sorting, accessFilter
+        FoundHits hits5 = indexStorage.searchObjects(emtpy, filter5,sorting, accessFilter
                 , null, null);
 
         assertThat("overlapping ranges did not return intersection", hits5.guids, is(set(guid2)));
