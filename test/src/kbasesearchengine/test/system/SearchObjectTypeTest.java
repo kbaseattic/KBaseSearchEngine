@@ -35,6 +35,15 @@ public class SearchObjectTypeTest {
                 "search type cannot be null or whitespace"));
         failConstruct("t", 0, new IllegalArgumentException(
                 "search type version must be greater than zero"));
+
+        char [] long_name = new char[SearchObjectType.MAX_TYPE_SIZE+1];
+        for(int ii=0; ii<SearchObjectType.MAX_TYPE_SIZE+1; ii++) {
+            long_name[ii] = 'a';
+        }
+        failConstruct(new String(long_name),
+                1, new IllegalArgumentException(
+                "Search type string size must be less than " +
+                        SearchObjectType.MAX_TYPE_SIZE + " UTF-8 chars"));
     }
     
     @Test
