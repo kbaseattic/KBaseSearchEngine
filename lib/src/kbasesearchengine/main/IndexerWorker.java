@@ -218,7 +218,8 @@ public class IndexerWorker implements Stoppable {
     
     private boolean performOneTick() throws InterruptedException, IndexingException {
         final Optional<StoredStatusEvent> optEvent = retrier.retryFunc(
-                s -> s.setAndGetProcessingState(StatusEventProcessingState.READY,
+                // TODO NNOW worker codes
+                s -> s.setAndGetProcessingState(StatusEventProcessingState.READY, new HashSet<>(),
                         StatusEventProcessingState.PROC, id),
                 storage, null);
         boolean processedEvent = false;
