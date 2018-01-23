@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.LinkedList;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -80,6 +81,17 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public static final int PUBLIC_ACCESS_GROUP = -1;
     public static final int ADMIN_ACCESS_GROUP = -2;
 
+    /** Maximum number of types that can be fit into the ElasticSearch HTTP URL max
+     * length of 4kb (default).
+     * i.e., MAX_OBJECT_TYPES_SIZE * {@link SearchObjectType#MAX_TYPE_SIZE} << URL length
+     * giving us room for other url attribs like blacklists and subtype search filtering.
+     *
+     * This value is also reflected in the limit specified for SearchObjectsInput.object_types in
+     * KBaseSearchEngine.spec.
+     *
+     */
+    public static final int MAX_OBJECT_TYPES_SIZE = 50;
+
     public ElasticIndexingStorage(HttpHost esHost, File tempDir) throws IOException {
         this.esHost = esHost;
         this.indexNamePrefix = "";
@@ -127,9 +139,47 @@ public class ElasticIndexingStorage implements IndexingStorage {
         typeToIndex.clear();
         typeVerToIndex.clear();
     }
-    
-    /* checks that at least one index exists for a type, and throws an exception otherwise.
-     * Returns a index string that matches any version of the type.
+
+
+    /** The specified list is valid if it,
+     *
+     * 1. is empty,
+     * 2. or contains one or more non-null elements and size is less than
+     *    {@link ElasticIndexingStorage#MAX_OBJECT_TYPES_SIZE}.
+     *
+     * list 1 represents a list that would map to any index pattern (search unconstrained by type)
+     * list 2 represents a list that would map to one or more specific index patterns (constrained search)
+     *
+     *
+     * @param objectTypes a list of object types.
+     * @throws IOException if list is invalid.
+     */
+    private void validateObjectTypes(List<String> objectTypes) throws IOException {
+
+        if (objectTypes == null) {
+            throw new IllegalArgumentException("Invalid list of object types. List is null.");
+        }
+
+        if (objectTypes.isEmpty()) {
+            return;
+        }
+
+        if (objectTypes.size() > MAX_OBJECT_TYPES_SIZE) {
+            throw new IOException("Invalid list of object types. " +
+                    "List size exceeds maximum limit of " + MAX_OBJECT_TYPES_SIZE);
+        }
+
+        if (objectTypes.contains(null)) {
+            throw new IOException("Invalid list of object types. Contains one or more null elements.");
+        }
+    }
+
+
+    /** checks that at least one index exists for a type, and throws an exception otherwise.
+     *
+     * @param objectType
+     * @return an index string that matches any version of the type.
+     * @throws IOException
      */
     private String checkIndex(final String objectType) throws IOException {
         String ret = typeToIndex.get(objectType);
@@ -1187,7 +1237,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     @Override
-    public FoundHits searchIds(String objectType, MatchFilter matchFilter, 
+    public FoundHits searchIds(List<String> objectType, MatchFilter matchFilter,
             List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination) 
                     throws IOException {
         return queryHits(objectType, prepareMatchFilters(matchFilter),
@@ -1195,17 +1245,17 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     @Override
-    public FoundHits searchObjects(String objectType, MatchFilter matchFilter,
+    public FoundHits searchObjects(List<String> objectTypes, MatchFilter matchFilter,
             List<SortingRule> sorting, AccessFilter accessFilter,
             Pagination pagination, PostProcessing postProcessing)
             throws IOException {
-        return queryHits(objectType, prepareMatchFilters(matchFilter),
+        return queryHits(objectTypes, prepareMatchFilters(matchFilter),
                 sorting, accessFilter, pagination, postProcessing);
     }
     
-    public Set<GUID> searchIds(String objectType, MatchFilter matchFilter, 
+    public Set<GUID> searchIds(List<String> objectTypes, MatchFilter matchFilter,
             List<SortingRule> sorting, AccessFilter accessFilter) throws IOException {
-        return searchIds(objectType, matchFilter, sorting, accessFilter, null).guids;
+        return searchIds(objectTypes, matchFilter, sorting, accessFilter, null).guids;
     }
 
     private List<Map<String, Object>> prepareMatchFilters(MatchFilter matchFilter) {
@@ -1320,7 +1370,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     private FoundHits queryHits(
-            final String objectType,
+            final List<String> objectTypes,
             final List<Map<String, Object>> matchFilters, 
             List<SortingRule> sorting,
             final AccessFilter accessFilter,
@@ -1385,8 +1435,28 @@ public class ElasticIndexingStorage implements IndexingStorage {
                                                                       sr.ascending ? "asc" : "desc"));
             sort.add(sortOrderWrapper);
         }
-        String indexName = objectType == null ? getAnyIndexPattern() : checkIndex(objectType);
+
+        validateObjectTypes(objectTypes);
+
+        String indexName;
+
+        // search unconstrained by object type
+        if (objectTypes.isEmpty()) {
+            indexName = getAnyIndexPattern();
+        }
+        // search constrained by object types
+        else {
+            final List<String> rr = new LinkedList<>();
+            for (final String type: objectTypes) {
+                rr.add(checkIndex(type));
+            }
+            indexName = String.join(",", rr);
+        }
+
+
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
+
+
         Response resp = makeRequest("GET", urlPath, ImmutableMap.copyOf(doc));
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
