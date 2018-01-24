@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.ImmutableList;
 import kbasesearchengine.AccessFilter;
 import kbasesearchengine.GetObjectsInput;
 import kbasesearchengine.GetObjectsOutput;
@@ -132,6 +133,7 @@ public class SearchMethods {
     }
     
     private kbasesearchengine.search.MatchFilter toSearch(MatchFilter mf) {
+        //TODO NNOW exludeSubObjects from input
         kbasesearchengine.search.MatchFilter ret = 
                 new kbasesearchengine.search.MatchFilter()
                 .withFullTextInAll(mf.getFullTextInAll())
@@ -267,6 +269,12 @@ public class SearchMethods {
     public SearchObjectsOutput searchObjects(SearchObjectsInput params, String user) 
             throws Exception {
         long t1 = System.currentTimeMillis();
+
+        // validate input
+        if (params.getObjectTypes() == null) {
+            params.setObjectTypes(ImmutableList.of());
+        }
+
         kbasesearchengine.search.MatchFilter matchFilter = toSearch(params.getMatchFilter());
         List<kbasesearchengine.search.SortingRule> sorting = null;
         if (params.getSortingRules() != null) {
@@ -278,7 +286,7 @@ public class SearchMethods {
         kbasesearchengine.search.Pagination pagination = toSearch(params.getPagination());
         kbasesearchengine.search.PostProcessing postProcessing = 
                 toSearch(params.getPostProcessing());
-        FoundHits hits = indexingStorage.searchObjects(params.getObjectType(),
+        FoundHits hits = indexingStorage.searchObjects(params.getObjectTypes(),
                 matchFilter, sorting, accessFilter, pagination, postProcessing);
         SearchObjectsOutput ret = new SearchObjectsOutput();
         ret.withPagination(fromSearch(hits.pagination));

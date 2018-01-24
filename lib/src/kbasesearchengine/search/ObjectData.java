@@ -79,14 +79,7 @@ public class ObjectData {
     /** Get the object's GUID.
      * @return the GUID.
      */
-    public String toString() {
-    		return "objectName: " + objectName + "\n" +
-    				"type: " + type.toString() + "\n" + 
-    				"creator: " + creator + "\n" + 
-    				"timestamp: " + timestamp.toString() + "\n" + 
-    				"data: " + data.toString() + "\n" + 
-    				"Guid: "+ guid.toString();
-    }
+
     public GUID getGUID() {
         return guid;
     }

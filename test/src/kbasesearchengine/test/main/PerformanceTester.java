@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.ImmutableList;
 import kbasesearchengine.common.FileUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
@@ -264,7 +265,7 @@ public class PerformanceTester {
     }
     
     private int countGenomes() throws Exception {
-        return storage.searchIds("Genome", 
+        return storage.searchIds(ImmutableList.of("Genome"),
                 MatchFilter.create().withLookupInKey("features", new MatchValue(1, null)), null,
                 AccessFilter.create().withPublic(true).withAdmin(true), null).total;
     }

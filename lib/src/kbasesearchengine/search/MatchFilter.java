@@ -6,6 +6,10 @@ import java.util.Map;
 import kbasesearchengine.common.GUID;
 
 public class MatchFilter {
+    
+    //TODO CODE everything about this class
+    
+    public boolean excludeSubObjects = false;
     public String fullTextInAll = null;
     public Integer accessGroupId = null;
     public String objectName = null;
@@ -17,6 +21,11 @@ public class MatchFilter {
     
     public static MatchFilter create() {
         return new MatchFilter();
+    }
+    
+    public MatchFilter withExcludeSubObjects(final boolean excludeSubObjects) {
+        this.excludeSubObjects = excludeSubObjects;
+        return this;
     }
     
     public MatchFilter withFullTextInAll(String text) {
