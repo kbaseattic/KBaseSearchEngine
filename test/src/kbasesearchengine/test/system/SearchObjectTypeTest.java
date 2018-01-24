@@ -10,8 +10,6 @@ import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.test.common.TestCommon;
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-import java.nio.charset.Charset;
-
 public class SearchObjectTypeTest {
 
     @Test

@@ -7,8 +7,21 @@ public class ParsedObject {
     
     //TODO CODE everything about this class
     
-    public String json;
-    public Map<String, List<Object>> keywords;
+    private final String json;
+    private final Map<String, List<Object>> keywords;
+
+    public ParsedObject(final String json, final Map<String, List<Object>> keywords) {
+        this.json = json;
+        this.keywords = keywords;
+    }
+    
+    public String getJson() {
+        return json;
+    }
+
+    public Map<String, List<Object>> getKeywords() {
+        return keywords;
+    }
 
     @Override
     public int hashCode() {

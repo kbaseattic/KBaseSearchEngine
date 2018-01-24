@@ -83,11 +83,9 @@ public class KeywordParser {
                 }
             }
         }
-        ParsedObject ret = new ParsedObject();
-        ret.json = json;
-        ret.keywords = keywords.entrySet().stream().filter(kv -> !kv.getValue().notIndexed)
-                .collect(Collectors.toMap(kv -> kv.getKey(), kv -> kv.getValue().values));
-        return ret;
+        return new ParsedObject(json,
+                keywords.entrySet().stream().filter(kv -> !kv.getValue().notIndexed)
+                        .collect(Collectors.toMap(kv -> kv.getKey(), kv -> kv.getValue().values)));
     }
 
     private static List<Object> processDerivedRule(

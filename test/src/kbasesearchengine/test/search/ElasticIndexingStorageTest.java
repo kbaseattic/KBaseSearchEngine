@@ -27,7 +27,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -62,6 +61,7 @@ import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
 import kbasesearchengine.system.SearchObjectType;
+import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.test.common.TestCommon;
 import kbasesearchengine.test.controllers.elasticsearch.ElasticSearchController;
 import kbasesearchengine.test.parse.SubObjectExtractorTest;
@@ -75,6 +75,8 @@ public class ElasticIndexingStorageTest {
     private static File tempDir = null;
     private static ObjectLookupProvider objLookup;
     private static ElasticSearchController es;
+
+    //TODO TEST should delete indexes between every test to keep them independent
 
     public ElasticIndexingStorageTest() {
 
@@ -175,23 +177,25 @@ public class ElasticIndexingStorageTest {
 
     private static void indexObject(
             final GUID id,
-            final SearchObjectType objectType,
+            final ObjectTypeParsingRules rule,
             final String json,
             final String objectName,
             final Instant timestamp,
             final String parentJsonValue,
-            final boolean isPublic,
-            final List<IndexingRules> indexingRules)
+            final boolean isPublic)
             throws IOException, ObjectParseException, IndexingException, InterruptedException {
-        ParsedObject obj = KeywordParser.extractKeywords(objectType, json, parentJsonValue,
-                indexingRules, objLookup, null);
+        ParsedObject obj = KeywordParser.extractKeywords(rule.getGlobalObjectType(), json,
+                parentJsonValue, rule.getIndexingRules(), objLookup, null);
         final SourceData data = SourceData.getBuilder(new UObject(json), objectName, "creator")
                 .build();
-        indexStorage.indexObject(id, objectType, obj, data, timestamp, parentJsonValue,
-                isPublic, indexingRules);
+        indexStorage.indexObject(rule, data, timestamp, parentJsonValue, id, obj, isPublic);
     }
-
-    private static void indexObject(String type, String jsonResource, GUID ref, String objName)
+    
+    private static void indexObject(
+            final String type,
+            final String jsonResource,
+            final GUID ref,
+            final String objName)
             throws Exception {
         // yuck
         final String extension = type.equals("Genome") ? ".yaml" : ".json";
@@ -215,9 +219,7 @@ public class ElasticIndexingStorageTest {
                 }
             }
             GUID id = ObjectParser.prepareGUID(parsingRules, ref, path, idConsumer);
-            indexObject(id, parsingRules.getGlobalObjectType(), subJson,
-                    objName, Instant.now(), parentJson,
-                    false, parsingRules.getIndexingRules());
+            indexObject(id, parsingRules, subJson, objName, Instant.now(), parentJson, false);
         }
 
     }
@@ -311,7 +313,7 @@ public class ElasticIndexingStorageTest {
         expectedException.expectMessage("Invalid list of object types. List is null.");
 
         // null list of types
-        Set<GUID> guids = indexStorage.searchIds(null,
+        indexStorage.searchIds(null,
                 MatchFilter.create().withAccessGroupId(1),
                 null, AccessFilter.create().withAdmin(true));
     }
@@ -338,7 +340,7 @@ public class ElasticIndexingStorageTest {
         List<String> objectTypes = new ArrayList<>();
         objectTypes.add(null);
         objectTypes.add("Narrative");
-        Set<GUID> guids = indexStorage.searchIds(objectTypes,
+        indexStorage.searchIds(objectTypes,
                 MatchFilter.create().withAccessGroupId(1),
                 null, AccessFilter.create().withAdmin(true));
     }
@@ -370,7 +372,7 @@ public class ElasticIndexingStorageTest {
             objectTypes.add("Narrative");
         }
 
-        Set<GUID> guids = indexStorage.searchIds(objectTypes,
+        indexStorage.searchIds(objectTypes,
                 MatchFilter.create().withAccessGroupId(1),
                 null, AccessFilter.create().withAdmin(true));
     }
@@ -424,28 +426,25 @@ public class ElasticIndexingStorageTest {
         List<String> type = ImmutableList.of(objType.getType());
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop1"))
                 .withFullText().build();
-        List<IndexingRules> indexingRules= Arrays.asList(ir);
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                objType, new StorageObjectType("foo", "bar"))
+                .withIndexingRule(ir).build();
         GUID id11 = new GUID("WS:2/1/1");
-        indexObject(id11, objType, "{\"prop1\":\"abc 123\"}", "obj.1", Instant.now(), null,
-                false, indexingRules);
-        checkIdInSet(indexStorage.searchIds(type, ft("abc"), null,
+        indexObject(id11, rule, "{\"prop1\":\"abc 123\"}", "obj.1", Instant.now(), null, false);
+        checkIdInSet(indexStorage.searchIds(type, ft("abc"), null, 
                 AccessFilter.create().withAccessGroups(2)), 1, id11);
         GUID id2 = new GUID("WS:2/2/1");
-        indexObject(id2, objType, "{\"prop1\":\"abd\"}", "obj.2", Instant.now(), null,
-                false, indexingRules);
+        indexObject(id2, rule, "{\"prop1\":\"abd\"}", "obj.2", Instant.now(), null, false);
         GUID id3 = new GUID("WS:3/1/1");
-        indexObject(id3, objType, "{\"prop1\":\"abc\"}", "obj.3", Instant.now(), null,
-                false, indexingRules);
-        checkIdInSet(indexStorage.searchIds(type, ft("abc"), null,
+        indexObject(id3, rule, "{\"prop1\":\"abc\"}", "obj.3", Instant.now(), null, false);
+        checkIdInSet(indexStorage.searchIds(type, ft("abc"), null, 
                 AccessFilter.create().withAccessGroups(2)), 1, id11);
         GUID id12 = new GUID("WS:2/1/2");
-        indexObject(id12, objType, "{\"prop1\":\"abc 124\"}", "obj.1", Instant.now(), null,
-                false, indexingRules);
+        indexObject(id12, rule, "{\"prop1\":\"abc 124\"}", "obj.1", Instant.now(), null, false);
         checkIdInSet(indexStorage.searchIds(type, ft("abc"), null,
                 AccessFilter.create().withAccessGroups(2)), 1, id12);
         GUID id13 = new GUID("WS:2/1/3");
-        indexObject(id13, objType, "{\"prop1\":\"abc 125\"}", "obj.1", Instant.now(), null,
-                false, indexingRules);
+        indexObject(id13, rule, "{\"prop1\":\"abc 125\"}", "obj.1", Instant.now(), null, false);
         //indexStorage.refreshIndex(indexStorage.getIndex(objType));
         checkIdInSet(indexStorage.searchIds(type, ft("abc"), null,
                 AccessFilter.create().withAccessGroups(2)), 1, id13);
@@ -482,16 +481,15 @@ public class ElasticIndexingStorageTest {
         List<String> type = ImmutableList.of(objType.getType());
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop2"))
                 .withKeywordType("integer").build();
-        List<IndexingRules> indexingRules= Arrays.asList(ir);
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                objType, new StorageObjectType("foo", "bar"))
+                .withIndexingRule(ir).build();
         GUID id1 = new GUID("WS:10/1/1");
-        indexObject(id1, objType, "{\"prop2\": 123}", "obj.1", Instant.now(), null,
-                false, indexingRules);
+        indexObject(id1, rule, "{\"prop2\": 123}", "obj.1", Instant.now(), null, false);
         GUID id2 = new GUID("WS:10/1/2");
-        indexObject(id2, objType, "{\"prop2\": 124}", "obj.1", Instant.now(), null,
-                false, indexingRules);
+        indexObject(id2, rule, "{\"prop2\": 124}", "obj.1", Instant.now(), null, false);
         GUID id3 = new GUID("WS:10/1/3");
-        indexObject(id3, objType, "{\"prop2\": 125}", "obj.1", Instant.now(), null,
-                false, indexingRules);
+        indexObject(id3, rule, "{\"prop2\": 125}", "obj.1", Instant.now(), null, false);
         AccessFilter af10 = AccessFilter.create().withAccessGroups(10);
         Assert.assertEquals(0, lookupIdsByKey(type, "prop2", 123, af10).size());
         checkIdInSet(lookupIdsByKey(type, "prop2", 125, af10), 1, id3);
@@ -533,13 +531,14 @@ public class ElasticIndexingStorageTest {
         List<String> type = ImmutableList.of(objType.getType());
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop3"))
                 .withFullText().build();
-        List<IndexingRules> indexingRules= Arrays.asList(ir);
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                objType, new StorageObjectType("foo", "bar"))
+                .withIndexingRule(ir).build();
         GUID id1 = new GUID("WS:20/1/1");
         GUID id2 = new GUID("WS:20/2/1");
-        indexObject(id1, objType, "{\"prop3\": \"private gggg\"}", "obj.1", Instant.now(), null,
-                false, indexingRules);
-        indexObject(id2, objType, "{\"prop3\": \"public gggg\"}", "obj.2", Instant.now(), null,
-                true, indexingRules);
+        indexObject(id1, rule, "{\"prop3\": \"private gggg\"}", "obj.1", Instant.now(), null,
+                false);
+        indexObject(id2, rule, "{\"prop3\": \"public gggg\"}", "obj.2", Instant.now(), null, true);
         Assert.assertEquals(0, lookupIdsByKey(type, "prop3", "private",
                 AccessFilter.create().withPublic(true)).size());
         checkIdInSet(lookupIdsByKey(type, "prop3", "private",
@@ -586,10 +585,11 @@ public class ElasticIndexingStorageTest {
         List<String> type = ImmutableList.of(objType.getType());
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop4"))
                 .withKeywordType("integer").build();
-        List<IndexingRules> indexingRules = Arrays.asList(ir);
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                objType, new StorageObjectType("foo", "bar"))
+                .withIndexingRule(ir).build();
         GUID id1 = new GUID("WS:30/1/1");
-        indexObject(id1, objType, "{\"prop4\": 123}", "obj.1", Instant.now(), null,
-                false, indexingRules);
+        indexObject(id1, rule, "{\"prop4\": 123}", "obj.1", Instant.now(), null, false);
         AccessFilter af30 = AccessFilter.create().withAccessGroups(30);
         checkIdInSet(lookupIdsByKey(type, "prop4", 123, af30), 1, id1);
         AccessFilter afPub = AccessFilter.create().withPublic(true);
@@ -622,14 +622,16 @@ public class ElasticIndexingStorageTest {
         List<String> type = ImmutableList.of(objType.getType());
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("myprop"))
                 .withFullText().build();
-        List<IndexingRules> indexingRules= Arrays.asList(ir);
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                objType, new StorageObjectType("foo", "bar"))
+                .withIndexingRule(ir).build();
         GUID id1 = new GUID("WS:100/2/1");
         GUID id2 = new GUID("WS:100/2/2");
-        indexObject(id1, objType, "{\"myprop\": \"some stuff\"}", "myobj", Instant.now(), null,
-                false, indexingRules);
-        indexObject(id2, objType, "{\"myprop\": \"some other stuff\"}", "myobj", Instant.now(),
-                null, false, indexingRules);
-
+        indexObject(id1, rule, "{\"myprop\": \"some stuff\"}", "myobj", Instant.now(), null,
+                false);
+        indexObject(id2, rule, "{\"myprop\": \"some other stuff\"}", "myobj", Instant.now(), null,
+                false);
+        
         final AccessFilter filter = AccessFilter.create().withAccessGroups(100);
         final AccessFilter filterAllVers = AccessFilter.create().withAccessGroups(100)
                 .withAllHistory(true);
@@ -642,7 +644,7 @@ public class ElasticIndexingStorageTest {
 
         // check ids show up correctly after delete
         indexStorage.deleteAllVersions(id1);
-        indexStorage.refreshIndexByType(objType);
+        indexStorage.refreshIndexByType(rule);
         assertThat("incorrect ids returned", lookupIdsByKey(type, "myprop", "some",
                 filter), is(set()));
         //TODO NOW these should probaby not show up
@@ -651,7 +653,7 @@ public class ElasticIndexingStorageTest {
 
         // check ids restored after undelete
         indexStorage.undeleteAllVersions(id1);
-        indexStorage.refreshIndexByType(objType);
+        indexStorage.refreshIndexByType(rule);
         assertThat("incorrect ids returned", lookupIdsByKey(type, "myprop", "some",
                 filter), is(set(id2)));
         assertThat("incorrect ids returned", lookupIdsByKey(type, "myprop", "some",
@@ -669,14 +671,16 @@ public class ElasticIndexingStorageTest {
         List<String> type = ImmutableList.of(objType.getType());
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("myprop"))
                 .withFullText().build();
-        List<IndexingRules> indexingRules = Arrays.asList(ir);
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                objType, new StorageObjectType("foo", "bar"))
+                .withIndexingRule(ir).build();
         GUID id1 = new GUID("WS:200/2/1");
         GUID id2 = new GUID("WS:200/2/2");
-        indexObject(id1, objType, "{\"myprop\": \"some stuff\"}", "myobj", Instant.now(), null,
-                false, indexingRules);
-        indexObject(id2, objType, "{\"myprop\": \"some other stuff\"}", "myobj", Instant.now(),
-                null, false, indexingRules);
-
+        indexObject(id1, rule, "{\"myprop\": \"some stuff\"}", "myobj", Instant.now(), null,
+                false);
+        indexObject(id2, rule, "{\"myprop\": \"some other stuff\"}", "myobj", Instant.now(),
+                null, false);
+        
         final AccessFilter filter = AccessFilter.create()
                 .withAllHistory(true).withPublic(false);
         final AccessFilter filterPublic = AccessFilter.create()
@@ -690,7 +694,7 @@ public class ElasticIndexingStorageTest {
 
         // check ids show up correctly after publish
         indexStorage.publishAllVersions(id1);
-        indexStorage.refreshIndexByType(objType);
+        indexStorage.refreshIndexByType(rule);
         assertThat("incorrect ids returned", lookupIdsByKey(type, "myprop", "some",
                 filter), is(set()));
         //TODO NOW these should probaby not show up
@@ -699,7 +703,7 @@ public class ElasticIndexingStorageTest {
 
         // check ids hidden after unpublish
         indexStorage.unpublishAllVersions(id1);
-        indexStorage.refreshIndexByType(objType);
+        indexStorage.refreshIndexByType(rule);
         assertThat("incorrect ids returned", lookupIdsByKey(type, "myprop", "some",
                 filter), is(set()));
         assertThat("incorrect ids returned", lookupIdsByKey(type, "myprop", "some",
@@ -712,18 +716,22 @@ public class ElasticIndexingStorageTest {
         final SearchObjectType type1 = new SearchObjectType("TypeVers", 5);
         // changing 10 -> 5 makes the test fail due to elasticsearch exception
         final SearchObjectType type2 = new SearchObjectType("TypeVers", 10);
-        final List<IndexingRules> idxRules1 = Arrays.asList(
-                IndexingRules.fromPath(new ObjectJsonPath("bar"))
-                        .withKeywordType("integer").build());
-        final List<IndexingRules> idxRules2 = Arrays.asList(
-                IndexingRules.fromPath(new ObjectJsonPath("bar"))
-                        .withKeywordType("keyword").build());
+        final IndexingRules idxRules1 = IndexingRules.fromPath(new ObjectJsonPath("bar"))
+                .withKeywordType("integer").build();
+        final IndexingRules idxRules2 = IndexingRules.fromPath(new ObjectJsonPath("bar"))
+                .withKeywordType("keyword").build();
         final Instant now = Instant.now();
+        final ObjectTypeParsingRules rule1 = ObjectTypeParsingRules.getBuilder(
+                type1, new StorageObjectType("foo", "bar"))
+                .withIndexingRule(idxRules1).build();
+        final ObjectTypeParsingRules rule2 = ObjectTypeParsingRules.getBuilder(
+                type2, new StorageObjectType("foo", "bar"))
+                .withIndexingRule(idxRules2).build();
         
-        indexObject(new GUID("WS:1/2/3"), type1, "{\"bar\": 1}", "o1", now,
-                null, false, idxRules1);
-        indexObject(new GUID("WS:4/5/6"), type2, "{\"bar\": \"whee\"}", "o2", now,
-                null, false, idxRules2);
+        indexObject(new GUID("WS:1/2/3"), rule1, "{\"bar\": 1}", "o1", now,
+                null, false);
+        indexObject(new GUID("WS:4/5/6"), rule2, "{\"bar\": \"whee\"}", "o2", now,
+                null, false);
         
         final ObjectData indexedObj1 =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/2/3"))).get(0);
@@ -763,7 +771,10 @@ public class ElasticIndexingStorageTest {
     @Test
     public void noIndexingRules() throws Exception {
         indexStorage.indexObjects(
-                new SearchObjectType("NoIndexingRules", 1),
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("NoIndexingRules", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .build(),
                 SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "creator")
                         .withNullableCommitHash("commit")
                         .withNullableCopier("cop")
@@ -776,8 +787,7 @@ public class ElasticIndexingStorageTest {
                 null,
                 new GUID("WS:1000/1/1"),
                 Collections.emptyMap(),
-                false,
-                Collections.emptyList());
+                false);
         
         final ObjectData indexedObj =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1000/1/1"))).get(0);
@@ -797,22 +807,94 @@ public class ElasticIndexingStorageTest {
         
         assertThat("incorrect indexed object", indexedObj, is(expected));
     }
+    
+    @Test
+    public void excludeSubObjects() throws Exception {
+        // regular object
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("ExcludeSubObjectsNorm", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "creator").build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2000/1/1"),
+                ImmutableMap.of(new GUID("WS:2000/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
+                false);
+        
+        // sub object
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("ExcludeSubObjectsSub", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .toSubObjectRule(
+                                "sub", new ObjectJsonPath("subpath"), new ObjectJsonPath("id"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "creator").build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2000/2/1"),
+                ImmutableMap.of(new GUID("WS:2000/2/1:sub/yay"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
+                false);
+        
+        final Set<GUID> res = indexStorage.searchIds(
+                Collections.emptyList(),
+                MatchFilter.create().withFullTextInAll("imaprettypony"),
+                null,
+                AccessFilter.create().withAccessGroups(2000));
+        assertThat("incorrect objects found", res,
+                is(set(new GUID("WS:2000/1/1"), new GUID("WS:2000/2/1:sub/yay"))));
+        
+        final Set<GUID> res2 = indexStorage.searchIds(
+                Collections.emptyList(),
+                MatchFilter.create().withFullTextInAll("imaprettypony")
+                        .withExcludeSubObjects(true),
+                null,
+                AccessFilter.create().withAccessGroups(2000));
+        assertThat("incorrect objects found", res2, is(set(new GUID("WS:2000/1/1"))));
+        
+        final Map<String, Integer> count = indexStorage.searchTypes(
+                MatchFilter.create().withFullTextInAll("imaprettypony"),
+                AccessFilter.create().withAccessGroups(2000));
+        
+        assertThat("incorrect type count", count, is(ImmutableMap.of(
+                "ExcludeSubObjectsSub", 1,
+                "ExcludeSubObjectsNorm", 1)));
+        
+        final Map<String, Integer> count2 = indexStorage.searchTypes(
+                MatchFilter.create().withFullTextInAll("imaprettypony")
+                        .withExcludeSubObjects(true),
+                AccessFilter.create().withAccessGroups(2000));
+        
+        assertThat("incorrect type count", count2, is(ImmutableMap.of(
+                "ExcludeSubObjectsNorm", 1)));
+    }
 
     private void prepareTestMultiwordSearch(GUID guid1, GUID guid2, GUID guid3) throws Exception {
-        SearchObjectType objectType = new SearchObjectType("Simple", 1);
-        IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop1"))
+        final SearchObjectType objectType = new SearchObjectType("Simple", 1);
+        final IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop1"))
                 .withFullText().build();
-        List<IndexingRules> indexingRules = Arrays.asList(ir);
 
-            indexObject(guid1, objectType, "{\"prop1\":\"multiWordInSearchMethod1 multiWordInSearchMethod2\"}",
-                    "multiword.1", Instant.now(), null,
-                    true, indexingRules);
-            indexObject(guid2, objectType, "{\"prop1\":\"multiWordInSearchMethod2\"}",
-                    "multiword.2", Instant.now(), null,
-                    true, indexingRules);
-            indexObject(guid3, objectType, "{\"prop1\":\"multiWordInSearchMethod1\"}",
-                    "multiword.3", Instant.now(), null,
-                    true, indexingRules);
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                objectType, new StorageObjectType("foo", "bar"))
+                .withIndexingRule(ir).build();
+        
+        indexObject(guid1, rule,
+                "{\"prop1\":\"multiWordInSearchMethod1 multiWordInSearchMethod2\"}",
+                "multiword.1", Instant.now(), null, true);
+        indexObject(guid2, rule, "{\"prop1\":\"multiWordInSearchMethod2\"}",
+                "multiword.2", Instant.now(), null, true);
+        indexObject(guid3, rule, "{\"prop1\":\"multiWordInSearchMethod1\"}",
+                "multiword.3", Instant.now(), null, true);
     }
 
 
@@ -846,23 +928,23 @@ public class ElasticIndexingStorageTest {
     }
 
     private void prepareTestLookupInKey(GUID guid1, GUID guid2, GUID guid3) throws Exception {
-        SearchObjectType objType = new SearchObjectType("SimpleNumber", 1 );
-        IndexingRules ir1 = IndexingRules.fromPath(new ObjectJsonPath("num1"))
+        final SearchObjectType objType = new SearchObjectType("SimpleNumber", 1 );
+        final IndexingRules ir1 = IndexingRules.fromPath(new ObjectJsonPath("num1"))
                 .withKeywordType("integer").build();
-        IndexingRules ir2 = IndexingRules.fromPath(new ObjectJsonPath("num2"))
+        final IndexingRules ir2 = IndexingRules.fromPath(new ObjectJsonPath("num2"))
                 .withKeywordType("integer").build();
-        List<IndexingRules> indexingRules= Arrays.asList(ir1, ir2);
 
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                objType, new StorageObjectType("foo", "bar"))
+                .withIndexingRule(ir1)
+                .withIndexingRule(ir2).build();
 
-        indexObject(guid1, objType, "{\"num1\": 123, \"num2\": 123}",
-                "number.1", Instant.now(), null,
-                false, indexingRules);
-        indexObject(guid2, objType, "{\"num1\": 1234, \"num2\": 1234}",
-                "number.2", Instant.now(), null,
-                false, indexingRules);
-        indexObject(guid3, objType, "{\"num1\": 1236, \"num2\": 1236}",
-                "number.3", Instant.now(), null,
-                false, indexingRules);
+        indexObject(guid1, rule, "{\"num1\": 123, \"num2\": 123}",
+                "number.1", Instant.now(), null, false);
+        indexObject(guid2, rule, "{\"num1\": 1234, \"num2\": 1234}",
+                "number.2", Instant.now(), null, false);
+        indexObject(guid3, rule, "{\"num1\": 1236, \"num2\": 1236}",
+                "number.3", Instant.now(), null, false);
     }
     @Test
     public void testLookupInKey() throws Exception{

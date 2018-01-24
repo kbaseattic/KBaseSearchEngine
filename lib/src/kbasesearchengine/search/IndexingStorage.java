@@ -9,8 +9,7 @@ import java.util.Set;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.parse.ParsedObject;
-import kbasesearchengine.system.IndexingRules;
-import kbasesearchengine.system.SearchObjectType;
+import kbasesearchengine.system.ObjectTypeParsingRules;
 
 public interface IndexingStorage {
     
@@ -27,14 +26,25 @@ public interface IndexingStorage {
      * @param indexingRules  indexing rules
      * @throws IOException
      */
-    public void indexObject(GUID guid, SearchObjectType objectType, ParsedObject obj, SourceData source,
-            Instant timestamp, String parentJsonValue, boolean isPublic,
-            List<IndexingRules> indexingRules) throws IOException;
+    public void indexObject(
+            ObjectTypeParsingRules rule,
+            SourceData source,
+            Instant timestamp,
+            String parentJsonValue,
+            GUID guid,
+            ParsedObject obj,
+            boolean isPublic)
+            throws IOException;
 
-    public void indexObjects(SearchObjectType objectType, SourceData obj, Instant timestamp,
-            String parentJsonValue, GUID pguid, Map<GUID, ParsedObject> idToObj,
-            boolean isPublic, List<IndexingRules> indexingRules) 
-                    throws IOException;
+    public void indexObjects(
+            ObjectTypeParsingRules rule,
+            SourceData source,
+            Instant timestamp,
+            String parentJsonValue,
+            GUID pguid,
+            Map<GUID, ParsedObject> idToObj,
+            boolean isPublic) 
+            throws IOException;
     
     /** Check that the parent objects (e.g. the access information) exists for a set of GUIDS.
      * Equivalent to {@link #checkParentGuidsExist(String, Set)} with a null String.
@@ -45,7 +55,7 @@ public interface IndexingStorage {
     public Map<GUID, Boolean> checkParentGuidsExist(Set<GUID> parentGuids)
             throws IOException;
 
-    public void flushIndexing(SearchObjectType objectType) throws IOException;
+    public void flushIndexing(ObjectTypeParsingRules objectType) throws IOException;
     
     public void shareObjects(Set<GUID> guids, int accessGroupId, boolean isPublicGroup) throws IOException;
 
@@ -68,35 +78,44 @@ public interface IndexingStorage {
             AccessFilter accessFilter) throws IOException;
 
     /**
-     *
-     * @param objectType a non-null list of object types to constrain the search to.
-     *                   An empty list indicates a search that is unconstrained by object type.
-     * @param matchFilter
-     * @param sorting
-     * @param accessFilter
-     * @param pagination
-     * @return
-     * @throws IOException
-     */
-    public FoundHits searchIds(List<String> objectType, MatchFilter matchFilter,
-            List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination) 
-                    throws IOException;
+    *
+    * @param objectType a non-null list of object types to constrain the search to.
+    *                   An empty list indicates a search that is unconstrained by object type.
+    * @param matchFilter
+    * @param sorting
+    * @param accessFilter
+    * @param pagination
+    * @return
+    * @throws IOException
+    */
+    public FoundHits searchIds(
+            List<String> objectType,
+            MatchFilter matchFilter,
+            List<SortingRule> sorting,
+            AccessFilter accessFilter,
+            Pagination pagination)
+            throws IOException;
 
     /**
-     *
-     * @param objectType a non-null list of object types to constrain the search to.
-     *                   An empty list indicates a search that is unconstrained by object type.
-     * @param matchFilter
-     * @param sorting
-     * @param accessFilter
-     * @param pagination
-     * @param postProcessing
-     * @return
-     * @throws IOException
-     */
-    public FoundHits searchObjects(List<String> objectType, MatchFilter matchFilter,
-            List<SortingRule> sorting, AccessFilter accessFilter, Pagination pagination,
-            PostProcessing postProcessing) throws IOException;
+    *
+    * @param objectType a non-null list of object types to constrain the search to.
+    *                   An empty list indicates a search that is unconstrained by object type.
+    * @param matchFilter
+    * @param sorting
+    * @param accessFilter
+    * @param pagination
+    * @param postProcessing
+    * @return
+    * @throws IOException
+    */
+    public FoundHits searchObjects(
+            List<String> objectType,
+            MatchFilter matchFilter,
+            List<SortingRule> sorting,
+            AccessFilter accessFilter,
+            Pagination pagination,
+            PostProcessing postProcessing)
+            throws IOException;
 
     /** Change the name of all the versions of an object.
      * @param object the GUID of the object. The version field is ignored.
