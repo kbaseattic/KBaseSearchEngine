@@ -53,6 +53,7 @@ build-startup-script:
 docker_image: build build-executable-script
 	ant war
 	-mkdir deployment/lib
+	-mkdir -p deployment/jettybase/webapps
 	cp dist/KBaseSearchEngine.war deployment/jettybase/webapps/root.war 
 	-mkdir -p deployment/services/search/lib
 	cp dist/* deployment/services/search/lib
