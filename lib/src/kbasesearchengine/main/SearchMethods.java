@@ -133,6 +133,7 @@ public class SearchMethods {
     }
     
     private kbasesearchengine.search.MatchFilter toSearch(MatchFilter mf) {
+        //TODO NNOW exludeSubObjects from input
         kbasesearchengine.search.MatchFilter ret = 
                 new kbasesearchengine.search.MatchFilter()
                 .withFullTextInAll(mf.getFullTextInAll())

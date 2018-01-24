@@ -566,8 +566,8 @@ public class IndexerWorker implements Stoppable {
         final Boolean isPublic = (Boolean) input.get(6);
         
         try {
-            indexingStorage.indexObjects(rule.getGlobalObjectType(), obj,
-                    timestamp, parentJson, guid, guidToObj, isPublic, rule.getIndexingRules());
+            indexingStorage.indexObjects(
+                    rule, obj, timestamp, parentJson, guid, guidToObj, isPublic);
         } catch (IOException e) {
             throw new FatalRetriableIndexingException(e.getMessage(), e);
         }
