@@ -1013,9 +1013,8 @@ public class ElasticIndexingStorageTest {
             //TODO: remove items from each test after completion. Will error if run all sequence in order due to version conflict
         }
         PostProcessing pp = new PostProcessing();
-
-        pp.objectData = true;
-        pp.objectInfo = true;
+        List<String> empty = new ArrayList<>();
+        
         pp.objectHighlight = true;
 
         List<kbasesearchengine.search.SortingRule> sorting = null;
@@ -1024,16 +1023,25 @@ public class ElasticIndexingStorageTest {
         //searchObjects
         final kbasesearchengine.search.MatchFilter filter = new kbasesearchengine.search.MatchFilter();
         filter.withFullTextInAll("multiWordInSearchMethod1 multiWordInSearchMethod2");
-        FoundHits hits = indexStorage.searchObjects(null, filter,sorting, accessFilter, null, pp);
+        FoundHits hits = indexStorage.searchObjects(empty, filter,sorting, accessFilter, null, pp);
         Map<String, ArrayList> hitRes = hits.objects.get(0).getHighlight();
 
         assertThat("Incorrect field for highlighting", hitRes.get("prop1"), is(notNullValue()) );
         assertThat("Incorrect portion highlighted", hitRes.get("prop1").get(0), is("<em>multiWordInSearchMethod1</em> <em>multiWordInSearchMethod2</em>"));
 
-        //searchIds does not return object data and so will not be highlight
-        //searchTypes returns the number of items per type that match that
+        //searchIds is a wrapper around queryHits and does not return object data and so will not be highlighted
+        //searchTypes returns the number of items per type that. No highlight neccesary.
 
+        //getObjectsByIds -- if you ever want to get the guids back highlighted...
+        Set<GUID> guids = new HashSet<>();
+        guids.add(guid1);
+        List<ObjectData> objIdsData = indexStorage.getObjectsByIds(guids, pp);
+        for(ObjectData obj: objIdsData){
+            Map<String, ArrayList> res = obj.getHighlight();
+            assertThat("Incorrect field for highlighting", res.get("guid"), is(notNullValue()) );
+            assertThat("Incorrect portion highlighted", res.get("guid").get(0), is("<em>WS:11/1/2</em>"));
 
+        }
 
 
     }

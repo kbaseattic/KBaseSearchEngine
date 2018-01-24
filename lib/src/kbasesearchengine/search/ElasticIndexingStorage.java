@@ -1058,12 +1058,21 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public List<ObjectData> getObjectsByIds(Set<GUID> ids, PostProcessing pp) 
             throws IOException {
 
-        Map<String, Object> doc = ImmutableMap.of("query",
-                                     ImmutableMap.of("bool",
+        Map<String, Object> query = ImmutableMap.of("bool",
                                         ImmutableMap.of("filter",
                                            ImmutableMap.of("terms",
-                ImmutableMap.of("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList()))))));
+                ImmutableMap.of("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList())))));
         //doc.put("_source", Arrays.asList("ojson"));
+        Map<String, Object> highlight =
+                ImmutableMap.of("fields",
+                        ImmutableMap.of("*",
+                                ImmutableMap.of("require_field_match", false)));
+        Map<String, Object> doc = new LinkedHashMap<>();
+        doc.put("query", query);
+
+        if(pp.objectHighlight){
+            doc.put("highlight", highlight);
+        }
 
         String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
@@ -1461,7 +1470,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put("from", pagination.start);
         doc.put("size", pagination.count);
 
-        boolean loadObjects = pp != null && (pp.objectInfo || pp.objectData || pp.objectKeys);
+        boolean loadObjects = pp != null && (pp.objectInfo || pp.objectData || pp.objectKeys || pp.objectHighlight);
         if (!loadObjects) {
             doc.put("_source", Arrays.asList("guid"));
         }
