@@ -205,6 +205,7 @@ public class TestCommon {
         final HttpURLConnection conn = (HttpURLConnection) target.openConnection();
         conn.setRequestMethod("POST");
         conn.setRequestProperty("content-type", "application/json");
+        conn.setRequestProperty("accept", "application/json");
         conn.setDoOutput(true);
         
         final DataOutputStream writer = new DataOutputStream(conn.getOutputStream());
@@ -226,6 +227,7 @@ public class TestCommon {
         final HttpURLConnection conn = (HttpURLConnection) target.openConnection();
         conn.setRequestMethod("POST");
         conn.setRequestProperty("content-type", "application/json");
+        conn.setRequestProperty("accept", "application/json");
         conn.setDoOutput(true);
         
         final DataOutputStream writer = new DataOutputStream(conn.getOutputStream());

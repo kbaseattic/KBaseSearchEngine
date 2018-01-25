@@ -40,6 +40,9 @@ module KBaseSearchEngine {
       including values of keywords or metadata/system properties (like
       object name, creation time range) or full-text search in all
       properties.
+      
+      boolean exclude_subobjects - don't return any subobjects in the search results if true.
+          Default false.
     */
     typedef structure {
         string full_text_in_all;
@@ -47,6 +50,7 @@ module KBaseSearchEngine {
         string object_name;
         GUID parent_guid;
         MatchValue timestamp;
+        boolean exclude_subobjects;
         mapping<string, MatchValue> lookupInKeys;
     } MatchFilter;
 
