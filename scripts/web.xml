@@ -3,6 +3,7 @@
     <servlet>
         <servlet-name>JsonRpcServlet</servlet-name>
         <servlet-class>kbasesearchengine.KBaseSearchEngineServer</servlet-class>
+        <load-on-startup>1</load-on-startup>
     </servlet>
     <servlet-mapping>
         <servlet-name>JsonRpcServlet</servlet-name>
