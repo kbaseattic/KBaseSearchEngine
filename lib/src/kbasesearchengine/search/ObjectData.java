@@ -561,11 +561,5 @@ public class ObjectData {
             }
             return this;
         }
-        public Builder withNullableHighlight(final Map<String, ArrayList> highlight) {
-            if(highlight != null){
-                this.highlight = highlight;
-            }
-            return this;
-        }
     }
 }
