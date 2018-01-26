@@ -84,7 +84,7 @@ public class SearchMethodsTest {
         fh.objects = Collections.emptyList();
         
         when(is.searchObjects(
-                "Genome",
+                Arrays.asList("Genome"),
                 expected,
                 null, // sort
                 new kbasesearchengine.search.AccessFilter().withAccessGroups(set()),
@@ -93,7 +93,7 @@ public class SearchMethodsTest {
                 .thenReturn(fh);
         
         final SearchObjectsOutput res = sm.searchObjects(new SearchObjectsInput()
-                .withObjectType("Genome")
+                .withObjectTypes(Arrays.asList("Genome"))
                 .withMatchFilter(input)
                 .withAccessFilter(new AccessFilter()),
                 "auser");

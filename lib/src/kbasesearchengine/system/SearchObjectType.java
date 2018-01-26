@@ -1,5 +1,6 @@
 package kbasesearchengine.system;
 
+import java.io.UnsupportedEncodingException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,6 +13,7 @@ import kbasesearchengine.tools.Utils;
 public class SearchObjectType {
 
     private final static Pattern INVALID_CHARS = Pattern.compile("[^a-zA-Z\\d]+");
+    public final static int MAX_TYPE_SIZE = 50; // UTF-8 chars
     
     private final String type;
     private final int version;
@@ -19,13 +21,23 @@ public class SearchObjectType {
     // consider supporting unicode later
     /** Create a new type.
      * @param type the type name. Names may include numbers and lower and uppercase ASCII letters.
-     * The first character must be a letter.
+     * The first character must be a letter. The maximum size is {@link SearchObjectType#MAX_TYPE_SIZE}.
      * @param version the version of the type.
      * @throws IllegalArgumentException if the type name is null or whitespace or the version is
      * less than one.
      */
     public SearchObjectType(final String type, final int version) {
         Utils.notNullOrEmpty(type, "search type cannot be null or whitespace");
+
+        try {
+            if (type.getBytes("UTF-8").length > MAX_TYPE_SIZE) {
+                throw new IllegalArgumentException("Search type string size must be less than " +
+                        MAX_TYPE_SIZE + " UTF-8 chars");
+            }
+        } catch (UnsupportedEncodingException ex) {
+            throw new IllegalArgumentException("Unsupported encoding for search type string: " + ex.getMessage());
+        }
+
         if (version < 1) {
             throw new IllegalArgumentException("search type version must be greater than zero");
         }
