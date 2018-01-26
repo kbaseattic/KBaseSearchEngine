@@ -73,6 +73,7 @@ public class ObjectData {
     /** Get the object's GUID.
      * @return the GUID.
      */
+
     public GUID getGUID() {
         return guid;
     }
