@@ -1087,24 +1087,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return ret;
     }
 
-    private Map<String, ArrayList> editHighlightedKeys(Map<String, ArrayList> highlightRes){
-        if(highlightRes == null){
-            return null;
-        }
-        Map<String, ArrayList> highlightResEdited = new HashMap<>();
-        for(String key : highlightRes.keySet()){
-            String newKey = key;
-            if(key.startsWith("key.")){
-                //truncate key. from key
-                newKey = key.substring(4);
-            }
-            highlightResEdited.put(newKey, highlightRes.get(key));
-
-        }
-        return highlightResEdited;
-    }
-
-
     private ObjectData buildObjectData(
             final Map<String, Object> obj,
             final Map<String, ArrayList> highlight,
@@ -1112,9 +1094,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
             PostProcessing pp) {
         // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
         final ObjectData.Builder b = ObjectData.getBuilder(new GUID((String) obj.get("guid")));
-        if(Objects.isNull(pp)){
-            return b.build();
-        }
         if (pp.objectInfo) {
             b.withNullableObjectName((String) obj.get(OBJ_NAME));
             b.withNullableCreator((String) obj.get(OBJ_CREATOR));
@@ -1155,7 +1134,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     } else {
                         textValue = String.valueOf(objValue);
                     }
-                    b.withKeyProperty(key.substring(4), textValue);
+                    b.withKeyProperty(stripKeyPrefix(key), textValue);
                 }
             }
         }
@@ -1163,8 +1142,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             for(String key : highlight.keySet()){
                 String newKey = key;
                 if(key.startsWith("key.")){
-                    //truncate key. from key
-                    newKey = key.substring(4);
+                    newKey = stripKeyPrefix(key);
                 }
                 b.withHighlight(newKey, highlight.get(key));
             }
@@ -1172,6 +1150,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         return b.build();
     }
+
+    private String stripKeyPrefix(String key){
+        return key.substring(4);
+    }
+
     
     private Map<String, Object> createPublicShouldBlock(boolean withAllHistory) {
         List<Object> must0List = new ArrayList<>();
@@ -1520,7 +1503,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
         ret.total = (Integer)hitMap.get("total");
         if (loadObjects) {
-            ret.objects = new ArrayList<ObjectData>();
+            ret.objects = new ArrayList<>();
         }
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");

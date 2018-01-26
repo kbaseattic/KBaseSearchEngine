@@ -903,7 +903,7 @@ public class ElasticIndexingStorageTest {
 
 
     @Test
-    public void testMultiwordSearch() throws Exception{
+    public void testMultiwordSearch() throws Exception {
         GUID guid1 = new GUID("WS:11/1/2");
         GUID guid2 = new GUID("WS:11/2/2");
         GUID guid3 = new GUID("WS:11/3/2");
@@ -951,7 +951,7 @@ public class ElasticIndexingStorageTest {
                 "number.3", Instant.now(), null, false);
     }
     @Test
-    public void testLookupInKey() throws Exception{
+    public void testLookupInKey() throws Exception {
         GUID guid1 = new GUID("WS:12/1/2");
         GUID guid2 = new GUID("WS:12/2/2");
         GUID guid3 = new GUID("WS:12/3/2");
@@ -1004,35 +1004,15 @@ public class ElasticIndexingStorageTest {
         assertThat("overlapping ranges did not return intersection", hits5.guids, is(set(guid2)));
     }
 
-    private void prepareTestMultiwordSearch2(GUID guid1, GUID guid2, GUID guid3) throws Exception {
-        final SearchObjectType objectType = new SearchObjectType("Simple", 1);
-        final IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop1"))
-                .withFullText().build();
-        final IndexingRules ir2 = IndexingRules.fromPath(new ObjectJsonPath("prop2"))
-                .withFullText().build();
-
-
-        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
-                objectType, new StorageObjectType("foo", "bar"))
-                .withIndexingRule(ir).withIndexingRule(ir2).build();
-
-        indexObject(guid1, rule,
-                "{\"prop1\":\"word1 word2\", \"prop2\": \"word1\"}",
-                "multiword.1", Instant.now(), null, true);
-        indexObject(guid2, rule, "{\"prop1\":\"word3  word3\", \"prop2\": \"word3\"}",
-                "multiword.2", Instant.now(), null, true);
-        indexObject(guid3, rule, "{\"prop1\":\"word1\", \"prop2\": \"word1\"}",
-                "multiword.3", Instant.now(), null, true);
-    }
 
     @Test
-    public void addHighlighting() throws Exception{
+    public void addHighlighting() throws Exception {
         GUID guid1 = new GUID("WS:11/1/2");
         GUID guid2 = new GUID("WS:11/2/2");
         GUID guid3 = new GUID("WS:11/3/2");
         try {
             prepareTestMultiwordSearch(guid1, guid2, guid3);
-        }catch(Exception e){
+        } catch(Exception e) {
             //TODO: remove items from each test after completion. Will error if run all sequence in order due to version conflict
         }
         PostProcessing pp = new PostProcessing();
@@ -1059,13 +1039,10 @@ public class ElasticIndexingStorageTest {
         Set<GUID> guids = new HashSet<>();
         guids.add(guid1);
         List<ObjectData> objIdsData = indexStorage.getObjectsByIds(guids, pp);
-        for(ObjectData obj: objIdsData){
+        for(ObjectData obj: objIdsData) {
             Map<String, ArrayList> res = obj.getHighlight();
             assertThat("Incorrect field for highlighting", res.get("guid"), is(notNullValue()) );
             assertThat("Incorrect portion highlighted", res.get("guid").get(0), is("<em>WS:11/1/2</em>"));
-
         }
-
-
     }
 }
