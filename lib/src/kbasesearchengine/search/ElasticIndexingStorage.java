@@ -7,18 +7,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -1075,7 +1064,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
 
-        if(pp.objectHighlight){
+        if(Objects.nonNull(pp) && pp.objectHighlight){
             doc.put("highlight", createHighlightQuery());
         }
 
@@ -1124,6 +1113,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
             PostProcessing pp) {
         // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
         final ObjectData.Builder b = ObjectData.getBuilder(new GUID((String) obj.get("guid")));
+        if(Objects.isNull(pp)){
+            return b.build();
+        }
         if (pp.objectInfo) {
             b.withNullableObjectName((String) obj.get(OBJ_NAME));
             b.withNullableCreator((String) obj.get(OBJ_CREATOR));
@@ -1181,22 +1173,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         return b.build();
     }
-//    private Map<String, ArrayList> editHighlightedKeys(Map<String, ArrayList> highlightRes){
-//        if(highlightRes == null){
-//            return null;
-//        }
-//        Map<String, ArrayList> highlightResEdited = new HashMap<>();
-//        for(String key : highlightRes.keySet()){
-//            String newKey = key;
-//            if(key.startsWith("key.")){
-//                //truncate key. from key
-//                newKey = key.substring(4);
-//            }
-//            highlightResEdited.put(newKey, highlightRes.get(key));
-//
-//        }
-//        return highlightResEdited;
-//    }
     
     private Map<String, Object> createPublicShouldBlock(boolean withAllHistory) {
         List<Object> must0List = new ArrayList<>();
@@ -1490,7 +1466,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
-        if(pp.objectHighlight){
+        if(Objects.nonNull(pp) && pp.objectHighlight){
             doc.put("highlight", createHighlightQuery());
         }
         doc.put("from", pagination.start);
