@@ -189,7 +189,12 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         if (workerCodes == null || workerCodes.isEmpty()) {
             workerCodes = DEFAULT_WORKER_CODES_SET;
         }
-        Utils.noNulls(workerCodes, "null item in workerCodes");
+        for (final String code: workerCodes) {
+            if (Utils.isNullOrEmpty(code)) {
+                throw new IllegalArgumentException("null or whitespace only item in workerCodes");
+            }
+        }
+        
         final Optional<StorageObjectType> sot = newEvent.getStorageObjectType();
         final Document doc = new Document()
                 .append(FLD_ACCESS_GROUP_ID, newEvent.getAccessGroupId().orNull())

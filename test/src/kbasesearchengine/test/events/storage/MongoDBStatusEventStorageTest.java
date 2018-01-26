@@ -571,7 +571,9 @@ public class MongoDBStatusEventStorageTest {
                 "Ws", Instant.ofEpochMilli(10000), StatusEventType.NEW_ALL_VERSIONS).build();
         failStore(event, null, null, new NullPointerException("state"));
         failStore(event, StatusEventProcessingState.UNINDX, set("foo", null),
-                new NullPointerException("null item in workerCodes"));
+                new IllegalArgumentException("null or whitespace only item in workerCodes"));
+        failStore(event, StatusEventProcessingState.UNINDX, set("foo", "   \t   \n  "),
+                new IllegalArgumentException("null or whitespace only item in workerCodes"));
     }
     
     private void failStore(
