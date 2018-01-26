@@ -1063,7 +1063,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
 
-        if(Objects.nonNull(pp) && pp.objectHighlight){
+        if(Objects.nonNull(pp) && pp.objectHighlight) {
             doc.put("highlight", createHighlightQuery());
         }
 
@@ -1090,7 +1090,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private ObjectData buildObjectData(
             final Map<String, Object> obj,
             final Map<String, ArrayList> highlight,
-
             PostProcessing pp) {
         // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
         final ObjectData.Builder b = ObjectData.getBuilder(new GUID((String) obj.get("guid")));
@@ -1138,10 +1137,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 }
             }
         }
-        if(pp.objectHighlight){
-            for(String key : highlight.keySet()){
+        if(pp.objectHighlight) {
+            for(String key : highlight.keySet()) {
                 String newKey = key;
-                if(key.startsWith("key.")){
+                if(key.startsWith("key.")) {
                     newKey = stripKeyPrefix(key);
                 }
                 b.withHighlight(newKey, highlight.get(key));
@@ -1448,7 +1447,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
-        if(Objects.nonNull(pp) && pp.objectHighlight){
+        if(Objects.nonNull(pp) && pp.objectHighlight) {
             doc.put("highlight", createHighlightQuery());
         }
         doc.put("from", pagination.start);
