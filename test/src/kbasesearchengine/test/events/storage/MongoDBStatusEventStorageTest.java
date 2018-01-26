@@ -326,12 +326,12 @@ public class MongoDBStatusEventStorageTest {
     
     @Test
     public void getAndSetProcessingWithSortAndNullCodes() throws Exception {
-        getAndSetProcessingWithUpdaterAndSort(null, NOOP);
+        getAndSetProcessingWithSort(null, NOOP);
     }
     
     @Test
     public void getAndSetProcessingWithSortNoDBWorkerCodeField() throws Exception {
-        getAndSetProcessingWithUpdaterAndSort(set(),
+        getAndSetProcessingWithSort(set(),
                 id -> db.getCollection("searchEvents").findOneAndUpdate(
                         new Document("_id", new ObjectId(id.getId())),
                         new Document("$unset", new Document("wrkcde", 1)),
@@ -340,7 +340,7 @@ public class MongoDBStatusEventStorageTest {
     
     @Test
     public void getAndSetProcessingWithSortNullDBWorkerCodeField() throws Exception {
-        getAndSetProcessingWithUpdaterAndSort(null,
+        getAndSetProcessingWithSort(null,
                 id -> db.getCollection("searchEvents").findOneAndUpdate(
                         new Document("_id", new ObjectId(id.getId())),
                         new Document("$set", new Document("wrkcde", null)),
@@ -349,7 +349,7 @@ public class MongoDBStatusEventStorageTest {
     
     @Test
     public void getAndSetProcessingWithSortEmptyDBWorkerCodeField() throws Exception {
-        getAndSetProcessingWithUpdaterAndSort(set("default", "bar"),
+        getAndSetProcessingWithSort(set("default", "bar"),
                 id -> db.getCollection("searchEvents").findOneAndUpdate(
                         new Document("_id", new ObjectId(id.getId())),
                         new Document("$set", new Document("wrkcde", Arrays.asList())),
@@ -358,25 +358,35 @@ public class MongoDBStatusEventStorageTest {
     
     @Test
     public void getAndSetProcessingWithSortAndEmptyCodes() throws Exception {
-        getAndSetProcessingWithUpdaterAndSort(set(), NOOP);
+        getAndSetProcessingWithSort(set(), NOOP);
     }
     
     @Test
     public void getAndSetProcessingWithSortAndDefaultCode() throws Exception {
-        getAndSetProcessingWithUpdaterAndSort(set("default"), NOOP);
+        getAndSetProcessingWithSort(set("default"), NOOP);
     }
     
     @Test
     public void getAndSetProcessingWithSortAndDefaultPlusCodes() throws Exception {
-        getAndSetProcessingWithUpdaterAndSort(set("default", "foo"), NOOP);
+        getAndSetProcessingWithSort(set("default", "foo"), NOOP);
     }
 
-    private void getAndSetProcessingWithUpdaterAndSort(
-            final Set<String> workerCodes,
+    private void getAndSetProcessingWithSort(
+            final Set<String> searchWorkerCodes,
+            final Consumer<StatusEventID> operation)
+            throws RetriableIndexingException, FatalRetriableIndexingException {
+        getAndSetProcessingWithSort(null, set("default"), null, searchWorkerCodes, operation);
+    }
+    
+    private void getAndSetProcessingWithSort(
+            final Set<String> storedWorkerCodes,
+            final Set<String> expectedWorkerCodes,
+            final Set<String> otherEventWorkerCodes,
+            final Set<String> searchWorkerCodes,
             final Consumer<StatusEventID> operation)
             throws RetriableIndexingException, FatalRetriableIndexingException {
         // test that the event that is updated is the oldest event
-        store(2, 200, StatusEventProcessingState.READY);
+        store(2, 200, StatusEventProcessingState.READY, otherEventWorkerCodes);
         final StorageObjectType sot = new StorageObjectType("foo", "bar", 9);
         final StoredStatusEvent sse = storage.store(StatusEvent.getBuilder(
                 sot, Instant.ofEpochMilli(1000), StatusEventType.COPY_ACCESS_GROUP)
@@ -387,15 +397,15 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableVersion(7)
                 .build(),
                 StatusEventProcessingState.READY,
-                null);
-        store(201, 400, StatusEventProcessingState.READY);
+                storedWorkerCodes);
+        store(201, 400, StatusEventProcessingState.READY, otherEventWorkerCodes);
         
         operation.accept(sse.getId());
         
         when(clock.instant()).thenReturn(Instant.ofEpochMilli(100000));
         
         final StoredStatusEvent ret = storage.setAndGetProcessingState(
-                StatusEventProcessingState.READY, workerCodes,
+                StatusEventProcessingState.READY, searchWorkerCodes,
                 StatusEventProcessingState.PROC, "whee")
                 .get();
         assertThat("incorrect state", ret.getState(), is(StatusEventProcessingState.PROC));
@@ -411,7 +421,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableVersion(7)
                 .build()));
         assertThat("ids don't match", ret.getId(), is(sse.getId()));
-        assertThat("incorrect worker codes", sse.getWorkerCodes(), is(set("default")));
+        assertThat("incorrect worker codes", sse.getWorkerCodes(), is(expectedWorkerCodes));
         
         final StoredStatusEvent got = storage.get(sse.getId()).get();
         assertThat("incorrect state", got.getState(), is(StatusEventProcessingState.PROC));
@@ -427,7 +437,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableVersion(7)
                 .build()));
         assertThat("ids don't match", got.getId(), is(sse.getId()));
-        assertThat("incorrect worker codes", sse.getWorkerCodes(), is(set("default")));
+        assertThat("incorrect worker codes", sse.getWorkerCodes(), is(expectedWorkerCodes));
     }
     
     @Test
@@ -563,10 +573,14 @@ public class MongoDBStatusEventStorageTest {
 
     private void store(final int count, final StatusEventProcessingState state)
             throws RetriableIndexingException {
-        store(1, count, state);
+        store(1, count, state, null);
     }
     
-    private void store(final int start, final int count, final StatusEventProcessingState state)
+    private void store(
+            final int start,
+            final int count,
+            final StatusEventProcessingState state,
+            final Set<String> workerCodes)
             throws RetriableIndexingException {
         final List<Integer> times = new ArrayList<>();
         for (int i = start; i <= count; i++) {
@@ -576,7 +590,7 @@ public class MongoDBStatusEventStorageTest {
         for (final int time: times) {
             storage.store(StatusEvent.getBuilder(
                     "foo", Instant.ofEpochMilli(time * 1000), StatusEventType.NEW_VERSION).build(),
-                    state, null);
+                    state, workerCodes);
         }
     }
     
