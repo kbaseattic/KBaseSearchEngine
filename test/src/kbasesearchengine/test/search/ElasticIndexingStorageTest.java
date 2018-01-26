@@ -884,6 +884,9 @@ public class ElasticIndexingStorageTest {
         final SearchObjectType objectType = new SearchObjectType("Simple", 1);
         final IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop1"))
                 .withFullText().build();
+        final IndexingRules ir2 = IndexingRules.fromPath(new ObjectJsonPath("prop1"))
+                .withFullText().build();
+
 
         final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
                 objectType, new StorageObjectType("foo", "bar"))
@@ -1001,6 +1004,26 @@ public class ElasticIndexingStorageTest {
         assertThat("overlapping ranges did not return intersection", hits5.guids, is(set(guid2)));
     }
 
+    private void prepareTestMultiwordSearch2(GUID guid1, GUID guid2, GUID guid3) throws Exception {
+        final SearchObjectType objectType = new SearchObjectType("Simple", 1);
+        final IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop1"))
+                .withFullText().build();
+        final IndexingRules ir2 = IndexingRules.fromPath(new ObjectJsonPath("prop2"))
+                .withFullText().build();
+
+
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                objectType, new StorageObjectType("foo", "bar"))
+                .withIndexingRule(ir).withIndexingRule(ir2).build();
+
+        indexObject(guid1, rule,
+                "{\"prop1\":\"word1 word2\", \"prop2\": \"word1\"}",
+                "multiword.1", Instant.now(), null, true);
+        indexObject(guid2, rule, "{\"prop1\":\"word3  word3\", \"prop2\": \"word3\"}",
+                "multiword.2", Instant.now(), null, true);
+        indexObject(guid3, rule, "{\"prop1\":\"word1\", \"prop2\": \"word1\"}",
+                "multiword.3", Instant.now(), null, true);
+    }
 
     @Test
     public void addHighlighting() throws Exception{

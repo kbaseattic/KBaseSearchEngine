@@ -1053,7 +1053,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
         pp.objectKeys = true;
         return getObjectsByIds(ids, pp);
     }
-    
+
+    private Map<String, Object> createHighlightQuery(){
+        Map<String, Object> highlight =
+            ImmutableMap.of("fields",
+                    ImmutableMap.of("*",
+                            ImmutableMap.of("require_field_match", false)));
+        return highlight;
+    }
+
     @Override
     public List<ObjectData> getObjectsByIds(Set<GUID> ids, PostProcessing pp) 
             throws IOException {
@@ -1063,15 +1071,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
                                            ImmutableMap.of("terms",
                 ImmutableMap.of("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList())))));
         //doc.put("_source", Arrays.asList("ojson"));
-        Map<String, Object> highlight =
-                ImmutableMap.of("fields",
-                        ImmutableMap.of("*",
-                                ImmutableMap.of("require_field_match", false)));
+
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
 
         if(pp.objectHighlight){
-            doc.put("highlight", highlight);
+            doc.put("highlight", createHighlightQuery());
         }
 
         String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
@@ -1088,7 +1093,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             @SuppressWarnings("unchecked")
             Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
             Map<String, ArrayList> highlightRes = (Map<String, ArrayList>) hit.get("highlight");
-            ObjectData item = buildObjectData(obj, editHighlightedKeys(highlightRes), pp);
+            ObjectData item = buildObjectData(obj, highlightRes, pp);
             ret.add(item);
         }
         return ret;
@@ -1164,11 +1169,34 @@ public class ElasticIndexingStorage implements IndexingStorage {
             }
         }
         if(pp.objectHighlight){
-            b.withNullableHighlight(highlight);
+            for(String key : highlight.keySet()){
+                String newKey = key;
+                if(key.startsWith("key.")){
+                    //truncate key. from key
+                    newKey = key.substring(4);
+                }
+                b.withNullableHighlight(newKey, highlight.get(key));
+            }
         }
 
         return b.build();
     }
+//    private Map<String, ArrayList> editHighlightedKeys(Map<String, ArrayList> highlightRes){
+//        if(highlightRes == null){
+//            return null;
+//        }
+//        Map<String, ArrayList> highlightResEdited = new HashMap<>();
+//        for(String key : highlightRes.keySet()){
+//            String newKey = key;
+//            if(key.startsWith("key.")){
+//                //truncate key. from key
+//                newKey = key.substring(4);
+//            }
+//            highlightResEdited.put(newKey, highlightRes.get(key));
+//
+//        }
+//        return highlightResEdited;
+//    }
     
     private Map<String, Object> createPublicShouldBlock(boolean withAllHistory) {
         List<Object> must0List = new ArrayList<>();
@@ -1459,14 +1487,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
                                    "filter", Arrays.asList(
                                            ImmutableMap.of("bool",
                                               ImmutableMap.of("should", shouldList)))));
-        Map<String, Object> highlight =
-                        ImmutableMap.of("fields",
-                                ImmutableMap.of("*",
-                                        ImmutableMap.of("require_field_match", false)));
 
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
-        doc.put("highlight", highlight);
+        if(pp.objectHighlight){
+            doc.put("highlight", createHighlightQuery());
+        }
         doc.put("from", pagination.start);
         doc.put("size", pagination.count);
 
@@ -1530,7 +1556,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             String guidText = (String)obj.get("guid");
             ret.guids.add(new GUID(guidText));
             if (loadObjects) {
-                ret.objects.add(buildObjectData(obj, editHighlightedKeys(highlightRes), pp));
+                ret.objects.add(buildObjectData(obj, highlightRes, pp));
             }
         }
         return ret;
