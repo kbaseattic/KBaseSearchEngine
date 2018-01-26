@@ -325,22 +325,49 @@ public class MongoDBStatusEventStorageTest {
     private static final Consumer<StatusEventID> NOOP = id -> {};
     
     @Test
-    public void getAndSetProcessingWithUpdaterAndSortNullCodes() throws Exception {
+    public void getAndSetProcessingWithSortAndNullCodes() throws Exception {
         getAndSetProcessingWithUpdaterAndSort(null, NOOP);
     }
     
     @Test
-    public void getAndSetProcessingWithUpdaterAndSortEmptyCodes() throws Exception {
+    public void getAndSetProcessingWithSortNoDBWorkerCodeField() throws Exception {
+        getAndSetProcessingWithUpdaterAndSort(set(),
+                id -> db.getCollection("searchEvents").findOneAndUpdate(
+                        new Document("_id", new ObjectId(id.getId())),
+                        new Document("$unset", new Document("wrkcde", 1)),
+                        new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)));
+    }
+    
+    @Test
+    public void getAndSetProcessingWithSortNullDBWorkerCodeField() throws Exception {
+        getAndSetProcessingWithUpdaterAndSort(null,
+                id -> db.getCollection("searchEvents").findOneAndUpdate(
+                        new Document("_id", new ObjectId(id.getId())),
+                        new Document("$set", new Document("wrkcde", null)),
+                        new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)));
+    }
+    
+    @Test
+    public void getAndSetProcessingWithSortEmptyDBWorkerCodeField() throws Exception {
+        getAndSetProcessingWithUpdaterAndSort(set("default", "bar"),
+                id -> db.getCollection("searchEvents").findOneAndUpdate(
+                        new Document("_id", new ObjectId(id.getId())),
+                        new Document("$set", new Document("wrkcde", Arrays.asList())),
+                        new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)));
+    }
+    
+    @Test
+    public void getAndSetProcessingWithSortAndEmptyCodes() throws Exception {
         getAndSetProcessingWithUpdaterAndSort(set(), NOOP);
     }
     
     @Test
-    public void getAndSetProcessingWithUpdaterAndSortDefaultCode() throws Exception {
+    public void getAndSetProcessingWithSortAndDefaultCode() throws Exception {
         getAndSetProcessingWithUpdaterAndSort(set("default"), NOOP);
     }
     
     @Test
-    public void getAndSetProcessingWithUpdaterAndSortDefaultPlusCodes() throws Exception {
+    public void getAndSetProcessingWithSortAndDefaultPlusCodes() throws Exception {
         getAndSetProcessingWithUpdaterAndSort(set("default", "foo"), NOOP);
     }
 
