@@ -553,7 +553,7 @@ public class ObjectData {
          * @param highlight the map of fields returned from elasticsearch.
          * @return this builder.
          */
-        public Builder withNullableHighlight(final String field, final ArrayList highlight) {
+        public Builder withHighlight(final String field, final ArrayList highlight) {
             Utils.notNullOrEmpty(field, "field cannot be null or whitespace");
             Utils.noNulls(highlight, "highlight cannot be null");
             if(highlight.size() > 0){

@@ -46,6 +46,7 @@ public class ObjectDataTest {
         assertThat("incorrect parent data", od.getParentData(), is(Optional.absent()));
         assertThat("incorrect timestamp", od.getTimestamp(), is(Optional.absent()));
         assertThat("incorrect type", od.getType(), is(Optional.absent()));
+        assertThat("incorrect highlight", od.getKeyProperties(), is(Collections.emptyMap()));
     }
     
     @Test
@@ -80,6 +81,8 @@ public class ObjectDataTest {
         assertThat("incorrect parent data", od.getParentData(), is(Optional.absent()));
         assertThat("incorrect timestamp", od.getTimestamp(), is(Optional.absent()));
         assertThat("incorrect type", od.getType(), is(Optional.absent()));
+        assertThat("incorrect highlight", od.getKeyProperties(), is(Collections.emptyMap()));
+
     }
     
     @Test
@@ -114,6 +117,8 @@ public class ObjectDataTest {
         assertThat("incorrect parent data", od.getParentData(), is(Optional.absent()));
         assertThat("incorrect timestamp", od.getTimestamp(), is(Optional.absent()));
         assertThat("incorrect type", od.getType(), is(Optional.absent()));
+        assertThat("incorrect highlight", od.getKeyProperties(), is(Collections.emptyMap()));
+
     }
     
     @Test
@@ -134,6 +139,7 @@ public class ObjectDataTest {
                 .withKeyProperty("baz", "bat")
                 .withKeyProperty("null", null)
                 .withKeyProperty("ws", "   \t   \n   ")
+                .withHighlight("field", new ArrayList<>(Arrays.asList("match")))
                 .build();
         
         assertThat("incorrect guid", od.getGUID(), is(new GUID("Foo:1/2/3:sub/thing")));
@@ -150,6 +156,10 @@ public class ObjectDataTest {
         keyprops.put("null", null);
         keyprops.put("ws", "   \t   \n   ");
         assertThat("incorrect key props", od.getKeyProperties(), is(keyprops));
+        final Map<String, ArrayList> highlight = new HashMap<>();
+        highlight.put("field", new ArrayList<>(Arrays.asList("match")));
+        assertThat("incorrect highlight field", od.getHighlight().keySet(), is(highlight.keySet()));
+        assertThat("incorrect highlight", od.getHighlight().get("field"), is(highlight.get("field")));
         assertThat("incorrect md5", od.getMd5(), is(Optional.of("md5")));
         assertThat("incorrect method", od.getMethod(), is(Optional.of("meth")));
         assertThat("incorrect module", od.getModule(), is(Optional.of("mod")));

@@ -11,7 +11,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -1167,7 +1166,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     //truncate key. from key
                     newKey = key.substring(4);
                 }
-                b.withNullableHighlight(newKey, highlight.get(key));
+                b.withHighlight(newKey, highlight.get(key));
             }
         }
 
