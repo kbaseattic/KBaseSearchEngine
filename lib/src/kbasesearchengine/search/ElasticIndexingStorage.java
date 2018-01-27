@@ -367,11 +367,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private Map<GUID, String> lookupDocIds(String indexName, Set<GUID> guids) throws IOException {
 
         // doc = {"query": {"bool": {"filter": [{"terms": {"guid": [guids]}}]}}}
-        Map<String, Object> doc = ImmutableMap.of("query", ImmutableMap.of(
-                                                    "bool", ImmutableMap.of(
-                                                      "filter", Arrays.asList(ImmutableMap.of("terms",
-                                                         ImmutableMap.of("guid",
-                                     guids.stream().map(u -> u.toString()).collect(Collectors.toList())))))));
+        Map<String, Object> doc = ImmutableMap.of(
+                "query", ImmutableMap.of(
+                        "bool", ImmutableMap.of(
+                                "filter", Arrays.asList(ImmutableMap.of(
+                                        "terms", ImmutableMap.of(
+                                                "guid", guids.stream().map(u -> u.toString())
+                                                        .collect(Collectors.toList())))))));
 
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
@@ -567,9 +569,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         // script = {"inline": "ctx._source.islast = (ctx._source.version == params.lastver)",
         //           "params": {"lastver": lastVersion}}
-        Map<String, Object> script =
-                ImmutableMap.of("inline", "ctx._source.islast = (ctx._source.version == params.lastver);",
-                                "params", params);
+        Map<String, Object> script = ImmutableMap.of(
+                "inline", "ctx._source.islast = (ctx._source.version == params.lastver);",
+                "params", params);
 
         // doc = {"query": {"bool": {"filter": [{"term": {"prefix": prefix}}]}},
         //        "script": {"inline": "ctx._source.islast = (ctx._source.version == params.lastver)",

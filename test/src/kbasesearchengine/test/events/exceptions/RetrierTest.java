@@ -177,16 +177,15 @@ public class RetrierTest {
     public void consumer2RetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 100, Collections.emptyList(), collog);
-        final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
                 .build(),
                 new StatusEventID("wugga"),
-                StatusEventProcessingState.UNPROC,
-                null,
-                null);
+                StatusEventProcessingState.UNPROC)
+                .build();
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 2), "foo", ev);
         final Instant end = Instant.now();
@@ -255,16 +254,15 @@ public class RetrierTest {
     public void consumer2FatalRetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 100, Arrays.asList(140, 60), collog);
-        final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
                 .build(),
                 new StatusEventID("wugga"),
-                StatusEventProcessingState.UNPROC,
-                null,
-                null);
+                StatusEventProcessingState.UNPROC)
+                .build();
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 2, true), "foo", ev);
         final Instant end = Instant.now();
@@ -376,16 +374,15 @@ public class RetrierTest {
     public void function2RetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 100, Collections.emptyList(), collog);
-        final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
                 .build(),
                 new StatusEventID("wugga"),
-                StatusEventProcessingState.UNPROC,
-                null,
-                null);
+                StatusEventProcessingState.UNPROC)
+                .build();
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 26L, 2), "foo", ev);
         final Instant end = Instant.now();
@@ -456,16 +453,15 @@ public class RetrierTest {
     public void function2FatalRetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(2, 100, Arrays.asList(140, 60), collog);
-        final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
                 .build(),
                 new StatusEventID("wugga"),
-                StatusEventProcessingState.UNPROC,
-                null,
-                null);
+                StatusEventProcessingState.UNPROC)
+                .build();
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 64L, 2, true), "foo", ev);
         final Instant end = Instant.now();

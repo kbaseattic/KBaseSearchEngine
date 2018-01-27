@@ -182,11 +182,11 @@ public class IndexerWorker implements Stoppable {
         Utils.nonNull(errtype, "errtype");
         final String msg;
         if (ErrorType.FATAL.equals(errtype)) {
-            msg = "Fatal error in indexer, shutting down: ";
+            msg = "Fatal error in indexer, shutting down";
         } else if (ErrorType.STD.equals(errtype)) {
-            msg = "Error in indexer: ";
+            msg = "Error in indexer";
         } else if (ErrorType.UNEXPECTED.equals(errtype)) {
-            msg = "Unexpected error in indexer: ";
+            msg = "Unexpected error in indexer";
         } else {
             throw new RuntimeException("Unknown error type: " + errtype);
         }
@@ -205,13 +205,13 @@ public class IndexerWorker implements Stoppable {
             final RetriableIndexingException e) {
         final String msg;
         if (event.isPresent()) {
-            msg = String.format("Retriable error in indexer for event %s %s%s, retry %s: ",
+            msg = String.format("Retriable error in indexer for event %s %s%s, retry %s",
                     event.get().getEvent().getEventType(),
                     event.get().isParentId() ? "with parent ID " : "",
                     event.get().getId().getId(),
                     retrycount);
         } else {
-            msg = String.format("Retriable error in indexer, retry %s: ", retrycount);
+            msg = String.format("Retriable error in indexer, retry %s", retrycount);
         }
         logError(msg, e);
     }
@@ -358,7 +358,7 @@ public class IndexerWorker implements Stoppable {
         if (exception instanceof FatalIndexingException) {
             throw (FatalIndexingException) exception;
         } else {
-            final String msg = error + String.format(" for event %s %s%s: ",
+            final String msg = error + String.format(" for event %s %s%s",
                     event.getEvent().getEventType(),
                     event.isParentId() ? "with parent ID " : "",
                     event.getId().getId());

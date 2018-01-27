@@ -64,12 +64,12 @@ public class EventQueueTest {
             final StatusEventType type,
             final StatusEventProcessingState state,
             final String objectID) {
-        return new StoredStatusEvent(StatusEvent.getBuilder(
+        return StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "storagecode", time, type)
                 .withNullableObjectID(objectID)
                 .withNullableAccessGroupID(accgrpID)
                 .build(),
-                new StatusEventID(eventid), state, null, null);
+                new StatusEventID(eventid), state).build();
     }
     
     private StoredStatusEvent unproc(
@@ -195,7 +195,7 @@ public class EventQueueTest {
                 StatusEventProcessingState.FAIL, StatusEventProcessingState.INDX,
                 StatusEventProcessingState.UNINDX, StatusEventProcessingState.READY,
                 StatusEventProcessingState.PROC)) {
-            failLoad(new StoredStatusEvent(se, id, state, null, null),
+            failLoad(StoredStatusEvent.getBuilder(se, id, state).build(),
                     new IllegalArgumentException("Illegal state for loading event: " + state));
         }
     }
@@ -212,12 +212,12 @@ public class EventQueueTest {
     @Test
     public void setProcessingCompleteFail() {
         final EventQueue q = new EventQueue();
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
                 .withNullableAccessGroupID(1)
                 .withNullableObjectID("id")
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+                new StatusEventID("foo"), StatusEventProcessingState.READY).build();
         
         //nulls
         failSetProcessingComplete(q, null, new NullPointerException("event"));
@@ -227,21 +227,21 @@ public class EventQueueTest {
         
         // with group level event in processed state with different event id
         final EventQueue q2 = new EventQueue(Arrays.asList(
-                new StoredStatusEvent(StatusEvent.getBuilder(
+                StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                         "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ACCESS_GROUP)
                         .withNullableAccessGroupID(1)
                         .build(),
-                        new StatusEventID("foo2"), StatusEventProcessingState.PROC, null, null)));
+                        new StatusEventID("foo2"), StatusEventProcessingState.PROC).build()));
         failSetProcessingComplete(q2, sse, new NoSuchEventException(sse));
         
         // with group level event with different group id
         final EventQueue q3 = new EventQueue(Arrays.asList(
-                new StoredStatusEvent(StatusEvent.getBuilder(
+                StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                         "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
                         .withNullableAccessGroupID(2)
                         .withNullableObjectID("id")
                         .build(),
-                        new StatusEventID("foo"), StatusEventProcessingState.PROC, null, null)));
+                        new StatusEventID("foo"), StatusEventProcessingState.PROC).build()));
         failSetProcessingComplete(q3, sse, new NoSuchEventException(sse));
         
     }

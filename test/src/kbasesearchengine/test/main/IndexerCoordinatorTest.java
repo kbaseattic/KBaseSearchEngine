@@ -141,11 +141,11 @@ public class IndexerCoordinatorTest {
         final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor,
                 MT, ST, SC);
         
-        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent event1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.UNPUBLISH_ACCESS_GROUP)
                 .withNullableAccessGroupID(2)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC).build();
         
         final StoredStatusEvent ready1 = to(event1, StatusEventProcessingState.READY);
         
@@ -188,8 +188,10 @@ public class IndexerCoordinatorTest {
     }
     
     private StoredStatusEvent changeID(final StoredStatusEvent event, final String id) {
-        return new StoredStatusEvent(event.getEvent(), new StatusEventID(id), event.getState(),
-                event.getUpdateTime().orNull(), event.getUpdater().orNull());
+        return StoredStatusEvent.getBuilder(event.getEvent(), new StatusEventID(id),
+                event.getState())
+                .withNullableUpdate(event.getUpdateTime().orNull(), event.getUpdater().orNull())
+                .build();
     }
 
     private Runnable getIndexerRunnable(
@@ -214,8 +216,10 @@ public class IndexerCoordinatorTest {
             final StoredStatusEvent sse,
             final StatusEventProcessingState state,
             final String updater) {
-        return new StoredStatusEvent(sse.getEvent(), sse.getId(), state,
-                Instant.now(), updater == null ? sse.getUpdater().orNull() : updater);
+        return StoredStatusEvent.getBuilder(sse.getEvent(), sse.getId(), state)
+                .withNullableUpdate(
+                        Instant.now(), updater == null ? sse.getUpdater().orNull() : updater)
+                .build();
     }
     
     @Test(timeout = 2000) // in case the coordinator loops forever
@@ -235,17 +239,17 @@ public class IndexerCoordinatorTest {
         final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor,
                 MT, ST, SC);
         
-        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent event1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.UNPUBLISH_ACCESS_GROUP)
                 .withNullableAccessGroupID(2)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC).build();
         
-        final StoredStatusEvent event2 = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent event2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(20000), StatusEventType.PUBLISH_ACCESS_GROUP)
                 .withNullableAccessGroupID(2)
                 .build(),
-                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC).build();
         
         final StoredStatusEvent ready1 = to(event1, StatusEventProcessingState.READY);
         final StoredStatusEvent proc1 = to(ready1, StatusEventProcessingState.PROC, "work1");
@@ -308,23 +312,23 @@ public class IndexerCoordinatorTest {
         final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
                 MT, ST, SC);
         
-        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent event1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.UNPUBLISH_ACCESS_GROUP)
                 .withNullableAccessGroupID(2)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC).build();
         
-        final StoredStatusEvent event2 = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent event2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(20000), StatusEventType.PUBLISH_ACCESS_GROUP)
                 .withNullableAccessGroupID(2)
                 .build(),
-                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC).build();
         
-        final StoredStatusEvent event3 = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent event3 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(30000), StatusEventType.PUBLISH_ACCESS_GROUP)
                 .withNullableAccessGroupID(2)
                 .build(),
-                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC).build();
         
         final StoredStatusEvent ready1 = to(event1, StatusEventProcessingState.READY);
         
@@ -412,19 +416,23 @@ public class IndexerCoordinatorTest {
     
     @Test(timeout = 2000) // in case the coordinator loops forever
     public void constructWithMultipleEvents() throws Exception {
-        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent event1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ALL_VERSIONS)
                 .withNullableAccessGroupID(2)
                 .withNullableObjectID("1")
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.READY, Instant.now(), null);
+                new StatusEventID("foo1"), StatusEventProcessingState.READY)
+                .withNullableUpdate(Instant.now(), null)
+                .build();
         
-        final StoredStatusEvent event2 = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent event2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(20000), StatusEventType.RENAME_ALL_VERSIONS)
                 .withNullableAccessGroupID(2)
                 .withNullableObjectID("2")
                 .build(),
-                new StatusEventID("foo2"), StatusEventProcessingState.PROC, Instant.now(), null);
+                new StatusEventID("foo2"), StatusEventProcessingState.PROC)
+                .withNullableUpdate(Instant.now(), null)
+                .build();
         
         final StoredStatusEvent unidx1 = to(event1, StatusEventProcessingState.UNINDX, "work1");
         final StoredStatusEvent fail2 = to(event2, StatusEventProcessingState.FAIL, "work2");
@@ -471,11 +479,13 @@ public class IndexerCoordinatorTest {
     
     @Test(timeout = 2000) // in case the coordinator loops forever
     public void constructWithSingleEvent() throws Exception {
-        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent event1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
                 .withNullableAccessGroupID(2)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.READY, Instant.now(), null);
+                new StatusEventID("foo1"), StatusEventProcessingState.READY)
+                .withNullableUpdate(Instant.now(), null)
+                .build();
         
         final StoredStatusEvent idx1 = to(event1, StatusEventProcessingState.INDX, "work1");
         
@@ -517,11 +527,11 @@ public class IndexerCoordinatorTest {
     @Test(timeout = 2000) // in case the coordinator loops forever
     public void desynchedQueue() throws Exception {
         /* test the case where the in memory queue does not match the DB. */
-        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent event1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
                 .withNullableAccessGroupID(2)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC).build();
         
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
@@ -637,11 +647,11 @@ public class IndexerCoordinatorTest {
         final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
                 Arrays.asList(1), ST, SC);
         
-        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent event1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
                 .withNullableAccessGroupID(2)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC).build();
         
         final Runnable coordRunner = getIndexerRunnable(executor, coord);
         
@@ -687,12 +697,12 @@ public class IndexerCoordinatorTest {
         final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
                 Arrays.asList(1, 1, 1), ST, SC);
         
-        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent event1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
                 .withNullableAccessGroupID(2)
                 .withNullableObjectID("1")
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC).build();
         
         final Runnable coordRunner = getIndexerRunnable(executor, coord);
         
@@ -740,12 +750,13 @@ public class IndexerCoordinatorTest {
     
     @Test
     public void logDelayed() throws Exception {
-        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent event1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
                 .withNullableAccessGroupID(2)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.PROC,
-                Instant.ofEpochMilli(10000), "work1");
+                new StatusEventID("foo1"), StatusEventProcessingState.PROC)
+                .withNullableUpdate(Instant.ofEpochMilli(10000), "work1")
+                .build();
         
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
@@ -799,12 +810,13 @@ public class IndexerCoordinatorTest {
     
     @Test
     public void logDelayedWithCacheExpiry() throws Exception {
-        final StoredStatusEvent event1 = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent event1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
                 .withNullableAccessGroupID(2)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.READY,
-                Instant.ofEpochMilli(10000), "work1");
+                new StatusEventID("foo1"), StatusEventProcessingState.READY)
+                .withNullableUpdate(Instant.ofEpochMilli(10000), "work1")
+                .build();
         
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
