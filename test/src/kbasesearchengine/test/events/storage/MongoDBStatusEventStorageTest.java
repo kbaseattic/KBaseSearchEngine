@@ -370,12 +370,37 @@ public class MongoDBStatusEventStorageTest {
     public void getAndSetProcessingWithSortAndDefaultPlusCodes() throws Exception {
         getAndSetProcessingWithSort(set("default", "foo"), NOOP);
     }
+    
+    @Test
+    public void getAndSetProcessingWithSortAndSpecificCodes() throws Exception {
+        getAndSetProcessingWithSort(set("bar"), set("baz"), set("bar"));
+    }
+    
+    @Test
+    public void getAndSetProcessingWithSortAndSpecificOverlappingCodes() throws Exception {
+        getAndSetProcessingWithSort(set("foo", "bar"), set("foo", "baz"), set("bar"));
+    }
+    
+    @Test
+    public void getAndSetProcessingWithSortAndSameCodes() throws Exception {
+        // tests sort
+        getAndSetProcessingWithSort(set("foo", "baz"), set("foo", "baz"), set("baz"));
+    }
 
     private void getAndSetProcessingWithSort(
             final Set<String> searchWorkerCodes,
             final Consumer<StatusEventID> operation)
             throws RetriableIndexingException, FatalRetriableIndexingException {
         getAndSetProcessingWithSort(null, set("default"), null, searchWorkerCodes, operation);
+    }
+    
+    private void getAndSetProcessingWithSort(
+            final Set<String> storedWorkerCodes,
+            final Set<String> otherEventWorkerCodes,
+            final Set<String> searchWorkerCodes)
+            throws FatalRetriableIndexingException, RetriableIndexingException {
+        getAndSetProcessingWithSort(storedWorkerCodes, storedWorkerCodes, otherEventWorkerCodes,
+                searchWorkerCodes, NOOP);
     }
     
     private void getAndSetProcessingWithSort(
@@ -438,6 +463,63 @@ public class MongoDBStatusEventStorageTest {
                 .build()));
         assertThat("ids don't match", got.getId(), is(sse.getId()));
         assertThat("incorrect worker codes", sse.getWorkerCodes(), is(expectedWorkerCodes));
+    }
+    
+//    @Test  WIP
+    public void getAndSetProcessingSortWithCodes() throws Exception {
+        // tests that an earlier event with different codes will be skipped
+        // and that the newest event with matching codes is returned
+        store(1, 3, StatusEventProcessingState.READY, set("foo"));
+//        store(1)
+        final StorageObjectType sot = new StorageObjectType("foo", "bar", 9);
+        final StoredStatusEvent sse = storage.store(StatusEvent.getBuilder(
+                sot, Instant.ofEpochMilli(4000), StatusEventType.COPY_ACCESS_GROUP)
+                .withNullableAccessGroupID(6)
+                .withNullableisPublic(true)
+                .withNullableNewName("foo")
+                .withNullableObjectID("bar")
+                .withNullableVersion(7)
+                .build(),
+                StatusEventProcessingState.READY,
+                set("bar"));
+        store(5, 7, StatusEventProcessingState.READY, set("bar"));
+        
+        when(clock.instant()).thenReturn(Instant.ofEpochMilli(100000));
+        
+        final StoredStatusEvent ret = storage.setAndGetProcessingState(
+                StatusEventProcessingState.READY, set("bar"),
+                StatusEventProcessingState.PROC, "whee")
+                .get();
+        assertThat("incorrect state", ret.getState(), is(StatusEventProcessingState.PROC));
+        assertThat("incorrect updater", ret.getUpdater(), is(Optional.of("whee")));
+        assertThat("incorrect update time", ret.getUpdateTime(),
+                is(Optional.of(Instant.ofEpochMilli(100000))));
+        assertThat("incorrect event", ret.getEvent(), is(StatusEvent.getBuilder(
+                sot, Instant.ofEpochMilli(4000), StatusEventType.COPY_ACCESS_GROUP)
+                .withNullableAccessGroupID(6)
+                .withNullableisPublic(true)
+                .withNullableNewName("foo")
+                .withNullableObjectID("bar")
+                .withNullableVersion(7)
+                .build()));
+        assertThat("ids don't match", ret.getId(), is(sse.getId()));
+        assertThat("incorrect worker codes", sse.getWorkerCodes(), is(set("bar")));
+        
+        final StoredStatusEvent got = storage.get(sse.getId()).get();
+        assertThat("incorrect state", got.getState(), is(StatusEventProcessingState.PROC));
+        assertThat("incorrect updater", got.getUpdater(), is(Optional.of("whee")));
+        assertThat("incorrect update time", ret.getUpdateTime(),
+                is(Optional.of(Instant.ofEpochMilli(100000))));
+        assertThat("incorrect event", got.getEvent(), is(StatusEvent.getBuilder(
+                sot, Instant.ofEpochMilli(4000), StatusEventType.COPY_ACCESS_GROUP)
+                .withNullableAccessGroupID(6)
+                .withNullableisPublic(true)
+                .withNullableNewName("foo")
+                .withNullableObjectID("bar")
+                .withNullableVersion(7)
+                .build()));
+        assertThat("ids don't match", got.getId(), is(sse.getId()));
+        assertThat("incorrect worker codes", sse.getWorkerCodes(), is(set("bar")));
     }
     
     @Test
