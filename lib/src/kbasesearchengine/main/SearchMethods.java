@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.ImmutableList;
 import kbasesearchengine.AccessFilter;
 import kbasesearchengine.GetObjectsInput;
 import kbasesearchengine.GetObjectsOutput;
@@ -51,21 +52,7 @@ public class SearchMethods {
             final TypeStorage typeStorage,
             final Set<String> admins) {
         this.admins = admins == null ? Collections.emptySet() : admins;
-        
-        // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
         this.accessGroupProvider = accessGroupProvider;
-        this.typeStorage = typeStorage;
-        this.indexingStorage = indexingStorage;
-    }
-    
-    /**
-     * For tests only !!!
-     */
-    public SearchMethods(
-            final IndexingStorage indexingStorage,
-            final TypeStorage typeStorage) {
-        this.accessGroupProvider = null;
-        this.admins = Collections.emptySet();
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
     }
@@ -138,7 +125,8 @@ public class SearchMethods {
                 .withAccessGroupId(toInteger(mf.getAccessGroupId()))
                 .withObjectName(mf.getObjectName())
                 .withParentGuid(toGUID(mf.getParentGuid()))
-                .withTimestamp(toSearch(mf.getTimestamp(), "timestamp"));
+                .withTimestamp(toSearch(mf.getTimestamp(), "timestamp"))
+                .withExcludeSubObjects(toBool(mf.getExcludeSubobjects()));
         if (mf.getLookupInKeys() != null) {
             Map<String, kbasesearchengine.search.MatchValue> keys =
                     new LinkedHashMap<String, kbasesearchengine.search.MatchValue>();
@@ -267,6 +255,12 @@ public class SearchMethods {
     public SearchObjectsOutput searchObjects(SearchObjectsInput params, String user) 
             throws Exception {
         long t1 = System.currentTimeMillis();
+
+        // validate input
+        if (params.getObjectTypes() == null) {
+            params.setObjectTypes(ImmutableList.of());
+        }
+
         kbasesearchengine.search.MatchFilter matchFilter = toSearch(params.getMatchFilter());
         List<kbasesearchengine.search.SortingRule> sorting = null;
         if (params.getSortingRules() != null) {
@@ -278,7 +272,7 @@ public class SearchMethods {
         kbasesearchengine.search.Pagination pagination = toSearch(params.getPagination());
         kbasesearchengine.search.PostProcessing postProcessing = 
                 toSearch(params.getPostProcessing());
-        FoundHits hits = indexingStorage.searchObjects(params.getObjectType(),
+        FoundHits hits = indexingStorage.searchObjects(params.getObjectTypes(),
                 matchFilter, sorting, accessFilter, pagination, postProcessing);
         SearchObjectsOutput ret = new SearchObjectsOutput();
         ret.withPagination(fromSearch(hits.pagination));

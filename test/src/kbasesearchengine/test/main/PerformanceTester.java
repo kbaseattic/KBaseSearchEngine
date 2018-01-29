@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.ImmutableList;
 import kbasesearchengine.common.FileUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
@@ -224,7 +225,7 @@ public class PerformanceTester {
                 String[] parts = ref.split("/");
                 int wsId = Integer.parseInt(parts[0]);
                 int version = Integer.parseInt(parts[2]);
-                final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
+                final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                         new StorageObjectType("WS", "KBaseGenomes.Genome"),
                         Instant.now(),
                         StatusEventType.NEW_VERSION)
@@ -234,9 +235,8 @@ public class PerformanceTester {
                         .withNullableisPublic(true)
                         .build(),
                         new StatusEventID("-1"),
-                        StatusEventProcessingState.UNPROC,
-                        null,
-                        null);
+                        StatusEventProcessingState.UNPROC)
+                        .build();
                 long t2 = System.currentTimeMillis();
                 try {
                     mop.processOneEvent(ev.getEvent());
@@ -264,7 +264,7 @@ public class PerformanceTester {
     }
     
     private int countGenomes() throws Exception {
-        return storage.searchIds("Genome", 
+        return storage.searchIds(ImmutableList.of("Genome"),
                 MatchFilter.create().withLookupInKey("features", new MatchValue(1, null)), null,
                 AccessFilter.create().withPublic(true).withAdmin(true), null).total;
     }

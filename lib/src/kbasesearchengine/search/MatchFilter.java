@@ -6,6 +6,10 @@ import java.util.Map;
 import kbasesearchengine.common.GUID;
 
 public class MatchFilter {
+    
+    //TODO CODE everything about this class
+    
+    public boolean excludeSubObjects = false;
     public String fullTextInAll = null;
     public Integer accessGroupId = null;
     public String objectName = null;
@@ -17,6 +21,11 @@ public class MatchFilter {
     
     public static MatchFilter create() {
         return new MatchFilter();
+    }
+    
+    public MatchFilter withExcludeSubObjects(final boolean excludeSubObjects) {
+        this.excludeSubObjects = excludeSubObjects;
+        return this;
     }
     
     public MatchFilter withFullTextInAll(String text) {
@@ -63,5 +72,85 @@ public class MatchFilter {
         }
         this.lookupInKeys.put(keyName, value);
         return this;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result
+                + ((accessGroupId == null) ? 0 : accessGroupId.hashCode());
+        result = prime * result + (excludeSubObjects ? 1231 : 1237);
+        result = prime * result
+                + ((fullTextInAll == null) ? 0 : fullTextInAll.hashCode());
+        result = prime * result
+                + ((lookupInKeys == null) ? 0 : lookupInKeys.hashCode());
+        result = prime * result
+                + ((objectName == null) ? 0 : objectName.hashCode());
+        result = prime * result
+                + ((parentGuid == null) ? 0 : parentGuid.hashCode());
+        result = prime * result
+                + ((timestamp == null) ? 0 : timestamp.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        MatchFilter other = (MatchFilter) obj;
+        if (accessGroupId == null) {
+            if (other.accessGroupId != null) {
+                return false;
+            }
+        } else if (!accessGroupId.equals(other.accessGroupId)) {
+            return false;
+        }
+        if (excludeSubObjects != other.excludeSubObjects) {
+            return false;
+        }
+        if (fullTextInAll == null) {
+            if (other.fullTextInAll != null) {
+                return false;
+            }
+        } else if (!fullTextInAll.equals(other.fullTextInAll)) {
+            return false;
+        }
+        if (lookupInKeys == null) {
+            if (other.lookupInKeys != null) {
+                return false;
+            }
+        } else if (!lookupInKeys.equals(other.lookupInKeys)) {
+            return false;
+        }
+        if (objectName == null) {
+            if (other.objectName != null) {
+                return false;
+            }
+        } else if (!objectName.equals(other.objectName)) {
+            return false;
+        }
+        if (parentGuid == null) {
+            if (other.parentGuid != null) {
+                return false;
+            }
+        } else if (!parentGuid.equals(other.parentGuid)) {
+            return false;
+        }
+        if (timestamp == null) {
+            if (other.timestamp != null) {
+                return false;
+            }
+        } else if (!timestamp.equals(other.timestamp)) {
+            return false;
+        }
+        return true;
     }
 }

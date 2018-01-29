@@ -102,18 +102,17 @@ public class IndexerWorkerTest {
         final StorageObjectType storageObjectType = StorageObjectType
                 .fromNullableVersion("code", "sometype", 3);
         
-        when(typeStore.listObjectTypeParsingRules(storageObjectType))
-                .thenReturn(set(
-                        ObjectTypeParsingRules.getBuilder(
-                                new SearchObjectType("foo", 1), storageObjectType)
-                                .toSubObjectRule("subfoo", new ObjectJsonPath("/subobjs/[*]/"),
-                                        new ObjectJsonPath("id"))
-                                .withIndexingRule(IndexingRules.fromPath(
-                                        new ObjectJsonPath("somedata"))
-                                        .build())
-                                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("id"))
-                                        .build())
-                                .build()));
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1), storageObjectType)
+                .toSubObjectRule("subfoo", new ObjectJsonPath("/subobjs/[*]/"),
+                        new ObjectJsonPath("id"))
+                .withIndexingRule(IndexingRules.fromPath(
+                        new ObjectJsonPath("somedata"))
+                        .build())
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("id"))
+                        .build())
+                .build();
+        when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
         
         worker.processOneEvent(StatusEvent.getBuilder(
                 storageObjectType,
@@ -124,19 +123,19 @@ public class IndexerWorkerTest {
                 .withNullableisPublic(false)
                 .build());
         
-        final ParsedObject po1 = new ParsedObject();
-        po1.json = new ObjectMapper().writeValueAsString(
-                ImmutableMap.of( "id", "an id", "somedata", "data"));
-        po1.keywords = ImmutableMap.of("somedata", Arrays.asList("data"),
-                "id", Arrays.asList("an id"));
-        final ParsedObject po2 = new ParsedObject();
-        po2.json = new ObjectMapper().writeValueAsString(
-                ImmutableMap.of("id", "an id2", "somedata", "data2"));
-        po2.keywords = ImmutableMap.of("somedata", Arrays.asList("data2"),
-                "id", Arrays.asList("an id2"));
+        final ParsedObject po1 = new ParsedObject(
+                new ObjectMapper().writeValueAsString(
+                        ImmutableMap.of( "id", "an id", "somedata", "data")),
+                ImmutableMap.of("somedata", Arrays.asList("data"),
+                        "id", Arrays.asList("an id")));
+        final ParsedObject po2 = new ParsedObject(
+                new ObjectMapper().writeValueAsString(
+                        ImmutableMap.of("id", "an id2", "somedata", "data2")),
+                ImmutableMap.of("somedata", Arrays.asList("data2"),
+                        "id", Arrays.asList("an id2")));
         
         verify(idxStore).indexObjects(
-                eq(new SearchObjectType("foo", 1)),
+                eq(rule),
                 any(SourceData.class),
                 eq(Instant.ofEpochMilli(10000)),
                 eq(null),
@@ -144,10 +143,7 @@ public class IndexerWorkerTest {
                 eq(ImmutableMap.of(
                         new GUID(guid, "subfoo", "an id2"), po2,
                         new GUID(guid, "subfoo", "an id"), po1)),
-                eq(false),
-                eq(Arrays.asList(
-                        IndexingRules.fromPath(new ObjectJsonPath("somedata")).build(),
-                        IndexingRules.fromPath(new ObjectJsonPath("id")).build())));
+                eq(false));
     }
     
     @Test

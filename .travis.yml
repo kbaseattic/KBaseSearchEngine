@@ -13,6 +13,10 @@ services:
 
 env:
   global:
+  # DOCKER_USER
+  - secure: "tFUL2RdMld3VXYVlN0IHWYR0Koszyv4BRVc4O6sRHFjvm41WuAmWpGduBZtcBEMC4p/geRW8kzd0w1c7LXQN8iPM92o34Ccix00p0TxkJJmcwXlj8QfTifzILy5lGzzSHdTJaoWkOACJ6e1W2IcX67qz0qrqZD3fYFLFU90/J4J7KOmOlzzBnyr7PCWCW505DVeb2+Hl6VLiX7xtmcCaolnFoS5ZQcxFxGKJc0dJ5PH4RZ25MSH8wJyoGeXCmnYQz72jYLioVnfQGgO3sQJeWbpvLIMHuLYnMLrTPm7qt4oCQCIC4xQgtOGdc2prt+eVIbTAgNiwdgLThQiIbIqTIop3nYlz3QYGSo4ZrpHbIWve9PRNwRiFNLRUP6cpmdVUcBo4GKjMahQKXSMK3gqUCSw4vNQAv/KTzGnc2egjcTz6wtRWU88D5h2ATULWzjjXWj42Dd+SSQJIFju0PjKVuVbwhF7thmwFoVK3dpx51Rz5TpnbEHCNESnLwz9XP4ied92fkSpqtcyGhn8oq+Zv/kCwhWgz7Usu/dHx2heWs3YVl2/VFmjtyd4V297OUz37a0wi1Vl4e7X3a6alHXlu4mIJFwDX1y/+IV+QuLWLGo8jZmCuqsKcd3vtaca1b3IdQhAFGsHSbE/pk01qsLNlLRUVZF82rfOVmnhXMp2jc4o="
+  # DOCKER_PASS
+  - secure: "LzIX6LaG9Lo6hWmalPttJqJlsk+Lk8gNAiKFDcSpEyhvoYOJy682sHARALCdCkq+w7uOz4USotn1jnhfCbfmjCtrYoct1LVsxazBGFYSoF896clpVLxiO5o90sedQBxy0rJMjD3MhvGqsjh6WNN34hqsjI1IgkNb52WBXsVdlYYSvwTrJjSZNDDgVaOhIerT54hWq6hsJbkwA30RSsOAsGyjfnXOBx/TF/TrvWlOhSuXRvTCPtwh1kNyE9MxhBWWOKroZ0mD9ObQ15MwP728o+sHM72K+XP5c5IfOGCkYc0CFtO5JKz4TMg/n1pkNVhB4XYlMbh5EtPnEVDnfQ7IdBVbFKDGMGwWEpBC6TNNSbN8cTJKrDxCOuM4I4Uu/S+LN5qRvTpiT0KlS47Dtxwzuz0FglWoClQC6tLbOf8AGWtuwSQXJhhyItvp8P+e4Ye2X+EaAMTcG110GMPDxdsZ2f5BZKXOUkqM1pmI6ScBE+Su0whsnUYY6nXSefQBAYzEi6fH4ewu1dTO30ry4MnSz6OT6I0WM7tDTL3Zq1L8zWzwLEbIU4hfkyRatAVo527jTgGwiTQoXt2612PJHzSFVndLcd2rvcAebUIl0mL85ekwLgNYeTbz7e3LMOW7C3FRblslPNajVFbUUjhnERP6zQuvr/CZuMCexjNuE8JXJLY="
   # TODO make a build matrix with various mongo versions & wired tiger running only the mongo tests
   - MONGODB_VER=mongodb-linux-x86_64-2.6.12
   - JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
@@ -63,3 +67,5 @@ script:
 after_success:
 - ls work/test-reports/
 - bash <(curl -s https://codecov.io/bash) -t 206d1355-c004-4912-9921-92c6d1c003d5 -f work/test-reports/coverage-report.xml
+- JARS_DIR=../jars/lib/jars/ make docker_image
+- IMAGE_NAME=kbase/kb_search build/push2dockerhub.sh

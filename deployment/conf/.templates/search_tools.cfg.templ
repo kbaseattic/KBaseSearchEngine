@@ -1,0 +1,44 @@
+## GENERAL SETTINGS
+
+# search MongoDB information. This is used when running any event generators or starting
+# the indexer coordinator or workers.
+search-mongo-host={{ default .Env.search_mongo_host "" }}
+search-mongo-db={{ default .Env.search_mongo_db "" }}
+search-mongo-user={{ default .Env.search_mongo_user "" }}
+search-mongo-pwd={{ default .Env.search_mongo_pwd "" }}
+
+# INDEXER
+
+# ElasticSearch information. This is used when starting the indexer workers.
+elastic-host={{ default .Env.elastic_host "" }}
+elastic-port={{ default .Env.elastic_port "" }}
+elastic-user={{ default .Env.elastic_user "" }}
+elastic-password={{ default .Env.elastic_password "" }}
+elastic-namespace={{ default .Env.elastic_namespace "kbase.1" }}
+scratch={{ default .Env.scratch "/tmp" }}
+
+# Workspace and auth urls and token information. This is used when starting the indexer
+# workers.
+workspace-url={{ default .Env.workspace_url "" }}
+auth-service-url={{ default .Env.auth_service_url "https://kbase.us/services/auth/api/legacy/KBase/Sessions/Login" }}
+auth-service-url-allow-insecure={{ default .Env.auth_service_url_allow_insecure "false" }}
+indexer-token={{ default .Env.indexer_token "" }}
+
+# Type information. This is used when starting the indexer workers.
+types-dir={{ default .Env.types_dir "/kb/module/resources/types" }}
+type-mappings-dir={{ default .Env.type_mappings_dir "/kb/module/resources/typemappings" }}
+
+### EVENT GENERATION
+
+# workspace MongoDB information. This is used when running the workspace event generator.
+workspace-mongo-host={{ default .Env.workspace_mongo_host "" }}
+workspace-mongo-db={{ default .Env.workspace_mongo_db "" }}
+workspace-mongo-user={{ default .Env.workspace_mongo_user "" }}
+workspace-mongo-pwd={{ default .Env.workspace_mongo_pwd "" }}
+
+# a comma delimited list of workspace ids or names to ignore when generating workspace events.
+workspace-blacklist={{ default .Env.workspace_blacklist "" }}
+
+# a comma delimited list of workspace types to process. A prefix of the type name of any length
+# greater than 1 may be provided.
+workspace-types={{ default .Env.workspace_types "" }}

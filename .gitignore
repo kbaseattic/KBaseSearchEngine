@@ -8,4 +8,5 @@ bin
 /search_tools.cfg.bak
 *.jar
 *.war
-
+/work/
+.idea/

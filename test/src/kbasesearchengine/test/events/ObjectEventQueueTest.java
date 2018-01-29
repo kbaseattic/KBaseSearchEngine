@@ -44,10 +44,10 @@ public class ObjectEventQueueTest {
     }
 
     private void isVersionLevelEvent(final StatusEventType type, final boolean expected) {
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), type)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
         
         assertThat("incorrect isVersion", ObjectEventQueue.isVersionLevelEvent(sse),
                 is(expected));
@@ -108,10 +108,10 @@ public class ObjectEventQueueTest {
     @Test
     public void loadOneObjectLevelEventAndProcess() {
         final ObjectEventQueue q = new ObjectEventQueue();
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
         
         assertEmpty(q);
         
@@ -130,18 +130,18 @@ public class ObjectEventQueueTest {
     public void loadMultipleObjectLevelEventsAndProcess() {
         final ObjectEventQueue q = new ObjectEventQueue();
         
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
-        final StoredStatusEvent sse1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        final StoredStatusEvent sse1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar1", Instant.ofEpochMilli(20000), StatusEventType.NEW_ALL_VERSIONS)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
-        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC).build();
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar2", Instant.ofEpochMilli(30000), StatusEventType.RENAME_ALL_VERSIONS)
                 .build(),
-                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC).build();
         
         assertEmpty(q);
         
@@ -188,10 +188,10 @@ public class ObjectEventQueueTest {
     public void loadOneVersionLevelEventAndProcess() {
         final ObjectEventQueue q = new ObjectEventQueue();
         
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
         
         assertEmpty(q);
         
@@ -210,18 +210,18 @@ public class ObjectEventQueueTest {
     public void loadMultipleVersionLevelEventsAndProcess() {
         final ObjectEventQueue q = new ObjectEventQueue();
         
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
-        final StoredStatusEvent sse1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        final StoredStatusEvent sse1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar1", Instant.ofEpochMilli(20000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
-        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC).build();
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar2", Instant.ofEpochMilli(30000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC).build();
         
         assertEmpty(q);
         
@@ -254,27 +254,27 @@ public class ObjectEventQueueTest {
     public void blockVersionEventsWithObjectLevelEvent() {
         final ObjectEventQueue q = new ObjectEventQueue();
         
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
-        final StoredStatusEvent sse1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        final StoredStatusEvent sse1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar1", Instant.ofEpochMilli(20000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
-        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC).build();
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar2", Instant.ofEpochMilli(30000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC, null, null);
-        final StoredStatusEvent sse3 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC).build();
+        final StoredStatusEvent sse3 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar3", Instant.ofEpochMilli(40000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo4"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo4"), StatusEventProcessingState.UNPROC).build();
         
-        final StoredStatusEvent blocking = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent blocking = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "blocker", Instant.ofEpochMilli(25000), StatusEventType.DELETE_ALL_VERSIONS)
                 .build(),
-                new StatusEventID("blk"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("blk"), StatusEventProcessingState.UNPROC).build();
         
         assertEmpty(q);
         
@@ -335,10 +335,10 @@ public class ObjectEventQueueTest {
     }
 
     private void assertSingleObjectLevelReadyEvent(final StatusEventType type) {
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), type)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+                new StatusEventID("foo"), StatusEventProcessingState.READY).build();
         final ObjectEventQueue q = new ObjectEventQueue(sse);
         assertQueueState(q, set(sse), set(), 1);
     }
@@ -354,32 +354,32 @@ public class ObjectEventQueueTest {
     }
     
     private void assertSingleObjectLevelProcessingEvent(final StatusEventType type) {
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), type)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.PROC, null, null);
+                new StatusEventID("foo"), StatusEventProcessingState.PROC).build();
         final ObjectEventQueue q = new ObjectEventQueue(sse);
         assertQueueState(q, set(), set(sse), 1);
     }
     
     @Test
     public void constructWithVersionLevelEvents() {
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
-        final StoredStatusEvent sse1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo"), StatusEventProcessingState.READY).build();
+        final StoredStatusEvent sse1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar1", Instant.ofEpochMilli(20000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.READY, null, null);
-        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo1"), StatusEventProcessingState.READY).build();
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar2", Instant.ofEpochMilli(30000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo2"), StatusEventProcessingState.PROC, null, null);
-        final StoredStatusEvent sse3 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo2"), StatusEventProcessingState.PROC).build();
+        final StoredStatusEvent sse3 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar3", Instant.ofEpochMilli(40000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo4"), StatusEventProcessingState.PROC, null, null);
+                new StatusEventID("foo4"), StatusEventProcessingState.PROC).build();
         
         assertEmpty(new ObjectEventQueue(new LinkedList<>(), new LinkedList<>()));
         
@@ -414,10 +414,10 @@ public class ObjectEventQueueTest {
         // from the original load()ed event, so check that works.
         // the status event itself and the id should not mutate, but other fields are fair game.
         
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
         
         final ObjectEventQueue q = new ObjectEventQueue();
         q.load(sse);
@@ -425,11 +425,12 @@ public class ObjectEventQueueTest {
         q.moveReadyToProcessing();
         assertQueueState(q, set(), set(sse), 1);
         
-        final StoredStatusEvent hideousmutant = new StoredStatusEvent(StatusEvent.getBuilder(
-                "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
-                .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.INDX,
-                Instant.ofEpochMilli(10000), "whee");
+        final StoredStatusEvent hideousmutant = StoredStatusEvent.getBuilder(
+                StatusEvent.getBuilder("bar", Instant.ofEpochMilli(10000),
+                        StatusEventType.NEW_VERSION).build(),
+                new StatusEventID("foo"), StatusEventProcessingState.INDX)
+                .withNullableUpdate(Instant.ofEpochMilli(10000), "whee")
+                .build();
         
         q.setProcessingComplete(hideousmutant);
         assertEmpty(q);
@@ -438,14 +439,14 @@ public class ObjectEventQueueTest {
     @Test
     public void immutableGetReady() {
         // test both getReady paths
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
-        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo"), StatusEventProcessingState.READY).build();
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar2", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+                new StatusEventID("foo"), StatusEventProcessingState.READY).build();
         
         final ObjectEventQueue q = new ObjectEventQueue(sse);
         assertGetReadyReturnIsImmutable(sse2, q);
@@ -468,14 +469,14 @@ public class ObjectEventQueueTest {
     @Test
     public void immutableGetProcessing() {
         // test both getProcessing paths
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.PROC, null, null);
-        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo"), StatusEventProcessingState.PROC).build();
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar2", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.PROC, null, null);
+                new StatusEventID("foo"), StatusEventProcessingState.PROC).build();
         
         final ObjectEventQueue q = new ObjectEventQueue(sse);
         assertGetProcessingReturnIsImmutable(sse2, q);
@@ -498,14 +499,14 @@ public class ObjectEventQueueTest {
     @Test
     public void immutableMoveReady() {
         // test both moveReady paths
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
-        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar2", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
         
         final ObjectEventQueue q = new ObjectEventQueue();
         q.load(sse);
@@ -535,14 +536,14 @@ public class ObjectEventQueueTest {
     @Test
     public void immutableMoveProcessing() {
         // test both moveProcessing paths
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
-        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo"), StatusEventProcessingState.READY).build();
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar2", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+                new StatusEventID("foo"), StatusEventProcessingState.READY).build();
         
         final ObjectEventQueue q = new ObjectEventQueue(sse);
         assertMoveProcessingReturnIsImmutable(sse2, q);
@@ -579,22 +580,22 @@ public class ObjectEventQueueTest {
                 StatusEventProcessingState.FAIL, StatusEventProcessingState.INDX,
                 StatusEventProcessingState.UNINDX, StatusEventProcessingState.UNPROC)) {
             failConstructWithVersionLevelEvents(
-                    Arrays.asList(new StoredStatusEvent(se, id, state, null, null)),
+                    Arrays.asList(StoredStatusEvent.getBuilder(se, id, state).build()),
                     new LinkedList<>(),
                     new IllegalArgumentException("Illegal initial event state: " + state));
             failConstructWithVersionLevelEvents(new LinkedList<>(),
-                    Arrays.asList(new StoredStatusEvent(se, id, state, null, null)),
+                    Arrays.asList(StoredStatusEvent.getBuilder(se, id, state).build()),
                     new IllegalArgumentException("Illegal initial event state: " + state));
         }
         
         failConstructWithVersionLevelEvents(
-                Arrays.asList(new StoredStatusEvent(
-                        se, id, StatusEventProcessingState.PROC, null, null)),
+                Arrays.asList(StoredStatusEvent.getBuilder(
+                        se, id, StatusEventProcessingState.PROC).build()),
                 new LinkedList<>(),
                 new IllegalArgumentException("Illegal initial event state: PROC"));
         failConstructWithVersionLevelEvents(new LinkedList<>(),
-                Arrays.asList(new StoredStatusEvent(
-                        se, id, StatusEventProcessingState.READY, null, null)),
+                Arrays.asList(StoredStatusEvent.getBuilder(
+                        se, id, StatusEventProcessingState.READY).build()),
                 new IllegalArgumentException("Illegal initial event state: READY"));
         
         // bad event types
@@ -604,14 +605,14 @@ public class ObjectEventQueueTest {
                 StatusEventType.PUBLISH_ACCESS_GROUP, StatusEventType.PUBLISH_ALL_VERSIONS,
                 StatusEventType.RENAME_ALL_VERSIONS, StatusEventType.UNDELETE_ALL_VERSIONS,
                 StatusEventType.UNPUBLISH_ACCESS_GROUP, StatusEventType.UNPUBLISH_ALL_VERSIONS)) {
-            final StoredStatusEvent setype = new StoredStatusEvent(StatusEvent.getBuilder(
+            final StoredStatusEvent setype = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                     "foo", Instant.ofEpochMilli(10000), type).build(),
-                    id, StatusEventProcessingState.READY, null, null);
+                    id, StatusEventProcessingState.READY).build();
             failConstructWithVersionLevelEvents(Arrays.asList(setype), new LinkedList<>(),
                     new IllegalArgumentException("Illegal initial event type: " + type));
-            final StoredStatusEvent setype2 = new StoredStatusEvent(StatusEvent.getBuilder(
+            final StoredStatusEvent setype2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                     "foo", Instant.ofEpochMilli(10000), type).build(),
-                    id, StatusEventProcessingState.PROC, null, null);
+                    id, StatusEventProcessingState.PROC).build();
             failConstructWithVersionLevelEvents(new LinkedList<>(), Arrays.asList(setype2),
                     new IllegalArgumentException("Illegal initial event type: " + type));
         }
@@ -641,7 +642,7 @@ public class ObjectEventQueueTest {
         for (final StatusEventProcessingState state: Arrays.asList(
                 StatusEventProcessingState.FAIL, StatusEventProcessingState.INDX,
                 StatusEventProcessingState.UNINDX, StatusEventProcessingState.UNPROC)) {
-            failConstructWithObjectLevelEvent(new StoredStatusEvent(se, id, state, null, null),
+            failConstructWithObjectLevelEvent(StoredStatusEvent.getBuilder(se, id, state).build(),
                     new IllegalArgumentException("Illegal initial event state: " + state));
         }
         
@@ -649,9 +650,9 @@ public class ObjectEventQueueTest {
         for (final StatusEventType type: Arrays.asList(
                 StatusEventType.COPY_ACCESS_GROUP, StatusEventType.DELETE_ACCESS_GROUP,
                 StatusEventType.NEW_VERSION, StatusEventType.PUBLISH_ACCESS_GROUP)) {
-            final StoredStatusEvent setype = new StoredStatusEvent(StatusEvent.getBuilder(
+            final StoredStatusEvent setype = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                     "foo", Instant.ofEpochMilli(10000), type).build(),
-                    id, StatusEventProcessingState.READY, null, null);
+                    id, StatusEventProcessingState.READY).build();
             failConstructWithObjectLevelEvent(setype,
                     new IllegalArgumentException("Illegal initial event type: " + type));
         }
@@ -683,7 +684,7 @@ public class ObjectEventQueueTest {
                 StatusEventProcessingState.FAIL, StatusEventProcessingState.INDX,
                 StatusEventProcessingState.UNINDX, StatusEventProcessingState.READY,
                 StatusEventProcessingState.PROC)) {
-            failLoad(new StoredStatusEvent(se, id, state, null, null),
+            failLoad(StoredStatusEvent.getBuilder(se, id, state).build(),
                     new IllegalArgumentException("Illegal state for loading event: " + state));
         }
         
@@ -691,9 +692,9 @@ public class ObjectEventQueueTest {
         for (final StatusEventType type: Arrays.asList(
                 StatusEventType.COPY_ACCESS_GROUP, StatusEventType.DELETE_ACCESS_GROUP,
                 StatusEventType.PUBLISH_ACCESS_GROUP)) {
-            final StoredStatusEvent setype = new StoredStatusEvent(StatusEvent.getBuilder(
+            final StoredStatusEvent setype = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                     "foo", Instant.ofEpochMilli(10000), type).build(),
-                    id, StatusEventProcessingState.UNPROC, null, null);
+                    id, StatusEventProcessingState.UNPROC).build();
             failLoad(setype,
                     new IllegalArgumentException("Illegal type for loading event: " + type));
         }
@@ -711,10 +712,10 @@ public class ObjectEventQueueTest {
     @Test
     public void setProcessingCompleteFail() {
         final ObjectEventQueue q = new ObjectEventQueue();
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.READY, null, null);
+                new StatusEventID("foo"), StatusEventProcessingState.READY).build();
         
         //nulls
         failSetProcessingComplete(q, null, new NullPointerException("event"));
@@ -723,19 +724,19 @@ public class ObjectEventQueueTest {
         failSetProcessingComplete(q, sse, new NoSuchEventException(sse));
         
         // with object level event in processed state
-        final ObjectEventQueue q2 = new ObjectEventQueue(new StoredStatusEvent(
+        final ObjectEventQueue q2 = new ObjectEventQueue(StoredStatusEvent.getBuilder(
                 StatusEvent.getBuilder(
                         "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
                         .build(),
-                        new StatusEventID("foo2"), StatusEventProcessingState.PROC, null, null));
+                        new StatusEventID("foo2"), StatusEventProcessingState.PROC).build());
         failSetProcessingComplete(q2, sse, new NoSuchEventException(sse));
         
         // with version level event in processed state
         final ObjectEventQueue q3 = new ObjectEventQueue(new LinkedList<>(), Arrays.asList(
-                new StoredStatusEvent(StatusEvent.getBuilder(
+                StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                         "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                         .build(),
-                        new StatusEventID("foo2"), StatusEventProcessingState.PROC, null, null)));
+                        new StatusEventID("foo2"), StatusEventProcessingState.PROC).build()));
         failSetProcessingComplete(q3, sse, new NoSuchEventException(sse));
     }
     
@@ -782,18 +783,18 @@ public class ObjectEventQueueTest {
     public void drainAndBlockVersionLevelEventsWithEventInReadyAndNoDrain() {
         final ObjectEventQueue q = new ObjectEventQueue();
         
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
-        final StoredStatusEvent sse1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        final StoredStatusEvent sse1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar1", Instant.ofEpochMilli(20000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
-        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC).build();
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar2", Instant.ofEpochMilli(30000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC).build();
         
         assertEmpty(q);
         
@@ -821,18 +822,18 @@ public class ObjectEventQueueTest {
     public void drainAndBlockVersionLevelEventsWithDrain() {
         final ObjectEventQueue q = new ObjectEventQueue();
         
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
-        final StoredStatusEvent sse1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        final StoredStatusEvent sse1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar1", Instant.ofEpochMilli(20000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
-        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC).build();
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar2", Instant.ofEpochMilli(30000), StatusEventType.NEW_VERSION)
                 .build(),
-                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC).build();
         
         assertEmpty(q);
         
@@ -853,18 +854,18 @@ public class ObjectEventQueueTest {
     public void drainAndBlockObjectLevelEvents() {
         final ObjectEventQueue q = new ObjectEventQueue();
         
-        final StoredStatusEvent sse = new StoredStatusEvent(StatusEvent.getBuilder(
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
                 .build(),
-                new StatusEventID("foo"), StatusEventProcessingState.UNPROC, null, null);
-        final StoredStatusEvent sse1 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        final StoredStatusEvent sse1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar1", Instant.ofEpochMilli(20000), StatusEventType.NEW_ALL_VERSIONS)
                 .build(),
-                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC, null, null);
-        final StoredStatusEvent sse2 = new StoredStatusEvent(StatusEvent.getBuilder(
+                new StatusEventID("foo1"), StatusEventProcessingState.UNPROC).build();
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 "bar2", Instant.ofEpochMilli(30000), StatusEventType.RENAME_ALL_VERSIONS)
                 .build(),
-                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC, null, null);
+                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC).build();
         
         assertEmpty(q);
         

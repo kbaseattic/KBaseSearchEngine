@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "object_type",
+    "object_types",
     "match_filter",
     "sorting_rules",
     "access_filter",
@@ -31,8 +31,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 })
 public class SearchObjectsInput {
 
-    @JsonProperty("object_type")
-    private String objectType;
+    @JsonProperty("object_types")
+    private List<String> objectTypes;
     /**
      * <p>Original spec-file type: MatchFilter</p>
      * <pre>
@@ -40,6 +40,8 @@ public class SearchObjectsInput {
      * including values of keywords or metadata/system properties (like
      * object name, creation time range) or full-text search in all
      * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
      * </pre>
      * 
      */
@@ -91,18 +93,18 @@ public class SearchObjectsInput {
     private PostProcessing postProcessing;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    @JsonProperty("object_type")
-    public String getObjectType() {
-        return objectType;
+    @JsonProperty("object_types")
+    public List<String> getObjectTypes() {
+        return objectTypes;
     }
 
     @JsonProperty("object_type")
-    public void setObjectType(String objectType) {
-        this.objectType = objectType;
+    public void setObjectTypes(List<String> objectTypes) {
+        this.objectTypes = objectTypes;
     }
 
-    public SearchObjectsInput withObjectType(String objectType) {
-        this.objectType = objectType;
+    public SearchObjectsInput withObjectTypes(List<String> objectTypes) {
+        this.objectTypes = objectTypes;
         return this;
     }
 
@@ -113,6 +115,8 @@ public class SearchObjectsInput {
      * including values of keywords or metadata/system properties (like
      * object name, creation time range) or full-text search in all
      * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
      * </pre>
      * 
      */
@@ -128,6 +132,8 @@ public class SearchObjectsInput {
      * including values of keywords or metadata/system properties (like
      * object name, creation time range) or full-text search in all
      * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
      * </pre>
      * 
      */
@@ -285,7 +291,7 @@ public class SearchObjectsInput {
 
     @Override
     public String toString() {
-        return ((((((((((((((("SearchObjectsInput"+" [objectType=")+ objectType)+", matchFilter=")+ matchFilter)+", sortingRules=")+ sortingRules)+", accessFilter=")+ accessFilter)+", pagination=")+ pagination)+", postProcessing=")+ postProcessing)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((("SearchObjectsInput"+" [objectTypes=")+ objectTypes)+", matchFilter=")+ matchFilter)+", sortingRules=")+ sortingRules)+", accessFilter=")+ accessFilter)+", pagination=")+ pagination)+", postProcessing=")+ postProcessing)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

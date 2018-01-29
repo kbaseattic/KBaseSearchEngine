@@ -18,6 +18,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * including values of keywords or metadata/system properties (like
  * object name, creation time range) or full-text search in all
  * properties.
+ * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+ *     Default false.
  * </pre>
  * 
  */
@@ -29,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "object_name",
     "parent_guid",
     "timestamp",
+    "exclude_subobjects",
     "lookupInKeys"
 })
 public class MatchFilter {
@@ -56,6 +59,8 @@ public class MatchFilter {
      */
     @JsonProperty("timestamp")
     private kbasesearchengine.MatchValue timestamp;
+    @JsonProperty("exclude_subobjects")
+    private Long excludeSubobjects;
     @JsonProperty("lookupInKeys")
     private Map<String, kbasesearchengine.MatchValue> lookupInKeys;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
@@ -161,6 +166,21 @@ public class MatchFilter {
         return this;
     }
 
+    @JsonProperty("exclude_subobjects")
+    public Long getExcludeSubobjects() {
+        return excludeSubobjects;
+    }
+
+    @JsonProperty("exclude_subobjects")
+    public void setExcludeSubobjects(Long excludeSubobjects) {
+        this.excludeSubobjects = excludeSubobjects;
+    }
+
+    public MatchFilter withExcludeSubobjects(Long excludeSubobjects) {
+        this.excludeSubobjects = excludeSubobjects;
+        return this;
+    }
+
     @JsonProperty("lookupInKeys")
     public Map<String, kbasesearchengine.MatchValue> getLookupInKeys() {
         return lookupInKeys;
@@ -188,7 +208,7 @@ public class MatchFilter {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((("MatchFilter"+" [fullTextInAll=")+ fullTextInAll)+", accessGroupId=")+ accessGroupId)+", objectName=")+ objectName)+", parentGuid=")+ parentGuid)+", timestamp=")+ timestamp)+", lookupInKeys=")+ lookupInKeys)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((("MatchFilter"+" [fullTextInAll=")+ fullTextInAll)+", accessGroupId=")+ accessGroupId)+", objectName=")+ objectName)+", parentGuid=")+ parentGuid)+", timestamp=")+ timestamp)+", excludeSubobjects=")+ excludeSubobjects)+", lookupInKeys=")+ lookupInKeys)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
