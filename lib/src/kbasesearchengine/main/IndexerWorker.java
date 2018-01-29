@@ -3,6 +3,7 @@ package kbasesearchengine.main;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,6 +56,9 @@ import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.tools.Utils;
 import org.apache.commons.io.FileUtils;
+import workspace.GetObjectInfo3Params;
+import workspace.GetObjectInfo3Results;
+import workspace.ObjectSpecification;
 
 public class IndexerWorker implements Stoppable {
     
@@ -403,35 +407,40 @@ public class IndexerWorker implements Stoppable {
 
     public void processOneEvent(final StatusEvent ev)
             throws IndexingException, InterruptedException, RetriableIndexingException {
+
+        // update event to reflect the latest state of object for which the specified StatusEvent is an event for
+        EventHandler handler = getEventHandler(ev.getStorageCode());
+        StatusEvent updatedEvent = handler.updateEvent(ev);
+
         try {
-            switch (ev.getEventType()) {
+            switch (updatedEvent.getEventType()) {
             case NEW_VERSION:
-                GUID pguid = ev.toGUID();
+                GUID pguid = updatedEvent.toGUID();
                 boolean indexed = indexingStorage.checkParentGuidsExist(new LinkedHashSet<>(
                         Arrays.asList(pguid))).get(pguid);
                 if (indexed) {
                     logger.logInfo("[Indexer]   skipping " + pguid +
                             " creation (already indexed)");
                     // TODO: we should fix public access for all sub-objects too (maybe already works. Anyway, ensure all subobjects are set correctly as well as the parent)
-                    if (ev.isPublic().get()) {
+                    if (updatedEvent.isPublic().get()) {
                         publish(pguid);
                     } else {
                         unpublish(pguid);
                     }
                 } else {
-                    indexObject(pguid, ev.getStorageObjectType().get(), ev.getTimestamp(),
-                            ev.isPublic().get(), null, new LinkedList<>());
+                    indexObject(pguid, updatedEvent.getStorageObjectType().get(), updatedEvent.getTimestamp(),
+                            updatedEvent.isPublic().get(), null, new LinkedList<>());
                 }
                 break;
             // currently unused
-//            case DELETED:
-//                unshare(ev.toGUID(), ev.getAccessGroupId().get());
-//                break;
+            case DELETED:
+                unshare(ev.toGUID(), ev.getAccessGroupId().get());
+                break;
             case DELETE_ALL_VERSIONS:
-                deleteAllVersions(ev.toGUID());
+                deleteAllVersions(updatedEvent.toGUID());
                 break;
             case UNDELETE_ALL_VERSIONS:
-                undeleteAllVersions(ev.toGUID());
+                undeleteAllVersions(updatedEvent.toGUID());
                 break;
                 //TODO DP reenable if we support DPs
 //            case SHARED:
@@ -442,17 +451,17 @@ public class IndexerWorker implements Stoppable {
 //                unshare(ev.toGUID(), ev.getTargetAccessGroupId());
 //                break;
             case RENAME_ALL_VERSIONS:
-                renameAllVersions(ev.toGUID(), ev.getNewName().get());
+                renameAllVersions(updatedEvent.toGUID(), updatedEvent.getNewName().get());
                 break;
             case PUBLISH_ALL_VERSIONS:
-                publishAllVersions(ev.toGUID());
+                publishAllVersions(updatedEvent.toGUID());
                 break;
             case UNPUBLISH_ALL_VERSIONS:
-                unpublishAllVersions(ev.toGUID());
+                unpublishAllVersions(updatedEvent.toGUID());
                 break;
             default:
                 throw new UnprocessableEventIndexingException(
-                        "Unsupported event type: " + ev.getEventType());
+                        "Unsupported event type: " + updatedEvent.getEventType());
             }
         } catch (IOException e) {
             // may want to make IndexingStorage throw more specific exceptions, but this will work
@@ -640,9 +649,9 @@ public class IndexerWorker implements Stoppable {
         indexingStorage.undeleteAllVersions(guid);
     }
 
-//    private void unshare(GUID guid, int accessGroupId) throws IOException {
-//        indexingStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
-//    }
+    private void unshare(GUID guid, int accessGroupId) throws IOException {
+        indexingStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
+    }
 
     private void deleteAllVersions(final GUID guid) throws IOException {
         indexingStorage.deleteAllVersions(guid);
