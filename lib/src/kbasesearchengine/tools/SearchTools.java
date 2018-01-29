@@ -24,6 +24,9 @@ import java.util.Scanner;
 import java.util.UUID;
 
 import kbasesearchengine.common.FileUtil;
+import kbasesearchengine.events.StatusEventProcessingState;
+import kbasesearchengine.events.StoredStatusEvent;
+import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import org.apache.http.HttpHost;
 import org.slf4j.LoggerFactory;
 
@@ -194,6 +197,18 @@ public class SearchTools {
                 noCommand = false;
             } catch (MongoException | IOException e) {
                 printError(e, args.verbose);
+                return 1;
+            }
+        }
+        if (args.resetFailedEvents) {
+
+            try {
+
+                final StatusEventStorage storage = new MongoDBStatusEventStorage(searchDB);
+                storage.resetFailedEvents();
+
+            } catch (StorageInitException | FatalRetriableIndexingException ex) {
+                printError(ex, args.verbose);
                 return 1;
             }
         }
@@ -625,6 +640,12 @@ public class SearchTools {
                 "Start an indexer worker with the provided id. At any given time, all workers " +
                 "MUST have unique ids. Set the id to '-' to generate a random id.")
         private String startWorker;
+
+        @Parameter(names = {"-f", "--reset-failed-events"}, description =
+                "Reset events with the FAIL processing state to the UNPROC (not processed) " +
+                " processing state so these events can be rerun by the indexer coordinator and" +
+                " indexer workers")
+        private boolean resetFailedEvents;
         
         @Parameter(names = {"-w", "--generate-workspace-events"}, description =
                 "Generate events for all objects in the workspace service database. " +
