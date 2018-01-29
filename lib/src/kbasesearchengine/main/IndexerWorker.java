@@ -3,7 +3,9 @@ package kbasesearchengine.main;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -50,6 +52,7 @@ import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.system.NoSuchTypeException;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.ParsingRulesSubtypeFirstComparator;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
@@ -95,7 +98,7 @@ public class IndexerWorker implements Stoppable {
         Utils.nonNull(logger, "logger");
         Utils.nonNull(indexingStorage, "indexingStorage");
         this.workerCodes = workerCodes;
-        logger.logInfo("Worker codes: " + String.join(",", workerCodes));
+        logger.logInfo("Worker codes: " + workerCodes);
         this.id = id;
         this.logger = logger;
         this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
@@ -520,8 +523,9 @@ public class IndexerWorker implements Stoppable {
             long loadTime = System.currentTimeMillis() - t1;
             logger.logInfo("[Indexer]   " + guid + ", loading time: " + loadTime + " ms.");
             logger.timeStat(guid, loadTime, 0, 0);
-            final Set<ObjectTypeParsingRules> parsingRules = 
-                    typeStorage.listObjectTypeParsingRules(storageObjectType);
+            final List<ObjectTypeParsingRules> parsingRules = new ArrayList<>( 
+                    typeStorage.listObjectTypeParsingRules(storageObjectType));
+            Collections.sort(parsingRules, new ParsingRulesSubtypeFirstComparator());
             for (final ObjectTypeParsingRules rule : parsingRules) {
                 final long t2 = System.currentTimeMillis();
                 final ParseObjectsRet parsedRet = parseObjects(guid, indexLookup,
