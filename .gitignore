@@ -6,3 +6,6 @@ bin
 /search_tools.cfg
 /classes/
 /search_tools.cfg.bak
+*.jar
+*.war
+
