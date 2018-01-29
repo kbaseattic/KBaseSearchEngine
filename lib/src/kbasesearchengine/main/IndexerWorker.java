@@ -95,7 +95,7 @@ public class IndexerWorker implements Stoppable {
         Utils.nonNull(logger, "logger");
         Utils.nonNull(indexingStorage, "indexingStorage");
         this.workerCodes = workerCodes;
-        logger.logInfo("Worker codes: " + String.join(",", workerCodes));
+        logger.logInfo("Worker codes: " + workerCodes);
         this.id = id;
         this.logger = logger;
         this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
