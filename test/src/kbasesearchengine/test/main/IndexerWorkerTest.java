@@ -113,15 +113,19 @@ public class IndexerWorkerTest {
                         .build())
                 .build();
         when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
-        
-        worker.processOneEvent(StatusEvent.getBuilder(
+
+        StatusEvent ev = StatusEvent.getBuilder(
                 storageObjectType,
                 Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(1)
                 .withNullableObjectID("2")
                 .withNullableVersion(3)
                 .withNullableisPublic(false)
-                .build());
+                .build();
+
+        when(ws.updateEvent(ev)).thenReturn(ev);
+        
+        worker.processOneEvent(ev);
         
         final ParsedObject po1 = new ParsedObject(
                 new ObjectMapper().writeValueAsString(
@@ -237,15 +241,20 @@ public class IndexerWorkerTest {
 
         when(typeStore.listObjectTypeParsingRules(storageObjectType))
                 .thenReturn(set(rules));
+
+        StatusEvent ev = StatusEvent.getBuilder(
+                storageObjectType,
+                Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("2")
+                .withNullableVersion(3)
+                .withNullableisPublic(false)
+                .build();
+
+        when(ws.updateEvent(ev)).thenReturn(ev);
+
         try {
-            worker.processOneEvent(StatusEvent.getBuilder(
-                    storageObjectType,
-                    Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
-                    .withNullableAccessGroupID(1)
-                    .withNullableObjectID("2")
-                    .withNullableVersion(3)
-                    .withNullableisPublic(false)
-                    .build());
+            worker.processOneEvent(ev);
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, new UnprocessableEventIndexingException(

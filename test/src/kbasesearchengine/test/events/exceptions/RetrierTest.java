@@ -513,8 +513,8 @@ public class RetrierTest {
         assertThat("incorrect event", le2.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le2.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le2.time, 30, 30);
-        assertCloseMS(start, end, 100, 30);
+        assertCloseMS(start, le2.time, 30, 60);
+        assertCloseMS(start, end, 100, 60);
     }
 
 }
