@@ -322,13 +322,6 @@ public class MongoDBStatusEventStorageTest {
         assertThat("expected fail", success, is(false));
     }
 
-    private static final Consumer<StatusEventID> NOOP = id -> {};
-    
-    @Test
-    public void getAndSetProcessingWithSortAndNullCodes() throws Exception {
-        getAndSetProcessingWithSort(null, NOOP);
-    }
-    
     @Test
     public void getAndSetProcessingWithSortNoDBWorkerCodeField() throws Exception {
         getAndSetProcessingWithSort(set(),
@@ -354,6 +347,13 @@ public class MongoDBStatusEventStorageTest {
                         new Document("_id", new ObjectId(id.getId())),
                         new Document("$set", new Document("wrkcde", Arrays.asList())),
                         new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)));
+    }
+    
+    private static final Consumer<StatusEventID> NOOP = id -> {};
+    
+    @Test
+    public void getAndSetProcessingWithSortAndNullCodes() throws Exception {
+        getAndSetProcessingWithSort(null, NOOP);
     }
     
     @Test
@@ -465,15 +465,15 @@ public class MongoDBStatusEventStorageTest {
         assertThat("incorrect worker codes", sse.getWorkerCodes(), is(expectedWorkerCodes));
     }
     
-//    @Test  WIP
+    @Test
     public void getAndSetProcessingSortWithCodes() throws Exception {
-        // tests that an earlier event with different codes will be skipped
+        // tests that earlier events with different codes will be skipped
         // and that the newest event with matching codes is returned
-        store(1, 3, StatusEventProcessingState.READY, set("foo"));
-//        store(1)
+        store(1, 10, StatusEventProcessingState.READY, set("foo"));
+        store(12, 20, StatusEventProcessingState.READY, set("bar"));
         final StorageObjectType sot = new StorageObjectType("foo", "bar", 9);
         final StoredStatusEvent sse = storage.store(StatusEvent.getBuilder(
-                sot, Instant.ofEpochMilli(4000), StatusEventType.COPY_ACCESS_GROUP)
+                sot, Instant.ofEpochMilli(11000), StatusEventType.COPY_ACCESS_GROUP)
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
@@ -482,7 +482,6 @@ public class MongoDBStatusEventStorageTest {
                 .build(),
                 StatusEventProcessingState.READY,
                 set("bar"));
-        store(5, 7, StatusEventProcessingState.READY, set("bar"));
         
         when(clock.instant()).thenReturn(Instant.ofEpochMilli(100000));
         
@@ -495,7 +494,7 @@ public class MongoDBStatusEventStorageTest {
         assertThat("incorrect update time", ret.getUpdateTime(),
                 is(Optional.of(Instant.ofEpochMilli(100000))));
         assertThat("incorrect event", ret.getEvent(), is(StatusEvent.getBuilder(
-                sot, Instant.ofEpochMilli(4000), StatusEventType.COPY_ACCESS_GROUP)
+                sot, Instant.ofEpochMilli(11000), StatusEventType.COPY_ACCESS_GROUP)
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
@@ -511,7 +510,7 @@ public class MongoDBStatusEventStorageTest {
         assertThat("incorrect update time", ret.getUpdateTime(),
                 is(Optional.of(Instant.ofEpochMilli(100000))));
         assertThat("incorrect event", got.getEvent(), is(StatusEvent.getBuilder(
-                sot, Instant.ofEpochMilli(4000), StatusEventType.COPY_ACCESS_GROUP)
+                sot, Instant.ofEpochMilli(11000), StatusEventType.COPY_ACCESS_GROUP)
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
@@ -523,7 +522,7 @@ public class MongoDBStatusEventStorageTest {
     }
     
     @Test
-    public void getAndSetProcessingNonExistant() throws Exception {
+    public void getAndSetProcessingNonExistantOnState() throws Exception {
         final StorageObjectType sot = new StorageObjectType("foo", "bar", 9);
         storage.store(StatusEvent.getBuilder(
                 sot, Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
@@ -540,6 +539,19 @@ public class MongoDBStatusEventStorageTest {
         
         final Optional<StoredStatusEvent> ret = storage.setAndGetProcessingState(
                 StatusEventProcessingState.READY, null, StatusEventProcessingState.PROC, "whee");
+        assertThat("expected absent", ret, is(Optional.absent()));
+    }
+    
+    @Test
+    public void getAndSetProcessingNonExistantOnWorkerCode() throws Exception {
+        store(1, 2, StatusEventProcessingState.READY, set("foo"));
+        store(1, 2, StatusEventProcessingState.READY, set("bar"));
+        
+        when(clock.instant()).thenReturn(Instant.now());
+        
+        final Optional<StoredStatusEvent> ret = storage.setAndGetProcessingState(
+                StatusEventProcessingState.READY, set("baz"),
+                StatusEventProcessingState.PROC, "whee");
         assertThat("expected absent", ret, is(Optional.absent()));
     }
     

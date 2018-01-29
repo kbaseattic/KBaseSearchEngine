@@ -51,8 +51,6 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     
     //TODO DB add schema ver code
     
-    //TODO NNOW test changes
-    
     private static final List<String> DEFAULT_WORKER_CODES_LIST = Collections.unmodifiableList(
             Arrays.asList(StatusEventStorage.DEFAULT_WORKER_CODE));
     private static final Set<String> DEFAULT_WORKER_CODES_SET = Collections.unmodifiableSet(
