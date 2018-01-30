@@ -188,8 +188,8 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
             throw new FatalRetriableIndexingException(
                     "Failed event storage: " + e.getMessage(), e);
         }
-        return new StoredStatusEvent(
-                newEvent, new StatusEventID(doc.getObjectId("_id").toString()), state, null, null);
+        return StoredStatusEvent.getBuilder(
+                newEvent, new StatusEventID(doc.getObjectId("_id").toString()), state).build();
     }
     
     @Override
@@ -225,17 +225,18 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         } else {
             b = StatusEvent.getBuilder(sot, time, eventType);
         }
-        return new StoredStatusEvent(b
-                .withNullableAccessGroupID(event.getInteger(FLD_ACCESS_GROUP_ID))
-                .withNullableObjectID(event.getString(FLD_OBJECT_ID))
-                .withNullableVersion(event.getInteger(FLD_VERSION))
-                .withNullableNewName(event.getString(FLD_NEW_NAME))
-                .withNullableisPublic(event.getBoolean(FLD_PUBLIC))
-                .build(),
+        return StoredStatusEvent.getBuilder(
+                b.withNullableAccessGroupID(event.getInteger(FLD_ACCESS_GROUP_ID))
+                        .withNullableObjectID(event.getString(FLD_OBJECT_ID))
+                        .withNullableVersion(event.getInteger(FLD_VERSION))
+                        .withNullableNewName(event.getString(FLD_NEW_NAME))
+                        .withNullableisPublic(event.getBoolean(FLD_PUBLIC))
+                        .build(),
                 new StatusEventID(event.getObjectId("_id").toString()),
-                StatusEventProcessingState.valueOf(event.getString(FLD_STATUS)),
-                updateTime == null ? null : updateTime.toInstant(),
-                event.getString(FLD_UPDATER));
+                StatusEventProcessingState.valueOf(event.getString(FLD_STATUS)))
+                .withNullableUpdate(updateTime == null ? null : updateTime.toInstant(),
+                        event.getString(FLD_UPDATER))
+                .build();
     }
     
     // note returns in order of time stamp, oldest first (e.g FIFO)
@@ -294,11 +295,10 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
             throws FatalRetriableIndexingException {
         Utils.nonNull(oldState, "oldState");
         Utils.nonNull(newState, "newState");
+        Utils.notNullOrEmpty(updater, "updater cannot be null or whitespace");
         final Document innerUpdate = new Document(FLD_STATUS, newState.toString())
-                .append(FLD_UPDATE_TIME, Date.from(clock.instant()));
-        if (!Utils.isNullOrEmpty(updater)) {
-            innerUpdate.append(FLD_UPDATER, updater);
-        }
+                .append(FLD_UPDATE_TIME, Date.from(clock.instant()))
+                .append(FLD_UPDATER, updater);
         final Document ret;
         try {
              ret = db.getCollection(COL_EVENT).findOneAndUpdate(

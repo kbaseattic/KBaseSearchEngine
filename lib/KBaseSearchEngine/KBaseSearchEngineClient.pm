@@ -130,6 +130,7 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	object_name has a value which is a string
 	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
+	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 GUID is a string
 MatchValue is a reference to a hash where the following keys are defined:
@@ -169,6 +170,7 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	object_name has a value which is a string
 	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
+	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 GUID is a string
 MatchValue is a reference to a hash where the following keys are defined:
@@ -276,6 +278,7 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	object_name has a value which is a string
 	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
+	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 GUID is a string
 MatchValue is a reference to a hash where the following keys are defined:
@@ -345,6 +348,7 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	object_name has a value which is a string
 	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
+	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 GUID is a string
 MatchValue is a reference to a hash where the following keys are defined:
@@ -914,6 +918,9 @@ including values of keywords or metadata/system properties (like
 object name, creation time range) or full-text search in all
 properties.
 
+boolean exclude_subobjects - don't return any subobjects in the search results if true.
+    Default false.
+
 
 =item Definition
 
@@ -926,6 +933,7 @@ access_group_id has a value which is an int
 object_name has a value which is a string
 parent_guid has a value which is a KBaseSearchEngine.GUID
 timestamp has a value which is a KBaseSearchEngine.MatchValue
+exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 
 </pre>
@@ -940,6 +948,7 @@ access_group_id has a value which is an int
 object_name has a value which is a string
 parent_guid has a value which is a KBaseSearchEngine.GUID
 timestamp has a value which is a KBaseSearchEngine.MatchValue
+exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 
 

@@ -159,7 +159,7 @@ public class RetrierTest {
     @Test
     public void consumer1RetrySuccessNoEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
-        final Retrier ret = new Retrier(1, 50, Collections.emptyList(), collog);
+        final Retrier ret = new Retrier(1, 100, Collections.emptyList(), collog);
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 1), "foo", null);
         final Instant end = Instant.now();
@@ -169,24 +169,23 @@ public class RetrierTest {
         assertThat("incorrect retry count", le.retryCount, is(1));
         assertThat("incorrect event", le.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le.time, 0, 30);
-        assertCloseMS(start, end, 50, 30);
+        assertCloseMS(start, le.time, 0, 60);
+        assertCloseMS(start, end, 100, 60);
     }
     
     @Test
     public void consumer2RetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
-        final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
-        final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
+        final Retrier ret = new Retrier(2, 100, Collections.emptyList(), collog);
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
                 .build(),
                 new StatusEventID("wugga"),
-                StatusEventProcessingState.UNPROC,
-                null,
-                null);
+                StatusEventProcessingState.UNPROC)
+                .build();
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 2), "foo", ev);
         final Instant end = Instant.now();
@@ -196,20 +195,20 @@ public class RetrierTest {
         assertThat("incorrect retry count", le1.retryCount, is(1));
         assertThat("incorrect event", le1.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le1.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le1.time, 0, 30);
+        assertCloseMS(start, le1.time, 0, 60);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le2.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le2.time, 50, 30);
-        assertCloseMS(start, end, 100, 30);
+        assertCloseMS(start, le2.time, 100, 60);
+        assertCloseMS(start, end, 200, 60);
     }
     
     @Test
     public void consumerRetriesExceeded() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
-        final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
+        final Retrier ret = new Retrier(2, 100, Collections.emptyList(), collog);
         final Instant start = Instant.now();
         try {
             ret.retryCons(new TestConsumer<>("foo", -1), "foo", null);
@@ -223,20 +222,20 @@ public class RetrierTest {
         assertThat("incorrect retry count", le1.retryCount, is(1));
         assertThat("incorrect event", le1.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le1.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le1.time, 0, 30);
+        assertCloseMS(start, le1.time, 0, 60);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le2.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le2.time, 50, 30);
-        assertCloseMS(start, end, 100, 30);
+        assertCloseMS(start, le2.time, 100, 60);
+        assertCloseMS(start, end, 200, 60);
     }
     
     @Test
     public void consumer1FatalRetrySuccessNoEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
-        final Retrier ret = new Retrier(1, 50, Arrays.asList(70), collog);
+        final Retrier ret = new Retrier(1, 100, Arrays.asList(140), collog);
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 1, true), "foo", null);
         final Instant end = Instant.now();
@@ -247,24 +246,23 @@ public class RetrierTest {
         assertThat("incorrect event", le.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le.time, 0, 30);
-        assertCloseMS(start, end, 70, 30);
+        assertCloseMS(start, le.time, 0, 60);
+        assertCloseMS(start, end, 140, 60);
     }
     
     @Test
     public void consumer2FatalRetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
-        final Retrier ret = new Retrier(2, 50, Arrays.asList(70, 30), collog);
-        final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
+        final Retrier ret = new Retrier(2, 100, Arrays.asList(140, 60), collog);
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
                 .build(),
                 new StatusEventID("wugga"),
-                StatusEventProcessingState.UNPROC,
-                null,
-                null);
+                StatusEventProcessingState.UNPROC)
+                .build();
         final Instant start = Instant.now();
         ret.retryCons(new TestConsumer<>("foo", 2, true), "foo", ev);
         final Instant end = Instant.now();
@@ -275,21 +273,21 @@ public class RetrierTest {
         assertThat("incorrect event", le1.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le1.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le1.time, 0, 30);
+        assertCloseMS(start, le1.time, 0, 60);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le2.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le2.time, 70, 30);
-        assertCloseMS(start, end, 100, 30);
+        assertCloseMS(start, le2.time, 140, 60);
+        assertCloseMS(start, end, 200, 60);
     }
     
     @Test
     public void consumerFatalRetriesExceeded() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
-        final Retrier ret = new Retrier(2, 50, Arrays.asList(30, 70), collog);
+        final Retrier ret = new Retrier(2, 100, Arrays.asList(60, 140), collog);
         final Instant start = Instant.now();
         try {
             ret.retryCons(new TestConsumer<>("foo", -1, true), "foo", null);
@@ -304,15 +302,15 @@ public class RetrierTest {
         assertThat("incorrect event", le1.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le1.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le1.time, 0, 30);
+        assertCloseMS(start, le1.time, 0, 60);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le2.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le2.time, 30, 30);
-        assertCloseMS(start, end, 100, 30);
+        assertCloseMS(start, le2.time, 60, 60);
+        assertCloseMS(start, end, 200, 60);
     }
 
     private class TestFunction<T, R> implements RetryFunction<T, R> {
@@ -357,7 +355,7 @@ public class RetrierTest {
     @Test
     public void function1RetrySuccessNoEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
-        final Retrier ret = new Retrier(1, 50, Collections.emptyList(), collog);
+        final Retrier ret = new Retrier(1, 100, Collections.emptyList(), collog);
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 24L, 1), "foo", null);
         final Instant end = Instant.now();
@@ -368,24 +366,23 @@ public class RetrierTest {
         assertThat("incorrect retry count", le.retryCount, is(1));
         assertThat("incorrect event", le.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le.time, 0, 30);
-        assertCloseMS(start, end, 50, 30);
+        assertCloseMS(start, le.time, 0, 60);
+        assertCloseMS(start, end, 100, 60);
     }
     
     @Test
     public void function2RetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
-        final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
-        final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
+        final Retrier ret = new Retrier(2, 100, Collections.emptyList(), collog);
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
                 .build(),
                 new StatusEventID("wugga"),
-                StatusEventProcessingState.UNPROC,
-                null,
-                null);
+                StatusEventProcessingState.UNPROC)
+                .build();
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 26L, 2), "foo", ev);
         final Instant end = Instant.now();
@@ -396,20 +393,20 @@ public class RetrierTest {
         assertThat("incorrect retry count", le1.retryCount, is(1));
         assertThat("incorrect event", le1.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le1.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le1.time, 0, 30);
+        assertCloseMS(start, le1.time, 0, 60);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le2.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le2.time, 50, 30);
-        assertCloseMS(start, end, 100, 30);
+        assertCloseMS(start, le2.time, 100, 60);
+        assertCloseMS(start, end, 200, 60);
     }
     
     @Test
     public void functionRetriesExceeded() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
-        final Retrier ret = new Retrier(2, 50, Collections.emptyList(), collog);
+        final Retrier ret = new Retrier(2, 100, Collections.emptyList(), collog);
         final Instant start = Instant.now();
         try {
             ret.retryFunc(new TestFunction<>("foo", 3L, -1), "foo", null);
@@ -423,20 +420,20 @@ public class RetrierTest {
         assertThat("incorrect retry count", le1.retryCount, is(1));
         assertThat("incorrect event", le1.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le1.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le1.time, 0, 30);
+        assertCloseMS(start, le1.time, 0, 60);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le2.exception, new RetriableIndexingException("bar"));
-        assertCloseMS(start, le2.time, 50, 30);
-        assertCloseMS(start, end, 100, 30);
+        assertCloseMS(start, le2.time, 100, 60);
+        assertCloseMS(start, end, 200, 60);
     }
     
     @Test
     public void function1FatalRetrySuccessNoEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
-        final Retrier ret = new Retrier(1, 50, Arrays.asList(70), collog);
+        final Retrier ret = new Retrier(1, 100, Arrays.asList(140), collog);
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 42L, 1, true), "foo", null);
         final Instant end = Instant.now();
@@ -448,24 +445,23 @@ public class RetrierTest {
         assertThat("incorrect event", le.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le.time, 0, 30);
-        assertCloseMS(start, end, 70, 30);
+        assertCloseMS(start, le.time, 0, 60);
+        assertCloseMS(start, end, 140, 60);
     }
     
     @Test
     public void function2FatalRetrySuccessWithEvent() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
-        final Retrier ret = new Retrier(2, 50, Arrays.asList(70, 30), collog);
-        final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
+        final Retrier ret = new Retrier(2, 100, Arrays.asList(140, 60), collog);
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 new StorageObjectType("foo", "whee"), Instant.now(), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(23)
                 .withNullableObjectID("bar")
                 .withNullableVersion(6)
                 .build(),
                 new StatusEventID("wugga"),
-                StatusEventProcessingState.UNPROC,
-                null,
-                null);
+                StatusEventProcessingState.UNPROC)
+                .build();
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>("foo", 64L, 2, true), "foo", ev);
         final Instant end = Instant.now();
@@ -477,21 +473,21 @@ public class RetrierTest {
         assertThat("incorrect event", le1.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le1.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le1.time, 0, 30);
+        assertCloseMS(start, le1.time, 0, 60);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.of(ev)));
         TestCommon.assertExceptionCorrect(le2.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le2.time, 70, 30);
-        assertCloseMS(start, end, 100, 30);
+        assertCloseMS(start, le2.time, 140, 60);
+        assertCloseMS(start, end, 200, 60);
     }
     
     @Test
     public void functionFatalRetriesExceeded() throws Exception {
         final CollectingLogger collog = new CollectingLogger();
-        final Retrier ret = new Retrier(2, 50, Arrays.asList(30, 70), collog);
+        final Retrier ret = new Retrier(2, 100, Arrays.asList(60, 140), collog);
         final Instant start = Instant.now();
         try {
             ret.retryFunc(new TestFunction<>("foo", 43L, -1, true), "foo", null);
@@ -506,15 +502,16 @@ public class RetrierTest {
         assertThat("incorrect event", le1.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le1.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le1.time, 0, 30);
+        assertCloseMS(start, le1.time, 0, 60);
         
         final LogEvent le2 = collog.events.get(1);
         assertThat("incorrect retry count", le2.retryCount, is(2));
         assertThat("incorrect event", le2.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le2.exception,
                 new FatalRetriableIndexingException("game over man"));
-        assertCloseMS(start, le2.time, 30, 60);
-        assertCloseMS(start, end, 100, 60);
+
+        assertCloseMS(start, le2.time, 60, 60);
+        assertCloseMS(start, end, 200, 60);
     }
 
 }

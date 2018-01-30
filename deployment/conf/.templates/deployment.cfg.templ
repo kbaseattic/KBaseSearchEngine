@@ -1,0 +1,20 @@
+[KBaseSearchEngine]
+kbase-endpoint = {{ default .Env.kbase_endpoint "" }}
+job-service-url = {{ default .Env.job_service_url "" }}
+workspace-url = {{ default .Env.workspace_url "" }}
+shock-url = {{ default .Env.shock_url "" }}
+handle-service-url = {{ default .Env.handle_url "" }}
+srv-wiz-url = {{ default .Env.srv_wiz_url "" }}
+njsw-url = {{ default .Env.njsw_url "" }}
+auth-service-url = {{ default .Env.auth_service_url "" }}
+auth-service-url-allow-insecure = {{ default .Env.auth_service_url_allow_insecure "" }}
+scratch = /kb/module/work/tmp
+
+indexer-token= {{ default .Env.indexer_token "" }}
+elastic-host = {{ default .Env.elastic_host "" }}
+elastic-port = {{ default .Env.elastic_port "" }}
+elastic-user = {{ default .Env.elastic_user "" }}
+elastic-password = {{ default .Env.elastic_password "" }}
+elastic-namespace={{ default .Env.elastic_namespace "kbase.1" }}
+types-dir={{ default .Env.types_dir "/kb/module/resources/types" }}
+type-mappings-dir={{ default .Env.type_mappings_dir "/kb/module/resources/typemappings" }}
