@@ -1,6 +1,7 @@
 package kbasesearchengine.events.storage;
 
 import java.util.List;
+import java.util.Set;
 
 import com.google.common.base.Optional;
 
@@ -15,14 +16,26 @@ import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
  *
  */
 public interface StatusEventStorage {
+    
+    /** The name for a default worker code that is applied to an event if it has no other worker
+     * codes, or can be applied to events manually if the event should run on a worker that
+     * processes events with the default code.
+     */
+    public static final String DEFAULT_WORKER_CODE = "default";
 
     /** Store a new event.
      * @param newEvent the event.
      * @param state the current processing state of the event.
+     * @param workerCodes a set of codes for the event that designate the workers that may process
+     * the event. If the list is null or empty the event will get the {@link #DEFAULT_WORKER_CODE}
+     * code.
      * @return a stored status event.
      * @throws FatalRetriableIndexingException if an error occurs while storing the event.
      */
-    StoredStatusEvent store(StatusEvent newEvent, StatusEventProcessingState state)
+    StoredStatusEvent store(
+            StatusEvent newEvent,
+            StatusEventProcessingState state,
+            Set<String> workerCodes)
             throws FatalRetriableIndexingException;
 
     /** Get an event by its ID.
@@ -45,8 +58,11 @@ public interface StatusEventStorage {
     /** Simultaneously find an event with a particular processing state and set a new state.
      * This is often used to switch an event from {@link StatusEventProcessingState#READY} to
      * {@link StatusEventProcessingState#PROC}.
-     * Returns the event that matches the processing state with the earliest timestamp.
+     * Returns the event that matches the processing state and worker codes with the earliest
+     * timestamp.
      * @param oldState the state of the event to find.
+     * @param workerCodes the permissible worker codes for the event. A null or empty list
+     * implies the default code.
      * @param newState the state to which the event will be updated.
      * @param updater an optional (e.g. nullable) id or name to associate with the state change.
      * Only the most recent state change is recorded.
@@ -55,6 +71,7 @@ public interface StatusEventStorage {
      */
     Optional<StoredStatusEvent> setAndGetProcessingState(
             StatusEventProcessingState oldState,
+            Set<String> workerCodes,
             StatusEventProcessingState newState,
             String updater)
             throws FatalRetriableIndexingException;

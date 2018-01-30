@@ -274,7 +274,9 @@ public class WorkspaceEventGenerator {
                     .withNullableVersion(vernum)
                     .withNullableisPublic(pub)
                     .build(),
-                    StatusEventProcessingState.UNPROC);
+                    StatusEventProcessingState.UNPROC,
+                    //TODO NNOW worker codes,
+                    new HashSet<>());
         } catch (RetriableIndexingException e) {
             throw new EventGeneratorException(e.getMessage(), e); //TODO CODE retries
         }

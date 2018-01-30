@@ -2,11 +2,15 @@ package kbasesearchengine.events.storage;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -39,7 +43,18 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     
     /* Note that general mongoexceptions are more or less impossible to test. */
     
+    /* No need for a worker code index at the moment I think. The query for
+     * setAndGetProcessingState should run down all the events in the target state in order of
+     * timestamp until it finds one with an appropriate code.
+     * Look into adding one if we start seeing long queries.
+     */
+    
     //TODO DB add schema ver code
+    
+    private static final List<String> DEFAULT_WORKER_CODES_LIST = Collections.unmodifiableList(
+            Arrays.asList(StatusEventStorage.DEFAULT_WORKER_CODE));
+    private static final Set<String> DEFAULT_WORKER_CODES_SET = Collections.unmodifiableSet(
+            new HashSet<>(DEFAULT_WORKER_CODES_LIST));
     
     private static final int MAX_RETURNED_EVENTS = 10000;
     
@@ -54,6 +69,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     private static final String FLD_OBJECT_TYPE_VER = "objtypever";
     private static final String FLD_PUBLIC = "public";
     private static final String FLD_NEW_NAME = "newname";
+    private static final String FLD_WORKER_CODES = "wrkcde";
     private static final String FLD_UPDATE_TIME = "updte";
     // the ID, if any, of the operator that last changed the event status. Arbitrary string.
     private static final String FLD_UPDATER = "updtr";
@@ -163,10 +179,20 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     @Override
     public StoredStatusEvent store(
             final StatusEvent newEvent,
-            final StatusEventProcessingState state)
+            final StatusEventProcessingState state,
+            Set<String> workerCodes)
             throws FatalRetriableIndexingException {
         Utils.nonNull(newEvent, "newEvent");
         Utils.nonNull(state, "state");
+        if (workerCodes == null || workerCodes.isEmpty()) {
+            workerCodes = DEFAULT_WORKER_CODES_SET;
+        }
+        for (final String code: workerCodes) {
+            if (Utils.isNullOrEmpty(code)) {
+                throw new IllegalArgumentException("null or whitespace only item in workerCodes");
+            }
+        }
+        
         final Optional<StorageObjectType> sot = newEvent.getStorageObjectType();
         final Document doc = new Document()
                 .append(FLD_ACCESS_GROUP_ID, newEvent.getAccessGroupId().orNull())
@@ -181,6 +207,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 .append(FLD_EVENT_TYPE, newEvent.getEventType().toString())
                 .append(FLD_NEW_NAME, newEvent.getNewName().orNull())
                 .append(FLD_PUBLIC, newEvent.isPublic().orNull())
+                .append(FLD_WORKER_CODES, workerCodes)
                 .append(FLD_TIMESTAMP, Date.from(newEvent.getTimestamp()));
         try {
             db.getCollection(COL_EVENT).insertOne(doc);
@@ -188,8 +215,12 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
             throw new FatalRetriableIndexingException(
                     "Failed event storage: " + e.getMessage(), e);
         }
-        return StoredStatusEvent.getBuilder(
-                newEvent, new StatusEventID(doc.getObjectId("_id").toString()), state).build();
+        final StoredStatusEvent.Builder b = StoredStatusEvent.getBuilder(
+                newEvent, new StatusEventID(doc.getObjectId("_id").toString()), state);
+        for (final String code: workerCodes) {
+            b.withWorkerCode(code);
+        }
+        return b.build();
     }
     
     @Override
@@ -219,13 +250,18 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         final Instant time = event.getDate(FLD_TIMESTAMP).toInstant();
         final StatusEventType eventType = StatusEventType.valueOf(event.getString(FLD_EVENT_TYPE));
         final Date updateTime = event.getDate(FLD_UPDATE_TIME);
+        @SuppressWarnings("unchecked")
+        List<String> workerCodes = (List<String>) event.get(FLD_WORKER_CODES);
+        if (workerCodes == null || workerCodes.isEmpty()) {
+            workerCodes = DEFAULT_WORKER_CODES_LIST;
+        }
         final Builder b;
         if (sot == null) {
             b = StatusEvent.getBuilder(storageCode, time, eventType);
         } else {
             b = StatusEvent.getBuilder(sot, time, eventType);
         }
-        return StoredStatusEvent.getBuilder(
+        final StoredStatusEvent.Builder b2 = StoredStatusEvent.getBuilder(
                 b.withNullableAccessGroupID(event.getInteger(FLD_ACCESS_GROUP_ID))
                         .withNullableObjectID(event.getString(FLD_OBJECT_ID))
                         .withNullableVersion(event.getInteger(FLD_VERSION))
@@ -235,8 +271,11 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 new StatusEventID(event.getObjectId("_id").toString()),
                 StatusEventProcessingState.valueOf(event.getString(FLD_STATUS)))
                 .withNullableUpdate(updateTime == null ? null : updateTime.toInstant(),
-                        event.getString(FLD_UPDATER))
-                .build();
+                        event.getString(FLD_UPDATER));
+        for (final String code: workerCodes) {
+            b2.withWorkerCode(code);
+        }
+        return b2.build();
     }
     
     // note returns in order of time stamp, oldest first (e.g FIFO)
@@ -290,19 +329,35 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     @Override
     public Optional<StoredStatusEvent> setAndGetProcessingState(
             final StatusEventProcessingState oldState,
+            final Set<String> workerCodes,
             final StatusEventProcessingState newState,
             final String updater)
             throws FatalRetriableIndexingException {
         Utils.nonNull(oldState, "oldState");
         Utils.nonNull(newState, "newState");
         Utils.notNullOrEmpty(updater, "updater cannot be null or whitespace");
+        final List<Document> codeQuery = new LinkedList<>();
+        final Set<String> codeSet = new HashSet<>();
+        if (workerCodes == null || workerCodes.isEmpty() ||
+                workerCodes.contains(StatusEventStorage.DEFAULT_WORKER_CODE)) {
+            // next line matches missing field & null fields
+            codeQuery.add(new Document(FLD_WORKER_CODES, null));
+            codeQuery.add(new Document(FLD_WORKER_CODES, Collections.emptyList()));
+            codeSet.add(StatusEventStorage.DEFAULT_WORKER_CODE);
+        }
+        if (workerCodes != null) {
+            Utils.noNulls(workerCodes, "null item in workerCodes");
+            codeSet.addAll(workerCodes);
+        }
+        codeQuery.add(new Document(FLD_WORKER_CODES, new Document("$in", codeSet)));
+        
         final Document innerUpdate = new Document(FLD_STATUS, newState.toString())
                 .append(FLD_UPDATE_TIME, Date.from(clock.instant()))
                 .append(FLD_UPDATER, updater);
         final Document ret;
         try {
-             ret = db.getCollection(COL_EVENT).findOneAndUpdate(
-                     new Document(FLD_STATUS, oldState.toString()),
+            ret = db.getCollection(COL_EVENT).findOneAndUpdate(
+                     new Document(FLD_STATUS, oldState.toString()).append("$or", codeQuery),
                      new Document("$set", innerUpdate),
                      new FindOneAndUpdateOptions()
                              .sort(new Document(FLD_TIMESTAMP, 1))

@@ -218,7 +218,8 @@ public class IndexerWorker implements Stoppable {
     
     private boolean performOneTick() throws InterruptedException, IndexingException {
         final Optional<StoredStatusEvent> optEvent = retrier.retryFunc(
-                s -> s.setAndGetProcessingState(StatusEventProcessingState.READY,
+                // TODO NNOW worker codes
+                s -> s.setAndGetProcessingState(StatusEventProcessingState.READY, new HashSet<>(),
                         StatusEventProcessingState.PROC, id),
                 storage, null);
         boolean processedEvent = false;
@@ -515,9 +516,9 @@ public class IndexerWorker implements Stoppable {
             long loadTime = System.currentTimeMillis() - t1;
             logger.logInfo("[Indexer]   " + guid + ", loading time: " + loadTime + " ms.");
             logger.timeStat(guid, loadTime, 0, 0);
-            Set<ObjectTypeParsingRules> parsingRules = 
+            final Set<ObjectTypeParsingRules> parsingRules = 
                     typeStorage.listObjectTypeParsingRules(storageObjectType);
-            for (ObjectTypeParsingRules rule : parsingRules) {
+            for (final ObjectTypeParsingRules rule : parsingRules) {
                 final long t2 = System.currentTimeMillis();
                 final ParseObjectsRet parsedRet = parseObjects(guid, indexLookup,
                         newRefPath, obj, rule);
