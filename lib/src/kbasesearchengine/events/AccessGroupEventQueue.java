@@ -7,11 +7,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.function.Function;
+
+import com.google.common.base.Optional;
 
 import kbasesearchengine.events.exceptions.NoSuchEventException;
 import kbasesearchengine.tools.Utils;
@@ -48,7 +49,7 @@ public class AccessGroupEventQueue {
             });
     /* if drain != null, ready and processing must = null. Object queues should be draining
      * events until the timestamp on the drain event.
-     * if ready or processing != null, drain and the non null field must be null. All object
+     * if ready or processing != null, drain and the other field must be null. All object
      * queues must be drained at this point. 
      */
     private StoredStatusEvent drain = null; // AG event waiting for object queues to drain
@@ -56,7 +57,7 @@ public class AccessGroupEventQueue {
     private StoredStatusEvent processing = null; // AG event processing
     private int size = 0; // keep a record of size rather than running through sub queues
     
-    /* should maybe initialize with an acccess group id and reject events that don't match */
+    /* should maybe initialize with an access group id and reject events that don't match */
     
     /** Create a new, empty, queue. */
     public AccessGroupEventQueue() {}
@@ -68,8 +69,7 @@ public class AccessGroupEventQueue {
      * <ul>
      * <li> Only one access group level event can be in the ready or processing state, and
      * if so no other events can be in the ready or processing state</li>
-     * <li> Only one object level event per object ID can be in the ready or processing state, and
-     * if so no version level events for that objectID can be in the ready or processing state</li>
+     * <li> Only one event per object ID can be in the ready or processing state</li>
      * </ul>
      * @param initialLoad the events to load into the queue.
      */
@@ -77,8 +77,6 @@ public class AccessGroupEventQueue {
         Utils.nonNull(initialLoad, "initialLoad");
         Utils.noNulls(initialLoad, "initialLoad has null entries");
         final Map<String, StoredStatusEvent> objects = new HashMap<>();
-        final Map<String, List<StoredStatusEvent>> objectVersionReady = new HashMap<>();
-        final Map<String, List<StoredStatusEvent>> objectVersionProcessing = new HashMap<>();
         
         for (final StoredStatusEvent e: initialLoad) {
             if (!e.getState().equals(StatusEventProcessingState.READY) &&
@@ -87,8 +85,6 @@ public class AccessGroupEventQueue {
             }
             if (ACCESS_GROUP_EVENTS.contains(e.getEvent().getEventType())) {
                 initAccessGroupEvent(e);
-            } else if (ObjectEventQueue.isVersionLevelEvent(e)) {
-                initVersionEvent(objectVersionReady, objectVersionProcessing, e);
             } else {
                 initObjectEvent(objects, e);
             }
@@ -97,25 +93,9 @@ public class AccessGroupEventQueue {
             throw new IllegalArgumentException("If an access group level event is in the " +
                     "ready or processing state, no other events may be submitted");
         }
-        final Set<String> allObjIDs = new HashSet<>();
-        allObjIDs.addAll(objects.keySet());
-        allObjIDs.addAll(objectVersionReady.keySet());
-        allObjIDs.addAll(objectVersionProcessing.keySet());
         
-        for (final String objID: allObjIDs) {
-            if ((objectVersionReady.containsKey(objID) ||
-                    objectVersionProcessing.containsKey(objID)) &&
-                    objects.containsKey(objID)) {
-                throw new IllegalArgumentException("Cannot submit both object and " +
-                        "version level events for object ID " + objID);
-            }
-            if (objects.containsKey(objID)) {
-                objectQueues.put(objID, new ObjectEventQueue(objects.get(objID)));
-            } else {
-                objectQueues.put(objID, new ObjectEventQueue(
-                        objectVersionReady.getOrDefault(objID, Collections.emptyList()),
-                        objectVersionProcessing.getOrDefault(objID, Collections.emptyList())));
-            }
+        for (final String objID: objects.keySet()) {
+            objectQueues.put(objID, new ObjectEventQueue(objects.get(objID)));
         }
         this.size = initialLoad.size();
     }
@@ -129,28 +109,6 @@ public class AccessGroupEventQueue {
                     "Already contains an event for object ID " + objID);
         }
         objectMap.put(objID, e);
-    }
-
-    private void initVersionEvent(
-            final Map<String, List<StoredStatusEvent>> objectVersionReady,
-            final Map<String, List<StoredStatusEvent>> objectVersionProcessing,
-            final StoredStatusEvent e) {
-        final String objID = e.getEvent().getAccessGroupObjectId().get();
-        if (e.getState().equals(StatusEventProcessingState.READY)) {
-            addEvent(objectVersionReady, objID, e);
-        } else {
-            addEvent(objectVersionProcessing, objID, e);
-        }
-    }
-    
-    private void addEvent(
-            final Map<String, List<StoredStatusEvent>> objectVersionProcessing,
-            final String objID,
-            final StoredStatusEvent e) {
-        if (!objectVersionProcessing.containsKey(objID)) {
-            objectVersionProcessing.put(objID, new LinkedList<>());
-        }
-        objectVersionProcessing.get(objID).add(e);
     }
 
     private void initAccessGroupEvent(final StoredStatusEvent e) {
@@ -208,7 +166,7 @@ public class AccessGroupEventQueue {
             if (drainTime != null) {
                 oq.drainAndBlockAt(drainTime);
             }
-            ret.addAll(oq.moveToReady());
+            addMoveToReady(oq, ret);
             drained = drained && !oq.isProcessingOrReady();
         }
         if (drained && drain != null) {
@@ -219,6 +177,32 @@ public class AccessGroupEventQueue {
         return Collections.unmodifiableSet(ret);
     }
     
+    private void addMoveToReady(final ObjectEventQueue oq, final Set<StoredStatusEvent> ret) {
+        add(q -> q.moveToReady(), oq, ret);
+    }
+    
+    private void addGetReady(final ObjectEventQueue oq, final Set<StoredStatusEvent> ret) {
+        add(q -> q.getReadyForProcessing(), oq, ret);
+    }
+    
+    private void addMoveToProcessing(final ObjectEventQueue oq, final Set<StoredStatusEvent> ret) {
+        add(q -> q.moveReadyToProcessing(), oq, ret);
+    }
+    
+    private void addGetProcessing(final ObjectEventQueue oq, final Set<StoredStatusEvent> ret) {
+        add(q -> q.getProcessing(), oq, ret);
+    }
+
+    private void add(
+            final Function<ObjectEventQueue, Optional<StoredStatusEvent>> func,
+            final ObjectEventQueue oq,
+            final Set<StoredStatusEvent> ret) {
+        final Optional<StoredStatusEvent> e = func.apply(oq);
+        if (e.isPresent()) {
+            ret.add(e.get());
+        }
+    }
+
     /** Move any events in the ready state to the processing state and return the modified
      * events.
      * @return the events that were moved to the processing state.
@@ -228,7 +212,7 @@ public class AccessGroupEventQueue {
         if (ready == null) {
             if (processing == null) {
                 for (final ObjectEventQueue oq: objectQueues.values()) {
-                    ret.addAll(oq.moveReadyToProcessing());
+                    addMoveToProcessing(oq, ret);
                 }
             }
             // if processing != null do nothing
@@ -296,7 +280,7 @@ public class AccessGroupEventQueue {
         if (ready != null) {
             ret.add(ready);
         } else if (processing == null) {
-            objectQueues.values().stream().forEach(q -> ret.addAll(q.getReadyForProcessing()));
+            objectQueues.values().stream().forEach(q -> addGetReady(q, ret));
         }
         return Collections.unmodifiableSet(ret);
     }
@@ -309,7 +293,7 @@ public class AccessGroupEventQueue {
         if (processing != null) {
             ret.add(processing);
         } else if (ready == null) {
-            objectQueues.values().stream().forEach(q -> ret.addAll(q.getProcessing()));
+            objectQueues.values().stream().forEach(q -> addGetProcessing(q, ret));
         }
         return Collections.unmodifiableSet(ret);
     }
