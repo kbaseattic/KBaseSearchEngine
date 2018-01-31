@@ -241,9 +241,9 @@ public class SearchTools {
             try {
                 runEventGenerator(
                         out,
-                        a.ref,
-                        getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()),
-                        getWsTypes(a.wsTypes, cfg.getWorkspaceTypes()),
+                        args.ref,
+                        getWsBlackList(args.wsBlacklist, cfg.getWorkspaceBlackList()),
+                        getWsTypes(args.wsTypes, cfg.getWorkspaceTypes()),
                         cfg.workerCodes());
                 noCommand = false;
             } catch (EventGeneratorException | StorageInitException e) {
