@@ -55,6 +55,7 @@ docker_image: build build-executable-script
 	-mkdir deployment/lib
 	-mkdir -p deployment/jettybase/webapps
 	-mkdir -p deployment/jettybase/logs
+	-mkdir -p deployment/jettybase/start.d
 	cp dist/KBaseSearchEngine.war deployment/jettybase/webapps/root.war 
 	-mkdir -p deployment/services/search/lib
 	cp dist/* deployment/services/search/lib

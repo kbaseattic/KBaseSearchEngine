@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.UUID;
 
 import kbasesearchengine.common.FileUtil;
@@ -68,6 +69,7 @@ import kbasesearchengine.system.TypeParseException;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.system.YAMLTypeMappingParser;
 import kbasesearchengine.tools.SearchToolsConfig.SearchToolsConfigException;
+import kbasesearchengine.tools.WorkspaceEventGenerator.Builder;
 import kbasesearchengine.tools.WorkspaceEventGenerator.EventGeneratorException;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthException;
@@ -237,9 +239,12 @@ public class SearchTools {
         }
         if (args.genWSEvents) {
             try {
-                runEventGenerator(out, args.ref,
-                        getWsBlackList(args.wsBlacklist, cfg.getWorkspaceBlackList()),
-                        getWsTypes(args.wsTypes, cfg.getWorkspaceTypes()));
+                runEventGenerator(
+                        out,
+                        a.ref,
+                        getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()),
+                        getWsTypes(a.wsTypes, cfg.getWorkspaceTypes()),
+                        cfg.workerCodes());
                 noCommand = false;
             } catch (EventGeneratorException | StorageInitException e) {
                 printError(e, args.verbose);
@@ -368,7 +373,8 @@ public class SearchTools {
                 new CloneableWorkspaceClientImpl(wsClient));
         
         final IndexerWorker wrk = new IndexerWorker(
-                getID(id), Arrays.asList(weh), storage, indexStore, ss, tempDir, logger);
+                getID(id), Arrays.asList(weh), storage, indexStore, ss, tempDir, logger,
+                cfg.workerCodes());
         wrk.startIndexer();
         return wrk;
     }
@@ -544,14 +550,16 @@ public class SearchTools {
             final PrintStream logtarget,
             final String ref,
             final List<WorkspaceIdentifier> wsBlackList,
-            final List<String> wsTypes)
+            final List<String> wsTypes,
+            final Set<String> workerCodes)
             throws EventGeneratorException, StorageInitException {
-        final WorkspaceEventGenerator gen = new WorkspaceEventGenerator.Builder(
+        final Builder gen = new WorkspaceEventGenerator.Builder(
                 new MongoDBStatusEventStorage(searchDB), workspaceDB, logtarget)
                 .withNullableRef(ref)
                 .withWorkspaceBlacklist(wsBlackList)
-                .withWorkspaceTypes(wsTypes).build();
-        gen.generateEvents();
+                .withWorkerCodes(workerCodes)
+                .withWorkspaceTypes(wsTypes);
+        gen.build().generateEvents();
     }
 
     private SearchToolsConfig getConfig(final String configPath)
