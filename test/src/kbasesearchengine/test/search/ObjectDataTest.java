@@ -125,7 +125,7 @@ public class ObjectDataTest {
     }
     
     @Test
-    public void buildMaximal() {
+    public void buildMaximal() throws Exception {
         final ObjectData od = ObjectData.getBuilder(new GUID("Foo:1/2/3:sub/thing"))
                 .withNullableCommitHash("hash")
                 .withNullableCopier("copy")
