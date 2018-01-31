@@ -177,6 +177,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
             <include name="kbasesearchengine/test/search/ObjectDataTest.java"/>
             <include name="kbasesearchengine/test/system/IndexingRulesTest.java"/>
             <include name="kbasesearchengine/test/system/ObjectTypeParsingRulesTest.java"/>
+            <include name="kbasesearchengine/test/system/ParsingRulesSubTypeFirstComparatorTest.java"/>
             <include name="kbasesearchengine/test/system/SearchObjectTypeTest.java"/>
             <include name="kbasesearchengine/test/system/StorageObjectTypeTest.java"/>
             <include name="kbasesearchengine/test/system/TypeFileStorageTest.java"/>
