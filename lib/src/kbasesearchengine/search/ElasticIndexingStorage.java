@@ -7,7 +7,19 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.LinkedList;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -1043,27 +1055,24 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     private Map<String, Object> createHighlightQuery(){
-        Map<String, Object> highlight =
-            ImmutableMap.of("fields",
+        return  ImmutableMap.of("fields",
                     ImmutableMap.of("*",
                             ImmutableMap.of("require_field_match", false)));
-        return highlight;
     }
 
     @Override
-    public List<ObjectData> getObjectsByIds(Set<GUID> ids, PostProcessing pp) 
+    public List<ObjectData> getObjectsByIds(Set<GUID> ids, final PostProcessing pp)
             throws IOException {
 
         Map<String, Object> query = ImmutableMap.of("bool",
                                         ImmutableMap.of("filter",
                                            ImmutableMap.of("terms",
                 ImmutableMap.of("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList())))));
-        //doc.put("_source", Arrays.asList("ojson"));
 
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
 
-        if(Objects.nonNull(pp) && pp.objectHighlight) {
+        if (Objects.nonNull(pp) && pp.objectHighlight) {
             doc.put("highlight", createHighlightQuery());
         }
 
@@ -1074,14 +1083,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 resp.getEntity().getContent(), Map.class);
         List<ObjectData> ret = new ArrayList<>();
         @SuppressWarnings("unchecked")
-        Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
+        final Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
+        final List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
-            Map<String, ArrayList> highlightRes = (Map<String, ArrayList>) hit.get("highlight");
-            ObjectData item = buildObjectData(obj, highlightRes, pp);
+            final Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
+            final Map<String, List<String>> highlightRes = (Map<String, List<String>>) hit.get("highlight");
+            final ObjectData item = buildObjectData(obj, highlightRes, pp);
             ret.add(item);
         }
         return ret;
@@ -1089,8 +1098,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     private ObjectData buildObjectData(
             final Map<String, Object> obj,
-            final Map<String, ArrayList> highlight,
-            PostProcessing pp) {
+            final Map<String, List<String>> highlight,
+            final PostProcessing pp) {
         // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
         final ObjectData.Builder b = ObjectData.getBuilder(new GUID((String) obj.get("guid")));
         if (pp.objectInfo) {
@@ -1124,7 +1133,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             for (final String key : obj.keySet()) {
                 if (key.startsWith("key.")) {
                     final Object objValue = obj.get(key);
-                    String textValue = null;
+                    String textValue;
                     if (objValue instanceof List) {
                         @SuppressWarnings("unchecked")
                         final List<Object> objValue2 = (List<Object>) objValue;
@@ -1137,10 +1146,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 }
             }
         }
-        if(pp.objectHighlight) {
-            for(String key : highlight.keySet()) {
+        if (pp.objectHighlight) {
+            for(final String key : highlight.keySet()) {
                 String newKey = key;
-                if(key.startsWith("key.")) {
+                if (key.startsWith("key.")) {
                     newKey = stripKeyPrefix(key);
                 }
                 b.withHighlight(newKey, highlight.get(key));
@@ -1150,7 +1159,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return b.build();
     }
 
-    private String stripKeyPrefix(String key){
+    private String stripKeyPrefix(final String key){
         return key.substring(4);
     }
 
@@ -1421,7 +1430,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         ret.pagination = pagination;
         ret.sortingRules = sorting;
 
-        Map<String, Object> mustForShared = createAccessMustBlock(accessFilter);
+        final Map<String, Object> mustForShared = createAccessMustBlock(accessFilter);
         if (mustForShared == null) {
             ret.total = 0;
             ret.guids = Collections.emptySet();
@@ -1447,7 +1456,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
-        if(Objects.nonNull(pp) && pp.objectHighlight) {
+        if (Objects.nonNull(pp) && pp.objectHighlight) {
             doc.put("highlight", createHighlightQuery());
         }
         doc.put("from", pagination.start);
@@ -1490,27 +1499,26 @@ public class ElasticIndexingStorage implements IndexingStorage {
             indexName += EXCLUDE_SUB_OJBS_URL_SUFFIX;
         }
 
-        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
+        final String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
+        final Response resp = makeRequest("GET", urlPath, ImmutableMap.copyOf(doc));
 
-        Response resp = makeRequest("GET", urlPath, ImmutableMap.copyOf(doc));
         @SuppressWarnings("unchecked")
-//        String results = IOUtils.toString(resp.getEntity().getContent(), "UTF-8");
-        Map<String, Object> data = UObject.getMapper().readValue(
+        final Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         ret.guids = new LinkedHashSet<>();
         @SuppressWarnings("unchecked")
-        Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
+        final Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
         ret.total = (Integer)hitMap.get("total");
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
         if (loadObjects) {
             ret.objects = new ArrayList<>();
         }
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
-            Map<String, ArrayList> highlightRes = (Map<String, ArrayList>) hit.get("highlight");
-            String guidText = (String)obj.get("guid");
+            final Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
+            final Map<String, List<String>> highlightRes = (Map<String, List<String>>) hit.get("highlight");
+            final String guidText = (String)obj.get("guid");
             ret.guids.add(new GUID(guidText));
             if (loadObjects) {
                 ret.objects.add(buildObjectData(obj, highlightRes, pp));
@@ -1519,8 +1527,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return ret;
     }
 
-
-    private String getKeyProperty(String keyName) {
+    private String getKeyProperty(final String keyName) {
         return "key." + keyName;
     }
 

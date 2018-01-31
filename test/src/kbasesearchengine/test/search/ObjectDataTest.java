@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -158,10 +159,10 @@ public class ObjectDataTest {
         keyprops.put("null", null);
         keyprops.put("ws", "   \t   \n   ");
         assertThat("incorrect key props", od.getKeyProperties(), is(keyprops));
-        final Map<String, ArrayList> highlight = new HashMap<>();
-        highlight.put("field", new ArrayList<>(Arrays.asList("match")));
-        assertThat("incorrect highlight field", od.getHighlight().keySet(), is(highlight.keySet()));
-        assertThat("incorrect highlight", od.getHighlight().get("field"), is(highlight.get("field")));
+
+        final Map<String, List<String>> highlight = new HashMap<>();
+        highlight.put("field", Arrays.asList("match"));
+        assertThat("incorrect highlight", od.getHighlight(), is(highlight));
         assertThat("incorrect md5", od.getMd5(), is(Optional.of("md5")));
         assertThat("incorrect method", od.getMethod(), is(Optional.of("meth")));
         assertThat("incorrect module", od.getModule(), is(Optional.of("mod")));

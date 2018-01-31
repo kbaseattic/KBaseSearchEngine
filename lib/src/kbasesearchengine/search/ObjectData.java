@@ -1,8 +1,7 @@
 package kbasesearchengine.search;
 
-import java.lang.reflect.Array;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +34,7 @@ public class ObjectData {
     private final Optional<Object> parentData;
     private final Optional<Object> data;
     private final Map<String, String> keyProps;
-    private final Map<String, ArrayList> highlight;
+    private final Map<String, List<String>> highlight;
 
 
     private ObjectData(
@@ -53,7 +52,7 @@ public class ObjectData {
             final Object parentData,
             final Object data,
             final Map<String, String> keyProps,
-            final Map<String, ArrayList> highlight) {
+            final Map<String, List<String>> highlight) {
         this.guid = guid;
         if (parentData != null) {
             this.parentGuid = Optional.fromNullable(new GUID(guid, null, null));
@@ -188,7 +187,7 @@ public class ObjectData {
     /** Get hits that matched the query as highlighted snips corresponding to fields.
      * @return the all fields with highlighting matches.
      */
-    public Map<String, ArrayList> getHighlight() { return highlight; }
+    public Map<String, List<String>> getHighlight() { return highlight; }
 
 
 
@@ -377,7 +376,7 @@ public class ObjectData {
         private Object parentData;
         private Object data;
         private Map<String, String> keyProps = new HashMap<>();
-        private Map<String, ArrayList> highlight = new HashMap<>();
+        private Map<String, List<String>> highlight = new HashMap<>();
         
         private Builder(final GUID guid) {
             Utils.nonNull(guid, "guid");
@@ -553,7 +552,7 @@ public class ObjectData {
          * @param highlight the map of fields returned from elasticsearch.
          * @return this builder.
          */
-        public Builder withHighlight(final String field, final ArrayList highlight) {
+        public Builder withHighlight(final String field, final List<String> highlight) {
             Utils.notNullOrEmpty(field, "field cannot be null or whitespace");
             Utils.noNulls(highlight, "highlight cannot be null");
             if(highlight.size() > 0) {
