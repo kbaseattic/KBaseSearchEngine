@@ -9,7 +9,6 @@ import java.util.Map;
 import com.google.common.base.Optional;
 
 import kbasesearchengine.common.GUID;
-import kbasesearchengine.events.exceptions.EmptyStringException;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.tools.Utils;
 
@@ -553,17 +552,12 @@ public class ObjectData {
          * @param highlight the map of fields returned from elasticsearch.
          * @return this builder.
          */
-        public Builder withHighlight(final String field, final List<String> highlight) throws Exception {
+        public Builder withHighlight(final String field, final List<String> highlight) {
             Utils.notNullOrEmpty(field, "field cannot be null or whitespace");
-            Utils.noNulls(highlight, "highlight cannot be null");
+            Utils.noNulls(highlight, "highlight list cannot be null");
 
-            /**
-             * highlight cannot be empty string or whitespace only
-             */
             for(final String s : highlight){
-                if(s.trim().isEmpty()){
-                    throw new EmptyStringException();
-                }
+                Utils.notNullOrEmpty(s, "highlight cannot be null or whitespace");
             }
 
             this.highlight.put(field, highlight);
