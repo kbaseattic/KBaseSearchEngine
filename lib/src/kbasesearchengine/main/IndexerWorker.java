@@ -79,6 +79,7 @@ public class IndexerWorker implements Stoppable {
     private final LineLogger logger;
     private final Map<String, EventHandler> eventHandlers = new HashMap<>();
     private ScheduledExecutorService executor = null;
+    private final SignalMonitor signalMonitor = new SignalMonitor();
     private boolean stopRunner = false;
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
@@ -137,6 +138,11 @@ public class IndexerWorker implements Stoppable {
         this.indexingStorage = indexingStorage;
     }
 
+    @Override
+    public void awaitShutdown() throws InterruptedException {
+        signalMonitor.awaitSignal();
+    }
+    
     public void startIndexer() {
         stopRunner = false;
         //TODO TEST add a way to inject an executor for testing purposes
@@ -158,6 +164,7 @@ public class IndexerWorker implements Stoppable {
                 } catch (InterruptedException | FatalIndexingException e) {
                     logError(ErrorType.FATAL, e);
                     executor.shutdown();
+                    signalMonitor.signal();
                 } catch (Throwable e) {
                     logError(ErrorType.UNEXPECTED, e);
                 }

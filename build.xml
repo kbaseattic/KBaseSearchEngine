@@ -186,6 +186,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
             <include name="kbasesearchengine/test/main/IndexerCoordinatorTest.java"/>
             <include name="kbasesearchengine/test/main/IndexerWorkerTest.java"/>
             <include name="kbasesearchengine/test/main/SearchMethodsTest.java"/>
+            <include name="kbasesearchengine/test/main/SignalMonitorTest.java"/>
           </fileset>
         </batchtest>
       </junit>
