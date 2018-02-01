@@ -1,0 +1,35 @@
+storage-type: WS
+types:
+    KBaseGenome.Genome:
+        default:
+           -
+               type: Genome
+               version: 1
+           -
+               type: GenomeFeature
+               version: 1
+
+        versions:
+            # for Production
+            9:
+                -
+                    type: Genome
+                    version: 2
+                -
+                    type: GenomeFeature
+                    version: 2
+            # for CI
+            13:
+                -
+                    type: Genome
+                    version: 2
+                -
+                    type: GenomeFeature
+                    version: 2
+            14:
+                -
+                    type: Genome
+                    version: 2
+                -
+                    type: GenomeFeature
+                    version: 2
