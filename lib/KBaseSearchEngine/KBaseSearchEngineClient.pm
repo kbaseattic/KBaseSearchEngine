@@ -198,7 +198,7 @@ SearchTypesOutput is a reference to a hash where the following keys are defined:
 
 =item Description
 
-Search for number of objects of each type matching constrains.
+Search for number of objects of each type matching constraints.
 
 =back
 
@@ -266,7 +266,7 @@ Search for number of objects of each type matching constrains.
 $params is a KBaseSearchEngine.SearchObjectsInput
 $return is a KBaseSearchEngine.SearchObjectsOutput
 SearchObjectsInput is a reference to a hash where the following keys are defined:
-	object_type has a value which is a string
+	object_types has a value which is a reference to a list where each element is a string
 	match_filter has a value which is a KBaseSearchEngine.MatchFilter
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 	access_filter has a value which is a KBaseSearchEngine.AccessFilter
@@ -317,6 +317,7 @@ SearchObjectsOutput is a reference to a hash where the following keys are define
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	total has a value which is an int
 	search_time has a value which is an int
+	ws_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.wsId and the value is a KBaseSearchEngine.NarrativeInfo
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
@@ -326,6 +327,10 @@ ObjectData is a reference to a hash where the following keys are defined:
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
 	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+wsId is a string
+NarrativeInfo is a reference to a hash where the following keys are defined:
+	narrative_id has a value which is an int
+	narrative_name has a value which is a string
 
 </pre>
 
@@ -336,7 +341,7 @@ ObjectData is a reference to a hash where the following keys are defined:
 $params is a KBaseSearchEngine.SearchObjectsInput
 $return is a KBaseSearchEngine.SearchObjectsOutput
 SearchObjectsInput is a reference to a hash where the following keys are defined:
-	object_type has a value which is a string
+	object_types has a value which is a reference to a list where each element is a string
 	match_filter has a value which is a KBaseSearchEngine.MatchFilter
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 	access_filter has a value which is a KBaseSearchEngine.AccessFilter
@@ -387,6 +392,7 @@ SearchObjectsOutput is a reference to a hash where the following keys are define
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	total has a value which is an int
 	search_time has a value which is an int
+	ws_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.wsId and the value is a KBaseSearchEngine.NarrativeInfo
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
@@ -396,13 +402,17 @@ ObjectData is a reference to a hash where the following keys are defined:
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
 	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+wsId is a string
+NarrativeInfo is a reference to a hash where the following keys are defined:
+	narrative_id has a value which is an int
+	narrative_name has a value which is a string
 
 
 =end text
 
 =item Description
 
-Search for objects of particular type matching constrains.
+Search for objects of particular type matching constraints.
 
 =back
 
@@ -483,6 +493,7 @@ boolean is an int
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	search_time has a value which is an int
+	ws_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.wsId and the value is a KBaseSearchEngine.NarrativeInfo
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
@@ -492,6 +503,10 @@ ObjectData is a reference to a hash where the following keys are defined:
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
 	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+wsId is a string
+NarrativeInfo is a reference to a hash where the following keys are defined:
+	narrative_id has a value which is an int
+	narrative_name has a value which is a string
 
 </pre>
 
@@ -515,6 +530,7 @@ boolean is an int
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	search_time has a value which is an int
+	ws_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.wsId and the value is a KBaseSearchEngine.NarrativeInfo
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
@@ -524,6 +540,10 @@ ObjectData is a reference to a hash where the following keys are defined:
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
 	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+wsId is a string
+NarrativeInfo is a reference to a hash where the following keys are defined:
+	narrative_id has a value which is an int
+	narrative_name has a value which is a string
 
 
 =end text
@@ -966,7 +986,7 @@ lookupInKeys has a value which is a reference to a hash where the key is a strin
 
 =item Description
 
-Optional rules of access constrains.
+Optional rules of access constraints.
   - with_private - include data found in workspaces not marked 
       as public, default value is true,
   - with_public - include data found in public workspaces,
@@ -1219,6 +1239,14 @@ data_includes has a value which is a reference to a list where each element is a
 =item Description
 
 Input parameters for 'search_objects' method.
+object_types - list of the types of objects to search on (optional). The
+               function will search on all objects if the list is not specified
+               or is empty. The list size must be less than 50.
+match_filter - see MatchFilter (optional).
+sorting_rules - see SortingRule (optional).
+access_filter - see AccessFilter (optional).
+pagination - see Pagination (optional).
+post_processing - see PostProcessing (optional).
 
 
 =item Definition
@@ -1227,7 +1255,7 @@ Input parameters for 'search_objects' method.
 
 <pre>
 a reference to a hash where the following keys are defined:
-object_type has a value which is a string
+object_types has a value which is a reference to a list where each element is a string
 match_filter has a value which is a KBaseSearchEngine.MatchFilter
 sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 access_filter has a value which is a KBaseSearchEngine.AccessFilter
@@ -1241,7 +1269,7 @@ post_processing has a value which is a KBaseSearchEngine.PostProcessing
 =begin text
 
 a reference to a hash where the following keys are defined:
-object_type has a value which is a string
+object_types has a value which is a reference to a list where each element is a string
 match_filter has a value which is a KBaseSearchEngine.MatchFilter
 sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 access_filter has a value which is a KBaseSearchEngine.AccessFilter
@@ -1312,6 +1340,64 @@ object_props has a value which is a reference to a hash where the key is a strin
 
 
 
+=head2 wsId
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 NarrativeInfo
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+narrative_id has a value which is an int
+narrative_name has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+narrative_id has a value which is an int
+narrative_name has a value which is a string
+
+
+=end text
+
+=back
+
+
+
 =head2 SearchObjectsOutput
 
 =over 4
@@ -1338,6 +1424,7 @@ sorting_rules has a value which is a reference to a list where each element is a
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 total has a value which is an int
 search_time has a value which is an int
+ws_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.wsId and the value is a KBaseSearchEngine.NarrativeInfo
 
 </pre>
 
@@ -1351,6 +1438,7 @@ sorting_rules has a value which is a reference to a list where each element is a
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 total has a value which is an int
 search_time has a value which is an int
+ws_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.wsId and the value is a KBaseSearchEngine.NarrativeInfo
 
 
 =end text
@@ -1415,6 +1503,7 @@ Output results of get_objects method.
 a reference to a hash where the following keys are defined:
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 search_time has a value which is an int
+ws_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.wsId and the value is a KBaseSearchEngine.NarrativeInfo
 
 </pre>
 
@@ -1425,6 +1514,7 @@ search_time has a value which is an int
 a reference to a hash where the following keys are defined:
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 search_time has a value which is an int
+ws_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.wsId and the value is a KBaseSearchEngine.NarrativeInfo
 
 
 =end text

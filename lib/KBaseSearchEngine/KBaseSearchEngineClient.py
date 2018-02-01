@@ -35,7 +35,7 @@ class KBaseSearchEngine(object):
 
     def search_types(self, params, context=None):
         """
-        Search for number of objects of each type matching constrains.
+        Search for number of objects of each type matching constraints.
         :param params: instance of type "SearchTypesInput" (Input parameters
            for search_types method.) -> structure: parameter "match_filter"
            of type "MatchFilter" (Optional rules of defining constrains for
@@ -77,8 +77,8 @@ class KBaseSearchEngine(object):
            parameter "min_date" of Long, parameter "max_date" of Long,
            parameter "min_double" of Double, parameter "max_double" of
            Double, parameter "access_filter" of type "AccessFilter" (Optional
-           rules of access constrains. - with_private - include data found in
-           workspaces not marked as public, default value is true, -
+           rules of access constraints. - with_private - include data found
+           in workspaces not marked as public, default value is true, -
            with_public - include data found in public workspaces, default
            value is false, - with_all_history - include all versions (last
            one and all old versions) of objects matching constrains, default
@@ -97,19 +97,25 @@ class KBaseSearchEngine(object):
 
     def search_objects(self, params, context=None):
         """
-        Search for objects of particular type matching constrains.
+        Search for objects of particular type matching constraints.
         :param params: instance of type "SearchObjectsInput" (Input
-           parameters for 'search_objects' method.) -> structure: parameter
-           "object_type" of String, parameter "match_filter" of type
-           "MatchFilter" (Optional rules of defining constrains for object
-           properties including values of keywords or metadata/system
-           properties (like object name, creation time range) or full-text
-           search in all properties. boolean exclude_subobjects - don't
-           return any subobjects in the search results if true. Default
-           false.) -> structure: parameter "full_text_in_all" of String,
-           parameter "access_group_id" of Long, parameter "object_name" of
-           String, parameter "parent_guid" of type "GUID" (Global user
-           identificator. It has structure like this:
+           parameters for 'search_objects' method. object_types - list of the
+           types of objects to search on (optional). The function will search
+           on all objects if the list is not specified or is empty. The list
+           size must be less than 50. match_filter - see MatchFilter
+           (optional). sorting_rules - see SortingRule (optional).
+           access_filter - see AccessFilter (optional). pagination - see
+           Pagination (optional). post_processing - see PostProcessing
+           (optional).) -> structure: parameter "object_types" of list of
+           String, parameter "match_filter" of type "MatchFilter" (Optional
+           rules of defining constrains for object properties including
+           values of keywords or metadata/system properties (like object
+           name, creation time range) or full-text search in all properties.
+           boolean exclude_subobjects - don't return any subobjects in the
+           search results if true. Default false.) -> structure: parameter
+           "full_text_in_all" of String, parameter "access_group_id" of Long,
+           parameter "object_name" of String, parameter "parent_guid" of type
+           "GUID" (Global user identificator. It has structure like this:
            <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            parameter "timestamp" of type "MatchValue" (Optional rules of
            defining constraints for values of particular term (keyword).
@@ -149,7 +155,7 @@ class KBaseSearchEngine(object):
            true.), parameter "key_name" of String, parameter "descending" of
            type "boolean" (A boolean. 0 = false, other = true.), parameter
            "access_filter" of type "AccessFilter" (Optional rules of access
-           constrains. - with_private - include data found in workspaces not
+           constraints. - with_private - include data found in workspaces not
            marked as public, default value is true, - with_public - include
            data found in public workspaces, default value is false, -
            with_all_history - include all versions (last one and all old
@@ -210,7 +216,10 @@ class KBaseSearchEngine(object):
            parameter "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "object_props" of mapping from String to
-           String, parameter "total" of Long, parameter "search_time" of Long
+           String, parameter "total" of Long, parameter "search_time" of
+           Long, parameter "ws_narrative_info" of mapping from type "wsId" to
+           type "NarrativeInfo" -> structure: parameter "narrative_id" of
+           Long, parameter "narrative_name" of String
         """
         return self._client.call_method(
             'KBaseSearchEngine.search_objects',
@@ -258,7 +267,10 @@ class KBaseSearchEngine(object):
            parameter "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "object_props" of mapping from String to
-           String, parameter "search_time" of Long
+           String, parameter "search_time" of Long, parameter
+           "ws_narrative_info" of mapping from type "wsId" to type
+           "NarrativeInfo" -> structure: parameter "narrative_id" of Long,
+           parameter "narrative_name" of String
         """
         return self._client.call_method(
             'KBaseSearchEngine.get_objects',

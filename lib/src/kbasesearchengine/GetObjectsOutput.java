@@ -23,7 +23,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
     "objects",
-    "search_time"
+    "search_time",
+    "ws_narrative_info"
 })
 public class GetObjectsOutput {
 
@@ -31,7 +32,9 @@ public class GetObjectsOutput {
     private List<ObjectData> objects;
     @JsonProperty("search_time")
     private Long searchTime;
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+    @JsonProperty("ws_narrative_info")
+    private Map<String, NarrativeInfo> wsNarrativeInfo;
+    private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("objects")
     public List<ObjectData> getObjects() {
@@ -63,19 +66,34 @@ public class GetObjectsOutput {
         return this;
     }
 
+    @JsonProperty("ws_narrative_info")
+    public Map<String, NarrativeInfo> getWsNarrativeInfo() {
+        return wsNarrativeInfo;
+    }
+
+    @JsonProperty("ws_narrative_info")
+    public void setWsNarrativeInfo(Map<String, NarrativeInfo> wsNarrativeInfo) {
+        this.wsNarrativeInfo = wsNarrativeInfo;
+    }
+
+    public GetObjectsOutput withWsNarrativeInfo(Map<String, NarrativeInfo> wsNarrativeInfo) {
+        this.wsNarrativeInfo = wsNarrativeInfo;
+        return this;
+    }
+
     @JsonAnyGetter
-    public Map<String, Object> getAdditionalProperties() {
+    public Map<java.lang.String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
     @JsonAnySetter
-    public void setAdditionalProperties(String name, Object value) {
+    public void setAdditionalProperties(java.lang.String name, Object value) {
         this.additionalProperties.put(name, value);
     }
 
     @Override
-    public String toString() {
-        return ((((((("GetObjectsOutput"+" [objects=")+ objects)+", searchTime=")+ searchTime)+", additionalProperties=")+ additionalProperties)+"]");
+    public java.lang.String toString() {
+        return ((((((((("GetObjectsOutput"+" [objects=")+ objects)+", searchTime=")+ searchTime)+", wsNarrativeInfo=")+ wsNarrativeInfo)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

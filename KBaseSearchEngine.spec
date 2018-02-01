@@ -174,6 +174,13 @@ module KBaseSearchEngine {
         mapping<string, string> object_props;
     } ObjectData;
 
+    typedef string wsId;
+
+    typedef structure {
+        int narrative_id;
+        string narrative_name;
+    } NarrativeInfo;
+
     /*
       Output results for 'search_objects' method.
       'pagination' and 'sorting_rules' fields show actual input for
@@ -187,6 +194,7 @@ module KBaseSearchEngine {
         list<ObjectData> objects;
         int total;
         int search_time;
+        mapping<wsId, NarrativeInfo> ws_narrative_info;
     } SearchObjectsOutput;
 
     /*
@@ -209,6 +217,7 @@ module KBaseSearchEngine {
     typedef structure {
         list<ObjectData> objects;
         int search_time;
+        mapping<wsId, NarrativeInfo> ws_narrative_info;
     } GetObjectsOutput;
 
     /*

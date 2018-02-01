@@ -32,6 +32,7 @@ import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.authorization.WorkspaceAccessGroupProvider;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.main.LineLogger;
+import kbasesearchengine.main.SearchInterface;
 import kbasesearchengine.main.SearchMethods;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.system.FileLister;
@@ -54,15 +55,15 @@ import kbasesearchengine.common.FileUtil;
  */
 public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
-    private static final String version = "";
-    private static final String gitUrl = "";
-    private static final String gitCommitHash = "";
+    private static final String version = "0.0.1";
+    private static final String gitUrl = "https://github.com/kbase/KBaseSearchEngine.git";
+    private static final String gitCommitHash = "5084cd4c93789df55a4cf688aab9912e8b5069e0";
 
     //BEGIN_CLASS_HEADER
     
     // TODO TEST add integration test that runs server
     
-    private final SearchMethods search;
+    private final SearchInterface search;
     
     private void quietLoggers() {
         ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME))
@@ -153,7 +154,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     /**
      * <p>Original spec-file function name: search_types</p>
      * <pre>
-     * Search for number of objects of each type matching constrains.
+     * Search for number of objects of each type matching constraints.
      * </pre>
      * @param   params   instance of type {@link kbasesearchengine.SearchTypesInput SearchTypesInput}
      * @return   instance of type {@link kbasesearchengine.SearchTypesOutput SearchTypesOutput}
@@ -170,7 +171,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     /**
      * <p>Original spec-file function name: search_objects</p>
      * <pre>
-     * Search for objects of particular type matching constrains.
+     * Search for objects of particular type matching constraints.
      * </pre>
      * @param   params   instance of type {@link kbasesearchengine.SearchObjectsInput SearchObjectsInput}
      * @return   instance of type {@link kbasesearchengine.SearchObjectsOutput SearchObjectsOutput}
