@@ -665,10 +665,8 @@ public class WorkspaceEventHandler implements EventHandler {
         try {
             objInfo = ws.getClient().administer(new UObject(command))
                     .asClassInstance(GetObjectInfo3Results.class);
-            String name = objInfo.getInfos().get(0).getE2();
-            if ( !Utils.isNullOrEmpty(name) ) {
-                latestName = name;
-            }
+            latestName = objInfo.getInfos().get(0).getE2();
+
         } catch (IOException e) {
             throw handleException(e);
         } catch (JsonClientException e) {
