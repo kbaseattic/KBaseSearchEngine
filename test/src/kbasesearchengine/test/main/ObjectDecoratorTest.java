@@ -2,6 +2,7 @@ package kbasesearchengine.test.main;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,6 +19,9 @@ import static org.mockito.Mockito.when;
 
 import kbasesearchengine.GetObjectsInput;
 import kbasesearchengine.GetObjectsOutput;
+import kbasesearchengine.SearchObjectsInput;
+import kbasesearchengine.SearchObjectsOutput;
+import kbasesearchengine.NarrativeInfo;
 import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.common.FileUtil;
 import kbasesearchengine.events.exceptions.IndexingException;
@@ -326,8 +330,6 @@ public class ObjectDecoratorTest {
 
         System.out.println(" RETVAL: " + retVal);
 
-        final long timestamp = getWSTimeStamp("1/1/1");
-
         System.out.println("waiting 5s for event to trickle through the system");
         Thread.sleep(5000); // wait for the indexer & worker to process the event
 
@@ -335,27 +337,25 @@ public class ObjectDecoratorTest {
         guid_list.add("WS:1/1/1");
         System.out.println(" IN TEST DECORATOR");
 
+        // test getObjects
+
         GetObjectsInput objsInput = new GetObjectsInput().withGuids(guid_list);
-        System.out.println(" OBJS INPUT: " + objsInput.toString());
-        System.out.println(" USER TOKEN: " + userToken + "USER NAME: " + userToken.getUserName());
+        System.out.println(" GET OBJS INPUT: " + objsInput.toString());
 
         GetObjectsOutput objsOutput = search.getObjects(objsInput, userToken.getUserName());
-        System.out.println(" OBJS OUTPUT: " + objsOutput.toString());
+        System.out.println(" GET OBJS OUTPUT: " + objsOutput.toString());
 
         SearchInterface sid = new DecorateWithNarrativeInfo(search);
         GetObjectsOutput objsOutputDecorated = sid.getObjects(objsInput, userToken.getUserName());
-        System.out.println(" OBJS OUTPUT WITH NARRATIVE INFO: " + objsOutputDecorated.toString());
+        System.out.println(" GET OBJS OUTPUT WITH NARRATIVE INFO: " + objsOutputDecorated.toString());
 
-        Map<String, String> wsInfoMeta = weh.getWorkspaceInfo(1);
+        String guid = objsOutputDecorated.getObjects().get(0).getGuid();
+        String objName = objsOutputDecorated.getObjects().get(0).getObjectName();
+        Map<String, NarrativeInfo> narrtiveInfo = objsOutputDecorated.getWsNarrativeInfo();
 
-        System.out.println(" WS META: " + wsInfoMeta.toString());
-    }
-
-    private long getWSTimeStamp(final String ref) throws IOException, JsonClientException {
-        return wsCli1.getObjects2(new GetObjects2Params()
-                .withNoData(1L)
-                .withObjects(Arrays.asList(new ObjectSpecification().withRef(ref))))
-                .getData().get(0).getEpoch();
+        assertThat("incorrect guid", guid, is("WS:1/1/1"));
+        assertThat("incorrect object name", objName, is("bar"));
+        assertNotNull("incorrect narrative info", narrtiveInfo);
     }
 
 }
