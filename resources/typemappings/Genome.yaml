@@ -10,14 +10,6 @@ types:
                version: 1
 
         versions:
-            # for Production
-            9:
-                -
-                    type: Genome
-                    version: 2
-                -
-                    type: GenomeFeature
-                    version: 2
             # for CI
             13:
                 -
