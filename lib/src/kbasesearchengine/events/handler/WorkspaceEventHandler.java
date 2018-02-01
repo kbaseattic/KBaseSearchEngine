@@ -684,10 +684,8 @@ public class WorkspaceEventHandler implements EventHandler {
             final String isPublic = ws.getClient().administer(new UObject(command))
                     .asClassInstance(WS_INFO_TYPEREF).getE6();
 
-            if ( !Utils.isNullOrEmpty(isPublic) ) {
-                latestIsPublic = (isPublic == "n") ? true: false;
-
-            }
+            latestIsPublic = (isPublic == "n") ? true: false;
+            
         } catch (IOException | JsonClientException ex) {
             throw new RetriableIndexingException(ex.getMessage());
         }
