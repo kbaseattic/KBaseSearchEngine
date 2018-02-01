@@ -5,7 +5,7 @@
     "storage-object-type": "KBaseFBA.FBAModel",
     "versions": [{
         "inner-sub-type": "MediaCompound",
-        "path-to-sub-objects": "/modelcompounds/*/",
+        "path-to-sub-objects": "/modelcompounds/[*]/",
         "primary-key-path": "id",
         "indexing-rules": [
             {
