@@ -610,13 +610,14 @@ public class WorkspaceEventHandler implements EventHandler {
                                             String,Long,Map<String,String>> obj: deletedObjList) {
                 long deletedObjid = obj.getE1().longValue();
                 if (deletedObjid  == objid) {
-                    latestEventType = StatusEventType.DELETED;
+                    latestEventType = StatusEventType.DELETE_ALL_VERSIONS;
                     break;
                 }
             }
         } catch (IOException e) {
             throw new RetriableIndexingException(e.getMessage());
-        } catch (JsonClientException e) {
+        }
+        catch (JsonClientException e) {
             throw new RetriableIndexingException(e.getMessage());
         }
 
@@ -640,7 +641,7 @@ public class WorkspaceEventHandler implements EventHandler {
             }
 
             if (!objidExists) {
-                latestEventType = StatusEventType.DELETED;
+                latestEventType = StatusEventType.DELETE_ALL_VERSIONS;
             }
         } catch (IOException e) {
             throw new RetriableIndexingException(e.getMessage());

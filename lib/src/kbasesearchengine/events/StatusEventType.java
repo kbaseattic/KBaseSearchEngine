@@ -3,7 +3,7 @@ package kbasesearchengine.events;
 public enum StatusEventType {
 	NEW_VERSION,
 	// these are currently unused
-	DELETED,
+//	DELETED,
 //	SHARED,
 //	UNSHARED,
 	PUBLISH_ALL_VERSIONS,

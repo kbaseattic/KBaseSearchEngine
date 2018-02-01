@@ -435,9 +435,9 @@ public class IndexerWorker implements Stoppable {
                 }
                 break;
             // currently unused
-            case DELETED:
-                unshare(ev.toGUID(), ev.getAccessGroupId().get());
-                break;
+//            case DELETED:
+//                unshare(ev.toGUID(), ev.getAccessGroupId().get());
+//                break;
             case DELETE_ALL_VERSIONS:
                 deleteAllVersions(updatedEvent.toGUID());
                 break;
