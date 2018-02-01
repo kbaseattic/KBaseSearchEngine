@@ -5,7 +5,7 @@
     "storage-object-type": "KBaseFBA.FBAModel",
     "versions": [{
         "inner-sub-type": "Biomass",
-        "path-to-sub-objects": "/biomasses/*/",
+        "path-to-sub-objects": "/biomasses/[*]/",
         "primary-key-path": "id",
         "indexing-rules": [
             {

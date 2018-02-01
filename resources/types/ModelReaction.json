@@ -5,7 +5,7 @@
     "storage-object-type": "KBaseFBA.FBAModel",
     "versions": [{
         "inner-sub-type": "ModelReaction",
-        "path-to-sub-objects": "/modelreactions/*/",
+        "path-to-sub-objects": "/modelreactions/[*]/",
         "primary-key-path": "id",
         "indexing-rules": [
             {

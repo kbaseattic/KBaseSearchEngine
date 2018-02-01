@@ -44,7 +44,6 @@
                 "full-text": true,
                 "key-name": "taxonomy",
                 "ui-name": "Genome Taxonomy"
-
             },
             {
                 "source-key": "genome_guid",

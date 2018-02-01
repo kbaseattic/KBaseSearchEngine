@@ -5,10 +5,10 @@
     "storage-object-type": "KBaseFBA.FBAModel",
     "versions": [{
         "inner-sub-type": "ModelReactionProteinSubunit",
-        "path-to-sub-objects": "/modelreactions/*/modelReactionProteins/*/modelReactionProteinSubunits/*/",
+        "path-to-sub-objects": "/modelreactions/[*]/modelReactionProteins/[*]/modelReactionProteinSubunits/[*]/",
         "primary-key-path": "id",
         "indexing-rules": [
-        	{
+            {
                 "path": "role",
                 "keyword-type": "string",
                 "ui-name": "Role"
