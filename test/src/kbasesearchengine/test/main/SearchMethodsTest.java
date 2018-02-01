@@ -9,16 +9,11 @@ import static kbasesearchengine.test.common.TestCommon.set;
 import java.util.Arrays;
 import java.util.Collections;
 
+import kbasesearchengine.*;
 import org.junit.Test;
 
-import kbasesearchengine.AccessFilter;
-import kbasesearchengine.MatchFilter;
-import kbasesearchengine.Pagination;
-import kbasesearchengine.SearchObjectsInput;
-import kbasesearchengine.SearchObjectsOutput;
-import kbasesearchengine.SearchTypesInput;
-import kbasesearchengine.SearchTypesOutput;
 import kbasesearchengine.authorization.AccessGroupProvider;
+import kbasesearchengine.main.SearchInterface;
 import kbasesearchengine.main.SearchMethods;
 import kbasesearchengine.search.FoundHits;
 import kbasesearchengine.search.IndexingStorage;
@@ -66,8 +61,8 @@ public class SearchMethodsTest {
         final AccessGroupProvider agp = mock(AccessGroupProvider.class);
         final IndexingStorage is = mock(IndexingStorage.class);
         final TypeStorage ts = mock(TypeStorage.class);
-        
-        final SearchMethods sm = new SearchMethods(agp, is, ts, Collections.emptySet());
+
+        final SearchInterface sm = new SearchMethods(agp, is, ts, Collections.emptySet());
         
         // what's returned doesn't matter, we're just checking that indexing storage gets the
         // right message
@@ -101,7 +96,7 @@ public class SearchMethodsTest {
         assertThat("incorrect objects", res.getObjects(), is(Collections.emptyList()));
         assertThat("incorrect pagination", res.getPagination(), is((Pagination) null));
         // if we want to check search time, need to mock a Clock. Don't bother for now.
-//        assertThat("incorrect objects", res.getSearchTime(), is(20));
+        // assertThat("incorrect objects", res.getSearchTime(), is(20));
         // don't care about the sorting rules for this test, so just check size
         assertThat("incorrect sorting rules count", res.getSortingRules().size(), is(1));
         assertThat("incorrect total", res.getTotal(), is(1L));
@@ -136,8 +131,8 @@ public class SearchMethodsTest {
         final AccessGroupProvider agp = mock(AccessGroupProvider.class);
         final IndexingStorage is = mock(IndexingStorage.class);
         final TypeStorage ts = mock(TypeStorage.class);
-        
-        final SearchMethods sm = new SearchMethods(agp, is, ts, Collections.emptySet());
+
+        final SearchInterface sm = new SearchMethods(agp, is, ts, Collections.emptySet());
         
         // what's returned doesn't matter, we're just checking that indexing storage gets the
         // right message
@@ -154,7 +149,7 @@ public class SearchMethodsTest {
         
         assertThat("incorrect counts", res.getTypeToCount(), is(Collections.emptyMap()));
         // if we want to check search time, need to mock a Clock. Don't bother for now.
-//        assertThat("incorrect objects", res.getSearchTime(), is(20));
+        // assertThat("incorrect objects", res.getSearchTime(), is(20));
     }
     
 }
