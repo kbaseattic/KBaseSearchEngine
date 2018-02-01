@@ -620,6 +620,34 @@ public class WorkspaceEventHandler implements EventHandler {
             throw new RetriableIndexingException(e.getMessage());
         }
 
+        // check if object may have been permanently deleted with no record left
+        command = new HashMap<>();
+        command.put("command", "listObjects");
+        command.put("params", new ListObjectsParams().withIds(Arrays.asList(wsid)));
+
+        try {
+            boolean objidExists = false;
+
+            final List<List> objList = ws.getClient().administer(new UObject(command))
+                    .asClassInstance(List.class);
+
+            for (List obj: objList) {
+                long id = (long)((Integer)obj.get(0)).intValue();
+                if (id  == objid) {
+                    objidExists = true;
+                    break;
+                }
+            }
+
+            if (!objidExists) {
+                latestEventType = StatusEventType.DELETED;
+            }
+        } catch (IOException e) {
+            throw new RetriableIndexingException(e.getMessage());
+        } catch (JsonClientException e) {
+            throw new RetriableIndexingException(e.getMessage());
+        }
+
 
         // check if name has changed and update state of lastestName
         final ObjectSpecification os = new ObjectSpecification().withRef(
