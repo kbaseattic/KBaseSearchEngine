@@ -84,6 +84,7 @@ versions:
                 keyword-type: integer
                 # The key for the extracted field will be contigs.
                 key-name: contigs
+            -
     -
         indexing-rules:
             -
@@ -109,7 +110,7 @@ versions:
                 keyword-type: integer
                 key-name: features
                 ui-name: Features
-             -
+            -
                 path: cdss/{size}
                 keyword-type: integer
                 key-name: cdss
