@@ -38,8 +38,9 @@ import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.TypeStorage;
 import us.kbase.common.service.UObject;
+import workspace.WorkspaceClient;
 
-public class SearchMethods {
+public class SearchMethods implements SearchInterface {
     
     private final AccessGroupProvider accessGroupProvider;
     private final TypeStorage typeStorage;
@@ -56,16 +57,13 @@ public class SearchMethods {
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
     }
-    
-    public static File getTempSubDir(final File rootTempDir, String subName) {
-        File ret = new File(rootTempDir, subName);
-        if (!ret.exists()) {
-            ret.mkdirs();
-        }
-        return ret;
-    }
-    
 
+    @Override
+    public WorkspaceClient getWorkspaceClient() {
+        return accessGroupProvider.getWorkspaceClient();
+    }
+
+    @Override
     public IndexingStorage getIndexingStorage(String objectType) {
         return indexingStorage;
     }
@@ -241,6 +239,7 @@ public class SearchMethods {
         }
     }
 
+    @Override
     public SearchTypesOutput searchTypes(SearchTypesInput params, String user) throws Exception {
         long t1 = System.currentTimeMillis();
         kbasesearchengine.search.MatchFilter matchFilter = toSearch(params.getMatchFilter());
@@ -252,8 +251,10 @@ public class SearchMethods {
                 .withSearchTime(System.currentTimeMillis() - t1);
     }
     
-    public SearchObjectsOutput searchObjects(SearchObjectsInput params, String user) 
+    @Override
+    public SearchObjectsOutput searchObjects(SearchObjectsInput params, String user)
             throws Exception {
+
         long t1 = System.currentTimeMillis();
 
         // validate input
@@ -290,21 +291,25 @@ public class SearchMethods {
         return ret;
     }
 
+    @Override
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
+
         final long t1 = System.currentTimeMillis();
         final Set<Integer> accessGroupIDs =
                 new HashSet<>(accessGroupProvider.findAccessGroupIds(user));
         final Set<GUID> guids = new LinkedHashSet<>();
         for (final String guid : params.getGuids()) {
             final GUID g = new GUID(guid);
+
             //TODO DP this is a quick fix for now, doesn't take data palettes into account
             if (accessGroupIDs.contains(g.getAccessGroupId())) {
                 // don't throw an error, just don't return data
                 guids.add(g);
             }
         }
-        final kbasesearchengine.search.PostProcessing postProcessing = 
+
+        final kbasesearchengine.search.PostProcessing postProcessing =
                 toSearch(params.getPostProcessing());
         final List<kbasesearchengine.search.ObjectData> objs = indexingStorage.getObjectsByIds(
                 guids, postProcessing);
@@ -313,7 +318,8 @@ public class SearchMethods {
         ret.withSearchTime(System.currentTimeMillis() - t1);
         return ret;
     }
-    
+
+    @Override
     public Map<String, TypeDescriptor> listTypes(String uniqueType) throws Exception {
         //TODO VERS remove keys from TypeDescriptor, document that listObjectTypes only returns the most recent version of each type
         Map<String, TypeDescriptor> ret = new LinkedHashMap<>();
@@ -354,5 +360,4 @@ public class SearchMethods {
     private static String guessUIName(String id) {
         return id.substring(0, 1).toUpperCase() + id.substring(1);
     }
-    
 }
