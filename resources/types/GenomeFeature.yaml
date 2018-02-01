@@ -79,7 +79,7 @@ versions:
   - path: functions
     transform: values
     full-text: true
-  - path: aliases/[*]/[1]
+  - path: aliases/[*]/
     full-text: true
     key-name: aliases
   - path: location
