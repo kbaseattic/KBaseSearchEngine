@@ -1,0 +1,24 @@
+{
+    "global-object-type": "ModelBiomass",
+    "ui-type-name": "Model Reaction",
+    "storage-type": "WS",
+    "storage-object-type": "KBaseFBA.FBAModel",
+    "versions": [{
+        "inner-sub-type": "Biomass",
+        "path-to-sub-objects": "/biomasses/*/",
+        "primary-key-path": "id",
+        "indexing-rules": [
+            {
+                "path": "id",
+                "keyword-type": "string",
+                "ui-name": "Biomass ID"
+            },
+            {
+                "path": "modelcompound_ref",
+                "keyword-type": "string",
+                "transform": "values",
+                "ui-name": "Biomass Compound"
+            }
+        ]
+    }]
+}
