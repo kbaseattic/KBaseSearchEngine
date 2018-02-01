@@ -1,6 +1,6 @@
 storage-type: WS
 types:
-    KBaseGenome.Genome:
+    KBaseGenomes.Genome:
         default:
            -
                type: Genome
