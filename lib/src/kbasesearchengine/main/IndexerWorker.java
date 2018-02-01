@@ -56,9 +56,6 @@ import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.tools.Utils;
 import org.apache.commons.io.FileUtils;
-import workspace.GetObjectInfo3Params;
-import workspace.GetObjectInfo3Results;
-import workspace.ObjectSpecification;
 
 public class IndexerWorker implements Stoppable {
     
