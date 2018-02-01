@@ -573,7 +573,7 @@ public class WorkspaceEventHandler implements EventHandler {
     }
 
     @Override
-    public StatusEvent updateEvent(StatusEvent ev)
+    public StatusEvent updateEvent(final StatusEvent ev)
             throws IndexingException,
                    RetriableIndexingException {
 
