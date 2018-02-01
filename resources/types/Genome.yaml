@@ -84,7 +84,6 @@ versions:
                 keyword-type: integer
                 # The key for the extracted field will be contigs.
                 key-name: contigs
-            -
     -
         indexing-rules:
             -

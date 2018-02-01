@@ -1,0 +1,19 @@
+global-object-type: AssemblyContig
+ui-type-name: Assembly Contig
+storage-type: WS
+storage-object-type: KBaseGenomeAnnotations.Assembly
+versions:
+- inner-sub-type: contig
+  path-to-sub-objects: /contigs/*/
+  primary-key-path: contig_id
+  indexing-rules:
+  - path: contig_id
+    keyword-type: string
+    ui-name: ID
+  - path: description
+    full-text: true
+  - path: gc_content
+    keyword-type: double
+    ui-name: GC-content
+  - path: length
+    keyword-type: integer
