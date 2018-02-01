@@ -614,11 +614,10 @@ public class WorkspaceEventHandler implements EventHandler {
                     break;
                 }
             }
-        } catch (IOException e) {
-            throw new RetriableIndexingException(e.getMessage());
-        }
-        catch (JsonClientException e) {
-            throw new RetriableIndexingException(e.getMessage());
+        } catch (IOException ex) {
+            throw handleException(ex);
+        } catch (JsonClientException ex) {
+            throw handleException(ex);
         }
 
         // check if object may have been permanently deleted with no record left
@@ -643,10 +642,10 @@ public class WorkspaceEventHandler implements EventHandler {
             if (!objidExists) {
                 latestEventType = StatusEventType.DELETE_ALL_VERSIONS;
             }
-        } catch (IOException e) {
-            throw new RetriableIndexingException(e.getMessage());
-        } catch (JsonClientException e) {
-            throw new RetriableIndexingException(e.getMessage());
+        } catch (IOException ex) {
+            throw handleException(ex);
+        } catch (JsonClientException ex) {
+            throw handleException(ex);
         }
 
 
@@ -668,10 +667,10 @@ public class WorkspaceEventHandler implements EventHandler {
                     .asClassInstance(GetObjectInfo3Results.class);
             latestName = objInfo.getInfos().get(0).getE2();
 
-        } catch (IOException e) {
-            throw handleException(e);
-        } catch (JsonClientException e) {
-            throw handleException(e);
+        } catch (IOException ex) {
+            throw handleException(ex);
+        } catch (JsonClientException ex) {
+            throw handleException(ex);
         }
 
         // check if permissions have changed and update state of isPublic
@@ -685,9 +684,11 @@ public class WorkspaceEventHandler implements EventHandler {
                     .asClassInstance(WS_INFO_TYPEREF).getE6();
 
             latestIsPublic = (isPublic == "n") ? true: false;
-            
-        } catch (IOException | JsonClientException ex) {
-            throw new RetriableIndexingException(ex.getMessage());
+
+        } catch (IOException ex) {
+            throw handleException(ex);
+        } catch (JsonClientException ex) {
+            throw handleException(ex);
         }
 
         StatusEvent updatedEvent = StatusEvent.
