@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.joda.time.format.DateTimeFormat;
@@ -320,6 +321,28 @@ public class WorkspaceEventHandler implements EventHandler {
                 return new StupidWorkspaceObjectIterator(event, objcount, newType);
             }
         };
+    }
+
+    public Map<String, String> getWorkspaceInfo(
+            final long wsId)
+            throws RetriableIndexingException, IndexingException {
+
+        final Map<String, Object> command = new HashMap<>();
+        command.put("command", "getWorkspaceInfo");
+        command.put("params", new WorkspaceIdentity()
+                .withId(wsId));
+
+        final Map<String, String> wsInfoMeta;
+
+        try {
+            wsInfoMeta = ws.getClient().administer(new UObject(command))
+                         .asClassInstance(WS_INFO_TYPEREF).getE9();
+        } catch (IOException e) {
+            throw handleException(e);
+        } catch (JsonClientException e) {
+            throw handleException(e);
+        }
+        return wsInfoMeta;
     }
 
     private Iterable<ChildStatusEvent> handleDeletedAccessGroup(final StoredStatusEvent event) {

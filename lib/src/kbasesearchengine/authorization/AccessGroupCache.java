@@ -10,6 +10,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.Weigher;
+import workspace.WorkspaceClient;
 
 /** A caching layer for access groups. Caches the results from the wrapped
  * {@link AccessGroupProvider} in memory for quick access.
@@ -19,7 +20,8 @@ import com.google.common.cache.Weigher;
 public class AccessGroupCache implements AccessGroupProvider {
     
     private final LoadingCache<String, List<Integer>> cache;
-    
+    private final AccessGroupProvider provider;
+
     /** Create a cache.
      * @param provider the {@link AccessGroupProvider} whose results will be cached.
      * @param cacheLifeTimeInSec the number of seconds a set of access groups for a user should
@@ -52,6 +54,8 @@ public class AccessGroupCache implements AccessGroupProvider {
         if (provider == null) {
             throw new NullPointerException("provider");
         }
+        this.provider = provider;
+
         if (cacheLifeTimeInSec < 1) {
             throw new IllegalArgumentException("cache lifetime must be at least one second");
         }
@@ -78,6 +82,11 @@ public class AccessGroupCache implements AccessGroupProvider {
                     }
 
                 });
+    }
+
+    @Override
+    public WorkspaceClient getWorkspaceClient() {
+        return provider.getWorkspaceClient();
     }
 
     @Override
