@@ -89,7 +89,7 @@ public class ObjectParserTest {
         final String type = "Assembly";
 
         final String parentJson = extractParentFragment(type, jsonResource);
-        assertNull(parentJson); // Assembly.json doesn't have "from-parent" path
+        assertNull(parentJson); // Assembly.yaml doesn't have "from-parent" path
     }
 
     /**
@@ -102,7 +102,7 @@ public class ObjectParserTest {
      */
     public static String extractParentFragment(String type, String jsonResource) throws Exception {
 
-        final File rulesFile = new File("resources/types/" + type + ".json");
+        final File rulesFile = new File("resources/types/" + type + ".yaml");
         final ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesFileParser
                 .fromFile(rulesFile).get(0);
 
@@ -152,7 +152,7 @@ public class ObjectParserTest {
 
         final ArrayList<GUID> idList = new ArrayList<GUID>();
 
-        final File rulesFile = new File("resources/types/" + type + ".json");
+        final File rulesFile = new File("resources/types/" + type + ".yaml");
         final ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesFileParser
                 .fromFile(rulesFile).get(0);
         final Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
@@ -276,7 +276,7 @@ public class ObjectParserTest {
         final String creator = "creator";
 
         final SourceData obj = SourceData.getBuilder(data, name, creator).build();
-        final File rulesFile = new File("resources/types/" + type + ".json");
+        final File rulesFile = new File("resources/types/" + type + ".yaml");
         final ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesFileParser
                 .fromFile(rulesFile).get(0);
 
