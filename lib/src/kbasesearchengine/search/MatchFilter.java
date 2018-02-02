@@ -1,9 +1,12 @@
 package kbasesearchengine.search;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.tools.Utils;
 
 public class MatchFilter {
     
@@ -16,6 +19,7 @@ public class MatchFilter {
     public GUID parentGuid = null;
     public MatchValue timestamp = null;
     public Map<String, MatchValue> lookupInKeys = null;
+    public Set<String> sourceTags = new HashSet<>();
 
     public MatchFilter() {}
     
@@ -73,6 +77,12 @@ public class MatchFilter {
         this.lookupInKeys.put(keyName, value);
         return this;
     }
+    
+    public MatchFilter withSourceTag(final String sourceTag) {
+        Utils.notNullOrEmpty(sourceTag, "sourceTag cannot be null or whitespace only");
+        sourceTags.add(sourceTag);
+        return this;
+    }
 
     @Override
     public int hashCode() {
@@ -89,6 +99,8 @@ public class MatchFilter {
                 + ((objectName == null) ? 0 : objectName.hashCode());
         result = prime * result
                 + ((parentGuid == null) ? 0 : parentGuid.hashCode());
+        result = prime * result
+                + ((sourceTags == null) ? 0 : sourceTags.hashCode());
         result = prime * result
                 + ((timestamp == null) ? 0 : timestamp.hashCode());
         return result;
@@ -142,6 +154,13 @@ public class MatchFilter {
                 return false;
             }
         } else if (!parentGuid.equals(other.parentGuid)) {
+            return false;
+        }
+        if (sourceTags == null) {
+            if (other.sourceTags != null) {
+                return false;
+            }
+        } else if (!sourceTags.equals(other.sourceTags)) {
             return false;
         }
         if (timestamp == null) {
