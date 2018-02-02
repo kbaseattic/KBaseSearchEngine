@@ -8,16 +8,13 @@ versions:
     keyword-type: string
   - path: name
     full-text: true
-  - path: source
-    full-text: true
-  - path: source
-    keyword-type: string
   - path: external_source_id
     full-text: true
     ui-name: External Source
+  - path: type
+    keyword-type: string
   - path: mediacompounds/{size}
     keyword-type: integer
-    key-name: Compounds
   - path: isDefined
     keyword-type: boolean
     key-name: Denfined

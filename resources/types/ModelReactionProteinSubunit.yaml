@@ -5,7 +5,7 @@ storage-object-type: KBaseFBA.FBAModel
 versions:
 - inner-sub-type: ModelReactionProteinSubunit
   path-to-sub-objects: /modelreactions/[*]/modelReactionProteins/[*]/modelReactionProteinSubunits/[*]/
-  primary-key-path: id
+  primary-key-path: role
   indexing-rules:
   - path: role
     keyword-type: string
