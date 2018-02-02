@@ -80,7 +80,8 @@ public class IndexerWorkerTest {
         when(ws.getStorageCode()).thenReturn("code");
         
         final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger);
+                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
+                null);
         
         final GUID guid = new GUID("code:1/2/3");
         when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
@@ -216,7 +217,8 @@ public class IndexerWorkerTest {
         when(ws.getStorageCode()).thenReturn("code");
         
         final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger);
+                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
+                null);
         
         final GUID guid = new GUID("code:1/2/3");
         when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));

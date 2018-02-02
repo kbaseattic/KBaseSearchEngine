@@ -71,6 +71,7 @@ public class IndexerWorker implements Stoppable {
     private final StatusEventStorage storage;
     private final TypeStorage typeStorage;
     private final IndexingStorage indexingStorage;
+    private final Set<String> workerCodes;
     private final LineLogger logger;
     private final Map<String, EventHandler> eventHandlers = new HashMap<>();
     private ScheduledExecutorService executor = null;
@@ -87,11 +88,14 @@ public class IndexerWorker implements Stoppable {
             final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,
-            final LineLogger logger)
-                throws IOException {
+            final LineLogger logger,
+            final Set<String> workerCodes)
+            throws IOException {
         Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
         Utils.nonNull(logger, "logger");
         Utils.nonNull(indexingStorage, "indexingStorage");
+        this.workerCodes = workerCodes;
+        logger.logInfo("Worker codes: " + workerCodes);
         this.id = id;
         this.logger = logger;
         this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
@@ -117,6 +121,7 @@ public class IndexerWorker implements Stoppable {
                 throws IOException {
         Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
         Utils.nonNull(logger, "logger");
+        this.workerCodes = null;
         this.id = id;
         this.storage = null;
         this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
@@ -218,8 +223,7 @@ public class IndexerWorker implements Stoppable {
     
     private boolean performOneTick() throws InterruptedException, IndexingException {
         final Optional<StoredStatusEvent> optEvent = retrier.retryFunc(
-                // TODO NNOW worker codes
-                s -> s.setAndGetProcessingState(StatusEventProcessingState.READY, new HashSet<>(),
+                s -> s.setAndGetProcessingState(StatusEventProcessingState.READY, workerCodes,
                         StatusEventProcessingState.PROC, id),
                 storage, null);
         boolean processedEvent = false;
