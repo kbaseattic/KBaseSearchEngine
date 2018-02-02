@@ -560,7 +560,7 @@ public class ObjectData {
                 Utils.notNullOrEmpty(s, "highlight cannot be null or whitespace");
             }
 
-            this.highlight.put(field, highlight);
+            this.highlight.put(field, Collections.unmodifiableList(highlight));
             return this;
         }
     }
