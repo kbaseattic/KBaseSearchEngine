@@ -12,6 +12,15 @@ versions:
     full-text: true
   - path: type
     keyword-type: string
+  - path: modelcompartments/{size}
+    keyword-type: integer
+    ui-name: Model Compartments
+  - path: modelcompounds/{size}
+    keyword-type: integer
+    ui-name: Model Compounds
+  - path: modelreactions/{size}
+    keyword-type: integer
+    ui-name: Model Reactions
   - path: genome_ref
     transform: guid
     target-object-type: Genome
