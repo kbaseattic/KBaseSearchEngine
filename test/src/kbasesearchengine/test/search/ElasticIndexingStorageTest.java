@@ -131,7 +131,7 @@ public class ElasticIndexingStorageTest {
             @Override
             public ObjectTypeParsingRules getTypeDescriptor(SearchObjectType type) {
                 try {
-                    final File rulesFile = new File("resources/types/" + type.getType() + ".json");
+                    final File rulesFile = new File("resources/types/" + type.getType() + ".yaml");
                     return ObjectTypeParsingRulesFileParser.fromFile(rulesFile)
                             .get(type.getVersion() - 1);
                 } catch (Exception ex) {
@@ -197,9 +197,7 @@ public class ElasticIndexingStorageTest {
             final GUID ref,
             final String objName)
             throws Exception {
-        // yuck
-        final String extension = type.equals("Genome") ? ".yaml" : ".json";
-        final File file = new File("resources/types/" + type + extension);
+        final File file = new File("resources/types/" + type + ".yaml");
         ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesFileParser.fromFile(file).get(0);
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
