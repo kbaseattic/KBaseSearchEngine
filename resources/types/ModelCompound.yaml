@@ -3,7 +3,7 @@ ui-type-name: Model Compound
 storage-type: WS
 storage-object-type: KBaseFBA.FBAModel
 versions:
-- inner-sub-type: MediaCompound
+- inner-sub-type: ModelCompound
   path-to-sub-objects: /modelcompounds/[*]/
   primary-key-path: id
   indexing-rules:

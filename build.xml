@@ -155,7 +155,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <sysproperty key="test.cfg" value="${test.cfg}"/>
         <batchtest>
           <fileset dir="${test.src}">
-            <include name="kbasesearchengine/test/parse/**Test.java"/>
+            <!--<include name="kbasesearchengine/test/parse/**Test.java"/>
             <include name="kbasesearchengine/test/authorization/AccessGroupCacheTest.java"/>
             <include name="kbasesearchengine/test/common/FileUtilTest.java"/>
             <include name="kbasesearchengine/test/events/AccessGroupEventQueueTest.java"/>
@@ -172,8 +172,9 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
             <include name="kbasesearchengine/test/events/handler/SourceDataTest.java"/>
             <include name="kbasesearchengine/test/events/storage/MongoDBStatusEventStorageTest.java"/>
             <include name="kbasesearchengine/test/integration/IndexerIntegrationTest.java"/>
-            <include name="kbasesearchengine/test/integration/IndexerWorkerIntegrationTest.java"/>
-            <include name="kbasesearchengine/test/search/ElasticIndexingStorageTest.java"/>
+            <include name="kbasesearchengine/test/integration/IndexerWorkerIntegrationTest.java"/>-->
+            <include name="kbasesearchengine/test/parse/ObjectParserTest.java"/>
+            <!--<include name="kbasesearchengine/test/search/ElasticIndexingStorageTest.java"/>
             <include name="kbasesearchengine/test/search/ObjectDataTest.java"/>
             <include name="kbasesearchengine/test/system/IndexingRulesTest.java"/>
             <include name="kbasesearchengine/test/system/ObjectTypeParsingRulesTest.java"/>
@@ -186,7 +187,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
             <include name="kbasesearchengine/test/tools/SearchToolsTest.java"/>
             <include name="kbasesearchengine/test/main/IndexerCoordinatorTest.java"/>
             <include name="kbasesearchengine/test/main/IndexerWorkerTest.java"/>
-            <include name="kbasesearchengine/test/main/SearchMethodsTest.java"/>
+            <include name="kbasesearchengine/test/main/SearchMethodsTest.java"/>-->
           </fileset>
         </batchtest>
       </junit>

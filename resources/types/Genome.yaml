@@ -129,6 +129,17 @@ versions:
                 transform: values
                 full-text: true
             -
+                path: feature_counts
+                transform: values
+                keyword-type: string
+                key-name: feature_types
+                ui-name: Feature Types
+            -
+                path: genome_tiers
+                transform: values
+                keyword-type: string
+                ui-name: Genome Tiers
+            -
                 path: suspect
                 keyword-type: boolean
                 ui-name: Suspect Genome

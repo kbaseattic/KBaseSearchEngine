@@ -16,11 +16,11 @@ versions:
     keyword-type: string
     ui-name: InChIKey
   - path: concentration
-    keyword-type: float
+    keyword-type: double
     ui-name: Concentration
   - path: minFlux
-    keyword-type: float
+    keyword-type: double
     ui-name: Minimum Flux
   - path: maxFlux
-    keyword-type: float
+    keyword-type: double
     ui-name: Maximum Flux
