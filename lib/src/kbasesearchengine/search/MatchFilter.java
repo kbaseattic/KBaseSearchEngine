@@ -20,6 +20,7 @@ public class MatchFilter {
     public MatchValue timestamp = null;
     public Map<String, MatchValue> lookupInKeys = null;
     public Set<String> sourceTags = new HashSet<>();
+    public boolean isSourceTagsBlacklist = false;
 
     public MatchFilter() {}
     
@@ -83,6 +84,11 @@ public class MatchFilter {
         sourceTags.add(sourceTag);
         return this;
     }
+    
+    public MatchFilter withIsSourceTagsBlackList(final Boolean isBlacklist) {
+        isSourceTagsBlacklist = isBlacklist != null && isBlacklist;
+        return this;
+    }
 
     @Override
     public int hashCode() {
@@ -93,6 +99,7 @@ public class MatchFilter {
         result = prime * result + (excludeSubObjects ? 1231 : 1237);
         result = prime * result
                 + ((fullTextInAll == null) ? 0 : fullTextInAll.hashCode());
+        result = prime * result + (isSourceTagsBlacklist ? 1231 : 1237);
         result = prime * result
                 + ((lookupInKeys == null) ? 0 : lookupInKeys.hashCode());
         result = prime * result
@@ -133,6 +140,9 @@ public class MatchFilter {
                 return false;
             }
         } else if (!fullTextInAll.equals(other.fullTextInAll)) {
+            return false;
+        }
+        if (isSourceTagsBlacklist != other.isSourceTagsBlacklist) {
             return false;
         }
         if (lookupInKeys == null) {

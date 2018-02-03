@@ -1307,10 +1307,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
                                                     // this seems like a bug...?
             matches.add(createFilter("match", OBJ_NAME, matchFilter.fullTextInAll));
         }
-//        if (!matchFilter.sourceTags.isEmpty()) {
-//            ret.add(ImmutableMap.of("terms", ImmutableMap.of(
-//                    SOURCE_TAGS, matchFilter.sourceTags)));
-//        }
         if (matchFilter.lookupInKeys != null) {
             for (final String keyName : matchFilter.lookupInKeys.keySet()) {
                 final MatchValue value = matchFilter.lookupInKeys.get(keyName);
@@ -1332,11 +1328,24 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         
         
+        final Map<String, Object> ret = new HashMap<>();
+        if (!matchFilter.sourceTags.isEmpty()) {
+            final Map<String, Object> tagsQuery = ImmutableMap.of("terms", ImmutableMap.of(
+                    SOURCE_TAGS, matchFilter.sourceTags));
+            if (matchFilter.isSourceTagsBlacklist) {
+                ret.put("must_not", tagsQuery);
+            } else {
+                matches.add(tagsQuery);
+            }
+        }
         // TODO: support parent guid (reduce search scope to one object, e.g. features of one geneom)
-        if (matches.isEmpty()) {
+        if (ret.isEmpty() && matches.isEmpty()) {
             matches.add(createFilter("match_all", null, null));
         }
-        return ImmutableMap.of("must", matches);
+        if (!matches.isEmpty()) {
+            ret.put("must", matches);
+        }
+        return ret;
     }
     
     private Map<String, Object> createAccessMustBlock(AccessFilter accessFilter) {
