@@ -1,0 +1,46 @@
+global-object-type: FBAModel
+ui-type-name: FBA Model
+storage-type: WS
+storage-object-type: KBaseFBA.FBAModel
+versions:
+- indexing-rules:
+  - path: id
+    keyword-type: string
+  - path: name
+    full-text: true
+  - path: source
+    full-text: true
+  - path: type
+    keyword-type: string
+  - path: modelcompartments/{size}
+    keyword-type: integer
+    ui-name: Model Compartments
+  - path: modelcompounds/{size}
+    keyword-type: integer
+    ui-name: Model Compounds
+  - path: modelreactions/{size}
+    keyword-type: integer
+    ui-name: Model Reactions
+  - path: genome_ref
+    transform: guid
+    target-object-type: Genome
+    target-object-type-version: 1
+    optional-default-value: []
+    keyword-type: string
+    key-name: genome_guid
+    ui-hidden: true
+  - source-key: genome_guid
+    transform: lookup.key.scientific_name
+    full-text: true
+    key-name: scientific_name
+    ui-name: Genome Name
+  - source-key: genome_guid
+    transform: lookup.key.taxonomy
+    full-text: true
+    key-name: taxonomy
+    ui-name: Genome Taxonomy
+  - source-key: genome_guid
+    transform: lookup.key.id
+    full-text: true
+    key-name: genome_id
+    ui-name: Genome ID
