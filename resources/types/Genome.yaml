@@ -84,3 +84,76 @@ versions:
                 keyword-type: integer
                 # The key for the extracted field will be contigs.
                 key-name: contigs
+    -
+        indexing-rules:
+            -
+                path: id
+                keyword-type: string
+            -
+                path: domain
+                keyword-type: string
+            -
+                path: taxonomy
+                full-text: true
+            -
+                path: scientific_name
+                full-text: true
+            -
+                path: notes
+                full-text: true
+            -
+                path: source
+                keyword-type: string
+            -
+                path: features/{size}
+                keyword-type: integer
+                key-name: features
+                ui-name: Features
+            -
+                path: cdss/{size}
+                keyword-type: integer
+                key-name: cdss
+                ui-name: CDSs
+            -
+                path: mrnas/{size}
+                keyword-type: integer
+                key-name: mrnas
+                ui-name: mRNAs
+            -
+                path: non_coding_features/{size}
+                keyword-type: integer
+                key-name: non_coding_features
+                ui-name: Non Coding Features
+            -
+                path: warnings
+                transform: values
+                full-text: true
+            -
+                path: feature_counts
+                transform: values
+                keyword-type: string
+                key-name: feature_types
+                ui-name: Feature Types
+            -
+                path: genome_tiers
+                transform: values
+                keyword-type: string
+                ui-name: Genome Tiers
+            -
+                path: suspect
+                keyword-type: boolean
+                ui-name: Suspect Genome
+            -
+                path: assembly_ref
+                transform: guid
+                target-object-type: Assembly
+                target-object-type-version: 1
+                optional-default-value: []
+                keyword-type: string
+                key-name: assembly_guid
+                ui-hidden: true
+            -
+                source-key: assembly_guid
+                transform: lookup.key.contigs
+                keyword-type: integer
+                key-name: contigs

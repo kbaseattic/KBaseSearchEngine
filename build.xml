@@ -173,6 +173,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
             <include name="kbasesearchengine/test/events/storage/MongoDBStatusEventStorageTest.java"/>
             <include name="kbasesearchengine/test/integration/IndexerIntegrationTest.java"/>
             <include name="kbasesearchengine/test/integration/IndexerWorkerIntegrationTest.java"/>
+            <include name="kbasesearchengine/test/parse/ObjectParserTest.java"/>
             <include name="kbasesearchengine/test/search/ElasticIndexingStorageTest.java"/>
             <include name="kbasesearchengine/test/search/ObjectDataTest.java"/>
             <include name="kbasesearchengine/test/system/IndexingRulesTest.java"/>

@@ -1,0 +1,74 @@
+global-object-type: GenomeNonCodingFeature
+ui-type-name: Genome Feature
+storage-type: WS
+storage-object-type: KBaseGenomes.Genome
+versions:
+- inner-sub-type: NonCodingFeature
+  path-to-sub-objects: /non_coding_features/[*]/
+  primary-key-path: id
+  indexing-rules:
+  - path: id
+    keyword-type: string
+  - path: functions
+    transform: values
+    full-text: true
+  - path: aliases/[*]/[1]
+    full-text: true
+    key-name: aliases
+  - path: location
+    transform: location.contig_id
+    full-text: true
+    key-name: contig_id
+    ui-name: Contig
+    ui-link-key: contig_ref
+  - derived-key: true
+    transform: guid
+    target-object-type: AssemblyContig
+    target-object-type-version: 1
+    source-key: assembly_guid
+    subobject-id-key: contig_id
+    key-name: contig_guid
+    ui-hidden: true
+  - path: location
+    transform: location.start
+    keyword-type: integer
+    key-name: start
+  - path: location
+    transform: location.strand
+    keyword-type: string
+    key-name: strand
+  - path: location
+    transform: location.stop
+    keyword-type: integer
+    key-name: stop
+  - path: protein_translation
+    not-indexed: true
+  - path: type
+    keyword-type: string
+    key-name: feature_type
+  - path: ontology_terms/*/
+    transform: values
+    keyword-type: string
+    key-name: ontology_terms
+  - from-parent: true
+    path: domain
+    keyword-type: string
+    key-name: genome_domain
+  - from-parent: true
+    path: taxonomy
+    full-text: true
+    key-name: genome_taxonomy
+  - from-parent: true
+    path: scientific_name
+    full-text: true
+    key-name: genome_scientific_name
+  - from-parent: true
+    path: assembly_ref
+    transform: guid
+    target-object-type: Assembly
+    target-object-type-version: 1
+    optional-default-value: []
+    keyword-type: string
+    key-name: assembly_guid
+    ui-hidden: true
+    not-indexed: true
