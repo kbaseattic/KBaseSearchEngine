@@ -1242,11 +1242,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
         // Shared block
         shouldList.add(createSharedShouldBlock(createAccessMustBlock(accessFilter)));
         // Rest of query
-        return  ImmutableMap.of(
-                "bool", ImmutableMap.of(
-                        "must", prepareMatchFilters(matchFilter),
-                        "filter", Arrays.asList(ImmutableMap.of(
-                                "bool", ImmutableMap.of("should", shouldList)))));
+        
+        final Map<String, Object> bool = new HashMap<>();
+        bool.putAll(prepareMatchFilters(matchFilter));
+        bool.put("filter", Arrays.asList(ImmutableMap.of("bool", ImmutableMap.of(
+                "should", shouldList))));
+        return  ImmutableMap.of("bool", bool);
     }
     
     @Override
@@ -1283,19 +1284,19 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return searchIds(objectTypes, matchFilter, sorting, accessFilter, null).guids;
     }
 
-    private List<Map<String, Object>> prepareMatchFilters(MatchFilter matchFilter) {
-        List<Map<String, Object>> ret = new ArrayList<>();
+    private Map<String, Object> prepareMatchFilters(MatchFilter matchFilter) {
+        final List<Map<String, Object>> matches = new ArrayList<>();
         if (matchFilter.fullTextInAll != null) {
-            LinkedHashMap<String, Object> query = new LinkedHashMap<>();
+            final LinkedHashMap<String, Object> query = new LinkedHashMap<>();
             query.put("query", matchFilter.fullTextInAll);
             query.put("operator", "and");
 
-            LinkedHashMap<String, Object> allQuery = new LinkedHashMap<>();
+            final LinkedHashMap<String, Object> allQuery = new LinkedHashMap<>();
             allQuery.put("_all", query);
 
-            LinkedHashMap<String, Object> match = new LinkedHashMap<>();
+            final LinkedHashMap<String, Object> match = new LinkedHashMap<>();
             match.put("match",allQuery);
-            ret.add(match);
+            matches.add(match);
         }
         // TODO: support for matchFilter.accessGroupId (e.g. reduce search scope to one group)
         /*if (matchFilter.accessGroupId != null) {
@@ -1304,36 +1305,38 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }*/
         if (matchFilter.objectName != null) {
                                                     // this seems like a bug...?
-            ret.add(createFilter("match", OBJ_NAME, matchFilter.fullTextInAll));
+            matches.add(createFilter("match", OBJ_NAME, matchFilter.fullTextInAll));
         }
 //        if (!matchFilter.sourceTags.isEmpty()) {
 //            ret.add(ImmutableMap.of("terms", ImmutableMap.of(
 //                    SOURCE_TAGS, matchFilter.sourceTags)));
 //        }
         if (matchFilter.lookupInKeys != null) {
-            for (String keyName : matchFilter.lookupInKeys.keySet()) {
-                MatchValue value = matchFilter.lookupInKeys.get(keyName);
-                String keyProp = getKeyProperty(keyName);
+            for (final String keyName : matchFilter.lookupInKeys.keySet()) {
+                final MatchValue value = matchFilter.lookupInKeys.get(keyName);
+                final String keyProp = getKeyProperty(keyName);
                 if (value.value != null) {
-                    ret.add(createFilter("term", keyProp, value.value));
+                    matches.add(createFilter("term", keyProp, value.value));
                 } else if (value.minInt != null || value.maxInt != null) {
-                    ret.add(createRangeFilter(keyProp, value.minInt, value.maxInt));
+                    matches.add(createRangeFilter(keyProp, value.minInt, value.maxInt));
                 } else if (value.minDate != null || value.maxDate != null) {
-                    ret.add(createRangeFilter(keyProp, value.minDate, value.maxDate));
+                    matches.add(createRangeFilter(keyProp, value.minDate, value.maxDate));
                 } else if (value.minDouble != null || value.maxDouble != null) {
-                    ret.add(createRangeFilter(keyProp, value.minDouble, value.maxDouble));
+                    matches.add(createRangeFilter(keyProp, value.minDouble, value.maxDouble));
                 }
             }
         }
         if (matchFilter.timestamp != null) {
-            ret.add(createRangeFilter(OBJ_TIMESTAMP, matchFilter.timestamp.minDate, 
+            matches.add(createRangeFilter(OBJ_TIMESTAMP, matchFilter.timestamp.minDate, 
                     matchFilter.timestamp.maxDate));
         }
+        
+        
         // TODO: support parent guid (reduce search scope to one object, e.g. features of one geneom)
-        if (ret.isEmpty()) {
-            ret.add(createFilter("match_all", null, null));
+        if (matches.isEmpty()) {
+            matches.add(createFilter("match_all", null, null));
         }
-        return ret;
+        return ImmutableMap.of("must", matches);
     }
     
     private Map<String, Object> createAccessMustBlock(AccessFilter accessFilter) {
