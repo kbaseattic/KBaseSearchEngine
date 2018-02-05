@@ -20,21 +20,32 @@ import java.util.Map;
 /**
  * Created by umaganapathy on 1/26/18.
  */
-public class DecorateWithNarrativeInfo extends ObjectDecorator {
+public class DecorateWithNarrativeInfo implements SearchInterface {
 
     /** The storage code for workspace events. */
     public static final String STORAGE_CODE = "WS";
     private final WorkspaceClient wsClient;
+    private final SearchInterface searchInterface;
 
     public DecorateWithNarrativeInfo(SearchInterface searchInterface,
                                      WorkspaceClient wsClient) {
-        super(searchInterface);
+        this.searchInterface = searchInterface;
         this.wsClient = wsClient;
+    }
+
+    public SearchTypesOutput searchTypes(SearchTypesInput params, String user)
+            throws Exception {
+        return searchInterface.searchTypes(params, user);
+    }
+
+    public Map<String, TypeDescriptor> listTypes(String uniqueType)
+            throws Exception {
+        return searchInterface.listTypes(uniqueType);
     }
 
     public SearchObjectsOutput searchObjects(SearchObjectsInput params, String user)
             throws Exception {
-        SearchObjectsOutput searchObjsOutput = super.searchObjects(params, user);
+        SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
         searchObjsOutput.setAccessGroupNarrativeInfo(addNarrativeInfo(searchObjsOutput.getObjects(),
                 searchObjsOutput.getAccessGroupNarrativeInfo()));
         return searchObjsOutput;
@@ -42,7 +53,7 @@ public class DecorateWithNarrativeInfo extends ObjectDecorator {
 
     public GetObjectsOutput getObjects(GetObjectsInput params, String user)
             throws Exception {
-        GetObjectsOutput getObjsOutput = super.getObjects(params, user);
+        GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
         getObjsOutput.setAccessGroupNarrativeInfo(addNarrativeInfo(getObjsOutput.getObjects(),
                 getObjsOutput.getAccessGroupNarrativeInfo()));
         return getObjsOutput;

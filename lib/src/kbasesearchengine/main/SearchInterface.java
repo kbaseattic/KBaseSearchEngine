@@ -11,8 +11,6 @@ import java.util.Map;
  */
 public interface SearchInterface {
 
-    IndexingStorage getIndexingStorage(String objectType);
-
     SearchTypesOutput searchTypes(SearchTypesInput params, String user) throws Exception;
 
     SearchObjectsOutput searchObjects(SearchObjectsInput params, String user)

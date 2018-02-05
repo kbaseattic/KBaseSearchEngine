@@ -56,11 +56,6 @@ public class SearchMethods implements SearchInterface {
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
     }
-
-    @Override
-    public IndexingStorage getIndexingStorage(String objectType) {
-        return indexingStorage;
-    }
     
     private static boolean toBool(Long value) {
         return value != null && value == 1L;
