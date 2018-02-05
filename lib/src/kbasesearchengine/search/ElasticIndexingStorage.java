@@ -1205,7 +1205,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 "size", 0);
 
         String urlPath = "/" + indexNamePrefix + "*" +
-                (matchFilter.excludeSubObjects ? EXCLUDE_SUB_OJBS_URL_SUFFIX : "") +
+                (matchFilter.isExcludeSubObjects() ? EXCLUDE_SUB_OJBS_URL_SUFFIX : "") +
                 "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         @SuppressWarnings("unchecked")
@@ -1286,9 +1286,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     private Map<String, Object> prepareMatchFilters(MatchFilter matchFilter) {
         final List<Map<String, Object>> matches = new ArrayList<>();
-        if (matchFilter.fullTextInAll != null) {
+        if (matchFilter.getFullTextInAll().isPresent()) {
             final LinkedHashMap<String, Object> query = new LinkedHashMap<>();
-            query.put("query", matchFilter.fullTextInAll);
+            query.put("query", matchFilter.getFullTextInAll().get());
             query.put("operator", "and");
 
             final LinkedHashMap<String, Object> allQuery = new LinkedHashMap<>();
@@ -1303,36 +1303,34 @@ public class ElasticIndexingStorage implements IndexingStorage {
             ret.add(createAccessMustBlock(new LinkedHashSet<>(Arrays.asList(
                     matchFilter.accessGroupId)), withAllHistory));
         }*/
-        if (matchFilter.objectName != null) {
+        if (matchFilter.getObjectName().isPresent()) {
                                                     // this seems like a bug...?
-            matches.add(createFilter("match", OBJ_NAME, matchFilter.fullTextInAll));
+            matches.add(createFilter("match", OBJ_NAME, matchFilter.getFullTextInAll().get()));
         }
-        if (matchFilter.lookupInKeys != null) {
-            for (final String keyName : matchFilter.lookupInKeys.keySet()) {
-                final MatchValue value = matchFilter.lookupInKeys.get(keyName);
-                final String keyProp = getKeyProperty(keyName);
-                if (value.value != null) {
-                    matches.add(createFilter("term", keyProp, value.value));
-                } else if (value.minInt != null || value.maxInt != null) {
-                    matches.add(createRangeFilter(keyProp, value.minInt, value.maxInt));
-                } else if (value.minDate != null || value.maxDate != null) {
-                    matches.add(createRangeFilter(keyProp, value.minDate, value.maxDate));
-                } else if (value.minDouble != null || value.maxDouble != null) {
-                    matches.add(createRangeFilter(keyProp, value.minDouble, value.maxDouble));
-                }
+        for (final String keyName : matchFilter.getLookupInKeys().keySet()) {
+            final MatchValue value = matchFilter.getLookupInKeys().get(keyName);
+            final String keyProp = getKeyProperty(keyName);
+            if (value.value != null) {
+                matches.add(createFilter("term", keyProp, value.value));
+            } else if (value.minInt != null || value.maxInt != null) {
+                matches.add(createRangeFilter(keyProp, value.minInt, value.maxInt));
+            } else if (value.minDate != null || value.maxDate != null) {
+                matches.add(createRangeFilter(keyProp, value.minDate, value.maxDate));
+            } else if (value.minDouble != null || value.maxDouble != null) {
+                matches.add(createRangeFilter(keyProp, value.minDouble, value.maxDouble));
             }
         }
-        if (matchFilter.timestamp != null) {
-            matches.add(createRangeFilter(OBJ_TIMESTAMP, matchFilter.timestamp.minDate, 
-                    matchFilter.timestamp.maxDate));
+        if (matchFilter.getTimestamp().isPresent()) {
+            matches.add(createRangeFilter(OBJ_TIMESTAMP, matchFilter.getTimestamp().get().minDate, 
+                    matchFilter.getTimestamp().get().maxDate));
         }
         
         
         final Map<String, Object> ret = new HashMap<>();
-        if (!matchFilter.sourceTags.isEmpty()) {
+        if (!matchFilter.getSourceTags().isEmpty()) {
             final Map<String, Object> tagsQuery = ImmutableMap.of("terms", ImmutableMap.of(
-                    SOURCE_TAGS, matchFilter.sourceTags));
-            if (matchFilter.isSourceTagsBlacklist) {
+                    SOURCE_TAGS, matchFilter.getSourceTags()));
+            if (matchFilter.isSourceTagsBlacklist()) {
                 ret.put("must_not", tagsQuery);
             } else {
                 matches.add(tagsQuery);
@@ -1477,7 +1475,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             indexName = String.join(",", rr);
         }
         
-        if (matchFilter.excludeSubObjects) {
+        if (matchFilter.isExcludeSubObjects()) {
             indexName += EXCLUDE_SUB_OJBS_URL_SUFFIX;
         }
 

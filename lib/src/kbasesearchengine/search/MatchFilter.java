@@ -1,80 +1,71 @@
 package kbasesearchengine.search;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+
+import com.google.common.base.Optional;
 
 import kbasesearchengine.tools.Utils;
 
 public class MatchFilter {
     
-    //TODO CODE everything about this class
+    //TODO NNOW JAVADOC
+    //TODO NNOW TEST (immutability)
     
-    public boolean excludeSubObjects = false;
-    public String fullTextInAll = null;
-    public String objectName = null;
-    public MatchValue timestamp = null;
-    public Map<String, MatchValue> lookupInKeys = null;
-    public Set<String> sourceTags = new HashSet<>();
-    public boolean isSourceTagsBlacklist = false;
+    private final boolean excludeSubObjects;
+    private final Optional<String> fullTextInAll;
+    private final Optional<String> objectName;
+    private final Optional<MatchValue> timestamp;
+    private final Map<String, MatchValue> lookupInKeys;
+    private final Set<String> sourceTags;
+    private final boolean isSourceTagsBlacklist;
 
-    public MatchFilter() {}
-    
-    public static MatchFilter create() {
-        return new MatchFilter();
-    }
-    
-    public MatchFilter withExcludeSubObjects(final boolean excludeSubObjects) {
+    private MatchFilter(
+            final boolean excludeSubObjects,
+            final String fullTextInAll,
+            final String objectName,
+            final MatchValue timestamp, //TODO CODE this is gross. Make an actual date range class
+            final Map<String, MatchValue> lookupInKeys,
+            final Set<String> sourceTags,
+            final boolean isSourceTagsBlacklist) {
         this.excludeSubObjects = excludeSubObjects;
-        return this;
-    }
-    
-    public MatchFilter withFullTextInAll(String text) {
-        this.fullTextInAll = text;
-        return this;
-    }
-    
-    public MatchFilter withObjectName(String partOfName) {
-        this.objectName = partOfName;
-        return this;
-    }
-    
-    public MatchFilter withTimestamp(MatchValue value) {
-        this.timestamp = value;
-        return this;
-    }
-    
-    public MatchFilter withLookupInKeys(Map<String, MatchValue> keys) {
-        if (lookupInKeys == null) {
-            this.lookupInKeys = new LinkedHashMap<>(keys);
-        } else {
-            this.lookupInKeys.putAll(keys);
-        }
-        return this;
+        this.fullTextInAll = Optional.fromNullable(fullTextInAll);
+        this.objectName = Optional.fromNullable(objectName);
+        this.timestamp = Optional.fromNullable(timestamp);
+        this.lookupInKeys = Collections.unmodifiableMap(lookupInKeys);
+        this.sourceTags = Collections.unmodifiableSet(sourceTags);
+        this.isSourceTagsBlacklist = isSourceTagsBlacklist;
     }
 
-    public MatchFilter withLookupInKey(String keyName, String value) {
-        return withLookupInKey(keyName, new MatchValue(value));
+    public boolean isExcludeSubObjects() {
+        return excludeSubObjects;
     }
 
-    public MatchFilter withLookupInKey(String keyName, MatchValue value) {
-        if (this.lookupInKeys == null) {
-            this.lookupInKeys = new LinkedHashMap<>();
-        }
-        this.lookupInKeys.put(keyName, value);
-        return this;
+    public Optional<String> getFullTextInAll() {
+        return fullTextInAll;
     }
-    
-    public MatchFilter withSourceTag(final String sourceTag) {
-        Utils.notNullOrEmpty(sourceTag, "sourceTag cannot be null or whitespace only");
-        sourceTags.add(sourceTag);
-        return this;
+
+    public Optional<String> getObjectName() {
+        return objectName;
     }
-    
-    public MatchFilter withIsSourceTagsBlackList(final Boolean isBlacklist) {
-        isSourceTagsBlacklist = isBlacklist != null && isBlacklist;
-        return this;
+
+    public Optional<MatchValue> getTimestamp() {
+        return timestamp;
+    }
+
+    public Map<String, MatchValue> getLookupInKeys() {
+        return lookupInKeys;
+    }
+
+    public Set<String> getSourceTags() {
+        return sourceTags;
+    }
+
+    public boolean isSourceTagsBlacklist() {
+        return isSourceTagsBlacklist;
     }
 
     @Override
@@ -151,4 +142,70 @@ public class MatchFilter {
         }
         return true;
     }
+
+    public static Builder getBuilder() {
+        return new Builder();
+    }
+    
+    public static class Builder {
+        
+        private boolean excludeSubObjects = false;
+        private String fullTextInAll = null;
+        private String objectName = null;
+        private MatchValue timestamp = null;
+        private Map<String, MatchValue> lookupInKeys = new HashMap<>();
+        private Set<String> sourceTags = new HashSet<>();
+        private boolean isSourceTagsBlacklist = false;
+        
+        private Builder() {}
+
+        public Builder withExcludeSubObjects(final boolean excludeSubObjects) {
+            this.excludeSubObjects = excludeSubObjects;
+            return this;
+        }
+        
+        public Builder withNullableFullTextInAll(final String text) {
+            this.fullTextInAll = text;
+            return this;
+        }
+        
+        public Builder withNullableObjectName(final String partOfName) {
+            this.objectName = partOfName;
+            return this;
+        }
+        
+        public Builder withNullableTimestamp(final MatchValue value) {
+            this.timestamp = value;
+            return this;
+        }
+        
+        public Builder withLookupInKey(final String keyName, final String value) {
+            Utils.notNullOrEmpty(value, "value cannot be null or whitespace only");
+            return withLookupInKey(keyName, new MatchValue(value));
+        }
+        
+        public Builder withLookupInKey(final String keyName, final MatchValue value) {
+            Utils.notNullOrEmpty(keyName, "keyName cannot be null or whitespace only");
+            Utils.nonNull(value, "value");
+            this.lookupInKeys.put(keyName, value);
+            return this;
+        }
+        
+        public Builder withSourceTag(final String sourceTag) {
+            Utils.notNullOrEmpty(sourceTag, "sourceTag cannot be null or whitespace only");
+            sourceTags.add(sourceTag);
+            return this;
+        }
+        
+        public Builder withIsSourceTagsBlackList(final Boolean isBlacklist) {
+            isSourceTagsBlacklist = isBlacklist != null && isBlacklist;
+            return this;
+        }
+        
+        public MatchFilter build() {
+            return new MatchFilter(excludeSubObjects, fullTextInAll, objectName, timestamp,
+                    lookupInKeys, sourceTags, isSourceTagsBlacklist);
+        }
+    }
+
 }
