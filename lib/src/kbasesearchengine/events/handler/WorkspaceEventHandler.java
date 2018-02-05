@@ -87,11 +87,12 @@ public class WorkspaceEventHandler implements EventHandler {
     private final CloneableWorkspaceClient ws;
     
     /** Create a handler.
-     * @param wsClient a workspace client to use when contacting the workspace service.
+     * @param clonableWorkspaceClient a workspace client to use when contacting the workspace
+     * service.
      */
-    public WorkspaceEventHandler(final CloneableWorkspaceClient wsClient) {
-        Utils.nonNull(wsClient, "wsClient");
-        ws = wsClient;
+    public WorkspaceEventHandler(final CloneableWorkspaceClient clonableWorkspaceClient) {
+        Utils.nonNull(clonableWorkspaceClient, "clonableWorkspaceClient");
+        ws = clonableWorkspaceClient;
     }
     
     @Override
@@ -135,13 +136,14 @@ public class WorkspaceEventHandler implements EventHandler {
                 null : ret.getProvenance().get(0);
         final String creator = ret.getCreator();
         String copier = ret.getInfo().getE6();
-        if (ret.getCopied() == null & ret.getCopySourceInaccessible() == 0) {
+        if (ret.getCopied() == null && ret.getCopySourceInaccessible() == 0) {
             copier = null;
         }
         final SourceData.Builder b = SourceData.getBuilder(
                 ret.getData(), ret.getInfo().getE2(), creator)
                 .withNullableCopier(copier)
                 .withNullableMD5(ret.getInfo().getE9());
+                //TODO CODE get the timestamp from ret rather than using event timestamp
         if (pa != null) {
             b.withNullableModule(pa.getService())
                     .withNullableMethod(pa.getMethod())
