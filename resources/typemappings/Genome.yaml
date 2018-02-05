@@ -4,24 +4,95 @@ types:
         default:
            -
                type: Genome
-               version: 1
+               version: 2
            -
                type: GenomeFeature
-               version: 1
+               version: 2
 
         versions:
             # for CI
-            13:
+            1:
                 -
                     type: Genome
-                    version: 2
+                    version: 1
                 -
                     type: GenomeFeature
-                    version: 2
-            14:
+                    version: 1
+            2:
                 -
                     type: Genome
-                    version: 2
+                    version: 1
                 -
                     type: GenomeFeature
-                    version: 2
+                    version: 1
+            3:
+                -
+                    type: Genome
+                    version: 1
+                -
+                    type: GenomeFeature
+                    version: 1
+            4:
+                -
+                    type: Genome
+                    version: 1
+                -
+                    type: GenomeFeature
+                    version: 1
+            5:
+                -
+                    type: Genome
+                    version: 1
+                -
+                    type: GenomeFeature
+                    version: 1
+            6:
+                -
+                    type: Genome
+                    version: 1
+                -
+                    type: GenomeFeature
+                    version: 1
+            7:
+                -
+                    type: Genome
+                    version: 1
+                -
+                    type: GenomeFeature
+                    version: 1
+            8:
+                -
+                    type: Genome
+                    version: 1
+                -
+                    type: GenomeFeature
+                    version: 1
+            9:
+                -
+                    type: Genome
+                    version: 1
+                -
+                    type: GenomeFeature
+                    version: 1
+            10:
+                -
+                    type: Genome
+                    version: 1
+                -
+                    type: GenomeFeature
+                    version: 1
+            11:
+                -
+                    type: Genome
+                    version: 1
+                -
+                    type: GenomeFeature
+                    version: 1
+            12:
+                -
+                    type: Genome
+                    version: 1
+                -
+                    type: GenomeFeature
+                    version: 1
+            
