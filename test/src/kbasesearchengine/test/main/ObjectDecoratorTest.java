@@ -21,7 +21,6 @@ import kbasesearchengine.GetObjectsInput;
 import kbasesearchengine.GetObjectsOutput;
 import kbasesearchengine.SearchObjectsInput;
 import kbasesearchengine.SearchObjectsOutput;
-import kbasesearchengine.NarrativeInfo;
 import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.common.FileUtil;
 import kbasesearchengine.events.exceptions.IndexingException;
