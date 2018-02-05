@@ -98,7 +98,7 @@ public class SearchObjectsInput {
         return objectTypes;
     }
 
-    @JsonProperty("object_type")
+    @JsonProperty("object_types")
     public void setObjectTypes(List<String> objectTypes) {
         this.objectTypes = objectTypes;
     }
