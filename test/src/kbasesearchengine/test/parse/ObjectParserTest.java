@@ -60,12 +60,12 @@ public class ObjectParserTest {
         }
     }
 
-    @Test
     /**
      * Testing object with 'from-parent' attributes
      * 
      * @throws Exception
      */
+    @Test
     public void extractParentFragmentGenomeFeatureTest() throws Exception {
 
         final String jsonResource = "genome01";
@@ -77,12 +77,12 @@ public class ObjectParserTest {
         assertEquals(parentJson, expectedParentJson);
     }
 
-    @Test
     /**
      * Testing object with no 'from-parent' attributes
      * 
      * @throws Exception
      */
+    @Test
     public void extractParentFragmentGenomeTest() throws Exception {
 
         final String jsonResource = "assembly01";
@@ -112,12 +112,12 @@ public class ObjectParserTest {
         }
     }
 
-    @Test
     /**
      * Testing preparing a genome feature GUID
      * 
      * @throws Exception
      */
+    @Test
     public void prepareGUIDGenomeFeatureTest() throws Exception {
 
         final String jsonResource = "genome01";
@@ -177,12 +177,12 @@ public class ObjectParserTest {
         return idList;
     }
 
-    @Test
     /**
      * Testing parsing Assembly object
      * 
      * @throws Exception
      */
+    @Test
     public void parseSubObjectsGenomeTest() throws Exception {
 
         final String jsonResource = "assembly01";
@@ -206,12 +206,12 @@ public class ObjectParserTest {
         assertThat(expectedResult, is(result));
     }
 
-    @Test
     /**
      * Testing parsing GenomeFeature object
      * 
      * @throws Exception
      */
+    @Test
     public void parseSubObjectsGenomeFeatureTest() throws Exception {
 
         final String jsonResource = "genome01";
@@ -253,12 +253,12 @@ public class ObjectParserTest {
         }
     }
 
-    @Test
     /**
      * Testing parsing MediaCompound object
      *
      * @throws Exception
      */
+    @Test
     public void parseSubObjectsMediaCompoundTest() throws Exception {
 
         final String jsonResource = "media01";
@@ -300,12 +300,12 @@ public class ObjectParserTest {
         }
     }
 
-    @Test
     /**
      * Testing parsing FBAModel object
      *
      * @throws Exception
      */
+    @Test
     public void parseObjectsModelTest() throws Exception {
 
         final String jsonResource = "fbamodel01";
@@ -332,12 +332,12 @@ public class ObjectParserTest {
         assertThat(expectedResult, is(result));
     }
 
-    @Test
     /**
      * Testing parsing ModelCompound object
      *
      * @throws Exception
      */
+    @Test
     public void parseSubObjectsModelCompoundTest() throws Exception {
 
         final String jsonResource = "fbamodel01";
@@ -376,12 +376,12 @@ public class ObjectParserTest {
         }
     }
 
-    @Test
     /**
      * Testing parsing ModelReaction object
      *
      * @throws Exception
      */
+    @Test
     public void parseSubObjectsModelReactionTest() throws Exception {
 
         final String jsonResource = "fbamodel01";
@@ -422,12 +422,12 @@ public class ObjectParserTest {
         }
     }
 
-    @Test
     /**
      * Testing parsing ModelReactionProteinSubunit object
      *
      * @throws Exception
      */
+    @Test
     public void parseSubObjectsModelReactionProteinSubunitTest() throws Exception {
 
         final String jsonResource = "fbamodel01";

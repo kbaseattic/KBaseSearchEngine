@@ -155,7 +155,6 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <sysproperty key="test.cfg" value="${test.cfg}"/>
         <batchtest>
           <fileset dir="${test.src}">
-            <include name="kbasesearchengine/test/parse/**Test.java"/>
             <include name="kbasesearchengine/test/authorization/AccessGroupCacheTest.java"/>
             <include name="kbasesearchengine/test/common/FileUtilTest.java"/>
             <include name="kbasesearchengine/test/events/AccessGroupEventQueueTest.java"/>
@@ -174,6 +173,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
             <include name="kbasesearchengine/test/integration/IndexerIntegrationTest.java"/>
             <include name="kbasesearchengine/test/integration/IndexerWorkerIntegrationTest.java"/>
             <include name="kbasesearchengine/test/parse/ObjectParserTest.java"/>
+            <include name="kbasesearchengine/test/parse/SubObjectExtractorTest.java"/>
             <include name="kbasesearchengine/test/search/ElasticIndexingStorageTest.java"/>
             <include name="kbasesearchengine/test/search/ObjectDataTest.java"/>
             <include name="kbasesearchengine/test/system/IndexingRulesTest.java"/>
