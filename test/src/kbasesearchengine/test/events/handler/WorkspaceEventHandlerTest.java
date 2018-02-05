@@ -32,6 +32,8 @@ import workspace.GetObjects2Results;
 import workspace.ObjectData;
 import workspace.ObjectIdentity;
 import workspace.ObjectSpecification;
+import workspace.ProvenanceAction;
+import workspace.SubAction;
 import workspace.WorkspaceClient;
 
 public class WorkspaceEventHandlerTest {
@@ -123,6 +125,209 @@ public class WorkspaceEventHandlerTest {
         final SourceData expected = SourceData.getBuilder(
                 new UObject(ImmutableMap.of("genome", "data")), "objname", "creator")
                 .withNullableMD5("checksum")
+                .build();
+        
+        compare(sd, expected);
+        
+        verify(wscli).setStreamingModeOn(true);
+        verify(wscli)._setFileForNextRpcResponse(new File("somefile"));
+    }
+    
+    @Test
+    public void loadWithPathMaximalCopyRef() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(wscli);
+        
+        when(wscli.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3;4/5/6"))))
+                .thenReturn(new UObject(new GetObjects2Results().withData(Arrays.asList(
+                        new ObjectData()
+                                .withData(new UObject(ImmutableMap.of("genome", "data")))
+                                .withProvenance(Arrays.asList(new ProvenanceAction()
+                                        .withMethod("meth")
+                                        .withService("serv")
+                                        .withServiceVer("sver")
+                                        .withSubactions(Arrays.asList(
+                                                new SubAction()
+                                                        .withCommit("commit")
+                                                        .withName("serv.meth"),
+                                                // this one should be ignored
+                                                new SubAction()
+                                                        .withCommit("commit2")
+                                                        .withName("serv.meth2")))))
+                                .withCreator("creator")
+                                .withCopied("7/8/9")
+                                .withCopySourceInaccessible(0L)
+                                .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
+                                        1, "wsname", "checksum", 44, Collections.emptyMap()))))));
+        
+        final SourceData sd = new WorkspaceEventHandler(clonecli)
+                .load(Arrays.asList(new GUID("WS:1/2/3"), new GUID("WS:4/5/6")),
+                        Paths.get("somefile"));
+        
+        final SourceData expected = SourceData.getBuilder(
+                new UObject(ImmutableMap.of("genome", "data")), "objname", "creator")
+                .withNullableCopier("copier")
+                .withNullableMD5("checksum")
+                .withNullableCommitHash("commit")
+                .withNullableMethod("meth")
+                .withNullableModule("serv")
+                .withNullableVersion("sver")
+                .build();
+        
+        compare(sd, expected);
+        
+        verify(wscli).setStreamingModeOn(true);
+        verify(wscli)._setFileForNextRpcResponse(new File("somefile"));
+    }
+    
+    @Test
+    public void loadWith1ItemPathEmptySubActionsInaccessibleCopy() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(wscli);
+        
+        when(wscli.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3"))))
+                .thenReturn(new UObject(new GetObjects2Results().withData(Arrays.asList(
+                        new ObjectData()
+                                .withData(new UObject(ImmutableMap.of("genome", "data")))
+                                .withProvenance(Arrays.asList(new ProvenanceAction()
+                                        .withMethod("meth")
+                                        .withService("serv")
+                                        .withServiceVer("sver")
+                                        .withSubactions(Collections.emptyList())))
+                                .withCreator("creator")
+                                .withCopySourceInaccessible(1L)
+                                .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
+                                        1, "wsname", "checksum", 44, Collections.emptyMap()))))));
+        
+        final SourceData sd = new WorkspaceEventHandler(clonecli)
+                .load(Arrays.asList(new GUID("WS:1/2/3")),
+                        Paths.get("somefile"));
+        
+        final SourceData expected = SourceData.getBuilder(
+                new UObject(ImmutableMap.of("genome", "data")), "objname", "creator")
+                .withNullableCopier("copier")
+                .withNullableMD5("checksum")
+                .withNullableMethod("meth")
+                .withNullableModule("serv")
+                .withNullableVersion("sver")
+                .build();
+        
+        compare(sd, expected);
+        
+        verify(wscli).setStreamingModeOn(true);
+        verify(wscli)._setFileForNextRpcResponse(new File("somefile"));
+    }
+    
+    @Test
+    public void loadWithNullSubActions() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(wscli);
+        
+        when(wscli.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3"))))
+                .thenReturn(new UObject(new GetObjects2Results().withData(Arrays.asList(
+                        new ObjectData()
+                                .withData(new UObject(ImmutableMap.of("genome", "data")))
+                                .withProvenance(Arrays.asList(new ProvenanceAction()
+                                        .withMethod("meth")
+                                        .withService("serv")
+                                        .withServiceVer("sver")
+                                        .withSubactions(null)))
+                                .withCreator("creator")
+                                .withCopySourceInaccessible(0L)
+                                .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
+                                        1, "wsname", "checksum", 44, Collections.emptyMap()))))));
+        
+        final SourceData sd = new WorkspaceEventHandler(clonecli)
+                .load(Arrays.asList(new GUID("WS:1/2/3")),
+                        Paths.get("somefile"));
+        
+        final SourceData expected = SourceData.getBuilder(
+                new UObject(ImmutableMap.of("genome", "data")), "objname", "creator")
+                .withNullableMD5("checksum")
+                .withNullableMethod("meth")
+                .withNullableModule("serv")
+                .withNullableVersion("sver")
+                .build();
+        
+        compare(sd, expected);
+        
+        verify(wscli).setStreamingModeOn(true);
+        verify(wscli)._setFileForNextRpcResponse(new File("somefile"));
+    }
+    
+    @Test
+    public void loadWithNoProvMethod() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(wscli);
+        
+        when(wscli.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3"))))
+                .thenReturn(new UObject(new GetObjects2Results().withData(Arrays.asList(
+                        new ObjectData()
+                                .withData(new UObject(ImmutableMap.of("genome", "data")))
+                                .withProvenance(Arrays.asList(new ProvenanceAction()
+                                        .withService("serv")
+                                        .withServiceVer("sver")
+                                        .withSubactions(Arrays.asList(
+                                                new SubAction()
+                                                .withCommit("commit")
+                                                .withName("serv.meth")))))
+                                .withCreator("creator")
+                                .withCopySourceInaccessible(0L)
+                                .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
+                                        1, "wsname", "checksum", 44, Collections.emptyMap()))))));
+        
+        final SourceData sd = new WorkspaceEventHandler(clonecli)
+                .load(Arrays.asList(new GUID("WS:1/2/3")),
+                        Paths.get("somefile"));
+        
+        final SourceData expected = SourceData.getBuilder(
+                new UObject(ImmutableMap.of("genome", "data")), "objname", "creator")
+                .withNullableMD5("checksum")
+                .withNullableModule("serv")
+                .withNullableVersion("sver")
+                .build();
+        
+        compare(sd, expected);
+        
+        verify(wscli).setStreamingModeOn(true);
+        verify(wscli)._setFileForNextRpcResponse(new File("somefile"));
+    }
+    
+    @Test
+    public void loadWithNoProvService() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(wscli);
+        
+        when(wscli.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3"))))
+                .thenReturn(new UObject(new GetObjects2Results().withData(Arrays.asList(
+                        new ObjectData()
+                                .withData(new UObject(ImmutableMap.of("genome", "data")))
+                                .withProvenance(Arrays.asList(new ProvenanceAction()
+                                        .withMethod("meth")
+                                        .withServiceVer("sver")
+                                        .withSubactions(Arrays.asList(
+                                                new SubAction()
+                                                .withCommit("commit")
+                                                .withName("serv.meth")))))
+                                .withCreator("creator")
+                                .withCopySourceInaccessible(0L)
+                                .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
+                                        1, "wsname", "checksum", 44, Collections.emptyMap()))))));
+        
+        final SourceData sd = new WorkspaceEventHandler(clonecli)
+                .load(Arrays.asList(new GUID("WS:1/2/3")),
+                        Paths.get("somefile"));
+        
+        final SourceData expected = SourceData.getBuilder(
+                new UObject(ImmutableMap.of("genome", "data")), "objname", "creator")
+                .withNullableMD5("checksum")
+                .withNullableMethod("meth")
+                .withNullableVersion("sver")
                 .build();
         
         compare(sd, expected);

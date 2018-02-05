@@ -134,13 +134,12 @@ public class WorkspaceEventHandler implements EventHandler {
         // if that's not true.
         final ProvenanceAction pa = ret.getProvenance().isEmpty() ?
                 null : ret.getProvenance().get(0);
-        final String creator = ret.getCreator();
         String copier = ret.getInfo().getE6();
         if (ret.getCopied() == null && ret.getCopySourceInaccessible() == 0) {
             copier = null;
         }
         final SourceData.Builder b = SourceData.getBuilder(
-                ret.getData(), ret.getInfo().getE2(), creator)
+                ret.getData(), ret.getInfo().getE2(), ret.getCreator())
                 .withNullableCopier(copier)
                 .withNullableMD5(ret.getInfo().getE9());
                 //TODO CODE get the timestamp from ret rather than using event timestamp
