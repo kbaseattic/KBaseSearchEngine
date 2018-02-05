@@ -85,10 +85,6 @@ public class SearchMethods {
         return value == null ? null : (int)(long)value;
     }
 
-    private static GUID toGUID(String value) {
-        return value == null ? null : new GUID(value);
-    }
-
     private kbasesearchengine.search.MatchValue toSearch(MatchValue mv, String source) {
         if (mv == null) {
             return null;
@@ -122,9 +118,7 @@ public class SearchMethods {
         kbasesearchengine.search.MatchFilter ret = 
                 new kbasesearchengine.search.MatchFilter()
                 .withFullTextInAll(mf.getFullTextInAll())
-                .withAccessGroupId(toInteger(mf.getAccessGroupId()))
                 .withObjectName(mf.getObjectName())
-                .withParentGuid(toGUID(mf.getParentGuid()))
                 .withTimestamp(toSearch(mf.getTimestamp(), "timestamp"))
                 .withExcludeSubObjects(toBool(mf.getExcludeSubobjects()));
         if (mf.getLookupInKeys() != null) {

@@ -313,8 +313,7 @@ public class ElasticIndexingStorageTest {
         expectedException.expectMessage("Invalid list of object types. List is null.");
 
         // null list of types
-        indexStorage.searchIds(null,
-                MatchFilter.create().withAccessGroupId(1),
+        indexStorage.searchIds(null, MatchFilter.create(),
                 null, AccessFilter.create().withAdmin(true));
     }
 
@@ -324,7 +323,7 @@ public class ElasticIndexingStorageTest {
 
         // empty list
         Set<GUID> guids = indexStorage.searchIds(new ArrayList<String>(),
-                MatchFilter.create().withAccessGroupId(1),
+                MatchFilter.create(),
                 null, AccessFilter.create().withAdmin(true));
 
         // genome object + 2 parent guids (see prepare)
@@ -341,7 +340,7 @@ public class ElasticIndexingStorageTest {
         objectTypes.add(null);
         objectTypes.add("Narrative");
         indexStorage.searchIds(objectTypes,
-                MatchFilter.create().withAccessGroupId(1),
+                MatchFilter.create(),
                 null, AccessFilter.create().withAdmin(true));
     }
 
@@ -355,7 +354,7 @@ public class ElasticIndexingStorageTest {
         objectTypes = new ArrayList<>();
         objectTypes.add("Genome");
         guids = indexStorage.searchIds(objectTypes,
-                MatchFilter.create().withAccessGroupId(1),
+                MatchFilter.create(),
                 null, AccessFilter.create().withAdmin(true));
 
         assertThat("incorrect number of results", guids.size(), is(1));
@@ -373,7 +372,7 @@ public class ElasticIndexingStorageTest {
         }
 
         indexStorage.searchIds(objectTypes,
-                MatchFilter.create().withAccessGroupId(1),
+                MatchFilter.create(),
                 null, AccessFilter.create().withAdmin(true));
     }
 
@@ -385,7 +384,7 @@ public class ElasticIndexingStorageTest {
         Set<GUID> guids;
 
         guids = indexStorage.searchIds(ImmutableList.of("Genome"),
-                MatchFilter.create().withAccessGroupId(1),
+                MatchFilter.create(),
                 null, AccessFilter.create().withAdmin(true));
 
         assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/3/1")),
@@ -394,7 +393,7 @@ public class ElasticIndexingStorageTest {
 
         // search for Genome and Assembly objects (assembly object from prepare method)
         guids = indexStorage.searchIds(ImmutableList.of("Genome", "Assembly"),
-                MatchFilter.create().withAccessGroupId(1),
+                MatchFilter.create(),
                 null, AccessFilter.create().withAdmin(true));
 
         assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/3/1")),
@@ -407,7 +406,7 @@ public class ElasticIndexingStorageTest {
 
         // search for Genome, Assembly and AssemblyContig objects (assembly and contig objects from prepare method)
         guids = indexStorage.searchIds(ImmutableList.of("Genome", "Assembly", "AssemblyContig"),
-                MatchFilter.create().withAccessGroupId(1),
+                MatchFilter.create(),
                 null, AccessFilter.create().withAdmin(true));
 
         assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/3/1")),

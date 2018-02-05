@@ -5,7 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import kbasesearchengine.common.GUID;
 import kbasesearchengine.tools.Utils;
 
 public class MatchFilter {
@@ -14,9 +13,7 @@ public class MatchFilter {
     
     public boolean excludeSubObjects = false;
     public String fullTextInAll = null;
-    public Integer accessGroupId = null;
     public String objectName = null;
-    public GUID parentGuid = null;
     public MatchValue timestamp = null;
     public Map<String, MatchValue> lookupInKeys = null;
     public Set<String> sourceTags = new HashSet<>();
@@ -38,18 +35,8 @@ public class MatchFilter {
         return this;
     }
     
-    public MatchFilter withAccessGroupId(Integer accessGroupId) {
-        this.accessGroupId = accessGroupId;
-        return this;
-    }
-    
     public MatchFilter withObjectName(String partOfName) {
         this.objectName = partOfName;
-        return this;
-    }
-    
-    public MatchFilter withParentGuid(GUID parentGuid) {
-        this.parentGuid = parentGuid;
         return this;
     }
     
@@ -94,8 +81,6 @@ public class MatchFilter {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result
-                + ((accessGroupId == null) ? 0 : accessGroupId.hashCode());
         result = prime * result + (excludeSubObjects ? 1231 : 1237);
         result = prime * result
                 + ((fullTextInAll == null) ? 0 : fullTextInAll.hashCode());
@@ -104,8 +89,6 @@ public class MatchFilter {
                 + ((lookupInKeys == null) ? 0 : lookupInKeys.hashCode());
         result = prime * result
                 + ((objectName == null) ? 0 : objectName.hashCode());
-        result = prime * result
-                + ((parentGuid == null) ? 0 : parentGuid.hashCode());
         result = prime * result
                 + ((sourceTags == null) ? 0 : sourceTags.hashCode());
         result = prime * result
@@ -125,13 +108,6 @@ public class MatchFilter {
             return false;
         }
         MatchFilter other = (MatchFilter) obj;
-        if (accessGroupId == null) {
-            if (other.accessGroupId != null) {
-                return false;
-            }
-        } else if (!accessGroupId.equals(other.accessGroupId)) {
-            return false;
-        }
         if (excludeSubObjects != other.excludeSubObjects) {
             return false;
         }
@@ -157,13 +133,6 @@ public class MatchFilter {
                 return false;
             }
         } else if (!objectName.equals(other.objectName)) {
-            return false;
-        }
-        if (parentGuid == null) {
-            if (other.parentGuid != null) {
-                return false;
-            }
-        } else if (!parentGuid.equals(other.parentGuid)) {
             return false;
         }
         if (sourceTags == null) {
