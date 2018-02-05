@@ -2,7 +2,6 @@ package kbasesearchengine.main;
 
 import kbasesearchengine.*;
 import kbasesearchengine.search.IndexingStorage;
-import workspace.WorkspaceClient;
 
 import java.util.Map;
 
@@ -35,10 +34,6 @@ abstract class ObjectDecorator implements SearchInterface {
 
     public IndexingStorage getIndexingStorage(String objectType) {
         return searchInterface.getIndexingStorage(objectType);
-    }
-
-    public WorkspaceClient getWorkspaceClient() {
-        return searchInterface.getWorkspaceClient();
     }
 
     public Map<String, TypeDescriptor> listTypes(String uniqueType)

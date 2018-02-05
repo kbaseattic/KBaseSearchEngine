@@ -3,15 +3,18 @@ package kbasesearchengine.main;
 import kbasesearchengine.*;
 import kbasesearchengine.ObjectData;
 import kbasesearchengine.common.GUID;
-import kbasesearchengine.events.exceptions.IndexingException;
-import kbasesearchengine.events.exceptions.RetriableIndexingException;
+import us.kbase.common.service.JsonClientException;
 import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
+import us.kbase.common.service.Tuple5;
+import us.kbase.common.service.Tuple9;
 import workspace.*;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 
 /**
@@ -19,59 +22,89 @@ import java.util.Map;
  */
 public class DecorateWithNarrativeInfo extends ObjectDecorator {
 
-    public DecorateWithNarrativeInfo(SearchInterface searchInterface) {
+    /** The storage code for workspace events. */
+    public static final String STORAGE_CODE = "WS";
+    private final WorkspaceClient wsClient;
+
+    public DecorateWithNarrativeInfo(SearchInterface searchInterface,
+                                     WorkspaceClient wsClient) {
         super(searchInterface);
+        this.wsClient = wsClient;
     }
 
     public SearchObjectsOutput searchObjects(SearchObjectsInput params, String user)
             throws Exception {
         SearchObjectsOutput searchObjsOutput = super.searchObjects(params, user);
-        searchObjsOutput.setWsNarrativeInfo(addNarrativeInfo(searchObjsOutput.getObjects(),
-                                                             searchObjsOutput.getWsNarrativeInfo()));
+        searchObjsOutput.setAccessGroupNarrativeInfo(addNarrativeInfo(searchObjsOutput.getObjects(),
+                searchObjsOutput.getAccessGroupNarrativeInfo()));
         return searchObjsOutput;
     }
 
     public GetObjectsOutput getObjects(GetObjectsInput params, String user)
             throws Exception {
         GetObjectsOutput getObjsOutput = super.getObjects(params, user);
-        getObjsOutput.setWsNarrativeInfo(addNarrativeInfo(getObjsOutput.getObjects(),
-                                                          getObjsOutput.getWsNarrativeInfo()));
+        getObjsOutput.setAccessGroupNarrativeInfo(addNarrativeInfo(getObjsOutput.getObjects(),
+                getObjsOutput.getAccessGroupNarrativeInfo()));
         return getObjsOutput;
     }
 
-    private Map<String, NarrativeInfo> addNarrativeInfo(List<ObjectData> objects,
-                                                 Map<String, NarrativeInfo> wsNarrativeInfo)
-                throws RetriableIndexingException, IndexingException {
+    private Map<Long, Tuple5 <String, Long, String, String, String>> addNarrativeInfo(
+            List<ObjectData> objects,
+            Map<Long, Tuple5 <String, Long, String, String, String>> accessGroupNarrInfo)
+                throws IOException, JsonClientException {
 
-        long narrativeID;
-        String narrativeName;
+        long wsId;
+        Tuple9 <Long, String, String, String, Long, String, String,
+                String,Map<String,String>> wsInfo;
+        Tuple5 <String, Long, String, String, String> tempNarrInfo =
+                new Tuple5<>();
+        final Map<Long, Tuple5 <String, Long, String, String, String>> retVal = new HashMap<>();
+
+        if (accessGroupNarrInfo != null) {
+            retVal.putAll(accessGroupNarrInfo);
+        }
+
+        List<Long> wsIdsList = new ArrayList<Long>();
 
         for (ObjectData objData: objects) {
 
-            String guid = objData.getGuid();
-            String wsid = new GUID(guid).getAccessGroupId().toString();
-            if (wsNarrativeInfo == null) {
-                wsNarrativeInfo = new HashMap<>();
+            GUID guid = new GUID(objData.getGuid());
+
+            String storageCode = guid.getStorageCode();
+
+            if (STORAGE_CODE.equals(storageCode)) {
+                wsId = guid.getAccessGroupId();
+                if (!wsIdsList.contains(wsId))
+                    wsIdsList.add(wsId);
             }
-            if (!wsNarrativeInfo.containsKey(wsid)) {
-                // get workspace info meta data
-                WorkspaceClient wsClient = getWorkspaceClient();
-                WorkspaceEventHandler weh = new WorkspaceEventHandler(
-                                                new CloneableWorkspaceClientImpl(wsClient));
-                Map<String, String> wsMetaInfo = weh.getWorkspaceInfo(Integer.parseInt(wsid));
-
-                if ( wsMetaInfo.containsKey("narrative") &&
-                        wsMetaInfo.containsKey("narrative_nice_name") ) {
-                    narrativeID = Long.parseLong(wsMetaInfo.get("narrative"));
-                    narrativeName = wsMetaInfo.get("narrative_nice_name");
-
-                    NarrativeInfo tempNarrInfo = new NarrativeInfo().
-                            withNarrativeId(narrativeID).
-                            withNarrativeName(narrativeName);
-                    wsNarrativeInfo.put(wsid, tempNarrInfo);
-                }
+            else {
+                // TODO: handle other storage types?
             }
         }
-        return wsNarrativeInfo;
+        for (long workspaceId: wsIdsList) {
+            if (!retVal.containsKey(workspaceId)) {
+                // get workspace info meta data
+                WorkspaceEventHandler weh = new WorkspaceEventHandler(
+                                                new CloneableWorkspaceClientImpl(wsClient));
+                wsInfo = weh.getWorkspaceInfo(workspaceId);
+                tempNarrInfo.setE3(wsInfo.getE4());
+                tempNarrInfo.setE4(wsInfo.getE3());
+                tempNarrInfo.setE5("TBD");
+
+                Map<String, String> wsInfoMeta = wsInfo.getE9();
+
+                if ( wsInfoMeta.containsKey("narrative") &&
+                        wsInfoMeta.containsKey("narrative_nice_name") ) {
+                    tempNarrInfo.setE1(wsInfoMeta.get("narrative_nice_name"));
+                    tempNarrInfo.setE2(Long.parseLong(wsInfoMeta.get("narrative")));
+                }
+                else { // will get here only when testing locally
+                    tempNarrInfo.setE1("Not Available");
+                    tempNarrInfo.setE2((long)-1);
+                }
+                retVal.put(workspaceId, tempNarrInfo);
+            }
+        }
+        return retVal;
     }
 }

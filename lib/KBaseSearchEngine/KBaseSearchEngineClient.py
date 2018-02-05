@@ -217,9 +217,12 @@ class KBaseSearchEngine(object):
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "object_props" of mapping from String to
            String, parameter "total" of Long, parameter "search_time" of
-           Long, parameter "ws_narrative_info" of mapping from type "wsId" to
-           type "NarrativeInfo" -> structure: parameter "narrative_id" of
-           Long, parameter "narrative_name" of String
+           Long, parameter "access_group_narrative_info" of mapping from type
+           "accessGroupId" to type "NarrativeInfo" -> tuple of size 5:
+           parameter "narrative_name" of String, parameter "narrative_id" of
+           Long, parameter "time_last_saved" of type "timestamp", parameter
+           "ws_owner_username" of String, parameter "ws_owner_realname" of
+           String
         """
         return self._client.call_method(
             'KBaseSearchEngine.search_objects',
@@ -268,9 +271,12 @@ class KBaseSearchEngine(object):
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "object_props" of mapping from String to
            String, parameter "search_time" of Long, parameter
-           "ws_narrative_info" of mapping from type "wsId" to type
-           "NarrativeInfo" -> structure: parameter "narrative_id" of Long,
-           parameter "narrative_name" of String
+           "access_group_narrative_info" of mapping from type "accessGroupId"
+           to type "NarrativeInfo" -> tuple of size 5: parameter
+           "narrative_name" of String, parameter "narrative_id" of Long,
+           parameter "time_last_saved" of type "timestamp", parameter
+           "ws_owner_username" of String, parameter "ws_owner_realname" of
+           String
         """
         return self._client.call_method(
             'KBaseSearchEngine.get_objects',

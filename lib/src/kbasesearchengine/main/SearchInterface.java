@@ -11,8 +11,6 @@ import java.util.Map;
  */
 public interface SearchInterface {
 
-    WorkspaceClient getWorkspaceClient();
-
     IndexingStorage getIndexingStorage(String objectType);
 
     SearchTypesOutput searchTypes(SearchTypesInput params, String user) throws Exception;

@@ -33,11 +33,6 @@ public class WorkspaceAccessGroupProvider implements AccessGroupProvider {
     }
 
     @Override
-    public WorkspaceClient getWorkspaceClient() {
-        return ws;
-    }
-
-    @Override
     public List<Integer> findAccessGroupIds(String user) throws IOException {
         try {
             return ws.administer(new UObject(ImmutableMap.of(

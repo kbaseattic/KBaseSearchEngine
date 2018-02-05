@@ -60,6 +60,7 @@ import kbasesearchengine.authorization.WorkspaceAccessGroupProvider;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple11;
+import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.UObject;
 import us.kbase.common.test.controllers.mongo.MongoController;
 import us.kbase.test.auth2.authcontroller.AuthController;
@@ -81,7 +82,7 @@ public class ObjectDecoratorTest {
     private static WorkspaceController ws;
     private static WorkspaceEventHandler weh;
     private static MongoDatabase wsdb;
-    private static WorkspaceClient wsCli1;
+    private static WorkspaceClient wsCli1, wsClient;
     private static AuthToken userToken;
 
     private static Path tempDirPath;
@@ -170,7 +171,7 @@ public class ObjectDecoratorTest {
                 new ObjectTypeParsingRulesFileParser(), parsers, new FileLister(), logger);
 
         final StatusEventStorage storage = new MongoDBStatusEventStorage(db);
-        final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, wsadmintoken);
+        wsClient = new WorkspaceClient(wsUrl, wsadmintoken);
         wsClient.setIsInsecureHttpConnectionAllowed(true);
 
         //final WorkspaceEventHandler weh = new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient));
@@ -187,8 +188,6 @@ public class ObjectDecoratorTest {
         final AccessGroupProvider accessGroupProvider = mock(AccessGroupProvider.class);
         when(accessGroupProvider.findAccessGroupIds("user1")).
                 thenReturn(intList);
-        when(accessGroupProvider.getWorkspaceClient()).
-                thenReturn(wsClient);
 
         System.out.println("Creating Search Methods");
         search = new SearchMethods(accessGroupProvider, indexStorage, ss, Collections.emptySet());
@@ -345,17 +344,19 @@ public class ObjectDecoratorTest {
         GetObjectsOutput objsOutput = search.getObjects(objsInput, userToken.getUserName());
         System.out.println(" GET OBJS OUTPUT: " + objsOutput.toString());
 
-        SearchInterface sid = new DecorateWithNarrativeInfo(search);
+        SearchInterface sid = new DecorateWithNarrativeInfo(search, wsClient);
         GetObjectsOutput objsOutputDecorated = sid.getObjects(objsInput, userToken.getUserName());
         System.out.println(" GET OBJS OUTPUT WITH NARRATIVE INFO: " + objsOutputDecorated.toString());
 
         String guid = objsOutputDecorated.getObjects().get(0).getGuid();
         String objName = objsOutputDecorated.getObjects().get(0).getObjectName();
-        Map<String, NarrativeInfo> narrtiveInfo = objsOutputDecorated.getWsNarrativeInfo();
+        Map<Long, Tuple5 <String, Long, String, String, String>> narrtiveInfo =
+                objsOutputDecorated.getAccessGroupNarrativeInfo();
 
         assertThat("incorrect guid", guid, is("WS:1/1/1"));
         assertThat("incorrect object name", objName, is("bar"));
         assertNotNull("incorrect narrative info", narrtiveInfo);
+        assertThat("incorrect user name", narrtiveInfo.get(new Long(1)).getE4(), is("user1"));
     }
 
 }

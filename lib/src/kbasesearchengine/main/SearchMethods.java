@@ -38,7 +38,6 @@ import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.TypeStorage;
 import us.kbase.common.service.UObject;
-import workspace.WorkspaceClient;
 
 public class SearchMethods implements SearchInterface {
     
@@ -56,11 +55,6 @@ public class SearchMethods implements SearchInterface {
         this.accessGroupProvider = accessGroupProvider;
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
-    }
-
-    @Override
-    public WorkspaceClient getWorkspaceClient() {
-        return accessGroupProvider.getWorkspaceClient();
     }
 
     @Override

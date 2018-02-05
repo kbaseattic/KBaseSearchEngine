@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import us.kbase.common.service.Tuple5;
 
 
 /**
@@ -24,16 +25,16 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonPropertyOrder({
     "objects",
     "search_time",
-    "ws_narrative_info"
+    "access_group_narrative_info"
 })
 public class GetObjectsOutput {
 
     @JsonProperty("objects")
     private List<ObjectData> objects;
     @JsonProperty("search_time")
-    private Long searchTime;
-    @JsonProperty("ws_narrative_info")
-    private Map<String, NarrativeInfo> wsNarrativeInfo;
+    private java.lang.Long searchTime;
+    @JsonProperty("access_group_narrative_info")
+    private Map<Long, Tuple5 <String, Long, String, String, String>> accessGroupNarrativeInfo;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("objects")
@@ -52,32 +53,32 @@ public class GetObjectsOutput {
     }
 
     @JsonProperty("search_time")
-    public Long getSearchTime() {
+    public java.lang.Long getSearchTime() {
         return searchTime;
     }
 
     @JsonProperty("search_time")
-    public void setSearchTime(Long searchTime) {
+    public void setSearchTime(java.lang.Long searchTime) {
         this.searchTime = searchTime;
     }
 
-    public GetObjectsOutput withSearchTime(Long searchTime) {
+    public GetObjectsOutput withSearchTime(java.lang.Long searchTime) {
         this.searchTime = searchTime;
         return this;
     }
 
-    @JsonProperty("ws_narrative_info")
-    public Map<String, NarrativeInfo> getWsNarrativeInfo() {
-        return wsNarrativeInfo;
+    @JsonProperty("access_group_narrative_info")
+    public Map<Long, Tuple5 <String, Long, String, String, String>> getAccessGroupNarrativeInfo() {
+        return accessGroupNarrativeInfo;
     }
 
-    @JsonProperty("ws_narrative_info")
-    public void setWsNarrativeInfo(Map<String, NarrativeInfo> wsNarrativeInfo) {
-        this.wsNarrativeInfo = wsNarrativeInfo;
+    @JsonProperty("access_group_narrative_info")
+    public void setAccessGroupNarrativeInfo(Map<Long, Tuple5 <String, Long, String, String, String>> accessGroupNarrativeInfo) {
+        this.accessGroupNarrativeInfo = accessGroupNarrativeInfo;
     }
 
-    public GetObjectsOutput withWsNarrativeInfo(Map<String, NarrativeInfo> wsNarrativeInfo) {
-        this.wsNarrativeInfo = wsNarrativeInfo;
+    public GetObjectsOutput withAccessGroupNarrativeInfo(Map<Long, Tuple5 <String, Long, String, String, String>> accessGroupNarrativeInfo) {
+        this.accessGroupNarrativeInfo = accessGroupNarrativeInfo;
         return this;
     }
 
@@ -93,7 +94,7 @@ public class GetObjectsOutput {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((("GetObjectsOutput"+" [objects=")+ objects)+", searchTime=")+ searchTime)+", wsNarrativeInfo=")+ wsNarrativeInfo)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((("GetObjectsOutput"+" [objects=")+ objects)+", searchTime=")+ searchTime)+", accessGroupNarrativeInfo=")+ accessGroupNarrativeInfo)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

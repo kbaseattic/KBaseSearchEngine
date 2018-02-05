@@ -323,27 +323,41 @@ public class WorkspaceEventHandler implements EventHandler {
         };
     }
 
-    public Map<String, String> getWorkspaceInfo(
+    public Tuple9<Long, String, String, String, Long, String, String,
+            String,Map<String,String>> getWorkspaceInfo(
             final long wsId)
-            throws RetriableIndexingException, IndexingException {
+            throws IOException, JsonClientException {
 
         final Map<String, Object> command = new HashMap<>();
         command.put("command", "getWorkspaceInfo");
         command.put("params", new WorkspaceIdentity()
                 .withId(wsId));
 
-        final Map<String, String> wsInfoMeta;
+        final Tuple9<Long, String, String, String, Long, String, String,
+                String,Map<String,String>> wsInfo;
 
-        try {
-            wsInfoMeta = ws.getClient().administer(new UObject(command))
-                         .asClassInstance(WS_INFO_TYPEREF).getE9();
-        } catch (IOException e) {
-            throw handleException(e);
-        } catch (JsonClientException e) {
-            throw handleException(e);
-        }
-        return wsInfoMeta;
+        wsInfo = ws.getClient().administer(new UObject(command))
+                .asClassInstance(WS_INFO_TYPEREF);
+
+        return wsInfo;
     }
+
+//    public Map<String, String> getWorkspaceInfo(
+//            final long wsId)
+//            throws IOException, JsonClientException {
+//
+//        final Map<String, Object> command = new HashMap<>();
+//        command.put("command", "getWorkspaceInfo");
+//        command.put("params", new WorkspaceIdentity()
+//                .withId(wsId));
+//
+//        final Map<String, String> wsInfoMeta;
+//
+//        wsInfoMeta = ws.getClient().administer(new UObject(command))
+//                .asClassInstance(WS_INFO_TYPEREF).getE9();
+//
+//        return wsInfoMeta;
+//    }
 
     private Iterable<ChildStatusEvent> handleDeletedAccessGroup(final StoredStatusEvent event) {
         

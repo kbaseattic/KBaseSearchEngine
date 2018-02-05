@@ -34,6 +34,7 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.SearchInterface;
 import kbasesearchengine.main.SearchMethods;
+import kbasesearchengine.main.DecorateWithNarrativeInfo;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.system.FileLister;
 import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
@@ -57,7 +58,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
     private static final String version = "0.0.1";
     private static final String gitUrl = "https://github.com/kbase/KBaseSearchEngine.git";
-    private static final String gitCommitHash = "5084cd4c93789df55a4cf688aab9912e8b5069e0";
+    private static final String gitCommitHash = "c935912085eafa39cb5f8112a289e680dc115141";
 
     //BEGIN_CLASS_HEADER
     
@@ -147,7 +148,8 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
         
-        search = new SearchMethods(accessGroupProvider, esStorage, ss, admins);
+        search = new DecorateWithNarrativeInfo(new SearchMethods(accessGroupProvider,
+                esStorage, ss, admins), wsClient);
         //END_CONSTRUCTOR
     }
 
