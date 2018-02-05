@@ -179,6 +179,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <test name="kbasesearchengine.test.parse.IdMapperTest"/>
         <test name="kbasesearchengine.test.parse.SubObjectExtractorTest"/>
         <test name="kbasesearchengine.test.search.ElasticIndexingStorageTest"/>
+        <test name="kbasesearchengine.test.search.MatchFilterTest"/>
         <test name="kbasesearchengine.test.search.ObjectDataTest"/>
         <test name="kbasesearchengine.test.system.IndexingRulesTest"/>
         <test name="kbasesearchengine.test.system.ObjectTypeParsingRulesTest"/>

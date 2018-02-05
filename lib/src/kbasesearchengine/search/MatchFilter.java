@@ -13,7 +13,6 @@ import kbasesearchengine.tools.Utils;
 public class MatchFilter {
     
     //TODO NNOW JAVADOC
-    //TODO NNOW TEST (immutability)
     
     private final boolean excludeSubObjects;
     private final Optional<String> fullTextInAll;
@@ -169,8 +168,8 @@ public class MatchFilter {
             return this;
         }
         
-        public Builder withNullableObjectName(final String partOfName) {
-            this.objectName = partOfName;
+        public Builder withNullableObjectName(final String objectName) {
+            this.objectName = objectName;
             return this;
         }
         
@@ -185,7 +184,7 @@ public class MatchFilter {
         }
         
         public Builder withLookupInKey(final String keyName, final MatchValue value) {
-            Utils.notNullOrEmpty(keyName, "keyName cannot be null or whitespace only");
+            Utils.notNullOrEmpty(keyName, "key cannot be null or whitespace only");
             Utils.nonNull(value, "value");
             this.lookupInKeys.put(keyName, value);
             return this;
@@ -197,8 +196,8 @@ public class MatchFilter {
             return this;
         }
         
-        public Builder withIsSourceTagsBlackList(final Boolean isBlacklist) {
-            isSourceTagsBlacklist = isBlacklist != null && isBlacklist;
+        public Builder withIsSourceTagsBlackList(final boolean isBlacklist) {
+            isSourceTagsBlacklist = isBlacklist;
             return this;
         }
         
