@@ -42,5 +42,5 @@ versions:
   - source-key: genome_guid
     transform: lookup.key.id
     full-text: true
-    key-name: genome_id
-    ui-name: Genome ID
+    key-name: genome_name
+    ui-name: Genome Name
