@@ -38,6 +38,7 @@
     <include name="junit/junit-4.9.jar"/>
     <include name="kbase/auth/kbase-auth-0.4.4.jar"/>
     <include name="kbase/common/kbase-common-0.0.23.jar"/>
+    <include name="kbase/workspace/WorkspaceService-0.8.0.jar"/>
     <include name="logback/logback-core-1.1.2.jar"/>
     <include name="logback/logback-classic-1.1.2.jar"/>
     <include name="servlet/servlet-api-2.5.jar"/>
