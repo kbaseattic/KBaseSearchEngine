@@ -1,0 +1,21 @@
+global-object-type: ModelReaction
+ui-type-name: Model Reaction
+storage-type: WS
+storage-object-type: KBaseFBA.FBAModel
+versions:
+- inner-sub-type: ModelReaction
+  path-to-sub-objects: /modelreactions/[*]/
+  primary-key-path: id
+  indexing-rules:
+  - path: id
+    keyword-type: string
+    ui-name: ID
+  - path: name
+    full-text: true
+  - path: pathway
+    keyword-type: string
+    ui-name: Pathway
+  - path: aliases
+    keyword-type: string
+    transform: values
+    ui-name: Aliases
