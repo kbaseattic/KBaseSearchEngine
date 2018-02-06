@@ -74,6 +74,8 @@ public class WorkspaceEventHandler implements EventHandler {
     
     private static final int WS_BATCH_SIZE = 10_000;
     
+    private static final String META_SEARCH_TAGS = "searchtags";
+    
     private static final TypeReference<List<Tuple11<Long, String, String, String,
             Long, String, Long, String, String, Long, Map<String, String>>>> OBJ_TYPEREF =
                     new TypeReference<List<Tuple11<Long, String, String, String,
@@ -113,26 +115,8 @@ public class WorkspaceEventHandler implements EventHandler {
         Utils.nonNull(guids, "guids");
         Utils.noNulls(guids, "null item in guids");
         Utils.nonNull(file, "file");
-        // create a new client since we're setting a file for the next response
-        // fixes race conditions
-        // a clone method would be handy
-        final WorkspaceClient wc = ws.getClientClone();
-        wc.setStreamingModeOn(true);
-        wc._setFileForNextRpcResponse(file.toFile());
-        final Map<String, Object> command = new HashMap<>();
-        command.put("command", "getObjects");
-        command.put("params", new GetObjects2Params().withObjects(
-                Arrays.asList(new ObjectSpecification().withRef(toWSRefPath(guids)))));
-        final ObjectData ret;
-        try {
-            ret = wc.administer(new UObject(command))
-                    .asClassInstance(GetObjects2Results.class)
-                    .getData().get(0);
-        } catch (IOException e) {
-            throw handleException(e);
-        } catch (JsonClientException e) {
-            throw handleException(e);
-        }
+        final ObjectData ret = getObjectData(guids, file);
+        final List<String> tags = getTags(ret);
         // we'll assume here that there's only one provenance action. This may need more thought
         // if that's not true.
         final ProvenanceAction pa = ret.getProvenance().isEmpty() ?
@@ -146,6 +130,9 @@ public class WorkspaceEventHandler implements EventHandler {
                 .withNullableCopier(copier)
                 .withNullableMD5(ret.getInfo().getE9());
                 //TODO CODE get the timestamp from ret rather than using event timestamp
+        for (final String tag: tags) {
+            b.withSourceTag(tag);
+        }
         if (pa != null) {
             b.withNullableModule(pa.getService())
                     .withNullableMethod(pa.getMethod())
@@ -166,6 +153,63 @@ public class WorkspaceEventHandler implements EventHandler {
             }
         }
         return b.build();
+    }
+
+    private List<String> getTags(final ObjectData objectdata)
+            throws RetriableIndexingException, IndexingException {
+        final String tags = getWorkspaceInfo(objectdata.getInfo().getE7()).getE9()
+                .get(META_SEARCH_TAGS);
+        final List<String> ret = new LinkedList<>();
+        if (tags != null) {
+            for (String tag: tags.split(",")) {
+                tag = tag.trim();
+                if (!tag.isEmpty()) {
+                    ret.add(tag);
+                }
+            }
+        }
+        return ret;
+    }
+    
+    private Tuple9<Long, String, String, String, Long, String,
+                String, String, Map<String, String>> getWorkspaceInfo(
+            final long workspaceID)
+            throws RetriableIndexingException, IndexingException {
+        final Map<String, Object> command = new HashMap<>();
+        command.put("command", "getWorkspaceInfo");
+        command.put("params", new WorkspaceIdentity().withId(workspaceID));
+        
+        try {
+            return ws.getClient().administer(new UObject(command))
+                    .asClassInstance(WS_INFO_TYPEREF);
+        } catch (IOException e) {
+            throw handleException(e);
+        } catch (JsonClientException e) {
+            throw handleException(e);
+        }
+    }
+
+    private ObjectData getObjectData(final List<GUID> guids, final Path file)
+            throws RetriableIndexingException, IndexingException {
+        // create a new client since we're setting a file for the next response
+        // fixes race conditions
+        // a clone method would be handy
+        final WorkspaceClient wc = ws.getClientClone();
+        wc.setStreamingModeOn(true);
+        wc._setFileForNextRpcResponse(file.toFile());
+        final Map<String, Object> command = new HashMap<>();
+        command.put("command", "getObjects");
+        command.put("params", new GetObjects2Params().withObjects(
+                Arrays.asList(new ObjectSpecification().withRef(toWSRefPath(guids)))));
+        try {
+            return wc.administer(new UObject(command))
+                    .asClassInstance(GetObjects2Results.class)
+                    .getData().get(0);
+        } catch (IOException e) {
+            throw handleException(e);
+        } catch (JsonClientException e) {
+            throw handleException(e);
+        }
     }
 
     private static IndexingException handleException(final JsonClientException e) {
