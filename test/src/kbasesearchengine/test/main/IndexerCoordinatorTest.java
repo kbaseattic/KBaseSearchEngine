@@ -39,6 +39,7 @@ import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.main.LineLogger;
+import kbasesearchengine.main.SignalMonitor;
 import kbasesearchengine.test.common.TestCommon;
 
 public class IndexerCoordinatorTest {
@@ -46,6 +47,8 @@ public class IndexerCoordinatorTest {
     private static final List<Integer> MT = Collections.emptyList();
     private static final Ticker ST = Ticker.systemTicker();
     private static final Clock SC = Clock.systemDefaultZone();
+    // this will only work once
+    private static final SignalMonitor SM = new SignalMonitor();
 
     @Test
     public void construct() throws Exception {
@@ -89,7 +92,7 @@ public class IndexerCoordinatorTest {
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor,
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, SM, 10, executor,
                 MT, ST, SC);
         
         coord.startIndexer();
@@ -120,7 +123,7 @@ public class IndexerCoordinatorTest {
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor,
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, SM, 10, executor,
                 MT, ST, SC);
         
         coord.stop(wait);
@@ -138,7 +141,7 @@ public class IndexerCoordinatorTest {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor,
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, SM, 10, executor,
                 MT, ST, SC);
         
         final StoredStatusEvent event1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
@@ -236,7 +239,7 @@ public class IndexerCoordinatorTest {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 10, executor,
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, SM, 10, executor,
                 MT, ST, SC);
         
         final StoredStatusEvent event1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
@@ -309,7 +312,7 @@ public class IndexerCoordinatorTest {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, SM, 3, executor,
                 MT, ST, SC);
         
         final StoredStatusEvent event1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
@@ -391,7 +394,7 @@ public class IndexerCoordinatorTest {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, SM, 3, executor,
                 MT, ST, SC);
         
         final Runnable coordRunner = getIndexerRunnable(executor, coord);
@@ -444,7 +447,7 @@ public class IndexerCoordinatorTest {
         when(storage.get(StatusEventProcessingState.READY, 3)).thenReturn(Arrays.asList(event1));
         when(storage.get(StatusEventProcessingState.PROC, 3)).thenReturn(Arrays.asList(event2));
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, SM, 3, executor,
                 MT, ST, SC);
         assertThat("incorrect queue size", coord.getQueueSize(), is(2));
         
@@ -495,7 +498,7 @@ public class IndexerCoordinatorTest {
         
         when(storage.get(StatusEventProcessingState.READY, 3)).thenReturn(Arrays.asList(event1));
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, SM, 3, executor,
                 MT, ST, SC);
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
         
@@ -537,7 +540,7 @@ public class IndexerCoordinatorTest {
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, SM, 3, executor,
                 MT, ST, SC);
         
         when(storage.get(StatusEventProcessingState.UNPROC, 3))
@@ -567,8 +570,9 @@ public class IndexerCoordinatorTest {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
-        
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+        final SignalMonitor sm = mock(SignalMonitor.class);
+
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, sm, 3, executor,
                 Arrays.asList(1, 1), ST, SC);
         
         when(storage.get(StatusEventProcessingState.UNPROC, 3)).thenThrow(
@@ -581,6 +585,7 @@ public class IndexerCoordinatorTest {
         assertThat("incorrect queue size", coord.getQueueSize(), is(0));
         
         verify(executor).shutdown();
+        verify(sm).signal();
 
         verify(logger).logError("Retriable error in indexer, retry 1: " +
                 "kbasesearchengine.events.exceptions.FatalRetriableIndexingException: wheee!");
@@ -609,8 +614,9 @@ public class IndexerCoordinatorTest {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        final SignalMonitor sm = mock(SignalMonitor.class);
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, sm, 3, executor,
                 Arrays.asList(1, 1), ST, SC);
         
         when(storage.get(StatusEventProcessingState.UNPROC, 3)).thenThrow(
@@ -623,6 +629,7 @@ public class IndexerCoordinatorTest {
         assertThat("incorrect queue size", coord.getQueueSize(), is(0));
 
         verify(executor, never()).shutdown();
+        verify(sm, never()).signal();
         
         verify(logger).logError("Unexpected error in indexer: java.lang.RuntimeException: arg");
         
@@ -643,8 +650,9 @@ public class IndexerCoordinatorTest {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        final SignalMonitor sm = mock(SignalMonitor.class);
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, sm, 3, executor,
                 Arrays.asList(1), ST, SC);
         
         final StoredStatusEvent event1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
@@ -666,6 +674,7 @@ public class IndexerCoordinatorTest {
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
         
         verify(executor).shutdown();
+        verify(sm).signal();
 
         verify(logger).logError("Retriable error in indexer for event " +
                 "PUBLISH_ACCESS_GROUP foo1, retry 1: " +
@@ -693,8 +702,9 @@ public class IndexerCoordinatorTest {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        final SignalMonitor sm = mock(SignalMonitor.class);
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, sm, 3, executor,
                 Arrays.asList(1, 1, 1), ST, SC);
         
         final StoredStatusEvent event1 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
@@ -714,6 +724,9 @@ public class IndexerCoordinatorTest {
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(0));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
+        
+        verify(executor).shutdown();
+        verify(sm).signal();
         
         verify(storage).setProcessingState(new StatusEventID("foo1"),
                 StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY);
@@ -765,7 +778,7 @@ public class IndexerCoordinatorTest {
         
         when(storage.get(StatusEventProcessingState.READY, 3)).thenReturn(Arrays.asList(event1));
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, SM, 3, executor,
                 MT, ST, clock);
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
 
@@ -826,7 +839,7 @@ public class IndexerCoordinatorTest {
         
         when(storage.get(StatusEventProcessingState.PROC, 3)).thenReturn(Arrays.asList(event1));
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, 3, executor,
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, SM, 3, executor,
                 MT, ticker, clock);
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
 
@@ -871,5 +884,37 @@ public class IndexerCoordinatorTest {
         verify(storage, never()).setProcessingState(any(), any(), any());
         verify(logger, never()).logError(any(String.class));
         verify(logger, never()).logError(any(Throwable.class));
+    }
+    
+    @Test
+    public void internalShutdown() throws Exception {
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+        final SignalMonitor sm = new SignalMonitor();
+        
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, sm, 3, executor,
+                Arrays.asList(1), ST, SC);
+        
+        when(storage.get(StatusEventProcessingState.PROC, 3))
+                .thenThrow(new FatalRetriableIndexingException("whee"));
+        
+        final Thread shutdownThread = new Thread() {
+            
+            @Override
+            public void run() {
+                try {
+                    TimeUnit.MILLISECONDS.sleep(200);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Test borked", e);
+                }
+                sm.signal();
+            }
+        };
+        
+        final Instant now = Instant.now();
+        shutdownThread.start();
+        coord.awaitShutdown();
+        TestCommon.assertCloseMS(now, Instant.now(), 200, 50);
     }
 }

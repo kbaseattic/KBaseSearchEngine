@@ -69,6 +69,11 @@
   <path id="compile.classpath">
     <fileset refid="lib"/>
   </path>
+	
+  <path id="test.classpath">
+    <path refid="compile.classpath"/>
+    <fileset file="${dist}/${jar.file}"/>
+  </path>
 
   <path id="src.path">
     <pathelement location="${src}" />
@@ -147,48 +152,43 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
     <jacoco:coverage destfile="${test.reports.dir}/jacoco.exec"
                      excludes="org/*:junit/*">
       <junit printsummary="yes" haltonfailure="yes" fork="true">
-        <classpath>
-          <pathelement location="${dist}/${jar.file}"/>
-          <path refid="compile.classpath"/>
-        </classpath>
+        <classpath refid="test.classpath"/>
         <formatter type="plain" usefile="false" />
         <sysproperty key="test.cfg" value="${test.cfg}"/>
-        <batchtest>
-          <fileset dir="${test.src}">
-            <include name="kbasesearchengine/test/parse/**Test.java"/>
-            <include name="kbasesearchengine/test/authorization/AccessGroupCacheTest.java"/>
-            <include name="kbasesearchengine/test/common/FileUtilTest.java"/>
-            <include name="kbasesearchengine/test/events/AccessGroupEventQueueTest.java"/>
-            <include name="kbasesearchengine/test/events/ChildStatusEventTest.java"/>
-            <include name="kbasesearchengine/test/events/EventQueueTest.java"/>
-            <include name="kbasesearchengine/test/events/ObjectEventQueueTest.java"/>
-            <include name="kbasesearchengine/test/events/StatusEventIDTest.java"/>
-            <include name="kbasesearchengine/test/events/StatusEventTest.java"/>
-            <include name="kbasesearchengine/test/events/StoredStatusEventTest.java"/>
-            <include name="kbasesearchengine/test/events/exceptions/RetrierTest.java"/>
-            <include name="kbasesearchengine/test/events/exceptions/ExceptionTest.java"/>
-            <include name="kbasesearchengine/test/events/handler/CloneableWorkspaceClientImplTest.java"/>
-            <include name="kbasesearchengine/test/events/handler/ResolvedReferenceTest.java"/>
-            <include name="kbasesearchengine/test/events/handler/SourceDataTest.java"/>
-            <include name="kbasesearchengine/test/events/storage/MongoDBStatusEventStorageTest.java"/>
-            <include name="kbasesearchengine/test/integration/IndexerIntegrationTest.java"/>
-            <include name="kbasesearchengine/test/integration/IndexerWorkerIntegrationTest.java"/>
-            <include name="kbasesearchengine/test/search/ElasticIndexingStorageTest.java"/>
-            <include name="kbasesearchengine/test/search/ObjectDataTest.java"/>
-            <include name="kbasesearchengine/test/system/IndexingRulesTest.java"/>
-            <include name="kbasesearchengine/test/system/ObjectTypeParsingRulesTest.java"/>
-            <include name="kbasesearchengine/test/system/ParsingRulesSubtypeFirstComparatorTest.java"/>
-            <include name="kbasesearchengine/test/system/SearchObjectTypeTest.java"/>
-            <include name="kbasesearchengine/test/system/StorageObjectTypeTest.java"/>
-            <include name="kbasesearchengine/test/system/TypeFileStorageTest.java"/>
-            <include name="kbasesearchengine/test/system/TypeMappingTest.java"/>
-            <include name="kbasesearchengine/test/system/TransformTest.java"/>
-            <include name="kbasesearchengine/test/tools/SearchToolsTest.java"/>
-            <include name="kbasesearchengine/test/main/IndexerCoordinatorTest.java"/>
-            <include name="kbasesearchengine/test/main/IndexerWorkerTest.java"/>
-            <include name="kbasesearchengine/test/main/SearchMethodsTest.java"/>
-          </fileset>
-        </batchtest>
+        <test name="kbasesearchengine.test.authorization.AccessGroupCacheTest"/>
+        <test name="kbasesearchengine.test.common.FileUtilTest"/>
+        <test name="kbasesearchengine.test.events.AccessGroupEventQueueTest"/>
+        <test name="kbasesearchengine.test.events.ChildStatusEventTest"/>
+        <test name="kbasesearchengine.test.events.EventQueueTest"/>
+        <test name="kbasesearchengine.test.events.ObjectEventQueueTest"/>
+        <test name="kbasesearchengine.test.events.StatusEventIDTest"/>
+        <test name="kbasesearchengine.test.events.StatusEventTest"/>
+        <test name="kbasesearchengine.test.events.StoredStatusEventTest"/>
+        <test name="kbasesearchengine.test.events.exceptions.RetrierTest"/>
+        <test name="kbasesearchengine.test.events.exceptions.ExceptionTest"/>
+        <test name="kbasesearchengine.test.events.handler.CloneableWorkspaceClientImplTest"/>
+        <test name="kbasesearchengine.test.events.handler.ResolvedReferenceTest"/>
+        <test name="kbasesearchengine.test.events.handler.SourceDataTest"/>
+        <test name="kbasesearchengine.test.events.storage.MongoDBStatusEventStorageTest"/>
+        <test name="kbasesearchengine.test.integration.IndexerIntegrationTest"/>
+        <test name="kbasesearchengine.test.integration.IndexerWorkerIntegrationTest"/>
+        <test name="kbasesearchengine.test.main.IndexerCoordinatorTest"/>
+        <test name="kbasesearchengine.test.main.IndexerWorkerTest"/>
+        <test name="kbasesearchengine.test.main.SearchMethodsTest"/>
+        <test name="kbasesearchengine.test.main.SignalMonitorTest"/>
+        <test name="kbasesearchengine.test.parse.IdMapperTest"/>
+        <test name="kbasesearchengine.test.parse.SubObjectExtractorTest"/>
+        <test name="kbasesearchengine.test.parse.ObjectParserTest"/>
+        <test name="kbasesearchengine.test.search.ElasticIndexingStorageTest"/>
+        <test name="kbasesearchengine.test.search.ObjectDataTest"/>
+        <test name="kbasesearchengine.test.system.IndexingRulesTest"/>
+        <test name="kbasesearchengine.test.system.ObjectTypeParsingRulesTest"/>
+        <test name="kbasesearchengine.test.system.SearchObjectTypeTest"/>
+        <test name="kbasesearchengine.test.system.StorageObjectTypeTest"/>
+        <test name="kbasesearchengine.test.system.TypeFileStorageTest"/>
+        <test name="kbasesearchengine.test.system.TypeMappingTest"/>
+        <test name="kbasesearchengine.test.system.TransformTest"/>
+        <test name="kbasesearchengine.test.tools.SearchToolsTest"/>
       </junit>
     </jacoco:coverage>
     <fail message="Test failure detected, check test results." if="test.failed" />
