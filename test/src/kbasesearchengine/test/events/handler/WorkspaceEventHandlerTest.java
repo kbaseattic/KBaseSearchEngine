@@ -3,12 +3,16 @@ package kbasesearchengine.test.events.handler;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.ConnectException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,12 +25,19 @@ import org.mockito.ArgumentMatcher;
 import com.google.common.collect.ImmutableMap;
 
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.events.exceptions.FatalIndexingException;
+import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
+import kbasesearchengine.events.exceptions.RetriableIndexingException;
+import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
 import kbasesearchengine.events.handler.CloneableWorkspaceClient;
+import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.test.common.TestCommon;
+import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.UObject;
+import us.kbase.common.service.UnauthorizedException;
 import workspace.GetObjects2Params;
 import workspace.GetObjects2Results;
 import workspace.ObjectData;
@@ -378,4 +389,97 @@ public class WorkspaceEventHandlerTest {
                 .withE11(meta);
     }
 
+    @Test
+    public void loadFailNulls() {
+        final Path f = Paths.get("foo");
+        final GUID g = new GUID("WS:1/2/3");
+        failLoadNulls((GUID) null, f, new NullPointerException("guid"));
+        failLoadNulls(g, null, new NullPointerException("file"));
+        
+        failLoadNulls((List<GUID>) null, f, new NullPointerException("guids"));
+        failLoadNulls(Arrays.asList(g), null, new NullPointerException("file"));
+        failLoadNulls(Arrays.asList(g, null), null,
+                new NullPointerException("null item in guids"));
+    }
+    
+    private void failLoadNulls(final GUID guid, final Path file, final Exception expected) {
+        try {
+            new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(
+                    mock(WorkspaceClient.class)))
+                    .load(guid, file);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
+
+    private void failLoadNulls(final List<GUID> guids, final Path file, final Exception expected) {
+        try {
+            new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(
+                    mock(WorkspaceClient.class)))
+                    .load(guids, file);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
+
+    @Test
+    public void loadFailBadStorageCode() {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(wscli);
+        try {
+            new WorkspaceEventHandler(clonecli)
+                    .load(Arrays.asList(new GUID("FS:1/2/3/")), Paths.get("foo"));
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got,
+                    new IllegalArgumentException("GUID FS:1/2/3 is not a workspace object"));
+        }
+    }
+    
+    @Test
+    public void loadFailWSExceptions() throws Exception {
+        failLoadWSException(new ConnectException("hot damn"),
+                new FatalRetriableIndexingException("hot damn"));
+        
+        failLoadWSException(new IOException("pump yer brakes, kid"),
+                new RetriableIndexingException("pump yer brakes, kid"));
+        
+        failLoadWSException(new UnauthorizedException("dvd commentary"),
+                new FatalIndexingException("dvd commentary"));
+        
+        failLoadWSException(new JsonClientException(null), new UnprocessableEventIndexingException(
+                "Null error message from workspace server"));
+        
+        failLoadWSException(new JsonClientException("Couldn't Login"),
+                new FatalIndexingException("Workspace credentials are invalid: Couldn't Login"));
+        
+        failLoadWSException(new JsonClientException("Did not start Up Properly"),
+                new FatalIndexingException(
+                        "Fatal error returned from workspace: Did not start Up Properly"));
+        
+        failLoadWSException(new JsonClientException("That man's a national treasure"),
+                new UnprocessableEventIndexingException(
+                        "Unrecoverable error from workspace on fetching object: " +
+                        "That man's a national treasure"));
+    }
+    
+    private void failLoadWSException(final Exception toThrow, final Exception expected)
+            throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(wscli);
+        
+        when(wscli.administer(any())).thenThrow(toThrow);
+        
+        
+        try {
+            new WorkspaceEventHandler(clonecli).load(new GUID("WS:1/2/3"), Paths.get("foo"));
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
 }

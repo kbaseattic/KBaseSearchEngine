@@ -103,13 +103,16 @@ public class WorkspaceEventHandler implements EventHandler {
     @Override
     public SourceData load(final GUID guid, final Path file)
             throws IndexingException, RetriableIndexingException {
+        Utils.nonNull(guid, "guid");
         return load(Arrays.asList(guid), file);
     }
 
     @Override
     public SourceData load(final List<GUID> guids, final Path file)
             throws IndexingException, RetriableIndexingException {
-        //TODO CODE check storage code
+        Utils.nonNull(guids, "guids");
+        Utils.noNulls(guids, "null item in guids");
+        Utils.nonNull(file, "file");
         // create a new client since we're setting a file for the next response
         // fixes race conditions
         // a clone method would be handy
@@ -176,7 +179,7 @@ public class WorkspaceEventHandler implements EventHandler {
             return new FatalIndexingException(
                     "Workspace credentials are invalid: " + e.getMessage(), e);
         } else if (e.getMessage().toLowerCase().contains("did not start up properly")) {
-            return new FatalIndexingException("Fatal error returned from  workspace: " +
+            return new FatalIndexingException("Fatal error returned from workspace: " +
                     e.getMessage(), e);
         } else {
             // this may need to be expanded, some errors may require retries or total failures
