@@ -2,7 +2,6 @@ package kbasesearchengine.tools;
 
 import static kbasesearchengine.tools.Utils.nonNull;
 
-import java.io.Console;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -83,6 +82,8 @@ import workspace.WorkspaceClient;
  */
 public class SearchTools {
     
+    //TODO TEST
+    
     private static final String NAME = "search_tools";
     private static final int MAX_Q_SIZE = 10000;
 
@@ -90,13 +91,12 @@ public class SearchTools {
      * @param args the program arguments.
      */
     public static void main(String[] args) {
-        System.exit(new SearchTools(args, System.out, System.err, System.console()).execute());
+        System.exit(new SearchTools(args, System.out, System.err).execute());
     }
     
     private final String[] args;
     private final PrintStream out;
     private final PrintStream err;
-    private final Console console; 
     
     private MongoDatabase workspaceDB = null;
     private MongoDatabase searchDB = null;
@@ -111,15 +111,13 @@ public class SearchTools {
     public SearchTools(
             final String[] args,
             final PrintStream out,
-            final PrintStream err,
-            final Console console) { //TODO TEST will need to wrap this for testing so it's mockable
+            final PrintStream err) {
         nonNull(args, "args");
         nonNull(out, "out");
         nonNull(err, "err");
         this.args = args;
         this.out = out;
         this.err = err;
-        this.console = console;
         quietLogger();
     }
     
@@ -291,27 +289,19 @@ public class SearchTools {
     }
     
     private void waitForReturn(final Stoppable stoppable) throws InterruptedException {
-        if (console == null) {
-            out.println("No console detected - process must be manually killed to stop.");
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                
-                @Override
-                public void run() {
-                    System.out.println("Waiting for task to stop");
-                    try {
-                        stoppable.stop(10 * 60 * 1000); // 10 mins
-                    } catch (InterruptedException e) {
-                        // do nothing, things are going down anyway
-                    }
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            
+            @Override
+            public void run() {
+                System.out.println("Waiting for task to stop");
+                try {
+                    stoppable.stop(10 * 60 * 1000); // 10 mins
+                } catch (InterruptedException e) {
+                    // do nothing, things are going down anyway
                 }
-            });
-            Thread.currentThread().join(); // waits forever
-        } else {
-            out.println("Press return to shut down process.");
-            console.readLine();
-            System.out.println("Waiting for task to stop");
-            stoppable.stop(10 * 60 * 1000); // 10 mins
-        }
+            }
+        });
+        stoppable.awaitShutdown();
     }
     
     private IndexerCoordinator runCoordinator(

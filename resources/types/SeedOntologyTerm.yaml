@@ -1,0 +1,7 @@
+global-object-type: SeedOntologyTerm
+storage-type: SeedOntologyDataSource
+storage-object-type: fake
+versions:
+- indexing-rules:
+  - path: id
+    keyword-type: string

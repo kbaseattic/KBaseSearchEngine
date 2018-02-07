@@ -131,7 +131,7 @@ public class ElasticIndexingStorageTest {
             @Override
             public ObjectTypeParsingRules getTypeDescriptor(SearchObjectType type) {
                 try {
-                    final File rulesFile = new File("resources/types/" + type.getType() + ".json");
+                    final File rulesFile = new File("resources/types/" + type.getType() + ".yaml");
                     return ObjectTypeParsingRulesFileParser.fromFile(rulesFile)
                             .get(type.getVersion() - 1);
                 } catch (Exception ex) {
@@ -197,9 +197,7 @@ public class ElasticIndexingStorageTest {
             final GUID ref,
             final String objName)
             throws Exception {
-        // yuck
-        final String extension = type.equals("Genome") ? ".yaml" : ".json";
-        final File file = new File("resources/types/" + type + extension);
+        final File file = new File("resources/types/" + type + ".yaml");
         ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesFileParser.fromFile(file).get(0);
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
@@ -877,6 +875,91 @@ public class ElasticIndexingStorageTest {
         
         assertThat("incorrect type count", count2, is(ImmutableMap.of(
                 "ExcludeSubObjectsNorm", 1)));
+    }
+    
+    @Test
+    public void sourceTags() throws Exception {
+        /* tests that objects are excluded that don't share at least one tag with the requested
+         * tags
+         */
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("SourceTags", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "creator")
+                        .withSourceTag("refdata")
+                        .withSourceTag("testnarr")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2000/1/1"),
+                ImmutableMap.of(new GUID("WS:2000/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
+                false);
+        
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("SourceTags", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "creator")
+                        .withSourceTag("refdata")
+                        .withSourceTag("narrative")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2000/2/1"),
+                ImmutableMap.of(new GUID("WS:2000/2/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
+                false);
+        
+        // whitelisted tags
+        checkWithTags(set(), set(new GUID("WS:2000/1/1"), new GUID("WS:2000/2/1")));
+        
+        checkWithTags(set("refdata", "foo"),
+                set(new GUID("WS:2000/1/1"), new GUID("WS:2000/2/1")));
+        
+        checkWithTags(set("narrative", "foo"), set(new GUID("WS:2000/2/1")));
+        
+        checkWithTags(set("bar", "foo"), set());
+        
+        
+        //blacklisted tags
+        checkWithTags(set(), set(new GUID("WS:2000/1/1"), new GUID("WS:2000/2/1")), true);
+        
+        checkWithTags(set("refdata", "foo"), set(), true);
+        
+        checkWithTags(set("narrative", "foo"), set(new GUID("WS:2000/1/1")), true);
+
+        checkWithTags(set("bar", "foo"), set(new GUID("WS:2000/1/1"), new GUID("WS:2000/2/1")),
+                true);
+    }
+
+    private void checkWithTags(final Set<String> tags, final Set<GUID> guids)
+            throws Exception {
+        checkWithTags(tags, guids, false);
+    }
+    
+    private void checkWithTags(
+            final Set<String> tags,
+            final Set<GUID> guids,
+            final boolean isBlacklist)
+            throws Exception {
+        final MatchFilter mfer = MatchFilter.create().withIsSourceTagsBlackList(isBlacklist);
+        tags.stream().forEach(t -> mfer.withSourceTag(t));
+        final Set<GUID> res = indexStorage.searchIds(
+                Collections.emptyList(),
+                mfer,
+                null,
+                AccessFilter.create().withAccessGroups(2000));
+        assertThat("incorrect objects found", res, is(guids));
     }
 
     private void prepareTestMultiwordSearch(GUID guid1, GUID guid2, GUID guid3) throws Exception {
