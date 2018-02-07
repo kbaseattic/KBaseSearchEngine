@@ -206,4 +206,40 @@ public class ObjectDataTest {
             TestCommon.assertExceptionCorrect(got, expected);
         }
     }
+
+    @Test
+    public void withHighlightFail() {
+        final ObjectData.Builder b = ObjectData.getBuilder(new GUID("ws:1/2/3"));
+        failWithHighlight(b, null, new ArrayList<>(Arrays.asList("highlight")),
+                new IllegalArgumentException("field cannot be null or whitespace"));
+        failWithHighlight(b, "   ", new ArrayList<>(Arrays.asList("highlight")),
+                new IllegalArgumentException("field cannot be null or whitespace"));
+        failWithHighlight(b, "field", null,
+                new NullPointerException("highlight list cannot be null"));
+        failWithHighlight(b, "field", new ArrayList<>(Arrays.asList("  ")),
+                new IllegalArgumentException("highlight cannot be null or whitespace"));
+
+        ArrayList<String> nullStrings = new ArrayList<>();
+        nullStrings.add(null);
+        failWithHighlight(b, "field", nullStrings,
+                new IllegalArgumentException("highlight cannot be null or whitespace"));
+    }
+    public void failWithHighlight(
+           final ObjectData.Builder b,
+           final String field,
+           final List<String> highlight,
+           final Exception expected
+    ){
+        try{
+            b.withHighlight(field, highlight);
+            fail("expected exception for incorrect highlight");
+        }catch (Exception e){
+
+            System.out.println("expected: " + expected.toString());
+            System.out.println("got: " + e.toString());
+
+            TestCommon.assertExceptionCorrect(e, expected);
+        }
+    }
+
 }

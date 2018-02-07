@@ -966,8 +966,6 @@ public class ElasticIndexingStorageTest {
         final SearchObjectType objectType = new SearchObjectType("Simple", 1);
         final IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop1"))
                 .withFullText().build();
-        final IndexingRules ir2 = IndexingRules.fromPath(new ObjectJsonPath("prop1"))
-                .withFullText().build();
 
 
         final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
@@ -1096,11 +1094,8 @@ public class ElasticIndexingStorageTest {
         GUID guid1 = new GUID("WS:11/1/2");
         GUID guid2 = new GUID("WS:11/2/2");
         GUID guid3 = new GUID("WS:11/3/2");
-//        try {
-            prepareTestMultiwordSearch(guid1, guid2, guid3);
-//        } catch(Exception e) {
-//            //TODO: remove items from each test after completion. Will error if run all sequence in order due to version conflict
-//        }
+        prepareTestMultiwordSearch(guid1, guid2, guid3);
+
         PostProcessing pp = new PostProcessing();
         List<String> empty = new ArrayList<>();
         
@@ -1120,7 +1115,7 @@ public class ElasticIndexingStorageTest {
         result1.put("prop1", Arrays.asList("<em>multiWordInSearchMethod1</em> <em>multiWordInSearchMethod2</em>"));
         assertThat("Incorrect highlighting", hitRes, is(result1) );
 
-        //searchIds is a wrapper around queryHits and does not r<em>WS:11/1/2</em>eturn object data and so will not be highlighted
+        //searchIds is a wrapper around queryHits and does not return object data and so will not be highlighted
         //searchTypes returns the number of items per type that. No highlight neccesary.
 
         //getObjectsByIds -- if you ever want to get the guids back highlighted...

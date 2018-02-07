@@ -554,7 +554,7 @@ public class ObjectData {
          */
         public Builder withHighlight(final String field, final List<String> highlight) {
             Utils.notNullOrEmpty(field, "field cannot be null or whitespace");
-            Utils.noNulls(highlight, "highlight list cannot be null");
+            Utils.nonNull(highlight, "highlight list cannot be null");
 
             for(final String s : highlight){
                 Utils.notNullOrEmpty(s, "highlight cannot be null or whitespace");

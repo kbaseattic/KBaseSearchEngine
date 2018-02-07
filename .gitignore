@@ -11,3 +11,4 @@ bin
 /work/
 .idea/
 KBaseSearchEngine.iml
+/deployment/jettybase/logs/

@@ -1066,27 +1066,27 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     @Override
-    public List<ObjectData> getObjectsByIds(Set<GUID> ids, final PostProcessing pp)
+    public List<ObjectData> getObjectsByIds(final Set<GUID> ids, final PostProcessing pp)
             throws IOException {
 
-        Map<String, Object> query = ImmutableMap.of("bool",
+        final Map<String, Object> query = ImmutableMap.of("bool",
                                         ImmutableMap.of("filter",
                                            ImmutableMap.of("terms",
                 ImmutableMap.of("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList())))));
 
-        Map<String, Object> doc = new LinkedHashMap<>();
+        final Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("query", query);
 
         if (Objects.nonNull(pp) && pp.objectHighlight) {
             doc.put("highlight", createHighlightQuery());
         }
 
-        String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
-        Response resp = makeRequest("GET", urlPath, doc);
+        final String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
+        final Response resp = makeRequest("GET", urlPath, doc);
         @SuppressWarnings("unchecked")
-        Map<String, Object> data = UObject.getMapper().readValue(
+        final Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
-        List<ObjectData> ret = new ArrayList<>();
+        final List<ObjectData> ret = new ArrayList<>();
         @SuppressWarnings("unchecked")
         final Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
         @SuppressWarnings("unchecked")
@@ -1121,7 +1121,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     (Integer) obj.get(SEARCH_OBJ_TYPE_VER)));
             // sometimes this is a long, sometimes it's an int
             b.withNullableTimestamp(Instant.ofEpochMilli(
-            ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
+                ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
         }
         if (pp.objectData) {
             final String ojson = (String) obj.get("ojson");
