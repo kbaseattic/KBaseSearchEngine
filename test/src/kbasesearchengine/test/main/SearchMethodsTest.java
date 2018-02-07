@@ -37,21 +37,22 @@ public class SearchMethodsTest {
         // false cases
         searchObjectsExcludeSubObjects(
                 new MatchFilter(),
-                new kbasesearchengine.search.MatchFilter());
+                kbasesearchengine.search.MatchFilter.getBuilder().build());
         searchObjectsExcludeSubObjects(
                 new MatchFilter().withExcludeSubobjects(null),
-                new kbasesearchengine.search.MatchFilter());
+                kbasesearchengine.search.MatchFilter.getBuilder().build());
         searchObjectsExcludeSubObjects(
                 new MatchFilter().withExcludeSubobjects(0L),
-                new kbasesearchengine.search.MatchFilter());
+                kbasesearchengine.search.MatchFilter.getBuilder().build());
         searchObjectsExcludeSubObjects(
                 new MatchFilter().withExcludeSubobjects(2L),
-                new kbasesearchengine.search.MatchFilter());
+                kbasesearchengine.search.MatchFilter.getBuilder().build());
         
         //true case
         searchObjectsExcludeSubObjects(
                 new MatchFilter().withExcludeSubobjects(1L),
-                new kbasesearchengine.search.MatchFilter().withExcludeSubObjects(true));
+                kbasesearchengine.search.MatchFilter.getBuilder().withExcludeSubObjects(true)
+                        .build());
     }
 
     private void searchObjectsExcludeSubObjects(
@@ -107,21 +108,22 @@ public class SearchMethodsTest {
         // false cases
         searchTypesExcludeSubObjects(
                 new MatchFilter(),
-                new kbasesearchengine.search.MatchFilter());
+                kbasesearchengine.search.MatchFilter.getBuilder().build());
         searchTypesExcludeSubObjects(
                 new MatchFilter().withExcludeSubobjects(null),
-                new kbasesearchengine.search.MatchFilter());
+                kbasesearchengine.search.MatchFilter.getBuilder().build());
         searchTypesExcludeSubObjects(
                 new MatchFilter().withExcludeSubobjects(0L),
-                new kbasesearchengine.search.MatchFilter());
+                kbasesearchengine.search.MatchFilter.getBuilder().build());
         searchTypesExcludeSubObjects(
                 new MatchFilter().withExcludeSubobjects(2L),
-                new kbasesearchengine.search.MatchFilter());
+                kbasesearchengine.search.MatchFilter.getBuilder().build());
         
         //true case
         searchTypesExcludeSubObjects(
                 new MatchFilter().withExcludeSubobjects(1L),
-                new kbasesearchengine.search.MatchFilter().withExcludeSubObjects(true));
+                kbasesearchengine.search.MatchFilter.getBuilder().withExcludeSubObjects(true)
+                        .build());
     }
 
     private void searchTypesExcludeSubObjects(

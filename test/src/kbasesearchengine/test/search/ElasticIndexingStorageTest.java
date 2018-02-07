@@ -53,6 +53,7 @@ import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
 import kbasesearchengine.search.AccessFilter;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.MatchFilter;
+import kbasesearchengine.search.MatchFilter.Builder;
 import kbasesearchengine.search.MatchValue;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
@@ -67,7 +68,6 @@ import kbasesearchengine.test.controllers.elasticsearch.ElasticSearchController;
 import kbasesearchengine.test.parse.SubObjectExtractorTest;
 import org.junit.rules.ExpectedException;
 import us.kbase.common.service.UObject;
-
 
 public class ElasticIndexingStorageTest {
 
@@ -172,7 +172,7 @@ public class ElasticIndexingStorageTest {
     }
 
     private static MatchFilter ft(String fullText) {
-        return MatchFilter.create().withFullTextInAll(fullText);
+        return MatchFilter.getBuilder().withNullableFullTextInAll(fullText).build();
     }
 
     private static void indexObject(
@@ -271,8 +271,8 @@ public class ElasticIndexingStorageTest {
         //System.out.println("AssemblyContig index: " + contigIndex);
         Assert.assertEquals("NC_000913", "" + contigIndex.getKeyProperties().get("contig_id"));
         // Search by keyword
-        ids = indexStorage.searchIds(type, MatchFilter.create().withLookupInKey(
-                "ontology_terms", "SSO:000008186"), null,
+        ids = indexStorage.searchIds(type, MatchFilter.getBuilder().withLookupInKey(
+                "ontology_terms", "SSO:000008186").build(), null,
                 AccessFilter.create().withAccessGroups(accessGroupIds));
         Assert.assertEquals(1, ids.size());
         id = ids.iterator().next();
@@ -284,8 +284,8 @@ public class ElasticIndexingStorageTest {
         System.out.println("*** start testGenome***");
         indexObject("Genome", "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
         Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Genome"),
-                MatchFilter.create().withLookupInKey(
-                        "features", new MatchValue(1, null)),
+                MatchFilter.getBuilder().withLookupInKey(
+                        "features", new MatchValue(1, null)).build(),
                 null, AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, guids.size());
         ObjectData genomeIndex = indexStorage.getObjectsByIds(guids).get(0);
@@ -311,8 +311,7 @@ public class ElasticIndexingStorageTest {
         expectedException.expectMessage("Invalid list of object types. List is null.");
 
         // null list of types
-        indexStorage.searchIds(null,
-                MatchFilter.create().withAccessGroupId(1),
+        indexStorage.searchIds(null, MatchFilter.getBuilder().build(),
                 null, AccessFilter.create().withAdmin(true));
     }
 
@@ -322,7 +321,7 @@ public class ElasticIndexingStorageTest {
 
         // empty list
         Set<GUID> guids = indexStorage.searchIds(new ArrayList<String>(),
-                MatchFilter.create().withAccessGroupId(1),
+                MatchFilter.getBuilder().build(),
                 null, AccessFilter.create().withAdmin(true));
 
         // genome object + 2 parent guids (see prepare)
@@ -339,7 +338,7 @@ public class ElasticIndexingStorageTest {
         objectTypes.add(null);
         objectTypes.add("Narrative");
         indexStorage.searchIds(objectTypes,
-                MatchFilter.create().withAccessGroupId(1),
+                MatchFilter.getBuilder().build(),
                 null, AccessFilter.create().withAdmin(true));
     }
 
@@ -353,7 +352,7 @@ public class ElasticIndexingStorageTest {
         objectTypes = new ArrayList<>();
         objectTypes.add("Genome");
         guids = indexStorage.searchIds(objectTypes,
-                MatchFilter.create().withAccessGroupId(1),
+                MatchFilter.getBuilder().build(),
                 null, AccessFilter.create().withAdmin(true));
 
         assertThat("incorrect number of results", guids.size(), is(1));
@@ -371,7 +370,7 @@ public class ElasticIndexingStorageTest {
         }
 
         indexStorage.searchIds(objectTypes,
-                MatchFilter.create().withAccessGroupId(1),
+                MatchFilter.getBuilder().build(),
                 null, AccessFilter.create().withAdmin(true));
     }
 
@@ -383,7 +382,7 @@ public class ElasticIndexingStorageTest {
         Set<GUID> guids;
 
         guids = indexStorage.searchIds(ImmutableList.of("Genome"),
-                MatchFilter.create().withAccessGroupId(1),
+                MatchFilter.getBuilder().build(),
                 null, AccessFilter.create().withAdmin(true));
 
         assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/3/1")),
@@ -392,7 +391,7 @@ public class ElasticIndexingStorageTest {
 
         // search for Genome and Assembly objects (assembly object from prepare method)
         guids = indexStorage.searchIds(ImmutableList.of("Genome", "Assembly"),
-                MatchFilter.create().withAccessGroupId(1),
+                MatchFilter.getBuilder().build(),
                 null, AccessFilter.create().withAdmin(true));
 
         assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/3/1")),
@@ -405,7 +404,7 @@ public class ElasticIndexingStorageTest {
 
         // search for Genome, Assembly and AssemblyContig objects (assembly and contig objects from prepare method)
         guids = indexStorage.searchIds(ImmutableList.of("Genome", "Assembly", "AssemblyContig"),
-                MatchFilter.create().withAccessGroupId(1),
+                MatchFilter.getBuilder().build(),
                 null, AccessFilter.create().withAdmin(true));
 
         assertThat("result missing expected object", guids.contains(GUID.fromRef("WS", "1/3/1")),
@@ -463,8 +462,8 @@ public class ElasticIndexingStorageTest {
 
     private Set<GUID> lookupIdsByKey(List<String> objTypes, String keyName, Object value,
             AccessFilter af) throws IOException {
-        Set<GUID> ret = indexStorage.searchIds(objTypes, MatchFilter.create().withLookupInKey(
-                keyName, new MatchValue(value)), null, af);
+        Set<GUID> ret = indexStorage.searchIds(objTypes, MatchFilter.getBuilder().withLookupInKey(
+                keyName, new MatchValue(value)).build(), null, af);
         PostProcessing pp = new PostProcessing();
         pp.objectInfo = true;
         pp.objectData = true;
@@ -846,7 +845,7 @@ public class ElasticIndexingStorageTest {
         
         final Set<GUID> res = indexStorage.searchIds(
                 Collections.emptyList(),
-                MatchFilter.create().withFullTextInAll("imaprettypony"),
+                MatchFilter.getBuilder().withNullableFullTextInAll("imaprettypony").build(),
                 null,
                 AccessFilter.create().withAccessGroups(2000));
         assertThat("incorrect objects found", res,
@@ -854,14 +853,14 @@ public class ElasticIndexingStorageTest {
         
         final Set<GUID> res2 = indexStorage.searchIds(
                 Collections.emptyList(),
-                MatchFilter.create().withFullTextInAll("imaprettypony")
-                        .withExcludeSubObjects(true),
+                MatchFilter.getBuilder().withNullableFullTextInAll("imaprettypony")
+                        .withExcludeSubObjects(true).build(),
                 null,
                 AccessFilter.create().withAccessGroups(2000));
         assertThat("incorrect objects found", res2, is(set(new GUID("WS:2000/1/1"))));
         
         final Map<String, Integer> count = indexStorage.searchTypes(
-                MatchFilter.create().withFullTextInAll("imaprettypony"),
+                MatchFilter.getBuilder().withNullableFullTextInAll("imaprettypony").build(),
                 AccessFilter.create().withAccessGroups(2000));
         
         assertThat("incorrect type count", count, is(ImmutableMap.of(
@@ -869,8 +868,8 @@ public class ElasticIndexingStorageTest {
                 "ExcludeSubObjectsNorm", 1)));
         
         final Map<String, Integer> count2 = indexStorage.searchTypes(
-                MatchFilter.create().withFullTextInAll("imaprettypony")
-                        .withExcludeSubObjects(true),
+                MatchFilter.getBuilder().withNullableFullTextInAll("imaprettypony")
+                        .withExcludeSubObjects(true).build(),
                 AccessFilter.create().withAccessGroups(2000));
         
         assertThat("incorrect type count", count2, is(ImmutableMap.of(
@@ -952,11 +951,11 @@ public class ElasticIndexingStorageTest {
             final Set<GUID> guids,
             final boolean isBlacklist)
             throws Exception {
-        final MatchFilter mfer = MatchFilter.create().withIsSourceTagsBlackList(isBlacklist);
+        final Builder mfer = MatchFilter.getBuilder().withIsSourceTagsBlackList(isBlacklist);
         tags.stream().forEach(t -> mfer.withSourceTag(t));
         final Set<GUID> res = indexStorage.searchIds(
                 Collections.emptyList(),
-                mfer,
+                mfer.build(),
                 null,
                 AccessFilter.create().withAccessGroups(2000));
         assertThat("incorrect objects found", res, is(guids));
@@ -988,21 +987,24 @@ public class ElasticIndexingStorageTest {
         GUID guid3 = new GUID("WS:11/3/2");
         prepareTestMultiwordSearch(guid1, guid2, guid3);
 
-        List<String> emtpy = new ArrayList<>();
+        List<String> empty = new ArrayList<>();
 
-        final kbasesearchengine.search.MatchFilter filter = new kbasesearchengine.search.MatchFilter();
+        final Builder filter = MatchFilter.getBuilder();
         List<kbasesearchengine.search.SortingRule> sorting = null;
-        AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
+        final AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
 
-        filter.withFullTextInAll("multiWordInSearchMethod1 multiWordInSearchMethod2");
-        FoundHits hits1 = indexStorage.searchObjects(emtpy, filter,sorting, accessFilter, null, null);
+        filter.withNullableFullTextInAll("multiWordInSearchMethod1 multiWordInSearchMethod2");
+        FoundHits hits1 = indexStorage.searchObjects(empty, filter.build(), sorting, accessFilter,
+                null, null);
 
-        filter.withFullTextInAll("multiWordInSearchMethod1");
-        FoundHits hits2 = indexStorage.searchObjects(emtpy, filter,sorting, accessFilter, null, null);
+        filter.withNullableFullTextInAll("multiWordInSearchMethod1");
+        FoundHits hits2 = indexStorage.searchObjects(empty, filter.build(), sorting, accessFilter,
+                null, null);
 
 
-        filter.withFullTextInAll("multiWordInSearchMethod2");
-        FoundHits hits3 = indexStorage.searchObjects(emtpy, filter,sorting, accessFilter, null, null);
+        filter.withNullableFullTextInAll("multiWordInSearchMethod2");
+        FoundHits hits3 = indexStorage.searchObjects(empty, filter.build(), sorting, accessFilter,
+                null, null);
 
         assertThat("did not find object1", hits1.guids, is(set(guid1)));
         assertThat("did not find object1 and object3", hits2.guids, is(set(guid1,guid3)));
@@ -1042,8 +1044,8 @@ public class ElasticIndexingStorageTest {
         AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
 
         //key, value pair lookup
-        MatchFilter filter0 = MatchFilter.create().withLookupInKey(
-                "num1", "123");
+        MatchFilter filter0 = MatchFilter.getBuilder().withLookupInKey(
+                "num1", "123").build();
         FoundHits hits0 = indexStorage.searchObjects(emtpy, filter0,sorting, accessFilter
                 , null, null);
         assertThat("did not find object1 using LookupInKey with value", hits0.guids, is(set(guid1)));
@@ -1054,9 +1056,9 @@ public class ElasticIndexingStorageTest {
         MatchValue range2 = new MatchValue(1000, 2000);
         MatchValue range3 = new MatchValue(100, 1234);
 
-        MatchFilter filter1 = MatchFilter.create().withLookupInKey("num1", range1);
-        MatchFilter filter2 = MatchFilter.create().withLookupInKey("num2", range2);
-        MatchFilter filter3 = MatchFilter.create().withLookupInKey("num1", range3);
+        MatchFilter filter1 = MatchFilter.getBuilder().withLookupInKey("num1", range1).build();
+        MatchFilter filter2 = MatchFilter.getBuilder().withLookupInKey("num2", range2).build();
+        MatchFilter filter3 = MatchFilter.getBuilder().withLookupInKey("num1", range3).build();
 
         FoundHits hits1 = indexStorage.searchObjects(emtpy, filter1,sorting, accessFilter, null, null);
         FoundHits hits2 = indexStorage.searchObjects(emtpy, filter2,sorting, accessFilter, null, null);
@@ -1067,16 +1069,17 @@ public class ElasticIndexingStorageTest {
         assertThat("did not find object1 and object3 using LookupInKey with range", hits3.guids, is(set(guid1, guid2)));
 
         //conflicting filters should return nothing
-        MatchFilter filter4 = MatchFilter.create().withLookupInKey("num1", range1);
-        filter4.withLookupInKey("num2", range2);
-        FoundHits hits4 = indexStorage.searchObjects(emtpy, filter4,sorting, accessFilter, null, null);
+        final MatchFilter filter4 = MatchFilter.getBuilder().withLookupInKey("num1", range1)
+                .withLookupInKey("num2", range2).build();
+        FoundHits hits4 = indexStorage.searchObjects(emtpy, filter4, sorting, accessFilter,
+                null, null);
 
         assertThat("conflicting ranges should produce 0 results", hits4.guids.isEmpty(), is(true));
 
 
         // overlapping filters should return intersection
-        MatchFilter filter5 = MatchFilter.create().withLookupInKey("num1", range3);
-        filter5.withLookupInKey("num2", range2);
+        final MatchFilter filter5 = MatchFilter.getBuilder().withLookupInKey("num1", range3)
+            .withLookupInKey("num2", range2).build();
         FoundHits hits5 = indexStorage.searchObjects(emtpy, filter5,sorting, accessFilter
                 , null, null);
 
