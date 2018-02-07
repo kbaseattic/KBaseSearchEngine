@@ -71,6 +71,7 @@ public class IndexerWorker implements Stoppable {
     private final StatusEventStorage storage;
     private final TypeStorage typeStorage;
     private final IndexingStorage indexingStorage;
+    private final Set<String> workerCodes;
     private final LineLogger logger;
     private final Map<String, EventHandler> eventHandlers = new HashMap<>();
     private ScheduledExecutorService executor = null;
@@ -87,11 +88,14 @@ public class IndexerWorker implements Stoppable {
             final IndexingStorage indexingStorage,
             final TypeStorage typeStorage,
             final File tempDir,
-            final LineLogger logger)
-                throws IOException {
+            final LineLogger logger,
+            final Set<String> workerCodes)
+            throws IOException {
         Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
         Utils.nonNull(logger, "logger");
         Utils.nonNull(indexingStorage, "indexingStorage");
+        this.workerCodes = workerCodes;
+        logger.logInfo("Worker codes: " + workerCodes);
         this.id = id;
         this.logger = logger;
         this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
@@ -117,6 +121,7 @@ public class IndexerWorker implements Stoppable {
                 throws IOException {
         Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
         Utils.nonNull(logger, "logger");
+        this.workerCodes = null;
         this.id = id;
         this.storage = null;
         this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
@@ -182,11 +187,11 @@ public class IndexerWorker implements Stoppable {
         Utils.nonNull(errtype, "errtype");
         final String msg;
         if (ErrorType.FATAL.equals(errtype)) {
-            msg = "Fatal error in indexer, shutting down: ";
+            msg = "Fatal error in indexer, shutting down";
         } else if (ErrorType.STD.equals(errtype)) {
-            msg = "Error in indexer: ";
+            msg = "Error in indexer";
         } else if (ErrorType.UNEXPECTED.equals(errtype)) {
-            msg = "Unexpected error in indexer: ";
+            msg = "Unexpected error in indexer";
         } else {
             throw new RuntimeException("Unknown error type: " + errtype);
         }
@@ -205,20 +210,20 @@ public class IndexerWorker implements Stoppable {
             final RetriableIndexingException e) {
         final String msg;
         if (event.isPresent()) {
-            msg = String.format("Retriable error in indexer for event %s %s%s, retry %s: ",
+            msg = String.format("Retriable error in indexer for event %s %s%s, retry %s",
                     event.get().getEvent().getEventType(),
                     event.get().isParentId() ? "with parent ID " : "",
                     event.get().getId().getId(),
                     retrycount);
         } else {
-            msg = String.format("Retriable error in indexer, retry %s: ", retrycount);
+            msg = String.format("Retriable error in indexer, retry %s", retrycount);
         }
         logError(msg, e);
     }
     
     private boolean performOneTick() throws InterruptedException, IndexingException {
         final Optional<StoredStatusEvent> optEvent = retrier.retryFunc(
-                s -> s.setAndGetProcessingState(StatusEventProcessingState.READY,
+                s -> s.setAndGetProcessingState(StatusEventProcessingState.READY, workerCodes,
                         StatusEventProcessingState.PROC, id),
                 storage, null);
         boolean processedEvent = false;
@@ -358,7 +363,7 @@ public class IndexerWorker implements Stoppable {
         if (exception instanceof FatalIndexingException) {
             throw (FatalIndexingException) exception;
         } else {
-            final String msg = error + String.format(" for event %s %s%s: ",
+            final String msg = error + String.format(" for event %s %s%s",
                     event.getEvent().getEventType(),
                     event.isParentId() ? "with parent ID " : "",
                     event.getId().getId());
@@ -515,9 +520,9 @@ public class IndexerWorker implements Stoppable {
             long loadTime = System.currentTimeMillis() - t1;
             logger.logInfo("[Indexer]   " + guid + ", loading time: " + loadTime + " ms.");
             logger.timeStat(guid, loadTime, 0, 0);
-            Set<ObjectTypeParsingRules> parsingRules = 
+            final Set<ObjectTypeParsingRules> parsingRules = 
                     typeStorage.listObjectTypeParsingRules(storageObjectType);
-            for (ObjectTypeParsingRules rule : parsingRules) {
+            for (final ObjectTypeParsingRules rule : parsingRules) {
                 final long t2 = System.currentTimeMillis();
                 final ParseObjectsRet parsedRet = parseObjects(guid, indexLookup,
                         newRefPath, obj, rule);

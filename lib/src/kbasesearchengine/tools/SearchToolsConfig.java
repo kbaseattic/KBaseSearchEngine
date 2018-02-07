@@ -5,21 +5,27 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import java.util.Properties;
+import java.util.Set;
 
 import com.google.common.base.Optional;
 
 public class SearchToolsConfig {
     
+    //TODO TESTS
+    //TODO JAVADOC
+    
     private static final String SEARCH_MONGO_HOST = "search-mongo-host";
     private static final String SEARCH_MONGO_DB = "search-mongo-db";
     private static final String SEARCH_MONGO_USER = "search-mongo-user";
     private static final String SEARCH_MONGO_PWD = "search-mongo-pwd";
+    private static final String WORKER_CODES = "worker-codes";
 
     private static final String ELASTIC_HOST = "elastic-host";
     private static final String ELASTIC_PORT = "elastic-port";
@@ -48,6 +54,7 @@ public class SearchToolsConfig {
     private final String searchMongoDB;
     private final Optional<String> searchMongoUser;
     private final Optional<char[]> searchMongoPwd;
+    private final Set<String> workerCodes;
     
     private final String elasticHost;
     private final int elasticPort;
@@ -76,6 +83,7 @@ public class SearchToolsConfig {
             final String searchMongoDB,
             final String searchMongoUser,
             String searchMongoPwd,
+            final List<String> workerCodes,
             final String elasticHost,
             final int elasticPort,
             final String elasticUser,
@@ -111,6 +119,8 @@ public class SearchToolsConfig {
         this.searchMongoPwd = Optional.fromNullable(searchMongoPwd == null ?
                 null :searchMongoPwd.toCharArray());
         searchMongoPwd = null;
+        
+        this.workerCodes = Collections.unmodifiableSet(new HashSet<>(workerCodes));
         
         this.elasticHost = elasticHost;
         this.elasticPort = elasticPort;
@@ -165,6 +175,10 @@ public class SearchToolsConfig {
 
     public Optional<char[]> getSearchMongoPwd() {
         return searchMongoPwd;
+    }
+    
+    public Set<String> workerCodes() {
+        return workerCodes;
     }
 
     public String getElasticHost() {
@@ -263,6 +277,7 @@ public class SearchToolsConfig {
                 getString(SEARCH_MONGO_DB, cfg, true),
                 getString(SEARCH_MONGO_USER, cfg),
                 getString(SEARCH_MONGO_PWD, cfg),
+                getStringList(WORKER_CODES, cfg),
                 getString(ELASTIC_HOST, cfg, true),
                 esPort,
                 getString(ELASTIC_USER, cfg),

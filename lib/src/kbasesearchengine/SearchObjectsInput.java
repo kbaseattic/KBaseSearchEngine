@@ -40,6 +40,8 @@ public class SearchObjectsInput {
      * including values of keywords or metadata/system properties (like
      * object name, creation time range) or full-text search in all
      * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
      * </pre>
      * 
      */
@@ -96,7 +98,7 @@ public class SearchObjectsInput {
         return objectTypes;
     }
 
-    @JsonProperty("object_type")
+    @JsonProperty("object_types")
     public void setObjectTypes(List<String> objectTypes) {
         this.objectTypes = objectTypes;
     }
@@ -113,6 +115,8 @@ public class SearchObjectsInput {
      * including values of keywords or metadata/system properties (like
      * object name, creation time range) or full-text search in all
      * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
      * </pre>
      * 
      */
@@ -128,6 +132,8 @@ public class SearchObjectsInput {
      * including values of keywords or metadata/system properties (like
      * object name, creation time range) or full-text search in all
      * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
      * </pre>
      * 
      */

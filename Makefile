@@ -50,6 +50,17 @@ build-startup-script:
 		-DKB_DEPLOYMENT_CONFIG=$$script_dir/../deploy.cfg -Djetty.port=5000 org.eclipse.jetty.start.Main jetty.xml' >> $(SCRIPTS_DIR)/$(STARTUP_SCRIPT_NAME)
 	chmod +x $(SCRIPTS_DIR)/$(STARTUP_SCRIPT_NAME)
 
+docker_image: build build-executable-script
+	ant war
+	-mkdir deployment/lib
+	-mkdir -p deployment/jettybase/webapps
+	-mkdir -p deployment/jettybase/logs
+	-mkdir -p deployment/jettybase/start.d
+	cp dist/KBaseSearchEngine.war deployment/jettybase/webapps/root.war 
+	-mkdir -p deployment/services/search/lib
+	cp dist/* deployment/services/search/lib
+	build/build_docker_image.sh
+
 build-test-script:
 	echo '#!/bin/bash' > $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'script_dir=$$(dirname "$$(readlink -f "$$0")")' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)

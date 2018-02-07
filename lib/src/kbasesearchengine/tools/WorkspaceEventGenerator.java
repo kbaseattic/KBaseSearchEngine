@@ -75,6 +75,7 @@ public class WorkspaceEventGenerator {
 
     //TODO EVENTGEN handle data palettes: 1) remove all sharing for ws 2) pull DP 3) add share events for all DP objects. RC still possible.
     //TODO TEST
+    //TODO JAVADOC
     
     private final int ws;
     private final int obj;
@@ -84,7 +85,8 @@ public class WorkspaceEventGenerator {
     private final MongoDatabase wsDB;
     private final PrintStream logtarget;
     private final Set<WorkspaceIdentifier> wsBlackList;
-    private List<Pattern> wsTypes;
+    private final List<Pattern> wsTypes;
+    private final Set<String> workerCodes;
     
     private WorkspaceEventGenerator(
             final StatusEventStorage storage,
@@ -94,7 +96,8 @@ public class WorkspaceEventGenerator {
             final int ver,
             final PrintStream logtarget,
             final Collection<WorkspaceIdentifier> wsBlackList,
-            final Collection<String> wsTypes)
+            final Collection<String> wsTypes,
+            final Collection<String> workerCodes)
             throws EventGeneratorException {
         this.ws = ws;
         this.obj = obj;
@@ -104,6 +107,7 @@ public class WorkspaceEventGenerator {
         this.logtarget = logtarget;
         this.wsBlackList = Collections.unmodifiableSet(new HashSet<>(wsBlackList));
         this.wsTypes = processTypes(wsTypes);
+        this.workerCodes = Collections.unmodifiableSet(new HashSet<>(workerCodes));
         checkWorkspaceSchema();
     }
     
@@ -274,7 +278,8 @@ public class WorkspaceEventGenerator {
                     .withNullableVersion(vernum)
                     .withNullableisPublic(pub)
                     .build(),
-                    StatusEventProcessingState.UNPROC);
+                    StatusEventProcessingState.UNPROC,
+                    workerCodes);
         } catch (RetriableIndexingException e) {
             throw new EventGeneratorException(e.getMessage(), e); //TODO CODE retries
         }
@@ -370,6 +375,7 @@ public class WorkspaceEventGenerator {
         private PrintStream logtarget;
         private Collection<WorkspaceIdentifier> wsBlackList = new LinkedList<>();
         private Collection<String> wsTypes = new LinkedList<>();
+        private Collection<String> workerCodes = new HashSet<>();
         
         public Builder(
                 final StatusEventStorage storage,
@@ -412,6 +418,8 @@ public class WorkspaceEventGenerator {
             return -1;
         }
 
+        //TODO CODE switch the next 3 methods to taking one item at a time vs. a list
+        
         public Builder withWorkspaceBlacklist(final Collection<WorkspaceIdentifier> wsBlackList) {
             nonNull(wsBlackList, "wsBlackList");
             noNulls(wsBlackList, "null item in wsBlackList");
@@ -422,14 +430,23 @@ public class WorkspaceEventGenerator {
         public Builder withWorkspaceTypes(final Collection<String> wsTypes) {
             nonNull(wsTypes, "wsTypes");
             noNulls(wsTypes, "null item in wsTypes");
-            // todo check no whitespace only chars
+            // TODO CODE check no whitespace only types
             this.wsTypes  = wsTypes;
+            return this;
+        }
+        
+        public Builder withWorkerCodes(final Collection<String> workerCodes) {
+            nonNull(workerCodes, "workerCodes");
+            noNulls(workerCodes, "null item in workerCodes");
+            // TODO CODE check no whitespace only codes
+            this.workerCodes = workerCodes;
             return this;
         }
 
         public WorkspaceEventGenerator build() throws EventGeneratorException {
             return new WorkspaceEventGenerator(
-                    storage, workspaceDatabase, ws, obj, ver, logtarget, wsBlackList, wsTypes);
+                    storage, workspaceDatabase, ws, obj, ver, logtarget, wsBlackList, wsTypes,
+                    workerCodes);
         }
 
     }
