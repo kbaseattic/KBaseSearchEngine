@@ -27,9 +27,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
     "full_text_in_all",
-    "access_group_id",
     "object_name",
-    "parent_guid",
     "timestamp",
     "exclude_subobjects",
     "lookupInKeys"
@@ -38,12 +36,8 @@ public class MatchFilter {
 
     @JsonProperty("full_text_in_all")
     private java.lang.String fullTextInAll;
-    @JsonProperty("access_group_id")
-    private Long accessGroupId;
     @JsonProperty("object_name")
     private java.lang.String objectName;
-    @JsonProperty("parent_guid")
-    private java.lang.String parentGuid;
     /**
      * <p>Original spec-file type: MatchValue</p>
      * <pre>
@@ -80,21 +74,6 @@ public class MatchFilter {
         return this;
     }
 
-    @JsonProperty("access_group_id")
-    public Long getAccessGroupId() {
-        return accessGroupId;
-    }
-
-    @JsonProperty("access_group_id")
-    public void setAccessGroupId(Long accessGroupId) {
-        this.accessGroupId = accessGroupId;
-    }
-
-    public MatchFilter withAccessGroupId(Long accessGroupId) {
-        this.accessGroupId = accessGroupId;
-        return this;
-    }
-
     @JsonProperty("object_name")
     public java.lang.String getObjectName() {
         return objectName;
@@ -107,21 +86,6 @@ public class MatchFilter {
 
     public MatchFilter withObjectName(java.lang.String objectName) {
         this.objectName = objectName;
-        return this;
-    }
-
-    @JsonProperty("parent_guid")
-    public java.lang.String getParentGuid() {
-        return parentGuid;
-    }
-
-    @JsonProperty("parent_guid")
-    public void setParentGuid(java.lang.String parentGuid) {
-        this.parentGuid = parentGuid;
-    }
-
-    public MatchFilter withParentGuid(java.lang.String parentGuid) {
-        this.parentGuid = parentGuid;
         return this;
     }
 
@@ -208,7 +172,7 @@ public class MatchFilter {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((("MatchFilter"+" [fullTextInAll=")+ fullTextInAll)+", accessGroupId=")+ accessGroupId)+", objectName=")+ objectName)+", parentGuid=")+ parentGuid)+", timestamp=")+ timestamp)+", excludeSubobjects=")+ excludeSubobjects)+", lookupInKeys=")+ lookupInKeys)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((("MatchFilter"+" [fullTextInAll=")+ fullTextInAll)+", objectName=")+ objectName)+", timestamp=")+ timestamp)+", excludeSubobjects=")+ excludeSubobjects)+", lookupInKeys=")+ lookupInKeys)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

@@ -153,7 +153,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     /**
      * <p>Original spec-file function name: search_types</p>
      * <pre>
-     * Search for number of objects of each type matching constrains.
+     * Search for number of objects of each type matching constraints.
      * </pre>
      * @param   params   instance of type {@link kbasesearchengine.SearchTypesInput SearchTypesInput}
      * @return   instance of type {@link kbasesearchengine.SearchTypesOutput SearchTypesOutput}
@@ -170,7 +170,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     /**
      * <p>Original spec-file function name: search_objects</p>
      * <pre>
-     * Search for objects of particular type matching constrains.
+     * Search for objects of particular type matching constraints.
      * </pre>
      * @param   params   instance of type {@link kbasesearchengine.SearchObjectsInput SearchObjectsInput}
      * @return   instance of type {@link kbasesearchengine.SearchObjectsOutput SearchObjectsOutput}

@@ -46,9 +46,7 @@ module KBaseSearchEngine {
     */
     typedef structure {
         string full_text_in_all;
-        int access_group_id;
         string object_name;
-        GUID parent_guid;
         MatchValue timestamp;
         boolean exclude_subobjects;
         mapping<string, MatchValue> lookupInKeys;
