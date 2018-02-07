@@ -887,7 +887,7 @@ public class IndexerCoordinatorTest {
     }
     
     @Test
-    public void internalShutdown() throws Exception {
+    public void awaitShutdown() throws Exception {
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final LineLogger logger = mock(LineLogger.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
