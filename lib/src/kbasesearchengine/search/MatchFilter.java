@@ -1,9 +1,12 @@
 package kbasesearchengine.search;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.tools.Utils;
 
 public class MatchFilter {
     
@@ -16,6 +19,8 @@ public class MatchFilter {
     public GUID parentGuid = null;
     public MatchValue timestamp = null;
     public Map<String, MatchValue> lookupInKeys = null;
+    public Set<String> sourceTags = new HashSet<>();
+    public boolean isSourceTagsBlacklist = false;
 
     public MatchFilter() {}
     
@@ -73,6 +78,17 @@ public class MatchFilter {
         this.lookupInKeys.put(keyName, value);
         return this;
     }
+    
+    public MatchFilter withSourceTag(final String sourceTag) {
+        Utils.notNullOrEmpty(sourceTag, "sourceTag cannot be null or whitespace only");
+        sourceTags.add(sourceTag);
+        return this;
+    }
+    
+    public MatchFilter withIsSourceTagsBlackList(final Boolean isBlacklist) {
+        isSourceTagsBlacklist = isBlacklist != null && isBlacklist;
+        return this;
+    }
 
     @Override
     public int hashCode() {
@@ -83,12 +99,15 @@ public class MatchFilter {
         result = prime * result + (excludeSubObjects ? 1231 : 1237);
         result = prime * result
                 + ((fullTextInAll == null) ? 0 : fullTextInAll.hashCode());
+        result = prime * result + (isSourceTagsBlacklist ? 1231 : 1237);
         result = prime * result
                 + ((lookupInKeys == null) ? 0 : lookupInKeys.hashCode());
         result = prime * result
                 + ((objectName == null) ? 0 : objectName.hashCode());
         result = prime * result
                 + ((parentGuid == null) ? 0 : parentGuid.hashCode());
+        result = prime * result
+                + ((sourceTags == null) ? 0 : sourceTags.hashCode());
         result = prime * result
                 + ((timestamp == null) ? 0 : timestamp.hashCode());
         return result;
@@ -123,6 +142,9 @@ public class MatchFilter {
         } else if (!fullTextInAll.equals(other.fullTextInAll)) {
             return false;
         }
+        if (isSourceTagsBlacklist != other.isSourceTagsBlacklist) {
+            return false;
+        }
         if (lookupInKeys == null) {
             if (other.lookupInKeys != null) {
                 return false;
@@ -142,6 +164,13 @@ public class MatchFilter {
                 return false;
             }
         } else if (!parentGuid.equals(other.parentGuid)) {
+            return false;
+        }
+        if (sourceTags == null) {
+            if (other.sourceTags != null) {
+                return false;
+            }
+        } else if (!sourceTags.equals(other.sourceTags)) {
             return false;
         }
         if (timestamp == null) {
