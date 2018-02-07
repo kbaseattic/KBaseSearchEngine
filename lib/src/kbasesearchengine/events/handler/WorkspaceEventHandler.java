@@ -174,6 +174,9 @@ public class WorkspaceEventHandler implements EventHandler {
         } else if (e.getMessage().toLowerCase().contains("login")) {
             return new FatalIndexingException(
                     "Workspace credentials are invalid: " + e.getMessage(), e);
+        } else if (e.getMessage().toLowerCase().contains("did not start up properly")) {
+            return new FatalIndexingException("Fatal error returned from  workspace: " +
+                    e.getMessage(), e);
         } else {
             // this may need to be expanded, some errors may require retries or total failures
             return new UnprocessableEventIndexingException(

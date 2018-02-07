@@ -13,5 +13,10 @@ public interface Stoppable {
      * or task to stop.
      */
     void stop(long millisToWait) throws InterruptedException;
+    
+    /** Wait for the {@link Stoppable} to shut down of its own volition. 
+     * @throws InterruptedException if the thread is interrupted.
+     */
+    void awaitShutdown() throws InterruptedException;
 
 }

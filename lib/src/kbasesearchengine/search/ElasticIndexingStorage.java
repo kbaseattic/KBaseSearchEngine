@@ -69,6 +69,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private static final String OBJ_COPIER = "copier";
     private static final String OBJ_CREATOR = "creator";
     private static final String OBJ_NAME = "oname";
+    // tags on the data originating at the source of the data
+    private static final String SOURCE_TAGS = "stags";
     
     private static final String SEARCH_OBJ_TYPE = "otype";
     private static final String SEARCH_OBJ_TYPE_VER = "otypever";
@@ -335,6 +337,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put("guid", id.toString());
         doc.put(SEARCH_OBJ_TYPE, objectType.getType());
         doc.put(SEARCH_OBJ_TYPE_VER, objectType.getVersion());
+        doc.put(SOURCE_TAGS, data.getSourceTags());
 
         doc.put(OBJ_NAME, data.getName());
         doc.put(OBJ_CREATOR, data.getCreator());
@@ -1208,44 +1211,26 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     //TODO VERS should this return SearchObjectType -> Integer map? Maybe an option to combine versions
     @Override
-    public Map<String, Integer> searchTypes(MatchFilter matchFilter,
-            AccessFilter accessFilter) throws IOException {
+    public Map<String, Integer> searchTypes(
+            final MatchFilter matchFilter,
+            final AccessFilter accessFilter)
+            throws IOException {
         Map<String, Object> mustForShared = createAccessMustBlock(accessFilter);
         if (mustForShared == null) {
             return Collections.emptyMap();
         }
-        List<Object> shouldList = new ArrayList<>();
-        // TODO: support for matchFilter.accessGroupId (e.g. reduce search scope to one group)
-        List<Object> matchFilters = new ArrayList<>(prepareMatchFilters(matchFilter));
-        // Public block (we exclude it for admin because it's covered by owner block)
-        if (accessFilter.withPublic && !accessFilter.isAdmin) {
-            shouldList.add(createPublicShouldBlock(accessFilter.withAllHistory));
-        }
-
-        // Owner block
-        shouldList.add(createOwnerShouldBlock(accessFilter));
-
-        // Shared block
-        shouldList.add(createSharedShouldBlock(mustForShared));
-        // Rest of query
-        Map<String, Object> query =
-                ImmutableMap.of("bool",
-                   ImmutableMap.of("must", matchFilters,
-                                   "filter", Arrays.asList(ImmutableMap.of("bool",
-                                                              ImmutableMap.of("should", shouldList)))));
-
-
         //TODO VERS if this aggregates by type version, need to add the version field to the terms
         Map<String, Object> aggs = ImmutableMap.of("types",
                                       ImmutableMap.of("terms",
                                          ImmutableMap.of("field", SEARCH_OBJ_TYPE)));
 
-        Map<String, Object> doc = ImmutableMap.of("query", query,
-                                                  "aggregations", aggs,
-                                                  "size", 0);
+        Map<String, Object> doc = ImmutableMap.of(
+                "query", createObjectQuery(matchFilter, accessFilter),
+                "aggregations", aggs,
+                "size", 0);
 
         String urlPath = "/" + indexNamePrefix + "*" +
-                (matchFilter.excludeSubObjects ? EXCLUDE_SUB_OJBS_URL_SUFFIX : "") +
+                (matchFilter.isExcludeSubObjects() ? EXCLUDE_SUB_OJBS_URL_SUFFIX : "") +
                 "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         @SuppressWarnings("unchecked")
@@ -1264,6 +1249,30 @@ public class ElasticIndexingStorage implements IndexingStorage {
             ret.put(objType, count);
         }
         return ImmutableMap.copyOf(ret);
+    }
+
+    private Map<String, Object> createObjectQuery(
+            final MatchFilter matchFilter,
+            final AccessFilter accessFilter) {
+        
+        final List<Object> shouldList = new ArrayList<>();
+        // Public block (we exclude it for admin because it's covered by owner block)
+        if (accessFilter.withPublic && !accessFilter.isAdmin) {
+            shouldList.add(createPublicShouldBlock(accessFilter.withAllHistory));
+        }
+
+        // Owner block
+        shouldList.add(createOwnerShouldBlock(accessFilter));
+
+        // Shared block
+        shouldList.add(createSharedShouldBlock(createAccessMustBlock(accessFilter)));
+        // Rest of query
+        
+        final Map<String, Object> bool = new HashMap<>();
+        bool.putAll(prepareMatchFilters(matchFilter));
+        bool.put("filter", Arrays.asList(ImmutableMap.of("bool", ImmutableMap.of(
+                "should", shouldList))));
+        return  ImmutableMap.of("bool", bool);
     }
     
     @Override
@@ -1300,49 +1309,64 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return searchIds(objectTypes, matchFilter, sorting, accessFilter, null).guids;
     }
 
-    private List<Map<String, Object>> prepareMatchFilters(MatchFilter matchFilter) {
-        List<Map<String, Object>> ret = new ArrayList<>();
-        if (matchFilter.fullTextInAll != null) {
-            LinkedHashMap<String, Object> query = new LinkedHashMap<>();
-            query.put("query", matchFilter.fullTextInAll);
+    private Map<String, Object> prepareMatchFilters(MatchFilter matchFilter) {
+        final List<Map<String, Object>> matches = new ArrayList<>();
+        if (matchFilter.getFullTextInAll().isPresent()) {
+            final LinkedHashMap<String, Object> query = new LinkedHashMap<>();
+            query.put("query", matchFilter.getFullTextInAll().get());
             query.put("operator", "and");
 
-            LinkedHashMap<String, Object> allQuery = new LinkedHashMap<>();
+            final LinkedHashMap<String, Object> allQuery = new LinkedHashMap<>();
             allQuery.put("_all", query);
 
-            LinkedHashMap<String, Object> match = new LinkedHashMap<>();
+            final LinkedHashMap<String, Object> match = new LinkedHashMap<>();
             match.put("match",allQuery);
-            ret.add(match);
+            matches.add(match);
         }
+        // TODO: support for matchFilter.accessGroupId (e.g. reduce search scope to one group)
         /*if (matchFilter.accessGroupId != null) {
             ret.add(createAccessMustBlock(new LinkedHashSet<>(Arrays.asList(
                     matchFilter.accessGroupId)), withAllHistory));
         }*/
-        if (matchFilter.objectName != null) {
-            ret.add(createFilter("match", OBJ_NAME, matchFilter.fullTextInAll));
+        if (matchFilter.getObjectName().isPresent()) {
+                                                    // this seems like a bug...?
+            matches.add(createFilter("match", OBJ_NAME, matchFilter.getFullTextInAll().get()));
         }
-        if (matchFilter.lookupInKeys != null) {
-            for (String keyName : matchFilter.lookupInKeys.keySet()) {
-                MatchValue value = matchFilter.lookupInKeys.get(keyName);
-                String keyProp = getKeyProperty(keyName);
-                if (value.value != null) {
-                    ret.add(createFilter("term", keyProp, value.value));
-                } else if (value.minInt != null || value.maxInt != null) {
-                    ret.add(createRangeFilter(keyProp, value.minInt, value.maxInt));
-                } else if (value.minDate != null || value.maxDate != null) {
-                    ret.add(createRangeFilter(keyProp, value.minDate, value.maxDate));
-                } else if (value.minDouble != null || value.maxDouble != null) {
-                    ret.add(createRangeFilter(keyProp, value.minDouble, value.maxDouble));
-                }
+        for (final String keyName : matchFilter.getLookupInKeys().keySet()) {
+            final MatchValue value = matchFilter.getLookupInKeys().get(keyName);
+            final String keyProp = getKeyProperty(keyName);
+            if (value.value != null) {
+                matches.add(createFilter("term", keyProp, value.value));
+            } else if (value.minInt != null || value.maxInt != null) {
+                matches.add(createRangeFilter(keyProp, value.minInt, value.maxInt));
+            } else if (value.minDate != null || value.maxDate != null) {
+                matches.add(createRangeFilter(keyProp, value.minDate, value.maxDate));
+            } else if (value.minDouble != null || value.maxDouble != null) {
+                matches.add(createRangeFilter(keyProp, value.minDouble, value.maxDouble));
             }
         }
-        if (matchFilter.timestamp != null) {
-            ret.add(createRangeFilter(OBJ_TIMESTAMP, matchFilter.timestamp.minDate, 
-                    matchFilter.timestamp.maxDate));
+        if (matchFilter.getTimestamp().isPresent()) {
+            matches.add(createRangeFilter(OBJ_TIMESTAMP, matchFilter.getTimestamp().get().minDate, 
+                    matchFilter.getTimestamp().get().maxDate));
+        }
+        
+        
+        final Map<String, Object> ret = new HashMap<>();
+        if (!matchFilter.getSourceTags().isEmpty()) {
+            final Map<String, Object> tagsQuery = ImmutableMap.of("terms", ImmutableMap.of(
+                    SOURCE_TAGS, matchFilter.getSourceTags()));
+            if (matchFilter.isSourceTagsBlacklist()) {
+                ret.put("must_not", tagsQuery);
+            } else {
+                matches.add(tagsQuery);
+            }
         }
         // TODO: support parent guid (reduce search scope to one object, e.g. features of one geneom)
-        if (ret.isEmpty()) {
-            ret.add(createFilter("match_all", null, null));
+        if (ret.isEmpty() && matches.isEmpty()) {
+            matches.add(createFilter("match_all", null, null));
+        }
+        if (!matches.isEmpty()) {
+            ret.put("must", matches);
         }
         return ret;
     }
@@ -1438,26 +1462,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
             ret.guids = Collections.emptySet();
             return ret;
         }
-        List<Object> shouldList = new ArrayList<>();
-        // TODO: support for matchFilter.accessGroupId  (e.g. reduce search scope to one group)
-        // Public block (we exclude it for admin because it's covered by owner block)
-        if (accessFilter.withPublic && !accessFilter.isAdmin) {
-            shouldList.add(createPublicShouldBlock(accessFilter.withAllHistory));
-        }
-        // Owner block
-        shouldList.add(createOwnerShouldBlock(accessFilter));
-        // Shared block
-        shouldList.add(createSharedShouldBlock(mustForShared));
-        // Rest of query
-        Map<String, Object> query =
-                ImmutableMap.of("bool",
-                   ImmutableMap.of("must", prepareMatchFilters(matchFilter),
-                                   "filter", Arrays.asList(
-                                           ImmutableMap.of("bool",
-                                              ImmutableMap.of("should", shouldList)))));
-
         Map<String, Object> doc = new LinkedHashMap<>();
-        doc.put("query", query);
+        
+        doc.put("query", createObjectQuery(matchFilter, accessFilter));
         if (Objects.nonNull(pp) && pp.objectHighlight) {
             doc.put("highlight", createHighlightQuery());
         }
@@ -1497,7 +1504,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             indexName = String.join(",", rr);
         }
         
-        if (matchFilter.excludeSubObjects) {
+        if (matchFilter.isExcludeSubObjects()) {
             indexName += EXCLUDE_SUB_OJBS_URL_SUFFIX;
         }
 
@@ -1705,6 +1712,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         props.put(SEARCH_OBJ_TYPE, keyword);
         props.put(SEARCH_OBJ_TYPE_VER, integer);
+        
+        props.put(SOURCE_TAGS, keyword);
 
         props.put(OBJ_NAME, ImmutableMap.of("type", "text"));
 

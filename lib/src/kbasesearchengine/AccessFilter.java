@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 /**
  * <p>Original spec-file type: AccessFilter</p>
  * <pre>
- * Optional rules of access constrains.
+ * Optional rules of access constraints.
  *   - with_private - include data found in workspaces not marked 
  *       as public, default value is true,
  *   - with_public - include data found in public workspaces,
