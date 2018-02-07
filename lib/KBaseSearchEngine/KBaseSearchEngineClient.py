@@ -218,7 +218,7 @@ class KBaseSearchEngine(object):
            to String, parameter "object_props" of mapping from String to
            String, parameter "total" of Long, parameter "search_time" of
            Long, parameter "access_group_narrative_info" of mapping from type
-           "accessGroupId" to type "NarrativeInfo" -> tuple of size 5:
+           "accessGroupId" to type "narrative_info" -> tuple of size 5:
            parameter "narrative_name" of String, parameter "narrative_id" of
            Long, parameter "time_last_saved" of type "timestamp", parameter
            "ws_owner_username" of String, parameter "ws_owner_realname" of
@@ -272,7 +272,7 @@ class KBaseSearchEngine(object):
            to String, parameter "object_props" of mapping from String to
            String, parameter "search_time" of Long, parameter
            "access_group_narrative_info" of mapping from type "accessGroupId"
-           to type "NarrativeInfo" -> tuple of size 5: parameter
+           to type "narrative_info" -> tuple of size 5: parameter
            "narrative_name" of String, parameter "narrative_id" of Long,
            parameter "time_last_saved" of type "timestamp", parameter
            "ws_owner_username" of String, parameter "ws_owner_realname" of

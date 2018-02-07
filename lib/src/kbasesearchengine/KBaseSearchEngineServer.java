@@ -58,7 +58,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
     private static final String version = "0.0.1";
     private static final String gitUrl = "https://github.com/kbase/KBaseSearchEngine.git";
-    private static final String gitCommitHash = "c935912085eafa39cb5f8112a289e680dc115141";
+    private static final String gitCommitHash = "c0a5b96a121b92e586ececfed41f96e521262e26";
 
     //BEGIN_CLASS_HEADER
     

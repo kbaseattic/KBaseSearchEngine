@@ -1,6 +1,13 @@
 package kbasesearchengine.main;
 
-import kbasesearchengine.*;
+import kbasesearchengine.SearchTypesInput;
+import kbasesearchengine.SearchTypesOutput;
+import kbasesearchengine.SearchObjectsInput;
+import kbasesearchengine.SearchObjectsOutput;
+import kbasesearchengine.GetObjectsInput;
+import kbasesearchengine.GetObjectsOutput;
+import kbasesearchengine.TypeDescriptor;
+
 import kbasesearchengine.search.IndexingStorage;
 import workspace.WorkspaceClient;
 

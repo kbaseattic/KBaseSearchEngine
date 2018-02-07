@@ -54,7 +54,7 @@ public class SearchObjectsOutput {
     @JsonProperty("search_time")
     private java.lang.Long searchTime;
     @JsonProperty("access_group_narrative_info")
-    private Map<Long, Tuple5 <String, Long, String, String, String>> accessGroupNarrativeInfo;
+    private Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrativeInfo;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     /**
@@ -147,16 +147,16 @@ public class SearchObjectsOutput {
     }
 
     @JsonProperty("access_group_narrative_info")
-    public Map<Long, Tuple5 <String, Long, String, String, String>> getAccessGroupNarrativeInfo() {
+    public Map<Long, Tuple5 <String, Long, Long, String, String>> getAccessGroupNarrativeInfo() {
         return accessGroupNarrativeInfo;
     }
 
     @JsonProperty("access_group_narrative_info")
-    public void setAccessGroupNarrativeInfo(Map<Long, Tuple5 <String, Long, String, String, String>> accessGroupNarrativeInfo) {
+    public void setAccessGroupNarrativeInfo(Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrativeInfo) {
         this.accessGroupNarrativeInfo = accessGroupNarrativeInfo;
     }
 
-    public SearchObjectsOutput withAccessGroupNarrativeInfo(Map<Long, Tuple5 <String, Long, String, String, String>> accessGroupNarrativeInfo) {
+    public SearchObjectsOutput withAccessGroupNarrativeInfo(Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrativeInfo) {
         this.accessGroupNarrativeInfo = accessGroupNarrativeInfo;
         return this;
     }

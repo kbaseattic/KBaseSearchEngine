@@ -54,10 +54,13 @@ import kbasesearchengine.test.common.TestCommon;
 import kbasesearchengine.test.controllers.elasticsearch.ElasticSearchController;
 import kbasesearchengine.test.controllers.workspace.WorkspaceController;
 import kbasesearchengine.test.data.TestDataLoader;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import kbasesearchengine.authorization.AccessGroupCache;
 import kbasesearchengine.authorization.WorkspaceAccessGroupProvider;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.JsonClientException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.UObject;
@@ -262,6 +265,27 @@ public class ObjectDecoratorTest {
         System.out.println("released: " + wc.releaseModule(module));
     }
 
+    private static String loadData(
+            final WorkspaceClient wc,
+            final long wsid,
+            final String name,
+            final String type,
+            final String data1,
+            final String data2)
+            throws JsonParseException, JsonMappingException, IOException, JsonClientException {
+
+        List<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>> retVal =
+                wc.saveObjects(new SaveObjectsParams()
+                        .withId(wsid)
+                        .withObjects(Arrays.asList(new ObjectSaveData()
+                                .withData(new UObject(ImmutableMap.of(data1, data2)))
+                                .withName(name)
+                                .withType(type))));
+        return retVal.get(0).getE7().toString() + '/' +
+                retVal.get(0).getE1().toString() +'/' +
+                retVal.get(0).getE5().toString();
+    }
+
     @AfterClass
     public static void tearDownClass() throws Exception {
         if (coord != null) {
@@ -304,35 +328,27 @@ public class ObjectDecoratorTest {
         // a basic test to ensure all the indexer guts are working together.
         // also tests provenance
 
-        wsCli1.createWorkspace(new CreateWorkspaceParams()
-                .withWorkspace("foo"));
-        List<Tuple11<Long, String, String, String, Long, String,
-                Long, String, String, Long, Map<String, String>>> retVal =
-                wsCli1.saveObjects(new SaveObjectsParams()
-                        .withWorkspace("foo")
-                        .withObjects(Arrays.asList(new ObjectSaveData()
-                                .withData(new UObject(ImmutableMap.of("whee", "wugga")))
-                                .withName("bar")
-                                .withType("Empty.AType-1.0")
-                                .withProvenance(Arrays.asList(new ProvenanceAction()
-                                        .withService("serv")
-                                        .withMethod("meth")
-                                        .withServiceVer("servver")
-                                        .withSubactions(Arrays.asList(new SubAction()
-                                                .withCommit("commit")
-                                                .withName("serv.meth")
-                                        ))
-                                ))
-                        ))
-                );
+        final long wsId1 = wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("workspace-1")).getE1();
+        final long wsId2 = wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("workspace-2")).getE1();
 
-        System.out.println(" RETVAL: " + retVal);
+        String emptyRef1 = loadData(wsCli1, wsId1, "EmptyObj1", "Empty.AType-1.0", "EmptyObject-1", "Obj-1-data");
+        String emptyRef2 = loadData(wsCli1, wsId1, "EmptyObj2", "Empty.AType-1.0", "EmptyObject-2", "Obj-2-data");
+        String emptyRef3 = loadData(wsCli1, wsId2, "EmptyObj3", "Empty.AType-1.0", "EmptyObject-3", "Obj-3-data");
+
+        System.out.println(" EMPTY REF1: " + emptyRef1);
+        System.out.println(" EMPTY REF2: " + emptyRef2);
+        System.out.println(" EMPTY REF3: " + emptyRef3);
 
         System.out.println("waiting 5s for event to trickle through the system");
         Thread.sleep(5000); // wait for the indexer & worker to process the event
 
         List<String> guid_list = new ArrayList<String>();
-        guid_list.add("WS:1/1/1");
+        guid_list.add("WS:" + emptyRef1);
+        guid_list.add("WS:" + emptyRef2);
+        guid_list.add("WS:" + emptyRef3);
+
         System.out.println(" IN TEST DECORATOR");
 
         // test getObjects
@@ -349,13 +365,14 @@ public class ObjectDecoratorTest {
 
         String guid = objsOutputDecorated.getObjects().get(0).getGuid();
         String objName = objsOutputDecorated.getObjects().get(0).getObjectName();
-        Map<Long, Tuple5 <String, Long, String, String, String>> narrtiveInfo =
+        Map<Long, Tuple5 <String, Long, Long, String, String>> narrtiveInfo =
                 objsOutputDecorated.getAccessGroupNarrativeInfo();
 
-        assertThat("incorrect guid", guid, is("WS:1/1/1"));
-        assertThat("incorrect object name", objName, is("bar"));
+        assertThat("incorrect guid", guid, is("WS:2/1/1"));
+        assertThat("incorrect object name", objName, is("EmptyObj3"));
         assertNotNull("incorrect narrative info", narrtiveInfo);
         assertThat("incorrect user name", narrtiveInfo.get(new Long(1)).getE4(), is("user1"));
+        assertThat("incorrect user name", narrtiveInfo.get(new Long(2)).getE4(), is("user1"));
     }
 
 }
