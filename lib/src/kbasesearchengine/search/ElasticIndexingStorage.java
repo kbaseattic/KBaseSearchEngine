@@ -1112,6 +1112,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
             // sometimes this is a long, sometimes it's an int
             b.withNullableTimestamp(Instant.ofEpochMilli(
                     ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
+            @SuppressWarnings("unchecked")
+            final List<String> sourceTags = (List<String>) obj.get(SOURCE_TAGS);
+            if (sourceTags != null) {
+                for (final String tag: sourceTags) {
+                    b.withSourceTag(tag);
+                }
+            }
         }
         if (json) {
             final String ojson = (String) obj.get("ojson");
