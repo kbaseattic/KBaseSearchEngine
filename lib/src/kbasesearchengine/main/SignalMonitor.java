@@ -16,14 +16,19 @@ import java.util.concurrent.CountDownLatch;
  */
 public class SignalMonitor {
     
-    final CountDownLatch latch = new CountDownLatch(1);
+    private final CountDownLatch latch = new CountDownLatch(1);
     
     public SignalMonitor() {}
     
+    /** Send a signal to the waiting thread. */
     public void signal() {
         latch.countDown();
     }
+
     
+    /** Wait for a signal to be sent by the controlling thread.
+     * @throws InterruptedException if the thread is interrupted.
+     */
     public void awaitSignal() throws InterruptedException {
         latch.await();
     }

@@ -896,9 +896,6 @@ public class IndexerCoordinatorTest {
         final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, sm, 3, executor,
                 Arrays.asList(1), ST, SC);
         
-        when(storage.get(StatusEventProcessingState.PROC, 3))
-                .thenThrow(new FatalRetriableIndexingException("whee"));
-        
         final Thread shutdownThread = new Thread() {
             
             @Override
