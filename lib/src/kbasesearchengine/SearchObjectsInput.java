@@ -16,6 +16,14 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * <p>Original spec-file type: SearchObjectsInput</p>
  * <pre>
  * Input parameters for 'search_objects' method.
+ * object_types - list of the types of objects to search on (optional). The
+ *                function will search on all objects if the list is not specified
+ *                or is empty. The list size must be less than 50.
+ * match_filter - see MatchFilter (optional).
+ * sorting_rules - see SortingRule (optional).
+ * access_filter - see AccessFilter (optional).
+ * pagination - see Pagination (optional).
+ * post_processing - see PostProcessing (optional).
  * </pre>
  * 
  */
@@ -52,7 +60,7 @@ public class SearchObjectsInput {
     /**
      * <p>Original spec-file type: AccessFilter</p>
      * <pre>
-     * Optional rules of access constrains.
+     * Optional rules of access constraints.
      *   - with_private - include data found in workspaces not marked 
      *       as public, default value is true,
      *   - with_public - include data found in public workspaces,
@@ -91,7 +99,7 @@ public class SearchObjectsInput {
      */
     @JsonProperty("post_processing")
     private PostProcessing postProcessing;
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+    private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("object_types")
     public List<String> getObjectTypes() {
@@ -165,7 +173,7 @@ public class SearchObjectsInput {
     /**
      * <p>Original spec-file type: AccessFilter</p>
      * <pre>
-     * Optional rules of access constrains.
+     * Optional rules of access constraints.
      *   - with_private - include data found in workspaces not marked 
      *       as public, default value is true,
      *   - with_public - include data found in public workspaces,
@@ -184,7 +192,7 @@ public class SearchObjectsInput {
     /**
      * <p>Original spec-file type: AccessFilter</p>
      * <pre>
-     * Optional rules of access constrains.
+     * Optional rules of access constraints.
      *   - with_private - include data found in workspaces not marked 
      *       as public, default value is true,
      *   - with_public - include data found in public workspaces,
@@ -280,17 +288,17 @@ public class SearchObjectsInput {
     }
 
     @JsonAnyGetter
-    public Map<String, Object> getAdditionalProperties() {
+    public Map<java.lang.String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
     @JsonAnySetter
-    public void setAdditionalProperties(String name, Object value) {
+    public void setAdditionalProperties(java.lang.String name, Object value) {
         this.additionalProperties.put(name, value);
     }
 
     @Override
-    public String toString() {
+    public java.lang.String toString() {
         return ((((((((((((((("SearchObjectsInput"+" [objectTypes=")+ objectTypes)+", matchFilter=")+ matchFilter)+", sortingRules=")+ sortingRules)+", accessFilter=")+ accessFilter)+", pagination=")+ pagination)+", postProcessing=")+ postProcessing)+", additionalProperties=")+ additionalProperties)+"]");
     }
 

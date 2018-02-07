@@ -126,13 +126,10 @@ SearchTypesInput is a reference to a hash where the following keys are defined:
 	access_filter has a value which is a KBaseSearchEngine.AccessFilter
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
-	access_group_id has a value which is an int
 	object_name has a value which is a string
-	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
-GUID is a string
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -166,13 +163,10 @@ SearchTypesInput is a reference to a hash where the following keys are defined:
 	access_filter has a value which is a KBaseSearchEngine.AccessFilter
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
-	access_group_id has a value which is an int
 	object_name has a value which is a string
-	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
-GUID is a string
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -198,7 +192,7 @@ SearchTypesOutput is a reference to a hash where the following keys are defined:
 
 =item Description
 
-Search for number of objects of each type matching constrains.
+Search for number of objects of each type matching constraints.
 
 =back
 
@@ -266,7 +260,7 @@ Search for number of objects of each type matching constrains.
 $params is a KBaseSearchEngine.SearchObjectsInput
 $return is a KBaseSearchEngine.SearchObjectsOutput
 SearchObjectsInput is a reference to a hash where the following keys are defined:
-	object_type has a value which is a string
+	object_types has a value which is a reference to a list where each element is a string
 	match_filter has a value which is a KBaseSearchEngine.MatchFilter
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 	access_filter has a value which is a KBaseSearchEngine.AccessFilter
@@ -274,13 +268,10 @@ SearchObjectsInput is a reference to a hash where the following keys are defined
 	post_processing has a value which is a KBaseSearchEngine.PostProcessing
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
-	access_group_id has a value which is an int
 	object_name has a value which is a string
-	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
-GUID is a string
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -326,6 +317,7 @@ ObjectData is a reference to a hash where the following keys are defined:
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
 	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+GUID is a string
 
 </pre>
 
@@ -336,7 +328,7 @@ ObjectData is a reference to a hash where the following keys are defined:
 $params is a KBaseSearchEngine.SearchObjectsInput
 $return is a KBaseSearchEngine.SearchObjectsOutput
 SearchObjectsInput is a reference to a hash where the following keys are defined:
-	object_type has a value which is a string
+	object_types has a value which is a reference to a list where each element is a string
 	match_filter has a value which is a KBaseSearchEngine.MatchFilter
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 	access_filter has a value which is a KBaseSearchEngine.AccessFilter
@@ -344,13 +336,10 @@ SearchObjectsInput is a reference to a hash where the following keys are defined
 	post_processing has a value which is a KBaseSearchEngine.PostProcessing
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
-	access_group_id has a value which is an int
 	object_name has a value which is a string
-	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
-GUID is a string
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -396,13 +385,14 @@ ObjectData is a reference to a hash where the following keys are defined:
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
 	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+GUID is a string
 
 
 =end text
 
 =item Description
 
-Search for objects of particular type matching constrains.
+Search for objects of particular type matching constraints.
 
 =back
 
@@ -929,9 +919,7 @@ boolean exclude_subobjects - don't return any subobjects in the search results i
 <pre>
 a reference to a hash where the following keys are defined:
 full_text_in_all has a value which is a string
-access_group_id has a value which is an int
 object_name has a value which is a string
-parent_guid has a value which is a KBaseSearchEngine.GUID
 timestamp has a value which is a KBaseSearchEngine.MatchValue
 exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
@@ -944,9 +932,7 @@ lookupInKeys has a value which is a reference to a hash where the key is a strin
 
 a reference to a hash where the following keys are defined:
 full_text_in_all has a value which is a string
-access_group_id has a value which is an int
 object_name has a value which is a string
-parent_guid has a value which is a KBaseSearchEngine.GUID
 timestamp has a value which is a KBaseSearchEngine.MatchValue
 exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
@@ -966,7 +952,7 @@ lookupInKeys has a value which is a reference to a hash where the key is a strin
 
 =item Description
 
-Optional rules of access constrains.
+Optional rules of access constraints.
   - with_private - include data found in workspaces not marked 
       as public, default value is true,
   - with_public - include data found in public workspaces,
@@ -1219,6 +1205,14 @@ data_includes has a value which is a reference to a list where each element is a
 =item Description
 
 Input parameters for 'search_objects' method.
+object_types - list of the types of objects to search on (optional). The
+               function will search on all objects if the list is not specified
+               or is empty. The list size must be less than 50.
+match_filter - see MatchFilter (optional).
+sorting_rules - see SortingRule (optional).
+access_filter - see AccessFilter (optional).
+pagination - see Pagination (optional).
+post_processing - see PostProcessing (optional).
 
 
 =item Definition
@@ -1227,7 +1221,7 @@ Input parameters for 'search_objects' method.
 
 <pre>
 a reference to a hash where the following keys are defined:
-object_type has a value which is a string
+object_types has a value which is a reference to a list where each element is a string
 match_filter has a value which is a KBaseSearchEngine.MatchFilter
 sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 access_filter has a value which is a KBaseSearchEngine.AccessFilter
@@ -1241,7 +1235,7 @@ post_processing has a value which is a KBaseSearchEngine.PostProcessing
 =begin text
 
 a reference to a hash where the following keys are defined:
-object_type has a value which is a string
+object_types has a value which is a reference to a list where each element is a string
 match_filter has a value which is a KBaseSearchEngine.MatchFilter
 sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 access_filter has a value which is a KBaseSearchEngine.AccessFilter
