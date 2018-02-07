@@ -1110,9 +1110,10 @@ public class ElasticIndexingStorageTest {
         AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
 
         //searchObjects
-        final kbasesearchengine.search.MatchFilter filter = new kbasesearchengine.search.MatchFilter();
-        filter.withFullTextInAll("multiWordInSearchMethod1 multiWordInSearchMethod2");
-        FoundHits hits = indexStorage.searchObjects(empty, filter,sorting, accessFilter, null, pp);
+        final Builder filter = MatchFilter.getBuilder();
+        filter.withNullableFullTextInAll("multiWordInSearchMethod1 multiWordInSearchMethod2");
+
+        FoundHits hits = indexStorage.searchObjects(empty, filter.build(),sorting, accessFilter, null, pp);
         Map<String, List<String>> hitRes = hits.objects.get(0).getHighlight();
 
         Map<String, List<String>> result1 = new HashMap<>();
