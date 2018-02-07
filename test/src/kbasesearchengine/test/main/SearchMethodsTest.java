@@ -9,7 +9,7 @@ import static kbasesearchengine.test.common.TestCommon.set;
 import java.util.Arrays;
 import java.util.Collections;
 
-import kbasesearchengine.*;
+import kbasesearchengine.MatchFilter;
 import org.junit.Test;
 
 import kbasesearchengine.authorization.AccessGroupProvider;
@@ -20,6 +20,12 @@ import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.PostProcessing;
 import kbasesearchengine.search.SortingRule;
 import kbasesearchengine.system.TypeStorage;
+import kbasesearchengine.SearchObjectsInput;
+import kbasesearchengine.SearchObjectsOutput;
+import kbasesearchengine.SearchTypesInput;
+import kbasesearchengine.SearchTypesOutput;
+import kbasesearchengine.AccessFilter;
+import kbasesearchengine.Pagination;
 
 public class SearchMethodsTest {
     
