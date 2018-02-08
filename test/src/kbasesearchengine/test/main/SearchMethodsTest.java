@@ -1,38 +1,5 @@
 package kbasesearchengine.test.main;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.mockingDetails;
-import static kbasesearchengine.test.common.TestCommon.set;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
-
-import kbasesearchengine.common.GUID;
-import kbasesearchengine.common.ObjectJsonPath;
-import kbasesearchengine.events.exceptions.IndexingException;
-import kbasesearchengine.events.handler.SourceData;
-import kbasesearchengine.parse.KeywordParser;
-import kbasesearchengine.parse.ObjectParseException;
-import kbasesearchengine.parse.ParsedObject;
-import kbasesearchengine.search.ObjectData;
-import kbasesearchengine.system.IndexingRules;
-import kbasesearchengine.system.ObjectTypeParsingRules;
-import kbasesearchengine.system.SearchObjectType;
-import kbasesearchengine.system.StorageObjectType;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import kbasesearchengine.AccessFilter;
 import kbasesearchengine.MatchFilter;
 import kbasesearchengine.Pagination;
@@ -41,15 +8,28 @@ import kbasesearchengine.SearchObjectsOutput;
 import kbasesearchengine.SearchTypesInput;
 import kbasesearchengine.SearchTypesOutput;
 import kbasesearchengine.authorization.AccessGroupProvider;
+import kbasesearchengine.common.GUID;
 import kbasesearchengine.main.SearchMethods;
 import kbasesearchengine.search.FoundHits;
 import kbasesearchengine.search.IndexingStorage;
+import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
 import kbasesearchengine.search.SortingRule;
 import kbasesearchengine.system.TypeStorage;
-import us.kbase.common.service.UObject;
+import org.junit.Test;
 
-import javax.xml.transform.Source;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static kbasesearchengine.test.common.TestCommon.set;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SearchMethodsTest {
 
