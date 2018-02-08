@@ -132,8 +132,8 @@ public class DecorateWithNarrativeInfo implements SearchInterface {
                         parseDateTime(wsInfo.getE4()).getMillis());
 
                 tempNarrInfo.setE3(timeMilli.toEpochMilli());  // modification time
-                tempNarrInfo.setE4(wsInfo.getE3());  // workspace user name
-                tempNarrInfo.setE5("");
+                tempNarrInfo.setE4(wsInfo.getE3());            // workspace user name
+                tempNarrInfo.setE5("");                        // TODO workspace user, real name
 
                 final Map<String, String> wsInfoMeta = wsInfo.getE9();
 
@@ -144,7 +144,7 @@ public class DecorateWithNarrativeInfo implements SearchInterface {
                 }
                 else {
                     tempNarrInfo.setE1(null);       // narrative name not available
-                    tempNarrInfo.setE2(null);              // narrative id not available
+                    tempNarrInfo.setE2(null);       // narrative id not available
                 }
                 retVal.put(workspaceId, tempNarrInfo);
             }
