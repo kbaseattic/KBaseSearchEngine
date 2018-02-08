@@ -126,13 +126,10 @@ SearchTypesInput is a reference to a hash where the following keys are defined:
 	access_filter has a value which is a KBaseSearchEngine.AccessFilter
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
-	access_group_id has a value which is an int
 	object_name has a value which is a string
-	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
-GUID is a string
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -166,13 +163,10 @@ SearchTypesInput is a reference to a hash where the following keys are defined:
 	access_filter has a value which is a KBaseSearchEngine.AccessFilter
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
-	access_group_id has a value which is an int
 	object_name has a value which is a string
-	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
-GUID is a string
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -274,13 +268,10 @@ SearchObjectsInput is a reference to a hash where the following keys are defined
 	post_processing has a value which is a KBaseSearchEngine.PostProcessing
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
-	access_group_id has a value which is an int
 	object_name has a value which is a string
-	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
-GUID is a string
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -335,6 +326,7 @@ narrative_info is a reference to a list containing 5 items:
 	3: (ws_owner_username) a string
 	4: (ws_owner_realname) a string
 timestamp is an int
+GUID is a string
 
 </pre>
 
@@ -353,13 +345,10 @@ SearchObjectsInput is a reference to a hash where the following keys are defined
 	post_processing has a value which is a KBaseSearchEngine.PostProcessing
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
-	access_group_id has a value which is an int
 	object_name has a value which is a string
-	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
-GUID is a string
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -414,7 +403,7 @@ narrative_info is a reference to a list containing 5 items:
 	3: (ws_owner_username) a string
 	4: (ws_owner_realname) a string
 timestamp is an int
-
+GUID is a string
 
 =end text
 
@@ -965,9 +954,7 @@ boolean exclude_subobjects - don't return any subobjects in the search results i
 <pre>
 a reference to a hash where the following keys are defined:
 full_text_in_all has a value which is a string
-access_group_id has a value which is an int
 object_name has a value which is a string
-parent_guid has a value which is a KBaseSearchEngine.GUID
 timestamp has a value which is a KBaseSearchEngine.MatchValue
 exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
@@ -980,9 +967,7 @@ lookupInKeys has a value which is a reference to a hash where the key is a strin
 
 a reference to a hash where the following keys are defined:
 full_text_in_all has a value which is a string
-access_group_id has a value which is an int
 object_name has a value which is a string
-parent_guid has a value which is a KBaseSearchEngine.GUID
 timestamp has a value which is a KBaseSearchEngine.MatchValue
 exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue

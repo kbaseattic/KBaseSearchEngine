@@ -44,38 +44,34 @@ class KBaseSearchEngine(object):
            search in all properties. boolean exclude_subobjects - don't
            return any subobjects in the search results if true. Default
            false.) -> structure: parameter "full_text_in_all" of String,
-           parameter "access_group_id" of Long, parameter "object_name" of
-           String, parameter "parent_guid" of type "GUID" (Global user
-           identificator. It has structure like this:
-           <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
-           parameter "timestamp" of type "MatchValue" (Optional rules of
-           defining constraints for values of particular term (keyword).
-           Appropriate field depends on type of keyword. For instance in case
-           of integer type 'int_value' should be used. In case of range
-           constraint rather than single value 'min_*' and 'max_*' fields
-           should be used. You may omit one of ends of range to achieve '<='
-           or '>=' comparison. Ends are always included for range
-           constraints.) -> structure: parameter "value" of String, parameter
-           "int_value" of Long, parameter "double_value" of Double, parameter
-           "bool_value" of type "boolean" (A boolean. 0 = false, other =
-           true.), parameter "min_int" of Long, parameter "max_int" of Long,
-           parameter "min_date" of Long, parameter "max_date" of Long,
-           parameter "min_double" of Double, parameter "max_double" of
-           Double, parameter "exclude_subobjects" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "lookupInKeys" of
-           mapping from String to type "MatchValue" (Optional rules of
-           defining constraints for values of particular term (keyword).
-           Appropriate field depends on type of keyword. For instance in case
-           of integer type 'int_value' should be used. In case of range
-           constraint rather than single value 'min_*' and 'max_*' fields
-           should be used. You may omit one of ends of range to achieve '<='
-           or '>=' comparison. Ends are always included for range
-           constraints.) -> structure: parameter "value" of String, parameter
-           "int_value" of Long, parameter "double_value" of Double, parameter
-           "bool_value" of type "boolean" (A boolean. 0 = false, other =
-           true.), parameter "min_int" of Long, parameter "max_int" of Long,
-           parameter "min_date" of Long, parameter "max_date" of Long,
-           parameter "min_double" of Double, parameter "max_double" of
+           parameter "object_name" of String, parameter "timestamp" of type
+           "MatchValue" (Optional rules of defining constraints for values of
+           particular term (keyword). Appropriate field depends on type of
+           keyword. For instance in case of integer type 'int_value' should
+           be used. In case of range constraint rather than single value
+           'min_*' and 'max_*' fields should be used. You may omit one of
+           ends of range to achieve '<=' or '>=' comparison. Ends are always
+           included for range constraints.) -> structure: parameter "value"
+           of String, parameter "int_value" of Long, parameter "double_value"
+           of Double, parameter "bool_value" of type "boolean" (A boolean. 0
+           = false, other = true.), parameter "min_int" of Long, parameter
+           "max_int" of Long, parameter "min_date" of Long, parameter
+           "max_date" of Long, parameter "min_double" of Double, parameter
+           "max_double" of Double, parameter "exclude_subobjects" of type
+           "boolean" (A boolean. 0 = false, other = true.), parameter
+           "lookupInKeys" of mapping from String to type "MatchValue"
+           (Optional rules of defining constraints for values of particular
+           term (keyword). Appropriate field depends on type of keyword. For
+           instance in case of integer type 'int_value' should be used. In
+           case of range constraint rather than single value 'min_*' and
+           'max_*' fields should be used. You may omit one of ends of range
+           to achieve '<=' or '>=' comparison. Ends are always included for
+           range constraints.) -> structure: parameter "value" of String,
+           parameter "int_value" of Long, parameter "double_value" of Double,
+           parameter "bool_value" of type "boolean" (A boolean. 0 = false,
+           other = true.), parameter "min_int" of Long, parameter "max_int"
+           of Long, parameter "min_date" of Long, parameter "max_date" of
+           Long, parameter "min_double" of Double, parameter "max_double" of
            Double, parameter "access_filter" of type "AccessFilter" (Optional
            rules of access constraints. - with_private - include data found
            in workspaces not marked as public, default value is true, -
@@ -117,6 +113,7 @@ class KBaseSearchEngine(object):
            parameter "object_name" of String, parameter "parent_guid" of type
            "GUID" (Global user identificator. It has structure like this:
            <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
+           "full_text_in_all" of String, parameter "object_name" of String,
            parameter "timestamp" of type "MatchValue" (Optional rules of
            defining constraints for values of particular term (keyword).
            Appropriate field depends on type of keyword. For instance in case

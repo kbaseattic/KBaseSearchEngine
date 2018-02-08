@@ -1,8 +1,10 @@
 package kbasesearchengine.test.events.handler;
 
+import static kbasesearchengine.test.common.TestCommon.set;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +35,7 @@ public class SourceDataTest {
         assertThat("incorrect module", sd.getModule(), is(Optional.absent()));
         assertThat("incorrect version", sd.getVersion(), is(Optional.absent()));
         assertThat("incorrect md5", sd.getMD5(), is(Optional.absent()));
+        assertThat("incorrect tags", sd.getSourceTags(), is(set()));
     }
     
     @Test
@@ -45,6 +48,8 @@ public class SourceDataTest {
                 .withNullableModule("mod")
                 .withNullableVersion("ver")
                 .withNullableMD5("md5")
+                .withSourceTag("refdata")
+                .withSourceTag("testworkspace")
                 .build();
         
         assertThat("incorrect data", sd.getData().asClassInstance(Map.class),
@@ -57,6 +62,7 @@ public class SourceDataTest {
         assertThat("incorrect module", sd.getModule(), is(Optional.of("mod")));
         assertThat("incorrect version", sd.getVersion(), is(Optional.of("ver")));
         assertThat("incorrect md5", sd.getMD5(), is(Optional.of("md5")));
+        assertThat("incorrect tags", sd.getSourceTags(), is(set("refdata", "testworkspace")));
     }
     
     @Test
@@ -81,6 +87,7 @@ public class SourceDataTest {
         assertThat("incorrect module", sd.getModule(), is(Optional.absent()));
         assertThat("incorrect version", sd.getVersion(), is(Optional.absent()));
         assertThat("incorrect md5", sd.getMD5(), is(Optional.absent()));
+        assertThat("incorrect tags", sd.getSourceTags(), is(set()));
     }
     
     @Test
@@ -105,6 +112,7 @@ public class SourceDataTest {
         assertThat("incorrect module", sd.getModule(), is(Optional.absent()));
         assertThat("incorrect version", sd.getVersion(), is(Optional.absent()));
         assertThat("incorrect md5", sd.getMD5(), is(Optional.absent()));
+        assertThat("incorrect tags", sd.getSourceTags(), is(set()));
     }
     
     @Test
@@ -132,6 +140,39 @@ public class SourceDataTest {
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
+    
+    @Test
+    public void addTagFail() {
+        failAddTag(null, new IllegalArgumentException(
+                "sourceTag cannot be null or whitespace only"));
+        failAddTag("   \t    \n  ", new IllegalArgumentException(
+                "sourceTag cannot be null or whitespace only"));
+    }
+    
+    private void failAddTag(final String tag, final Exception expected) {
+        try {
+            SourceData.getBuilder(new UObject(new HashMap<>()), "name", "creator")
+                    .withSourceTag(tag);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
+    
+    @Test
+    public void immutableTags() {
+        final SourceData sd = SourceData.getBuilder(
+                new UObject(ImmutableMap.of("foo1", "bar1")), "name1", "creator1")
+                .withSourceTag("refdata")
+                .build();
+        
+        try {
+            sd.getSourceTags().add("foo");
+            fail("expected exception");
+        } catch (UnsupportedOperationException got) {
+            // test passes
         }
     }
 }

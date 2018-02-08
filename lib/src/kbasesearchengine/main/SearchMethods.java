@@ -34,6 +34,7 @@ import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.search.FoundHits;
 import kbasesearchengine.search.IndexingStorage;
+import kbasesearchengine.search.MatchFilter.Builder;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.TypeStorage;
@@ -72,10 +73,6 @@ public class SearchMethods implements SearchInterface {
         return value == null ? null : (int)(long)value;
     }
 
-    private static GUID toGUID(String value) {
-        return value == null ? null : new GUID(value);
-    }
-
     private kbasesearchengine.search.MatchValue toSearch(MatchValue mv, String source) {
         if (mv == null) {
             return null;
@@ -106,23 +103,19 @@ public class SearchMethods implements SearchInterface {
     }
     
     private kbasesearchengine.search.MatchFilter toSearch(MatchFilter mf) {
-        kbasesearchengine.search.MatchFilter ret = 
-                new kbasesearchengine.search.MatchFilter()
-                .withFullTextInAll(mf.getFullTextInAll())
-                .withAccessGroupId(toInteger(mf.getAccessGroupId()))
-                .withObjectName(mf.getObjectName())
-                .withParentGuid(toGUID(mf.getParentGuid()))
-                .withTimestamp(toSearch(mf.getTimestamp(), "timestamp"))
+        final Builder ret = 
+                kbasesearchengine.search.MatchFilter.getBuilder()
+                .withNullableFullTextInAll(mf.getFullTextInAll())
+                .withNullableObjectName(mf.getObjectName())
+                .withNullableTimestamp(toSearch(mf.getTimestamp(), "timestamp"))
                 .withExcludeSubObjects(toBool(mf.getExcludeSubobjects()));
         if (mf.getLookupInKeys() != null) {
-            Map<String, kbasesearchengine.search.MatchValue> keys =
-                    new LinkedHashMap<String, kbasesearchengine.search.MatchValue>();
-            for (String key : mf.getLookupInKeys().keySet()) {
-                keys.put(key, toSearch(mf.getLookupInKeys().get(key), key));
+            for (final String key : mf.getLookupInKeys().keySet()) {
+                //TODO CODE proper error for null value
+                ret.withLookupInKey(key, toSearch(mf.getLookupInKeys().get(key), key));
             }
-            ret.withLookupInKeys(keys);
         }
-        return ret;
+        return ret.build();
     }
 
     private kbasesearchengine.search.AccessFilter toSearch(AccessFilter af, String user)

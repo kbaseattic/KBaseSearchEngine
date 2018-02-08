@@ -1,94 +1,113 @@
 package kbasesearchengine.search;
 
-import java.util.LinkedHashMap;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
-import kbasesearchengine.common.GUID;
+import com.google.common.base.Optional;
 
+import kbasesearchengine.tools.Utils;
+
+/**
+ * Describes what objects in {@link IndexingStorage} a search should return.
+ * 
+ * @author gaprice@lbl.gov
+ * @author rsutormin@lbl.gov
+ *
+ */
 public class MatchFilter {
     
-    //TODO CODE everything about this class
-    
-    public boolean excludeSubObjects = false;
-    public String fullTextInAll = null;
-    public Integer accessGroupId = null;
-    public String objectName = null;
-    public GUID parentGuid = null;
-    public MatchValue timestamp = null;
-    public Map<String, MatchValue> lookupInKeys = null;
+    private final boolean excludeSubObjects;
+    private final Optional<String> fullTextInAll;
+    private final Optional<String> objectName;
+    private final Optional<MatchValue> timestamp;
+    private final Map<String, MatchValue> lookupInKeys;
+    private final Set<String> sourceTags;
+    private final boolean isSourceTagsBlacklist;
 
-    public MatchFilter() {}
-    
-    public static MatchFilter create() {
-        return new MatchFilter();
-    }
-    
-    public MatchFilter withExcludeSubObjects(final boolean excludeSubObjects) {
+    private MatchFilter(
+            final boolean excludeSubObjects,
+            final String fullTextInAll,
+            final String objectName,
+            final MatchValue timestamp, //TODO CODE this is gross. Make an actual date range class
+            final Map<String, MatchValue> lookupInKeys,
+            final Set<String> sourceTags,
+            final boolean isSourceTagsBlacklist) {
         this.excludeSubObjects = excludeSubObjects;
-        return this;
-    }
-    
-    public MatchFilter withFullTextInAll(String text) {
-        this.fullTextInAll = text;
-        return this;
-    }
-    
-    public MatchFilter withAccessGroupId(Integer accessGroupId) {
-        this.accessGroupId = accessGroupId;
-        return this;
-    }
-    
-    public MatchFilter withObjectName(String partOfName) {
-        this.objectName = partOfName;
-        return this;
-    }
-    
-    public MatchFilter withParentGuid(GUID parentGuid) {
-        this.parentGuid = parentGuid;
-        return this;
-    }
-    
-    public MatchFilter withTimestamp(MatchValue value) {
-        this.timestamp = value;
-        return this;
-    }
-    
-    public MatchFilter withLookupInKeys(Map<String, MatchValue> keys) {
-        if (lookupInKeys == null) {
-            this.lookupInKeys = new LinkedHashMap<>(keys);
-        } else {
-            this.lookupInKeys.putAll(keys);
-        }
-        return this;
+        this.fullTextInAll = Optional.fromNullable(fullTextInAll);
+        this.objectName = Optional.fromNullable(objectName);
+        this.timestamp = Optional.fromNullable(timestamp);
+        this.lookupInKeys = Collections.unmodifiableMap(lookupInKeys);
+        this.sourceTags = Collections.unmodifiableSet(sourceTags);
+        this.isSourceTagsBlacklist = isSourceTagsBlacklist;
     }
 
-    public MatchFilter withLookupInKey(String keyName, String value) {
-        return withLookupInKey(keyName, new MatchValue(value));
+    /** True if sub objects should be excluded from the search, default false.
+     * @return true if sub objects should be excluded.
+     */
+    public boolean isExcludeSubObjects() {
+        return excludeSubObjects;
     }
 
-    public MatchFilter withLookupInKey(String keyName, MatchValue value) {
-        if (this.lookupInKeys == null) {
-            this.lookupInKeys = new LinkedHashMap<>();
-        }
-        this.lookupInKeys.put(keyName, value);
-        return this;
+    /** A text string to match across all fields of an object, if present.
+     * @return the text string.
+     */
+    public Optional<String> getFullTextInAll() {
+        return fullTextInAll;
+    }
+
+    /** An object name to match across objects, if present.
+     * @return the object name.
+     */
+    public Optional<String> getObjectName() {
+        return objectName;
+    }
+
+    /** A time range to match across objects, if present.
+     * @return the time range.
+     */
+    public Optional<MatchValue> getTimestamp() {
+        return timestamp;
+    }
+
+    /** A set of matches on object keys to search on.
+     * @return the matches.
+     */
+    public Map<String, MatchValue> getLookupInKeys() {
+        return lookupInKeys;
+    }
+
+    /** Tags applied to objects at the data source to apply to the search.
+     * @return data source tags.
+     */
+    public Set<String> getSourceTags() {
+        return sourceTags;
+    }
+
+    /** Returns true if the data source tags is a blacklist, or false if a whitelist
+     * (the default).
+     * @return whether the data source tags is a whitelist or blacklist.
+     */
+    public boolean isSourceTagsBlacklist() {
+        return isSourceTagsBlacklist;
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result
-                + ((accessGroupId == null) ? 0 : accessGroupId.hashCode());
         result = prime * result + (excludeSubObjects ? 1231 : 1237);
         result = prime * result
                 + ((fullTextInAll == null) ? 0 : fullTextInAll.hashCode());
+        result = prime * result + (isSourceTagsBlacklist ? 1231 : 1237);
         result = prime * result
                 + ((lookupInKeys == null) ? 0 : lookupInKeys.hashCode());
         result = prime * result
                 + ((objectName == null) ? 0 : objectName.hashCode());
         result = prime * result
-                + ((parentGuid == null) ? 0 : parentGuid.hashCode());
+                + ((sourceTags == null) ? 0 : sourceTags.hashCode());
         result = prime * result
                 + ((timestamp == null) ? 0 : timestamp.hashCode());
         return result;
@@ -106,13 +125,6 @@ public class MatchFilter {
             return false;
         }
         MatchFilter other = (MatchFilter) obj;
-        if (accessGroupId == null) {
-            if (other.accessGroupId != null) {
-                return false;
-            }
-        } else if (!accessGroupId.equals(other.accessGroupId)) {
-            return false;
-        }
         if (excludeSubObjects != other.excludeSubObjects) {
             return false;
         }
@@ -121,6 +133,9 @@ public class MatchFilter {
                 return false;
             }
         } else if (!fullTextInAll.equals(other.fullTextInAll)) {
+            return false;
+        }
+        if (isSourceTagsBlacklist != other.isSourceTagsBlacklist) {
             return false;
         }
         if (lookupInKeys == null) {
@@ -137,11 +152,11 @@ public class MatchFilter {
         } else if (!objectName.equals(other.objectName)) {
             return false;
         }
-        if (parentGuid == null) {
-            if (other.parentGuid != null) {
+        if (sourceTags == null) {
+            if (other.sourceTags != null) {
                 return false;
             }
-        } else if (!parentGuid.equals(other.parentGuid)) {
+        } else if (!sourceTags.equals(other.sourceTags)) {
             return false;
         }
         if (timestamp == null) {
@@ -153,4 +168,115 @@ public class MatchFilter {
         }
         return true;
     }
+
+    /** Get a builder for a {@link MatchFilter}.
+     * @return
+     */
+    public static Builder getBuilder() {
+        return new Builder();
+    }
+    
+    /** A {@link MatchFilter} builder.
+     * @author gaprice@lbl.gov
+     *
+     */
+    public static class Builder {
+        
+        private boolean excludeSubObjects = false;
+        private String fullTextInAll = null;
+        private String objectName = null;
+        private MatchValue timestamp = null;
+        private Map<String, MatchValue> lookupInKeys = new HashMap<>();
+        private Set<String> sourceTags = new HashSet<>();
+        private boolean isSourceTagsBlacklist = false;
+        
+        private Builder() {}
+
+        /** Set whether subobjects should be returned in the search results, default false.
+         * @param excludeSubObjects whether subobjects should be returned.
+         * @return this builder.
+         */
+        public Builder withExcludeSubObjects(final boolean excludeSubObjects) {
+            this.excludeSubObjects = excludeSubObjects;
+            return this;
+        }
+        
+        /** Add a text string that is compared across all object fields for matches when searching.
+         * @param text the text string.
+         * @return this builder.
+         */
+        public Builder withNullableFullTextInAll(final String text) {
+            this.fullTextInAll = text;
+            return this;
+        }
+        
+        /** Add an object name to search against.
+         * @param objectName the object name.
+         * @return this builder.
+         */
+        public Builder withNullableObjectName(final String objectName) {
+            this.objectName = objectName;
+            return this;
+        }
+        
+        /** Add a range that constrains the creation date of the returned objects.
+         * @param value the timestamp range.
+         * @return this builder.
+         */
+        public Builder withNullableTimestamp(final MatchValue value) {
+            this.timestamp = value;
+            return this;
+        }
+        
+        /** Add a key / value pair to search on.
+         * @param keyName the object key to match.
+         * @param value the value of the key to match.
+         * @return this builder.
+         */
+        public Builder withLookupInKey(final String keyName, final String value) {
+            Utils.notNullOrEmpty(value, "value cannot be null or whitespace only");
+            return withLookupInKey(keyName, new MatchValue(value));
+        }
+        
+        /** Add a key / value pair to search on.
+         * @param keyName the object key to match.
+         * @param value the value of the key to match.
+         * @return this builder.
+         */
+        public Builder withLookupInKey(final String keyName, final MatchValue value) {
+            Utils.notNullOrEmpty(keyName, "key cannot be null or whitespace only");
+            Utils.nonNull(value, "value");
+            this.lookupInKeys.put(keyName, value);
+            return this;
+        }
+        
+        /** Add a tag applied at the data source to match against in the search.
+         * @param sourceTag the data source tag.
+         * @return this builder.
+         */
+        public Builder withSourceTag(final String sourceTag) {
+            Utils.notNullOrEmpty(sourceTag, "sourceTag cannot be null or whitespace only");
+            sourceTags.add(sourceTag);
+            return this;
+        }
+        
+        /** Specify whether the data source tags should be applied as a blacklist or a whitelist,
+         * the default.
+         * @param isBlacklist true if the data source tags should be treated as a blacklist.
+         * @return this builder.
+         */
+        public Builder withIsSourceTagsBlackList(final boolean isBlacklist) {
+            isSourceTagsBlacklist = isBlacklist;
+            return this;
+        }
+        
+        /** Build the {@link MatchFilter}.
+         * @return this builder. the new {@link MatchFilter}.
+         */
+        public MatchFilter build() {
+            return new MatchFilter(excludeSubObjects, fullTextInAll, objectName, timestamp,
+                    lookupInKeys, sourceTags, isSourceTagsBlacklist);
+        }
+    }
+
 }
