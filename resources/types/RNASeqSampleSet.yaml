@@ -1,0 +1,7 @@
+global-object-type: RNASeqSampleSet
+storage-type: WS
+storage-object-type: KBaseRNASeq.RNASeqSampleSet
+versions:
+- indexing-rules:
+  - path: sampleset_id
+    full-text: true
