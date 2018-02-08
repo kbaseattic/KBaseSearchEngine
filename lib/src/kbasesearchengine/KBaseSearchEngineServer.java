@@ -42,7 +42,7 @@ import kbasesearchengine.system.TypeMappingParser;
 import kbasesearchengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.ConfigurableAuthService;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceClient;
 import kbasesearchengine.common.FileUtil;
 //END_HEADER
 

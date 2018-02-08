@@ -40,14 +40,14 @@ import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple9;
 import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
-import workspace.GetObjects2Params;
-import workspace.GetObjects2Results;
-import workspace.ObjectData;
-import workspace.ObjectSpecification;
-import workspace.ProvenanceAction;
-import workspace.SubAction;
-import workspace.WorkspaceClient;
-import workspace.WorkspaceIdentity;
+import us.kbase.workspace.GetObjects2Params;
+import us.kbase.workspace.GetObjects2Results;
+import us.kbase.workspace.ObjectData;
+import us.kbase.workspace.ObjectSpecification;
+import us.kbase.workspace.ProvenanceAction;
+import us.kbase.workspace.SubAction;
+import us.kbase.workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceIdentity;
 
 public class WorkspaceEventHandlerTest {
     
