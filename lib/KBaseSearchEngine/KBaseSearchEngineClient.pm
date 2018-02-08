@@ -404,6 +404,10 @@ narrative_info is a reference to a list containing 5 items:
 	4: (ws_owner_realname) a string
 timestamp is an int
 GUID is a string
+<<<<<<< HEAD
+=======
+
+>>>>>>> ed8780fe9789a5e8da188a3f08966c3a8f16a35f
 
 =end text
 
