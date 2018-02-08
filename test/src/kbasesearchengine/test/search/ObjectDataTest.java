@@ -223,21 +223,31 @@ public class ObjectDataTest {
         nullStrings.add(null);
         failWithHighlight(b, "field", nullStrings,
                 new IllegalArgumentException("highlight cannot be null or whitespace"));
+
+        //test immutability of highlight map
+        b.withHighlight("field", new ArrayList<>(Arrays.asList("highlight")));
+        ObjectData obj = b.build();
+        Map<String, List<String>> res = obj.getHighlight();
+
+        try {
+            res.put("test", new ArrayList<>(Arrays.asList("highlight")));
+            fail("cannot modify highlight");
+        } catch(Exception e){
+            TestCommon.assertExceptionCorrect(e, new UnsupportedOperationException());
+        }
+
     }
+
     public void failWithHighlight(
            final ObjectData.Builder b,
            final String field,
            final List<String> highlight,
-           final Exception expected
-    ){
-        try{
+           final Exception expected ) {
+
+        try {
             b.withHighlight(field, highlight);
             fail("expected exception for incorrect highlight");
-        }catch (Exception e){
-
-            System.out.println("expected: " + expected.toString());
-            System.out.println("got: " + e.toString());
-
+        } catch (Exception e) {
             TestCommon.assertExceptionCorrect(e, expected);
         }
     }
