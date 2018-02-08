@@ -2,13 +2,35 @@ package kbasesearchengine.test.main;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mockingDetails;
 import static kbasesearchengine.test.common.TestCommon.set;
 
+import java.io.IOException;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Collections;
 
+import kbasesearchengine.common.GUID;
+import kbasesearchengine.common.ObjectJsonPath;
+import kbasesearchengine.events.exceptions.IndexingException;
+import kbasesearchengine.events.handler.SourceData;
+import kbasesearchengine.parse.KeywordParser;
+import kbasesearchengine.parse.ObjectParseException;
+import kbasesearchengine.parse.ParsedObject;
+import kbasesearchengine.search.ObjectData;
+import kbasesearchengine.system.IndexingRules;
+import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.SearchObjectType;
+import kbasesearchengine.system.StorageObjectType;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import kbasesearchengine.AccessFilter;
@@ -25,15 +47,21 @@ import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.PostProcessing;
 import kbasesearchengine.search.SortingRule;
 import kbasesearchengine.system.TypeStorage;
+import us.kbase.common.service.UObject;
+
+import javax.xml.transform.Source;
 
 public class SearchMethodsTest {
-    
+
     private final static PostProcessing PP_DEFAULT = new PostProcessing();
     static {
         PP_DEFAULT.objectData = true;
         PP_DEFAULT.objectInfo = true;
         PP_DEFAULT.objectKeys = true;
     }
+    private final static IndexingStorage idx = mock(IndexingStorage.class);
+
+
 
     //TODO TEST add a whole lot more tests. Most of SearchMethods is not covered.
     
@@ -158,5 +186,66 @@ public class SearchMethodsTest {
         // if we want to check search time, need to mock a Clock. Don't bother for now.
 //        assertThat("incorrect objects", res.getSearchTime(), is(20));
     }
-    
+
+
+
+
+    @Test
+    public void searchObjectResult() throws Exception {
+        final AccessGroupProvider agp = mock(AccessGroupProvider.class);
+        final TypeStorage ts = mock(TypeStorage.class);
+        final SearchMethods sm = new SearchMethods(agp, idx, ts, Collections.emptySet());
+
+
+        final ArrayList<String> highlight = new ArrayList<>();
+        highlight.add("<em>test</em>");
+
+        final kbasesearchengine.search.ObjectData obj = kbasesearchengine.search.ObjectData
+                .getBuilder(new GUID("ws:1/2/3"))
+                .withHighlight("field", highlight).build();
+
+        final ArrayList<ObjectData> objs = new ArrayList<>();
+        objs.add(obj);
+
+        final PostProcessing pp = new PostProcessing();
+        pp.objectHighlight = true;
+
+
+        final SortingRule sr = new SortingRule();
+        sr.isTimestamp = true;
+        sr.ascending = true;
+
+        final FoundHits fh = new FoundHits();
+        fh.pagination = null;
+        fh.sortingRules=  Arrays.asList(sr);;
+        fh.total = 1;
+        fh.guids = set(new GUID("ws:1/2/3"));
+        fh.objects = objs;
+
+
+        final kbasesearchengine.search.MatchFilter filter = kbasesearchengine.search.MatchFilter.getBuilder()
+                .withNullableFullTextInAll("test")
+                .build();
+
+        when(idx.searchObjects(
+                new ArrayList<>(),
+                filter,
+                null, // sort
+                new kbasesearchengine.search.AccessFilter().withAccessGroups(set()),
+                null, // pagination
+                PP_DEFAULT))
+                .thenReturn(fh);
+
+        final SearchObjectsOutput res = sm.searchObjects(new SearchObjectsInput()
+                        .withMatchFilter(new MatchFilter().withFullTextInAll("test"))
+                        .withAccessFilter(new AccessFilter()), "auser");
+
+
+        final Map<String, List<String>> highlightRes = new HashMap<>();
+        highlightRes.put("field", highlight);
+
+        assertThat("did not find objects", res.getObjects().size()>0, is(true));
+        assertThat("did not find objects", res.getObjects().get(0).getHighlight(), is(highlightRes));
+
+    }
 }

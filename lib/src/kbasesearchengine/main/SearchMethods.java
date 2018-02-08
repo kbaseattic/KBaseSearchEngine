@@ -219,6 +219,8 @@ public class SearchMethods {
         }
         ret.withObjectName(od.getObjectName().orNull());
         ret.withKeyProps(od.getKeyProperties());
+        ret.withHighlight(od.getHighlight());
+
         addObjectProp(ret, od.getCreator().orNull(), "creator");
         addObjectProp(ret, od.getCopier().orNull(), "copied");
         addObjectProp(ret, od.getModule().orNull(), "module");
