@@ -169,6 +169,7 @@
                 <test name="kbasesearchengine.test.events.handler.CloneableWorkspaceClientImplTest"/>
                 <test name="kbasesearchengine.test.events.handler.ResolvedReferenceTest"/>
                 <test name="kbasesearchengine.test.events.handler.SourceDataTest"/>
+                <test name="kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest"/>
                 <test name="kbasesearchengine.test.events.storage.MongoDBStatusEventStorageTest"/>
                 <test name="kbasesearchengine.test.integration.IndexerIntegrationTest"/>
                 <test name="kbasesearchengine.test.integration.IndexerWorkerIntegrationTest"/>
@@ -191,7 +192,7 @@
                 <test name="kbasesearchengine.test.system.TypeMappingTest"/>
                 <test name="kbasesearchengine.test.system.TransformTest"/>
                 <test name="kbasesearchengine.test.tools.SearchToolsTest"/>
-                <test name="kbasesearchengine.test.tools.ObjectDecoratorTest"/>
+                <test name="kbasesearchengine.test.main.ObjectDecoratorTest"/>
             </junit>
         </jacoco:coverage>
         <fail message="Test failure detected, check test results." if="test.failed" />
