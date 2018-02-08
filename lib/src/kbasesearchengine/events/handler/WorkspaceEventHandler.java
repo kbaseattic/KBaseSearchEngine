@@ -171,7 +171,6 @@ public class WorkspaceEventHandler implements EventHandler {
         return ret;
     }
     
-    //TODO NNOW TEST
     /** Parse a date emitted from the workspace to epoch millis.
      * @param workspaceFormattedDate a workspace timestamp.
      * @return epoch millis.

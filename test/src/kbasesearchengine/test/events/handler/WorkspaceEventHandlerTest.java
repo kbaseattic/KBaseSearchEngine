@@ -74,6 +74,19 @@ public class WorkspaceEventHandlerTest {
         }
     }
     
+    @Test
+    public void parseDate() {
+        assertThat("incorrect epoch",
+                WorkspaceEventHandler.parseDateToEpochMillis("2018-02-08T21:55:45Z"),
+                is(1518126945000L));
+        assertThat("incorrect epoch",
+                WorkspaceEventHandler.parseDateToEpochMillis("2018-02-08T21:55:45.123Z"),
+                is(1518126945123L));
+        assertThat("incorrect epoch",
+                WorkspaceEventHandler.parseDateToEpochMillis("2018-02-08T21:55:45+00:00"),
+                is(1518126945000L));
+    }
+    
     private class AdminGetObjectsAnswerMatcher implements ArgumentMatcher<UObject> {
 
         final String ref;
