@@ -49,9 +49,9 @@ import kbasesearchengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
-import workspace.ListObjectsParams;
-import workspace.WorkspaceClient;
-import workspace.WorkspaceIdentity;
+import us.kbase.workspace.ListObjectsParams;
+import us.kbase.workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceIdentity;
 
 /** NOTE: extremely large refactors have occurred since this code was written and it has not been
  * updated. It should be considered to be obsolete until someone takes the time to review and
