@@ -287,9 +287,17 @@ public class SearchAPIIntegrationTest {
                 null,
                 new GUID("WS:1/1/1"),
                 ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
-                        "{\"whee\": \"imaprettypony\"}",
-                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
+                        "{\"whee\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
                 false);
+        
+        final ObjectData expected1 = new ObjectData()
+                .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
+                .withGuid("WS:1/1/1")
+                .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
+                .withObjectProps(ImmutableMap.of("creator", "creator"))
+                .withObjectName("objname1")
+                .withTimestamp(10000L);
         
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -310,19 +318,6 @@ public class SearchAPIIntegrationTest {
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
                 false);
         
-        final SearchObjectsOutput res;
-        try {
-            res = searchCli.searchObjects(new SearchObjectsInput()
-                    .withAccessFilter(new AccessFilter())
-                    .withMatchFilter(new MatchFilter()
-                            .withSourceTags(Arrays.asList("narrative"))));
-        } catch (ServerException e) {
-            System.out.println("Exception server side trace:\n" + e.getData());
-            throw e;
-        }
-        
-        assertThat("incorrect object count", res.getObjects().size(), is(1));
-        
         final ObjectData expected2 = new ObjectData()
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony")))
                 .withGuid("WS:1/2/1")
@@ -331,11 +326,34 @@ public class SearchAPIIntegrationTest {
                 .withObjectName("objname2")
                 .withTimestamp(10000L);
         
-        compare(res.getObjects().get(0), expected2);
+        final SearchObjectsOutput res1 = searchObjects(new MatchFilter()
+                .withSourceTags(Arrays.asList("narrative")));
+        
+        assertThat("incorrect object count", res1.getObjects().size(), is(1));
+        compare(res1.getObjects().get(0), expected2);
+        
+        final SearchObjectsOutput res2 = searchObjects(new MatchFilter()
+                .withSourceTags(Arrays.asList("narrative"))
+                .withSourceTagsBlacklist(1L));
+        
+        assertThat("incorrect object count", res2.getObjects().size(), is(1));
+        compare(res2.getObjects().get(0), expected1);
+    }
+
+    private SearchObjectsOutput searchObjects(final MatchFilter mf) throws Exception {
+        try {
+            return searchCli.searchObjects(new SearchObjectsInput()
+                    .withAccessFilter(new AccessFilter())
+                    .withMatchFilter(mf));
+        } catch (ServerException e) {
+            System.out.println("Exception server side trace:\n" + e.getData());
+            throw e;
+        }
     }
 
     private void compare(final ObjectData got, final ObjectData expected) {
         // no hashcode and equals compiled into ObjectData
+        // or UObject for that matter
         assertThat("incorrect add props", got.getAdditionalProperties(),
                 is(Collections.emptyMap()));
         assertThat("incorrect data", got.getData().asClassInstance(Map.class),
