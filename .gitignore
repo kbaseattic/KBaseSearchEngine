@@ -10,3 +10,5 @@ bin
 *.war
 /work/
 .idea/
+KBaseSearchEngine.iml
+/deployment/jettybase/logs/

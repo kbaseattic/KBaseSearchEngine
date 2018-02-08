@@ -1,6 +1,7 @@
 package kbasesearchengine.search;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +34,9 @@ public class ObjectData {
     private final Optional<Object> parentData;
     private final Optional<Object> data;
     private final Map<String, String> keyProps;
-    
+    private final Map<String, List<String>> highlight;
+
+
     private ObjectData(
             final GUID guid,
             final String objectName,
@@ -48,7 +51,8 @@ public class ObjectData {
             final Instant timestamp,
             final Object parentData,
             final Object data,
-            final Map<String, String> keyProps) {
+            final Map<String, String> keyProps,
+            final Map<String, List<String>> highlight) {
         this.guid = guid;
         if (parentData != null) {
             this.parentGuid = Optional.fromNullable(new GUID(guid, null, null));
@@ -68,6 +72,7 @@ public class ObjectData {
         this.parentData = Optional.fromNullable(parentData);
         this.data = Optional.fromNullable(data);
         this.keyProps = Collections.unmodifiableMap(keyProps);
+        this.highlight = Collections.unmodifiableMap(highlight);
     }
 
     /** Get the object's GUID.
@@ -179,6 +184,13 @@ public class ObjectData {
         return keyProps;
     }
 
+    /** Get hits that matched the query as highlighted snips corresponding to fields.
+     * @return the all fields with highlighting matches.
+     */
+    public Map<String, List<String>> getHighlight() { return highlight; }
+
+
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -205,6 +217,7 @@ public class ObjectData {
         result = prime * result
                 + ((timestamp == null) ? 0 : timestamp.hashCode());
         result = prime * result + ((type == null) ? 0 : type.hashCode());
+        result = prime * result + ((highlight == null) ? 0 : highlight.hashCode());
         return result;
     }
 
@@ -325,6 +338,13 @@ public class ObjectData {
         } else if (!type.equals(other.type)) {
             return false;
         }
+        if (highlight == null) {
+            if (other.highlight != null) {
+                return false;
+            }
+        } else if (!highlight.equals(other.highlight)) {
+            return false;
+        }
         return true;
     }
     
@@ -356,6 +376,7 @@ public class ObjectData {
         private Object parentData;
         private Object data;
         private Map<String, String> keyProps = new HashMap<>();
+        private Map<String, List<String>> highlight = new HashMap<>();
         
         private Builder(final GUID guid) {
             Utils.nonNull(guid, "guid");
@@ -367,7 +388,7 @@ public class ObjectData {
          */
         public ObjectData build() {
             return new ObjectData(guid, objectName, type, creator, copier, module, method,
-                    commitHash, moduleVersion, md5, timestamp, parentData, data, keyProps);
+                    commitHash, moduleVersion, md5, timestamp, parentData, data, keyProps, highlight);
         }
         
         /** Set the object name in the builder. Replaces any previous object name. Nulls and
@@ -524,6 +545,22 @@ public class ObjectData {
         public Builder withKeyProperty(final String key, final String property) {
             Utils.notNullOrEmpty(key, "key cannot be null or whitespace");
             keyProps.put(key, property);
+            return this;
+        }
+
+        /** Adds the highlight fields to the object.
+         * @param highlight the map of fields returned from elasticsearch.
+         * @return this builder.
+         */
+        public Builder withHighlight(final String field, final List<String> highlight) {
+            Utils.notNullOrEmpty(field, "field cannot be null or whitespace");
+            Utils.nonNull(highlight, "highlight list cannot be null");
+
+            for(final String s : highlight){
+                Utils.notNullOrEmpty(s, "highlight cannot be null or whitespace");
+            }
+
+            this.highlight.put(field, Collections.unmodifiableList(highlight));
             return this;
         }
     }

@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -1057,33 +1058,44 @@ public class ElasticIndexingStorage implements IndexingStorage {
         pp.objectKeys = true;
         return getObjectsByIds(ids, pp);
     }
-    
+
+    private Map<String, Object> createHighlightQuery(){
+        return  ImmutableMap.of("fields",
+                    ImmutableMap.of("*",
+                            ImmutableMap.of("require_field_match", false)));
+    }
+
     @Override
-    public List<ObjectData> getObjectsByIds(Set<GUID> ids, PostProcessing pp) 
+    public List<ObjectData> getObjectsByIds(final Set<GUID> ids, final PostProcessing pp)
             throws IOException {
 
-        Map<String, Object> doc = ImmutableMap.of("query",
-                                     ImmutableMap.of("bool",
+        final Map<String, Object> query = ImmutableMap.of("bool",
                                         ImmutableMap.of("filter",
                                            ImmutableMap.of("terms",
-                ImmutableMap.of("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList()))))));
-        //doc.put("_source", Arrays.asList("ojson"));
+                ImmutableMap.of("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList())))));
 
-        String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
-        Response resp = makeRequest("GET", urlPath, doc);
+        final Map<String, Object> doc = new LinkedHashMap<>();
+        doc.put("query", query);
+
+        if (Objects.nonNull(pp) && pp.objectHighlight) {
+            doc.put("highlight", createHighlightQuery());
+        }
+
+        final String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
+        final Response resp = makeRequest("GET", urlPath, doc);
         @SuppressWarnings("unchecked")
-        Map<String, Object> data = UObject.getMapper().readValue(
+        final Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
-        List<ObjectData> ret = new ArrayList<>();
+        final List<ObjectData> ret = new ArrayList<>();
         @SuppressWarnings("unchecked")
-        Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
+        final Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
+        final List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
-            ObjectData item = buildObjectData(obj, pp.objectInfo, pp.objectKeys, 
-                    pp.objectData, pp.objectDataIncludes);
+            final Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
+            final Map<String, List<String>> highlightRes = (Map<String, List<String>>) hit.get("highlight");
+            final ObjectData item = buildObjectData(obj, highlightRes, pp);
             ret.add(item);
         }
         return ret;
@@ -1091,13 +1103,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     private ObjectData buildObjectData(
             final Map<String, Object> obj,
-            final boolean info,
-            final boolean keys, 
-            final boolean json,
-            final List<String> objectDataIncludes) {
+            final Map<String, List<String>> highlight,
+            final PostProcessing pp) {
         // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
         final ObjectData.Builder b = ObjectData.getBuilder(new GUID((String) obj.get("guid")));
-        if (info) {
+        if (pp.objectInfo) {
             b.withNullableObjectName((String) obj.get(OBJ_NAME));
             b.withNullableCreator((String) obj.get(OBJ_CREATOR));
             b.withNullableCopier((String) obj.get(OBJ_COPIER));
@@ -1111,9 +1121,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     (Integer) obj.get(SEARCH_OBJ_TYPE_VER)));
             // sometimes this is a long, sometimes it's an int
             b.withNullableTimestamp(Instant.ofEpochMilli(
-                    ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
+                ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
         }
-        if (json) {
+        if (pp.objectData) {
             final String ojson = (String) obj.get("ojson");
             if (ojson != null) {
                 b.withNullableData(UObject.transformStringToObject(
@@ -1124,11 +1134,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 b.withNullableParentData(UObject.transformStringToObject(pjson, Object.class));
             }
         }
-        if (keys) {
+        if (pp.objectKeys) {
             for (final String key : obj.keySet()) {
                 if (key.startsWith("key.")) {
                     final Object objValue = obj.get(key);
-                    String textValue = null;
+                    String textValue;
                     if (objValue instanceof List) {
                         @SuppressWarnings("unchecked")
                         final List<Object> objValue2 = (List<Object>) objValue;
@@ -1137,12 +1147,27 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     } else {
                         textValue = String.valueOf(objValue);
                     }
-                    b.withKeyProperty(key.substring(4), textValue);
+                    b.withKeyProperty(stripKeyPrefix(key), textValue);
                 }
             }
         }
+        if (pp.objectHighlight) {
+            for(final String key : highlight.keySet()) {
+                String newKey = key;
+                if (key.startsWith("key.")) {
+                    newKey = stripKeyPrefix(key);
+                }
+                b.withHighlight(newKey, highlight.get(key));
+            }
+        }
+
         return b.build();
     }
+
+    private String stripKeyPrefix(final String key){
+        return key.substring(4);
+    }
+
     
     private Map<String, Object> createPublicShouldBlock(boolean withAllHistory) {
         List<Object> must0List = new ArrayList<>();
@@ -1431,18 +1456,22 @@ public class ElasticIndexingStorage implements IndexingStorage {
         ret.pagination = pagination;
         ret.sortingRules = sorting;
 
-        Map<String, Object> mustForShared = createAccessMustBlock(accessFilter);
+        final Map<String, Object> mustForShared = createAccessMustBlock(accessFilter);
         if (mustForShared == null) {
             ret.total = 0;
             ret.guids = Collections.emptySet();
             return ret;
         }
         Map<String, Object> doc = new LinkedHashMap<>();
+        
         doc.put("query", createObjectQuery(matchFilter, accessFilter));
+        if (Objects.nonNull(pp) && pp.objectHighlight) {
+            doc.put("highlight", createHighlightQuery());
+        }
         doc.put("from", pagination.start);
         doc.put("size", pagination.count);
 
-        boolean loadObjects = pp != null && (pp.objectInfo || pp.objectData || pp.objectKeys);
+        boolean loadObjects = pp != null && (pp.objectInfo || pp.objectData || pp.objectKeys || pp.objectHighlight);
         if (!loadObjects) {
             doc.put("_source", Arrays.asList("guid"));
         }
@@ -1479,35 +1508,35 @@ public class ElasticIndexingStorage implements IndexingStorage {
             indexName += EXCLUDE_SUB_OJBS_URL_SUFFIX;
         }
 
-        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
+        final String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
+        final Response resp = makeRequest("GET", urlPath, ImmutableMap.copyOf(doc));
 
-        Response resp = makeRequest("GET", urlPath, ImmutableMap.copyOf(doc));
         @SuppressWarnings("unchecked")
-        Map<String, Object> data = UObject.getMapper().readValue(
+        final Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         ret.guids = new LinkedHashSet<>();
         @SuppressWarnings("unchecked")
-        Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
+        final Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
         ret.total = (Integer)hitMap.get("total");
-        if (loadObjects) {
-            ret.objects = new ArrayList<ObjectData>();
-        }
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
+        final List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
+        if (loadObjects) {
+            ret.objects = new ArrayList<>();
+        }
         for (Map<String, Object> hit : hitList) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
-            String guidText = (String)obj.get("guid");
+            final Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
+            final Map<String, List<String>> highlightRes = (Map<String, List<String>>) hit.get("highlight");
+            final String guidText = (String)obj.get("guid");
             ret.guids.add(new GUID(guidText));
             if (loadObjects) {
-                ret.objects.add(buildObjectData(obj, pp.objectInfo, pp.objectKeys, 
-                    pp.objectData, pp.objectDataIncludes));
+                ret.objects.add(buildObjectData(obj, highlightRes, pp));
             }
         }
         return ret;
     }
-    
-    private String getKeyProperty(String keyName) {
+
+    private String getKeyProperty(final String keyName) {
         return "key." + keyName;
     }
 
