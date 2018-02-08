@@ -1,4 +1,4 @@
-global-object-type: Pangenome Ortholog Family
+global-object-type: PangenomeOrthologFamily
 ui-type-name: Pangenome Ortholog Family
 storage-type: WS
 storage-object-type: KBaseGenomes.Pangenome
