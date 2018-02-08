@@ -43,6 +43,14 @@ module KBaseSearchEngine {
       
       boolean exclude_subobjects - don't return any subobjects in the search results if true.
           Default false.
+      list<string> source_tags - source tags are arbitrary strings applied to data at the data
+          source (for example, the workspace service). The source_tags list may optionally
+          populated with a set of tags that will determine what data is returned in a search.
+          By default, the list behaves as a whitelist and only data with at least one of the
+          tags will be returned.
+      source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
+          data with at least one of the tags will be excluded from the search results. If missing
+          or false, the default behavior is maintained.
     */
     typedef structure {
         string full_text_in_all;
@@ -50,6 +58,8 @@ module KBaseSearchEngine {
         MatchValue timestamp;
         boolean exclude_subobjects;
         mapping<string, MatchValue> lookupInKeys;
+        list<string> source_tags;
+        boolean source_tags_blacklist;
     } MatchFilter;
 
     /*

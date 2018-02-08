@@ -130,6 +130,8 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	source_tags has a value which is a reference to a list where each element is a string
+	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -167,6 +169,8 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	source_tags has a value which is a reference to a list where each element is a string
+	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -272,6 +276,8 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	source_tags has a value which is a reference to a list where each element is a string
+	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -340,6 +346,8 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	source_tags has a value which is a reference to a list where each element is a string
+	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -910,6 +918,14 @@ properties.
 
 boolean exclude_subobjects - don't return any subobjects in the search results if true.
     Default false.
+list<string> source_tags - source tags are arbitrary strings applied to data at the data
+    source (for example, the workspace service). The source_tags list may optionally
+    populated with a set of tags that will determine what data is returned in a search.
+    By default, the list behaves as a whitelist and only data with at least one of the
+    tags will be returned.
+source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
+    data with at least one of the tags will be excluded from the search results. If missing
+    or false, the default behavior is maintained.
 
 
 =item Definition
@@ -923,6 +939,8 @@ object_name has a value which is a string
 timestamp has a value which is a KBaseSearchEngine.MatchValue
 exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+source_tags has a value which is a reference to a list where each element is a string
+source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 
 </pre>
 
@@ -936,6 +954,8 @@ object_name has a value which is a string
 timestamp has a value which is a KBaseSearchEngine.MatchValue
 exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+source_tags has a value which is a reference to a list where each element is a string
+source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 
 
 =end text
