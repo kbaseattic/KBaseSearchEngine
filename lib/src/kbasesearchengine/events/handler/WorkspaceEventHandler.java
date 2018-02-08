@@ -192,7 +192,6 @@ public class WorkspaceEventHandler implements EventHandler {
         }
     }
 
-    //TODO NNOW TEST
     /** Get the workspace information for a workspace from the workspace service to which this
      * handler is communicating.
      * @param workspaceID the integer ID of the workspace.

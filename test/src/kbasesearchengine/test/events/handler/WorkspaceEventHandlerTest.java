@@ -87,6 +87,41 @@ public class WorkspaceEventHandlerTest {
                 is(1518126945000L));
     }
     
+    @Test
+    public void getWorkspaceInfo() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClient()).thenReturn(wscli);
+        
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+        
+        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(34))))
+                .thenReturn(new UObject(wsTuple(64, "myws", "owner", "date", 32, "a",
+                            "r", "unlocked", Collections.emptyMap())));
+        
+        final Tuple9<Long, String, String, String, Long, String, String, String,
+                Map<String, String>> res = weh.getWorkspaceInfo(34);
+        
+        compare(res, wsTuple(64, "myws", "owner", "date", 32, "a",
+                "r", "unlocked", Collections.emptyMap()));
+    }
+    
+    private void compare(
+            final Tuple9<Long, String, String, String, Long, String, String, String,
+                    Map<String, String>> got,
+            final Tuple9<Long, String, String, String, Long, String, String, String,
+                    Map<String, String>> expected) {
+        assertThat("incorrect ws id", got.getE1(), is(expected.getE1()));
+        assertThat("incorrect ws name", got.getE2(), is(expected.getE2()));
+        assertThat("incorrect ws owner", got.getE3(), is(expected.getE3()));
+        assertThat("incorrect ws date", got.getE4(), is(expected.getE4()));
+        assertThat("incorrect ws obj count", got.getE5(), is(expected.getE5()));
+        assertThat("incorrect ws user perm", got.getE6(), is(expected.getE6()));
+        assertThat("incorrect ws global perm", got.getE7(), is(expected.getE7()));
+        assertThat("incorrect ws lock state", got.getE8(), is(expected.getE8()));
+        assertThat("incorrect ws meta", got.getE9(), is(expected.getE9()));
+    }
+
     private class AdminGetObjectsAnswerMatcher implements ArgumentMatcher<UObject> {
 
         final String ref;
@@ -443,7 +478,8 @@ public class WorkspaceEventHandlerTest {
         assertThat("incorrect tags", sd.getSourceTags(), is(expected.getSourceTags()));
     }
     
-    private Object wsTuple(
+    private Tuple9<Long, String, String, String, Long, String, String, String,
+        Map<String, String>> wsTuple(
             final long wsid,
             final String wsname,
             final String owner,
