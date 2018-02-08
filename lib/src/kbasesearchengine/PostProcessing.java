@@ -23,6 +23,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  *     ('key_props' field in ObjectData structure),
  * skip_data - do not include raw data for object ('data' and 
  *     'parent_data' fields in ObjectData structure),
+ * skip_highlight - do not include highlights of fields that
+ *      matched query,
  * ids_only - shortcut to mark all three skips as true.
  * </pre>
  * 
@@ -34,6 +36,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "skip_info",
     "skip_keys",
     "skip_data",
+    "skip_highlight",
     "data_includes"
 })
 public class PostProcessing {
@@ -46,6 +49,8 @@ public class PostProcessing {
     private Long skipKeys;
     @JsonProperty("skip_data")
     private Long skipData;
+    @JsonProperty("skip_highlight")
+    private Long skipHighlight;
     @JsonProperty("data_includes")
     private List<String> dataIncludes;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
@@ -110,6 +115,21 @@ public class PostProcessing {
         return this;
     }
 
+    @JsonProperty("skip_highlight")
+    public Long getSkipHighlight() {
+        return skipHighlight;
+    }
+
+    @JsonProperty("skip_highlight")
+    public void setSkipHighlight(Long skipHighlight) {
+        this.skipHighlight = skipHighlight;
+    }
+
+    public PostProcessing withSkipHighlight(Long skipHighlight) {
+        this.skipHighlight = skipHighlight;
+        return this;
+    }
+
     @JsonProperty("data_includes")
     public List<String> getDataIncludes() {
         return dataIncludes;
@@ -137,7 +157,7 @@ public class PostProcessing {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((("PostProcessing"+" [idsOnly=")+ idsOnly)+", skipInfo=")+ skipInfo)+", skipKeys=")+ skipKeys)+", skipData=")+ skipData)+", dataIncludes=")+ dataIncludes)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((("PostProcessing"+" [idsOnly=")+ idsOnly)+", skipInfo=")+ skipInfo)+", skipKeys=")+ skipKeys)+", skipData=")+ skipData)+", skipHighlight=")+ skipHighlight)+", dataIncludes=")+ dataIncludes)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

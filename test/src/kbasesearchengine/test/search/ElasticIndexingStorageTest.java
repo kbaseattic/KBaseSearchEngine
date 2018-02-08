@@ -2,7 +2,6 @@ package kbasesearchengine.test.search;
 
 import static kbasesearchengine.test.common.TestCommon.set;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
@@ -1099,7 +1098,6 @@ public class ElasticIndexingStorageTest {
         PostProcessing pp = new PostProcessing();
         List<String> empty = new ArrayList<>();
         
-        pp.objectHighlight = true;
 
         List<kbasesearchengine.search.SortingRule> sorting = null;
         AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
@@ -1108,7 +1106,18 @@ public class ElasticIndexingStorageTest {
         final Builder filter = MatchFilter.getBuilder();
         filter.withNullableFullTextInAll("multiWordInSearchMethod1 multiWordInSearchMethod2");
 
+
+        //highlight turned off would give null objects unless objectData is set to true
+        pp.objectData = true;
+        FoundHits hits0 = indexStorage.searchObjects(empty, filter.build(),sorting, accessFilter, null, pp);
+
+        assertThat("Incorrect highlighting", hits0.objects.get(0).getHighlight(), is(Collections.emptyMap()) );
+
+        pp.objectData = false;
+        pp.objectHighlight = true;
         FoundHits hits = indexStorage.searchObjects(empty, filter.build(),sorting, accessFilter, null, pp);
+
+
         Map<String, List<String>> hitRes = hits.objects.get(0).getHighlight();
 
         Map<String, List<String>> result1 = new HashMap<>();

@@ -166,14 +166,17 @@ class KBaseSearchEngine(object):
            fields in ObjectData structure), skip_keys - do not include
            keyword values for object ('key_props' field in ObjectData
            structure), skip_data - do not include raw data for object ('data'
-           and 'parent_data' fields in ObjectData structure), ids_only -
-           shortcut to mark all three skips as true.) -> structure: parameter
-           "ids_only" of type "boolean" (A boolean. 0 = false, other =
-           true.), parameter "skip_info" of type "boolean" (A boolean. 0 =
-           false, other = true.), parameter "skip_keys" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "skip_data" of type
+           and 'parent_data' fields in ObjectData structure), skip_highlight
+           - do not include highlights of fields that matched query, ids_only
+           - shortcut to mark all three skips as true.) -> structure:
+           parameter "ids_only" of type "boolean" (A boolean. 0 = false,
+           other = true.), parameter "skip_info" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "skip_keys" of type
            "boolean" (A boolean. 0 = false, other = true.), parameter
-           "data_includes" of list of String
+           "skip_data" of type "boolean" (A boolean. 0 = false, other =
+           true.), parameter "skip_highlight" of type "boolean" (A boolean. 0
+           = false, other = true.), parameter "data_includes" of list of
+           String
         :returns: instance of type "SearchObjectsOutput" (Output results for
            'search_objects' method. 'pagination' and 'sorting_rules' fields
            show actual input for pagination and sorting. total - total number
@@ -199,7 +202,12 @@ class KBaseSearchEngine(object):
            object, and the module and method used to create the object and
            their version and version control commit hash. Not all keys may be
            present; if not their values were not available in the search
-           data.) -> structure: parameter "guid" of type "GUID" (Global user
+           data. mapping<string, list<string>> highlight - They keys are the
+           field names and the list contains the sections in each field that
+           matched the search query. Fields with no hits will not be
+           available. Short fields that matched are shown in their entirety.
+           Longer fields are shown as snippets precedded or followed by
+           "...".) -> structure: parameter "guid" of type "GUID" (Global user
            identificator. It has structure like this:
            <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            parameter "parent_guid" of type "GUID" (Global user identificator.
@@ -209,6 +217,7 @@ class KBaseSearchEngine(object):
            parameter "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "object_props" of mapping from String to
+           String, parameter "highlight" of mapping from String to list of
            String, parameter "total" of Long, parameter "search_time" of Long
         """
         return self._client.call_method(
@@ -228,14 +237,17 @@ class KBaseSearchEngine(object):
            'timestamp' fields in ObjectData structure), skip_keys - do not
            include keyword values for object ('key_props' field in ObjectData
            structure), skip_data - do not include raw data for object ('data'
-           and 'parent_data' fields in ObjectData structure), ids_only -
-           shortcut to mark all three skips as true.) -> structure: parameter
-           "ids_only" of type "boolean" (A boolean. 0 = false, other =
-           true.), parameter "skip_info" of type "boolean" (A boolean. 0 =
-           false, other = true.), parameter "skip_keys" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "skip_data" of type
+           and 'parent_data' fields in ObjectData structure), skip_highlight
+           - do not include highlights of fields that matched query, ids_only
+           - shortcut to mark all three skips as true.) -> structure:
+           parameter "ids_only" of type "boolean" (A boolean. 0 = false,
+           other = true.), parameter "skip_info" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "skip_keys" of type
            "boolean" (A boolean. 0 = false, other = true.), parameter
-           "data_includes" of list of String
+           "skip_data" of type "boolean" (A boolean. 0 = false, other =
+           true.), parameter "skip_highlight" of type "boolean" (A boolean. 0
+           = false, other = true.), parameter "data_includes" of list of
+           String
         :returns: instance of type "GetObjectsOutput" (Output results of
            get_objects method.) -> structure: parameter "objects" of list of
            type "ObjectData" (Properties of found object including metadata,
@@ -246,8 +258,13 @@ class KBaseSearchEngine(object):
            object, the user that copied this incarnation of the object, and
            the module and method used to create the object and their version
            and version control commit hash. Not all keys may be present; if
-           not their values were not available in the search data.) ->
-           structure: parameter "guid" of type "GUID" (Global user
+           not their values were not available in the search data.
+           mapping<string, list<string>> highlight - They keys are the field
+           names and the list contains the sections in each field that
+           matched the search query. Fields with no hits will not be
+           available. Short fields that matched are shown in their entirety.
+           Longer fields are shown as snippets precedded or followed by
+           "...".) -> structure: parameter "guid" of type "GUID" (Global user
            identificator. It has structure like this:
            <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            parameter "parent_guid" of type "GUID" (Global user identificator.
@@ -257,6 +274,7 @@ class KBaseSearchEngine(object):
            parameter "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "object_props" of mapping from String to
+           String, parameter "highlight" of mapping from String to list of
            String, parameter "search_time" of Long
         """
         return self._client.call_method(
