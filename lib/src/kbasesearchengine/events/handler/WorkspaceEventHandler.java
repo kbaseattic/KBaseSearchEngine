@@ -171,14 +171,14 @@ public class WorkspaceEventHandler implements EventHandler {
         return ret;
     }
     
-    private Tuple9<Long, String, String, String, Long, String,
+    public Tuple9<Long, String, String, String, Long, String,
                 String, String, Map<String, String>> getWorkspaceInfo(
             final long workspaceID)
             throws RetriableIndexingException, IndexingException {
         final Map<String, Object> command = new HashMap<>();
         command.put("command", "getWorkspaceInfo");
         command.put("params", new WorkspaceIdentity().withId(workspaceID));
-        
+
         try {
             return ws.getClient().administer(new UObject(command))
                     .asClassInstance(WS_INFO_TYPEREF);

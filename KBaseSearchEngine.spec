@@ -182,6 +182,16 @@ module KBaseSearchEngine {
         mapping<string, string> object_props;
     } ObjectData;
 
+    typedef int access_group_id;
+    typedef int timestamp;
+
+    typedef tuple<string narrative_name,
+                  int narrative_id,
+                  timestamp time_last_saved,
+                  string ws_owner_username,
+                  string ws_owner_realname
+                  > narrative_info;
+
     /*
       Output results for 'search_objects' method.
       'pagination' and 'sorting_rules' fields show actual input for
@@ -195,6 +205,7 @@ module KBaseSearchEngine {
         list<ObjectData> objects;
         int total;
         int search_time;
+        mapping<access_group_id, narrative_info> access_group_narrative_info;
     } SearchObjectsOutput;
 
     /*
@@ -217,6 +228,7 @@ module KBaseSearchEngine {
     typedef structure {
         list<ObjectData> objects;
         int search_time;
+        mapping<access_group_id, narrative_info> access_group_narrative_info;
     } GetObjectsOutput;
 
     /*

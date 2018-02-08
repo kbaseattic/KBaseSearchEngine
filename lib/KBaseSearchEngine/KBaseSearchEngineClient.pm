@@ -314,6 +314,7 @@ SearchObjectsOutput is a reference to a hash where the following keys are define
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	total has a value which is an int
 	search_time has a value which is an int
+	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.accessGroupId and the value is a KBaseSearchEngine.narrative_info
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
@@ -323,6 +324,14 @@ ObjectData is a reference to a hash where the following keys are defined:
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
 	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+accessGroupId is an int
+narrative_info is a reference to a list containing 5 items:
+	0: (narrative_name) a string
+	1: (narrative_id) an int
+	2: (time_last_saved) a KBaseSearchEngine.timestamp
+	3: (ws_owner_username) a string
+	4: (ws_owner_realname) a string
+timestamp is an int
 GUID is a string
 
 </pre>
@@ -384,6 +393,7 @@ SearchObjectsOutput is a reference to a hash where the following keys are define
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	total has a value which is an int
 	search_time has a value which is an int
+	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.accessGroupId and the value is a KBaseSearchEngine.narrative_info
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
@@ -393,8 +403,19 @@ ObjectData is a reference to a hash where the following keys are defined:
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
 	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+accessGroupId is an int
+narrative_info is a reference to a list containing 5 items:
+	0: (narrative_name) a string
+	1: (narrative_id) an int
+	2: (time_last_saved) a KBaseSearchEngine.timestamp
+	3: (ws_owner_username) a string
+	4: (ws_owner_realname) a string
+timestamp is an int
 GUID is a string
+<<<<<<< HEAD
+=======
 
+>>>>>>> ed8780fe9789a5e8da188a3f08966c3a8f16a35f
 
 =end text
 
@@ -481,6 +502,7 @@ boolean is an int
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	search_time has a value which is an int
+	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.accessGroupId and the value is a KBaseSearchEngine.narrative_info
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
@@ -490,6 +512,14 @@ ObjectData is a reference to a hash where the following keys are defined:
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
 	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+accessGroupId is an int
+narrative_info is a reference to a list containing 5 items:
+	0: (narrative_name) a string
+	1: (narrative_id) an int
+	2: (time_last_saved) a KBaseSearchEngine.timestamp
+	3: (ws_owner_username) a string
+	4: (ws_owner_realname) a string
+timestamp is an int
 
 </pre>
 
@@ -513,6 +543,7 @@ boolean is an int
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	search_time has a value which is an int
+	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.accessGroupId and the value is a KBaseSearchEngine.narrative_info
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
@@ -522,6 +553,14 @@ ObjectData is a reference to a hash where the following keys are defined:
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
 	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+accessGroupId is an int
+narrative_info is a reference to a list containing 5 items:
+	0: (narrative_name) a string
+	1: (narrative_id) an int
+	2: (time_last_saved) a KBaseSearchEngine.timestamp
+	3: (ws_owner_username) a string
+	4: (ws_owner_realname) a string
+timestamp is an int
 
 
 =end text
@@ -1326,6 +1365,96 @@ object_props has a value which is a reference to a hash where the key is a strin
 
 
 
+=head2 accessGroupId
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+an int
+</pre>
+
+=end html
+
+=begin text
+
+an int
+
+=end text
+
+=back
+
+
+
+=head2 timestamp
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+an int
+</pre>
+
+=end html
+
+=begin text
+
+an int
+
+=end text
+
+=back
+
+
+
+=head2 narrative_info
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 5 items:
+0: (narrative_name) a string
+1: (narrative_id) an int
+2: (time_last_saved) a KBaseSearchEngine.timestamp
+3: (ws_owner_username) a string
+4: (ws_owner_realname) a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 5 items:
+0: (narrative_name) a string
+1: (narrative_id) an int
+2: (time_last_saved) a KBaseSearchEngine.timestamp
+3: (ws_owner_username) a string
+4: (ws_owner_realname) a string
+
+
+=end text
+
+=back
+
+
+
 =head2 SearchObjectsOutput
 
 =over 4
@@ -1352,6 +1481,7 @@ sorting_rules has a value which is a reference to a list where each element is a
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 total has a value which is an int
 search_time has a value which is an int
+access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.accessGroupId and the value is a KBaseSearchEngine.narrative_info
 
 </pre>
 
@@ -1365,6 +1495,7 @@ sorting_rules has a value which is a reference to a list where each element is a
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 total has a value which is an int
 search_time has a value which is an int
+access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.accessGroupId and the value is a KBaseSearchEngine.narrative_info
 
 
 =end text
@@ -1429,6 +1560,7 @@ Output results of get_objects method.
 a reference to a hash where the following keys are defined:
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 search_time has a value which is an int
+access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.accessGroupId and the value is a KBaseSearchEngine.narrative_info
 
 </pre>
 
@@ -1439,6 +1571,7 @@ search_time has a value which is an int
 a reference to a hash where the following keys are defined:
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 search_time has a value which is an int
+access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.accessGroupId and the value is a KBaseSearchEngine.narrative_info
 
 
 =end text

@@ -120,6 +120,11 @@ class KBaseSearchEngine(object):
            values of keywords or metadata/system properties (like object
            name, creation time range) or full-text search in all properties.
            boolean exclude_subobjects - don't return any subobjects in the
+           search results if true. Default false.) -> structure: parameter
+           "full_text_in_all" of String, parameter "access_group_id" of Long,
+           parameter "object_name" of String, parameter "parent_guid" of type
+           "GUID" (Global user identificator. It has structure like this:
+           <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            search results if true. Default false. list<string> source_tags -
            source tags are arbitrary strings applied to data at the data
            source (for example, the workspace service). The source_tags list
@@ -233,7 +238,13 @@ class KBaseSearchEngine(object):
            parameter "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "object_props" of mapping from String to
-           String, parameter "total" of Long, parameter "search_time" of Long
+           String, parameter "total" of Long, parameter "search_time" of
+           Long, parameter "access_group_narrative_info" of mapping from type
+           "accessGroupId" to type "narrative_info" -> tuple of size 5:
+           parameter "narrative_name" of String, parameter "narrative_id" of
+           Long, parameter "time_last_saved" of type "timestamp", parameter
+           "ws_owner_username" of String, parameter "ws_owner_realname" of
+           String
         """
         return self._client.call_method(
             'KBaseSearchEngine.search_objects',
@@ -281,7 +292,13 @@ class KBaseSearchEngine(object):
            parameter "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "object_props" of mapping from String to
-           String, parameter "search_time" of Long
+           String, parameter "search_time" of Long, parameter
+           "access_group_narrative_info" of mapping from type "accessGroupId"
+           to type "narrative_info" -> tuple of size 5: parameter
+           "narrative_name" of String, parameter "narrative_id" of Long,
+           parameter "time_last_saved" of type "timestamp", parameter
+           "ws_owner_username" of String, parameter "ws_owner_realname" of
+           String
         """
         return self._client.call_method(
             'KBaseSearchEngine.get_objects',

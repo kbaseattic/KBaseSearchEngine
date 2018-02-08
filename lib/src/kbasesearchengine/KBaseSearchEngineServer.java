@@ -32,7 +32,9 @@ import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.authorization.WorkspaceAccessGroupProvider;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.main.LineLogger;
+import kbasesearchengine.main.SearchInterface;
 import kbasesearchengine.main.SearchMethods;
+import kbasesearchengine.main.DecorateWithNarrativeInfo;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.system.FileLister;
 import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
@@ -54,15 +56,15 @@ import kbasesearchengine.common.FileUtil;
  */
 public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
-    private static final String version = "";
-    private static final String gitUrl = "";
-    private static final String gitCommitHash = "";
+    private static final String version = "0.0.1";
+    private static final String gitUrl = "https://github.com/kbase/KBaseSearchEngine.git";
+    private static final String gitCommitHash = "c0a5b96a121b92e586ececfed41f96e521262e26";
 
     //BEGIN_CLASS_HEADER
     
     // TODO TEST add integration test that runs server
     
-    private final SearchMethods search;
+    private final SearchInterface search;
     
     private void quietLoggers() {
         ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME))
@@ -146,7 +148,8 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
         
-        search = new SearchMethods(accessGroupProvider, esStorage, ss, admins);
+        search = new DecorateWithNarrativeInfo(new SearchMethods(accessGroupProvider,
+                esStorage, ss, admins), wsClient);
         //END_CONSTRUCTOR
     }
 
