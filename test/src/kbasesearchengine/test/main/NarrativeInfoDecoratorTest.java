@@ -364,7 +364,8 @@ public class NarrativeInfoDecoratorTest {
         GetObjectsOutput objsOutput = search.getObjects(objsInput, userToken.getUserName());
         System.out.println(" GET OBJS OUTPUT: " + objsOutput.toString());
 
-        SearchInterface sid = new DecorateWithNarrativeInfo(search, wsClient);
+        SearchInterface sid = new DecorateWithNarrativeInfo(search,
+                new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsCli1)));
         GetObjectsOutput objsOutputDecorated = sid.getObjects(objsInput, userToken.getUserName());
         System.out.println(" GET OBJS OUTPUT WITH NARRATIVE INFO: " + objsOutputDecorated.toString());
 

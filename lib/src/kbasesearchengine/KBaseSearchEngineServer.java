@@ -31,6 +31,8 @@ import kbasesearchengine.authorization.AccessGroupCache;
 import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.authorization.WorkspaceAccessGroupProvider;
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
+import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.SearchInterface;
 import kbasesearchengine.main.SearchMethods;
@@ -148,8 +150,9 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
         
-        search = new DecorateWithNarrativeInfo(new SearchMethods(accessGroupProvider,
-                esStorage, ss, admins), wsClient);
+        search = new DecorateWithNarrativeInfo(
+                new SearchMethods(accessGroupProvider, esStorage, ss, admins),
+                new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient)));
         //END_CONSTRUCTOR
     }
 

@@ -157,7 +157,7 @@ public class WorkspaceEventHandler implements EventHandler {
 
     private List<String> getTags(final ObjectData objectdata)
             throws RetriableIndexingException, IndexingException {
-        final String tags = getWorkspaceInfo(objectdata.getInfo().getE7()).getE9()
+        final String tags = getWorkspaceInfoInternal(objectdata.getInfo().getE7()).getE9()
                 .get(META_SEARCH_TAGS);
         final List<String> ret = new LinkedList<>();
         if (tags != null) {
@@ -171,17 +171,21 @@ public class WorkspaceEventHandler implements EventHandler {
         return ret;
     }
     
-    public Tuple9<Long, String, String, String, Long, String,
-                String, String, Map<String, String>> getWorkspaceInfo(
+    //TODO NNOW TEST
+    /** Parse a date emitted from the workspace to epoch millis.
+     * @param workspaceFormattedDate a workspace timestamp.
+     * @return epoch millis.
+     */
+    public static long parseDateToEpochMillis(final String workspaceFormattedDate) {
+        return DATE_PARSER.parseDateTime(workspaceFormattedDate).getMillis();
+    }
+    
+    private Tuple9<Long, String, String, String, Long, String,
+                String, String, Map<String, String>> getWorkspaceInfoInternal(
             final long workspaceID)
             throws RetriableIndexingException, IndexingException {
-        final Map<String, Object> command = new HashMap<>();
-        command.put("command", "getWorkspaceInfo");
-        command.put("params", new WorkspaceIdentity().withId(workspaceID));
-
         try {
-            return ws.getClient().administer(new UObject(command))
-                    .asClassInstance(WS_INFO_TYPEREF);
+            return getWorkspaceInfo(workspaceID);
         } catch (IOException e) {
             throw handleException(e);
         } catch (JsonClientException e) {
@@ -189,6 +193,27 @@ public class WorkspaceEventHandler implements EventHandler {
         }
     }
 
+    //TODO NNOW TEST
+    /** Get the workspace information for a workspace from the workspace service to which this
+     * handler is communicating.
+     * @param workspaceID the integer ID of the workspace.
+     * @return the workspace info as returned from the workspace.
+     * @throws IOException if an IO exception occurs.
+     * @throws JsonClientException if an error retrieving the data occurs.
+     */
+    public Tuple9<Long, String, String, String, Long, String,
+                String, String, Map<String, String>> getWorkspaceInfo(
+            final long workspaceID)
+            throws IOException, JsonClientException {
+
+        final Map<String, Object> command = new HashMap<>();
+        command.put("command", "getWorkspaceInfo");
+        command.put("params", new WorkspaceIdentity().withId(workspaceID));
+        return ws.getClient().administer(new UObject(command))
+                .asClassInstance(WS_INFO_TYPEREF);
+    }
+    
+    
     private ObjectData getObjectData(final List<GUID> guids, final Path file)
             throws RetriableIndexingException, IndexingException {
         // create a new client since we're setting a file for the next response
@@ -297,7 +322,7 @@ public class WorkspaceEventHandler implements EventHandler {
                         Math.toIntExact(obj.getE5()), null, null),
                 new StorageObjectType(STORAGE_CODE, obj.getE3().split("-")[0],
                       Integer.parseInt(obj.getE3().split("-")[1].split("\\.")[0])),
-                Instant.ofEpochMilli(DATE_PARSER.parseDateTime(obj.getE4()).getMillis()));
+                Instant.ofEpochMilli(parseDateToEpochMillis(obj.getE4())));
     }
 
     @Override
@@ -598,7 +623,7 @@ public class WorkspaceEventHandler implements EventHandler {
                 Integer.parseInt(obj.getE3().split("-")[1].split("\\.")[0]));
         return new ChildStatusEvent(StatusEvent.getBuilder(
                 storageObjectType,
-                Instant.ofEpochMilli(DATE_PARSER.parseDateTime(obj.getE4()).getMillis()),
+                Instant.ofEpochMilli(parseDateToEpochMillis(obj.getE4())),
                 StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(origEvent.getEvent().getAccessGroupId().get())
                 .withNullableObjectID(obj.getE1() + "")
