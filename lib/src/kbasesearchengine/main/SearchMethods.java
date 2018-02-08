@@ -108,7 +108,13 @@ public class SearchMethods implements SearchInterface {
                 .withNullableFullTextInAll(mf.getFullTextInAll())
                 .withNullableObjectName(mf.getObjectName())
                 .withNullableTimestamp(toSearch(mf.getTimestamp(), "timestamp"))
-                .withExcludeSubObjects(toBool(mf.getExcludeSubobjects()));
+                .withExcludeSubObjects(toBool(mf.getExcludeSubobjects()))
+                .withIsSourceTagsBlackList(toBool(mf.getSourceTagsBlacklist()));
+        if (mf.getSourceTags() != null) {
+            for (final String tag: mf.getSourceTags()) {
+                ret.withSourceTag(tag);
+            }
+        }
         if (mf.getLookupInKeys() != null) {
             for (final String key : mf.getLookupInKeys().keySet()) {
                 //TODO CODE proper error for null value

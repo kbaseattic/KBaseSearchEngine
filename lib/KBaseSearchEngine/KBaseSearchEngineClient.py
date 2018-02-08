@@ -43,43 +43,55 @@ class KBaseSearchEngine(object):
            properties (like object name, creation time range) or full-text
            search in all properties. boolean exclude_subobjects - don't
            return any subobjects in the search results if true. Default
-           false.) -> structure: parameter "full_text_in_all" of String,
-           parameter "object_name" of String, parameter "timestamp" of type
-           "MatchValue" (Optional rules of defining constraints for values of
-           particular term (keyword). Appropriate field depends on type of
-           keyword. For instance in case of integer type 'int_value' should
-           be used. In case of range constraint rather than single value
-           'min_*' and 'max_*' fields should be used. You may omit one of
-           ends of range to achieve '<=' or '>=' comparison. Ends are always
-           included for range constraints.) -> structure: parameter "value"
-           of String, parameter "int_value" of Long, parameter "double_value"
-           of Double, parameter "bool_value" of type "boolean" (A boolean. 0
-           = false, other = true.), parameter "min_int" of Long, parameter
-           "max_int" of Long, parameter "min_date" of Long, parameter
-           "max_date" of Long, parameter "min_double" of Double, parameter
-           "max_double" of Double, parameter "exclude_subobjects" of type
-           "boolean" (A boolean. 0 = false, other = true.), parameter
-           "lookupInKeys" of mapping from String to type "MatchValue"
-           (Optional rules of defining constraints for values of particular
-           term (keyword). Appropriate field depends on type of keyword. For
-           instance in case of integer type 'int_value' should be used. In
-           case of range constraint rather than single value 'min_*' and
-           'max_*' fields should be used. You may omit one of ends of range
-           to achieve '<=' or '>=' comparison. Ends are always included for
-           range constraints.) -> structure: parameter "value" of String,
-           parameter "int_value" of Long, parameter "double_value" of Double,
-           parameter "bool_value" of type "boolean" (A boolean. 0 = false,
-           other = true.), parameter "min_int" of Long, parameter "max_int"
-           of Long, parameter "min_date" of Long, parameter "max_date" of
-           Long, parameter "min_double" of Double, parameter "max_double" of
-           Double, parameter "access_filter" of type "AccessFilter" (Optional
-           rules of access constraints. - with_private - include data found
-           in workspaces not marked as public, default value is true, -
-           with_public - include data found in public workspaces, default
-           value is false, - with_all_history - include all versions (last
-           one and all old versions) of objects matching constrains, default
-           value is false.) -> structure: parameter "with_private" of type
-           "boolean" (A boolean. 0 = false, other = true.), parameter
+           false. list<string> source_tags - source tags are arbitrary
+           strings applied to data at the data source (for example, the
+           workspace service). The source_tags list may optionally be
+           populated with a set of tags that will determine what data is
+           returned in a search. By default, the list behaves as a whitelist
+           and only data with at least one of the tags will be returned.
+           source_tags_blacklist - if true, the source_tags list behaves as a
+           blacklist and any data with at least one of the tags will be
+           excluded from the search results. If missing or false, the default
+           behavior is maintained.) -> structure: parameter
+           "full_text_in_all" of String, parameter "object_name" of String,
+           parameter "timestamp" of type "MatchValue" (Optional rules of
+           defining constraints for values of particular term (keyword).
+           Appropriate field depends on type of keyword. For instance in case
+           of integer type 'int_value' should be used. In case of range
+           constraint rather than single value 'min_*' and 'max_*' fields
+           should be used. You may omit one of ends of range to achieve '<='
+           or '>=' comparison. Ends are always included for range
+           constraints.) -> structure: parameter "value" of String, parameter
+           "int_value" of Long, parameter "double_value" of Double, parameter
+           "bool_value" of type "boolean" (A boolean. 0 = false, other =
+           true.), parameter "min_int" of Long, parameter "max_int" of Long,
+           parameter "min_date" of Long, parameter "max_date" of Long,
+           parameter "min_double" of Double, parameter "max_double" of
+           Double, parameter "exclude_subobjects" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "lookupInKeys" of
+           mapping from String to type "MatchValue" (Optional rules of
+           defining constraints for values of particular term (keyword).
+           Appropriate field depends on type of keyword. For instance in case
+           of integer type 'int_value' should be used. In case of range
+           constraint rather than single value 'min_*' and 'max_*' fields
+           should be used. You may omit one of ends of range to achieve '<='
+           or '>=' comparison. Ends are always included for range
+           constraints.) -> structure: parameter "value" of String, parameter
+           "int_value" of Long, parameter "double_value" of Double, parameter
+           "bool_value" of type "boolean" (A boolean. 0 = false, other =
+           true.), parameter "min_int" of Long, parameter "max_int" of Long,
+           parameter "min_date" of Long, parameter "max_date" of Long,
+           parameter "min_double" of Double, parameter "max_double" of
+           Double, parameter "source_tags" of list of String, parameter
+           "source_tags_blacklist" of type "boolean" (A boolean. 0 = false,
+           other = true.), parameter "access_filter" of type "AccessFilter"
+           (Optional rules of access constraints. - with_private - include
+           data found in workspaces not marked as public, default value is
+           true, - with_public - include data found in public workspaces,
+           default value is false, - with_all_history - include all versions
+           (last one and all old versions) of objects matching constrains,
+           default value is false.) -> structure: parameter "with_private" of
+           type "boolean" (A boolean. 0 = false, other = true.), parameter
            "with_public" of type "boolean" (A boolean. 0 = false, other =
            true.), parameter "with_all_history" of type "boolean" (A boolean.
            0 = false, other = true.)
@@ -113,6 +125,16 @@ class KBaseSearchEngine(object):
            parameter "object_name" of String, parameter "parent_guid" of type
            "GUID" (Global user identificator. It has structure like this:
            <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
+           search results if true. Default false. list<string> source_tags -
+           source tags are arbitrary strings applied to data at the data
+           source (for example, the workspace service). The source_tags list
+           may optionally be populated with a set of tags that will determine
+           what data is returned in a search. By default, the list behaves as
+           a whitelist and only data with at least one of the tags will be
+           returned. source_tags_blacklist - if true, the source_tags list
+           behaves as a blacklist and any data with at least one of the tags
+           will be excluded from the search results. If missing or false, the
+           default behavior is maintained.) -> structure: parameter
            "full_text_in_all" of String, parameter "object_name" of String,
            parameter "timestamp" of type "MatchValue" (Optional rules of
            defining constraints for values of particular term (keyword).
@@ -142,28 +164,31 @@ class KBaseSearchEngine(object):
            true.), parameter "min_int" of Long, parameter "max_int" of Long,
            parameter "min_date" of Long, parameter "max_date" of Long,
            parameter "min_double" of Double, parameter "max_double" of
-           Double, parameter "sorting_rules" of list of type "SortingRule"
-           (Rule for sorting found results. 'key_name', 'is_timestamp' and
-           'is_object_name' are alternative way of defining what property if
-           used for sorting. Default order is ascending (if 'descending'
-           field is not set).) -> structure: parameter "is_timestamp" of type
-           "boolean" (A boolean. 0 = false, other = true.), parameter
-           "is_object_name" of type "boolean" (A boolean. 0 = false, other =
-           true.), parameter "key_name" of String, parameter "descending" of
-           type "boolean" (A boolean. 0 = false, other = true.), parameter
-           "access_filter" of type "AccessFilter" (Optional rules of access
-           constraints. - with_private - include data found in workspaces not
-           marked as public, default value is true, - with_public - include
-           data found in public workspaces, default value is false, -
-           with_all_history - include all versions (last one and all old
-           versions) of objects matching constrains, default value is false.)
-           -> structure: parameter "with_private" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "with_public" of
-           type "boolean" (A boolean. 0 = false, other = true.), parameter
-           "with_all_history" of type "boolean" (A boolean. 0 = false, other
-           = true.), parameter "pagination" of type "Pagination" (Pagination
-           rules. Default values are: start = 0, count = 50.) -> structure:
-           parameter "start" of Long, parameter "count" of Long, parameter
+           Double, parameter "source_tags" of list of String, parameter
+           "source_tags_blacklist" of type "boolean" (A boolean. 0 = false,
+           other = true.), parameter "sorting_rules" of list of type
+           "SortingRule" (Rule for sorting found results. 'key_name',
+           'is_timestamp' and 'is_object_name' are alternative way of
+           defining what property if used for sorting. Default order is
+           ascending (if 'descending' field is not set).) -> structure:
+           parameter "is_timestamp" of type "boolean" (A boolean. 0 = false,
+           other = true.), parameter "is_object_name" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "key_name" of
+           String, parameter "descending" of type "boolean" (A boolean. 0 =
+           false, other = true.), parameter "access_filter" of type
+           "AccessFilter" (Optional rules of access constraints. -
+           with_private - include data found in workspaces not marked as
+           public, default value is true, - with_public - include data found
+           in public workspaces, default value is false, - with_all_history -
+           include all versions (last one and all old versions) of objects
+           matching constrains, default value is false.) -> structure:
+           parameter "with_private" of type "boolean" (A boolean. 0 = false,
+           other = true.), parameter "with_public" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "with_all_history"
+           of type "boolean" (A boolean. 0 = false, other = true.), parameter
+           "pagination" of type "Pagination" (Pagination rules. Default
+           values are: start = 0, count = 50.) -> structure: parameter
+           "start" of Long, parameter "count" of Long, parameter
            "post_processing" of type "PostProcessing" (Rules for what to
            return about found objects. skip_info - do not include brief info
            for object ('guid, 'parent_guid', 'object_name' and 'timestamp'
