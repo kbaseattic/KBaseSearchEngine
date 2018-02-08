@@ -4,6 +4,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
+import java.lang.reflect.Array;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -235,6 +236,15 @@ public class ObjectDataTest {
         } catch(Exception e){
             TestCommon.assertExceptionCorrect(e, new UnsupportedOperationException());
         }
+
+        try {
+            List<String> list = res.get("field");
+            list.add("test");
+            fail("cannot modify highlight list");
+        } catch(Exception e){
+            TestCommon.assertExceptionCorrect(e, new UnsupportedOperationException());
+        }
+
 
     }
 
