@@ -55,15 +55,15 @@ import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
 import us.kbase.common.test.controllers.mongo.MongoController;
 import us.kbase.test.auth2.authcontroller.AuthController;
-import workspace.CreateWorkspaceParams;
-import workspace.GetObjects2Params;
-import workspace.ObjectSaveData;
-import workspace.ObjectSpecification;
-import workspace.ProvenanceAction;
-import workspace.RegisterTypespecParams;
-import workspace.SaveObjectsParams;
-import workspace.SubAction;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.CreateWorkspaceParams;
+import us.kbase.workspace.GetObjects2Params;
+import us.kbase.workspace.ObjectSaveData;
+import us.kbase.workspace.ObjectSpecification;
+import us.kbase.workspace.ProvenanceAction;
+import us.kbase.workspace.RegisterTypespecParams;
+import us.kbase.workspace.SaveObjectsParams;
+import us.kbase.workspace.SubAction;
+import us.kbase.workspace.WorkspaceClient;
 
 public class IndexerIntegrationTest {
     
@@ -286,12 +286,13 @@ public class IndexerIntegrationTest {
     }
 
     @Test
-    public void singleNewVersion() throws Exception {
+    public void singleNewVersionWithSourceTags() throws Exception {
         // a basic test to ensure all the indexer guts are working together.
-        // also tests provenance
+        // also tests provenance and source tags
         
         wsCli1.createWorkspace(new CreateWorkspaceParams()
-                .withWorkspace("foo"));
+                .withWorkspace("foo")
+                .withMeta(ImmutableMap.of("searchtags", "narrative, refdata")));
         wsCli1.saveObjects(new SaveObjectsParams()
                 .withWorkspace("foo")
                 .withObjects(Arrays.asList(new ObjectSaveData()
@@ -330,6 +331,8 @@ public class IndexerIntegrationTest {
                 .withNullableTimestamp(indexedTimestamp)
                 .withNullableData(ImmutableMap.of("whee", "wugga"))
                 .withKeyProperty("whee", "wugga")
+                .withSourceTag("narrative")
+                .withSourceTag("refdata")
                 .build();
         
         assertThat("incorrect indexed object", indexedObj, is(expected));

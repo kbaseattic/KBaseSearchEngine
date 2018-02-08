@@ -8,9 +8,9 @@ import com.google.common.collect.ImmutableMap;
 
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
-import workspace.ListWorkspaceIDsParams;
-import workspace.ListWorkspaceIDsResults;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.ListWorkspaceIDsParams;
+import us.kbase.workspace.ListWorkspaceIDsResults;
+import us.kbase.workspace.WorkspaceClient;
 
 /** A provider for KBase workspace service based access group IDs.
  * @author gaprice@lbl.gov

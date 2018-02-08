@@ -1,5 +1,17 @@
 package kbasesearchengine.test.main;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static kbasesearchengine.test.common.TestCommon.set;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+import org.junit.Test;
+
 import kbasesearchengine.AccessFilter;
 import kbasesearchengine.MatchFilter;
 import kbasesearchengine.Pagination;
@@ -16,6 +28,7 @@ import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
 import kbasesearchengine.search.SortingRule;
 import kbasesearchengine.system.TypeStorage;
+import kbasesearchengine.test.common.TestCommon;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -26,10 +39,8 @@ import java.util.List;
 import java.util.Map;
 
 import static kbasesearchengine.test.common.TestCommon.set;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+
+
 
 public class SearchMethodsTest {
 
@@ -48,27 +59,85 @@ public class SearchMethodsTest {
     @Test
     public void searchObjectsExcludeSubObjects() throws Exception {
         // false cases
-        searchObjectsExcludeSubObjects(
+        searchObjectsCheckMatchFilter(
                 new MatchFilter(),
                 kbasesearchengine.search.MatchFilter.getBuilder().build());
-        searchObjectsExcludeSubObjects(
+        searchObjectsCheckMatchFilter(
                 new MatchFilter().withExcludeSubobjects(null),
                 kbasesearchengine.search.MatchFilter.getBuilder().build());
-        searchObjectsExcludeSubObjects(
+        searchObjectsCheckMatchFilter(
                 new MatchFilter().withExcludeSubobjects(0L),
                 kbasesearchengine.search.MatchFilter.getBuilder().build());
-        searchObjectsExcludeSubObjects(
+        searchObjectsCheckMatchFilter(
                 new MatchFilter().withExcludeSubobjects(2L),
                 kbasesearchengine.search.MatchFilter.getBuilder().build());
         
         //true case
-        searchObjectsExcludeSubObjects(
+        searchObjectsCheckMatchFilter(
                 new MatchFilter().withExcludeSubobjects(1L),
                 kbasesearchengine.search.MatchFilter.getBuilder().withExcludeSubObjects(true)
                         .build());
     }
+    
+    @Test
+    public void searchObjectsSourceTags() throws Exception {
+        // null cases
+        searchObjectsCheckMatchFilter(
+                new MatchFilter(),
+                kbasesearchengine.search.MatchFilter.getBuilder().build());
+        searchObjectsCheckMatchFilter(
+                new MatchFilter().withSourceTags(null).withSourceTagsBlacklist(null),
+                kbasesearchengine.search.MatchFilter.getBuilder().build());
+        
+        // whitelist
+        searchObjectsCheckMatchFilter(
+                new MatchFilter().withSourceTags(Arrays.asList("foo", "bar")),
+                kbasesearchengine.search.MatchFilter.getBuilder()
+                        .withSourceTag("foo")
+                        .withSourceTag("bar")
+                        .build());
+        
+        // explicit whitelist
+        searchObjectsCheckMatchFilter(
+                new MatchFilter().withSourceTags(Arrays.asList("foo", "bar"))
+                        .withSourceTagsBlacklist(0L),
+                kbasesearchengine.search.MatchFilter.getBuilder()
+                        .withSourceTag("foo")
+                        .withSourceTag("bar")
+                        .build());
+        
+        // blacklist
+        searchObjectsCheckMatchFilter(
+                new MatchFilter().withSourceTags(Arrays.asList("foo", "bar"))
+                        .withSourceTagsBlacklist(1L),
+                kbasesearchengine.search.MatchFilter.getBuilder()
+                        .withSourceTag("foo")
+                        .withSourceTag("bar")
+                        .withIsSourceTagsBlackList(true)
+                        .build());
+    }
+    
+    @Test
+    public void searchObjectsIllegalSourceTag() {
+        failSearchObjectsSourceTag(null, new IllegalArgumentException(
+                "sourceTag cannot be null or whitespace only"));
+        failSearchObjectsSourceTag("  \t  \n  ", new IllegalArgumentException(
+                "sourceTag cannot be null or whitespace only"));
+    }
+    
+    private void failSearchObjectsSourceTag(final String tag, final Exception expected) {
+        try {
+            searchObjectsCheckMatchFilter(
+                    new MatchFilter().withSourceTags(Arrays.asList("foo", tag)),
+                    kbasesearchengine.search.MatchFilter.getBuilder().build());
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+        
+    }
 
-    private void searchObjectsExcludeSubObjects(
+    private void searchObjectsCheckMatchFilter(
             final MatchFilter input,
             final kbasesearchengine.search.MatchFilter expected)
             throws Exception {
@@ -119,27 +188,85 @@ public class SearchMethodsTest {
     @Test
     public void searchTypesExcludeSubObjects() throws Exception {
         // false cases
-        searchTypesExcludeSubObjects(
+        searchTypesCheckMatchFilter(
                 new MatchFilter(),
                 kbasesearchengine.search.MatchFilter.getBuilder().build());
-        searchTypesExcludeSubObjects(
+        searchTypesCheckMatchFilter(
                 new MatchFilter().withExcludeSubobjects(null),
                 kbasesearchengine.search.MatchFilter.getBuilder().build());
-        searchTypesExcludeSubObjects(
+        searchTypesCheckMatchFilter(
                 new MatchFilter().withExcludeSubobjects(0L),
                 kbasesearchengine.search.MatchFilter.getBuilder().build());
-        searchTypesExcludeSubObjects(
+        searchTypesCheckMatchFilter(
                 new MatchFilter().withExcludeSubobjects(2L),
                 kbasesearchengine.search.MatchFilter.getBuilder().build());
         
         //true case
-        searchTypesExcludeSubObjects(
+        searchTypesCheckMatchFilter(
                 new MatchFilter().withExcludeSubobjects(1L),
                 kbasesearchengine.search.MatchFilter.getBuilder().withExcludeSubObjects(true)
                         .build());
     }
+    
+    @Test
+    public void searchTypesSourceTags() throws Exception {
+        // null cases
+        searchTypesCheckMatchFilter(
+                new MatchFilter(),
+                kbasesearchengine.search.MatchFilter.getBuilder().build());
+        searchTypesCheckMatchFilter(
+                new MatchFilter().withSourceTags(null).withSourceTagsBlacklist(null),
+                kbasesearchengine.search.MatchFilter.getBuilder().build());
+        
+        // whitelist
+        searchTypesCheckMatchFilter(
+                new MatchFilter().withSourceTags(Arrays.asList("foo", "bar")),
+                kbasesearchengine.search.MatchFilter.getBuilder()
+                        .withSourceTag("foo")
+                        .withSourceTag("bar")
+                        .build());
+        
+        // explicit whitelist
+        searchTypesCheckMatchFilter(
+                new MatchFilter().withSourceTags(Arrays.asList("foo", "bar"))
+                        .withSourceTagsBlacklist(0L),
+                kbasesearchengine.search.MatchFilter.getBuilder()
+                        .withSourceTag("foo")
+                        .withSourceTag("bar")
+                        .build());
+        
+        // blacklist
+        searchTypesCheckMatchFilter(
+                new MatchFilter().withSourceTags(Arrays.asList("foo", "bar"))
+                        .withSourceTagsBlacklist(1L),
+                kbasesearchengine.search.MatchFilter.getBuilder()
+                        .withSourceTag("foo")
+                        .withSourceTag("bar")
+                        .withIsSourceTagsBlackList(true)
+                        .build());
+    }
+    
+    @Test
+    public void searchTypesIllegalSourceTag() {
+        failSearchTypesSourceTag(null, new IllegalArgumentException(
+                "sourceTag cannot be null or whitespace only"));
+        failSearchTypesSourceTag("  \t  \n  ", new IllegalArgumentException(
+                "sourceTag cannot be null or whitespace only"));
+    }
+    
+    private void failSearchTypesSourceTag(final String tag, final Exception expected) {
+        try {
+            searchTypesCheckMatchFilter(
+                    new MatchFilter().withSourceTags(Arrays.asList("foo", tag)),
+                    kbasesearchengine.search.MatchFilter.getBuilder().build());
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+        
+    }
 
-    private void searchTypesExcludeSubObjects(
+    private void searchTypesCheckMatchFilter(
             final MatchFilter input,
             final kbasesearchengine.search.MatchFilter expected)
             throws Exception {

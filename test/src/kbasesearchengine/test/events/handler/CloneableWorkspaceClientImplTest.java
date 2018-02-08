@@ -13,7 +13,7 @@ import org.junit.Test;
 import kbasesearchengine.events.handler.CloneableWorkspaceClient;
 import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import us.kbase.auth.AuthToken;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceClient;
 
 public class CloneableWorkspaceClientImplTest {
     

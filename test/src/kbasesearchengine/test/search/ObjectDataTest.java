@@ -1,10 +1,10 @@
 package kbasesearchengine.test.search;
 
+import static kbasesearchengine.test.common.TestCommon.set;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
-import java.lang.reflect.Array;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,6 +50,7 @@ public class ObjectDataTest {
         assertThat("incorrect parent data", od.getParentData(), is(Optional.absent()));
         assertThat("incorrect timestamp", od.getTimestamp(), is(Optional.absent()));
         assertThat("incorrect type", od.getType(), is(Optional.absent()));
+        assertThat("incorrect tags", od.getSourceTags(), is(set()));
         assertThat("incorrect highlight", od.getKeyProperties(), is(Collections.emptyMap()));
     }
     
@@ -85,8 +86,8 @@ public class ObjectDataTest {
         assertThat("incorrect parent data", od.getParentData(), is(Optional.absent()));
         assertThat("incorrect timestamp", od.getTimestamp(), is(Optional.absent()));
         assertThat("incorrect type", od.getType(), is(Optional.absent()));
+        assertThat("incorrect tags", od.getSourceTags(), is(set()));
         assertThat("incorrect highlight", od.getKeyProperties(), is(Collections.emptyMap()));
-
     }
     
     @Test
@@ -121,8 +122,8 @@ public class ObjectDataTest {
         assertThat("incorrect parent data", od.getParentData(), is(Optional.absent()));
         assertThat("incorrect timestamp", od.getTimestamp(), is(Optional.absent()));
         assertThat("incorrect type", od.getType(), is(Optional.absent()));
+        assertThat("incorrect tags", od.getSourceTags(), is(set()));
         assertThat("incorrect highlight", od.getKeyProperties(), is(Collections.emptyMap()));
-
     }
     
     @Test
@@ -143,6 +144,8 @@ public class ObjectDataTest {
                 .withKeyProperty("baz", "bat")
                 .withKeyProperty("null", null)
                 .withKeyProperty("ws", "   \t   \n   ")
+                .withSourceTag("foo")
+                .withSourceTag("bar")
                 .withHighlight("field", new ArrayList<>(Arrays.asList("match")))
                 .build();
         
@@ -175,6 +178,7 @@ public class ObjectDataTest {
                 is(Optional.of(Instant.ofEpochMilli(10000))));
         assertThat("incorrect type", od.getType(),
                 is(Optional.of(new SearchObjectType("foo", 1))));
+        assertThat("incorrect tags", od.getSourceTags(), is(set("foo", "bar")));
     }
     
     @Test
@@ -191,9 +195,9 @@ public class ObjectDataTest {
     public void withKeyFail() {
         final ObjectData.Builder b = ObjectData.getBuilder(new GUID("a:1/2/3"));
         failWithKey(b, null, new IllegalArgumentException(
-                "key cannot be null or whitespace"));
+                "key cannot be null or whitespace only"));
         failWithKey(b, "    \t    \n  ", new IllegalArgumentException(
-                "key cannot be null or whitespace"));
+                "key cannot be null or whitespace only"));
     }
     
     private void failWithKey(
@@ -205,6 +209,49 @@ public class ObjectDataTest {
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
+    
+    @Test
+    public void withSourceTagFail() {
+        failWithSourceTag(null,
+                new IllegalArgumentException("sourceTag cannot be null or whitespace only"));
+        failWithSourceTag("   \t   \n   ",
+                new IllegalArgumentException("sourceTag cannot be null or whitespace only"));
+    }
+    
+    private void failWithSourceTag(final String sourceTag, final Exception expected) {
+        try {
+            ObjectData.getBuilder(new GUID("a:1/2/3")).withSourceTag(sourceTag);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
+    
+    @Test
+    public void immutableKeyProps() {
+        final ObjectData od = ObjectData.getBuilder(new GUID("a:1/2/3"))
+                .withKeyProperty("foo", "bar").build();
+        
+        try {
+            od.getKeyProperties().put("whee", "whoo");
+            fail("expected exception");
+        } catch (UnsupportedOperationException got) {
+            // test passed
+        }
+    }
+    
+    @Test
+    public void immutableSourceTags() {
+        final ObjectData od = ObjectData.getBuilder(new GUID("a:1/2/3"))
+                .withSourceTag("foo").build();
+        
+        try {
+            od.getSourceTags().add("whee");
+            fail("expected exception");
+        } catch (UnsupportedOperationException got) {
+            // test passed
         }
     }
 

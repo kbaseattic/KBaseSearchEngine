@@ -4,7 +4,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.common.base.Optional;
 
@@ -34,8 +36,8 @@ public class ObjectData {
     private final Optional<Object> parentData;
     private final Optional<Object> data;
     private final Map<String, String> keyProps;
+    private final Set<String> sourceTags;
     private final Map<String, List<String>> highlight;
-
 
     private ObjectData(
             final GUID guid,
@@ -52,6 +54,7 @@ public class ObjectData {
             final Object parentData,
             final Object data,
             final Map<String, String> keyProps,
+            final Set<String> sourceTags,
             final Map<String, List<String>> highlight) {
         this.guid = guid;
         if (parentData != null) {
@@ -72,6 +75,7 @@ public class ObjectData {
         this.parentData = Optional.fromNullable(parentData);
         this.data = Optional.fromNullable(data);
         this.keyProps = Collections.unmodifiableMap(keyProps);
+        this.sourceTags = Collections.unmodifiableSet(sourceTags);
         this.highlight = Collections.unmodifiableMap(highlight);
     }
 
@@ -184,12 +188,19 @@ public class ObjectData {
         return keyProps;
     }
 
+    /** Get the tags applied to the data at the data source, if any.
+     * @return the source tags.
+     */
+    public Set<String> getSourceTags() {
+        return sourceTags;
+    }
+    
     /** Get hits that matched the query as highlighted snips corresponding to fields.
      * @return the all fields with highlighting matches.
      */
-    public Map<String, List<String>> getHighlight() { return highlight; }
-
-
+    public Map<String, List<String>> getHighlight() {
+        return highlight;
+    }
 
     @Override
     public int hashCode() {
@@ -214,6 +225,8 @@ public class ObjectData {
                 + ((parentData == null) ? 0 : parentData.hashCode());
         result = prime * result
                 + ((parentGuid == null) ? 0 : parentGuid.hashCode());
+        result = prime * result
+                + ((sourceTags == null) ? 0 : sourceTags.hashCode());
         result = prime * result
                 + ((timestamp == null) ? 0 : timestamp.hashCode());
         result = prime * result + ((type == null) ? 0 : type.hashCode());
@@ -324,6 +337,13 @@ public class ObjectData {
         } else if (!parentGuid.equals(other.parentGuid)) {
             return false;
         }
+        if (sourceTags == null) {
+            if (other.sourceTags != null) {
+                return false;
+            }
+        } else if (!sourceTags.equals(other.sourceTags)) {
+            return false;
+        }
         if (timestamp == null) {
             if (other.timestamp != null) {
                 return false;
@@ -376,6 +396,7 @@ public class ObjectData {
         private Object parentData;
         private Object data;
         private Map<String, String> keyProps = new HashMap<>();
+        private Set<String> sourceTags = new HashSet<>();
         private Map<String, List<String>> highlight = new HashMap<>();
         
         private Builder(final GUID guid) {
@@ -388,7 +409,8 @@ public class ObjectData {
          */
         public ObjectData build() {
             return new ObjectData(guid, objectName, type, creator, copier, module, method,
-                    commitHash, moduleVersion, md5, timestamp, parentData, data, keyProps, highlight);
+                    commitHash, moduleVersion, md5, timestamp, parentData, data, keyProps,
+                    sourceTags, highlight);
         }
         
         /** Set the object name in the builder. Replaces any previous object name. Nulls and
@@ -543,8 +565,18 @@ public class ObjectData {
          * @return this builder.
          */
         public Builder withKeyProperty(final String key, final String property) {
-            Utils.notNullOrEmpty(key, "key cannot be null or whitespace");
+            Utils.notNullOrEmpty(key, "key cannot be null or whitespace only");
             keyProps.put(key, property);
+            return this;
+        }
+        
+        /** Adds a tag to the data that was applied at the data's source.
+         * @param sourceTag the tag.
+         * @return this builder.
+         */
+        public Builder withSourceTag(final String sourceTag) {
+            Utils.notNullOrEmpty(sourceTag, "sourceTag cannot be null or whitespace only");
+            sourceTags.add(sourceTag);
             return this;
         }
 
