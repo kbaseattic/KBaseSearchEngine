@@ -13,24 +13,18 @@ import kbasesearchengine.SearchObjectsOutput;
 import kbasesearchengine.GetObjectsInput;
 import kbasesearchengine.GetObjectsOutput;
 import kbasesearchengine.TypeDescriptor;
-import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.Tuple9;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceClient;
 
-import java.io.IOException;
 import java.text.ParseException;
 import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.text.SimpleDateFormat;
-import java.util.Locale;
 
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;

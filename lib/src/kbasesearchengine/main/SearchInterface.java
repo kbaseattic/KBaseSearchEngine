@@ -8,9 +8,6 @@ import kbasesearchengine.GetObjectsInput;
 import kbasesearchengine.GetObjectsOutput;
 import kbasesearchengine.TypeDescriptor;
 
-import kbasesearchengine.search.IndexingStorage;
-import workspace.WorkspaceClient;
-
 import java.util.Map;
 
 /**

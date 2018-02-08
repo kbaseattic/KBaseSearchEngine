@@ -174,9 +174,10 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <test name="kbasesearchengine.test.events.storage.MongoDBStatusEventStorageTest"/>
         <test name="kbasesearchengine.test.integration.IndexerIntegrationTest"/>
         <test name="kbasesearchengine.test.integration.IndexerWorkerIntegrationTest"/>
-      	<test name="kbasesearchengine.test.integration.SearchAPIIntegrationTest"/>
+        <test name="kbasesearchengine.test.integration.SearchAPIIntegrationTest"/>
         <test name="kbasesearchengine.test.main.IndexerCoordinatorTest"/>
         <test name="kbasesearchengine.test.main.IndexerWorkerTest"/>
+        <!--<test name="kbasesearchengine.test.main.NarrativeInfoDecoratorTest"/>-->
         <test name="kbasesearchengine.test.main.SearchMethodsTest"/>
         <test name="kbasesearchengine.test.main.SignalMonitorTest"/>
         <test name="kbasesearchengine.test.parse.IdMapperTest"/>
@@ -194,7 +195,6 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <test name="kbasesearchengine.test.system.TypeMappingTest"/>
         <test name="kbasesearchengine.test.system.TransformTest"/>
         <test name="kbasesearchengine.test.tools.SearchToolsTest"/>
-        <test name="kbasesearchengine.test.main.NarrativeInfoDecoratorTest"/>
       </junit>
     </jacoco:coverage>
     <fail message="Test failure detected, check test results." if="test.failed" />
