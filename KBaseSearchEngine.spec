@@ -172,7 +172,7 @@ module KBaseSearchEngine {
         mapping<string, string> object_props;
     } ObjectData;
 
-    typedef int accessGroupId;
+    typedef int access_group_id;
     typedef int timestamp;
 
     typedef tuple<string narrative_name,
@@ -195,7 +195,7 @@ module KBaseSearchEngine {
         list<ObjectData> objects;
         int total;
         int search_time;
-        mapping<accessGroupId, narrative_info> access_group_narrative_info;
+        mapping<access_group_id, narrative_info> access_group_narrative_info;
     } SearchObjectsOutput;
 
     /*
@@ -218,7 +218,7 @@ module KBaseSearchEngine {
     typedef structure {
         list<ObjectData> objects;
         int search_time;
-        mapping<accessGroupId, narrative_info> access_group_narrative_info;
+        mapping<access_group_id, narrative_info> access_group_narrative_info;
     } GetObjectsOutput;
 
     /*

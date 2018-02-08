@@ -192,6 +192,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <test name="kbasesearchengine.test.system.TypeMappingTest"/>
         <test name="kbasesearchengine.test.system.TransformTest"/>
         <test name="kbasesearchengine.test.tools.SearchToolsTest"/>
+        <test name="kbasesearchengine.test.main.NarrativeInfoDecoratorTest"/>
       </junit>
     </jacoco:coverage>
     <fail message="Test failure detected, check test results." if="test.failed" />

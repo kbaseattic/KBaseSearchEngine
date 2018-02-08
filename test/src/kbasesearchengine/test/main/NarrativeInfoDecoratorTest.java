@@ -73,7 +73,7 @@ import workspace.RegisterTypespecParams;
 import workspace.SaveObjectsParams;
 import workspace.WorkspaceClient;
 
-public class ObjectDecoratorTest {
+public class NarrativeInfoDecoratorTest {
 
     // should add a setting in the worker and coordinator to shorten the wait time for testing
     // purposes

@@ -52,8 +52,9 @@ public class DecorateWithNarrativeInfo implements SearchInterface {
     private final WorkspaceEventHandler weh;
     private final SearchInterface searchInterface;
 
-    public DecorateWithNarrativeInfo(final SearchInterface searchInterface,
-                                     final WorkspaceClient wsClient) {
+    public DecorateWithNarrativeInfo(
+            final SearchInterface searchInterface,
+            final WorkspaceClient wsClient) {
         Utils.nonNull(searchInterface, "searchInterface");
         Utils.nonNull(wsClient, "wsClient");
         this.searchInterface = searchInterface;
@@ -61,19 +62,22 @@ public class DecorateWithNarrativeInfo implements SearchInterface {
                 new CloneableWorkspaceClientImpl(wsClient));
     }
 
-    public SearchTypesOutput searchTypes(final SearchTypesInput params,
-                                         final String user)
+    public SearchTypesOutput searchTypes(
+            final SearchTypesInput params,
+            final String user)
             throws Exception {
         return searchInterface.searchTypes(params, user);
     }
 
-    public Map<String, TypeDescriptor> listTypes(final String uniqueType)
+    public Map<String, TypeDescriptor> listTypes(
+            final String uniqueType)
             throws Exception {
         return searchInterface.listTypes(uniqueType);
     }
 
-    public SearchObjectsOutput searchObjects(final SearchObjectsInput params,
-                                             final String user)
+    public SearchObjectsOutput searchObjects(
+            final SearchObjectsInput params,
+            final String user)
             throws Exception {
         SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
         searchObjsOutput.setAccessGroupNarrativeInfo(addNarrativeInfo(searchObjsOutput.getObjects(),
@@ -81,8 +85,9 @@ public class DecorateWithNarrativeInfo implements SearchInterface {
         return searchObjsOutput;
     }
 
-    public GetObjectsOutput getObjects(final GetObjectsInput params,
-                                       final String user)
+    public GetObjectsOutput getObjects(
+            final GetObjectsInput params,
+            final String user)
             throws Exception {
         GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
         getObjsOutput.setAccessGroupNarrativeInfo(addNarrativeInfo(getObjsOutput.getObjects(),
@@ -93,7 +98,7 @@ public class DecorateWithNarrativeInfo implements SearchInterface {
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(
             final List<ObjectData> objects,
             final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo)
-                throws IOException, JsonClientException, ParseException {
+            throws IOException, JsonClientException, ParseException {
 
         final Map<Long, Tuple5 <String, Long, Long, String, String>> retVal = new HashMap<>();
 
@@ -128,7 +133,7 @@ public class DecorateWithNarrativeInfo implements SearchInterface {
 
                 tempNarrInfo.setE3(timeMilli.toEpochMilli());  // modification time
                 tempNarrInfo.setE4(wsInfo.getE3());  // workspace user name
-                tempNarrInfo.setE5("TBD");
+                tempNarrInfo.setE5("");
 
                 final Map<String, String> wsInfoMeta = wsInfo.getE9();
 
@@ -138,8 +143,8 @@ public class DecorateWithNarrativeInfo implements SearchInterface {
                     tempNarrInfo.setE2(Long.parseLong(wsInfoMeta.get("narrative")));
                 }
                 else {
-                    tempNarrInfo.setE1("Not Available");       // narrative name not available
-                    tempNarrInfo.setE2((long)-1);              // narrative id not available
+                    tempNarrInfo.setE1(null);       // narrative name not available
+                    tempNarrInfo.setE2(null);              // narrative id not available
                 }
                 retVal.put(workspaceId, tempNarrInfo);
             }
