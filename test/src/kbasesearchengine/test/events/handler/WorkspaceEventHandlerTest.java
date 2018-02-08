@@ -5,6 +5,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,16 +37,17 @@ import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.test.common.TestCommon;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple11;
+import us.kbase.common.service.Tuple9;
 import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
-import workspace.GetObjects2Params;
-import workspace.GetObjects2Results;
-import workspace.ObjectData;
-import workspace.ObjectIdentity;
-import workspace.ObjectSpecification;
-import workspace.ProvenanceAction;
-import workspace.SubAction;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.GetObjects2Params;
+import us.kbase.workspace.GetObjects2Results;
+import us.kbase.workspace.ObjectData;
+import us.kbase.workspace.ObjectSpecification;
+import us.kbase.workspace.ProvenanceAction;
+import us.kbase.workspace.SubAction;
+import us.kbase.workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceIdentity;
 
 public class WorkspaceEventHandlerTest {
     
@@ -83,52 +85,85 @@ public class WorkspaceEventHandlerTest {
         @Override
         public boolean matches(final UObject command) {
             // the fact that kb-sdk doesn't compile in equals & hashcode is infuriating
+            boolean matches = true;
             @SuppressWarnings("unchecked")
             final Map<String, Object> cmd = command.asClassInstance(Map.class);
-            assertThat("incorrect command", cmd.get("command"), is("getObjects"));
+            matches = matches && "getObjects".equals(cmd.get("command"));
+            
             final GetObjects2Params p = UObject.transformObjectToObject(
                     cmd.get("params"), GetObjects2Params.class);
-            assertThat("incorrect ignore errs", p.getIgnoreErrors(), is((Long) null));
-            assertThat("incorrect nodata", p.getNoData(), is((Long) null));
+            matches = matches && p.getIgnoreErrors() == null;
+            matches = matches && p.getNoData() == null;
+            
             final List<ObjectSpecification> objslist = p.getObjects();
-            assertThat("incorrect spec count", objslist.size(), is(1));
+            matches = matches && objslist.size() == 1;
+            
             final ObjectSpecification spec = objslist.get(0);
-            assertThat("incorrect find ref path", spec.getFindReferencePath(), is((Long) null));
-            assertThat("incorrect included", spec.getIncluded(), is((List<String>) null));
-            assertThat("incorrect name", spec.getName(), is((String) null));
-            assertThat("incorrect objid", spec.getObjid(), is((Long) null));
-            assertThat("incorrect objpath", spec.getObjPath(), is((List<ObjectIdentity>) null));
-            assertThat("incorrect refpath", spec.getObjRefPath(), is((List<String>) null));
-            assertThat("incorrect ref", spec.getRef(), is(ref));
-            assertThat("incorrect strict arrays", spec.getStrictArrays(), is((Long) null));
-            assertThat("incorrect strict maps", spec.getStrictMaps(), is((Long) null));
-            assertThat("incorrect to obj path", spec.getToObjPath(),
-                    is((List<ObjectIdentity>) null));
-            assertThat("incorrect to obj ref path", spec.getToObjRefPath(),
-                    is((List<String>) null));
-            assertThat("incorrect ver", spec.getVer(), is((Long) null));
-            assertThat("incorrect ws", spec.getWorkspace(), is((String) null));
-            assertThat("incorrect wsid", spec.getWsid(), is((Long) null));
-            return true;
+            matches = matches && spec.getFindReferencePath() == null;
+            matches = matches && spec.getIncluded() == null;
+            matches = matches && spec.getName() == null;
+            matches = matches && spec.getObjid() == null;
+            matches = matches && spec.getObjPath() == null;
+            matches = matches && spec.getObjRefPath() == null;
+            matches = matches && spec.getStrictArrays() == null;
+            matches = matches && spec.getStrictMaps() == null;
+            matches = matches && spec.getToObjPath() == null;
+            matches = matches && spec.getToObjRefPath() == null;
+            matches = matches && spec.getVer() == null;
+            matches = matches && spec.getWorkspace() == null;
+            matches = matches && spec.getWsid() == null;
+            matches = matches && ref.equals(spec.getRef());
+            
+            return matches;
+        }
+    }
+    
+    private class AdminGetWSInfoAnswerMatcher implements ArgumentMatcher<UObject> {
+
+        final long id;
+        
+        public AdminGetWSInfoAnswerMatcher(final long id) {
+            this.id = id;
         }
         
+        @Override
+        public boolean matches(final UObject command) {
+            // the fact that kb-sdk doesn't compile in equals & hashcode is infuriating
+            boolean matches = true;
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> cmd = command.asClassInstance(Map.class);
+            matches = matches && "getWorkspaceInfo".equals(cmd.get("command"));
+
+            final WorkspaceIdentity wi = UObject.transformObjectToObject(
+                    cmd.get("params"), WorkspaceIdentity.class);
+            matches = matches && wi.getId() == id;
+            matches = matches && wi.getWorkspace() == null;
+
+            return matches;
+        }
     }
     
     @Test
     public void loadNoPathMinimal() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
         final WorkspaceClient wscli = mock(WorkspaceClient.class);
-        when(clonecli.getClientClone()).thenReturn(wscli);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
         
-        when(wscli.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3"))))
-                .thenReturn(new UObject(new GetObjects2Results().withData(Arrays.asList(
-                        new ObjectData()
-                                .withData(new UObject(ImmutableMap.of("genome", "data")))
-                                .withProvenance(Collections.emptyList())
-                                .withCreator("creator")
-                                .withCopySourceInaccessible(0L)
-                                .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
-                                        1, "wsname", "checksum", 44, Collections.emptyMap()))))));
+        doReturn(new UObject(new GetObjects2Results().withData(Arrays.asList(
+                new ObjectData()
+                        .withData(new UObject(ImmutableMap.of("genome", "data")))
+                        .withProvenance(Collections.emptyList())
+                        .withCreator("creator")
+                        .withCopySourceInaccessible(0L)
+                        .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
+                                1, "wsname", "checksum", 44, Collections.emptyMap()))))))
+                .when(cloned).administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3")));
+        
+        doReturn(new UObject(wsTuple(1, "wsname", "username", "date", 7, "r", "n",
+                "unlocked", Collections.emptyMap())))
+                .when(wscli).administer(argThat(new AdminGetWSInfoAnswerMatcher(1)));
         
         final SourceData sd = new WorkspaceEventHandler(clonecli)
                 .load(new GUID("WS:1/2/3"), Paths.get("somefile"));
@@ -140,17 +175,19 @@ public class WorkspaceEventHandlerTest {
         
         compare(sd, expected);
         
-        verify(wscli).setStreamingModeOn(true);
-        verify(wscli)._setFileForNextRpcResponse(new File("somefile"));
+        verify(cloned).setStreamingModeOn(true);
+        verify(cloned)._setFileForNextRpcResponse(new File("somefile"));
     }
-    
+
     @Test
     public void loadWithPathMaximalCopyRef() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
         final WorkspaceClient wscli = mock(WorkspaceClient.class);
-        when(clonecli.getClientClone()).thenReturn(wscli);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
         
-        when(wscli.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3;4/5/6"))))
+        when(cloned.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3;4/5/6"))))
                 .thenReturn(new UObject(new GetObjects2Results().withData(Arrays.asList(
                         new ObjectData()
                                 .withData(new UObject(ImmutableMap.of("genome", "data")))
@@ -172,6 +209,10 @@ public class WorkspaceEventHandlerTest {
                                 .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
                                         1, "wsname", "checksum", 44, Collections.emptyMap()))))));
         
+        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(1))))
+                .thenReturn(new UObject(wsTuple(1, "wsname", "username", "date", 7, "r", "n",
+                        "unlocked", Collections.emptyMap())));
+        
         final SourceData sd = new WorkspaceEventHandler(clonecli)
                 .load(Arrays.asList(new GUID("WS:1/2/3"), new GUID("WS:4/5/6")),
                         Paths.get("somefile"));
@@ -188,17 +229,19 @@ public class WorkspaceEventHandlerTest {
         
         compare(sd, expected);
         
-        verify(wscli).setStreamingModeOn(true);
-        verify(wscli)._setFileForNextRpcResponse(new File("somefile"));
+        verify(cloned).setStreamingModeOn(true);
+        verify(cloned)._setFileForNextRpcResponse(new File("somefile"));
     }
     
     @Test
     public void loadWith1ItemPathEmptySubActionsInaccessibleCopy() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
         final WorkspaceClient wscli = mock(WorkspaceClient.class);
-        when(clonecli.getClientClone()).thenReturn(wscli);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
         
-        when(wscli.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3"))))
+        when(cloned.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3"))))
                 .thenReturn(new UObject(new GetObjects2Results().withData(Arrays.asList(
                         new ObjectData()
                                 .withData(new UObject(ImmutableMap.of("genome", "data")))
@@ -211,6 +254,10 @@ public class WorkspaceEventHandlerTest {
                                 .withCopySourceInaccessible(1L)
                                 .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
                                         1, "wsname", "checksum", 44, Collections.emptyMap()))))));
+        
+        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(1))))
+                .thenReturn(new UObject(wsTuple(1, "wsname", "username", "date", 7, "r", "n",
+                        "unlocked", Collections.emptyMap())));
         
         final SourceData sd = new WorkspaceEventHandler(clonecli)
                 .load(Arrays.asList(new GUID("WS:1/2/3")),
@@ -227,17 +274,19 @@ public class WorkspaceEventHandlerTest {
         
         compare(sd, expected);
         
-        verify(wscli).setStreamingModeOn(true);
-        verify(wscli)._setFileForNextRpcResponse(new File("somefile"));
+        verify(cloned).setStreamingModeOn(true);
+        verify(cloned)._setFileForNextRpcResponse(new File("somefile"));
     }
     
     @Test
-    public void loadWithNullSubActions() throws Exception {
+    public void loadWithNullSubActionsAndTags() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
         final WorkspaceClient wscli = mock(WorkspaceClient.class);
-        when(clonecli.getClientClone()).thenReturn(wscli);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
         
-        when(wscli.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3"))))
+        when(cloned.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3"))))
                 .thenReturn(new UObject(new GetObjects2Results().withData(Arrays.asList(
                         new ObjectData()
                                 .withData(new UObject(ImmutableMap.of("genome", "data")))
@@ -251,6 +300,11 @@ public class WorkspaceEventHandlerTest {
                                 .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
                                         1, "wsname", "checksum", 44, Collections.emptyMap()))))));
         
+        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(1))))
+                .thenReturn(new UObject(wsTuple(1, "wsname", "username", "date", 7, "r", "n",
+                        "unlocked",
+                        ImmutableMap.of("searchtags", "foo, \t  \n  ,    bar  \t  , baz"))));
+        
         final SourceData sd = new WorkspaceEventHandler(clonecli)
                 .load(Arrays.asList(new GUID("WS:1/2/3")),
                         Paths.get("somefile"));
@@ -261,21 +315,26 @@ public class WorkspaceEventHandlerTest {
                 .withNullableMethod("meth")
                 .withNullableModule("serv")
                 .withNullableVersion("sver")
+                .withSourceTag("foo")
+                .withSourceTag("bar")
+                .withSourceTag("baz")
                 .build();
         
         compare(sd, expected);
         
-        verify(wscli).setStreamingModeOn(true);
-        verify(wscli)._setFileForNextRpcResponse(new File("somefile"));
+        verify(cloned).setStreamingModeOn(true);
+        verify(cloned)._setFileForNextRpcResponse(new File("somefile"));
     }
     
     @Test
     public void loadWithNoProvMethod() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
         final WorkspaceClient wscli = mock(WorkspaceClient.class);
-        when(clonecli.getClientClone()).thenReturn(wscli);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
         
-        when(wscli.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3"))))
+        when(cloned.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3"))))
                 .thenReturn(new UObject(new GetObjects2Results().withData(Arrays.asList(
                         new ObjectData()
                                 .withData(new UObject(ImmutableMap.of("genome", "data")))
@@ -291,6 +350,10 @@ public class WorkspaceEventHandlerTest {
                                 .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
                                         1, "wsname", "checksum", 44, Collections.emptyMap()))))));
         
+        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(1))))
+                .thenReturn(new UObject(wsTuple(1, "wsname", "username", "date", 7, "r", "n",
+                        "unlocked", Collections.emptyMap())));
+        
         final SourceData sd = new WorkspaceEventHandler(clonecli)
                 .load(Arrays.asList(new GUID("WS:1/2/3")),
                         Paths.get("somefile"));
@@ -304,17 +367,19 @@ public class WorkspaceEventHandlerTest {
         
         compare(sd, expected);
         
-        verify(wscli).setStreamingModeOn(true);
-        verify(wscli)._setFileForNextRpcResponse(new File("somefile"));
+        verify(cloned).setStreamingModeOn(true);
+        verify(cloned)._setFileForNextRpcResponse(new File("somefile"));
     }
     
     @Test
     public void loadWithNoProvService() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
         final WorkspaceClient wscli = mock(WorkspaceClient.class);
-        when(clonecli.getClientClone()).thenReturn(wscli);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
         
-        when(wscli.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3"))))
+        when(cloned.administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3"))))
                 .thenReturn(new UObject(new GetObjects2Results().withData(Arrays.asList(
                         new ObjectData()
                                 .withData(new UObject(ImmutableMap.of("genome", "data")))
@@ -330,6 +395,10 @@ public class WorkspaceEventHandlerTest {
                                 .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
                                         1, "wsname", "checksum", 44, Collections.emptyMap()))))));
         
+        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(1))))
+                .thenReturn(new UObject(wsTuple(1, "wsname", "username", "date", 7, "r", "n",
+                        "unlocked", Collections.emptyMap())));
+        
         final SourceData sd = new WorkspaceEventHandler(clonecli)
                 .load(Arrays.asList(new GUID("WS:1/2/3")),
                         Paths.get("somefile"));
@@ -343,8 +412,8 @@ public class WorkspaceEventHandlerTest {
         
         compare(sd, expected);
         
-        verify(wscli).setStreamingModeOn(true);
-        verify(wscli)._setFileForNextRpcResponse(new File("somefile"));
+        verify(cloned).setStreamingModeOn(true);
+        verify(cloned)._setFileForNextRpcResponse(new File("somefile"));
     }
 
     private void compare(final SourceData sd, final SourceData expected) {
@@ -359,6 +428,29 @@ public class WorkspaceEventHandlerTest {
         assertThat("incorrect version", sd.getVersion(), is(expected.getVersion()));
         assertThat("incorrect md5", sd.getMD5(), is(expected.getMD5()));
         assertThat("incorrect tags", sd.getSourceTags(), is(expected.getSourceTags()));
+    }
+    
+    private Object wsTuple(
+            final long wsid,
+            final String wsname,
+            final String owner,
+            final String date,
+            final long objcount,
+            final String userperm,
+            final String publicread,
+            final String locked,
+            final Map<String, String> meta) {
+        return new Tuple9<Long, String, String, String, Long, String, String, String,
+            Map<String, String>>()
+                .withE1(wsid)
+                .withE2(wsname)
+                .withE3(owner)
+                .withE4(date)
+                .withE5(objcount)
+                .withE6(userperm)
+                .withE7(publicread)
+                .withE8(locked)
+                .withE9(meta);
     }
 
     private Tuple11<Long, String, String, String, Long, String, Long, String, String, Long,
@@ -440,33 +532,62 @@ public class WorkspaceEventHandlerTest {
     }
     
     @Test
-    public void loadFailWSExceptions() throws Exception {
-        failLoadWSException(new ConnectException("hot damn"),
+    public void loadFailWSGetObjExceptions() throws Exception {
+        failLoadWSGetObjException(new ConnectException("hot damn"),
                 new FatalRetriableIndexingException("hot damn"));
         
-        failLoadWSException(new IOException("pump yer brakes, kid"),
+        failLoadWSGetObjException(new IOException("pump yer brakes, kid"),
                 new RetriableIndexingException("pump yer brakes, kid"));
         
-        failLoadWSException(new UnauthorizedException("dvd commentary"),
+        failLoadWSGetObjException(new UnauthorizedException("dvd commentary"),
                 new FatalIndexingException("dvd commentary"));
         
-        failLoadWSException(new JsonClientException(null), new UnprocessableEventIndexingException(
-                "Null error message from workspace server"));
+        failLoadWSGetObjException(new JsonClientException(null),
+                new UnprocessableEventIndexingException(
+                        "Null error message from workspace server"));
         
-        failLoadWSException(new JsonClientException("Couldn't Login"),
+        failLoadWSGetObjException(new JsonClientException("Couldn't Login"),
                 new FatalIndexingException("Workspace credentials are invalid: Couldn't Login"));
         
-        failLoadWSException(new JsonClientException("Did not start Up Properly"),
+        failLoadWSGetObjException(new JsonClientException("Did not start Up Properly"),
                 new FatalIndexingException(
                         "Fatal error returned from workspace: Did not start Up Properly"));
         
-        failLoadWSException(new JsonClientException("That man's a national treasure"),
+        failLoadWSGetObjException(new JsonClientException("That man's a national treasure"),
                 new UnprocessableEventIndexingException(
                         "Unrecoverable error from workspace on fetching object: " +
                         "That man's a national treasure"));
     }
     
-    private void failLoadWSException(final Exception toThrow, final Exception expected)
+    @Test
+    public void loadFailWSGetWSInfoExceptions() throws Exception {
+        failLoadWSGetWSInfoException(new ConnectException("hot damn"),
+                new FatalRetriableIndexingException("hot damn"));
+        
+        failLoadWSGetWSInfoException(new IOException("pump yer brakes, kid"),
+                new RetriableIndexingException("pump yer brakes, kid"));
+        
+        failLoadWSGetWSInfoException(new UnauthorizedException("dvd commentary"),
+                new FatalIndexingException("dvd commentary"));
+        
+        failLoadWSGetWSInfoException(new JsonClientException(null),
+                new UnprocessableEventIndexingException(
+                        "Null error message from workspace server"));
+        
+        failLoadWSGetWSInfoException(new JsonClientException("Couldn't Login"),
+                new FatalIndexingException("Workspace credentials are invalid: Couldn't Login"));
+        
+        failLoadWSGetWSInfoException(new JsonClientException("Did not start Up Properly"),
+                new FatalIndexingException(
+                        "Fatal error returned from workspace: Did not start Up Properly"));
+        
+        failLoadWSGetWSInfoException(new JsonClientException("That man's a national treasure"),
+                new UnprocessableEventIndexingException(
+                        "Unrecoverable error from workspace on fetching object: " +
+                        "That man's a national treasure"));
+    }
+    
+    private void failLoadWSGetObjException(final Exception toThrow, final Exception expected)
             throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
         final WorkspaceClient wscli = mock(WorkspaceClient.class);
@@ -474,6 +595,33 @@ public class WorkspaceEventHandlerTest {
         
         when(wscli.administer(any())).thenThrow(toThrow);
         
+        try {
+            new WorkspaceEventHandler(clonecli).load(new GUID("WS:1/2/3"), Paths.get("foo"));
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
+    
+    private void failLoadWSGetWSInfoException(final Exception toThrow, final Exception expected)
+            throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+        
+        doReturn(new UObject(new GetObjects2Results().withData(Arrays.asList(
+                new ObjectData()
+                        .withData(new UObject(ImmutableMap.of("genome", "data")))
+                        .withProvenance(Collections.emptyList())
+                        .withCreator("creator")
+                        .withCopySourceInaccessible(0L)
+                        .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
+                                1, "wsname", "checksum", 44, Collections.emptyMap()))))))
+                .when(cloned).administer(argThat(new AdminGetObjectsAnswerMatcher("1/2/3")));
+        
+        when(wscli.administer(any())).thenThrow(toThrow);
         
         try {
             new WorkspaceEventHandler(clonecli).load(new GUID("WS:1/2/3"), Paths.get("foo"));

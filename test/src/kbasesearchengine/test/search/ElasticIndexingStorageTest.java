@@ -2,7 +2,6 @@ package kbasesearchengine.test.search;
 
 import static kbasesearchengine.test.common.TestCommon.set;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
@@ -919,6 +918,23 @@ public class ElasticIndexingStorageTest {
                         "{\"whee\": \"imaprettypony\"}",
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
                 false);
+        
+        // check tags are in returned data
+        final ObjectData indexedObj =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:2000/1/1"))).get(0);
+        
+        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:2000/1/1"))
+                .withNullableObjectName("objname")
+                .withNullableType(new SearchObjectType("SourceTags", 1))
+                .withNullableCreator("creator")
+                .withSourceTag("refdata")
+                .withSourceTag("testnarr")
+                .withNullableTimestamp(Instant.ofEpochMilli(10000))
+                .withKeyProperty("whee", "imaprettypony")
+                .withNullableData(ImmutableMap.of("whee", "imaprettypony"))
+                .build();
+        
+        assertThat("incorrect indexed object", indexedObj, is(expected));
         
         // whitelisted tags
         checkWithTags(set(), set(new GUID("WS:2000/1/1"), new GUID("WS:2000/2/1")));

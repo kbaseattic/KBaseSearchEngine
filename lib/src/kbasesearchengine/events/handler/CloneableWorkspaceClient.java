@@ -1,6 +1,6 @@
 package kbasesearchengine.events.handler;
 
-import workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceClient;
 
 /** A wrapper class for a workspace client that implements a clone method. This produces
  * a new workspace client with the same url and token as the client returned by getClient() and

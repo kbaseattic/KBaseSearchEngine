@@ -75,7 +75,7 @@ import us.kbase.auth.AuthException;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
 import us.kbase.common.service.UnauthorizedException;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceClient;
 
 /** Tools for working with Search. Note that this CLI is designed against the search prototype
  * event listener in the workspace service, and may need changes if the event listener is changed

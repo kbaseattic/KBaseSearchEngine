@@ -62,11 +62,11 @@ import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
 import us.kbase.common.test.controllers.mongo.MongoController;
 import us.kbase.test.auth2.authcontroller.AuthController;
-import workspace.CreateWorkspaceParams;
-import workspace.ObjectSaveData;
-import workspace.RegisterTypespecParams;
-import workspace.SaveObjectsParams;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.CreateWorkspaceParams;
+import us.kbase.workspace.ObjectSaveData;
+import us.kbase.workspace.RegisterTypespecParams;
+import us.kbase.workspace.SaveObjectsParams;
+import us.kbase.workspace.WorkspaceClient;
 
 public class IndexerWorkerIntegrationTest {
     

@@ -1094,7 +1094,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
         for (Map<String, Object> hit : hitList) {
             @SuppressWarnings("unchecked")
             final Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
-            final Map<String, List<String>> highlightRes = (Map<String, List<String>>) hit.get("highlight");
+            @SuppressWarnings("unchecked")
+            final Map<String, List<String>> highlightRes =
+                    (Map<String, List<String>>) hit.get("highlight");
             final ObjectData item = buildObjectData(obj, highlightRes, pp);
             ret.add(item);
         }
@@ -1121,7 +1123,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     (Integer) obj.get(SEARCH_OBJ_TYPE_VER)));
             // sometimes this is a long, sometimes it's an int
             b.withNullableTimestamp(Instant.ofEpochMilli(
-                ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
+                    ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
+            @SuppressWarnings("unchecked")
+            final List<String> sourceTags = (List<String>) obj.get(SOURCE_TAGS);
+            if (sourceTags != null) {
+                for (final String tag: sourceTags) {
+                    b.withSourceTag(tag);
+                }
+            }
         }
         if (pp.objectData) {
             final String ojson = (String) obj.get("ojson");
@@ -1526,7 +1535,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
         for (Map<String, Object> hit : hitList) {
             @SuppressWarnings("unchecked")
             final Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
-            final Map<String, List<String>> highlightRes = (Map<String, List<String>>) hit.get("highlight");
+            @SuppressWarnings("unchecked")
+            final Map<String, List<String>> highlightRes =
+                    (Map<String, List<String>>) hit.get("highlight");
             final String guidText = (String)obj.get("guid");
             ret.guids.add(new GUID(guidText));
             if (loadObjects) {
