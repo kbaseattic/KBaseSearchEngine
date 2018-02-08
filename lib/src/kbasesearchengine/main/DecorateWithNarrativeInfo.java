@@ -3,7 +3,8 @@ package kbasesearchengine.main;
 import kbasesearchengine.ObjectData;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.tools.Utils;
-import us.kbase.common.service.JsonClientException;
+import kbasesearchengine.events.exceptions.IndexingException;
+import kbasesearchengine.events.exceptions.RetriableIndexingException;
 import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import kbasesearchengine.SearchTypesInput;
 import kbasesearchengine.SearchTypesOutput;
@@ -98,7 +99,7 @@ public class DecorateWithNarrativeInfo implements SearchInterface {
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(
             final List<ObjectData> objects,
             final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo)
-            throws IOException, JsonClientException, ParseException {
+            throws RetriableIndexingException, IndexingException, ParseException {
 
         final Map<Long, Tuple5 <String, Long, Long, String, String>> retVal = new HashMap<>();
 

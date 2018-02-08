@@ -171,14 +171,14 @@ public class WorkspaceEventHandler implements EventHandler {
         return ret;
     }
     
-    private Tuple9<Long, String, String, String, Long, String,
+    public Tuple9<Long, String, String, String, Long, String,
                 String, String, Map<String, String>> getWorkspaceInfo(
             final long workspaceID)
             throws RetriableIndexingException, IndexingException {
         final Map<String, Object> command = new HashMap<>();
         command.put("command", "getWorkspaceInfo");
         command.put("params", new WorkspaceIdentity().withId(workspaceID));
-        
+
         try {
             return ws.getClient().administer(new UObject(command))
                     .asClassInstance(WS_INFO_TYPEREF);
@@ -371,25 +371,6 @@ public class WorkspaceEventHandler implements EventHandler {
                 return new StupidWorkspaceObjectIterator(event, objcount, newType);
             }
         };
-    }
-
-    public Tuple9<Long, String, String, String, Long, String, String,
-            String,Map<String,String>> getWorkspaceInfo(
-            final long wsId)
-            throws IOException, JsonClientException {
-
-        final Map<String, Object> command = new HashMap<>();
-        command.put("command", "getWorkspaceInfo");
-        command.put("params", new WorkspaceIdentity()
-                .withId(wsId));
-
-        final Tuple9<Long, String, String, String, Long, String, String,
-                String,Map<String,String>> wsInfo;
-
-        wsInfo = ws.getClient().administer(new UObject(command))
-                .asClassInstance(WS_INFO_TYPEREF);
-
-        return wsInfo;
     }
 
     private Iterable<ChildStatusEvent> handleDeletedAccessGroup(final StoredStatusEvent event) {
