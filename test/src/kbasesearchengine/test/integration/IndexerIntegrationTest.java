@@ -286,12 +286,13 @@ public class IndexerIntegrationTest {
     }
 
     @Test
-    public void singleNewVersion() throws Exception {
+    public void singleNewVersionWithSourceTags() throws Exception {
         // a basic test to ensure all the indexer guts are working together.
-        // also tests provenance
+        // also tests provenance and source tags
         
         wsCli1.createWorkspace(new CreateWorkspaceParams()
-                .withWorkspace("foo"));
+                .withWorkspace("foo")
+                .withMeta(ImmutableMap.of("searchtags", "narrative, refdata")));
         wsCli1.saveObjects(new SaveObjectsParams()
                 .withWorkspace("foo")
                 .withObjects(Arrays.asList(new ObjectSaveData()
@@ -330,6 +331,8 @@ public class IndexerIntegrationTest {
                 .withNullableTimestamp(indexedTimestamp)
                 .withNullableData(ImmutableMap.of("whee", "wugga"))
                 .withKeyProperty("whee", "wugga")
+                .withSourceTag("narrative")
+                .withSourceTag("refdata")
                 .build();
         
         assertThat("incorrect indexed object", indexedObj, is(expected));

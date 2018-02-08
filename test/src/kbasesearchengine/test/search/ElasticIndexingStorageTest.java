@@ -919,6 +919,23 @@ public class ElasticIndexingStorageTest {
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
                 false);
         
+        // check tags are in returned data
+        final ObjectData indexedObj =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:2000/1/1"))).get(0);
+        
+        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:2000/1/1"))
+                .withNullableObjectName("objname")
+                .withNullableType(new SearchObjectType("SourceTags", 1))
+                .withNullableCreator("creator")
+                .withSourceTag("refdata")
+                .withSourceTag("testnarr")
+                .withNullableTimestamp(Instant.ofEpochMilli(10000))
+                .withKeyProperty("whee", "imaprettypony")
+                .withNullableData(ImmutableMap.of("whee", "imaprettypony"))
+                .build();
+        
+        assertThat("incorrect indexed object", indexedObj, is(expected));
+        
         // whitelisted tags
         checkWithTags(set(), set(new GUID("WS:2000/1/1"), new GUID("WS:2000/2/1")));
         
@@ -966,6 +983,7 @@ public class ElasticIndexingStorageTest {
         final IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop1"))
                 .withFullText().build();
 
+
         final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
                 objectType, new StorageObjectType("foo", "bar"))
                 .withIndexingRule(ir).build();
@@ -981,7 +999,7 @@ public class ElasticIndexingStorageTest {
 
 
     @Test
-    public void testMultiwordSearch() throws Exception{
+    public void testMultiwordSearch() throws Exception {
         GUID guid1 = new GUID("WS:11/1/2");
         GUID guid2 = new GUID("WS:11/2/2");
         GUID guid3 = new GUID("WS:11/3/2");
@@ -1032,7 +1050,7 @@ public class ElasticIndexingStorageTest {
                 "number.3", Instant.now(), null, false);
     }
     @Test
-    public void testLookupInKey() throws Exception{
+    public void testLookupInKey() throws Exception {
         GUID guid1 = new GUID("WS:12/1/2");
         GUID guid2 = new GUID("WS:12/2/2");
         GUID guid3 = new GUID("WS:12/3/2");
@@ -1086,4 +1104,45 @@ public class ElasticIndexingStorageTest {
         assertThat("overlapping ranges did not return intersection", hits5.guids, is(set(guid2)));
     }
 
+
+    @Test
+    public void addHighlighting() throws Exception {
+        GUID guid1 = new GUID("WS:11/1/2");
+        GUID guid2 = new GUID("WS:11/2/2");
+        GUID guid3 = new GUID("WS:11/3/2");
+        prepareTestMultiwordSearch(guid1, guid2, guid3);
+
+        PostProcessing pp = new PostProcessing();
+        List<String> empty = new ArrayList<>();
+        
+        pp.objectHighlight = true;
+
+        List<kbasesearchengine.search.SortingRule> sorting = null;
+        AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
+
+        //searchObjects
+        final Builder filter = MatchFilter.getBuilder();
+        filter.withNullableFullTextInAll("multiWordInSearchMethod1 multiWordInSearchMethod2");
+
+        FoundHits hits = indexStorage.searchObjects(empty, filter.build(),sorting, accessFilter, null, pp);
+        Map<String, List<String>> hitRes = hits.objects.get(0).getHighlight();
+
+        Map<String, List<String>> result1 = new HashMap<>();
+        result1.put("prop1", Arrays.asList("<em>multiWordInSearchMethod1</em> <em>multiWordInSearchMethod2</em>"));
+        assertThat("Incorrect highlighting", hitRes, is(result1) );
+
+        //searchIds is a wrapper around queryHits and does not return object data and so will not be highlighted
+        //searchTypes returns the number of items per type that. No highlight neccesary.
+
+        //getObjectsByIds -- if you ever want to get the guids back highlighted...
+        Set<GUID> guids = new HashSet<>();
+        guids.add(guid1);
+        List<ObjectData> objIdsData = indexStorage.getObjectsByIds(guids, pp);
+        Map<String, List<String>> result2 = new HashMap<>();
+        result2.put("guid", Arrays.asList("<em>WS:11/1/2</em>"));
+        for(ObjectData obj: objIdsData) {
+            Map<String, List<String>> res = obj.getHighlight();
+            assertThat("Incorrect highlighting", res, is(result2));
+        }
+    }
 }

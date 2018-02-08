@@ -9,6 +9,7 @@ public class PostProcessing {
     public boolean objectInfo;
     public boolean objectKeys;
     public boolean objectData;
+    public boolean objectHighlight;
     public List<String> objectDataIncludes;
     
     @Override
