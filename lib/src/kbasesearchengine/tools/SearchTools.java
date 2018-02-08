@@ -24,6 +24,9 @@ import java.util.Set;
 import java.util.UUID;
 
 import kbasesearchengine.common.FileUtil;
+import kbasesearchengine.events.StatusEventProcessingState;
+import kbasesearchengine.events.StoredStatusEvent;
+import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import org.apache.http.HttpHost;
 import org.slf4j.LoggerFactory;
 
@@ -130,107 +133,119 @@ public class SearchTools {
      * @return the exit code.
      */
     public int execute() {
-        final Args a = new Args();
-        JCommander jc = new JCommander(a);
+        final Args args = new Args();
+        JCommander jc = new JCommander(args);
         jc.setProgramName(NAME);
 
         try {
-            jc.parse(args);
+            jc.parse(this.args);
         } catch (ParameterException e) {
-            printError(e, a.verbose);
+            printError(e, args.verbose);
             return 1;
         }
-        if (a.help) {
+        if (args.help) {
             usage(jc);
             return 0;
         }
         // can't be empty string since it's a command line param
-        final boolean startWorker = a.startWorker != null;
-        if ((a.startCoordinator ? 1 : 0) + 
-                (a.genWSEvents ? 1 : 0) +
+        final boolean startWorker = args.startWorker != null;
+        if ((args.startCoordinator ? 1 : 0) +
+                (args.genWSEvents ? 1 : 0) +
                 (startWorker ? 1 : 0) > 1) {
             printError("Can only run one of the coordinator, event generator, or a worker.");
             return 1;
         }
         final SearchToolsConfig cfg;
         try {
-            cfg = getConfig(a.configPath);
+            cfg = getConfig(args.configPath);
         } catch (NoSuchFileException e) {
-            printError("No such file", e, a.verbose);
+            printError("No such file", e, args.verbose);
             return 1;
         } catch (AccessDeniedException e) {
-            printError("Access denied", e, a.verbose);
+            printError("Access denied", e, args.verbose);
             return 1;
         } catch (IOException e) {
-            printError(e, a.verbose);
+            printError(e, args.verbose);
             return 1;
         } catch (SearchToolsConfigException e) {
-            printError("For config file " + a.configPath, e, a.verbose);
+            printError("For config file " + args.configPath, e, args.verbose);
             return 1;
         }
         boolean noCommand = true; // this seems dumb...
-        if (a.specPath != null) {
+        if (args.specPath != null) {
             try {
                 new MinimalSpecGenerator().generateMinimalSearchSpec(
-                        Paths.get(a.specPath), a.storageType, a.searchType, a.storageObjectType);
+                        Paths.get(args.specPath), args.storageType, args.searchType, args.storageObjectType);
                 noCommand = false;
             } catch (IllegalArgumentException | IOException e) {
-                printError(e, a.verbose);
+                printError(e, args.verbose);
                 return 1;
             }
         }
         try {
-            setUpMongoDBs(cfg, a.genWSEvents, a.dropDB || a.startCoordinator || startWorker);
-            setUpElasticSearch(cfg, a.dropDB || startWorker);
+            setUpMongoDBs(cfg, args.genWSEvents, args.dropDB || args.startCoordinator || startWorker);
+            setUpElasticSearch(cfg, args.dropDB || startWorker);
         } catch (MongoException | IOException e) {
-            printError(e, a.verbose);
+            printError(e, args.verbose);
             return 1;
         }
-        if (a.dropDB) {
+        if (args.dropDB) {
             try {
                 deleteMongoDB();
                 out.println("Deleting ElasticSearch indexes");
                 indexStore.dropData();
                 noCommand = false;
             } catch (MongoException | IOException e) {
-                printError(e, a.verbose);
+                printError(e, args.verbose);
                 return 1;
             }
         }
-        if (a.startCoordinator) {
+        if (args.resetFailedEvents) {
+
+            try {
+
+                final StatusEventStorage storage = new MongoDBStatusEventStorage(searchDB);
+                storage.resetFailedEvents();
+
+            } catch (StorageInitException | FatalRetriableIndexingException ex) {
+                printError(ex, args.verbose);
+                return 1;
+            }
+        }
+        if (args.startCoordinator) {
             try {
                 final IndexerCoordinator coord = runCoordinator(cfg, out, err);
                 noCommand = false; 
                 waitForReturn(coord);
             } catch (StorageInitException | IndexingException | InterruptedException e) {
-                printError(e, a.verbose);
+                printError(e, args.verbose);
                 return 1;
             }
         }
         if (startWorker) {
             try {
                 
-                final IndexerWorker work = runWorker(cfg, a.startWorker, out, err);
+                final IndexerWorker work = runWorker(cfg, args.startWorker, out, err);
                 noCommand = false;
                 waitForReturn(work);
             } catch (IOException | AuthException | ObjectParseException | TypeParseException |
                     UnauthorizedException | StorageInitException | IllegalArgumentException |
                     InterruptedException e) {
-                printError(e, a.verbose);
+                printError(e, args.verbose);
                 return 1;
             }
         }
-        if (a.genWSEvents) {
+        if (args.genWSEvents) {
             try {
                 runEventGenerator(
                         out,
-                        a.ref,
-                        getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()),
-                        getWsTypes(a.wsTypes, cfg.getWorkspaceTypes()),
+                        args.ref,
+                        getWsBlackList(args.wsBlacklist, cfg.getWorkspaceBlackList()),
+                        getWsTypes(args.wsTypes, cfg.getWorkspaceTypes()),
                         cfg.workerCodes());
                 noCommand = false;
             } catch (EventGeneratorException | StorageInitException e) {
-                printError(e, a.verbose);
+                printError(e, args.verbose);
                 return 1;
             }
         }
@@ -623,6 +638,12 @@ public class SearchTools {
                 "Start an indexer worker with the provided id. At any given time, all workers " +
                 "MUST have unique ids. Set the id to '-' to generate a random id.")
         private String startWorker;
+
+        @Parameter(names = {"-f", "--reset-failed-events"}, description =
+                "Reset events with the FAIL processing state to the UNPROC (not processed) " +
+                " processing state so these events can be rerun by the indexer coordinator and" +
+                " indexer workers")
+        private boolean resetFailedEvents;
         
         @Parameter(names = {"-w", "--generate-workspace-events"}, description =
                 "Generate events for all objects in the workspace service database. " +
