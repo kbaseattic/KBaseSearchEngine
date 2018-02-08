@@ -21,6 +21,9 @@ import us.kbase.common.service.Tuple5;
  *     pagination and sorting.
  * total - total number of found objects.
  * search_time - common time in milliseconds spent.
+ * mapping<access_group_id, narrative_info> access_group_narrative_info - information about
+ *    the workspaces in which the objects in the results reside. This data only applies to
+ *    workspace objects.
  * </pre>
  * 
  */
