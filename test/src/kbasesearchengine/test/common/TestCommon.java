@@ -8,6 +8,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
@@ -246,5 +247,17 @@ public class TestCommon {
         @SuppressWarnings("unchecked")
         final Map<String, Object> resp = new ObjectMapper().readValue(out, Map.class);
         return (String) resp.get("token");
+    }
+    
+    //http://quirkygba.blogspot.com/2009/11/setting-environment-variables-in-java.html
+    @SuppressWarnings("unchecked")
+    public static Map<String, String> getenv()
+            throws NoSuchFieldException, SecurityException,
+            IllegalArgumentException, IllegalAccessException {
+        Map<String, String> unmodifiable = System.getenv();
+        Class<?> cu = unmodifiable.getClass();
+        Field m = cu.getDeclaredField("m");
+        m.setAccessible(true);
+        return (Map<String, String>) m.get(unmodifiable);
     }
 }
