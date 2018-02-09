@@ -349,7 +349,6 @@ public class SearchAPIIntegrationTest {
 
     @Test
     public void highlightTest () throws Exception{
-        //ws with auth
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("highlight"));
 
@@ -376,12 +375,12 @@ public class SearchAPIIntegrationTest {
                 .withSourceTags(Arrays.asList("immaprettypony1")));
         //default for highlighting is off -- mainly b/c of search tags
         final kbasesearchengine.PostProcessing pp = new kbasesearchengine.PostProcessing();
-        final MatchFilter filter = new MatchFilter().withFullTextInAll("imaprettypony1");
+        final MatchFilter filter = new MatchFilter().withFullTextInAll("objname1");
         //1L to get this to be true
         pp.setIncludeHighlight(1L);
 
         Map<String, List<String>> highlight = new HashMap<>();
-        highlight.put("whee",  Arrays.asList("<em>imaprettypony1</em>"));
+        highlight.put("object_name",  Arrays.asList("<em>objname1</em>"));
         final ObjectData expected = new ObjectData()
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")

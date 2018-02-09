@@ -75,6 +75,24 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private static final String SEARCH_OBJ_TYPE = "otype";
     private static final String SEARCH_OBJ_TYPE_VER = "otypever";
 
+    //skipped timestamp, md5, copier, creator
+    private static final ImmutableMap<String, String> readableNames = ImmutableMap.<String,String>builder()
+            .put(OBJ_PROV_COMMIT_HASH, "provenance_commit")
+            .put(OBJ_PROV_MODULE_VERSION, "provenance_module_ver")
+            .put(OBJ_PROV_METHOD, "provenance_method")
+            .put(OBJ_PROV_MODULE, "provenance_module")
+            .put(OBJ_NAME, "object_name")
+            .put(SOURCE_TAGS, "source_tags")
+            .put(SEARCH_OBJ_TYPE, "type")
+            .put(SEARCH_OBJ_TYPE_VER, "type_ver")
+            .put("str_cde", "storage_code")
+            .put("acccgrp", "access_group_id")
+            .put("version", "object_version")
+            .put("islast", "is_last_version")
+            .put("public", "is_public")
+            .put("shared", "is_shared")
+            .build();
+
     private HttpHost esHost;
     private String esUser;
     private String esPassword;
@@ -1162,10 +1180,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         if (pp.objectHighlight) {
             for(final String key : highlight.keySet()) {
-                String newKey = key;
-                if (key.startsWith("key.")) {
-                    newKey = stripKeyPrefix(key);
-                }
+                String newKey = getReadableKeyNames(key);
                 b.withHighlight(newKey, highlight.get(key));
             }
         }
@@ -1173,11 +1188,19 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return b.build();
     }
 
+    private String getReadableKeyNames(final String key){
+        if (key.startsWith("key.")) {
+            return stripKeyPrefix(key);
+        }
+        if(readableNames.containsKey(key)){
+            return readableNames.get(key);
+        }
+        return key;
+    }
     private String stripKeyPrefix(final String key){
         return key.substring(4);
     }
 
-    
     private Map<String, Object> createPublicShouldBlock(boolean withAllHistory) {
         List<Object> must0List = new ArrayList<>();
         must0List.add(createFilter("term", "public", true));
