@@ -209,6 +209,30 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
   <taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml"
            classpathref="jacoco.classpath"/>
 
+  <patternset id="exclude-from-coverage">
+    <!-- there must be a better way to ignore the generated code-->
+    <exclude name="kbasesearchengine/AccessFilter.*"/>
+    <exclude name="kbasesearchengine/GetObjectsInput.*"/>
+    <exclude name="kbasesearchengine/GetObjectsOutput.*"/>
+    <exclude name="kbasesearchengine/KBaseSearchEngineClient.*"/>
+    <exclude name="kbasesearchengine/KeyDescription.*"/>
+    <exclude name="kbasesearchengine/ListTypesInput.*"/>
+    <exclude name="kbasesearchengine/ListTypesOutput.*"/>
+    <exclude name="kbasesearchengine/MatchFilter.*"/>
+    <exclude name="kbasesearchengine/MatchValue.*"/>
+    <exclude name="kbasesearchengine/ObjectData.*"/>
+    <exclude name="kbasesearchengine/Pagination.*"/>
+    <exclude name="kbasesearchengine/PostProcessing.*"/>
+    <exclude name="kbasesearchengine/SearchObjectsInput.*"/>
+    <exclude name="kbasesearchengine/SearchObjectsOutput.*"/>
+    <exclude name="kbasesearchengine/SearchTypesInput.*"/>
+    <exclude name="kbasesearchengine/SearchTypesOutput.*"/>
+    <exclude name="kbasesearchengine/SortingRule.*"/>
+    <exclude name="kbasesearchengine/TypeDescriptor.*"/>
+    <exclude name="us/kbase/**"/>
+    <exclude name="**/test/**" />
+  </patternset>
+	
   <target name="test-report"
           depends="test"
           description="run all tests and generate test report">
@@ -219,12 +243,12 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
       <structure name="KBaseSearchEngine Unit Tests">
         <classfiles>
           <fileset dir="${classes}">
-            <exclude name="**/test/**" />
+            <patternset refid="exclude-from-coverage"/>
           </fileset>
         </classfiles>
         <sourcefiles encoding="UTF-8">
           <fileset dir="${src}">
-            <exclude name="**/test/**" />
+            <patternset refid="exclude-from-coverage"/>
           </fileset>
         </sourcefiles>
       </structure>
