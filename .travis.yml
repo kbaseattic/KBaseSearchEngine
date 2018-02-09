@@ -25,7 +25,7 @@ branches:
   only:
   - master
   - develop
-  - travis
+  - debug
 
 before_install:
 - whoami
