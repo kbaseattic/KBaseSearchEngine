@@ -160,11 +160,12 @@ public class NarrativeInfoDecoratorTest {
         final SearchObjectsInput dummyInput = new SearchObjectsInput();
         
         final List<ObjectData> objectdata = Arrays.asList(
-                new ObjectData().withGuid("WS:65/2/7"), // expect overwrite
+                new ObjectData().withGuid("WS:65/2/7"),
                 new ObjectData().withGuid("WS:2/345/1000"));
         when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
                 .withObjects(objectdata)
                 .withAccessGroupNarrativeInfo(ImmutableMap.of(
+                        // expect overwrite
                         65L, narrInfo("narrname", 1L, 10000L, "owner", "Herbert J. Kornfeld"),
                         32L, narrInfo("narrname6", 2L, 20000L, "owner6", "Herbert K. Kornfeld"))));
         

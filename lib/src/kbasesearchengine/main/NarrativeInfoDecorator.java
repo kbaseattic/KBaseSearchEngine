@@ -1,28 +1,37 @@
 package kbasesearchengine.main;
 
-import kbasesearchengine.ObjectData;
-import kbasesearchengine.common.GUID;
-import kbasesearchengine.tools.Utils;
-import kbasesearchengine.SearchTypesInput;
-import kbasesearchengine.SearchTypesOutput;
-import kbasesearchengine.SearchObjectsInput;
-import kbasesearchengine.SearchObjectsOutput;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import kbasesearchengine.GetObjectsInput;
 import kbasesearchengine.GetObjectsOutput;
+import kbasesearchengine.ObjectData;
+import kbasesearchengine.SearchObjectsInput;
+import kbasesearchengine.SearchObjectsOutput;
+import kbasesearchengine.SearchTypesInput;
+import kbasesearchengine.SearchTypesOutput;
 import kbasesearchengine.TypeDescriptor;
+import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
+import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.Tuple9;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-
 /**
+ * Decorates the results from a {@link SearchInterface} with information about workspaces that
+ * contain objects in the search results. See
+ * {@link SearchObjectsOutput#getAccessGroupNarrativeInfo()} and
+ * {@link GetObjectsOutput#getAccessGroupNarrativeInfo()}, which is where the information is
+ * stored.
+ * 
+ * If a previous decorator or the root search implementation itself provides information in the
+ * narrative information, it will be overwritten if any workspace IDs in the {@link ObjectData}
+ * match with the IDs in the narrative information.
  * 
  * @author Uma Ganapathy
  * @author gaprice@lbl.gov
@@ -33,6 +42,13 @@ public class NarrativeInfoDecorator implements SearchInterface {
     private final WorkspaceEventHandler weh;
     private final SearchInterface searchInterface;
 
+    /** Create a decorator.
+     * @param searchInterface the search interface to decorate. This may be a root interface that
+     * produces data from a search storage system or another decorator.
+     * @param wsHandler a workspace event handler pointing at the workspace from which
+     * data should be retrieved. This should be the same workspace as that from which the data
+     * is indexed.
+     */
     public NarrativeInfoDecorator(
             final SearchInterface searchInterface,
             final WorkspaceEventHandler wsHandler) {

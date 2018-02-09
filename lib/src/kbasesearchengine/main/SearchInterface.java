@@ -10,10 +10,9 @@ import kbasesearchengine.TypeDescriptor;
 
 import java.util.Map;
 
-/**
- * Created by umaganapathy on 1/26/18.
- */
 public interface SearchInterface {
+    
+    // TODO JAVADOC
 
     SearchTypesOutput searchTypes(SearchTypesInput params, String user) throws Exception;
 
