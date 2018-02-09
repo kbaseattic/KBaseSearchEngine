@@ -1,5 +1,6 @@
 package kbasesearchengine.test.integration;
 
+import static kbasesearchengine.test.main.NarrativeInfoDecoratorTest.narrInfo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -42,6 +43,7 @@ import kbasesearchengine.common.FileUtil;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.events.handler.SourceData;
+import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.system.IndexingRules;
@@ -52,8 +54,10 @@ import kbasesearchengine.test.common.TestCommon;
 import kbasesearchengine.test.controllers.elasticsearch.ElasticSearchController;
 import kbasesearchengine.test.controllers.workspace.WorkspaceController;
 import kbasesearchengine.test.data.TestDataLoader;
+import kbasesearchengine.test.main.NarrativeInfoDecoratorTest;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.ServerException;
+import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.UObject;
 import us.kbase.common.test.controllers.mongo.MongoController;
 import us.kbase.test.auth2.authcontroller.AuthController;
@@ -138,7 +142,7 @@ public class SearchAPIIntegrationTest {
                 authURL,
                 tempDirPath);
         System.out.println("Started workspace on port " + ws.getServerPort());
-        wsdb = mc.getDatabase("IndexerIntegTestWSDB");
+        wsdb = mc.getDatabase("SearchAPIIntTestWSDB");
         
         URL wsUrl = new URL("http://localhost:" + ws.getServerPort());
         wsCli1 = new WorkspaceClient(wsUrl, userToken);
@@ -345,6 +349,52 @@ public class SearchAPIIntegrationTest {
 
 
 
+    }
+    
+    @Test
+    public void narrativeDecoration() throws Exception {
+        final long wsdate = WorkspaceEventHandler.parseDateToEpochMillis(wsCli1.createWorkspace(
+                new CreateWorkspaceParams()
+                        .withWorkspace("decorate")
+                        .withMeta(ImmutableMap.of(
+                                "narrative", "6",
+                                "narrative_nice_name", "Kevin")))
+                .getE4());
+        
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Deco", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/1/1"),
+                ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
+                false);
+        
+        final ObjectData expected1 = new ObjectData()
+                .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
+                .withGuid("WS:1/1/1")
+                .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
+                .withObjectProps(ImmutableMap.of("creator", "creator"))
+                .withObjectName("objname1")
+                .withTimestamp(10000L);
+        
+        final SearchObjectsOutput res = searchObjects(new MatchFilter());
+        
+        assertThat("incorrect object count", res.getObjects().size(), is(1));
+        compare(res.getObjects().get(0), expected1);
+        
+        final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
+                1L, narrInfo("Kevin", 6L, wsdate, userToken.getUserName(), null));
+        
+        NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
     }
 
     @Test

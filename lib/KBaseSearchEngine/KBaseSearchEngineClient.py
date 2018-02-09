@@ -203,34 +203,33 @@ class KBaseSearchEngine(object):
         :returns: instance of type "SearchObjectsOutput" (Output results for
            'search_objects' method. 'pagination' and 'sorting_rules' fields
            show actual input for pagination and sorting. total - total number
-           of found objects. search_time - common time in milliseconds
-           spent.) -> structure: parameter "pagination" of type "Pagination"
-           (Pagination rules. Default values are: start = 0, count = 50.) ->
-           structure: parameter "start" of Long, parameter "count" of Long,
-           parameter "sorting_rules" of list of type "SortingRule" (Rule for
-           sorting found results. 'key_name', 'is_timestamp' and
-           'is_object_name' are alternative way of defining what property if
-           used for sorting. Default order is ascending (if 'descending'
-           field is not set).) -> structure: parameter "is_timestamp" of type
-           "boolean" (A boolean. 0 = false, other = true.), parameter
-           "is_object_name" of type "boolean" (A boolean. 0 = false, other =
-           true.), parameter "key_name" of String, parameter "descending" of
-           type "boolean" (A boolean. 0 = false, other = true.), parameter
-           "objects" of list of type "ObjectData" (Properties of found object
-           including metadata, raw data and keywords. mapping<string, string>
-           object_props - general properties for all objects. This mapping
-           contains the keys 'creator', 'copied', 'module', 'method',
-           'module_ver', and 'commit' - respectively the user that originally
-           created the object, the user that copied this incarnation of the
-           object, and the module and method used to create the object and
-           their version and version control commit hash. Not all keys may be
-           present; if not their values were not available in the search
-           data. mapping<string, list<string>> highlight - They keys are the
-           field names and the list contains the sections in each field that
-           matched the search query. Fields with no hits will not be
-           available. Short fields that matched are shown in their entirety.
-           Longer fields are shown as snippets precedded or followed by
-           "...".) -> structure: parameter "guid" of type "GUID" (Global user
+           of found objects. search_time - common time in milliseconds spent.
+           mapping<access_group_id, narrative_info>
+           access_group_narrative_info - information about the workspaces in
+           which the objects in the results reside. This data only applies to
+           workspace objects.) -> structure: parameter "pagination" of type
+           "Pagination" (Pagination rules. Default values are: start = 0,
+           count = 50.) -> structure: parameter "start" of Long, parameter
+           "count" of Long, parameter "sorting_rules" of list of type
+           "SortingRule" (Rule for sorting found results. 'key_name',
+           'is_timestamp' and 'is_object_name' are alternative way of
+           defining what property if used for sorting. Default order is
+           ascending (if 'descending' field is not set).) -> structure:
+           parameter "is_timestamp" of type "boolean" (A boolean. 0 = false,
+           other = true.), parameter "is_object_name" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "key_name" of
+           String, parameter "descending" of type "boolean" (A boolean. 0 =
+           false, other = true.), parameter "objects" of list of type
+           "ObjectData" (Properties of found object including metadata, raw
+           data and keywords. mapping<string, string> object_props - general
+           properties for all objects. This mapping contains the keys
+           'creator', 'copied', 'module', 'method', 'module_ver', and
+           'commit' - respectively the user that originally created the
+           object, the user that copied this incarnation of the object, and
+           the module and method used to create the object and their version
+           and version control commit hash. Not all keys may be present; if
+           not their values were not available in the search data.) ->
+           structure: parameter "guid" of type "GUID" (Global user
            identificator. It has structure like this:
            <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            parameter "parent_guid" of type "GUID" (Global user identificator.
@@ -242,6 +241,24 @@ class KBaseSearchEngine(object):
            to String, parameter "object_props" of mapping from String to
            String, parameter "highlight" of mapping from String to list of
            String, parameter "total" of Long, parameter "search_time" of Long
+           String, parameter "total" of Long, parameter "search_time" of
+           Long, parameter "access_group_narrative_info" of mapping from type
+           "access_group_id" (An data source access group ID (for instance,
+           the integer ID of a workspace).) to type "narrative_info"
+           (Information about a workspace, which may or may not contain a
+           KBase Narrative. This data is specific for data from the Workspace
+           Service. string narrative_name - the name of the narrative
+           contained in the workspace, or null if the workspace does not
+           contain a narrative. int narrative_id - the id of the narrative
+           contained in the workspace, or null. timestamp time_last_saved -
+           the modification date of the workspace. string ws_owner_username -
+           the unique user name of the workspace's owner. string
+           ws_owner_displayname - the display name of the workspace's owner.)
+           -> tuple of size 5: parameter "narrative_name" of String,
+           parameter "narrative_id" of Long, parameter "time_last_saved" of
+           type "timestamp" (A timestamp in milliseconds since the epoch.),
+           parameter "ws_owner_username" of String, parameter
+           "ws_owner_displayname" of String
         """
         return self._client.call_method(
             'KBaseSearchEngine.search_objects',
@@ -271,7 +288,10 @@ class KBaseSearchEngine(object):
            "include_highlight" of type "boolean" (A boolean. 0 = false, other
            = true.), parameter "data_includes" of list of String
         :returns: instance of type "GetObjectsOutput" (Output results of
-           get_objects method.) -> structure: parameter "objects" of list of
+           get_objects method. mapping<access_group_id, narrative_info>
+           access_group_narrative_info - information about the workspaces in
+           which the objects in the results reside. This data only applies to
+           workspace objects.) -> structure: parameter "objects" of list of
            type "ObjectData" (Properties of found object including metadata,
            raw data and keywords. mapping<string, string> object_props -
            general properties for all objects. This mapping contains the keys
@@ -297,7 +317,24 @@ class KBaseSearchEngine(object):
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "object_props" of mapping from String to
            String, parameter "highlight" of mapping from String to list of
-           String, parameter "search_time" of Long
+           String, parameter "search_time" of Long, parameter
+           "access_group_narrative_info" of mapping from type
+           "access_group_id" (An data source access group ID (for instance,
+           the integer ID of a workspace).) to type "narrative_info"
+           (Information about a workspace, which may or may not contain a
+           KBase Narrative. This data is specific for data from the Workspace
+           Service. string narrative_name - the name of the narrative
+           contained in the workspace, or null if the workspace does not
+           contain a narrative. int narrative_id - the id of the narrative
+           contained in the workspace, or null. timestamp time_last_saved -
+           the modification date of the workspace. string ws_owner_username -
+           the unique user name of the workspace's owner. string
+           ws_owner_displayname - the display name of the workspace's owner.)
+           -> tuple of size 5: parameter "narrative_name" of String,
+           parameter "narrative_id" of Long, parameter "time_last_saved" of
+           type "timestamp" (A timestamp in milliseconds since the epoch.),
+           parameter "ws_owner_username" of String, parameter
+           "ws_owner_displayname" of String
         """
         return self._client.call_method(
             'KBaseSearchEngine.get_objects',
