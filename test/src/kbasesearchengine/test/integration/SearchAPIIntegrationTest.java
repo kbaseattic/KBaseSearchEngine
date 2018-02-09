@@ -13,8 +13,11 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.deser.DataFormatReaders;
+import kbasesearchengine.search.PostProcessing;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.ini4j.Ini;
@@ -338,8 +341,72 @@ public class SearchAPIIntegrationTest {
         
         assertThat("incorrect object count", res2.getObjects().size(), is(1));
         compare(res2.getObjects().get(0), expected1);
+
+
+
+
     }
 
+    @Test
+    public void highlightTest () throws Exception{
+        //???? wtf is this even doing
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("sourceTags"));
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("SourceTags", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator")
+                        .withSourceTag("refdata")
+                        .withSourceTag("testnarr")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/1/1"),
+                ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
+                false);
+
+        final SearchObjectsOutput res1 = searchObjects(new MatchFilter()
+                .withSourceTags(Arrays.asList("immaprettypony1")));
+        //default for highlighting is off -- mainly b/c of search tags
+        final kbasesearchengine.PostProcessing pp = new kbasesearchengine.PostProcessing();
+        final MatchFilter filter = new MatchFilter().withFullTextInAll("imaprettypony1");
+        //1L to get this to be true
+        pp.setIncludeHighlight(1L);
+
+        Map<String, List<String>> highlight = new HashMap<>();
+        highlight.put("whee",  Arrays.asList("<em>imaprettypony1</em>"));
+        final ObjectData expected = new ObjectData()
+                .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
+                .withGuid("WS:1/1/1")
+                .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
+                .withObjectProps(ImmutableMap.of("creator", "creator"))
+                .withObjectName("objname1")
+                .withHighlight(highlight)
+                .withTimestamp(10000L);
+
+
+        SearchObjectsInput params = new SearchObjectsInput()
+                .withPostProcessing(pp)
+                .withAccessFilter(new AccessFilter())
+                .withMatchFilter(filter);
+
+
+        SearchObjectsOutput res = searchCli.searchObjects(params);
+
+        final ObjectData actual = res.getObjects().get(0);
+        compare(actual, expected);
+
+        //highlight in objects
+        assertThat("incorrect highlight", actual.getHighlight(), is(expected.getHighlight()));
+
+    }
     private SearchObjectsOutput searchObjects(final MatchFilter mf) throws Exception {
         try {
             return searchCli.searchObjects(new SearchObjectsInput()
@@ -350,6 +417,8 @@ public class SearchAPIIntegrationTest {
             throw e;
         }
     }
+
+
 
     private void compare(final ObjectData got, final ObjectData expected) {
         // no hashcode and equals compiled into ObjectData

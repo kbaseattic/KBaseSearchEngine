@@ -197,11 +197,14 @@ public class SearchMethods {
             ret.objectInfo = true;
             ret.objectData = true;
             ret.objectKeys = true;
+            ret.objectHighlight = false;
         } else {
             boolean idsOnly = toBool(pp.getIdsOnly());
             ret.objectInfo = !(toBool(pp.getSkipInfo()) || idsOnly);
             ret.objectData = !(toBool(pp.getSkipData()) || idsOnly);
             ret.objectKeys = !(toBool(pp.getSkipKeys()) || idsOnly);
+            //default to false currently b/c of search tags. TODO: add search tags to black list?
+            ret.objectHighlight = toBool(pp.getIncludeHighlight()) && !idsOnly;
         }
         return ret;
     }
