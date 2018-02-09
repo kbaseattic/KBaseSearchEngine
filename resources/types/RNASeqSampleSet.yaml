@@ -6,8 +6,8 @@ versions:
   - path: sampleset_desc
     full-text: true
   - path: num_samples
-    key-type: intager
+    key-type: integer
   - path: num_replicates
-    key-type: intager
+    key-type: integer
   - path: domain
     key-type: string
