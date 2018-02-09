@@ -230,7 +230,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
     <exclude name="kbasesearchengine/SortingRule.*"/>
     <exclude name="kbasesearchengine/TypeDescriptor.*"/>
     <exclude name="us/kbase/**"/>
-    <exclude name="**/test/**" />
+    <exclude name="**/test/**"/>
   </patternset>
 	
   <target name="test-report"
