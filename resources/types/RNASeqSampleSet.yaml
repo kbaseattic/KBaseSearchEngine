@@ -3,5 +3,11 @@ storage-type: WS
 storage-object-type: KBaseRNASeq.RNASeqSampleSet
 versions:
 - indexing-rules:
-  - path: sampleset_id
+  - path: sampleset_desc
     full-text: true
+  - path: num_samples
+    key-type: intager
+  - path: num_replicates
+    key-type: intager
+  - path: domain
+    key-type: string

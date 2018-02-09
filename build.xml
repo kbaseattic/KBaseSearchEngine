@@ -155,7 +155,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <classpath refid="test.classpath"/>
         <formatter type="plain" usefile="false" />
         <sysproperty key="test.cfg" value="${test.cfg}"/>
-        <test name="kbasesearchengine.test.authorization.AccessGroupCacheTest"/>
+        <!--<test name="kbasesearchengine.test.authorization.AccessGroupCacheTest"/>
         <test name="kbasesearchengine.test.common.FileUtilTest"/>
         <test name="kbasesearchengine.test.events.AccessGroupEventQueueTest"/>
         <test name="kbasesearchengine.test.events.ChildStatusEventTest"/>
@@ -176,9 +176,9 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <test name="kbasesearchengine.test.main.IndexerWorkerTest"/>
         <test name="kbasesearchengine.test.main.SearchMethodsTest"/>
         <test name="kbasesearchengine.test.main.SignalMonitorTest"/>
-        <test name="kbasesearchengine.test.parse.IdMapperTest"/>
+        <test name="kbasesearchengine.test.parse.IdMapperTest"/>-->
         <test name="kbasesearchengine.test.parse.ObjectParserTest"/>
-        <test name="kbasesearchengine.test.parse.SubObjectExtractorTest"/>
+        <!--<test name="kbasesearchengine.test.parse.SubObjectExtractorTest"/>
         <test name="kbasesearchengine.test.search.ElasticIndexingStorageTest"/>
         <test name="kbasesearchengine.test.search.ObjectDataTest"/>
         <test name="kbasesearchengine.test.system.IndexingRulesTest"/>
@@ -189,7 +189,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <test name="kbasesearchengine.test.system.TypeFileStorageTest"/>
         <test name="kbasesearchengine.test.system.TypeMappingTest"/>
         <test name="kbasesearchengine.test.system.TransformTest"/>
-        <test name="kbasesearchengine.test.tools.SearchToolsTest"/>
+        <test name="kbasesearchengine.test.tools.SearchToolsTest"/>-->
       </junit>
     </jacoco:coverage>
     <fail message="Test failure detected, check test results." if="test.failed" />
