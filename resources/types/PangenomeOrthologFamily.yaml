@@ -15,9 +15,9 @@ versions:
   - path: orthologs/[*]/0
     transform: values
     keyword-type: string
-    key-name: ortholog_gens
+    key-name: ortholog_genes
     ui-name: Ortholog Genes
-  - path: ortholog/{size}
+  - path: orthologs/{size}
     keyword-type: integer
     key-name: ortholog_count
     ui-name: Number of Orthologs

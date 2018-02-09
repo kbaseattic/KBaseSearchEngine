@@ -15,7 +15,7 @@ versions:
     keyword-type: integer
     key-name: orthologs
   # I expect this won't work but I'm including to spur discussion on what might
-  - path: genome_refs/[*]
-    transform: values.guid.lookup.key.scientific_name
-    key-name: genome_names
-    ui-name: Genome Names
+  #- path: genome_refs/[*]
+  #  transform: values.guid.lookup.key.scientific_name
+  # key-name: genome_names
+  #  ui-name: Genome Names
