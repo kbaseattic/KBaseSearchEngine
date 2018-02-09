@@ -134,11 +134,11 @@ public class NarrativeInfoDecoratorTest {
         
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
         
-        final Map<Long, Tuple5<String, Long, Long, String, String>> expected = new HashMap<>();
-        expected.put(65L, narrInfo(null, null, 1518126945000L, "owner1", null));
-        expected.put(1L, narrInfo(null, null, 1518126957000L, "owner2", null));
-        expected.put(2L, narrInfo(null, null, 1518126945678L, "owner3", null));
-        expected.put(42L, narrInfo("mylovelynarrative", 3L, 1518126950678L, "owner4", null));
+        final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
+                65L, narrInfo(null, null, 1518126945000L, "owner1", null),
+                1L, narrInfo(null, null, 1518126957000L, "owner2", null),
+                2L, narrInfo(null, null, 1518126945678L, "owner3", null),
+                42L, narrInfo("mylovelynarrative", 3L, 1518126950678L, "owner4", null));
         
         assertThat("incorrect object data", res.getObjects(), is(objectdata));
         
@@ -181,10 +181,10 @@ public class NarrativeInfoDecoratorTest {
         
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
         
-        final Map<Long, Tuple5<String, Long, Long, String, String>> expected = new HashMap<>();
-        expected.put(65L, narrInfo(null, null, 1518126945000L, "owner1", null));
-        expected.put(2L, narrInfo(null, null, 1518126945678L, "owner3", null));
-        expected.put(32L, narrInfo("narrname6", 2L, 20000L, "owner6", "Herbert K. Kornfeld"));
+        final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
+                65L, narrInfo(null, null, 1518126945000L, "owner1", null),
+                2L, narrInfo(null, null, 1518126945678L, "owner3", null),
+                32L, narrInfo("narrname6", 2L, 20000L, "owner6", "Herbert K. Kornfeld"));
         
         assertThat("incorrect object data", res.getObjects(), is(objectdata));
         
@@ -307,7 +307,7 @@ public class NarrativeInfoDecoratorTest {
                 "type", dummyOutput)));
     }
     
-    private void compare(
+    public static void compare(
             final Map<Long, Tuple5<String, Long, Long, String, String>> got,
             final Map<Long, Tuple5<String, Long, Long, String, String>> expected) {
         assertThat("incorrect map keys", got.keySet(), is(expected.keySet()));
@@ -316,7 +316,7 @@ public class NarrativeInfoDecoratorTest {
         }
     }
 
-    private void compare(
+    public static void compare(
             final Tuple5<String, Long, Long, String, String> got,
             final Tuple5<String, Long, Long, String, String> expected) {
         assertThat("incorrect narrative name", got.getE1(), is(expected.getE1()));
@@ -326,7 +326,7 @@ public class NarrativeInfoDecoratorTest {
         assertThat("incorrect display name", got.getE5(), is(expected.getE5()));
     }
 
-    private Tuple5<String, Long, Long, String, String> narrInfo(
+    public static Tuple5<String, Long, Long, String, String> narrInfo(
             final String narrativeName,
             final Long narrativeId,
             final Long epoch,
