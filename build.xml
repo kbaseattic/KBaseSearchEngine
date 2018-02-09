@@ -238,6 +238,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
             <exclude name="kbasesearchengine/SearchTypesOutput.*"/>
             <exclude name="kbasesearchengine/SortingRule.*"/>
             <exclude name="kbasesearchengine/TypeDescriptor.*"/>
+            <exclude name="us/kbase/**"/>
             <exclude name="**/test/**" />
           </fileset>
         </classfiles>
@@ -262,6 +263,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
             <exclude name="kbasesearchengine/SearchTypesOutput.*"/>
             <exclude name="kbasesearchengine/SortingRule.*"/>
             <exclude name="kbasesearchengine/TypeDescriptor.*"/>
+            <exclude name="us/kbase/**"/>
             <exclude name="**/test/**" />
           </fileset>
         </sourcefiles>
