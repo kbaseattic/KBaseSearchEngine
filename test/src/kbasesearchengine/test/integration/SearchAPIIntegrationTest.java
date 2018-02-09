@@ -349,9 +349,9 @@ public class SearchAPIIntegrationTest {
 
     @Test
     public void highlightTest () throws Exception{
-        //???? wtf is this even doing
+        //ws with auth
         wsCli1.createWorkspace(new CreateWorkspaceParams()
-                .withWorkspace("sourceTags"));
+                .withWorkspace("highlight"));
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
