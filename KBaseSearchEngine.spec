@@ -182,7 +182,7 @@ module KBaseSearchEngine {
         mapping<string, string> object_props;
     } ObjectData;
 
-    /* An data source access group ID (for instance, the integer ID of a workspace). */
+    /* A data source access group ID (for instance, the integer ID of a workspace). */
     typedef int access_group_id;
     
     /* A timestamp in milliseconds since the epoch. */

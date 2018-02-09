@@ -36,7 +36,7 @@ import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.SearchInterface;
 import kbasesearchengine.main.SearchMethods;
-import kbasesearchengine.main.DecorateWithNarrativeInfo;
+import kbasesearchengine.main.NarrativeInfoDecorator;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.system.FileLister;
 import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
@@ -150,7 +150,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
         
-        search = new DecorateWithNarrativeInfo(
+        search = new NarrativeInfoDecorator(
                 new SearchMethods(accessGroupProvider, esStorage, ss, admins),
                 new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient)));
         //END_CONSTRUCTOR

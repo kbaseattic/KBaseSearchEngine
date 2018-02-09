@@ -28,12 +28,12 @@ import java.util.Map;
  * @author gaprice@lbl.gov
  *
  */
-public class DecorateWithNarrativeInfo implements SearchInterface {
+public class NarrativeInfoDecorator implements SearchInterface {
 
     private final WorkspaceEventHandler weh;
     private final SearchInterface searchInterface;
 
-    public DecorateWithNarrativeInfo(
+    public NarrativeInfoDecorator(
             final SearchInterface searchInterface,
             final WorkspaceEventHandler wsHandler) {
         Utils.nonNull(searchInterface, "searchInterface");

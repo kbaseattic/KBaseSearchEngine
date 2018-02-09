@@ -478,7 +478,7 @@ public class WorkspaceEventHandlerTest {
         assertThat("incorrect tags", sd.getSourceTags(), is(expected.getSourceTags()));
     }
     
-    private Tuple9<Long, String, String, String, Long, String, String, String,
+    public static Tuple9<Long, String, String, String, Long, String, String, String,
         Map<String, String>> wsTuple(
             final long wsid,
             final String wsname,
