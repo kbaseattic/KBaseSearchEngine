@@ -42,37 +42,33 @@ public class NarrativeInfoDecorator implements SearchInterface {
         this.weh = wsHandler;
     }
 
-    public SearchTypesOutput searchTypes(
-            final SearchTypesInput params,
-            final String user)
+    @Override
+    public SearchTypesOutput searchTypes(final SearchTypesInput params, final String user)
             throws Exception {
         return searchInterface.searchTypes(params, user);
     }
 
-    public Map<String, TypeDescriptor> listTypes(
-            final String uniqueType)
-            throws Exception {
+    @Override
+    public Map<String, TypeDescriptor> listTypes(final String uniqueType) throws Exception {
         return searchInterface.listTypes(uniqueType);
     }
 
-    public SearchObjectsOutput searchObjects(
-            final SearchObjectsInput params,
-            final String user)
+    @Override
+    public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
-        SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
-        searchObjsOutput.setAccessGroupNarrativeInfo(addNarrativeInfo(searchObjsOutput.getObjects(),
+        final SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
+        return searchObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
+                searchObjsOutput.getObjects(),
                 searchObjsOutput.getAccessGroupNarrativeInfo()));
-        return searchObjsOutput;
     }
 
-    public GetObjectsOutput getObjects(
-            final GetObjectsInput params,
-            final String user)
+    @Override
+    public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
-        GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
-        getObjsOutput.setAccessGroupNarrativeInfo(addNarrativeInfo(getObjsOutput.getObjects(),
+        final GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
+        return getObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
+                getObjsOutput.getObjects(),
                 getObjsOutput.getAccessGroupNarrativeInfo()));
-        return getObjsOutput;
     }
 
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(
