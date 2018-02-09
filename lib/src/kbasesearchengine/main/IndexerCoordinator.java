@@ -166,12 +166,15 @@ public class IndexerCoordinator implements Stoppable {
         @Override
         public void run() {
             try {
+                logger.logInfo("*** cycle start ***");
                 runOneCycle();
             } catch (InterruptedException | FatalIndexingException e) {
+                logger.logInfo("*** fatal error ***");
                 logError(ErrorType.FATAL, e);
                 executor.shutdown();
                 signalMonitor.signal();
             } catch (Throwable e) {
+                logger.logInfo("*** unexpected error ***");
                 logError(ErrorType.UNEXPECTED, e);
             }
         }
@@ -233,14 +236,20 @@ public class IndexerCoordinator implements Stoppable {
         continuousCycles = 0;
         boolean noWait = true;
         while (!stopRunner && noWait) {
+            logger.logInfo("*** inner cycle start, queue size: " + queue.size());
             final boolean loadedEvents = loadEventsIntoQueue();
+            logger.logInfo("*** queue size post load: " + queue.size());
             queue.moveToReady();
+            logger.logInfo("*** queue size post move to ready: " + queue.size());
             setEventsAsReadyInStorage();
             // so we don't run through the same events again next loop
             queue.moveReadyToProcessing();
+            logger.logInfo("*** queue size post move to processing: " + queue.size());
             checkOnEventsInProcess();
+            logger.logInfo("*** queue size post remove events: " + queue.size());
             // start the cycle immediately if there were events in storage and the queue isn't full
             noWait = loadedEvents && queue.size() < maxQueueSize;
+            logger.logInfo("*** noWait: " + noWait);
             continuousCycles++;
         }
     }
@@ -250,11 +259,14 @@ public class IndexerCoordinator implements Stoppable {
         final boolean loaded;
         final int loadSize = maxQueueSize - queue.size();
         if (loadSize > 0) {
+            logger.logInfo("*** requesting event load size: " + loadSize);
             final List<StoredStatusEvent> events = retrier.retryFunc(
                     s -> s.get(StatusEventProcessingState.UNPROC, loadSize), storage, null);
             events.stream().forEach(e -> queue.load(e));
             loaded = !events.isEmpty();
+            logger.logInfo("*** loaded: " + events.size());
         } else {
+            logger.logInfo("*** no load ***");
             loaded = false;
         }
         return loaded;
@@ -290,6 +302,7 @@ public class IndexerCoordinator implements Stoppable {
                             "Event %s %s %s completed processing with state %s on worker %s",
                             e.getId().getId(), e.getEvent().getEventType(),
                             e.getEvent().toGUID(), state, e.getUpdater().orNull()));
+                    logger.logInfo("*** queue size: " + queue.size());
                 } else {
                     logDelayedEvent(e);
                 }
