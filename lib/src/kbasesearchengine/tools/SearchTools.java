@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -364,19 +365,26 @@ public class SearchTools {
         }
     }
 
-    private LineLogger buildLogger(final PrintStream logTarget,
-            final PrintStream errTarget) {
+    private LineLogger buildLogger(final PrintStream logTarget, final PrintStream errTarget) {
+        
         final LineLogger logger = new LineLogger() {
+            
+            private String decorate(final String log) {
+                final Instant now = Instant.now();
+                return now.toEpochMilli() + " " + now + " " + log;
+            }
+            
             @Override
             public void logInfo(final String line) {
-                logTarget.println(line);
+                logTarget.println(decorate(line));
             }
             @Override
             public void logError(final String line) {
-                errTarget.println(line);
+                errTarget.println(decorate(line));
             }
             @Override
             public void logError(final Throwable error) {
+                errTarget.print(decorate("Error: \n"));
                 error.printStackTrace(errTarget);
             }
             @Override
