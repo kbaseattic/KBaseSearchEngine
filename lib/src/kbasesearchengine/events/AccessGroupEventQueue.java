@@ -270,6 +270,13 @@ public class AccessGroupEventQueue {
         return size;
     }
     
+    public int sizeNoMemoization() {
+        return (drain == null ? 0 : 1) + (ready == null ? 0 : 1) + (processing == null ? 0 : 1) +
+                accessGroupQueue.size() + objectQueues.values().stream()
+                .mapToInt(q -> q.size()).sum();
+                
+    }
+    
     /** Return whether the queue is empty.
      * @return true if the queue is empty, false otherwise.
      */

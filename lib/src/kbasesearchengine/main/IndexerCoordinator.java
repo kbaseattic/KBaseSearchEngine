@@ -236,17 +236,22 @@ public class IndexerCoordinator implements Stoppable {
         continuousCycles = 0;
         boolean noWait = true;
         while (!stopRunner && noWait) {
-            logger.logInfo("*** inner cycle start, queue size: " + queue.size());
+            logger.logInfo("*** inner cycle start, queue size: " + queue.size() + " " +
+                    queue.sizeNoMemoization());
             final boolean loadedEvents = loadEventsIntoQueue();
-            logger.logInfo("*** queue size post load: " + queue.size());
+            logger.logInfo("*** queue size post load: " + queue.size() + " " +
+                    queue.sizeNoMemoization());
             queue.moveToReady();
-            logger.logInfo("*** queue size post move to ready: " + queue.size());
+            logger.logInfo("*** queue size post move to ready: " + queue.size() + " " +
+                    queue.sizeNoMemoization());
             setEventsAsReadyInStorage();
             // so we don't run through the same events again next loop
             queue.moveReadyToProcessing();
-            logger.logInfo("*** queue size post move to processing: " + queue.size());
+            logger.logInfo("*** queue size post move to processing: " + queue.size() + " " +
+                    queue.sizeNoMemoization());
             checkOnEventsInProcess();
-            logger.logInfo("*** queue size post remove events: " + queue.size());
+            logger.logInfo("*** queue size post remove events: " + queue.size() + " " +
+                    queue.sizeNoMemoization());
             // start the cycle immediately if there were events in storage and the queue isn't full
             noWait = loadedEvents && queue.size() < maxQueueSize;
             logger.logInfo("*** noWait: " + noWait);
@@ -273,6 +278,7 @@ public class IndexerCoordinator implements Stoppable {
     }
 
     private void setEventsAsReadyInStorage() throws InterruptedException, IndexingException {
+        int toReady = 0;
         for (final StoredStatusEvent sse: queue.getReadyForProcessing()) {
             // since the queue doesn't mutate the state, if the state is not UNPROC
             // it's not in that state in the DB either
@@ -284,8 +290,10 @@ public class IndexerCoordinator implements Stoppable {
                         sse.getId().getId(), sse.getEvent().getEventType(),
                         sse.getEvent().toGUID(), StatusEventProcessingState.UNPROC,
                         StatusEventProcessingState.READY));
+                toReady++;
             }
         }
+        logger.logInfo("*** moved to ready: " + toReady);
     }
     
     private void checkOnEventsInProcess() throws InterruptedException, IndexingException {
@@ -302,7 +310,8 @@ public class IndexerCoordinator implements Stoppable {
                             "Event %s %s %s completed processing with state %s on worker %s",
                             e.getId().getId(), e.getEvent().getEventType(),
                             e.getEvent().toGUID(), state, e.getUpdater().orNull()));
-                    logger.logInfo("*** queue size: " + queue.size());
+                    logger.logInfo("*** queue size: " + queue.size() + " " +
+                            queue.sizeNoMemoization());
                 } else {
                     logDelayedEvent(e);
                 }
