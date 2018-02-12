@@ -425,9 +425,9 @@ public class SearchAPIIntegrationTest {
                 .withSourceTags(Arrays.asList("immaprettypony1")));
         //default for highlighting is off -- mainly b/c of search tags
         final kbasesearchengine.PostProcessing pp = new kbasesearchengine.PostProcessing();
-        final MatchFilter filter = new MatchFilter().withFullTextInAll("objname1");
         //1L to get this to be true
         pp.setIncludeHighlight(1L);
+        final MatchFilter filter = new MatchFilter().withFullTextInAll("objname1");
 
         Map<String, List<String>> highlight = new HashMap<>();
         highlight.put("object_name",  Arrays.asList("<em>objname1</em>"));

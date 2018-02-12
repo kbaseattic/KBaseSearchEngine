@@ -190,6 +190,7 @@ public class SearchMethods implements SearchInterface {
             ret.objectData = !(toBool(pp.getSkipData()) || idsOnly);
             ret.objectKeys = !(toBool(pp.getSkipKeys()) || idsOnly);
             //default to false currently b/c of search tags. TODO: add search tags to black list?
+            boolean test =  toBool(pp.getIncludeHighlight());
             ret.objectHighlight = toBool(pp.getIncludeHighlight()) && !idsOnly;
         }
         return ret;

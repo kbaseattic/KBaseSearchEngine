@@ -51,7 +51,6 @@ public class SearchMethodsTest {
         PP_DEFAULT.objectInfo = true;
         PP_DEFAULT.objectKeys = true;
     }
-    private final static IndexingStorage idx = mock(IndexingStorage.class);
 
 
 
@@ -300,9 +299,7 @@ public class SearchMethodsTest {
 
     @Test
     public void searchObjectResult() throws Exception {
-        final AccessGroupProvider agp = mock(AccessGroupProvider.class);
-        final TypeStorage ts = mock(TypeStorage.class);
-        final SearchMethods sm = new SearchMethods(agp, idx, ts, Collections.emptySet());
+        final  IndexingStorage idx = mock(IndexingStorage.class);
 
 
         final ArrayList<String> highlight = new ArrayList<>();
@@ -312,48 +309,122 @@ public class SearchMethodsTest {
                 .getBuilder(new GUID("ws:1/2/3"))
                 .withHighlight("field", highlight).build();
 
+        final kbasesearchengine.search.ObjectData obj2 = kbasesearchengine.search.ObjectData
+                .getBuilder(new GUID("ws:4/5/6"))
+                .build();
+
         final ArrayList<ObjectData> objs = new ArrayList<>();
         objs.add(obj);
 
-        final PostProcessing pp = new PostProcessing();
-        pp.objectHighlight = true;
-
+        final ArrayList<ObjectData> objs2 = new ArrayList<>();
+        objs2.add(obj2);
 
         final SortingRule sr = new SortingRule();
         sr.isTimestamp = true;
         sr.ascending = true;
 
-        final FoundHits fh = new FoundHits();
-        fh.pagination = null;
-        fh.sortingRules=  Arrays.asList(sr);;
-        fh.total = 1;
-        fh.guids = set(new GUID("ws:1/2/3"));
-        fh.objects = objs;
-
-
         final kbasesearchengine.search.MatchFilter filter = kbasesearchengine.search.MatchFilter.getBuilder()
                 .withNullableFullTextInAll("test")
                 .build();
 
+        //returns highlight. objectKeys,info,and data default to true
+        final PostProcessing pp1 = new PostProcessing();
+        pp1.objectHighlight = true;
+        pp1.objectData = false;
+        pp1.objectKeys = false;
+        pp1.objectInfo = false;
+        pp1.objectDataIncludes=null;
+
+        //returns nothing
+        final PostProcessing pp2 = new PostProcessing();
+        pp2.objectHighlight = false;
+        pp2.objectData = false;
+        pp2.objectKeys = false;
+        pp2.objectInfo = false;
+        pp2.objectDataIncludes=null;
+
+        final FoundHits fh1 = new FoundHits();
+        fh1.pagination = null;
+        fh1.sortingRules=  Arrays.asList(sr);;
+        fh1.total = 1;
+        fh1.guids = set(new GUID("ws:1/2/3"));
+        fh1.objects = objs;
+
+        final FoundHits fh2 = new FoundHits();
+        fh2.pagination = null;
+        fh2.sortingRules=  Arrays.asList(sr);;
+        fh2.total = 1;
+        fh2.guids = set(new GUID("ws:4/5/6"));
+        fh2.objects = objs2;
+
+        //result with highlight
         when(idx.searchObjects(
                 new ArrayList<>(),
                 filter,
                 null, // sort
                 new kbasesearchengine.search.AccessFilter().withAccessGroups(set()),
                 null, // pagination
-                PP_DEFAULT))
-                .thenReturn(fh);
+                pp1))
+                .thenReturn(fh1);
 
-        final SearchObjectsOutput res = sm.searchObjects(new SearchObjectsInput()
-                        .withMatchFilter(new MatchFilter().withFullTextInAll("test"))
-                        .withAccessFilter(new AccessFilter()), "auser");
+        //result with no highlight
+        when(idx.searchObjects(
+                new ArrayList<>(),
+                filter,
+                null, // sort
+                new kbasesearchengine.search.AccessFilter().withAccessGroups(set()),
+                null, // pagination
+                pp2))
+                .thenReturn(fh2);
+
+        //include highlight only
+        kbasesearchengine.PostProcessing option1 = new kbasesearchengine.PostProcessing()
+                .withIncludeHighlight(1L)
+                .withSkipKeys(1L)
+                .withSkipInfo(1L)
+                .withSkipData(1L);
+
+        final SearchObjectsOutput res1 = searchObjects(idx, option1);
 
 
         final Map<String, List<String>> highlightRes = new HashMap<>();
         highlightRes.put("field", highlight);
+        assertThat("did not find objects", res1.getObjects().size() == 1, is(true));
+        assertThat("did not get right highlight", res1.getObjects().get(0).getHighlight(), is(highlightRes));
 
-        assertThat("did not find objects", res.getObjects().size()>0, is(true));
-        assertThat("did not find objects", res.getObjects().get(0).getHighlight(), is(highlightRes));
+        //highlight on and ids on
+        kbasesearchengine.PostProcessing option2 = new kbasesearchengine.PostProcessing()
+                .withIncludeHighlight(1L)
+                .withIdsOnly(1L);
 
+        final SearchObjectsOutput res2 = searchObjects(idx, option2);
+
+        assertThat("did not find objects", res2.getObjects().size() == 1, is(true));
+        assertThat("did not get right highlight", res2.getObjects().get(0).getHighlight(), is(Collections.emptyMap()));
+
+
+        //highlight off and ids off
+        kbasesearchengine.PostProcessing option3 = new kbasesearchengine.PostProcessing()
+                .withIdsOnly(1L);
+
+        final SearchObjectsOutput res3 = searchObjects(idx, option3);
+
+        assertThat("did not find objects", res3.getObjects().size() == 1, is(true));
+        assertThat("did not get right highlight", res3.getObjects().get(0).getHighlight(), is(Collections.emptyMap()));
+
+    }
+
+    private SearchObjectsOutput searchObjects(IndexingStorage idx, kbasesearchengine.PostProcessing pp) throws Exception{
+        final AccessGroupProvider agp = mock(AccessGroupProvider.class);
+        final TypeStorage ts = mock(TypeStorage.class);
+        final SearchMethods sm = new SearchMethods(agp, idx, ts, Collections.emptySet());
+
+
+        final SearchObjectsInput input = new SearchObjectsInput()
+                .withPostProcessing(pp)
+                .withMatchFilter(new MatchFilter().withFullTextInAll("test"))
+                .withAccessFilter(new AccessFilter());
+
+        return  sm.searchObjects(input, "auser");
     }
 }

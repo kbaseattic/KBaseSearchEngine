@@ -1123,13 +1123,14 @@ public class ElasticIndexingStorageTest {
         final Builder filter = MatchFilter.getBuilder();
         filter.withNullableFullTextInAll("multiWordInSearchMethod1 multiWordInSearchMethod2");
 
-
-        //highlight turned off would give null objects unless objectData is set to true
+        //tests that turning off highlight works
+        //highlight turned off would give null objects unless objectData/objectInfo/objectKey is set to true
         pp.objectData = true;
         FoundHits hits0 = indexStorage.searchObjects(empty, filter.build(),sorting, accessFilter, null, pp);
 
         assertThat("Incorrect highlighting", hits0.objects.get(0).getHighlight(), is(Collections.emptyMap()) );
 
+        //turn on highlight
         pp.objectData = false;
         pp.objectHighlight = true;
         FoundHits hits = indexStorage.searchObjects(empty, filter.build(),sorting, accessFilter, null, pp);
