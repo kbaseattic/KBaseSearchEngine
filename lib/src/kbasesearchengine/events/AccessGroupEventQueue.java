@@ -90,8 +90,10 @@ public class AccessGroupEventQueue {
             }
         }
         if ((ready != null || processing != null) && initialLoad.size() > 1) {
+            final StoredStatusEvent current = ready == null ? processing : ready;
             throw new IllegalArgumentException("If an access group level event is in the " +
-                    "ready or processing state, no other events may be submitted");
+                    "ready or processing state, no other events may be submitted.\n" +
+                    "Access group event: " + current);
         }
         
         for (final String objID: objects.keySet()) {
@@ -105,16 +107,19 @@ public class AccessGroupEventQueue {
             final StoredStatusEvent e) {
         final String objID = e.getEvent().getAccessGroupObjectId().get();
         if (objectMap.containsKey(objID)) {
-            throw new IllegalArgumentException(
-                    "Already contains an event for object ID " + objID);
+            throw new IllegalArgumentException(String.format(
+                    "Already contains an event for object ID %s.\n" +
+                    "Existing event: %s\nNew event: %s", objID, objectMap.get(objID), e));
         }
         objectMap.put(objID, e);
     }
 
     private void initAccessGroupEvent(final StoredStatusEvent e) {
         if (ready != null || processing != null) {
-            throw new IllegalArgumentException(
-                    "More than one access level event is not allowed");
+            final StoredStatusEvent existing = ready == null ? processing : ready;
+            throw new IllegalArgumentException(String.format(
+                    "More than one access level event per access group ID is not allowed.\n" +
+                    "Existing: %s\nNew event: %s", existing, e));
         }
         if (e.getState().equals(StatusEventProcessingState.READY)) {
             ready = e;
