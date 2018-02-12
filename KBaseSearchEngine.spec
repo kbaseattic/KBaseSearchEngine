@@ -132,7 +132,8 @@ module KBaseSearchEngine {
           'parent_data' fields in ObjectData structure),
       include_highlight - include highlights of fields that
            matched query,
-      ids_only - shortcut to mark all three skips as true.
+      ids_only - shortcut to mark all three skips as true and 
+           include_highlight as false.
     */
     typedef structure {
         boolean ids_only;
