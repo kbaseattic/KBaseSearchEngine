@@ -182,12 +182,38 @@ module KBaseSearchEngine {
         mapping<string, string> object_props;
     } ObjectData;
 
+    /* A data source access group ID (for instance, the integer ID of a workspace). */
+    typedef int access_group_id;
+    
+    /* A timestamp in milliseconds since the epoch. */
+    typedef int timestamp;
+
+    /* Information about a workspace, which may or may not contain a KBase Narrative.
+       This data is specific for data from the Workspace Service.
+       
+       string narrative_name - the name of the narrative contained in the workspace, or null if
+           the workspace does not contain a narrative.
+       int narrative_id - the id of the narrative contained in the workspace, or null.
+       timestamp time_last_saved - the modification date of the workspace.
+       string ws_owner_username - the unique user name of the workspace's owner.
+       string ws_owner_displayname - the display name of the workspace's owner.
+    */
+    typedef tuple<string narrative_name,
+                  int narrative_id,
+                  timestamp time_last_saved,
+                  string ws_owner_username,
+                  string ws_owner_displayname
+                  > narrative_info;
+
     /*
       Output results for 'search_objects' method.
       'pagination' and 'sorting_rules' fields show actual input for
           pagination and sorting.
       total - total number of found objects.
       search_time - common time in milliseconds spent.
+      mapping<access_group_id, narrative_info> access_group_narrative_info - information about
+         the workspaces in which the objects in the results reside. This data only applies to
+         workspace objects.
     */
     typedef structure {
         Pagination pagination;
@@ -195,6 +221,7 @@ module KBaseSearchEngine {
         list<ObjectData> objects;
         int total;
         int search_time;
+        mapping<access_group_id, narrative_info> access_group_narrative_info;
     } SearchObjectsOutput;
 
     /*
@@ -213,10 +240,15 @@ module KBaseSearchEngine {
 
     /*
       Output results of get_objects method.
+      
+      mapping<access_group_id, narrative_info> access_group_narrative_info - information about
+         the workspaces in which the objects in the results reside. This data only applies to
+         workspace objects.
     */
     typedef structure {
         list<ObjectData> objects;
         int search_time;
+        mapping<access_group_id, narrative_info> access_group_narrative_info;
     } GetObjectsOutput;
 
     /*
