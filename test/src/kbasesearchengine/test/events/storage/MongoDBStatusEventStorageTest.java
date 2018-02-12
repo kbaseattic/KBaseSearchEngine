@@ -1,5 +1,6 @@
 package kbasesearchengine.test.events.storage;
 
+import static com.mongodb.client.model.Filters.eq;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertNotNull;
@@ -781,5 +782,43 @@ public class MongoDBStatusEventStorageTest {
                         .append("name", "_id_")
                         .append("ns", "test_mongostorage.searchEvents")
                 )));
+    }
+
+    @Test
+    public void resetFailedEvents()
+                  throws RetriableIndexingException {
+        store(10, StatusEventProcessingState.FAIL);
+        store(2, StatusEventProcessingState.READY);
+        store(2, StatusEventProcessingState.INDX);
+        store(2, StatusEventProcessingState.PROC);
+        store(2, StatusEventProcessingState.UNINDX);
+        store(2, StatusEventProcessingState.UNPROC);
+
+        long numObjects = db.getCollection("searchEvents").count();
+        assertThat("incorrect number of events", numObjects, is(20L));
+        assertStateCount(StatusEventProcessingState.FAIL, 10L);
+        assertStateCount(StatusEventProcessingState.UNPROC, 2L);
+        assertStateCount(StatusEventProcessingState.UNINDX, 2L);
+        assertStateCount(StatusEventProcessingState.PROC, 2L);
+        assertStateCount(StatusEventProcessingState.INDX, 2L);
+        assertStateCount(StatusEventProcessingState.READY, 2L);
+
+        storage.resetFailedEvents();
+
+        numObjects = db.getCollection("searchEvents").count();
+        assertThat("incorrect number of events", numObjects, is(20L));
+        assertStateCount(StatusEventProcessingState.FAIL, 0L);
+        assertStateCount(StatusEventProcessingState.UNPROC, 12L);  // fail + unproc
+        assertStateCount(StatusEventProcessingState.UNINDX, 2L);
+        assertStateCount(StatusEventProcessingState.PROC, 2L);
+        assertStateCount(StatusEventProcessingState.INDX, 2L);
+        assertStateCount(StatusEventProcessingState.READY, 2L);
+    }
+
+    private void assertStateCount(StatusEventProcessingState state, long count) {
+
+        long numObjects = db.getCollection("searchEvents").
+                                   count(eq("status", state.toString()));
+        assertThat("incorrect number of events", numObjects, is(count));
     }
 }
