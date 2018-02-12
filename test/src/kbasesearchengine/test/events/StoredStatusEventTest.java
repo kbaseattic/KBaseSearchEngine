@@ -43,17 +43,22 @@ public class StoredStatusEventTest {
         assertThat("incorrect update time", sei.getUpdateTime(), is(Optional.absent()));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
         assertThat("incorrect tags", sei.getWorkerCodes(), is(Collections.emptySet()));
+        assertThat("incorrect storedby", sei.getStoredBy(), is(Optional.absent()));
+        assertThat("incorrect storeTime", sei.getStoreTime(), is(Optional.absent()));
     }
 
     
     @Test 
-    public void buildMinimalNullUpdate() {
+    public void buildMinimalNulls() {
         final StatusEvent se = StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build();
         
         final StoredStatusEvent sei = StoredStatusEvent.getBuilder(se, new StatusEventID("foo"),
                 StatusEventProcessingState.UNPROC)
                 .withNullableUpdate(null, null)
+                .withNullableStoredBy(null)
+                .withNullableStoredBy("   \t  \n ")
+                .withNullableStoreTime(null)
                 .build();
         assertThat("incorrect id", sei.getId(), is(new StatusEventID("foo")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
@@ -63,6 +68,8 @@ public class StoredStatusEventTest {
         assertThat("incorrect update time", sei.getUpdateTime(), is(Optional.absent()));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
         assertThat("incorrect tags", sei.getWorkerCodes(), is(Collections.emptySet()));
+        assertThat("incorrect storedby", sei.getStoredBy(), is(Optional.absent()));
+        assertThat("incorrect storeTime", sei.getStoreTime(), is(Optional.absent()));
     }
     
     @Test 
@@ -88,6 +95,8 @@ public class StoredStatusEventTest {
                 is(Optional.of(Instant.ofEpochMilli(10000))));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
         assertThat("incorrect tags", sei.getWorkerCodes(), is(Collections.emptySet()));
+        assertThat("incorrect storedby", sei.getStoredBy(), is(Optional.absent()));
+        assertThat("incorrect storeTime", sei.getStoreTime(), is(Optional.absent()));
     }
     
     @Test
@@ -109,6 +118,8 @@ public class StoredStatusEventTest {
                 is(Optional.of(Instant.ofEpochMilli(20000))));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
         assertThat("incorrect tags", sei.getWorkerCodes(), is(Collections.emptySet()));
+        assertThat("incorrect storedby", sei.getStoredBy(), is(Optional.absent()));
+        assertThat("incorrect storeTime", sei.getStoreTime(), is(Optional.absent()));
     }
     
     @Test
@@ -130,6 +141,8 @@ public class StoredStatusEventTest {
                 is(Optional.of(Instant.ofEpochMilli(20000))));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
         assertThat("incorrect tags", sei.getWorkerCodes(), is(Collections.emptySet()));
+        assertThat("incorrect storedby", sei.getStoredBy(), is(Optional.absent()));
+        assertThat("incorrect storeTime", sei.getStoreTime(), is(Optional.absent()));
     }
     
     @Test
@@ -142,6 +155,8 @@ public class StoredStatusEventTest {
                 .withNullableUpdate(Instant.ofEpochMilli(20000), "foo")
                 .withWorkerCode("foo")
                 .withWorkerCode("bar")
+                .withNullableStoredBy("my man")
+                .withNullableStoreTime(Instant.ofEpochMilli(30000))
                 .build();
         assertThat("incorrect id", sei.getId(), is(new StatusEventID("foo")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
@@ -152,6 +167,9 @@ public class StoredStatusEventTest {
                 is(Optional.of(Instant.ofEpochMilli(20000))));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
         assertThat("incorrect tags", sei.getWorkerCodes(), is(set("foo", "bar")));
+        assertThat("incorrect storedby", sei.getStoredBy(), is(Optional.of("my man")));
+        assertThat("incorrect storeTime", sei.getStoreTime(),
+                is(Optional.of(Instant.ofEpochMilli(30000))));
     }
     
     @Test

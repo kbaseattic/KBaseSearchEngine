@@ -71,6 +71,8 @@ public class WorkspaceEventGenerator {
     private static final String WS_KEY_SCHEMAVER = "schemaver";
     private static final String WS_KEY_IN_UPDATE = "inupdate";
     
+    private static final String WS_EVENT_GEN = "WSEG";
+    
     //TODO EVENTGEN optimize by not pulling unneeded fields from db
 
     //TODO EVENTGEN handle data palettes: 1) remove all sharing for ws 2) pull DP 3) add share events for all DP objects. RC still possible.
@@ -279,7 +281,8 @@ public class WorkspaceEventGenerator {
                     .withNullableisPublic(pub)
                     .build(),
                     StatusEventProcessingState.UNPROC,
-                    workerCodes);
+                    workerCodes,
+                    WS_EVENT_GEN);
         } catch (RetriableIndexingException e) {
             throw new EventGeneratorException(e.getMessage(), e); //TODO CODE retries
         }
