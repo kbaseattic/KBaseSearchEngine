@@ -35,6 +35,8 @@ import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.tools.Utils;
 
+import static com.mongodb.client.model.Filters.eq;
+
 /** An implementation of {@link StatusEventStorage} with MongoDB as the backend.
  * @author gaprice@lbl.gov
  *
@@ -376,20 +378,10 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     public void resetFailedEvents()
             throws FatalRetriableIndexingException {
 
-        while (true) {
-            List<StoredStatusEvent> failedEvents = get(StatusEventProcessingState.FAIL, 10000);
-
-            if (failedEvents.size() == 0 ) {
-                return;
-            }
-
-            // reset event state to UNPROC
-            for (StoredStatusEvent event: failedEvents) {
-                setProcessingState(event.getId(),
-                        StatusEventProcessingState.FAIL,
-                        StatusEventProcessingState.UNPROC);
-            }
-        }
-
+        db.getCollection(COL_EVENT).
+                updateMany(eq(FLD_STATUS,StatusEventProcessingState.FAIL.toString()),
+                              new Document( "$set",
+                                  new Document("status",
+                                          StatusEventProcessingState.UNPROC.toString())));
     }
 }
