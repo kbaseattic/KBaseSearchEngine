@@ -1,0 +1,21 @@
+# a test spec.
+
+global-object-type: OneString
+storage-type: WS
+storage-object-type: OneString.AType
+versions:
+    -
+        indexing-rules:
+            -
+                path: foo
+                keyword-type: string
+                # key-name will be 'foo'
+            -
+                path: foo
+                keyword-type: string
+                key-name: foo1
+            -
+                path: foo
+                keyword-type: string
+                key-name: foo2
+
