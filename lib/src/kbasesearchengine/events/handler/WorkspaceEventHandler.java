@@ -212,6 +212,34 @@ public class WorkspaceEventHandler implements EventHandler {
         return ws.getClient().administer(new UObject(command))
                 .asClassInstance(WS_INFO_TYPEREF);
     }
+
+
+    /** Get the workspace information for an object from the workspace service to which this
+     * handler is communicating.
+     * @param workspaceID the integer ID of the workspace.
+     * @param objectId the integer ID of the object.
+     * @return the object info as returned from the workspace.
+     * @throws IOException if an IO exception occurs.
+     * @throws JsonClientException if an error retrieving the data occurs.
+     */
+    public GetObjectInfo3Results getObjectInfo(
+                                       final long workspaceID,
+                                       final long objectId)
+            throws IOException, JsonClientException {
+
+        final ObjectSpecification os = new ObjectSpecification().withRef(
+                Long.toString(workspaceID) + "/" + Long.toString(objectId));
+
+        final List<ObjectSpecification> getInfoInput = new ArrayList<>();
+        getInfoInput.add(os);
+
+        Map<String, Object> command = new HashMap<>();
+        command.put("command", "getObjectInfo");
+        command.put("params", new GetObjectInfo3Params().withObjects(getInfoInput));
+
+        return ws.getClient().administer(new UObject(command))
+                    .asClassInstance(GetObjectInfo3Results.class);
+    }
     
     
     private ObjectData getObjectData(final List<GUID> guids, final Path file)
@@ -375,15 +403,11 @@ public class WorkspaceEventHandler implements EventHandler {
             final StatusEventType newType)
             throws RetriableIndexingException, IndexingException {
 
-        final Map<String, Object> command = new HashMap<>();
-        command.put("command", "getWorkspaceInfo");
-        command.put("params", new WorkspaceIdentity()
-                .withId((long) event.getEvent().getAccessGroupId().get()));
+        long workspaceId = (long) event.getEvent().getAccessGroupId().get();
         
         final long objcount;
         try {
-            objcount = ws.getClient().administer(new UObject(command))
-                    .asClassInstance(WS_INFO_TYPEREF).getE5();
+            objcount = getWorkspaceInfo(workspaceId).getE5();
         } catch (IOException e) {
             throw handleException(e);
         } catch (JsonClientException e) {
@@ -661,21 +685,10 @@ public class WorkspaceEventHandler implements EventHandler {
         // update a rename event
         if (eventType.equals(StatusEventType.RENAME_ALL_VERSIONS)) {
             // check if name has changed and update state of lastestName
-            final ObjectSpecification os = new ObjectSpecification().withRef(
-                    accessGrpId + "/" + objectId);
-
-            final List<ObjectSpecification> getInfoInput = new ArrayList<>();
-            getInfoInput.add(os);
-
-            Map<String, Object> command = new HashMap<>();
-            command.put("command", "getObjectInfo");
-            command.put("params", new GetObjectInfo3Params().withObjects(getInfoInput));
-
-            final GetObjectInfo3Results objInfo;
 
             try {
-                objInfo = ws.getClient().administer(new UObject(command))
-                        .asClassInstance(GetObjectInfo3Results.class);
+                GetObjectInfo3Results objInfo =
+                        getObjectInfo(Long.decode(accessGrpId), Long.decode(objectId));
                 String latestName = objInfo.getInfos().get(0).getE2();
 
                 if( ev.getNewName().equals(latestName) )
@@ -698,14 +711,8 @@ public class WorkspaceEventHandler implements EventHandler {
         if (eventType.equals(StatusEventType.PUBLISH_ALL_VERSIONS) ||
                 eventType.equals(StatusEventType.UNPUBLISH_ALL_VERSIONS )) {
             try {
-                Map<String, Object> command = new HashMap<>();
-                command.put("command", "getWorkspaceInfo");
-                command.put("params", new WorkspaceIdentity()
-                        .withId(Long.decode(accessGrpId)));
-
                 // get globalread permission value
-                final String isPublic = ws.getClient().administer(new UObject(command))
-                        .asClassInstance(WS_INFO_TYPEREF).getE7();
+                final String isPublic = getWorkspaceInfo(Long.decode(accessGrpId)).getE7();
 
                 // n = no permissions = public access
                 Boolean latestIsPublic = (isPublic == "n") ? true: false;
