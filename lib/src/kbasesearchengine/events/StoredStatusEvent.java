@@ -103,6 +103,29 @@ public class StoredStatusEvent implements StatusEventWithId {
     }
     
     @Override
+    public String toString() {
+        StringBuilder builder2 = new StringBuilder();
+        builder2.append("StoredStatusEvent [event=");
+        builder2.append(event);
+        builder2.append(", id=");
+        builder2.append(id);
+        builder2.append(", state=");
+        builder2.append(state);
+        builder2.append(", updateTime=");
+        builder2.append(updateTime);
+        builder2.append(", updater=");
+        builder2.append(updater);
+        builder2.append(", workerCodes=");
+        builder2.append(workerCodes);
+        builder2.append(", storedBy=");
+        builder2.append(storedBy);
+        builder2.append(", storeTime=");
+        builder2.append(storeTime);
+        builder2.append("]");
+        return builder2.toString();
+    }
+
+    @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
