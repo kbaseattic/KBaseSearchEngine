@@ -1134,8 +1134,6 @@ public class ElasticIndexingStorageTest {
         pp.objectData = false;
         pp.objectHighlight = true;
         FoundHits hits = indexStorage.searchObjects(empty, filter.build(),sorting, accessFilter, null, pp);
-
-
         Map<String, List<String>> hitRes = hits.objects.get(0).getHighlight();
 
         Map<String, List<String>> result1 = new HashMap<>();

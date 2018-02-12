@@ -17,8 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.deser.DataFormatReaders;
-import kbasesearchengine.search.PostProcessing;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.ini4j.Ini;
@@ -345,10 +343,6 @@ public class SearchAPIIntegrationTest {
         
         assertThat("incorrect object count", res2.getObjects().size(), is(1));
         compare(res2.getObjects().get(0), expected1);
-
-
-
-
     }
     
     @Test
@@ -421,8 +415,6 @@ public class SearchAPIIntegrationTest {
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
                 false);
 
-        final SearchObjectsOutput res1 = searchObjects(new MatchFilter()
-                .withSourceTags(Arrays.asList("immaprettypony1")));
         //default for highlighting is off -- mainly b/c of search tags
         final kbasesearchengine.PostProcessing pp = new kbasesearchengine.PostProcessing();
         //1L to get this to be true
@@ -446,7 +438,6 @@ public class SearchAPIIntegrationTest {
                 .withAccessFilter(new AccessFilter())
                 .withMatchFilter(filter);
 
-
         SearchObjectsOutput res = searchCli.searchObjects(params);
 
         final ObjectData actual = res.getObjects().get(0);
@@ -466,8 +457,6 @@ public class SearchAPIIntegrationTest {
             throw e;
         }
     }
-
-
 
     private void compare(final ObjectData got, final ObjectData expected) {
         // no hashcode and equals compiled into ObjectData

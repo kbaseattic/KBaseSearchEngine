@@ -96,7 +96,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private static final String R_OBJ_COPIER = "copier";
     private static final String R_OBJ_CREATOR = "creator";
     private static final String R_OBJ_NAME = "object_name";
-    private static final String R_OBJ_PREFIX = "prefix";
+    private static final String R_OBJ_PREFIX = "guid_prefix";
     private static final String R_OBJ_STORAGE_CODE = "storage_code";
     private static final String R_OBJ_ACCESS_GROUP_ID = "access_group_id";
     private static final String R_OBJ_VERSION = "version";
@@ -110,8 +110,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private static final String R_SEARCH_OBJ_TYPE = "type";
     private static final String R_SEARCH_OBJ_TYPE_VER = "type_ver";
 
-
-    //skipped timestamp, md5, copier, creator
     private static final ImmutableMap<String, String> readableNames = ImmutableMap.<String,String>builder()
             .put(OBJ_GUID, R_OBJ_GUID)
             .put(OBJ_TIMESTAMP, R_OBJ_TIMESTAMP)
@@ -1229,14 +1227,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return b.build();
     }
 
-    private String getReadableKeyNames(final String key){
+    private String getReadableKeyNames(final String key) throws IllegalStateException{
         if (key.startsWith("key.")) {
             return stripKeyPrefix(key);
-        }
-        if(readableNames.containsKey(key)){
+        } else if(readableNames.containsKey(key)) {
             return readableNames.get(key);
+        } else {
+            //this should not happen. Untested
+            throw new IllegalStateException("Object has unexpected key");
         }
-        return key;
     }
     private String stripKeyPrefix(final String key){
         return key.substring(4);

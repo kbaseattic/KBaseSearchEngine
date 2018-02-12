@@ -169,7 +169,7 @@ module KBaseSearchEngine {
       mapping<string, list<string>> highlight - The keys are the field names and the list 
           contains the sections in each field that matched the search query. Fields with no
           hits will not be available. Short fields that matched are shown in their entirety.
-          Longer fields are shown as snippets precedded or followed by "...".     
+          Longer fields are shown as snippets preceded or followed by "...".     
       mapping<string, string> object_props - general properties for all objects. This mapping
           contains the keys 'creator', 'copied', 'module', 'method', 'module_ver', and 'commit' -
           respectively the user that originally created the object, the user that copied this

@@ -9,6 +9,10 @@ import static kbasesearchengine.test.common.TestCommon.set;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import kbasesearchengine.MatchFilter;
 import org.junit.Test;
@@ -30,18 +34,6 @@ import kbasesearchengine.SearchTypesOutput;
 import kbasesearchengine.AccessFilter;
 import kbasesearchengine.Pagination;
 import kbasesearchengine.test.common.TestCommon;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static kbasesearchengine.test.common.TestCommon.set;
-
-
 
 public class SearchMethodsTest {
 
@@ -294,9 +286,6 @@ public class SearchMethodsTest {
         // assertThat("incorrect objects", res.getSearchTime(), is(20));
     }
 
-
-
-
     @Test
     public void searchObjectResult() throws Exception {
         final  IndexingStorage idx = mock(IndexingStorage.class);
@@ -345,14 +334,14 @@ public class SearchMethodsTest {
 
         final FoundHits fh1 = new FoundHits();
         fh1.pagination = null;
-        fh1.sortingRules =  Arrays.asList(sr);;
+        fh1.sortingRules =  Arrays.asList(sr);
         fh1.total = 1;
         fh1.guids = set(new GUID("ws:1/2/3"));
         fh1.objects = objs;
 
         final FoundHits fh2 = new FoundHits();
         fh2.pagination = null;
-        fh2.sortingRules =  Arrays.asList(sr);;
+        fh2.sortingRules =  Arrays.asList(sr);
         fh2.total = 1;
         fh2.guids = set(new GUID("ws:4/5/6"));
         fh2.objects = objs2;
@@ -377,7 +366,9 @@ public class SearchMethodsTest {
                 pp2))
                 .thenReturn(fh2);
 
-        //include highlight only
+
+        //tests 
+        //with highlight on only
         kbasesearchengine.PostProcessing option1 = new kbasesearchengine.PostProcessing()
                 .withIncludeHighlight(1L)
                 .withSkipKeys(1L)
@@ -385,7 +376,6 @@ public class SearchMethodsTest {
                 .withSkipData(1L);
 
         final SearchObjectsOutput res1 = searchObjects(idx, option1);
-
 
         final Map<String, List<String>> highlightRes = new HashMap<>();
         highlightRes.put("field", highlight);
@@ -414,7 +404,7 @@ public class SearchMethodsTest {
 
     }
 
-    private SearchObjectsOutput searchObjects(IndexingStorage idx, kbasesearchengine.PostProcessing pp) throws Exception{
+    private SearchObjectsOutput searchObjects(final IndexingStorage idx, final kbasesearchengine.PostProcessing pp) throws Exception {
         final AccessGroupProvider agp = mock(AccessGroupProvider.class);
         final TypeStorage ts = mock(TypeStorage.class);
         final SearchMethods sm = new SearchMethods(agp, idx, ts, Collections.emptySet());
