@@ -372,4 +372,24 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         return Optional.of(toEvent(ret));
     }
 
+    @Override
+    public void resetFailedEvents()
+            throws FatalRetriableIndexingException {
+
+        while (true) {
+            List<StoredStatusEvent> failedEvents = get(StatusEventProcessingState.FAIL, 10000);
+
+            if (failedEvents.size() == 0 ) {
+                return;
+            }
+
+            // reset event state to UNPROC
+            for (StoredStatusEvent event: failedEvents) {
+                setProcessingState(event.getId(),
+                        StatusEventProcessingState.FAIL,
+                        StatusEventProcessingState.UNPROC);
+            }
+        }
+
+    }
 }
