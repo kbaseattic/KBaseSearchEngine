@@ -130,7 +130,7 @@ module KBaseSearchEngine {
           ('key_props' field in ObjectData structure),
       skip_data - do not include raw data for object ('data' and 
           'parent_data' fields in ObjectData structure),
-      include - include highlights of fields that
+      include_highlight - include highlights of fields that
            matched query,
       ids_only - shortcut to mark all three skips as true.
     */
@@ -166,18 +166,16 @@ module KBaseSearchEngine {
     /*
       Properties of found object including metadata, raw data and
           keywords.
-          
+      mapping<string, list<string>> highlight - The keys are the field names and the list 
+          contains the sections in each field that matched the search query. Fields with no
+          hits will not be available. Short fields that matched are shown in their entirety.
+          Longer fields are shown as snippets precedded or followed by "...".     
       mapping<string, string> object_props - general properties for all objects. This mapping
           contains the keys 'creator', 'copied', 'module', 'method', 'module_ver', and 'commit' -
           respectively the user that originally created the object, the user that copied this
           incarnation of the object, and the module and method used to create the object and
           their version and version control commit hash. Not all keys may be present; if not
           their values were not available in the search data.
-      mapping<string, list<string>> highlight - They keys are the field names and the list 
-          contains the sections in each field that matched the search query. Fields with no
-          hits will not be available. Short fields that matched are shown in their entirety.
-          Longer fields are shown as snippets precedded or followed by "...". 
-
     */
     typedef structure {
         GUID guid;

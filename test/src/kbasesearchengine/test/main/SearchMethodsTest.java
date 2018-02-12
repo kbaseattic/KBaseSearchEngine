@@ -345,14 +345,14 @@ public class SearchMethodsTest {
 
         final FoundHits fh1 = new FoundHits();
         fh1.pagination = null;
-        fh1.sortingRules=  Arrays.asList(sr);;
+        fh1.sortingRules =  Arrays.asList(sr);;
         fh1.total = 1;
         fh1.guids = set(new GUID("ws:1/2/3"));
         fh1.objects = objs;
 
         final FoundHits fh2 = new FoundHits();
         fh2.pagination = null;
-        fh2.sortingRules=  Arrays.asList(sr);;
+        fh2.sortingRules =  Arrays.asList(sr);;
         fh2.total = 1;
         fh2.guids = set(new GUID("ws:4/5/6"));
         fh2.objects = objs2;
