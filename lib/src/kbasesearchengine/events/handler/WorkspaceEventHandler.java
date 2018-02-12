@@ -651,128 +651,165 @@ public class WorkspaceEventHandler implements EventHandler {
             throws IndexingException,
                    RetriableIndexingException {
 
-        // latest states to update
-        StatusEventType latestEventType = ev.getEventType();
-        Boolean latestIsPublic = null;
-        String latestName = null;
+        // brute force get latest state and update event as events
+        // can be played out of order in the case of failed events being replayed.
 
-        if (ev.isPublic().isPresent()) {
-            latestIsPublic = ev.isPublic().get().booleanValue();
-        }
-        if (ev.getNewName().isPresent()) {
-            latestName = ev.getNewName().get().toString();
-        }
+        StatusEventType eventType = ev.getEventType();
+        String accessGrpId = ev.getAccessGroupId().get().toString();
+        String objectId = ev.getAccessGroupObjectId().get();
 
+        // update a rename event
+        if (eventType.equals(StatusEventType.RENAME_ALL_VERSIONS)) {
+            // check if name has changed and update state of lastestName
+            final ObjectSpecification os = new ObjectSpecification().withRef(
+                    accessGrpId + "/" + objectId);
 
-        // wsid and objid of the object that the specified StatusEvent is an event for
-        long wsid = (long)ev.getAccessGroupId().get();
-        long objid = Long.valueOf(ev.getAccessGroupObjectId().get().toString()).longValue();
+            final List<ObjectSpecification> getInfoInput = new ArrayList<>();
+            getInfoInput.add(os);
 
-        Map<String, Object> command;
+            Map<String, Object> command = new HashMap<>();
+            command.put("command", "getObjectInfo");
+            command.put("params", new GetObjectInfo3Params().withObjects(getInfoInput));
 
-        // check if object is deleted and update state of latestEventType
-        command = new HashMap<>();
-        command.put("command", "listObjects");
-        command.put("params", new ListObjectsParams().withShowOnlyDeleted(wsid).withIds(Arrays.asList(wsid)));
-        final List<Tuple11<Long,String,String,String,Long,String,Long,String,String,Long,
-                Map<String,String>>> deletedObjList;
-        try {
-            deletedObjList = ws.getClient().administer(new UObject(command))
-                    .asClassInstance(List.class);
+            final GetObjectInfo3Results objInfo;
 
-            for (Tuple11<Long,String,String,String,Long,String,Long,String,
-                                            String,Long,Map<String,String>> obj: deletedObjList) {
-                long deletedObjid = obj.getE1().longValue();
-                if (deletedObjid  == objid) {
-                    latestEventType = StatusEventType.DELETE_ALL_VERSIONS;
-                    break;
+            try {
+                objInfo = ws.getClient().administer(new UObject(command))
+                        .asClassInstance(GetObjectInfo3Results.class);
+                String latestName = objInfo.getInfos().get(0).getE2();
+
+                if( ev.getNewName().equals(latestName) )
+                    return ev;
+                else {
+                    return StatusEvent.
+                            getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(), eventType).
+                            withNullableAccessGroupID(Integer.decode(accessGrpId)).
+                            withNullableObjectID(objectId).
+                            withNullableVersion(ev.getVersion().get()).
+                            withNullableNewName(latestName).build();
                 }
+            } catch (IOException ex) {
+                throw handleException(ex);
+            } catch (JsonClientException ex) {
+                throw handleException(ex);
             }
-        } catch (IOException ex) {
-            throw handleException(ex);
-        } catch (JsonClientException ex) {
-            throw handleException(ex);
         }
+        // update a (UN)PUBLISH_ALL_VERSIONS event
+        if (eventType.equals(StatusEventType.PUBLISH_ALL_VERSIONS) ||
+                eventType.equals(StatusEventType.UNPUBLISH_ALL_VERSIONS )) {
+            try {
+                Map<String, Object> command = new HashMap<>();
+                command.put("command", "getWorkspaceInfo");
+                command.put("params", new WorkspaceIdentity()
+                        .withId(Long.decode(accessGrpId)));
 
-        // check if object may have been permanently deleted with no record left
-        command = new HashMap<>();
-        command.put("command", "listObjects");
-        command.put("params", new ListObjectsParams().withIds(Arrays.asList(wsid)));
+                // get globalread permission value
+                final String isPublic = ws.getClient().administer(new UObject(command))
+                        .asClassInstance(WS_INFO_TYPEREF).getE7();
 
-        try {
-            boolean objidExists = false;
+                // n = no permissions = public access
+                Boolean latestIsPublic = (isPublic == "n") ? true: false;
 
-            final List<List> objList = ws.getClient().administer(new UObject(command))
-                    .asClassInstance(List.class);
-
-            for (List obj: objList) {
-                long id = (long)((Integer)obj.get(0)).intValue();
-                if (id  == objid) {
-                    objidExists = true;
-                    break;
+                if (latestIsPublic) {
+                    return StatusEvent.
+                            getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(),
+                                    StatusEventType.PUBLISH_ALL_VERSIONS).
+                            withNullableAccessGroupID(Integer.decode(accessGrpId)).
+                            withNullableObjectID(objectId).
+                            withNullableVersion(ev.getVersion().get()).
+                            withNullableisPublic(latestIsPublic).build();
+                } else {
+                    return StatusEvent.
+                            getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(),
+                                    StatusEventType.UNPUBLISH_ALL_VERSIONS).
+                            withNullableAccessGroupID(Integer.decode(accessGrpId)).
+                            withNullableObjectID(objectId).
+                            withNullableVersion(ev.getVersion().get()).
+                            withNullableisPublic(latestIsPublic).build();
                 }
+
+            } catch (IOException ex) {
+                throw handleException(ex);
+            } catch (JsonClientException ex) {
+                throw handleException(ex);
             }
-
-            if (!objidExists) {
-                latestEventType = StatusEventType.DELETE_ALL_VERSIONS;
-            }
-        } catch (IOException ex) {
-            throw handleException(ex);
-        } catch (JsonClientException ex) {
-            throw handleException(ex);
         }
+        // update a (UN)DELETE_ALL_VERSIONS event
+        if (eventType.equals(StatusEventType.DELETE_ALL_VERSIONS) ||
+                eventType.equals(StatusEventType.UNDELETE_ALL_VERSIONS )) {
+            Map<String, Object> command;
 
-
-        // check if name has changed and update state of lastestName
-        final ObjectSpecification os = new ObjectSpecification().withRef(
-                ev.getAccessGroupId().get().toString() + "/" +
-                        ev.getAccessGroupObjectId().get());
-
-        final List<ObjectSpecification> getInfoInput = new ArrayList<>();
-        getInfoInput.add(os);
-
-        command = new HashMap<>();
-        command.put("command", "getObjectInfo");
-        command.put("params", new GetObjectInfo3Params().withObjects(getInfoInput));
-
-        final GetObjectInfo3Results objInfo;
-        try {
-            objInfo = ws.getClient().administer(new UObject(command))
-                    .asClassInstance(GetObjectInfo3Results.class);
-            latestName = objInfo.getInfos().get(0).getE2();
-
-        } catch (IOException ex) {
-            throw handleException(ex);
-        } catch (JsonClientException ex) {
-            throw handleException(ex);
-        }
-
-        // check if permissions have changed and update state of isPublic
-        try {
+            // if source data object does not exist then update event as a
+            // DELETE_ALL_VERSIONS event
             command = new HashMap<>();
-            command.put("command", "getWorkspaceInfo");
-            command.put("params", new WorkspaceIdentity()
-                    .withId((long) ev.getAccessGroupId().get()));
+            command.put("command", "listObjects");
+            command.put("params", new ListObjectsParams().
+                    withIds(Arrays.asList(Long.decode(accessGrpId))));
+            try {
+                boolean objidExists = false;
 
-            final String isPublic = ws.getClient().administer(new UObject(command))
-                    .asClassInstance(WS_INFO_TYPEREF).getE6();
+                final List<List> objList = ws.getClient().administer(new UObject(command))
+                        .asClassInstance(List.class);
 
-            latestIsPublic = (isPublic == "n") ? true: false;
+                for (List obj: objList) {
+                    long id = (long)((Integer)obj.get(0)).intValue();
+                    if (id  == Long.decode(objectId)) {
+                        objidExists = true;
+                        break;
+                    }
+                }
 
-        } catch (IOException ex) {
-            throw handleException(ex);
-        } catch (JsonClientException ex) {
-            throw handleException(ex);
+                if (!objidExists) {
+                    return StatusEvent.
+                            getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(),
+                                    StatusEventType.DELETE_ALL_VERSIONS).
+                            withNullableAccessGroupID(Integer.decode(accessGrpId)).
+                            withNullableObjectID(objectId).build();
+                }
+            } catch (IOException ex) {
+                throw handleException(ex);
+            } catch (JsonClientException ex) {
+                throw handleException(ex);
+            }
+
+            // if source data object is deleted then update event as a DELETE_ALL_VERSIONS event
+            command = new HashMap<>();
+            command.put("command", "listObjects");
+            command.put("params", new ListObjectsParams().
+                                             withShowOnlyDeleted(1L).
+                                             withIds(Arrays.asList(Long.decode(accessGrpId))));
+            final List<Tuple11<Long,String,String,String,Long,String,Long,String,String,Long,
+                    Map<String,String>>> deletedObjList;
+            try {
+                deletedObjList = ws.getClient().administer(new UObject(command))
+                        .asClassInstance(List.class);
+
+                for (Tuple11<Long,String,String,String,Long,String,Long,String,
+                        String,Long,Map<String,String>> obj: deletedObjList) {
+                    long deletedObjid = obj.getE1().longValue();
+                    if (deletedObjid  == Long.decode(objectId)) {
+                        return StatusEvent.
+                                getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(),
+                                        StatusEventType.DELETE_ALL_VERSIONS).
+                                withNullableAccessGroupID(Integer.decode(accessGrpId)).
+                                withNullableObjectID(objectId).build();
+                    }
+                }
+            } catch (IOException ex) {
+                throw handleException(ex);
+            } catch (JsonClientException ex) {
+                throw handleException(ex);
+            }
+
+            // source data object exists so update event as UNDELETE_ALL_VERSIONS
+            return StatusEvent.
+                    getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(),
+                            StatusEventType.UNDELETE_ALL_VERSIONS).
+                    withNullableAccessGroupID(Integer.decode(accessGrpId)).
+                    withNullableObjectID(objectId).build();
+
         }
-
-        StatusEvent updatedEvent = StatusEvent.
-                getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(), latestEventType).
-                withNullableAccessGroupID(ev.getAccessGroupId().get()).
-                withNullableObjectID(ev.getAccessGroupObjectId().get()).
-                withNullableVersion(ev.getVersion().get()).
-                withNullableisPublic(latestIsPublic).
-                withNullableNewName(latestName).build();
-
-        return updatedEvent;
+        // no update needed for other event types
+        return ev;
     }
 }

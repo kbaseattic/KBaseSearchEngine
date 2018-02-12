@@ -2,6 +2,7 @@ package kbasesearchengine.test.main;
 
 import static kbasesearchengine.test.common.TestCommon.set;
 import static org.junit.Assert.fail;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
@@ -295,6 +296,7 @@ public class IndexerWorkerTest {
         deleteRecursively(tempDir);
         
         when(ws.getStorageCode()).thenReturn("code");
+        when(ws.updateEvent(any())).then(returnsFirstArg());
         
         final IndexerWorker worker = new IndexerWorker(
                 "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
