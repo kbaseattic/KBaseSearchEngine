@@ -1235,7 +1235,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             return readableNames.get(key);
         } else {
             //this should not happen. Untested
-            String message = "Object with guid " + guid + " has unexpected key: " + key;
+            String message = "Object with guid " + guid.toString() + " has unexpected key: " + key;
             throw new IllegalStateException(message);
         }
     }

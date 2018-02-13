@@ -395,7 +395,7 @@ public class SearchMethodsTest {
         assertThat("did not get right highlight",
                 res2.getObjects().get(0).getHighlight(),
                 is(Collections.emptyMap()));
-        
+
         //highlight off and ids off
         kbasesearchengine.PostProcessing option3 = new kbasesearchengine.PostProcessing()
                 .withIdsOnly(1L);
