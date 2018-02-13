@@ -367,7 +367,7 @@ public class SearchMethodsTest {
                 .thenReturn(fh2);
 
 
-        //tests 
+        //tests
         //with highlight on only
         kbasesearchengine.PostProcessing option1 = new kbasesearchengine.PostProcessing()
                 .withIncludeHighlight(1L)
@@ -380,7 +380,9 @@ public class SearchMethodsTest {
         final Map<String, List<String>> highlightRes = new HashMap<>();
         highlightRes.put("field", highlight);
         assertThat("did not find objects", res1.getObjects().size() == 1, is(true));
-        assertThat("did not get right highlight", res1.getObjects().get(0).getHighlight(), is(highlightRes));
+        assertThat("did not get right highlight",
+                res1.getObjects().get(0).getHighlight(),
+                is(highlightRes));
 
         //highlight on and ids on
         kbasesearchengine.PostProcessing option2 = new kbasesearchengine.PostProcessing()
@@ -390,9 +392,10 @@ public class SearchMethodsTest {
         final SearchObjectsOutput res2 = searchObjects(idx, option2);
 
         assertThat("did not find objects", res2.getObjects().size() == 1, is(true));
-        assertThat("did not get right highlight", res2.getObjects().get(0).getHighlight(), is(Collections.emptyMap()));
-
-
+        assertThat("did not get right highlight",
+                res2.getObjects().get(0).getHighlight(),
+                is(Collections.emptyMap()));
+        
         //highlight off and ids off
         kbasesearchengine.PostProcessing option3 = new kbasesearchengine.PostProcessing()
                 .withIdsOnly(1L);
@@ -400,11 +403,16 @@ public class SearchMethodsTest {
         final SearchObjectsOutput res3 = searchObjects(idx, option3);
 
         assertThat("did not find objects", res3.getObjects().size() == 1, is(true));
-        assertThat("did not get right highlight", res3.getObjects().get(0).getHighlight(), is(Collections.emptyMap()));
+        assertThat("did not get right highlight",
+                res3.getObjects().get(0).getHighlight(),
+                is(Collections.emptyMap()));
 
     }
 
-    private SearchObjectsOutput searchObjects(final IndexingStorage idx, final kbasesearchengine.PostProcessing pp) throws Exception {
+    private SearchObjectsOutput searchObjects(
+            final IndexingStorage idx,
+            final kbasesearchengine.PostProcessing pp)
+            throws Exception {
         final AccessGroupProvider agp = mock(AccessGroupProvider.class);
         final TypeStorage ts = mock(TypeStorage.class);
         final SearchMethods sm = new SearchMethods(agp, idx, ts, Collections.emptySet());

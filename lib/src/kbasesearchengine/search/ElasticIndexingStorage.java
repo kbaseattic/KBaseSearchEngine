@@ -1166,7 +1166,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final Map<String, List<String>> highlight,
             final PostProcessing pp) {
         // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
-        final ObjectData.Builder b = ObjectData.getBuilder(new GUID((String) obj.get("guid")));
+        GUID guid = new GUID((String) obj.get("guid"));
+        final ObjectData.Builder b = ObjectData.getBuilder(guid);
         if (pp.objectInfo) {
             b.withNullableObjectName((String) obj.get(OBJ_NAME));
             b.withNullableCreator((String) obj.get(OBJ_CREATOR));
@@ -1220,21 +1221,22 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         if (pp.objectHighlight) {
             for(final String key : highlight.keySet()) {
-                b.withHighlight(getReadableKeyNames(key), highlight.get(key));
+                b.withHighlight(getReadableKeyNames(key, guid), highlight.get(key));
             }
         }
 
         return b.build();
     }
 
-    private String getReadableKeyNames(final String key) throws IllegalStateException{
+    private String getReadableKeyNames(final String key, final GUID guid) throws IllegalStateException{
         if (key.startsWith("key.")) {
             return stripKeyPrefix(key);
         } else if(readableNames.containsKey(key)) {
             return readableNames.get(key);
         } else {
             //this should not happen. Untested
-            throw new IllegalStateException("Object has unexpected key");
+            String message = "Object with guid " + guid + " has unexpected key: " + key;
+            throw new IllegalStateException(message);
         }
     }
     private String stripKeyPrefix(final String key){
