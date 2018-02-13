@@ -60,6 +60,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     private static final String SUBTYPE_INDEX_SUFFIX = "_sub";
     private static final String EXCLUDE_SUB_OJBS_URL_SUFFIX = ",-*" + SUBTYPE_INDEX_SUFFIX;
+    private static final String OBJ_GUID = "guid";
     private static final String OBJ_TIMESTAMP = "timestamp";
     private static final String OBJ_PROV_COMMIT_HASH = "prv_cmt";
     private static final String OBJ_PROV_MODULE_VERSION = "prv_ver";
@@ -69,11 +70,68 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private static final String OBJ_COPIER = "copier";
     private static final String OBJ_CREATOR = "creator";
     private static final String OBJ_NAME = "oname";
+    private static final String OBJ_PREFIX = "prefix";
+    private static final String OBJ_STORAGE_CODE = "str_cde";
+    private static final String OBJ_ACCESS_GROUP_ID = "accgrp";
+    private static final String OBJ_VERSION = "version";
+    private static final String OBJ_IS_LAST = "islast";
+    private static final String OBJ_PUBLIC = "public";
+    private static final String OBJ_SHARED = "shared";
+
     // tags on the data originating at the source of the data
     private static final String SOURCE_TAGS = "stags";
     
     private static final String SEARCH_OBJ_TYPE = "otype";
     private static final String SEARCH_OBJ_TYPE_VER = "otypever";
+
+
+    //readable names
+    private static final String R_OBJ_GUID = "guid";
+    private static final String R_OBJ_TIMESTAMP = "timestamp";
+    private static final String R_OBJ_PROV_COMMIT_HASH = "provenance_commit";
+    private static final String R_OBJ_PROV_MODULE_VERSION = "provenance_module_ver";
+    private static final String R_OBJ_PROV_METHOD = "provenance_method";
+    private static final String R_OBJ_PROV_MODULE = "provenance_module";
+    private static final String R_OBJ_MD5 = "md5";
+    private static final String R_OBJ_COPIER = "copier";
+    private static final String R_OBJ_CREATOR = "creator";
+    private static final String R_OBJ_NAME = "object_name";
+    private static final String R_OBJ_PREFIX = "guid_prefix";
+    private static final String R_OBJ_STORAGE_CODE = "storage_code";
+    private static final String R_OBJ_ACCESS_GROUP_ID = "access_group_id";
+    private static final String R_OBJ_VERSION = "version";
+    private static final String R_OBJ_IS_LAST = "is_last_version";
+    private static final String R_OBJ_PUBLIC = "is_public";
+    private static final String R_OBJ_SHARED = "is_shared";
+
+    // tags on the data originating at the source of the data
+    private static final String R_SOURCE_TAGS = "source_tags";
+
+    private static final String R_SEARCH_OBJ_TYPE = "type";
+    private static final String R_SEARCH_OBJ_TYPE_VER = "type_ver";
+
+    private static final ImmutableMap<String, String> readableNames = ImmutableMap.<String,String>builder()
+            .put(OBJ_GUID, R_OBJ_GUID)
+            .put(OBJ_TIMESTAMP, R_OBJ_TIMESTAMP)
+            .put(OBJ_PROV_COMMIT_HASH, R_OBJ_PROV_COMMIT_HASH)
+            .put(OBJ_PROV_MODULE_VERSION, R_OBJ_PROV_MODULE_VERSION)
+            .put(OBJ_PROV_METHOD, R_OBJ_PROV_METHOD)
+            .put(OBJ_PROV_MODULE, R_OBJ_PROV_MODULE)
+            .put(OBJ_MD5, R_OBJ_MD5)
+            .put(OBJ_COPIER, R_OBJ_COPIER)
+            .put(OBJ_CREATOR, R_OBJ_CREATOR)
+            .put(OBJ_NAME, R_OBJ_NAME)
+            .put(SOURCE_TAGS, R_SOURCE_TAGS)
+            .put(SEARCH_OBJ_TYPE, R_SEARCH_OBJ_TYPE)
+            .put(SEARCH_OBJ_TYPE_VER, R_SEARCH_OBJ_TYPE_VER)
+            .put(OBJ_PREFIX, R_OBJ_PREFIX)
+            .put(OBJ_STORAGE_CODE, R_OBJ_STORAGE_CODE)
+            .put(OBJ_ACCESS_GROUP_ID, R_OBJ_ACCESS_GROUP_ID)
+            .put(OBJ_VERSION, R_OBJ_VERSION)
+            .put(OBJ_IS_LAST, R_OBJ_IS_LAST)
+            .put(OBJ_PUBLIC, R_OBJ_PUBLIC)
+            .put(OBJ_SHARED, R_OBJ_SHARED)
+            .build();
 
     private HttpHost esHost;
     private String esUser;
@@ -334,7 +392,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.putAll(indexPart);
-        doc.put("guid", id.toString());
+        doc.put(OBJ_GUID, id.toString());
         doc.put(SEARCH_OBJ_TYPE, objectType.getType());
         doc.put(SEARCH_OBJ_TYPE_VER, objectType.getVersion());
         doc.put(SOURCE_TAGS, data.getSourceTags());
@@ -349,13 +407,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put(OBJ_MD5, data.getMD5().orNull());
         
         doc.put(OBJ_TIMESTAMP, timestamp.toEpochMilli());
-        doc.put("prefix", toGUIDPrefix(id));
-        doc.put("str_cde", id.getStorageCode());
-        doc.put("accgrp", id.getAccessGroupId());
-        doc.put("version", id.getVersion());
-        doc.put("islast", lastVersion == id.getVersion());
-        doc.put("public", isPublic);
-        doc.put("shared", false);
+        doc.put(OBJ_PREFIX, toGUIDPrefix(id));
+        doc.put(OBJ_STORAGE_CODE, id.getStorageCode());
+        doc.put(OBJ_ACCESS_GROUP_ID, id.getAccessGroupId());
+        doc.put(OBJ_VERSION, id.getVersion());
+        doc.put(OBJ_IS_LAST, lastVersion == id.getVersion());
+        doc.put(OBJ_PUBLIC, isPublic);
+        doc.put(OBJ_SHARED, false);
         if (obj != null) {
             doc.put("ojson", obj.getJson());
             doc.put("pjson", parentJson);
@@ -1108,7 +1166,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final Map<String, List<String>> highlight,
             final PostProcessing pp) {
         // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
-        final ObjectData.Builder b = ObjectData.getBuilder(new GUID((String) obj.get("guid")));
+        GUID guid = new GUID((String) obj.get("guid"));
+        final ObjectData.Builder b = ObjectData.getBuilder(guid);
         if (pp.objectInfo) {
             b.withNullableObjectName((String) obj.get(OBJ_NAME));
             b.withNullableCreator((String) obj.get(OBJ_CREATOR));
@@ -1162,22 +1221,28 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         if (pp.objectHighlight) {
             for(final String key : highlight.keySet()) {
-                String newKey = key;
-                if (key.startsWith("key.")) {
-                    newKey = stripKeyPrefix(key);
-                }
-                b.withHighlight(newKey, highlight.get(key));
+                b.withHighlight(getReadableKeyNames(key, guid), highlight.get(key));
             }
         }
 
         return b.build();
     }
 
+    private String getReadableKeyNames(final String key, final GUID guid) throws IllegalStateException{
+        if (key.startsWith("key.")) {
+            return stripKeyPrefix(key);
+        } else if(readableNames.containsKey(key)) {
+            return readableNames.get(key);
+        } else {
+            //this should not happen. Untested
+            String message = "Object with guid " + guid.toString() + " has unexpected key: " + key;
+            throw new IllegalStateException(message);
+        }
+    }
     private String stripKeyPrefix(final String key){
         return key.substring(4);
     }
 
-    
     private Map<String, Object> createPublicShouldBlock(boolean withAllHistory) {
         List<Object> must0List = new ArrayList<>();
         must0List.add(createFilter("term", "public", true));
@@ -1738,14 +1803,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         props.put(OBJ_TIMESTAMP, ImmutableMap.of("type", "date"));
         
-        props.put("prefix", keyword);
-        props.put("str_cde", keyword);
-        props.put("accgrp", integer);
-        props.put("version", integer);
+        props.put(OBJ_PREFIX, keyword);
+        props.put(OBJ_STORAGE_CODE, keyword);
+        props.put(OBJ_ACCESS_GROUP_ID, integer);
+        props.put(OBJ_VERSION, integer);
 
-        props.put("islast", bool);
-        props.put("public", bool);
-        props.put("shared", bool);
+        props.put(OBJ_IS_LAST, bool);
+        props.put(OBJ_PUBLIC, bool);
+        props.put(OBJ_SHARED, bool);
 
         props.put("ojson", ImmutableMap.of(
                 "type", "keyword",
