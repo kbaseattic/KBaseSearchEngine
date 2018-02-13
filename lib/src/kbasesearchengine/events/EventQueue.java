@@ -71,6 +71,10 @@ public class EventQueue {
         return size;
     }
     
+    public int sizeNoMemoization() {
+        return queues.values().stream().mapToInt(q -> q.size()).sum();
+    }
+    
     /** Return true if the queue is empty, false otherwise.
      * @return true if the queue is empty.
      */
