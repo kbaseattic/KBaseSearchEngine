@@ -232,7 +232,8 @@ public class IndexerWorker implements Stoppable {
         logError(msg, e);
     }
     
-    private boolean performOneTick() throws InterruptedException, IndexingException {
+    private boolean performOneTick() throws InterruptedException, IndexingException,
+            FatalRetriableIndexingException {
         final Optional<StoredStatusEvent> optEvent = retrier.retryFunc(
                 s -> s.setAndGetProcessingState(StatusEventProcessingState.READY, workerCodes,
                         StatusEventProcessingState.PROC, id),
@@ -240,6 +241,7 @@ public class IndexerWorker implements Stoppable {
         boolean processedEvent = false;
         if (optEvent.isPresent()) {
             final StoredStatusEvent parentEvent = optEvent.get();
+            logger.logInfo("*** got event for processing: " + storage.get(parentEvent.getId()));
             final EventHandler handler;
             try {
                 handler = getEventHandler(parentEvent);
@@ -263,9 +265,12 @@ public class IndexerWorker implements Stoppable {
             final StatusEventProcessingState result)
             throws InterruptedException, FatalIndexingException {
         try {
+            logger.logInfo("*** marking event " + parentEvent.getId().getId() + " as " + result);
             // should only throw fatal
+            logger.logInfo("*** prior to mark: " + storage.get(parentEvent.getId()));
             retrier.retryCons(s -> s.setProcessingState(parentEvent.getId(),
                     StatusEventProcessingState.PROC, result), storage, parentEvent);
+            logger.logInfo("*** post to mark: " + storage.get(parentEvent.getId()));
         } catch (FatalIndexingException | InterruptedException e) {
             throw e;
         } catch (Exception e) {
