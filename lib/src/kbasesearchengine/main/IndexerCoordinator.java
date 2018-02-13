@@ -22,6 +22,7 @@ import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventWithId;
 import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
+import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
 import kbasesearchengine.events.exceptions.Retrier;
@@ -226,7 +227,8 @@ public class IndexerCoordinator implements Stoppable {
         logError(msg, e);
     }
     
-    private void runOneCycle() throws InterruptedException, IndexingException {
+    private void runOneCycle() throws InterruptedException, IndexingException,
+            FatalRetriableIndexingException {
         /* some of the operations in the submethods could be batched if they prove to be a
          * bottleneck
          * but the mongo client keeps a connection open so it's not that expensive to 
@@ -277,15 +279,18 @@ public class IndexerCoordinator implements Stoppable {
         return loaded;
     }
 
-    private void setEventsAsReadyInStorage() throws InterruptedException, IndexingException {
+    private void setEventsAsReadyInStorage() throws InterruptedException, IndexingException,
+            FatalRetriableIndexingException {
         int toReady = 0;
         for (final StoredStatusEvent sse: queue.getReadyForProcessing()) {
             // since the queue doesn't mutate the state, if the state is not UNPROC
             // it's not in that state in the DB either
             if (sse.getState().equals(StatusEventProcessingState.UNPROC)) {
+                System.out.println("*** event pre set to ready: " + storage.get(sse.getId()));
                 retrier.retryCons(e -> storage.setProcessingState(e.getId(),
                         StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY),
                         sse, sse);
+                System.out.println("*** event post set to ready: " + storage.get(sse.getId()));
                 logger.logInfo(String.format("Moved event %s %s %s from %s to %s",
                         sse.getId().getId(), sse.getEvent().getEventType(),
                         sse.getEvent().toGUID(), StatusEventProcessingState.UNPROC,
@@ -310,6 +315,7 @@ public class IndexerCoordinator implements Stoppable {
                             "Event %s %s %s completed processing with state %s on worker %s",
                             e.getId().getId(), e.getEvent().getEventType(),
                             e.getEvent().toGUID(), state, e.getUpdater().orNull()));
+                    System.out.println("*** event set complete: " + e);
                     logger.logInfo("*** queue size: " + queue.size() + " " +
                             queue.sizeNoMemoization());
                 } else {
