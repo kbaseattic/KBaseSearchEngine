@@ -323,7 +323,7 @@ public class ElasticIndexingStorageTest {
         System.out.println("*** start testGeneTree***");
         indexObject("Tree", 0, "genetree01", new GUID("WS:1/1/1"), "GeneTree.1");
         Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Tree"),
-                MatchFilter.create().withLookupInKey("type", "GeneTree"), 
+                MatchFilter.getBuilder().withLookupInKey("type", "GeneTree").build(), 
                 null, AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, guids.size());
         ObjectData index = indexStorage.getObjectsByIds(guids).get(0);
@@ -338,7 +338,7 @@ public class ElasticIndexingStorageTest {
         System.out.println("*** start testSpeciesTree***");
         indexObject("Tree", 0, "speciestree01", new GUID("WS:1/1/1"), "SpeciesTree.1");
         Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Tree"),
-                MatchFilter.create().withLookupInKey("type", "SpeciesTree"), 
+                MatchFilter.getBuilder().withLookupInKey("type", "SpeciesTree").build(), 
                 null, AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, guids.size());
         ObjectData index = indexStorage.getObjectsByIds(guids).get(0);
@@ -353,8 +353,8 @@ public class ElasticIndexingStorageTest {
         System.out.println("*** start testGenomeV2***");
         indexObject("Genome", 1, "genome02", new GUID("WS:1/1/1"), "MyGenome.2");
         Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Genome"),
-                MatchFilter.create().withLookupInKey(
-                        "features", new MatchValue(1, null)),
+                MatchFilter.getBuilder().withLookupInKey(
+                        "features", new MatchValue(1, null)).build(),
                 null, AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, guids.size());
         ObjectData genomeIndex = indexStorage.getObjectsByIds(guids).get(0);
@@ -403,8 +403,8 @@ public class ElasticIndexingStorageTest {
         ObjectData contigIndex = getIndexedObject(new GUID(contigGuidText));
         Assert.assertEquals("NC_000913", "" + contigIndex.getKeyProperties().get("contig_id"));
         // Search by keyword
-        ids = indexStorage.searchIds(type, MatchFilter.create().withLookupInKey(
-                "aliases", "b0001"), null,
+        ids = indexStorage.searchIds(type, MatchFilter.getBuilder().withLookupInKey(
+                "aliases", "b0001").build(), null,
                 AccessFilter.create().withAccessGroups(accessGroupIds));
         Assert.assertEquals(1, ids.size());
         id = ids.iterator().next();
