@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -72,7 +73,7 @@ import us.kbase.auth.AuthException;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
 import us.kbase.common.service.UnauthorizedException;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceClient;
 
 /** Tools for working with Search. Note that this CLI is designed against the search prototype
  * event listener in the workspace service, and may need changes if the event listener is changed
@@ -364,19 +365,26 @@ public class SearchTools {
         }
     }
 
-    private LineLogger buildLogger(final PrintStream logTarget,
-            final PrintStream errTarget) {
+    private LineLogger buildLogger(final PrintStream logTarget, final PrintStream errTarget) {
+        
         final LineLogger logger = new LineLogger() {
+            
+            private String decorate(final String log) {
+                final Instant now = Instant.now();
+                return now.toEpochMilli() + " " + now + " " + log;
+            }
+            
             @Override
             public void logInfo(final String line) {
-                logTarget.println(line);
+                logTarget.println(decorate(line));
             }
             @Override
             public void logError(final String line) {
-                errTarget.println(line);
+                errTarget.println(decorate(line));
             }
             @Override
             public void logError(final Throwable error) {
+                errTarget.print(decorate("Error: \n"));
                 error.printStackTrace(errTarget);
             }
             @Override

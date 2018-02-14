@@ -7,7 +7,7 @@ public class MatchValue {
     public Object value;
     public Integer minInt;
     public Integer maxInt;
-    public Long minDate;
+    public Long minDate; //TODO CODE use Instant
     public Long maxDate;
     public Double minDouble;
     public Double maxDouble;

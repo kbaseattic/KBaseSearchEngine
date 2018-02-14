@@ -38,6 +38,7 @@
     <include name="junit/junit-4.9.jar"/>
     <include name="kbase/auth/kbase-auth-0.4.4.jar"/>
     <include name="kbase/common/kbase-common-0.0.23.jar"/>
+    <include name="kbase/workspace/WorkspaceService-0.8.0.jar"/>
     <include name="logback/logback-core-1.1.2.jar"/>
     <include name="logback/logback-classic-1.1.2.jar"/>
     <include name="servlet/servlet-api-2.5.jar"/>
@@ -169,17 +170,21 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <test name="kbasesearchengine.test.events.handler.CloneableWorkspaceClientImplTest"/>
         <test name="kbasesearchengine.test.events.handler.ResolvedReferenceTest"/>
         <test name="kbasesearchengine.test.events.handler.SourceDataTest"/>
+        <test name="kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest"/>
         <test name="kbasesearchengine.test.events.storage.MongoDBStatusEventStorageTest"/>
         <test name="kbasesearchengine.test.integration.IndexerIntegrationTest"/>
         <test name="kbasesearchengine.test.integration.IndexerWorkerIntegrationTest"/>
+        <test name="kbasesearchengine.test.integration.SearchAPIIntegrationTest"/>
         <test name="kbasesearchengine.test.main.IndexerCoordinatorTest"/>
         <test name="kbasesearchengine.test.main.IndexerWorkerTest"/>
+        <test name="kbasesearchengine.test.main.NarrativeInfoDecoratorTest"/>
         <test name="kbasesearchengine.test.main.SearchMethodsTest"/>
         <test name="kbasesearchengine.test.main.SignalMonitorTest"/>
         <test name="kbasesearchengine.test.parse.IdMapperTest"/>
         <test name="kbasesearchengine.test.parse.ObjectParserTest"/>
         <test name="kbasesearchengine.test.parse.SubObjectExtractorTest"/>
         <test name="kbasesearchengine.test.search.ElasticIndexingStorageTest"/>
+        <test name="kbasesearchengine.test.search.MatchFilterTest"/>
         <test name="kbasesearchengine.test.search.ObjectDataTest"/>
         <test name="kbasesearchengine.test.system.IndexingRulesTest"/>
         <test name="kbasesearchengine.test.system.ObjectTypeParsingRulesTest"/>
@@ -204,6 +209,30 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
   <taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml"
            classpathref="jacoco.classpath"/>
 
+  <patternset id="exclude-from-coverage">
+    <!-- there must be a better way to ignore the generated code-->
+    <exclude name="kbasesearchengine/AccessFilter.*"/>
+    <exclude name="kbasesearchengine/GetObjectsInput.*"/>
+    <exclude name="kbasesearchengine/GetObjectsOutput.*"/>
+    <exclude name="kbasesearchengine/KBaseSearchEngineClient.*"/>
+    <exclude name="kbasesearchengine/KeyDescription.*"/>
+    <exclude name="kbasesearchengine/ListTypesInput.*"/>
+    <exclude name="kbasesearchengine/ListTypesOutput.*"/>
+    <exclude name="kbasesearchengine/MatchFilter.*"/>
+    <exclude name="kbasesearchengine/MatchValue.*"/>
+    <exclude name="kbasesearchengine/ObjectData.*"/>
+    <exclude name="kbasesearchengine/Pagination.*"/>
+    <exclude name="kbasesearchengine/PostProcessing.*"/>
+    <exclude name="kbasesearchengine/SearchObjectsInput.*"/>
+    <exclude name="kbasesearchengine/SearchObjectsOutput.*"/>
+    <exclude name="kbasesearchengine/SearchTypesInput.*"/>
+    <exclude name="kbasesearchengine/SearchTypesOutput.*"/>
+    <exclude name="kbasesearchengine/SortingRule.*"/>
+    <exclude name="kbasesearchengine/TypeDescriptor.*"/>
+    <exclude name="us/kbase/**"/>
+    <exclude name="**/test/**"/>
+  </patternset>
+	
   <target name="test-report"
           depends="test"
           description="run all tests and generate test report">
@@ -214,12 +243,12 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
       <structure name="KBaseSearchEngine Unit Tests">
         <classfiles>
           <fileset dir="${classes}">
-            <exclude name="**/test/**" />
+            <patternset refid="exclude-from-coverage"/>
           </fileset>
         </classfiles>
         <sourcefiles encoding="UTF-8">
           <fileset dir="${src}">
-            <exclude name="**/test/**" />
+            <patternset refid="exclude-from-coverage"/>
           </fileset>
         </sourcefiles>
       </structure>

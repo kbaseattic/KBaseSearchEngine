@@ -31,8 +31,12 @@ import kbasesearchengine.authorization.AccessGroupCache;
 import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.authorization.WorkspaceAccessGroupProvider;
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
+import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.main.LineLogger;
+import kbasesearchengine.main.SearchInterface;
 import kbasesearchengine.main.SearchMethods;
+import kbasesearchengine.main.NarrativeInfoDecorator;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.system.FileLister;
 import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
@@ -42,7 +46,7 @@ import kbasesearchengine.system.TypeMappingParser;
 import kbasesearchengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.ConfigurableAuthService;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceClient;
 import kbasesearchengine.common.FileUtil;
 //END_HEADER
 
@@ -62,7 +66,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     
     // TODO TEST add integration test that runs server
     
-    private final SearchMethods search;
+    private final SearchInterface search;
     
     private void quietLoggers() {
         ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME))
@@ -146,14 +150,16 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
         
-        search = new SearchMethods(accessGroupProvider, esStorage, ss, admins);
+        search = new NarrativeInfoDecorator(
+                new SearchMethods(accessGroupProvider, esStorage, ss, admins),
+                new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient)));
         //END_CONSTRUCTOR
     }
 
     /**
      * <p>Original spec-file function name: search_types</p>
      * <pre>
-     * Search for number of objects of each type matching constrains.
+     * Search for number of objects of each type matching constraints.
      * </pre>
      * @param   params   instance of type {@link kbasesearchengine.SearchTypesInput SearchTypesInput}
      * @return   instance of type {@link kbasesearchengine.SearchTypesOutput SearchTypesOutput}
@@ -170,7 +176,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     /**
      * <p>Original spec-file function name: search_objects</p>
      * <pre>
-     * Search for objects of particular type matching constrains.
+     * Search for objects of particular type matching constraints.
      * </pre>
      * @param   params   instance of type {@link kbasesearchengine.SearchObjectsInput SearchObjectsInput}
      * @return   instance of type {@link kbasesearchengine.SearchObjectsOutput SearchObjectsOutput}

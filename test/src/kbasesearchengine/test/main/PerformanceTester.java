@@ -49,9 +49,9 @@ import kbasesearchengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
-import workspace.ListObjectsParams;
-import workspace.WorkspaceClient;
-import workspace.WorkspaceIdentity;
+import us.kbase.workspace.ListObjectsParams;
+import us.kbase.workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceIdentity;
 
 /** NOTE: extremely large refactors have occurred since this code was written and it has not been
  * updated. It should be considered to be obsolete until someone takes the time to review and
@@ -265,7 +265,9 @@ public class PerformanceTester {
     
     private int countGenomes() throws Exception {
         return storage.searchIds(ImmutableList.of("Genome"),
-                MatchFilter.create().withLookupInKey("features", new MatchValue(1, null)), null,
+                MatchFilter.getBuilder().withLookupInKey("features", new MatchValue(1, null))
+                        .build(),
+                null,
                 AccessFilter.create().withPublic(true).withAdmin(true), null).total;
     }
     
@@ -275,7 +277,7 @@ public class PerformanceTester {
         String query = "Bacteria";
         int genomes = countGenomes();
         Map<String, Integer> typeAggr = storage.searchTypes(
-                MatchFilter.create(), AccessFilter.create().withPublic(true)
+                MatchFilter.getBuilder().build(), AccessFilter.create().withPublic(true)
                 .withAccessGroups(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         Integer features = typeAggr.get("GenomeFeature");
         Integer contigs = typeAggr.get("AssemblyContig");
@@ -283,7 +285,7 @@ public class PerformanceTester {
                 contigs + "/" + features);
         long t1 = System.currentTimeMillis();
         Map<String, Integer> typeToCount = storage.searchTypes(
-                MatchFilter.create().withFullTextInAll(query), 
+                MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), 
                 AccessFilter.create().withPublic(true)
                 .withAccessGroups(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         t1 = System.currentTimeMillis() - t1;

@@ -5,14 +5,12 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 
-public class Tuple7 <T1, T2, T3, T4, T5, T6, T7> {
+public class Tuple5 <T1, T2, T3, T4, T5> {
     private T1 e1;
     private T2 e2;
     private T3 e3;
     private T4 e4;
     private T5 e5;
-    private T6 e6;
-    private T7 e7;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     public T1 getE1() {
@@ -23,7 +21,7 @@ public class Tuple7 <T1, T2, T3, T4, T5, T6, T7> {
         this.e1 = e1;
     }
 
-    public Tuple7<T1, T2, T3, T4, T5, T6, T7> withE1(T1 e1) {
+    public Tuple5<T1, T2, T3, T4, T5> withE1(T1 e1) {
         this.e1 = e1;
         return this;
     }
@@ -36,7 +34,7 @@ public class Tuple7 <T1, T2, T3, T4, T5, T6, T7> {
         this.e2 = e2;
     }
 
-    public Tuple7<T1, T2, T3, T4, T5, T6, T7> withE2(T2 e2) {
+    public Tuple5<T1, T2, T3, T4, T5> withE2(T2 e2) {
         this.e2 = e2;
         return this;
     }
@@ -49,7 +47,7 @@ public class Tuple7 <T1, T2, T3, T4, T5, T6, T7> {
         this.e3 = e3;
     }
 
-    public Tuple7<T1, T2, T3, T4, T5, T6, T7> withE3(T3 e3) {
+    public Tuple5<T1, T2, T3, T4, T5> withE3(T3 e3) {
         this.e3 = e3;
         return this;
     }
@@ -62,7 +60,7 @@ public class Tuple7 <T1, T2, T3, T4, T5, T6, T7> {
         this.e4 = e4;
     }
 
-    public Tuple7<T1, T2, T3, T4, T5, T6, T7> withE4(T4 e4) {
+    public Tuple5<T1, T2, T3, T4, T5> withE4(T4 e4) {
         this.e4 = e4;
         return this;
     }
@@ -75,40 +73,14 @@ public class Tuple7 <T1, T2, T3, T4, T5, T6, T7> {
         this.e5 = e5;
     }
 
-    public Tuple7<T1, T2, T3, T4, T5, T6, T7> withE5(T5 e5) {
+    public Tuple5<T1, T2, T3, T4, T5> withE5(T5 e5) {
         this.e5 = e5;
-        return this;
-    }
-
-    public T6 getE6() {
-        return e6;
-    }
-
-    public void setE6(T6 e6) {
-        this.e6 = e6;
-    }
-
-    public Tuple7<T1, T2, T3, T4, T5, T6, T7> withE6(T6 e6) {
-        this.e6 = e6;
-        return this;
-    }
-
-    public T7 getE7() {
-        return e7;
-    }
-
-    public void setE7(T7 e7) {
-        this.e7 = e7;
-    }
-
-    public Tuple7<T1, T2, T3, T4, T5, T6, T7> withE7(T7 e7) {
-        this.e7 = e7;
         return this;
     }
 
     @Override
     public String toString() {
-        return "Tuple7 [e1=" + e1 + ", e2=" + e2 + ", e3=" + e3 + ", e4=" + e4 + ", e5=" + e5 + ", e6=" + e6 + ", e7=" + e7 + "]";
+        return "Tuple5 [e1=" + e1 + ", e2=" + e2 + ", e3=" + e3 + ", e4=" + e4 + ", e5=" + e5 + "]";
     }
 
     @JsonAnyGetter
