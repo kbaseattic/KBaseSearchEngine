@@ -194,6 +194,7 @@ public class IndexerIntegrationTest {
     
     private static void installSearchTypes(final Path target) throws IOException {
         installTestFile("EmptyAType.json", target);
+        installTestFile("OneStringThreeKeyNames.yaml", target);
         installTestFile("TwoVersions.yaml", target);
         installTestFile("NoIndexingRules.yaml", target);
     }
@@ -213,10 +214,12 @@ public class IndexerIntegrationTest {
         final WorkspaceClient wc = new WorkspaceClient(wsURL, wsadmintoken);
         wc.setIsInsecureHttpConnectionAllowed(true);
         ownModule(wc, "Empty");
+        ownModule(wc, "OneString");
         ownModule(wc, "TwoVersions");
         ownModule(wc, "TwoVersionsMapped");
         ownModule(wc, "NoIndexingRules");
         loadType(wc, "Empty", "Empty.spec", Arrays.asList("AType"));
+        loadType(wc, "OneString", "OneString.spec", Arrays.asList("AType"));
         loadType(wc, "TwoVersions", "TwoVersions1.spec", Arrays.asList("Type"));
         loadType(wc, "TwoVersions", "TwoVersions2.spec", Collections.emptyList());
         loadType(wc, "TwoVersionsMapped", "TwoVersionsMapped1.spec", Arrays.asList("Type"));
@@ -333,6 +336,44 @@ public class IndexerIntegrationTest {
                 .withKeyProperty("whee", "wugga")
                 .withSourceTag("narrative")
                 .withSourceTag("refdata")
+                .build();
+        
+        assertThat("incorrect indexed object", indexedObj, is(expected));
+        assertWSTimestampCloseToIndexedTimestamp(timestamp, indexedTimestamp);
+    }
+    
+    @Test
+    public void threeKeyNames() throws Exception {
+        // tests that a spec with multiple keynames for the same field works.
+        
+        wsCli1.createWorkspace(new CreateWorkspaceParams().withWorkspace("foo"));
+        wsCli1.saveObjects(new SaveObjectsParams()
+                .withWorkspace("foo")
+                .withObjects(Arrays.asList(new ObjectSaveData()
+                        .withData(new UObject(ImmutableMap.of("foo", "bar")))
+                        .withName("bar")
+                        .withType("OneString.AType-1.0")
+                ))
+        );
+        final long timestamp = getWSTimeStamp("1/1/1");
+        
+        System.out.println("waiting 5s for event to trickle through the system");
+        Thread.sleep(5000); // wait for the indexer & worker to process the event
+        
+        final ObjectData indexedObj =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/1/1"))).get(0);
+        final Instant indexedTimestamp = indexedObj.getTimestamp().get();
+        
+        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:1/1/1"))
+                .withNullableObjectName("bar")
+                .withNullableType(new SearchObjectType("OneString", 1))
+                .withNullableCreator(userToken.getUserName())
+                .withNullableMD5("9bb58f26192e4ba00f01e2e7b136bbd8")
+                .withNullableTimestamp(indexedTimestamp)
+                .withNullableData(ImmutableMap.of("foo", "bar"))
+                .withKeyProperty("foo", "bar")
+                .withKeyProperty("foo1", "bar")
+                .withKeyProperty("foo2", "bar")
                 .build();
         
         assertThat("incorrect indexed object", indexedObj, is(expected));
