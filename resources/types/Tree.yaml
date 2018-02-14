@@ -3,14 +3,12 @@ storage-type: WS
 storage-object-type: KBaseTrees.Tree
 versions:
 - indexing-rules:
-  - path: default_node_labels/{size}
-    keyword-type: integer
-    key-name: nodes
-    ui-name: Nodes
+  - path: default_node_labels
+    transform: values
+    full-text: true
+    key-name: labels
+    ui-name: Labels
   - path: type
     keyword-type: string
     ui-name: Tree Type
-  - path: default_node_labels/*/
-    transform: values
-    full-text: true
-    ui-name: Labels
+  

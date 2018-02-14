@@ -9,5 +9,5 @@ versions:
     key-type: integer
   - path: num_replicates
     key-type: integer
-  - path: domain
+  - path: source
     key-type: string
