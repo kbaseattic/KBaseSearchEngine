@@ -227,8 +227,9 @@ public class WorkspaceEventHandler implements EventHandler {
                                        final long objectId)
             throws IOException, JsonClientException {
 
-        final ObjectSpecification os = new ObjectSpecification().withRef(
-                Long.toString(workspaceID) + "/" + Long.toString(objectId));
+        final ObjectSpecification os = new ObjectSpecification().
+                withWsid(workspaceID).
+                withObjid(objectId);
 
         final List<ObjectSpecification> getInfoInput = new ArrayList<>();
         getInfoInput.add(os);
@@ -678,18 +679,18 @@ public class WorkspaceEventHandler implements EventHandler {
         // brute force get latest state and update event as events
         // can be played out of order in the case of failed events being replayed.
 
-        StatusEventType eventType = ev.getEventType();
-        String accessGrpId = ev.getAccessGroupId().get().toString();
-        String objectId = ev.getAccessGroupObjectId().get();
+        final StatusEventType eventType = ev.getEventType();
+        final String accessGrpId = ev.getAccessGroupId().get().toString();
+        final String objectId = ev.getAccessGroupObjectId().get();
 
         // update a rename event
         if (eventType.equals(StatusEventType.RENAME_ALL_VERSIONS)) {
             // check if name has changed and update state of lastestName
 
             try {
-                GetObjectInfo3Results objInfo =
+                final GetObjectInfo3Results objInfo =
                         getObjectInfo(Long.decode(accessGrpId), Long.decode(objectId));
-                String latestName = objInfo.getInfos().get(0).getE2();
+                final String latestName = objInfo.getInfos().get(0).getE2();
 
                 if( ev.getNewName().equals(latestName) )
                     return ev;
@@ -715,7 +716,7 @@ public class WorkspaceEventHandler implements EventHandler {
                 final String isPublic = getWorkspaceInfo(Long.decode(accessGrpId)).getE7();
 
                 // n = no permissions = public access
-                Boolean latestIsPublic = (isPublic == "n") ? true: false;
+                final Boolean latestIsPublic = (isPublic == "n") ? true: false;
 
                 if (latestIsPublic) {
                     return StatusEvent.
@@ -759,7 +760,7 @@ public class WorkspaceEventHandler implements EventHandler {
                         .asClassInstance(List.class);
 
                 for (List obj: objList) {
-                    long id = (long)((Integer)obj.get(0)).intValue();
+                    final long id = (long)((Integer)obj.get(0)).intValue();
                     if (id  == Long.decode(objectId)) {
                         objidExists = true;
                         break;

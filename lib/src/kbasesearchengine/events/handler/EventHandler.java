@@ -1,6 +1,5 @@
 package kbasesearchengine.events.handler;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
@@ -16,7 +15,6 @@ import kbasesearchengine.events.exceptions.IndexingExceptionUncheckedWrapper;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
 import kbasesearchengine.events.exceptions.RetriableIndexingExceptionUncheckedWrapper;
 import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
-import us.kbase.common.service.JsonClientException;
 
 /** An interface for handling search events. The interface abstracts away event source specific
  * operations.

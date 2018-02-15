@@ -25,8 +25,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import kbasesearchengine.common.FileUtil;
-import kbasesearchengine.events.StatusEventProcessingState;
-import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import org.apache.http.HttpHost;
 import org.slf4j.LoggerFactory;

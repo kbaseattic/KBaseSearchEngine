@@ -662,9 +662,9 @@ public class IndexerWorker implements Stoppable {
         indexingStorage.undeleteAllVersions(guid);
     }
 
-    private void unshare(GUID guid, int accessGroupId) throws IOException {
-        indexingStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
-    }
+//    private void unshare(GUID guid, int accessGroupId) throws IOException {
+//        indexingStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
+//    }
 
     private void deleteAllVersions(final GUID guid) throws IOException {
         indexingStorage.deleteAllVersions(guid);

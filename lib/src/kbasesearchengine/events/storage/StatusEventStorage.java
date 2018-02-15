@@ -94,7 +94,7 @@ public interface StatusEventStorage {
             throws FatalRetriableIndexingException;
 
     /**
-     * Resets all failed events simply by settings their state from FAIL to
+     * Resets all failed events simply by setting their state from FAIL to
      * UNPROC.
      */
     void resetFailedEvents()
