@@ -390,10 +390,15 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     public void resetFailedEvents()
             throws FatalRetriableIndexingException {
 
-        db.getCollection(COL_EVENT).
+        try {
+            db.getCollection(COL_EVENT).
                 updateMany(eq(FLD_STATUS,StatusEventProcessingState.FAIL.toString()),
-                              new Document( "$set",
+                              new Document("$set",
                                   new Document("status",
                                           StatusEventProcessingState.UNPROC.toString())));
+        } catch (MongoException ex) {
+            throw new FatalRetriableIndexingException(
+                    "Failed to reset failed events: " + ex.getMessage(), ex);
+        }
     }
 }
