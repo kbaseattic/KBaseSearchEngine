@@ -866,6 +866,7 @@ public class MongoDBStatusEventStorageTest {
     @Test
     public void resetFailedEvents()
                   throws RetriableIndexingException {
+        when(clock.instant()).thenReturn(Instant.ofEpochMilli(30000L));
         store(10, StatusEventProcessingState.FAIL);
         store(2, StatusEventProcessingState.READY);
         store(2, StatusEventProcessingState.INDX);
