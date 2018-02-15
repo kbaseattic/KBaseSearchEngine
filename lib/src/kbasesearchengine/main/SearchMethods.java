@@ -228,7 +228,7 @@ public class SearchMethods implements SearchInterface {
         addObjectProp(ret, od.getModule().orNull(), "module");
         addObjectProp(ret, od.getMethod().orNull(), "method");
         addObjectProp(ret, od.getModuleVersion().orNull(), "module_ver");
-        addObjectProp(ret, od.getCommitHash().orNull(), "commmit");
+        addObjectProp(ret, od.getCommitHash().orNull(), "commit");
         return ret;
     }
     
