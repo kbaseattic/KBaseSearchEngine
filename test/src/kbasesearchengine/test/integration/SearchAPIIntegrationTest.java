@@ -2,6 +2,7 @@ package kbasesearchengine.test.integration;
 
 import static kbasesearchengine.test.main.NarrativeInfoDecoratorTest.narrInfo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
@@ -482,13 +483,20 @@ public class SearchAPIIntegrationTest {
     @Test
     public void status() throws Exception {
         final Map<String, Object> res = searchCli.status();
+        // since the test working relies on the presence of the git.properties doc, which may
+        // or may not be present given on how the test is run, we just check that something
+        // is returned for the git properties.
+        assertThat("null git url", res.get("git_url"), is(notNullValue()));
+        assertThat("null git commit", res.get("git_commit_hash"), is(notNullValue()));
+        System.out.println(res);
+        
+        res.remove("git_url");
+        res.remove("git_commit_hash");
         
         final Map<String, Object> expected = ImmutableMap.of(
                 "state", "OK",
                 "message", "",
-                "version", "0.1.0-dev1",
-                "git_url", "", // these last two will get filled in later
-                "git_commit_hash", "");
+                "version", "0.1.0-dev1");
         
         assertThat("incorrect status output", res, is(expected));
     }

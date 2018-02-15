@@ -33,6 +33,7 @@ import kbasesearchengine.authorization.WorkspaceAccessGroupProvider;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
+import kbasesearchengine.main.GitInfo;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.SearchInterface;
 import kbasesearchengine.main.SearchMethods;
@@ -65,7 +66,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
 
     //BEGIN_CLASS_HEADER
     
-    // TODO TEST add integration test that runs server
+    private static final GitInfo GIT = new GitInfo();
     
     private final SearchInterface search;
     
@@ -232,11 +233,15 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         returnVal.put("state", "OK");
         returnVal.put("message", "");
         returnVal.put("version", SearchVersion.VERSION);
-        returnVal.put("git_url", gitUrl);
-        returnVal.put("git_commit_hash", gitCommitHash);
+        returnVal.put("git_url", GIT.getGitUrl());
+        returnVal.put("git_commit_hash", GIT.getGitCommit());
         // get eclipse to shut up about the unused constants
         @SuppressWarnings("unused")
         final String v = version;
+        @SuppressWarnings("unused")
+        final String u = gitUrl;
+        @SuppressWarnings("unused")
+        final String c = gitCommitHash;
         //END_STATUS
         return returnVal;
     }

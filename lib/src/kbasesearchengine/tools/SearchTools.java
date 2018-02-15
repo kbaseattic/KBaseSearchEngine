@@ -54,6 +54,7 @@ import kbasesearchengine.events.storage.StorageInitException;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.SearchVersion;
 import kbasesearchengine.main.Stoppable;
+import kbasesearchengine.main.GitInfo;
 import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.main.IndexerWorker;
 import kbasesearchengine.parse.ObjectParseException;
@@ -88,6 +89,7 @@ public class SearchTools {
     
     private static final String NAME = "search_tools";
     private static final int MAX_Q_SIZE = 10000;
+    private static final GitInfo GIT = new GitInfo();
 
     /** Runs the CLI.
      * @param args the program arguments.
@@ -574,8 +576,8 @@ public class SearchTools {
     }
     
     private void printVer() {
-        out.println("Software version " + SearchVersion.VERSION);
-        //TODO CODE print git hash
+        out.println(String.format("Software version %s (commit %s)", SearchVersion.VERSION,
+                GIT.getGitCommit()));
     }
     
     private void printError(final Throwable e, final boolean verbose) {
