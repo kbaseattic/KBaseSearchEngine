@@ -1163,9 +1163,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     private ObjectData buildObjectData(
             final Map<String, Object> obj,
-            final Map<String, List<String>> highlight,
+            Map<String, List<String>> highlight,
             final PostProcessing pp) {
         // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
+
+        //because elastic sometimes returns highlight as null instead of empty.
+        if(highlight == null){
+            highlight = Collections.EMPTY_MAP;
+        }
+
         GUID guid = new GUID((String) obj.get("guid"));
         final ObjectData.Builder b = ObjectData.getBuilder(guid);
         if (pp.objectInfo) {
@@ -1222,7 +1228,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (pp.objectHighlight) {
             for(final String key : highlight.keySet()) {
                 b.withHighlight(getReadableKeyNames(key, guid), highlight.get(key));
-            }
+            }    
         }
 
         return b.build();
