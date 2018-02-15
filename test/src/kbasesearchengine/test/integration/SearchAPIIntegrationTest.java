@@ -445,8 +445,8 @@ public class SearchAPIIntegrationTest {
 
         //highlight in objects
         assertThat("incorrect highlight", actual.getHighlight(), is(expected.getHighlight()));
-
     }
+    
     private SearchObjectsOutput searchObjects(final MatchFilter mf) throws Exception {
         try {
             return searchCli.searchObjects(new SearchObjectsInput()
@@ -479,4 +479,17 @@ public class SearchAPIIntegrationTest {
         assertThat("incorrect timestamp", got.getTimestamp(), is(expected.getTimestamp()));
     }
     
+    @Test
+    public void status() throws Exception {
+        final Map<String, Object> res = searchCli.status();
+        
+        final Map<String, Object> expected = ImmutableMap.of(
+                "state", "OK",
+                "message", "",
+                "version", "0.1.0-dev1",
+                "git_url", "", // these last two will get filled in later
+                "git_commit_hash", "");
+        
+        assertThat("incorrect status output", res, is(expected));
+    }
 }

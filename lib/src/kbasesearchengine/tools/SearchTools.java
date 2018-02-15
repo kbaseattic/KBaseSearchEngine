@@ -52,6 +52,7 @@ import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.events.storage.StorageInitException;
 import kbasesearchengine.main.LineLogger;
+import kbasesearchengine.main.SearchVersion;
 import kbasesearchengine.main.Stoppable;
 import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.main.IndexerWorker;
@@ -141,6 +142,10 @@ public class SearchTools {
             printError(e, a.verbose);
             return 1;
         }
+        if (a.version) {
+            printVer();
+            return 0;
+        }
         if (a.help) {
             usage(jc);
             return 0;
@@ -172,6 +177,7 @@ public class SearchTools {
         boolean noCommand = true; // this seems dumb...
         if (a.specPath != null) {
             try {
+                printVer();
                 new MinimalSpecGenerator().generateMinimalSearchSpec(
                         Paths.get(a.specPath), a.storageType, a.searchType, a.storageObjectType);
                 noCommand = false;
@@ -200,6 +206,7 @@ public class SearchTools {
         }
         if (a.startCoordinator) {
             try {
+                printVer();
                 final IndexerCoordinator coord = runCoordinator(cfg, out, err);
                 noCommand = false; 
                 waitForReturn(coord);
@@ -210,7 +217,7 @@ public class SearchTools {
         }
         if (startWorker) {
             try {
-                
+                printVer();
                 final IndexerWorker work = runWorker(cfg, a.startWorker, out, err);
                 noCommand = false;
                 waitForReturn(work);
@@ -223,6 +230,7 @@ public class SearchTools {
         }
         if (a.genWSEvents) {
             try {
+                printVer();
                 runEventGenerator(
                         out,
                         a.ref,
@@ -565,6 +573,11 @@ public class SearchTools {
         out.println(sb.toString());
     }
     
+    private void printVer() {
+        out.println("Software version " + SearchVersion.VERSION);
+        //TODO CODE print git hash
+    }
+    
     private void printError(final Throwable e, final boolean verbose) {
         printError("Error", e, verbose);
     }
@@ -658,5 +671,7 @@ public class SearchTools {
                 "which to initialize a new search transformation spec. See --spec.")
         private String storageObjectType;
                         
+        @Parameter(names = {"--version"}, description = "Print the software version and exit")
+        private boolean version;
     }
 }
