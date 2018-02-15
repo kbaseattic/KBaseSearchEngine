@@ -29,13 +29,15 @@ public interface StatusEventStorage {
      * @param workerCodes a set of codes for the event that designate the workers that may process
      * the event. If the list is null or empty the event will get the {@link #DEFAULT_WORKER_CODE}
      * code.
+     * @param storedBy an arbitrary string indicating the entity that stored the event.
      * @return a stored status event.
      * @throws FatalRetriableIndexingException if an error occurs while storing the event.
      */
     StoredStatusEvent store(
             StatusEvent newEvent,
             StatusEventProcessingState state,
-            Set<String> workerCodes)
+            Set<String> workerCodes,
+            String storedBy)
             throws FatalRetriableIndexingException;
 
     /** Get an event by its ID.

@@ -40,6 +40,8 @@ public class GetObjectsInput {
      *     ('key_props' field in ObjectData structure),
      * skip_data - do not include raw data for object ('data' and 
      *     'parent_data' fields in ObjectData structure),
+     * include - include highlights of fields that
+     *      matched query,
      * ids_only - shortcut to mark all three skips as true.
      * </pre>
      * 
@@ -74,6 +76,8 @@ public class GetObjectsInput {
      *     ('key_props' field in ObjectData structure),
      * skip_data - do not include raw data for object ('data' and 
      *     'parent_data' fields in ObjectData structure),
+     * include - include highlights of fields that
+     *      matched query,
      * ids_only - shortcut to mark all three skips as true.
      * </pre>
      * 
@@ -94,6 +98,8 @@ public class GetObjectsInput {
      *     ('key_props' field in ObjectData structure),
      * skip_data - do not include raw data for object ('data' and 
      *     'parent_data' fields in ObjectData structure),
+     * include - include highlights of fields that
+     *      matched query,
      * ids_only - shortcut to mark all three skips as true.
      * </pre>
      * 

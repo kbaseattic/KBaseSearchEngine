@@ -183,11 +183,14 @@ public class SearchMethods implements SearchInterface {
             ret.objectInfo = true;
             ret.objectData = true;
             ret.objectKeys = true;
+            ret.objectHighlight = false;
         } else {
             boolean idsOnly = toBool(pp.getIdsOnly());
             ret.objectInfo = !(toBool(pp.getSkipInfo()) || idsOnly);
             ret.objectData = !(toBool(pp.getSkipData()) || idsOnly);
             ret.objectKeys = !(toBool(pp.getSkipKeys()) || idsOnly);
+            //default to false currently b/c of search tags. TODO: add search tags to black list?
+            ret.objectHighlight = toBool(pp.getIncludeHighlight()) && !idsOnly;
         }
         return ret;
     }
@@ -211,6 +214,8 @@ public class SearchMethods implements SearchInterface {
         }
         ret.withObjectName(od.getObjectName().orNull());
         ret.withKeyProps(od.getKeyProperties());
+        ret.withHighlight(od.getHighlight());
+
         addObjectProp(ret, od.getCreator().orNull(), "creator");
         addObjectProp(ret, od.getCopier().orNull(), "copied");
         addObjectProp(ret, od.getModule().orNull(), "module");

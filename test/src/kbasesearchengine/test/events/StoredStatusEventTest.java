@@ -32,10 +32,10 @@ public class StoredStatusEventTest {
         final StatusEvent se = StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build();
         
-        final StoredStatusEvent sei = StoredStatusEvent.getBuilder(se, new StatusEventID("foo"),
+        final StoredStatusEvent sei = StoredStatusEvent.getBuilder(se, new StatusEventID("bar"),
                 StatusEventProcessingState.UNPROC)
                 .build();
-        assertThat("incorrect id", sei.getId(), is(new StatusEventID("foo")));
+        assertThat("incorrect id", sei.getId(), is(new StatusEventID("bar")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build()));
         assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));
@@ -43,19 +43,34 @@ public class StoredStatusEventTest {
         assertThat("incorrect update time", sei.getUpdateTime(), is(Optional.absent()));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
         assertThat("incorrect tags", sei.getWorkerCodes(), is(Collections.emptySet()));
+        assertThat("incorrect storedby", sei.getStoredBy(), is(Optional.absent()));
+        assertThat("incorrect storeTime", sei.getStoreTime(), is(Optional.absent()));
+        assertThat("incorrect toString", sei.toString(), is(
+                "StoredStatusEvent [event=StatusEvent [time=1970-01-01T00:00:10Z, " +
+                "eventType=DELETE_ALL_VERSIONS, storageCode=foo, " +
+                "storageObjectType=Optional.absent(), accessGroupID=Optional.absent(), " +
+                "objectID=Optional.absent(), version=Optional.absent(), " +
+                "isPublic=Optional.absent(), newName=Optional.absent()], " +
+                "id=StatusEventID [id=bar], state=UNPROC, updateTime=Optional.absent(), " +
+                "updater=Optional.absent(), workerCodes=[], storedBy=Optional.absent(), " +
+                "storeTime=Optional.absent()]"));
+        
     }
 
     
     @Test 
-    public void buildMinimalNullUpdate() {
+    public void buildMinimalNulls() {
         final StatusEvent se = StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build();
         
-        final StoredStatusEvent sei = StoredStatusEvent.getBuilder(se, new StatusEventID("foo"),
+        final StoredStatusEvent sei = StoredStatusEvent.getBuilder(se, new StatusEventID("bar"),
                 StatusEventProcessingState.UNPROC)
                 .withNullableUpdate(null, null)
+                .withNullableStoredBy(null)
+                .withNullableStoredBy("   \t  \n ")
+                .withNullableStoreTime(null)
                 .build();
-        assertThat("incorrect id", sei.getId(), is(new StatusEventID("foo")));
+        assertThat("incorrect id", sei.getId(), is(new StatusEventID("bar")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build()));
         assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));
@@ -63,6 +78,17 @@ public class StoredStatusEventTest {
         assertThat("incorrect update time", sei.getUpdateTime(), is(Optional.absent()));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
         assertThat("incorrect tags", sei.getWorkerCodes(), is(Collections.emptySet()));
+        assertThat("incorrect storedby", sei.getStoredBy(), is(Optional.absent()));
+        assertThat("incorrect storeTime", sei.getStoreTime(), is(Optional.absent()));
+        assertThat("incorrect toString", sei.toString(), is(
+                "StoredStatusEvent [event=StatusEvent [time=1970-01-01T00:00:10Z, " +
+                "eventType=DELETE_ALL_VERSIONS, storageCode=foo, " +
+                "storageObjectType=Optional.absent(), accessGroupID=Optional.absent(), " +
+                "objectID=Optional.absent(), version=Optional.absent(), " +
+                "isPublic=Optional.absent(), newName=Optional.absent()], " +
+                "id=StatusEventID [id=bar], state=UNPROC, updateTime=Optional.absent(), " +
+                "updater=Optional.absent(), workerCodes=[], storedBy=Optional.absent(), " +
+                "storeTime=Optional.absent()]"));
     }
     
     @Test 
@@ -75,19 +101,31 @@ public class StoredStatusEventTest {
         final StatusEvent se = StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build();
         
-        final StoredStatusEvent sei = StoredStatusEvent.getBuilder(se, new StatusEventID("foo"),
+        final StoredStatusEvent sei = StoredStatusEvent.getBuilder(se, new StatusEventID("bar"),
                 StatusEventProcessingState.UNPROC)
-                .withNullableUpdate(Instant.ofEpochMilli(10000), updater)
+                .withNullableUpdate(Instant.ofEpochMilli(20000), updater)
                 .build();
-        assertThat("incorrect id", sei.getId(), is(new StatusEventID("foo")));
+        assertThat("incorrect id", sei.getId(), is(new StatusEventID("bar")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build()));
         assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));
         assertThat("incorrect updater", sei.getUpdater(), is(Optional.absent()));
         assertThat("incorrect update time", sei.getUpdateTime(),
-                is(Optional.of(Instant.ofEpochMilli(10000))));
+                is(Optional.of(Instant.ofEpochMilli(20000))));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
         assertThat("incorrect tags", sei.getWorkerCodes(), is(Collections.emptySet()));
+        assertThat("incorrect storedby", sei.getStoredBy(), is(Optional.absent()));
+        assertThat("incorrect storeTime", sei.getStoreTime(), is(Optional.absent()));
+        assertThat("incorrect toString", sei.toString(), is(
+                "StoredStatusEvent [event=StatusEvent [time=1970-01-01T00:00:10Z, " +
+                "eventType=DELETE_ALL_VERSIONS, storageCode=foo, " +
+                "storageObjectType=Optional.absent(), accessGroupID=Optional.absent(), " +
+                "objectID=Optional.absent(), version=Optional.absent(), " +
+                "isPublic=Optional.absent(), newName=Optional.absent()], " +
+                "id=StatusEventID [id=bar], state=UNPROC, " +
+                "updateTime=Optional.of(1970-01-01T00:00:20Z), " +
+                "updater=Optional.absent(), workerCodes=[], storedBy=Optional.absent(), " +
+                "storeTime=Optional.absent()]"));
     }
     
     @Test
@@ -95,12 +133,12 @@ public class StoredStatusEventTest {
         final StatusEvent se = StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build();
         
-        final StoredStatusEvent sei = StoredStatusEvent.getBuilder(se, new StatusEventID("foo"),
+        final StoredStatusEvent sei = StoredStatusEvent.getBuilder(se, new StatusEventID("baz"),
                 StatusEventProcessingState.UNPROC)
                 .withNullableUpdate(Instant.ofEpochMilli(10000), "foo")
                 .withNullableUpdate(Instant.ofEpochMilli(20000), "bar")
                 .build();
-        assertThat("incorrect id", sei.getId(), is(new StatusEventID("foo")));
+        assertThat("incorrect id", sei.getId(), is(new StatusEventID("baz")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build()));
         assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));
@@ -109,6 +147,18 @@ public class StoredStatusEventTest {
                 is(Optional.of(Instant.ofEpochMilli(20000))));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
         assertThat("incorrect tags", sei.getWorkerCodes(), is(Collections.emptySet()));
+        assertThat("incorrect storedby", sei.getStoredBy(), is(Optional.absent()));
+        assertThat("incorrect storeTime", sei.getStoreTime(), is(Optional.absent()));
+        assertThat("incorrect toString", sei.toString(), is(
+                "StoredStatusEvent [event=StatusEvent [time=1970-01-01T00:00:10Z, " +
+                "eventType=DELETE_ALL_VERSIONS, storageCode=foo, " +
+                "storageObjectType=Optional.absent(), accessGroupID=Optional.absent(), " +
+                "objectID=Optional.absent(), version=Optional.absent(), " +
+                "isPublic=Optional.absent(), newName=Optional.absent()], " +
+                "id=StatusEventID [id=baz], state=UNPROC, " +
+                "updateTime=Optional.of(1970-01-01T00:00:20Z), " +
+                "updater=Optional.of(bar), workerCodes=[], storedBy=Optional.absent(), " +
+                "storeTime=Optional.absent()]"));
     }
     
     @Test
@@ -116,12 +166,12 @@ public class StoredStatusEventTest {
         final StatusEvent se = StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build();
         
-        final StoredStatusEvent sei = StoredStatusEvent.getBuilder(se, new StatusEventID("foo"),
+        final StoredStatusEvent sei = StoredStatusEvent.getBuilder(se, new StatusEventID("baz"),
                 StatusEventProcessingState.UNPROC)
                 .withNullableUpdate(Instant.ofEpochMilli(10000), "foo")
                 .withNullableUpdate(Instant.ofEpochMilli(20000), null)
                 .build();
-        assertThat("incorrect id", sei.getId(), is(new StatusEventID("foo")));
+        assertThat("incorrect id", sei.getId(), is(new StatusEventID("baz")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build()));
         assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));
@@ -130,6 +180,18 @@ public class StoredStatusEventTest {
                 is(Optional.of(Instant.ofEpochMilli(20000))));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
         assertThat("incorrect tags", sei.getWorkerCodes(), is(Collections.emptySet()));
+        assertThat("incorrect storedby", sei.getStoredBy(), is(Optional.absent()));
+        assertThat("incorrect storeTime", sei.getStoreTime(), is(Optional.absent()));
+        assertThat("incorrect toString", sei.toString(), is(
+                "StoredStatusEvent [event=StatusEvent [time=1970-01-01T00:00:10Z, " +
+                "eventType=DELETE_ALL_VERSIONS, storageCode=foo, " +
+                "storageObjectType=Optional.absent(), accessGroupID=Optional.absent(), " +
+                "objectID=Optional.absent(), version=Optional.absent(), " +
+                "isPublic=Optional.absent(), newName=Optional.absent()], " +
+                "id=StatusEventID [id=baz], state=UNPROC, " +
+                "updateTime=Optional.of(1970-01-01T00:00:20Z), " +
+                "updater=Optional.absent(), workerCodes=[], storedBy=Optional.absent(), " +
+                "storeTime=Optional.absent()]"));
     }
     
     @Test
@@ -142,6 +204,8 @@ public class StoredStatusEventTest {
                 .withNullableUpdate(Instant.ofEpochMilli(20000), "foo")
                 .withWorkerCode("foo")
                 .withWorkerCode("bar")
+                .withNullableStoredBy("my man")
+                .withNullableStoreTime(Instant.ofEpochMilli(30000))
                 .build();
         assertThat("incorrect id", sei.getId(), is(new StatusEventID("foo")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
@@ -152,6 +216,19 @@ public class StoredStatusEventTest {
                 is(Optional.of(Instant.ofEpochMilli(20000))));
         assertThat("incorrect is parent", sei.isParentId(), is(false));
         assertThat("incorrect tags", sei.getWorkerCodes(), is(set("foo", "bar")));
+        assertThat("incorrect storedby", sei.getStoredBy(), is(Optional.of("my man")));
+        assertThat("incorrect storeTime", sei.getStoreTime(),
+                is(Optional.of(Instant.ofEpochMilli(30000))));
+        assertThat("incorrect toString", sei.toString(), is(
+                "StoredStatusEvent [event=StatusEvent [time=1970-01-01T00:00:10Z, " +
+                "eventType=DELETE_ALL_VERSIONS, storageCode=foo, " +
+                "storageObjectType=Optional.absent(), accessGroupID=Optional.absent(), " +
+                "objectID=Optional.absent(), version=Optional.absent(), " +
+                "isPublic=Optional.absent(), newName=Optional.absent()], " +
+                "id=StatusEventID [id=foo], state=UNPROC, " +
+                "updateTime=Optional.of(1970-01-01T00:00:20Z), updater=Optional.of(foo), " +
+                "workerCodes=[bar, foo], storedBy=Optional.of(my man), " +
+                "storeTime=Optional.of(1970-01-01T00:00:30Z)]"));
     }
     
     @Test

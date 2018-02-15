@@ -307,6 +307,7 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_info has a value which is a KBaseSearchEngine.boolean
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
+	include_highlight has a value which is a KBaseSearchEngine.boolean
 	data_includes has a value which is a reference to a list where each element is a string
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
@@ -324,6 +325,7 @@ ObjectData is a reference to a hash where the following keys are defined:
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
 	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+	highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
 GUID is a string
 access_group_id is an int
 narrative_info is a reference to a list containing 5 items:
@@ -386,6 +388,7 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_info has a value which is a KBaseSearchEngine.boolean
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
+	include_highlight has a value which is a KBaseSearchEngine.boolean
 	data_includes has a value which is a reference to a list where each element is a string
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
@@ -403,6 +406,7 @@ ObjectData is a reference to a hash where the following keys are defined:
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
 	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+	highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
 GUID is a string
 access_group_id is an int
 narrative_info is a reference to a list containing 5 items:
@@ -494,6 +498,7 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_info has a value which is a KBaseSearchEngine.boolean
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
+	include_highlight has a value which is a KBaseSearchEngine.boolean
 	data_includes has a value which is a reference to a list where each element is a string
 boolean is an int
 GetObjectsOutput is a reference to a hash where the following keys are defined:
@@ -509,6 +514,7 @@ ObjectData is a reference to a hash where the following keys are defined:
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
 	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+	highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
 access_group_id is an int
 narrative_info is a reference to a list containing 5 items:
 	0: (narrative_name) a string
@@ -535,6 +541,7 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_info has a value which is a KBaseSearchEngine.boolean
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
+	include_highlight has a value which is a KBaseSearchEngine.boolean
 	data_includes has a value which is a reference to a list where each element is a string
 boolean is an int
 GetObjectsOutput is a reference to a hash where the following keys are defined:
@@ -550,6 +557,7 @@ ObjectData is a reference to a hash where the following keys are defined:
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
 	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+	highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
 access_group_id is an int
 narrative_info is a reference to a list containing 5 items:
 	0: (narrative_name) a string
@@ -1217,6 +1225,8 @@ skip_keys - do not include keyword values for object
     ('key_props' field in ObjectData structure),
 skip_data - do not include raw data for object ('data' and 
     'parent_data' fields in ObjectData structure),
+include - include highlights of fields that
+     matched query,
 ids_only - shortcut to mark all three skips as true.
 
 
@@ -1230,6 +1240,7 @@ ids_only has a value which is a KBaseSearchEngine.boolean
 skip_info has a value which is a KBaseSearchEngine.boolean
 skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
+include_highlight has a value which is a KBaseSearchEngine.boolean
 data_includes has a value which is a reference to a list where each element is a string
 
 </pre>
@@ -1243,6 +1254,7 @@ ids_only has a value which is a KBaseSearchEngine.boolean
 skip_info has a value which is a KBaseSearchEngine.boolean
 skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
+include_highlight has a value which is a KBaseSearchEngine.boolean
 data_includes has a value which is a reference to a list where each element is a string
 
 
@@ -1322,6 +1334,10 @@ mapping<string, string> object_props - general properties for all objects. This 
     incarnation of the object, and the module and method used to create the object and
     their version and version control commit hash. Not all keys may be present; if not
     their values were not available in the search data.
+mapping<string, list<string>> highlight - They keys are the field names and the list 
+    contains the sections in each field that matched the search query. Fields with no
+    hits will not be available. Short fields that matched are shown in their entirety.
+    Longer fields are shown as snippets precedded or followed by "...".
 
 
 =item Definition
@@ -1338,6 +1354,7 @@ parent_data has a value which is an UnspecifiedObject, which can hold any non-nu
 data has a value which is an UnspecifiedObject, which can hold any non-null object
 key_props has a value which is a reference to a hash where the key is a string and the value is a string
 object_props has a value which is a reference to a hash where the key is a string and the value is a string
+highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
 
 </pre>
 
@@ -1354,6 +1371,7 @@ parent_data has a value which is an UnspecifiedObject, which can hold any non-nu
 data has a value which is an UnspecifiedObject, which can hold any non-null object
 key_props has a value which is a reference to a hash where the key is a string and the value is a string
 object_props has a value which is a reference to a hash where the key is a string and the value is a string
+highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
 
 
 =end text
