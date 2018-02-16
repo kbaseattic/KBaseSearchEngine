@@ -697,7 +697,7 @@ public class WorkspaceEventHandler implements EventHandler {
 
         Map<String, Object> command;
 
-        // check if workspace is permanently deleted
+        // check if workspace is permanently deleted or marked as deleted
         try {
             final Tuple9 tuple = getWorkspaceInfo(wsid);
         } catch(IOException ex) {
@@ -713,7 +713,7 @@ public class WorkspaceEventHandler implements EventHandler {
             }
         }
 
-        // check if object is permanently deleted
+        // check if object is permanently deleted or marked as deleted
         command = new HashMap<>();
         command.put("command", "listObjects");
         command.put("params", new ListObjectsParams().
@@ -748,36 +748,6 @@ public class WorkspaceEventHandler implements EventHandler {
             // but IndexingException has a protected constructor
             throw new RetriableIndexingException(ex.getMessage());
         }
-
-        // check if object exists but is marked as deleted
-        command = new HashMap<>();
-        command.put("command", "listObjects");
-        command.put("params", new ListObjectsParams().
-                                      withShowOnlyDeleted((long)wsid).
-                                      withIds(Arrays.asList((long)wsid)).
-                                      withMinObjectID(objid-1).
-                                      withMaxObjectID(objid+1));
-        final List<Tuple11> deletedObjList;
-        try {
-            deletedObjList = ws.getClient().administer(new UObject(command))
-                                                    .asClassInstance(List.class);
-
-            for (Tuple11 obj: deletedObjList) {
-                long deletedObjid = Long.valueOf(obj.getE1().toString()).longValue();
-                if (deletedObjid  == objid) {
-                        return StatusEvent.
-                            getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(),
-                                    StatusEventType.DELETE_ALL_VERSIONS).
-                            withNullableAccessGroupID(wsid).
-                            withNullableObjectID(Long.toString(objid)).build();
-            }
-            }
-        } catch (IOException e) {
-            throw new RetriableIndexingException(e.getMessage());
-        } catch (JsonClientException e) {
-            throw new RetriableIndexingException(e.getMessage());
-        }
-
 
         // check if name has changed and update state of lastestName
         ObjectSpecification os = new ObjectSpecification().withRef(
