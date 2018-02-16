@@ -539,12 +539,12 @@ public class SearchAPIIntegrationTest {
                     // https://github.com/kbase/auth2/blob/73160676e4b64c9316c1c93023e20514519744d7/src/us/kbase/auth2/service/api/Users.java#L68
                     ": 30010 Illegal user name: Illegal user name [Baduser]: " +
                     "30010 Illegal user name: Illegal character in user name Baduser: B"));
-            //they really want you do know the user name is illegal
+            //they really want you to know the user name is illegal
         }
     }
     
     @Test
-    public void authClientFailContstruct() throws Exception {
+    public void authClientFailConstruct() throws Exception {
         try {
             new TemporaryAuth2Client(null);
             fail("expected exception");

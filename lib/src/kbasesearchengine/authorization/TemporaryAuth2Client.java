@@ -204,7 +204,7 @@ public class TemporaryAuth2Client {
         
         /** Get the call id returned with the exception, if available. The auth service
          * always returns a call id.
-         * @return
+         * @return the call id.
          */
         public Optional<String> getCallID() {
             return Optional.of(callID);
