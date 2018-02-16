@@ -155,8 +155,13 @@ public class SearchMethods implements SearchInterface {
             return null;
         }
         SortingRule ret = new SortingRule();
-
-        ret.withKeyName(sr.keyName);
+        if (sr.isTimestamp) {
+            ret.withIsTimestamp(1L);
+        } else if (sr.isWorkspaceId) {
+            ret.withIsWorkspaceId(1L);
+        } else {
+            ret.withKeyName(sr.keyName);
+        }
 
         ret.withAscending(sr.ascending ? 1L : 0L);
         return ret;
