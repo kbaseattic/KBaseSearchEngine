@@ -25,7 +25,6 @@ import kbasesearchengine.search.FoundHits;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
-import kbasesearchengine.search.SortingRule;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.SearchObjectsInput;
 import kbasesearchengine.SearchObjectsOutput;
@@ -141,14 +140,11 @@ public class SearchMethodsTest {
         
         // what's returned doesn't matter, we're just checking that indexing storage gets the
         // right message
-        
-        final SortingRule sr = new SortingRule();
-        sr.isTimestamp = true;
-        sr.ascending = true;
+
         
         final FoundHits fh = new FoundHits();
         fh.pagination = null;
-        fh.sortingRules = Arrays.asList(sr);
+        fh.sortingRules = Collections.emptyList();
         fh.total = 1;
         fh.guids = set();
         fh.objects = Collections.emptyList();
@@ -308,9 +304,6 @@ public class SearchMethodsTest {
         final ArrayList<ObjectData> objs2 = new ArrayList<>();
         objs2.add(obj2);
 
-        final SortingRule sr = new SortingRule();
-        sr.isTimestamp = true;
-        sr.ascending = true;
 
         final kbasesearchengine.search.MatchFilter filter = kbasesearchengine.search.MatchFilter.getBuilder()
                 .withNullableFullTextInAll("test")
@@ -334,14 +327,14 @@ public class SearchMethodsTest {
 
         final FoundHits fh1 = new FoundHits();
         fh1.pagination = null;
-        fh1.sortingRules =  Arrays.asList(sr);
+        fh1.sortingRules =  Collections.emptyList();
         fh1.total = 1;
         fh1.guids = set(new GUID("ws:1/2/3"));
         fh1.objects = objs;
 
         final FoundHits fh2 = new FoundHits();
         fh2.pagination = null;
-        fh2.sortingRules =  Arrays.asList(sr);
+        fh2.sortingRules =  Collections.emptyList();
         fh2.total = 1;
         fh2.guids = set(new GUID("ws:4/5/6"));
         fh2.objects = objs2;

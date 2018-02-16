@@ -291,10 +291,8 @@ MatchValue is a reference to a hash where the following keys are defined:
 	max_double has a value which is a float
 boolean is an int
 SortingRule is a reference to a hash where the following keys are defined:
-	is_timestamp has a value which is a KBaseSearchEngine.boolean
-	is_object_name has a value which is a KBaseSearchEngine.boolean
 	key_name has a value which is a string
-	descending has a value which is a KBaseSearchEngine.boolean
+	ascending has a value which is a KBaseSearchEngine.boolean
 AccessFilter is a reference to a hash where the following keys are defined:
 	with_private has a value which is a KBaseSearchEngine.boolean
 	with_public has a value which is a KBaseSearchEngine.boolean
@@ -372,10 +370,8 @@ MatchValue is a reference to a hash where the following keys are defined:
 	max_double has a value which is a float
 boolean is an int
 SortingRule is a reference to a hash where the following keys are defined:
-	is_timestamp has a value which is a KBaseSearchEngine.boolean
-	is_object_name has a value which is a KBaseSearchEngine.boolean
 	key_name has a value which is a string
-	descending has a value which is a KBaseSearchEngine.boolean
+	ascending has a value which is a KBaseSearchEngine.boolean
 AccessFilter is a reference to a hash where the following keys are defined:
 	with_private has a value which is a KBaseSearchEngine.boolean
 	with_public has a value which is a KBaseSearchEngine.boolean
@@ -1148,10 +1144,8 @@ if used for sorting. Default order is ascending (if
 
 <pre>
 a reference to a hash where the following keys are defined:
-is_timestamp has a value which is a KBaseSearchEngine.boolean
-is_object_name has a value which is a KBaseSearchEngine.boolean
 key_name has a value which is a string
-descending has a value which is a KBaseSearchEngine.boolean
+ascending has a value which is a KBaseSearchEngine.boolean
 
 </pre>
 
@@ -1160,10 +1154,8 @@ descending has a value which is a KBaseSearchEngine.boolean
 =begin text
 
 a reference to a hash where the following keys are defined:
-is_timestamp has a value which is a KBaseSearchEngine.boolean
-is_object_name has a value which is a KBaseSearchEngine.boolean
 key_name has a value which is a string
-descending has a value which is a KBaseSearchEngine.boolean
+ascending has a value which is a KBaseSearchEngine.boolean
 
 
 =end text
@@ -1225,9 +1217,10 @@ skip_keys - do not include keyword values for object
     ('key_props' field in ObjectData structure),
 skip_data - do not include raw data for object ('data' and 
     'parent_data' fields in ObjectData structure),
-include - include highlights of fields that
+include_highlight - include highlights of fields that
      matched query,
-ids_only - shortcut to mark all three skips as true.
+ids_only - shortcut to mark all three skips as true and 
+     include_highlight as false.
 
 
 =item Definition
@@ -1327,17 +1320,16 @@ post_processing has a value which is a KBaseSearchEngine.PostProcessing
 
 Properties of found object including metadata, raw data and
     keywords.
-    
+mapping<string, list<string>> highlight - The keys are the field names and the list 
+    contains the sections in each field that matched the search query. Fields with no
+    hits will not be available. Short fields that matched are shown in their entirety.
+    Longer fields are shown as snippets preceded or followed by "...".     
 mapping<string, string> object_props - general properties for all objects. This mapping
     contains the keys 'creator', 'copied', 'module', 'method', 'module_ver', and 'commit' -
     respectively the user that originally created the object, the user that copied this
     incarnation of the object, and the module and method used to create the object and
     their version and version control commit hash. Not all keys may be present; if not
     their values were not available in the search data.
-mapping<string, list<string>> highlight - They keys are the field names and the list 
-    contains the sections in each field that matched the search query. Fields with no
-    hits will not be available. Short fields that matched are shown in their entirety.
-    Longer fields are shown as snippets precedded or followed by "...".
 
 
 =item Definition
@@ -1388,7 +1380,7 @@ highlight has a value which is a reference to a hash where the key is a string a
 
 =item Description
 
-An data source access group ID (for instance, the integer ID of a workspace).
+A data source access group ID (for instance, the integer ID of a workspace).
 
 
 =item Definition

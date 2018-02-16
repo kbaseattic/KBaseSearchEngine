@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.ImmutableBiMap;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -110,7 +111,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private static final String R_SEARCH_OBJ_TYPE = "type";
     private static final String R_SEARCH_OBJ_TYPE_VER = "type_ver";
 
-    private static final ImmutableMap<String, String> readableNames = ImmutableMap.<String,String>builder()
+    private static final ImmutableBiMap<String, String> readableNames = ImmutableBiMap.<String,String>builder()
             .put(OBJ_GUID, R_OBJ_GUID)
             .put(OBJ_TIMESTAMP, R_OBJ_TIMESTAMP)
             .put(OBJ_PROV_COMMIT_HASH, R_OBJ_PROV_COMMIT_HASH)
@@ -1525,7 +1526,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Pagination pagination = new Pagination(pgStart, pgCount);
         if (sorting == null || sorting.isEmpty()) {
             SortingRule sr = new SortingRule();
-            sr.isTimestamp = true;
+            sr.keyName = R_OBJ_TIMESTAMP;
             sr.ascending = true;
             sorting = Arrays.asList(sr);
         }
@@ -1555,10 +1556,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         List<Object> sort = new ArrayList<>();
         doc.put("sort", sort);
         for (SortingRule sr : sorting) {
-            String keyProp = sr.isTimestamp ? OBJ_TIMESTAMP : (sr.isObjectName ? OBJ_NAME : 
-                getKeyProperty(sr.keyName));
-
-            Map<String, Object> sortOrderWrapper = ImmutableMap.of(keyProp,
+            String keyProp;
+            if (readableNames.containsValue(sr.keyName)){
+                keyProp = sr.keyName;
+            }else{
+                keyProp = getKeyProperty(sr.keyName);
+            }
+            Map<String, Object> sortOrderWrapper = ImmutableMap.of(readableNames.inverse().get(keyProp),
                                                       ImmutableMap.of("order",
                                                                       sr.ascending ? "asc" : "desc"));
             sort.add(sortOrderWrapper);
