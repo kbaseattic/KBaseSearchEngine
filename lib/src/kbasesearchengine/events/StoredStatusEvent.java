@@ -22,6 +22,8 @@ public class StoredStatusEvent implements StatusEventWithId {
     private final Optional<Instant> updateTime;
     private final Optional<String> updater;
     private final Set<String> workerCodes;
+    private final Optional<String> storedBy;
+    private final Optional<Instant> storeTime;
     
     private StoredStatusEvent(
             final StatusEvent event,
@@ -29,13 +31,17 @@ public class StoredStatusEvent implements StatusEventWithId {
             final StatusEventProcessingState state,
             final Optional<Instant> updateTime,
             final Optional<String> updater,
-            final Set<String> workerCodes) {
+            final Set<String> workerCodes,
+            final Optional<String> storedBy,
+            final Optional<Instant> storeTime) {
         this.event = event;
         this.id = id;
         this.state = state;
         this.updateTime = updateTime;
         this.updater = updater;
         this.workerCodes = Collections.unmodifiableSet(workerCodes);
+        this.storedBy = storedBy;
+        this.storeTime = storeTime;
     }
 
     @Override
@@ -81,6 +87,44 @@ public class StoredStatusEvent implements StatusEventWithId {
         return workerCodes;
     }
     
+    /** Get an arbitrary string identifying the entity that stored this event, if available.
+     * @return an identifier for the entity that stored the event.
+     */
+    public Optional<String> getStoredBy() {
+        return storedBy;
+    }
+    
+    /** Get the time that this event was stored in the storage system. Not all event sources
+     * set the store time, although doing so is best practice.
+     * @return the time the event was stored.
+     */
+    public Optional<Instant> getStoreTime() {
+        return storeTime;
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder builder2 = new StringBuilder();
+        builder2.append("StoredStatusEvent [event=");
+        builder2.append(event);
+        builder2.append(", id=");
+        builder2.append(id);
+        builder2.append(", state=");
+        builder2.append(state);
+        builder2.append(", updateTime=");
+        builder2.append(updateTime);
+        builder2.append(", updater=");
+        builder2.append(updater);
+        builder2.append(", workerCodes=");
+        builder2.append(workerCodes);
+        builder2.append(", storedBy=");
+        builder2.append(storedBy);
+        builder2.append(", storeTime=");
+        builder2.append(storeTime);
+        builder2.append("]");
+        return builder2.toString();
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -88,10 +132,15 @@ public class StoredStatusEvent implements StatusEventWithId {
         result = prime * result + ((event == null) ? 0 : event.hashCode());
         result = prime * result + ((id == null) ? 0 : id.hashCode());
         result = prime * result + ((state == null) ? 0 : state.hashCode());
-        result = prime * result + ((workerCodes == null) ? 0 : workerCodes.hashCode());
+        result = prime * result
+                + ((storeTime == null) ? 0 : storeTime.hashCode());
+        result = prime * result
+                + ((storedBy == null) ? 0 : storedBy.hashCode());
         result = prime * result
                 + ((updateTime == null) ? 0 : updateTime.hashCode());
         result = prime * result + ((updater == null) ? 0 : updater.hashCode());
+        result = prime * result
+                + ((workerCodes == null) ? 0 : workerCodes.hashCode());
         return result;
     }
 
@@ -124,11 +173,18 @@ public class StoredStatusEvent implements StatusEventWithId {
         if (state != other.state) {
             return false;
         }
-        if (workerCodes == null) {
-            if (other.workerCodes != null) {
+        if (storeTime == null) {
+            if (other.storeTime != null) {
                 return false;
             }
-        } else if (!workerCodes.equals(other.workerCodes)) {
+        } else if (!storeTime.equals(other.storeTime)) {
+            return false;
+        }
+        if (storedBy == null) {
+            if (other.storedBy != null) {
+                return false;
+            }
+        } else if (!storedBy.equals(other.storedBy)) {
             return false;
         }
         if (updateTime == null) {
@@ -143,6 +199,13 @@ public class StoredStatusEvent implements StatusEventWithId {
                 return false;
             }
         } else if (!updater.equals(other.updater)) {
+            return false;
+        }
+        if (workerCodes == null) {
+            if (other.workerCodes != null) {
+                return false;
+            }
+        } else if (!workerCodes.equals(other.workerCodes)) {
             return false;
         }
         return true;
@@ -173,6 +236,8 @@ public class StoredStatusEvent implements StatusEventWithId {
         private Optional<Instant> updateTime = Optional.absent();
         private Optional<String> updater = Optional.absent();
         private Set<String> workerCodes = new HashSet<>();
+        private Optional<String> storedBy = Optional.absent();
+        private Optional<Instant> storeTime = Optional.absent();
         
         private Builder(
                 final StatusEvent event,
@@ -214,11 +279,33 @@ public class StoredStatusEvent implements StatusEventWithId {
             return this;
         }
         
+        /** Add a string indicating the entity that stored this event in the storage system.
+         * Nulls and whitespace only strings are ignored.
+         * @param storedBy the entity that stored this event.
+         * @return this builder.
+         */
+        public Builder withNullableStoredBy(final String storedBy) {
+            if (!Utils.isNullOrEmpty(storedBy)) {
+                this.storedBy = Optional.of(storedBy);
+            }
+            return this;
+        }
+        
+        /** Add a timestamp for when the event was stored.
+         * @param storeTime a timestamp.
+         * @return this builder.
+         */
+        public Builder withNullableStoreTime(final Instant storeTime) {
+            this.storeTime = Optional.fromNullable(storeTime);
+            return this;
+        }
+        
         /** Build the {@link StoredStatusEvent}.
          * @return the event.
          */
         public StoredStatusEvent build() {
-            return new StoredStatusEvent(event, id, state, updateTime, updater, workerCodes);
+            return new StoredStatusEvent(event, id, state, updateTime, updater, workerCodes,
+                    storedBy, storeTime);
         }
     }
 }

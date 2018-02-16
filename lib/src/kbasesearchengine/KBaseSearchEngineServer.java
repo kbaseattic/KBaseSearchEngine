@@ -36,6 +36,7 @@ import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.SearchInterface;
 import kbasesearchengine.main.SearchMethods;
+import kbasesearchengine.main.SearchVersion;
 import kbasesearchengine.main.NarrativeInfoDecorator;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.system.FileLister;
@@ -233,9 +234,12 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         returnVal = new LinkedHashMap<String, Object>();
         returnVal.put("state", "OK");
         returnVal.put("message", "");
-        returnVal.put("version", version);
+        returnVal.put("version", SearchVersion.VERSION);
         returnVal.put("git_url", gitUrl);
         returnVal.put("git_commit_hash", gitCommitHash);
+        // get eclipse to shut up about the unused constants
+        @SuppressWarnings("unused")
+        final String v = version;
         //END_STATUS
         return returnVal;
     }

@@ -697,23 +697,27 @@ public class AccessGroupEventQueueTest {
         final StoredStatusEvent objproc1 = ready(
                 "4", Instant.ofEpochMilli(10000), "foo1", StatusEventType.DELETE_ALL_VERSIONS);
         
-        final IllegalArgumentException expAccess = new IllegalArgumentException(
-                "More than one access level event is not allowed");
-        failConstruct(expAccess, agready, agproc);
-        failConstruct(expAccess, agproc, agready);
-        failConstruct(expAccess, agready, agready);
-        failConstruct(expAccess, agproc, agproc);
+        final String expAG =
+                "More than one access level event per access group ID is not allowed.\n";
+        failConstruct(new IllegalArgumentException(expAG +
+                "Existing: " + agready + "\nNew event: " + agproc), agready, agproc);
+        failConstruct(new IllegalArgumentException(expAG +
+                "Existing: " + agproc + "\nNew event: " + agready), agproc, agready);
+        failConstruct(new IllegalArgumentException(expAG +
+                "Existing: " + agready + "\nNew event: " + agready), agready, agready);
+        failConstruct(new IllegalArgumentException(expAG +
+                "Existing: " + agproc + "\nNew event: " + agproc), agproc, agproc);
         
-        final IllegalArgumentException expAccessPlus = new IllegalArgumentException(
-                "If an access group level event is in the ready or processing state, no " +
-                "other events may be submitted");
-        failConstruct(expAccessPlus, agready, objready1);
-        failConstruct(expAccessPlus, agready, objproc1);
-        failConstruct(expAccessPlus, agproc, objready1);
-        failConstruct(expAccessPlus, agproc, objproc1);
+        final String expAGPlus = "If an access group level event is in the ready or processing " +
+                "state, no other events may be submitted.\nAccess group event: ";
+        failConstruct(new IllegalArgumentException(expAGPlus + agready), agready, objready1);
+        failConstruct(new IllegalArgumentException(expAGPlus + agready), agready, objproc1);
+        failConstruct(new IllegalArgumentException(expAGPlus + agproc), agproc, objready1);
+        failConstruct(new IllegalArgumentException(expAGPlus + agproc), agproc, objproc1);
         
         final IllegalArgumentException expObj2 = new IllegalArgumentException(
-                "Already contains an event for object ID foo1");
+                "Already contains an event for object ID foo1.\n" + 
+                "Existing event: " + objready1 + "\nNew event: " + objproc1);
         failConstruct(expObj2, objready1, objproc1);
     }
     
