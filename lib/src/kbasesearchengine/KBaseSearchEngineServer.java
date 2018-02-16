@@ -141,7 +141,9 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
         final AccessGroupProvider accessGroupProvider = new AccessGroupCache(
                 new WorkspaceAccessGroupProvider(wsClient), 30, 50000 * 1000);
-        
+
+        // TODO *******  Creating NarrativeInfoCache
+
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
                 FileUtil.getOrCreateSubDir(tempDir, "esbulk"));
         if (esUser != null) {
@@ -152,7 +154,8 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         
         search = new NarrativeInfoDecorator(
                 new SearchMethods(accessGroupProvider, esStorage, ss, admins),
-                new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient)));
+                new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient)),
+                authURL, tokenStr);
         //END_CONSTRUCTOR
     }
 
