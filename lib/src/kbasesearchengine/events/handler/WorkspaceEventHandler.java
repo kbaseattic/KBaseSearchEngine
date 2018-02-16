@@ -222,7 +222,7 @@ public class WorkspaceEventHandler implements EventHandler {
      * @throws IOException if an IO exception occurs.
      * @throws JsonClientException if an error retrieving the data occurs.
      */
-    public GetObjectInfo3Results getObjectInfo(
+    private GetObjectInfo3Results getObjectInfo(
                                        final long workspaceID,
                                        final long objectId)
             throws IOException, JsonClientException {
