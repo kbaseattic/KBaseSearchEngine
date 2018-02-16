@@ -222,6 +222,7 @@ public class SearchMethods implements SearchInterface {
         final Optional<SearchObjectType> type = od.getType();
         if (type.isPresent()) {
             addObjectProp(ret, type.get().getType(), "type");
+            addObjectProp(ret, Integer.toString(type.get().getVersion()), "type_ver");
         }
         addObjectProp(ret, od.getCreator().orNull(), "creator");
         addObjectProp(ret, od.getCopier().orNull(), "copied");
