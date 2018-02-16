@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import kbasesearchengine.AccessFilter;
 import kbasesearchengine.GetObjectsInput;
@@ -36,6 +37,7 @@ import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.MatchFilter.Builder;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.TypeStorage;
 import us.kbase.common.service.UObject;
 
@@ -212,16 +214,21 @@ public class SearchMethods implements SearchInterface {
         if (od.getParentData().isPresent()) {
             ret.withParentData(new UObject(od.getParentData().get()));
         }
+
         ret.withObjectName(od.getObjectName().orNull());
         ret.withKeyProps(od.getKeyProperties());
         ret.withHighlight(od.getHighlight());
 
+        SearchObjectType type = od.getType().orNull();
+        if(type != null){
+            addObjectProp(ret, type.getType(), "type");
+        }
         addObjectProp(ret, od.getCreator().orNull(), "creator");
         addObjectProp(ret, od.getCopier().orNull(), "copied");
         addObjectProp(ret, od.getModule().orNull(), "module");
         addObjectProp(ret, od.getMethod().orNull(), "method");
         addObjectProp(ret, od.getModuleVersion().orNull(), "module_ver");
-        addObjectProp(ret, od.getCommitHash().orNull(), "commmit");
+        addObjectProp(ret, od.getCommitHash().orNull(), "commit");
         return ret;
     }
     
