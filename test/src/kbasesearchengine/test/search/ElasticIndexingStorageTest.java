@@ -23,6 +23,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableList;
+import kbasesearchengine.search.SortingRule;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.junit.After;
@@ -1154,4 +1155,50 @@ public class ElasticIndexingStorageTest {
             assertThat("Incorrect highlighting", res, is(result2));
         }
     }
+    @Test
+    public void sortingResults() throws Exception {
+        //type is SimpleNumber
+        GUID guid1 = new GUID("WS:11/1/2");
+        GUID guid2 = new GUID("WS:12/2/2");
+        GUID guid3 = new GUID("WS:13/3/2");
+        prepareTestLookupInKey(guid1, guid2, guid3);
+        //type is Simple
+        GUID guid4 = new GUID("WS:14/1/2");
+        GUID guid5 = new GUID("WS:15/2/2");
+        GUID guid6 = new GUID("WS:16/3/2");
+        prepareTestMultiwordSearch(guid5, guid6, guid4);
+        List<String> empty = new ArrayList<>();
+
+        Set<GUID> expected = new HashSet<>();
+        expected.add(guid4);
+        expected.add(guid5);
+        expected.add(guid6);
+        expected.add(guid1);
+        expected.add(guid2);
+        expected.add(guid3);
+
+        PostProcessing pp = new PostProcessing();
+        pp.objectData = true;
+        pp.objectInfo = true;
+
+        MatchFilter filter = MatchFilter.getBuilder().build();
+        AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
+
+        List<kbasesearchengine.search.SortingRule> sorting = new ArrayList<>();
+        SortingRule sr1 = new SortingRule();
+        sr1.isWorkspaceId = true;
+        sr1.ascending = true;
+
+        SortingRule sr2 = new SortingRule();
+        sr2.keyName = "type";
+        sr2.ascending = true;
+
+        sorting.add(sr1);
+        sorting.add(sr2);
+
+        FoundHits found = indexStorage.searchObjects(empty,filter,sorting,accessFilter,null, pp);
+        assertThat("fds", found.guids.equals(expected), is(true));
+
+    }
+
 }

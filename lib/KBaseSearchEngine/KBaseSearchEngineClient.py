@@ -162,25 +162,27 @@ class KBaseSearchEngine(object):
            Double, parameter "source_tags" of list of String, parameter
            "source_tags_blacklist" of type "boolean" (A boolean. 0 = false,
            other = true.), parameter "sorting_rules" of list of type
-           "SortingRule" (Rule for sorting found results. 'key_name',
-           'is_timestamp' and 'is_object_name' are alternative way of
-           defining what property if used for sorting. Default order is
-           ascending (if 'descending' field is not set).) -> structure:
-           parameter "key_name" of String, parameter "ascending" of type
-           "boolean" (A boolean. 0 = false, other = true.), parameter
-           "access_filter" of type "AccessFilter" (Optional rules of access
-           constraints. - with_private - include data found in workspaces not
-           marked as public, default value is true, - with_public - include
-           data found in public workspaces, default value is false, -
-           with_all_history - include all versions (last one and all old
-           versions) of objects matching constrains, default value is false.)
-           -> structure: parameter "with_private" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "with_public" of
+           "SortingRule" (Rule for sorting found results. 'key_name' is the
+           keys that are sorted by. 'isTimestamp' and 'isWorkspaceId' are
+           shortcuts. Default order is ascending if 'ascending' field is not
+           set).) -> structure: parameter "isTimestamp" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "isWorkspaceId" of
            type "boolean" (A boolean. 0 = false, other = true.), parameter
-           "with_all_history" of type "boolean" (A boolean. 0 = false, other
-           = true.), parameter "pagination" of type "Pagination" (Pagination
-           rules. Default values are: start = 0, count = 50.) -> structure:
-           parameter "start" of Long, parameter "count" of Long, parameter
+           "key_name" of String, parameter "ascending" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "access_filter" of
+           type "AccessFilter" (Optional rules of access constraints. -
+           with_private - include data found in workspaces not marked as
+           public, default value is true, - with_public - include data found
+           in public workspaces, default value is false, - with_all_history -
+           include all versions (last one and all old versions) of objects
+           matching constrains, default value is false.) -> structure:
+           parameter "with_private" of type "boolean" (A boolean. 0 = false,
+           other = true.), parameter "with_public" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "with_all_history"
+           of type "boolean" (A boolean. 0 = false, other = true.), parameter
+           "pagination" of type "Pagination" (Pagination rules. Default
+           values are: start = 0, count = 50.) -> structure: parameter
+           "start" of Long, parameter "count" of Long, parameter
            "post_processing" of type "PostProcessing" (Rules for what to
            return about found objects. skip_info - do not include brief info
            for object ('guid, 'parent_guid', 'object_name' and 'timestamp'
@@ -209,27 +211,29 @@ class KBaseSearchEngine(object):
            "Pagination" (Pagination rules. Default values are: start = 0,
            count = 50.) -> structure: parameter "start" of Long, parameter
            "count" of Long, parameter "sorting_rules" of list of type
-           "SortingRule" (Rule for sorting found results. 'key_name',
-           'is_timestamp' and 'is_object_name' are alternative way of
-           defining what property if used for sorting. Default order is
-           ascending (if 'descending' field is not set).) -> structure:
-           parameter "key_name" of String, parameter "ascending" of type
-           "boolean" (A boolean. 0 = false, other = true.), parameter
-           "objects" of list of type "ObjectData" (Properties of found object
-           including metadata, raw data and keywords. mapping<string,
-           list<string>> highlight - The keys are the field names and the
-           list contains the sections in each field that matched the search
-           query. Fields with no hits will not be available. Short fields
-           that matched are shown in their entirety. Longer fields are shown
-           as snippets preceded or followed by "...". mapping<string, string>
-           object_props - general properties for all objects. This mapping
-           contains the keys 'creator', 'copied', 'module', 'method',
-           'module_ver', and 'commit' - respectively the user that originally
-           created the object, the user that copied this incarnation of the
-           object, and the module and method used to create the object and
-           their version and version control commit hash. Not all keys may be
-           present; if not their values were not available in the search
-           data.) -> structure: parameter "guid" of type "GUID" (Global user
+           "SortingRule" (Rule for sorting found results. 'key_name' is the
+           keys that are sorted by. 'isTimestamp' and 'isWorkspaceId' are
+           shortcuts. Default order is ascending if 'ascending' field is not
+           set).) -> structure: parameter "isTimestamp" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "isWorkspaceId" of
+           type "boolean" (A boolean. 0 = false, other = true.), parameter
+           "key_name" of String, parameter "ascending" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "objects" of list of
+           type "ObjectData" (Properties of found object including metadata,
+           raw data and keywords. mapping<string, list<string>> highlight -
+           The keys are the field names and the list contains the sections in
+           each field that matched the search query. Fields with no hits will
+           not be available. Short fields that matched are shown in their
+           entirety. Longer fields are shown as snippets preceded or followed
+           by "...". mapping<string, string> object_props - general
+           properties for all objects. This mapping contains the keys
+           'creator', 'copied', 'module', 'method', 'module_ver', and
+           'commit' - respectively the user that originally created the
+           object, the user that copied this incarnation of the object, and
+           the module and method used to create the object and their version
+           and version control commit hash. Not all keys may be present; if
+           not their values were not available in the search data.) ->
+           structure: parameter "guid" of type "GUID" (Global user
            identificator. It has structure like this:
            <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            parameter "parent_guid" of type "GUID" (Global user identificator.

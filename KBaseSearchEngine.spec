@@ -102,10 +102,13 @@ module KBaseSearchEngine {
 
     /*
       Rule for sorting found results. 'key_name' is the keys that are sorted by. 
+      'isTimestamp' and 'isWorkspaceId' are shortcuts.
       Default order is ascending if 'ascending' field is not set).
     */
     typedef structure {
-                string key_name;
+        boolean isTimestamp;
+        boolean isWorkspaceId;
+        string key_name;
         boolean ascending;
     } SortingRule;
 

@@ -1524,12 +1524,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
         int pgStart = pg == null || pg.start == null ? 0 : pg.start;
         int pgCount = pg == null || pg.count == null ? 50 : pg.count;
         Pagination pagination = new Pagination(pgStart, pgCount);
+
         if (sorting == null || sorting.isEmpty()) {
             SortingRule sr = new SortingRule();
             sr.keyName = R_OBJ_TIMESTAMP;
             sr.ascending = true;
             sorting = Arrays.asList(sr);
         }
+
         FoundHits ret = new FoundHits();
         ret.pagination = pagination;
         ret.sortingRules = sorting;
@@ -1553,21 +1555,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (!loadObjects) {
             doc.put("_source", Arrays.asList("guid"));
         }
-        List<Object> sort = new ArrayList<>();
-        doc.put("sort", sort);
-        for (SortingRule sr : sorting) {
-            String keyProp;
-            if (readableNames.containsValue(sr.keyName)){
-                keyProp = sr.keyName;
-            }else{
-                keyProp = getKeyProperty(sr.keyName);
-            }
-            Map<String, Object> sortOrderWrapper = ImmutableMap.of(readableNames.inverse().get(keyProp),
-                                                      ImmutableMap.of("order",
-                                                                      sr.ascending ? "asc" : "desc"));
-            sort.add(sortOrderWrapper);
-        }
-
+        doc.put("sort", createSortingQuery(sorting));
         validateObjectTypes(objectTypes);
 
         String indexName;
@@ -1617,6 +1605,26 @@ public class ElasticIndexingStorage implements IndexingStorage {
             }
         }
         return ret;
+    }
+
+    private List<Object> createSortingQuery(List<SortingRule> sorting) {
+
+        List<Object> sort = new ArrayList<>();
+        for (SortingRule sr : sorting) {
+            String keyProp;
+            if(sr.isWorkspaceId){
+                keyProp = R_OBJ_ACCESS_GROUP_ID;
+            }else if (readableNames.containsValue(sr.keyName)){
+                keyProp = sr.keyName;
+            }else{
+                keyProp = getKeyProperty(sr.keyName);
+            }
+            Map<String, Object> sortOrderWrapper = ImmutableMap.of(readableNames.inverse().get(keyProp),
+                    ImmutableMap.of("order",
+                            sr.ascending ? "asc" : "desc"));
+            sort.add(sortOrderWrapper);
+        }
+        return sort;
     }
 
     private String getKeyProperty(final String keyName) {

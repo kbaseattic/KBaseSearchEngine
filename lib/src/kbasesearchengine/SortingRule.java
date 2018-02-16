@@ -14,26 +14,61 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 /**
  * <p>Original spec-file type: SortingRule</p>
  * <pre>
- * Rule for sorting found results. 'key_name', 'is_timestamp' and
- * 'is_object_name' are alternative way of defining what property
- * if used for sorting. Default order is ascending (if 
- * 'descending' field is not set).
+ * Rule for sorting found results. 'key_name' is the keys that are sorted by. 
+ * 'isTimestamp' and 'isWorkspaceId' are shortcuts.
+ * Default order is ascending if 'ascending' field is not set).
  * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
+    "isTimestamp",
+    "isWorkspaceId",
     "key_name",
     "ascending"
 })
 public class SortingRule {
 
+    @JsonProperty("isTimestamp")
+    private Long isTimestamp;
+    @JsonProperty("isWorkspaceId")
+    private Long isWorkspaceId;
     @JsonProperty("key_name")
     private String keyName;
     @JsonProperty("ascending")
     private Long ascending;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+
+    @JsonProperty("isTimestamp")
+    public Long getIsTimestamp() {
+        return isTimestamp;
+    }
+
+    @JsonProperty("isTimestamp")
+    public void setIsTimestamp(Long isTimestamp) {
+        this.isTimestamp = isTimestamp;
+    }
+
+    public SortingRule withIsTimestamp(Long isTimestamp) {
+        this.isTimestamp = isTimestamp;
+        return this;
+    }
+
+    @JsonProperty("isWorkspaceId")
+    public Long getIsWorkspaceId() {
+        return isWorkspaceId;
+    }
+
+    @JsonProperty("isWorkspaceId")
+    public void setIsWorkspaceId(Long isWorkspaceId) {
+        this.isWorkspaceId = isWorkspaceId;
+    }
+
+    public SortingRule withIsWorkspaceId(Long isWorkspaceId) {
+        this.isWorkspaceId = isWorkspaceId;
+        return this;
+    }
 
     @JsonProperty("key_name")
     public String getKeyName() {
@@ -77,7 +112,7 @@ public class SortingRule {
 
     @Override
     public String toString() {
-        return ((((((("SortingRule"+" [keyName=")+ keyName)+", ascending=")+ ascending)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((("SortingRule"+" [isTimestamp=")+ isTimestamp)+", isWorkspaceId=")+ isWorkspaceId)+", keyName=")+ keyName)+", ascending=")+ ascending)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
