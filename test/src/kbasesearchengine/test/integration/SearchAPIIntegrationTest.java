@@ -300,7 +300,7 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
-                .withObjectProps(ImmutableMap.of("creator", "creator"))
+                .withObjectProps(ImmutableMap.of("creator", "creator" , "type", "SourceTags"))
                 .withObjectName("objname1")
                 .withTimestamp(10000L);
         
@@ -327,7 +327,7 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony")))
                 .withGuid("WS:1/2/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony"))
-                .withObjectProps(ImmutableMap.of("creator", "creator"))
+                .withObjectProps(ImmutableMap.of("creator", "creator" , "type", "SourceTags"))
                 .withObjectName("objname2")
                 .withTimestamp(10000L);
         
@@ -335,14 +335,14 @@ public class SearchAPIIntegrationTest {
                 .withSourceTags(Arrays.asList("narrative")));
         
         assertThat("incorrect object count", res1.getObjects().size(), is(1));
-        compare(res1.getObjects().get(0), expected2);
+        TestCommon.compare(res1.getObjects().get(0), expected2);
         
         final SearchObjectsOutput res2 = searchObjects(new MatchFilter()
                 .withSourceTags(Arrays.asList("narrative"))
                 .withSourceTagsBlacklist(1L));
         
         assertThat("incorrect object count", res2.getObjects().size(), is(1));
-        compare(res2.getObjects().get(0), expected1);
+        TestCommon.compare(res2.getObjects().get(0), expected1);
     }
     
     @Test
@@ -376,14 +376,14 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
-                .withObjectProps(ImmutableMap.of("creator", "creator"))
+                .withObjectProps(ImmutableMap.of("creator", "creator", "type", "Deco"))
                 .withObjectName("objname1")
                 .withTimestamp(10000L);
         
         final SearchObjectsOutput res = searchObjects(new MatchFilter());
         
         assertThat("incorrect object count", res.getObjects().size(), is(1));
-        compare(res.getObjects().get(0), expected1);
+        TestCommon.compare(res.getObjects().get(0), expected1);
         
         final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
                 1L, narrInfo("Kevin", 6L, wsdate, userToken.getUserName(), null));
@@ -427,7 +427,7 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
-                .withObjectProps(ImmutableMap.of("creator", "creator"))
+                .withObjectProps(ImmutableMap.of("creator", "creator", "type", "SourceTags"))
                 .withObjectName("objname1")
                 .withHighlight(highlight)
                 .withTimestamp(10000L);
@@ -441,7 +441,7 @@ public class SearchAPIIntegrationTest {
         SearchObjectsOutput res = searchCli.searchObjects(params);
 
         final ObjectData actual = res.getObjects().get(0);
-        compare(actual, expected);
+        TestCommon.compare(actual, expected);
 
         //highlight in objects
         assertThat("incorrect highlight", actual.getHighlight(), is(expected.getHighlight()));
@@ -456,11 +456,12 @@ public class SearchAPIIntegrationTest {
         SearchObjectsOutput res2 = searchCli.searchObjects(params2);
 
         final ObjectData actual2 = res2.getObjects().get(0);
-        compare(actual2, expected);
+        TestCommon.compare(actual2, expected);
         assertThat("highlight should return empty map", actual2.getHighlight(), is(Collections.emptyMap()));
 
 
     }
+    
     private SearchObjectsOutput searchObjects(final MatchFilter mf) throws Exception {
         try {
             return searchCli.searchObjects(new SearchObjectsInput()
@@ -472,25 +473,19 @@ public class SearchAPIIntegrationTest {
         }
     }
 
-    private void compare(final ObjectData got, final ObjectData expected) {
-        // no hashcode and equals compiled into ObjectData
-        // or UObject for that matter
-        assertThat("incorrect add props", got.getAdditionalProperties(),
-                is(Collections.emptyMap()));
-        assertThat("incorrect data", got.getData().asClassInstance(Map.class),
-                is(expected.getData().asClassInstance(Map.class)));
-        assertThat("incorrect guid", got.getGuid(), is(expected.getGuid()));
-        assertThat("incorrect key props", got.getKeyProps(), is(expected.getKeyProps()));
-        assertThat("incorrect obj name", got.getObjectName(), is(expected.getObjectName()));
-        assertThat("incorrect obj props", got.getObjectProps(), is(expected.getObjectProps()));
-        if (got.getParentData() == null) {
-            assertThat("incorrect parent data", got.getParentData(), is(expected.getParentData()));
-        } else {
-            assertThat("incorrect parent data", got.getParentData().asClassInstance(Map.class),
-                    is(expected.getParentData().asClassInstance(Map.class)));
-        }
-        assertThat("incorrect parent guid", got.getParentGuid(), is(expected.getParentData()));
-        assertThat("incorrect timestamp", got.getTimestamp(), is(expected.getTimestamp()));
-    }
+
     
+    @Test
+    public void status() throws Exception {
+        final Map<String, Object> res = searchCli.status();
+        
+        final Map<String, Object> expected = ImmutableMap.of(
+                "state", "OK",
+                "message", "",
+                "version", "0.1.0-dev1",
+                "git_url", "", // these last two will get filled in later
+                "git_commit_hash", "");
+        
+        assertThat("incorrect status output", res, is(expected));
+    }
 }

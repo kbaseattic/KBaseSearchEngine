@@ -1,22 +1,13 @@
 package kbasesearchengine.test.main;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static kbasesearchengine.test.common.TestCommon.set;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.collect.ImmutableMap;
+import kbasesearchengine.AccessFilter;
 import kbasesearchengine.MatchFilter;
-import org.junit.Test;
-
+import kbasesearchengine.Pagination;
+import kbasesearchengine.SearchObjectsInput;
+import kbasesearchengine.SearchObjectsOutput;
+import kbasesearchengine.SearchTypesInput;
+import kbasesearchengine.SearchTypesOutput;
 import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.main.SearchInterface;
@@ -26,14 +17,26 @@ import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
 import kbasesearchengine.search.SortingRule;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.TypeStorage;
-import kbasesearchengine.SearchObjectsInput;
-import kbasesearchengine.SearchObjectsOutput;
-import kbasesearchengine.SearchTypesInput;
-import kbasesearchengine.SearchTypesOutput;
-import kbasesearchengine.AccessFilter;
-import kbasesearchengine.Pagination;
 import kbasesearchengine.test.common.TestCommon;
+import org.junit.Test;
+import us.kbase.common.service.UObject;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static kbasesearchengine.test.common.TestCommon.set;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SearchMethodsTest {
 
@@ -43,8 +46,6 @@ public class SearchMethodsTest {
         PP_DEFAULT.objectInfo = true;
         PP_DEFAULT.objectKeys = true;
     }
-
-
 
     //TODO TEST add a whole lot more tests. Most of SearchMethods is not covered.
     
@@ -375,7 +376,7 @@ public class SearchMethodsTest {
                 .withSkipInfo(1L)
                 .withSkipData(1L);
 
-        final SearchObjectsOutput res1 = searchObjects(idx, option1);
+        final SearchObjectsOutput res1 = searchObjects(idx, option1, "test");
 
         final Map<String, List<String>> highlightRes = new HashMap<>();
         highlightRes.put("field", highlight);
@@ -389,7 +390,7 @@ public class SearchMethodsTest {
                 .withIncludeHighlight(1L)
                 .withIdsOnly(1L);
 
-        final SearchObjectsOutput res2 = searchObjects(idx, option2);
+        final SearchObjectsOutput res2 = searchObjects(idx, option2, "test");
 
         assertThat("did not find objects", res2.getObjects().size() == 1, is(true));
         assertThat("did not get right highlight",
@@ -400,7 +401,7 @@ public class SearchMethodsTest {
         kbasesearchengine.PostProcessing option3 = new kbasesearchengine.PostProcessing()
                 .withIdsOnly(1L);
 
-        final SearchObjectsOutput res3 = searchObjects(idx, option3);
+        final SearchObjectsOutput res3 = searchObjects(idx, option3, "test");
 
         assertThat("did not find objects", res3.getObjects().size() == 1, is(true));
         assertThat("did not get right highlight",
@@ -411,7 +412,8 @@ public class SearchMethodsTest {
 
     private SearchObjectsOutput searchObjects(
             final IndexingStorage idx,
-            final kbasesearchengine.PostProcessing pp)
+            final kbasesearchengine.PostProcessing pp,
+            final String query)
             throws Exception {
         final AccessGroupProvider agp = mock(AccessGroupProvider.class);
         final TypeStorage ts = mock(TypeStorage.class);
@@ -420,9 +422,200 @@ public class SearchMethodsTest {
 
         final SearchObjectsInput input = new SearchObjectsInput()
                 .withPostProcessing(pp)
-                .withMatchFilter(new MatchFilter().withFullTextInAll("test"))
+                .withMatchFilter(new MatchFilter().withFullTextInAll(query))
                 .withAccessFilter(new AccessFilter());
 
         return  sm.searchObjects(input, "auser");
     }
+
+    @Test
+    public void ObjectDataConversion() throws Exception {
+        final  IndexingStorage idx = mock(IndexingStorage.class);
+
+        GUID guid = new GUID("ws:1/2/3");
+        Instant time = Instant.now();
+
+        //highlight already tested seperately. TODO add parent GUID && object
+        //fields that are not added to kbasesearchengine.ObjectData are omitted for sanity
+        final kbasesearchengine.search.ObjectData obj = kbasesearchengine.search.ObjectData
+                .getBuilder(guid)
+                .withNullableTimestamp(time)
+                .withNullableData("obj")
+                .withNullableObjectName("objname")
+                .withKeyProperty("key", "prop")
+                .withNullableType(new SearchObjectType("Blah" , 1))
+                .withNullableCreator("user")
+                .withNullableCopier("user2")
+                .withNullableModule("module")
+                .withNullableMethod("method")
+                .withNullableModuleVersion("2")
+                .withNullableCommitHash("commitHash")
+                .build();
+
+        final ArrayList<ObjectData> objs = new ArrayList<>();
+        objs.add(obj);
+
+        final SortingRule sr = new SortingRule();
+        sr.isTimestamp = true;
+        sr.ascending = true;
+
+        final kbasesearchengine.search.MatchFilter filter = kbasesearchengine.search.MatchFilter.getBuilder()
+                .withNullableFullTextInAll("objname")
+                .build();
+
+        final PostProcessing pp1 = new PostProcessing();
+        pp1.objectHighlight = false;
+        pp1.objectData = true;
+        pp1.objectKeys = true;
+        pp1.objectInfo = true;
+        pp1.objectDataIncludes=null;
+
+
+        final FoundHits fh1 = new FoundHits();
+        fh1.pagination = null;
+        fh1.sortingRules =  Arrays.asList(sr);
+        fh1.total = 1;
+        fh1.guids = set(new GUID("ws:1/2/3"));
+        fh1.objects = objs;
+
+        //result with highlight
+        when(idx.searchObjects(
+                new ArrayList<>(),
+                filter,
+                null, // sort
+                new kbasesearchengine.search.AccessFilter().withAccessGroups(set()),
+                null, // pagination
+                pp1))
+                .thenReturn(fh1);
+
+        //tests
+        //with highlight on only
+        kbasesearchengine.PostProcessing option1 = new kbasesearchengine.PostProcessing()
+                .withIncludeHighlight(0L)
+                .withSkipKeys(0L)
+                .withSkipInfo(0L)
+                .withSkipData(0L);
+
+        final SearchObjectsOutput res1 = searchObjects(idx, option1, "objname");
+
+        assertThat("did not find objects", res1.getObjects().size() == 1, is(true));
+        kbasesearchengine.ObjectData actual = res1.getObjects().get(0);
+        assertThat("incorrect timestamp", actual.getTimestamp(), is(time.toEpochMilli()));
+        Map <String, String> expectedKeyProps = new HashMap<>();
+        expectedKeyProps.put("key", "prop");
+        assertThat("incorrect key props", actual.getKeyProps(), is(expectedKeyProps));
+
+        assertThat("incorrect data", actual.getData().toString(),
+                is(new UObject("obj").toString()));
+        assertThat("incorrect guid", actual.getGuid(), is(guid.toString()));
+
+        assertThat("incorrect obj name", actual.getObjectName(), is("objname"));
+
+        //additional properties are: type, creator, copied, module, method, module_ver, commit
+        final ImmutableMap<String,String> expected = ImmutableMap.<String,String>builder()
+                .put("type", "Blah")
+                .put("creator", "user")
+                .put("copied", "user2")
+                .put("module", "module")
+                .put("method", "method")
+                .put("module_ver", "2")
+                .put("commit", "commitHash")
+                .build();
+        checkObjectProps(expected, actual);
+    }
+
+    @Test
+    public void ObjectDataConversionNullable() throws Exception {
+        final  IndexingStorage idx = mock(IndexingStorage.class);
+        GUID guid = new GUID("ws:1/2/3");
+
+        final kbasesearchengine.search.ObjectData obj = kbasesearchengine.search.ObjectData
+                .getBuilder(guid)
+                .withNullableTimestamp(null)
+                .withNullableData(null)
+                .withNullableObjectName(null)
+                .withNullableType(null)
+                .withNullableCreator(null)
+                .withNullableCopier(null)
+                .withNullableModule(null)
+                .withNullableMethod(null)
+                .withNullableModuleVersion(null)
+                .withNullableCommitHash(null)
+                .build();
+
+        final ArrayList<ObjectData> objs = new ArrayList<>();
+        objs.add(obj);
+
+        final SortingRule sr = new SortingRule();
+        sr.isTimestamp = true;
+        sr.ascending = true;
+
+        final kbasesearchengine.search.MatchFilter filter = kbasesearchengine.search.MatchFilter.getBuilder()
+                .withNullableFullTextInAll("ws:1/2/3")
+                .build();
+
+        final PostProcessing pp1 = new PostProcessing();
+        pp1.objectHighlight = false;
+        pp1.objectData = true;
+        pp1.objectKeys = false;
+        pp1.objectInfo = true;
+        pp1.objectDataIncludes=null;
+
+
+        final FoundHits fh1 = new FoundHits();
+        fh1.pagination = null;
+        fh1.sortingRules =  Arrays.asList(sr);
+        fh1.total = 1;
+        fh1.guids = set(new GUID("ws:1/2/3"));
+        fh1.objects = objs;
+
+        //result with highlight
+        when(idx.searchObjects(
+                new ArrayList<>(),
+                filter,
+                null, // sort
+                new kbasesearchengine.search.AccessFilter().withAccessGroups(set()),
+                null, // pagination
+                pp1))
+                .thenReturn(fh1);
+
+        //tests
+        //with highlight on only
+        kbasesearchengine.PostProcessing option1 = new kbasesearchengine.PostProcessing()
+                .withIncludeHighlight(0L)
+                .withSkipKeys(1L)
+                .withSkipInfo(0L)
+                .withSkipData(0L);
+
+        final SearchObjectsOutput res1 = searchObjects(idx, option1, "ws:1/2/3");
+
+        assertThat("did not find objects", res1.getObjects().size() == 1, is(true));
+        kbasesearchengine.ObjectData actual = res1.getObjects().get(0);
+
+        assertThat("incorrect timestamp", actual.getTimestamp() == null, is(true));
+        assertThat("incorrect data", actual.getData() == null,
+                is(true));
+        assertThat("incorrect guid", actual.getGuid(), is(guid.toString()));
+        assertThat("incorrect obj name", actual.getObjectName() == null, is(true));
+
+        //additional properties are: type, creator, copied, module, method, module_ver, commit
+        final Map<String,String> expected = new HashMap<>();
+                expected.put("type", null);
+                expected.put("creator", null);
+                expected.put("copied", null);
+                expected.put("module", null);
+                expected.put("method", null);
+                expected.put("module_ver", null);
+                expected.put("commit", null);
+        checkObjectProps(expected, actual);
+    }
+
+    private void checkObjectProps(Map<String, String> expected, kbasesearchengine.ObjectData actual){
+        Map<String, String > additonalProperties = actual.getObjectProps();
+        for( String prop : additonalProperties.keySet()) {
+            assertThat("key " + prop + " has correct value",
+                    additonalProperties.get(prop), is(expected.get(prop)));
+        }
+    }
+
 }
