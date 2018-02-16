@@ -452,6 +452,21 @@ public class SearchAPIIntegrationTest {
 
         //highlight in objects
         assertThat("incorrect highlight", actual.getHighlight(), is(expected.getHighlight()));
+
+        //test b/c highlight is unable to find number/dates and may return null
+        final MatchFilter filter2 = new MatchFilter().withFullTextInAll("WS:1/1/1");
+        SearchObjectsInput params2 = new SearchObjectsInput()
+                .withPostProcessing(pp)
+                .withAccessFilter(new AccessFilter())
+                .withMatchFilter(filter2);
+
+        SearchObjectsOutput res2 = searchCli.searchObjects(params2);
+
+        final ObjectData actual2 = res2.getObjects().get(0);
+        TestCommon.compare(actual2, expected);
+        assertThat("highlight should return empty map", actual2.getHighlight(), is(Collections.emptyMap()));
+
+
     }
     
     private SearchObjectsOutput searchObjects(final MatchFilter mf) throws Exception {
