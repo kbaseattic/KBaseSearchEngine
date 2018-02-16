@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * <p>Original spec-file type: SortingRule</p>
  * <pre>
  * Rule for sorting found results. 'key_name' is the keys that are sorted by. 
- * 'isTimestamp' and 'isWorkspaceId' are shortcuts.
+ * 'is_timestamp' and 'is_workspace_id' are shortcuts.
  * Default order is ascending if 'ascending' field is not set).
  * </pre>
  * 
@@ -23,16 +23,16 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "isTimestamp",
-    "isWorkspaceId",
+    "is_timestamp",
+    "is_workspace_id",
     "key_name",
     "ascending"
 })
 public class SortingRule {
 
-    @JsonProperty("isTimestamp")
+    @JsonProperty("is_timestamp")
     private Long isTimestamp;
-    @JsonProperty("isWorkspaceId")
+    @JsonProperty("is_workspace_id")
     private Long isWorkspaceId;
     @JsonProperty("key_name")
     private String keyName;
@@ -40,12 +40,12 @@ public class SortingRule {
     private Long ascending;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    @JsonProperty("isTimestamp")
+    @JsonProperty("is_timestamp")
     public Long getIsTimestamp() {
         return isTimestamp;
     }
 
-    @JsonProperty("isTimestamp")
+    @JsonProperty("is_timestamp")
     public void setIsTimestamp(Long isTimestamp) {
         this.isTimestamp = isTimestamp;
     }
@@ -55,12 +55,12 @@ public class SortingRule {
         return this;
     }
 
-    @JsonProperty("isWorkspaceId")
+    @JsonProperty("is_workspace_id")
     public Long getIsWorkspaceId() {
         return isWorkspaceId;
     }
 
-    @JsonProperty("isWorkspaceId")
+    @JsonProperty("is_workspace_id")
     public void setIsWorkspaceId(Long isWorkspaceId) {
         this.isWorkspaceId = isWorkspaceId;
     }

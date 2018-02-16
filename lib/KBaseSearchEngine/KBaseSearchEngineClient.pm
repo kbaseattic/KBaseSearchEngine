@@ -291,8 +291,8 @@ MatchValue is a reference to a hash where the following keys are defined:
 	max_double has a value which is a float
 boolean is an int
 SortingRule is a reference to a hash where the following keys are defined:
-	isTimestamp has a value which is a KBaseSearchEngine.boolean
-	isWorkspaceId has a value which is a KBaseSearchEngine.boolean
+	is_timestamp has a value which is a KBaseSearchEngine.boolean
+	is_workspace_id has a value which is a KBaseSearchEngine.boolean
 	key_name has a value which is a string
 	ascending has a value which is a KBaseSearchEngine.boolean
 AccessFilter is a reference to a hash where the following keys are defined:
@@ -372,8 +372,8 @@ MatchValue is a reference to a hash where the following keys are defined:
 	max_double has a value which is a float
 boolean is an int
 SortingRule is a reference to a hash where the following keys are defined:
-	isTimestamp has a value which is a KBaseSearchEngine.boolean
-	isWorkspaceId has a value which is a KBaseSearchEngine.boolean
+	is_timestamp has a value which is a KBaseSearchEngine.boolean
+	is_workspace_id has a value which is a KBaseSearchEngine.boolean
 	key_name has a value which is a string
 	ascending has a value which is a KBaseSearchEngine.boolean
 AccessFilter is a reference to a hash where the following keys are defined:
@@ -1137,7 +1137,7 @@ search_time has a value which is an int
 =item Description
 
 Rule for sorting found results. 'key_name' is the keys that are sorted by. 
-'isTimestamp' and 'isWorkspaceId' are shortcuts.
+'is_timestamp' and 'is_workspace_id' are shortcuts.
 Default order is ascending if 'ascending' field is not set).
 
 
@@ -1147,8 +1147,8 @@ Default order is ascending if 'ascending' field is not set).
 
 <pre>
 a reference to a hash where the following keys are defined:
-isTimestamp has a value which is a KBaseSearchEngine.boolean
-isWorkspaceId has a value which is a KBaseSearchEngine.boolean
+is_timestamp has a value which is a KBaseSearchEngine.boolean
+is_workspace_id has a value which is a KBaseSearchEngine.boolean
 key_name has a value which is a string
 ascending has a value which is a KBaseSearchEngine.boolean
 
@@ -1159,8 +1159,8 @@ ascending has a value which is a KBaseSearchEngine.boolean
 =begin text
 
 a reference to a hash where the following keys are defined:
-isTimestamp has a value which is a KBaseSearchEngine.boolean
-isWorkspaceId has a value which is a KBaseSearchEngine.boolean
+is_timestamp has a value which is a KBaseSearchEngine.boolean
+is_workspace_id has a value which is a KBaseSearchEngine.boolean
 key_name has a value which is a string
 ascending has a value which is a KBaseSearchEngine.boolean
 

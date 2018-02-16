@@ -163,10 +163,10 @@ class KBaseSearchEngine(object):
            "source_tags_blacklist" of type "boolean" (A boolean. 0 = false,
            other = true.), parameter "sorting_rules" of list of type
            "SortingRule" (Rule for sorting found results. 'key_name' is the
-           keys that are sorted by. 'isTimestamp' and 'isWorkspaceId' are
+           keys that are sorted by. 'is_timestamp' and 'is_workspace_id' are
            shortcuts. Default order is ascending if 'ascending' field is not
-           set).) -> structure: parameter "isTimestamp" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "isWorkspaceId" of
+           set).) -> structure: parameter "is_timestamp" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "is_workspace_id" of
            type "boolean" (A boolean. 0 = false, other = true.), parameter
            "key_name" of String, parameter "ascending" of type "boolean" (A
            boolean. 0 = false, other = true.), parameter "access_filter" of
@@ -212,10 +212,10 @@ class KBaseSearchEngine(object):
            count = 50.) -> structure: parameter "start" of Long, parameter
            "count" of Long, parameter "sorting_rules" of list of type
            "SortingRule" (Rule for sorting found results. 'key_name' is the
-           keys that are sorted by. 'isTimestamp' and 'isWorkspaceId' are
+           keys that are sorted by. 'is_timestamp' and 'is_workspace_id' are
            shortcuts. Default order is ascending if 'ascending' field is not
-           set).) -> structure: parameter "isTimestamp" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "isWorkspaceId" of
+           set).) -> structure: parameter "is_timestamp" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "is_workspace_id" of
            type "boolean" (A boolean. 0 = false, other = true.), parameter
            "key_name" of String, parameter "ascending" of type "boolean" (A
            boolean. 0 = false, other = true.), parameter "objects" of list of
