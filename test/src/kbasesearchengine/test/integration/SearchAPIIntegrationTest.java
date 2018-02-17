@@ -383,7 +383,10 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
-                .withObjectProps(ImmutableMap.of("creator", "creator", "type", "Deco", "type_ver", "1"))
+                .withObjectProps(ImmutableMap.of(
+                        "creator", "creator",
+                        "type", "Deco",
+                        "type_ver", "1"))
                 .withObjectName("objname1")
                 .withTimestamp(10000L);
         
@@ -393,7 +396,7 @@ public class SearchAPIIntegrationTest {
         TestCommon.compare(res.getObjects().get(0), expected1);
         
         final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
-                1L, narrInfo("Kevin", 6L, wsdate, userToken.getUserName(), null));
+                1L, narrInfo("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
         
         NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
     }
@@ -508,6 +511,19 @@ public class SearchAPIIntegrationTest {
      * Will need a mock server to test cases where the client gets a response that would never
      * be returned from auth
      */
+    
+    @Test
+    public void construct() throws Exception {
+        final TemporaryAuth2Client client = new TemporaryAuth2Client(
+                new URL("http://localhost:1000/whee"));
+        
+        assertThat("incorrect url", client.getURL(), is(new URL("http://localhost:1000/whee/")));
+        
+        final TemporaryAuth2Client client2 = new TemporaryAuth2Client(
+                new URL("http://localhost:1000/whee/"));
+        
+        assertThat("incorrect url", client2.getURL(), is(new URL("http://localhost:1000/whee/")));
+    }
     
     @Test
     public void authClientGetDisplayNames() throws Exception {
