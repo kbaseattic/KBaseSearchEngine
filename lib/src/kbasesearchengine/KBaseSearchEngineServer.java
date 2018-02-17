@@ -29,6 +29,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import kbasesearchengine.authorization.AccessGroupCache;
 import kbasesearchengine.authorization.AccessGroupProvider;
+import kbasesearchengine.authorization.TemporaryAuth2Client;
 import kbasesearchengine.authorization.WorkspaceAccessGroupProvider;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
@@ -152,9 +153,15 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
         
+        // this is a dirty hack so we don't have to provide 2 auth urls in the config
+        // update if we ever update the SDK to use the non-legacy endpoints
+        final String auth2URL = authURL.split("api")[0];
+        
         search = new NarrativeInfoDecorator(
                 new SearchMethods(accessGroupProvider, esStorage, ss, admins),
-                new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient)));
+                new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient)),
+                new TemporaryAuth2Client(new URL(auth2URL)),
+                kbaseIndexerToken.getToken());
         //END_CONSTRUCTOR
     }
 

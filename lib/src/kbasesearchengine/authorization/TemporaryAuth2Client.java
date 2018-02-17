@@ -34,9 +34,22 @@ public class TemporaryAuth2Client {
     
     private final URL authURL;
     
-    public TemporaryAuth2Client(final URL authURL) {
+    public TemporaryAuth2Client(URL authURL) {
         Utils.nonNull(authURL, "authURL");
+        if (!authURL.toString().endsWith("/"))
+            try {
+                authURL = new URL(authURL.toString() + "/");
+            } catch (MalformedURLException e) {
+                throw new RuntimeException("this should never happen", e);
+            }
         this.authURL = authURL;
+    }
+    
+    /** Return the url of the auth service this client contacts.
+     * @return the url.
+     */
+    public URL getURL() {
+        return authURL;
     }
     
     /** Get display names for a set of users. Users that do not exist in the auth service
@@ -65,7 +78,7 @@ public class TemporaryAuth2Client {
         
         final URL target;
         try {
-            target = new URL(authURL.toString() + "/api/V2/users?list=" + users);
+            target = new URL(authURL.toString() + "api/V2/users?list=" + users);
         } catch (MalformedURLException e) {
             throw new RuntimeException("this should never happen", e); 
         }
