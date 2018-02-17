@@ -66,7 +66,10 @@ public class NarrativeInfoCache implements NarrativeInfoProvider {
                 .weigher(new Weigher<Long, Tuple5<String, Long, Long, String, String>>() {
 
                     @Override
-                    public int weigh(Long wsId, Tuple5<String, Long, Long, String, String> narrativeInfo) {
+                    public int weigh(Long wsId, Tuple5<String, Long, Long, String, String> narrativeInfo)
+                    {
+                        // TODO this is supposed to return the size of the narrativeInfo
+                        // TODO Need to verify if this is right
                         return 5;
                     }
                 })
