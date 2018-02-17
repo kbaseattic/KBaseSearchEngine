@@ -30,7 +30,7 @@ public class ObjectEventQueue {
      * events match
      */
     
-    private static final Set<StatusEventType> OBJ_LVL_EVENTS = new HashSet<>(Arrays.asList(
+    public static final Set<StatusEventType> OBJ_LVL_EVENTS = new HashSet<>(Arrays.asList(
             StatusEventType.DELETE_ALL_VERSIONS, StatusEventType.NEW_ALL_VERSIONS,
             StatusEventType.PUBLISH_ALL_VERSIONS, StatusEventType.RENAME_ALL_VERSIONS,
             StatusEventType.UNDELETE_ALL_VERSIONS, StatusEventType.UNPUBLISH_ALL_VERSIONS,

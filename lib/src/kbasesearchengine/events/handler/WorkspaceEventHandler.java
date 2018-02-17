@@ -17,6 +17,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Optional;
+import kbasesearchengine.events.AccessGroupEventQueue;
+import kbasesearchengine.events.ObjectEventQueue;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.DateTimeFormatterBuilder;
@@ -675,6 +677,12 @@ public class WorkspaceEventHandler implements EventHandler {
     public StatusEvent updateEvent(final StatusEvent ev)
             throws IndexingException,
                    RetriableIndexingException {
+
+        // only object level events are updated below
+        if (!ObjectEventQueue.OBJ_LVL_EVENTS.contains(ev.getEventType())) {
+            return ev;
+        }
+
         // brute force get latest state and update event as event can be played
         // out of order in the case of failed events being replayed.
 
