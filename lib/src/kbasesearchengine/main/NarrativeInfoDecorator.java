@@ -16,6 +16,8 @@ import kbasesearchengine.SearchTypesInput;
 import kbasesearchengine.SearchTypesOutput;
 import kbasesearchengine.TypeDescriptor;
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.authorization.AuthAPI;
+
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.JsonClientException;
@@ -41,6 +43,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
 
     private final WorkspaceEventHandler weh;
     private final SearchInterface searchInterface;
+    private final String kbaseIndexerToken;
+    private final AuthAPI authAPI;
 
     /** Create a decorator.
      * @param searchInterface the search interface to decorate. This may be a root interface that
@@ -51,11 +55,15 @@ public class NarrativeInfoDecorator implements SearchInterface {
      */
     public NarrativeInfoDecorator(
             final SearchInterface searchInterface,
-            final WorkspaceEventHandler wsHandler) {
+            final WorkspaceEventHandler wsHandler,
+            final String authURLString,
+            final String kbaseIndexerToken) {
         Utils.nonNull(searchInterface, "searchInterface");
         Utils.nonNull(wsHandler, "wsHandler");
         this.searchInterface = searchInterface;
         this.weh = wsHandler;
+        this.authAPI = new AuthAPI(authURLString);
+        this.kbaseIndexerToken = kbaseIndexerToken;
     }
 
     @Override
@@ -90,8 +98,9 @@ public class NarrativeInfoDecorator implements SearchInterface {
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(
             final List<ObjectData> objects,
             final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo)
-            throws IOException, JsonClientException {
+            throws IOException, JsonClientException, Exception {
 
+        // TODO adding and retreiving from cache
         final Map<Long, Tuple5 <String, Long, Long, String, String>> retVal = new HashMap<>();
 
         if (accessGroupNarrInfo != null) {
@@ -118,12 +127,22 @@ public class NarrativeInfoDecorator implements SearchInterface {
                         + e.getMessage(), e);
             }
 
+            final String wsUsername = wsInfo.getE3();
+
+            final Map<String, Object> displayNameMap = authAPI.getDisplayNames(
+                        kbaseIndexerToken,
+                        wsUsername);
+
+            // TODO Need to be changed if the API can be used for multiple users
+            final Object displayName = displayNameMap.get("display");
+            final String wsUserRealname = (displayName == null) ? null : displayName.toString();
+
             final long timeMilli = WorkspaceEventHandler.parseDateToEpochMillis(wsInfo.getE4());
             final Tuple5<String, Long, Long, String, String> tempNarrInfo =
                         new Tuple5<String, Long, Long, String, String>()
-                    .withE3(timeMilli)      // modification time
-                    .withE4(wsInfo.getE3()) // workspace user name
-                    .withE5(null);          // TODO workspace user, real name
+                    .withE3(timeMilli)       // modification time
+                    .withE4(wsUsername)      // workspace user name
+                    .withE5(wsUserRealname); // workspace user, real name
 
             final Map<String, String> wsInfoMeta = wsInfo.getE9();
 
