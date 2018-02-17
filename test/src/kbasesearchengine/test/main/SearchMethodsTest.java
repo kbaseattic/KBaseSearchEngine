@@ -514,6 +514,7 @@ public class SearchMethodsTest {
         //additional properties are: type, creator, copied, module, method, module_ver, commit
         final ImmutableMap<String,String> expected = ImmutableMap.<String,String>builder()
                 .put("type", "Blah")
+                .put("type_ver", "1")
                 .put("creator", "user")
                 .put("copied", "user2")
                 .put("module", "module")
@@ -601,6 +602,7 @@ public class SearchMethodsTest {
         //additional properties are: type, creator, copied, module, method, module_ver, commit
         final Map<String,String> expected = new HashMap<>();
                 expected.put("type", null);
+                expected.put("type_ver", null);
                 expected.put("creator", null);
                 expected.put("copied", null);
                 expected.put("module", null);

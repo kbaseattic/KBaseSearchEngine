@@ -15,6 +15,8 @@ import kbasesearchengine.SearchObjectsOutput;
 import kbasesearchengine.SearchTypesInput;
 import kbasesearchengine.SearchTypesOutput;
 import kbasesearchengine.TypeDescriptor;
+import kbasesearchengine.authorization.TemporaryAuth2Client;
+import kbasesearchengine.authorization.TemporaryAuth2Client.Auth2Exception;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
@@ -41,6 +43,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
 
     private final WorkspaceEventHandler weh;
     private final SearchInterface searchInterface;
+    private final TemporaryAuth2Client authClient;
+    private final String token;
 
     /** Create a decorator.
      * @param searchInterface the search interface to decorate. This may be a root interface that
@@ -51,11 +55,17 @@ public class NarrativeInfoDecorator implements SearchInterface {
      */
     public NarrativeInfoDecorator(
             final SearchInterface searchInterface,
-            final WorkspaceEventHandler wsHandler) {
+            final WorkspaceEventHandler wsHandler,
+            final TemporaryAuth2Client authClient,
+            final String token) {
         Utils.nonNull(searchInterface, "searchInterface");
         Utils.nonNull(wsHandler, "wsHandler");
+        Utils.nonNull(authClient, "authClient");
+        Utils.notNullOrEmpty(token, "token cannot be null or whitespace only");
         this.searchInterface = searchInterface;
         this.weh = wsHandler;
+        this.authClient = authClient;
+        this.token = token;
     }
 
     @Override
@@ -90,7 +100,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(
             final List<ObjectData> objects,
             final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo)
-            throws IOException, JsonClientException {
+            throws IOException, JsonClientException, Auth2Exception {
 
         final Map<Long, Tuple5 <String, Long, Long, String, String>> retVal = new HashMap<>();
 
@@ -105,35 +115,49 @@ public class NarrativeInfoDecorator implements SearchInterface {
                 wsIdsSet.add((long) guid.getAccessGroupId());
             }
         }
+        final Set<String> userNames = new HashSet<>();
         for (final long workspaceId: wsIdsSet) {
-            final Tuple9 <Long, String, String, String, Long, String, String,
-                    String, Map<String,String>> wsInfo;
-            
-            try {
-                wsInfo = weh.getWorkspaceInfo(workspaceId);
-            } catch (IOException e) {
-                throw new IOException("Failed retrieving workspace info: " + e.getMessage(), e);
-            } catch (JsonClientException e) {
-                throw new JsonClientException("Failed retrieving workspace info: "
-                        + e.getMessage(), e);
-            }
-
-            final long timeMilli = WorkspaceEventHandler.parseDateToEpochMillis(wsInfo.getE4());
             final Tuple5<String, Long, Long, String, String> tempNarrInfo =
-                        new Tuple5<String, Long, Long, String, String>()
-                    .withE3(timeMilli)      // modification time
-                    .withE4(wsInfo.getE3()) // workspace user name
-                    .withE5(null);          // TODO workspace user, real name
-
-            final Map<String, String> wsInfoMeta = wsInfo.getE9();
-
-            if (wsInfoMeta.containsKey("narrative") &&
-                    wsInfoMeta.containsKey("narrative_nice_name")) {
-                tempNarrInfo.withE1(wsInfoMeta.get("narrative_nice_name"))
-                        .withE2(Long.parseLong(wsInfoMeta.get("narrative")));
-            }
+                    getNarrativeInfo(workspaceId);
+            userNames.add(tempNarrInfo.getE4());
             retVal.put(workspaceId, tempNarrInfo);
         }
+        final Map<String, String> displayNames = authClient.getUserDisplayNames(token, userNames);
+        // e5 is the full / display name, e4 is the user name
+        // defaults to the existing name so names from previous decorator layers aren't set to null
+        retVal.values().stream().forEach(t -> t.withE5(
+                displayNames.getOrDefault(t.getE4(), t.getE5())));
         return retVal;
+    }
+    
+    private Tuple5<String, Long, Long, String, String> getNarrativeInfo(final long wsid)
+            throws IOException, JsonClientException {
+        final Tuple9 <Long, String, String, String, Long, String, String,
+                String, Map<String,String>> wsInfo;
+
+        try {
+            wsInfo = weh.getWorkspaceInfo(wsid);
+        } catch (IOException e) {
+            throw new IOException("Failed retrieving workspace info: " + e.getMessage(), e);
+        } catch (JsonClientException e) {
+            throw new JsonClientException("Failed retrieving workspace info: "
+                    + e.getMessage(), e);
+        }
+        
+        final long timeMilli = WorkspaceEventHandler.parseDateToEpochMillis(wsInfo.getE4());
+        final Tuple5<String, Long, Long, String, String> tempNarrInfo =
+                    new Tuple5<String, Long, Long, String, String>()
+                .withE3(timeMilli)      // modification time
+                .withE4(wsInfo.getE3()); // workspace user name
+                // e5 gets filled in later
+        
+        final Map<String, String> wsInfoMeta = wsInfo.getE9();
+        
+        if (wsInfoMeta.containsKey("narrative") &&
+                wsInfoMeta.containsKey("narrative_nice_name")) {
+            tempNarrInfo.withE1(wsInfoMeta.get("narrative_nice_name"))
+                    .withE2(Long.parseLong(wsInfoMeta.get("narrative")));
+        }
+        return tempNarrInfo;
     }
 }

@@ -219,9 +219,10 @@ public class SearchMethods implements SearchInterface {
         ret.withKeyProps(od.getKeyProperties());
         ret.withHighlight(od.getHighlight());
 
-        SearchObjectType type = od.getType().orNull();
-        if(type != null){
-            addObjectProp(ret, type.getType(), "type");
+        final Optional<SearchObjectType> type = od.getType();
+        if (type.isPresent()) {
+            addObjectProp(ret, type.get().getType(), "type");
+            addObjectProp(ret, Integer.toString(type.get().getVersion()), "type_ver");
         }
         addObjectProp(ret, od.getCreator().orNull(), "creator");
         addObjectProp(ret, od.getCopier().orNull(), "copied");

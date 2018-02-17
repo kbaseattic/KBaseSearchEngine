@@ -1,8 +1,11 @@
 package kbasesearchengine.test.integration;
 
+import static kbasesearchengine.test.common.TestCommon.set;
 import static kbasesearchengine.test.main.NarrativeInfoDecoratorTest.narrInfo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +19,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
@@ -37,6 +41,8 @@ import kbasesearchengine.MatchFilter;
 import kbasesearchengine.ObjectData;
 import kbasesearchengine.SearchObjectsInput;
 import kbasesearchengine.SearchObjectsOutput;
+import kbasesearchengine.authorization.TemporaryAuth2Client;
+import kbasesearchengine.authorization.TemporaryAuth2Client.Auth2Exception;
 import kbasesearchengine.common.FileUtil;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
@@ -90,6 +96,7 @@ public class SearchAPIIntegrationTest {
     private static WorkspaceClient wsCli1;
     private static KBaseSearchEngineServer searchServer;
     private static KBaseSearchEngineClient searchCli;
+    private static URL authURL;
     
     @BeforeClass
     public static void prepare() throws Exception {
@@ -117,7 +124,7 @@ public class SearchAPIIntegrationTest {
                 "localhost:" + mongo.getServerPort(),
                 "SearchAPIIntTestAuth",
                 tempDirPath);
-        final URL authURL = new URL("http://localhost:" + auth.getServerPort() + "/testmode");
+        authURL = new URL("http://localhost:" + auth.getServerPort() + "/testmode");
         System.out.println("started auth server at " + authURL);
         TestCommon.createAuthUser(authURL, "user1", "display1");
         TestCommon.createAuthUser(authURL, "user2", "display2");
@@ -300,7 +307,7 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
-                .withObjectProps(ImmutableMap.of("creator", "creator" , "type", "SourceTags"))
+                .withObjectProps(ImmutableMap.of("creator", "creator" , "type", "SourceTags", "type_ver", "1"))
                 .withObjectName("objname1")
                 .withTimestamp(10000L);
         
@@ -327,7 +334,7 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony")))
                 .withGuid("WS:1/2/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony"))
-                .withObjectProps(ImmutableMap.of("creator", "creator" , "type", "SourceTags"))
+                .withObjectProps(ImmutableMap.of("creator", "creator" , "type", "SourceTags", "type_ver", "1"))
                 .withObjectName("objname2")
                 .withTimestamp(10000L);
         
@@ -376,7 +383,10 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
-                .withObjectProps(ImmutableMap.of("creator", "creator", "type", "Deco"))
+                .withObjectProps(ImmutableMap.of(
+                        "creator", "creator",
+                        "type", "Deco",
+                        "type_ver", "1"))
                 .withObjectName("objname1")
                 .withTimestamp(10000L);
         
@@ -386,7 +396,7 @@ public class SearchAPIIntegrationTest {
         TestCommon.compare(res.getObjects().get(0), expected1);
         
         final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
-                1L, narrInfo("Kevin", 6L, wsdate, userToken.getUserName(), null));
+                1L, narrInfo("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
         
         NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
     }
@@ -427,7 +437,7 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
-                .withObjectProps(ImmutableMap.of("creator", "creator", "type", "SourceTags"))
+                .withObjectProps(ImmutableMap.of("creator", "creator", "type", "SourceTags", "type_ver", "1"))
                 .withObjectName("objname1")
                 .withHighlight(highlight)
                 .withTimestamp(10000L);
@@ -478,14 +488,110 @@ public class SearchAPIIntegrationTest {
     @Test
     public void status() throws Exception {
         final Map<String, Object> res = searchCli.status();
+        // since the test working relies on the presence of the git.properties doc, which may
+        // or may not be present given on how the test is run, we just check that something
+        // is returned for the git properties.
+        assertThat("null git url", res.get("git_url"), is(notNullValue()));
+        assertThat("null git commit", res.get("git_commit_hash"), is(notNullValue()));
+        System.out.println(res);
+        
+        res.remove("git_url");
+        res.remove("git_commit_hash");
         
         final Map<String, Object> expected = ImmutableMap.of(
                 "state", "OK",
                 "message", "",
-                "version", "0.1.0-dev1",
-                "git_url", "", // these last two will get filled in later
-                "git_commit_hash", "");
+                "version", "0.1.0-dev1");
         
         assertThat("incorrect status output", res, is(expected));
+    }
+    
+    /* ****** Auth client tests - to be moved to their own suite *** 
+     *     //TODO TEST move the auth client tests to a separate suite
+     * Will need a mock server to test cases where the client gets a response that would never
+     * be returned from auth
+     */
+    
+    @Test
+    public void construct() throws Exception {
+        final TemporaryAuth2Client client = new TemporaryAuth2Client(
+                new URL("http://localhost:1000/whee"));
+        
+        assertThat("incorrect url", client.getURL(), is(new URL("http://localhost:1000/whee/")));
+        
+        final TemporaryAuth2Client client2 = new TemporaryAuth2Client(
+                new URL("http://localhost:1000/whee/"));
+        
+        assertThat("incorrect url", client2.getURL(), is(new URL("http://localhost:1000/whee/")));
+    }
+    
+    @Test
+    public void authClientGetDisplayNames() throws Exception {
+        final TemporaryAuth2Client client = new TemporaryAuth2Client(authURL);
+        assertThat("incorrect users", client.getUserDisplayNames(
+                userToken.getToken(), set("user1", "user2")),
+                is(ImmutableMap.of("user1", "display1", "user2", "display2")));
+    }
+    
+    @Test
+    public void authClientGetDisplayNamesEmptyInput() throws Exception {
+        final TemporaryAuth2Client client = new TemporaryAuth2Client(authURL);
+        assertThat("incorrect users", client.getUserDisplayNames(userToken.getToken(), set()),
+                is(Collections.emptyMap()));
+    }
+    
+    @Test
+    public void authClientGetDisplayNamesServerError() throws Exception {
+        final TemporaryAuth2Client client = new TemporaryAuth2Client(
+                new URL("http://localhost:" + auth.getServerPort()));
+        try {
+            client.getUserDisplayNames(userToken.getToken(), set("Baduser"));
+            fail("expected exception");
+        } catch (Auth2Exception got) {
+            TestCommon.assertExceptionCorrect(got, new Auth2Exception(
+                    "Auth service returned error code 400 with call id " +
+                    got.getCallID().get() + 
+                    // there's some software gore for you
+                    // https://github.com/kbase/auth2/blob/73160676e4b64c9316c1c93023e20514519744d7/src/us/kbase/auth2/service/api/Users.java#L68
+                    ": 30010 Illegal user name: Illegal user name [Baduser]: " +
+                    "30010 Illegal user name: Illegal character in user name Baduser: B"));
+            //they really want you to know the user name is illegal
+        }
+    }
+    
+    @Test
+    public void authClientFailConstruct() throws Exception {
+        try {
+            new TemporaryAuth2Client(null);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, new NullPointerException("authURL"));
+        }
+    }
+    
+    @Test
+    public void authClientgetDisplayNamesBadInput() {
+        failAuthClientGetDisplayNames(null, set(),
+                new IllegalArgumentException("token cannot be null or whitespace only"));
+        failAuthClientGetDisplayNames("   \t   \n ", set(),
+                new IllegalArgumentException("token cannot be null or whitespace only"));
+        
+        failAuthClientGetDisplayNames("t", null, new NullPointerException("userNames"));
+        failAuthClientGetDisplayNames("t", set("n", null),
+                new IllegalArgumentException("Null or whitespace only entry in userNames"));
+        failAuthClientGetDisplayNames("t", set("n", "  \t    \n  "),
+                new IllegalArgumentException("Null or whitespace only entry in userNames"));
+    }
+    
+    private void failAuthClientGetDisplayNames(
+            final String token,
+            final Set<String> userNames,
+            final Exception expected) {
+        try {
+            new TemporaryAuth2Client(authURL).getUserDisplayNames(token, userNames);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
     }
 }
