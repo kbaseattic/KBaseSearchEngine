@@ -14,10 +14,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 /**
  * <p>Original spec-file type: SortingRule</p>
  * <pre>
- * Rule for sorting found results. 'key_name', 'is_timestamp' and
- * 'is_object_name' are alternative way of defining what property
- * if used for sorting. Default order is ascending (if 
- * 'descending' field is not set).
+ * Rule for sorting found results. 'key_name' is the keys that are sorted by. 
+ * 'is_timestamp' and 'is_workspace_id' are shortcuts.
+ * Default order is ascending if 'ascending' field is not set).
  * </pre>
  * 
  */
@@ -25,20 +24,20 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
     "is_timestamp",
-    "is_object_name",
+    "is_access_group_id",
     "key_name",
-    "descending"
+    "ascending"
 })
 public class SortingRule {
 
     @JsonProperty("is_timestamp")
     private Long isTimestamp;
-    @JsonProperty("is_object_name")
-    private Long isObjectName;
+    @JsonProperty("is_access_group_id")
+    private Long isAccessGroupId;
     @JsonProperty("key_name")
     private String keyName;
-    @JsonProperty("descending")
-    private Long descending;
+    @JsonProperty("ascending")
+    private Long ascending;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("is_timestamp")
@@ -56,18 +55,18 @@ public class SortingRule {
         return this;
     }
 
-    @JsonProperty("is_object_name")
-    public Long getIsObjectName() {
-        return isObjectName;
+    @JsonProperty("is_access_group_id")
+    public Long getIsAccessGroupId() {
+        return isAccessGroupId;
     }
 
-    @JsonProperty("is_object_name")
-    public void setIsObjectName(Long isObjectName) {
-        this.isObjectName = isObjectName;
+    @JsonProperty("is_access_group_id")
+    public void setIsAccessGroupId(Long isAccessGroupId) {
+        this.isAccessGroupId = isAccessGroupId;
     }
 
-    public SortingRule withIsObjectName(Long isObjectName) {
-        this.isObjectName = isObjectName;
+    public SortingRule withIsAccessGroupId(Long isAccessGroupId) {
+        this.isAccessGroupId = isAccessGroupId;
         return this;
     }
 
@@ -86,18 +85,18 @@ public class SortingRule {
         return this;
     }
 
-    @JsonProperty("descending")
-    public Long getDescending() {
-        return descending;
+    @JsonProperty("ascending")
+    public Long getAscending() {
+        return ascending;
     }
 
-    @JsonProperty("descending")
-    public void setDescending(Long descending) {
-        this.descending = descending;
+    @JsonProperty("ascending")
+    public void setAscending(Long ascending) {
+        this.ascending = ascending;
     }
 
-    public SortingRule withDescending(Long descending) {
-        this.descending = descending;
+    public SortingRule withAscending(Long ascending) {
+        this.ascending = ascending;
         return this;
     }
 
@@ -113,7 +112,7 @@ public class SortingRule {
 
     @Override
     public String toString() {
-        return ((((((((((("SortingRule"+" [isTimestamp=")+ isTimestamp)+", isObjectName=")+ isObjectName)+", keyName=")+ keyName)+", descending=")+ descending)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((("SortingRule"+" [isTimestamp=")+ isTimestamp)+", isAccessGroupId=")+ isAccessGroupId)+", keyName=")+ keyName)+", ascending=")+ ascending)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

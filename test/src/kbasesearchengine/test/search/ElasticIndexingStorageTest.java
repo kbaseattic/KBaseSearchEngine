@@ -23,6 +23,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableList;
+import kbasesearchengine.search.SortingRule;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.junit.After;
@@ -1154,4 +1155,98 @@ public class ElasticIndexingStorageTest {
             assertThat("Incorrect highlighting", res, is(result2));
         }
     }
+    @Test
+    public void sortingResults() throws Exception {
+        //type is SimpleNumber
+        GUID guid1 = new GUID("WS:12/1/2");
+        GUID guid2 = new GUID("WS:13/2/2");
+        GUID guid3 = new GUID("WS:11/3/2");
+        prepareTestLookupInKey(guid1, guid2, guid3);
+
+        PostProcessing pp = new PostProcessing();
+        pp.objectData = true;
+        pp.objectInfo = true;
+
+        MatchFilter filter = MatchFilter.getBuilder().build();
+        AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
+
+        List<kbasesearchengine.search.SortingRule> sorting = new ArrayList<>();
+        SortingRule sr1 = new SortingRule();
+        sr1.isAccessGroupID = true;
+        sr1.ascending = true;
+
+        SortingRule sr2 = new SortingRule();
+        sr2.keyName= "num1";
+        sr2.ascending = false;
+
+        SortingRule sr3 = new SortingRule();
+        sr3.isTimestamp = true;
+        sr3.ascending = false;
+
+        SortingRule sr4 = new SortingRule();
+        sr4.keyName = "type";
+        sr4.ascending = true;
+
+        Set<GUID> expected = new LinkedHashSet<>();
+        List<String> empty = new ArrayList<>();
+
+        //sorting by access group id
+        sorting.add(sr1);
+        expected.add(guid3);
+        expected.add(guid1);
+        expected.add(guid2);
+
+        FoundHits found1 = indexStorage.searchObjects(empty,filter,sorting,accessFilter,null, pp);
+        assertThat("sort by access group id incorrect", found1.guids.equals(expected), is(true));
+
+        //sorting by key props
+        sorting = new ArrayList<>();
+        sorting.add(sr2);
+        expected = new HashSet<>();
+        expected.add(guid2);
+        expected.add(guid1);
+        expected.add(guid3);
+
+        FoundHits found2 = indexStorage.searchObjects(empty,filter,sorting,accessFilter,null, pp);
+        assertThat("sort by key prop incorrect", found2.guids.equals(expected), is(true));
+
+        //sorting by timestamp
+        sorting = new ArrayList<>();
+        sorting.add(sr3);
+        expected = new HashSet<>();
+        expected.add(guid3);
+        expected.add(guid2);
+        expected.add(guid1);
+
+        FoundHits found3 = indexStorage.searchObjects(empty,filter,sorting,accessFilter,null, pp);
+        assertThat("sort by key prop incorrect", found3.guids.equals(expected), is(true));
+
+        //sorting by type. Added more data to database
+//        type is Simple
+        GUID guid4 = new GUID("WS:16/1/2");
+        GUID guid5 = new GUID("WS:14/2/2");
+        GUID guid6 = new GUID("WS:15/3/2");
+        prepareTestMultiwordSearch(guid5, guid6, guid4);
+
+        // sorting with type, then by workspaceId
+        expected = new HashSet<>();
+        expected.add(guid5);
+        expected.add(guid6);
+        expected.add(guid4);
+        expected.add(guid3);
+        expected.add(guid1);
+        expected.add(guid2);
+
+        sorting = new ArrayList<>();
+        sorting.add(sr4);
+        sorting.add(sr1);
+
+
+        FoundHits found4 = indexStorage.searchObjects(empty,filter,sorting,accessFilter,null, pp);
+        assertThat("sort by type incorrect", found4.guids.equals(expected), is(true));
+
+
+    }
+
+
 }

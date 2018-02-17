@@ -101,16 +101,15 @@ module KBaseSearchEngine {
         returns (SearchTypesOutput) authentication required;
 
     /*
-      Rule for sorting found results. 'key_name', 'is_timestamp' and
-      'is_object_name' are alternative way of defining what property
-      if used for sorting. Default order is ascending (if 
-      'descending' field is not set).
+      Rule for sorting found results. 'key_name' is the keys that are sorted by. 
+      'is_timestamp' and 'is_workspace_id' are shortcuts.
+      Default order is ascending if 'ascending' field is not set).
     */
     typedef structure {
         boolean is_timestamp;
-        boolean is_object_name;
+        boolean is_access_group_id;
         string key_name;
-        boolean descending;
+        boolean ascending;
     } SortingRule;
 
     /*

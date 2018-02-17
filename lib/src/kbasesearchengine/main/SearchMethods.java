@@ -146,9 +146,9 @@ public class SearchMethods implements SearchInterface {
         }
         kbasesearchengine.search.SortingRule ret = new kbasesearchengine.search.SortingRule();
         ret.isTimestamp = toBool(sr.getIsTimestamp());
-        ret.isObjectName = toBool(sr.getIsObjectName());
+        ret.isAccessGroupID = toBool(sr.getIsAccessGroupId());
         ret.keyName = sr.getKeyName();
-        ret.ascending = !toBool(sr.getDescending());
+        ret.ascending = toBool(sr.getAscending());
         return ret;
     }
 
@@ -159,12 +159,13 @@ public class SearchMethods implements SearchInterface {
         SortingRule ret = new SortingRule();
         if (sr.isTimestamp) {
             ret.withIsTimestamp(1L);
-        } else if (sr.isObjectName) {
-            ret.withIsObjectName(1L);
+        } else if (sr.isAccessGroupID) {
+            ret.withIsAccessGroupId(1L);
         } else {
             ret.withKeyName(sr.keyName);
         }
-        ret.withDescending(sr.ascending ? 0L : 1L);
+
+        ret.withAscending(sr.ascending ? 1L : 0L);
         return ret;
     }
 

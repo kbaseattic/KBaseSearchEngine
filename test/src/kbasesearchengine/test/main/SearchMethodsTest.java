@@ -142,18 +142,18 @@ public class SearchMethodsTest {
         
         // what's returned doesn't matter, we're just checking that indexing storage gets the
         // right message
-        
+
         final SortingRule sr = new SortingRule();
         sr.isTimestamp = true;
         sr.ascending = true;
-        
+
         final FoundHits fh = new FoundHits();
         fh.pagination = null;
         fh.sortingRules = Arrays.asList(sr);
         fh.total = 1;
         fh.guids = set();
         fh.objects = Collections.emptyList();
-        
+
         when(is.searchObjects(
                 Arrays.asList("Genome"),
                 expected,
@@ -162,7 +162,7 @@ public class SearchMethodsTest {
                 null, // pagination
                 PP_DEFAULT))
                 .thenReturn(fh);
-        
+
         final SearchObjectsOutput res = sm.searchObjects(new SearchObjectsInput()
                 .withObjectTypes(Arrays.asList("Genome"))
                 .withMatchFilter(input)
@@ -177,7 +177,7 @@ public class SearchMethodsTest {
         assertThat("incorrect sorting rules count", res.getSortingRules().size(), is(1));
         assertThat("incorrect total", res.getTotal(), is(1L));
     }
-    
+
     @Test
     public void searchTypesExcludeSubObjects() throws Exception {
         // false cases
@@ -193,14 +193,14 @@ public class SearchMethodsTest {
         searchTypesCheckMatchFilter(
                 new MatchFilter().withExcludeSubobjects(2L),
                 kbasesearchengine.search.MatchFilter.getBuilder().build());
-        
+
         //true case
         searchTypesCheckMatchFilter(
                 new MatchFilter().withExcludeSubobjects(1L),
                 kbasesearchengine.search.MatchFilter.getBuilder().withExcludeSubObjects(true)
                         .build());
     }
-    
+
     @Test
     public void searchTypesSourceTags() throws Exception {
         // null cases
@@ -210,7 +210,7 @@ public class SearchMethodsTest {
         searchTypesCheckMatchFilter(
                 new MatchFilter().withSourceTags(null).withSourceTagsBlacklist(null),
                 kbasesearchengine.search.MatchFilter.getBuilder().build());
-        
+
         // whitelist
         searchTypesCheckMatchFilter(
                 new MatchFilter().withSourceTags(Arrays.asList("foo", "bar")),
@@ -218,7 +218,7 @@ public class SearchMethodsTest {
                         .withSourceTag("foo")
                         .withSourceTag("bar")
                         .build());
-        
+
         // explicit whitelist
         searchTypesCheckMatchFilter(
                 new MatchFilter().withSourceTags(Arrays.asList("foo", "bar"))
@@ -227,7 +227,7 @@ public class SearchMethodsTest {
                         .withSourceTag("foo")
                         .withSourceTag("bar")
                         .build());
-        
+
         // blacklist
         searchTypesCheckMatchFilter(
                 new MatchFilter().withSourceTags(Arrays.asList("foo", "bar"))
@@ -238,7 +238,7 @@ public class SearchMethodsTest {
                         .withIsSourceTagsBlackList(true)
                         .build());
     }
-    
+
     @Test
     public void searchTypesIllegalSourceTag() {
         failSearchTypesSourceTag(null, new IllegalArgumentException(
@@ -246,7 +246,7 @@ public class SearchMethodsTest {
         failSearchTypesSourceTag("  \t  \n  ", new IllegalArgumentException(
                 "sourceTag cannot be null or whitespace only"));
     }
-    
+
     private void failSearchTypesSourceTag(final String tag, final Exception expected) {
         try {
             searchTypesCheckMatchFilter(
@@ -256,7 +256,7 @@ public class SearchMethodsTest {
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
         }
-        
+
     }
 
     private void searchTypesCheckMatchFilter(
@@ -268,20 +268,20 @@ public class SearchMethodsTest {
         final TypeStorage ts = mock(TypeStorage.class);
 
         final SearchInterface sm = new SearchMethods(agp, is, ts, Collections.emptySet());
-        
+
         // what's returned doesn't matter, we're just checking that indexing storage gets the
         // right message
-        
+
         when(is.searchTypes(
                 expected,
                 new kbasesearchengine.search.AccessFilter().withAccessGroups(set())))
                 .thenReturn(Collections.emptyMap());
-        
+
         final SearchTypesOutput res = sm.searchTypes(new SearchTypesInput()
                 .withMatchFilter(input)
                 .withAccessFilter(new AccessFilter()),
                 "auser");
-        
+
         assertThat("incorrect counts", res.getTypeToCount(), is(Collections.emptyMap()));
         // if we want to check search time, need to mock a Clock. Don't bother for now.
         // assertThat("incorrect objects", res.getSearchTime(), is(20));
