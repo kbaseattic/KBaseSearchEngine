@@ -13,7 +13,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import kbasesearchengine.AccessFilter;
 import kbasesearchengine.GetObjectsInput;
@@ -145,6 +144,8 @@ public class SearchMethods implements SearchInterface {
             return null;
         }
         kbasesearchengine.search.SortingRule ret = new kbasesearchengine.search.SortingRule();
+        ret.isTimestamp = toBool(sr.getIsTimestamp());
+        ret.isAccessGroupID = toBool(sr.getIsAccessGroupId());
         ret.keyName = sr.getKeyName();
         ret.ascending = toBool(sr.getAscending());
         return ret;
@@ -157,8 +158,8 @@ public class SearchMethods implements SearchInterface {
         SortingRule ret = new SortingRule();
         if (sr.isTimestamp) {
             ret.withIsTimestamp(1L);
-        } else if (sr.isWorkspaceId) {
-            ret.withIsWorkspaceId(1L);
+        } else if (sr.isAccessGroupID) {
+            ret.withIsAccessGroupId(1L);
         } else {
             ret.withKeyName(sr.keyName);
         }

@@ -7,7 +7,7 @@ public class SortingRule {
 
     public boolean isTimestamp;
     //cheat right not b/c workspaceId or access_group_id is not exposed to front end
-    public boolean isWorkspaceId;
+    public boolean isAccessGroupID;
 
     //TODO some fields are not sortable right now. Will need to add checks and validations later
     public String keyName;

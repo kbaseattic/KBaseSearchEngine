@@ -1612,14 +1612,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
         List<Object> sort = new ArrayList<>();
         for (SortingRule sr : sorting) {
             String keyProp;
-            if(sr.isWorkspaceId){
-                keyProp = R_OBJ_ACCESS_GROUP_ID;
-            }else if (readableNames.containsValue(sr.keyName)){
-                keyProp = sr.keyName;
-            }else{
+            if (sr.isTimestamp) {
+                keyProp = OBJ_TIMESTAMP;
+            } else if (sr.isAccessGroupID){
+                keyProp = OBJ_ACCESS_GROUP_ID;
+            } else if (readableNames.containsValue(sr.keyName)){
+                keyProp = readableNames.inverse().get(sr.keyName);
+            } else {
                 keyProp = getKeyProperty(sr.keyName);
             }
-            Map<String, Object> sortOrderWrapper = ImmutableMap.of(readableNames.inverse().get(keyProp),
+            Map<String, Object> sortOrderWrapper = ImmutableMap.of(keyProp,
                     ImmutableMap.of("order",
                             sr.ascending ? "asc" : "desc"));
             sort.add(sortOrderWrapper);

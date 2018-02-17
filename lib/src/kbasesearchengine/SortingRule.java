@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
     "is_timestamp",
-    "is_workspace_id",
+    "is_access_group_id",
     "key_name",
     "ascending"
 })
@@ -32,8 +32,8 @@ public class SortingRule {
 
     @JsonProperty("is_timestamp")
     private Long isTimestamp;
-    @JsonProperty("is_workspace_id")
-    private Long isWorkspaceId;
+    @JsonProperty("is_access_group_id")
+    private Long isAccessGroupId;
     @JsonProperty("key_name")
     private String keyName;
     @JsonProperty("ascending")
@@ -55,18 +55,18 @@ public class SortingRule {
         return this;
     }
 
-    @JsonProperty("is_workspace_id")
-    public Long getIsWorkspaceId() {
-        return isWorkspaceId;
+    @JsonProperty("is_access_group_id")
+    public Long getIsAccessGroupId() {
+        return isAccessGroupId;
     }
 
-    @JsonProperty("is_workspace_id")
-    public void setIsWorkspaceId(Long isWorkspaceId) {
-        this.isWorkspaceId = isWorkspaceId;
+    @JsonProperty("is_access_group_id")
+    public void setIsAccessGroupId(Long isAccessGroupId) {
+        this.isAccessGroupId = isAccessGroupId;
     }
 
-    public SortingRule withIsWorkspaceId(Long isWorkspaceId) {
-        this.isWorkspaceId = isWorkspaceId;
+    public SortingRule withIsAccessGroupId(Long isAccessGroupId) {
+        this.isAccessGroupId = isAccessGroupId;
         return this;
     }
 
@@ -112,7 +112,7 @@ public class SortingRule {
 
     @Override
     public String toString() {
-        return ((((((((((("SortingRule"+" [isTimestamp=")+ isTimestamp)+", isWorkspaceId=")+ isWorkspaceId)+", keyName=")+ keyName)+", ascending=")+ ascending)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((("SortingRule"+" [isTimestamp=")+ isTimestamp)+", isAccessGroupId=")+ isAccessGroupId)+", keyName=")+ keyName)+", ascending=")+ ascending)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

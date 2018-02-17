@@ -107,7 +107,7 @@ module KBaseSearchEngine {
     */
     typedef structure {
         boolean is_timestamp;
-        boolean is_workspace_id;
+        boolean is_access_group_id;
         string key_name;
         boolean ascending;
     } SortingRule;

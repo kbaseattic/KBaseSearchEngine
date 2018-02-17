@@ -166,8 +166,8 @@ class KBaseSearchEngine(object):
            keys that are sorted by. 'is_timestamp' and 'is_workspace_id' are
            shortcuts. Default order is ascending if 'ascending' field is not
            set).) -> structure: parameter "is_timestamp" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "is_workspace_id" of
-           type "boolean" (A boolean. 0 = false, other = true.), parameter
+           boolean. 0 = false, other = true.), parameter "is_access_group_id"
+           of type "boolean" (A boolean. 0 = false, other = true.), parameter
            "key_name" of String, parameter "ascending" of type "boolean" (A
            boolean. 0 = false, other = true.), parameter "access_filter" of
            type "AccessFilter" (Optional rules of access constraints. -
@@ -215,8 +215,8 @@ class KBaseSearchEngine(object):
            keys that are sorted by. 'is_timestamp' and 'is_workspace_id' are
            shortcuts. Default order is ascending if 'ascending' field is not
            set).) -> structure: parameter "is_timestamp" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "is_workspace_id" of
-           type "boolean" (A boolean. 0 = false, other = true.), parameter
+           boolean. 0 = false, other = true.), parameter "is_access_group_id"
+           of type "boolean" (A boolean. 0 = false, other = true.), parameter
            "key_name" of String, parameter "ascending" of type "boolean" (A
            boolean. 0 = false, other = true.), parameter "objects" of list of
            type "ObjectData" (Properties of found object including metadata,
