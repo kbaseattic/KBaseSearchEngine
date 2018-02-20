@@ -331,7 +331,7 @@ public class IndexerCoordinatorTest {
                 "WS", Instant.ofEpochMilli(30000), StatusEventType.PUBLISH_ACCESS_GROUP)
                 .withNullableAccessGroupID(2)
                 .build(),
-                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC).build();
+                new StatusEventID("foo3"), StatusEventProcessingState.UNPROC).build();
         
         final StoredStatusEvent ready1 = to(event1, StatusEventProcessingState.READY);
         
