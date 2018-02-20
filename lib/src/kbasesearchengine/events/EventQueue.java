@@ -87,9 +87,10 @@ public class EventQueue {
         return event.getEvent().getAccessGroupId().get();
     }
     
-    /** Add an new {@link StatusEventProcessingState#UNPROC} event to the queue. Before any
-     * loaded events are added to the ready or processing states, {@link #moveToReady()} must
-     * be called.
+    /** Add a new {@link StatusEventProcessingState#UNPROC} event to the queue.
+     * Events that already exist in the queue as determined by the event id are ignored.
+     * Before any loaded events are added to the ready or processing states,
+     * {@link #moveToReady()} must be called.
      * @param event the event to add.
      */
     public void load(final StoredStatusEvent event) {
@@ -97,8 +98,8 @@ public class EventQueue {
         if (!queues.containsKey(accgrpID)) {
             queues.put(accgrpID, new AccessGroupEventQueue());
         }
-        queues.get(accgrpID).load(event);
-        size++;
+        final boolean loaded = queues.get(accgrpID).load(event);
+        size += loaded ? 1: 0;
     }
     
     /** Remove a processed event from the queue and update the queue state, potentially moving

@@ -101,16 +101,19 @@ module KBaseSearchEngine {
         returns (SearchTypesOutput) authentication required;
 
     /*
-      Rule for sorting found results. 'key_name', 'is_timestamp' and
-      'is_object_name' are alternative way of defining what property
-      if used for sorting. Default order is ascending (if 
-      'descending' field is not set).
+      Rule for sorting results. 
+      
+      string property - the property to sort on. This may be a an object property - e.g. a 
+          field inside the object - or a standard property possessed by all objects, like a
+          timestamp or creator.
+      boolean is_object_property - true (the default) to specify an object property, false to
+          specify a standard property.
+      boolean ascending - true (the default) to sort ascending, false to sort descending.
     */
     typedef structure {
-        boolean is_timestamp;
-        boolean is_object_name;
-        string key_name;
-        boolean descending;
+        string property;
+        boolean is_object_property;
+        boolean ascending;
     } SortingRule;
 
     /*
@@ -130,13 +133,17 @@ module KBaseSearchEngine {
           ('key_props' field in ObjectData structure),
       skip_data - do not include raw data for object ('data' and 
           'parent_data' fields in ObjectData structure),
-      ids_only - shortcut to mark all three skips as true.
+      include_highlight - include highlights of fields that
+           matched query,
+      ids_only - shortcut to mark all three skips as true and 
+           include_highlight as false.
     */
     typedef structure {
         boolean ids_only;
         boolean skip_info;
         boolean skip_keys;
         boolean skip_data;
+        boolean include_highlight;
         list<string> data_includes;
     } PostProcessing;
 
@@ -163,7 +170,10 @@ module KBaseSearchEngine {
     /*
       Properties of found object including metadata, raw data and
           keywords.
-          
+      mapping<string, list<string>> highlight - The keys are the field names and the list 
+          contains the sections in each field that matched the search query. Fields with no
+          hits will not be available. Short fields that matched are shown in their entirety.
+          Longer fields are shown as snippets preceded or followed by "...".     
       mapping<string, string> object_props - general properties for all objects. This mapping
           contains the keys 'creator', 'copied', 'module', 'method', 'module_ver', and 'commit' -
           respectively the user that originally created the object, the user that copied this
@@ -180,6 +190,7 @@ module KBaseSearchEngine {
         UnspecifiedObject data;
         mapping<string, string> key_props;
         mapping<string, string> object_props;
+        mapping<string, list<string>> highlight;
     } ObjectData;
 
     /* A data source access group ID (for instance, the integer ID of a workspace). */
