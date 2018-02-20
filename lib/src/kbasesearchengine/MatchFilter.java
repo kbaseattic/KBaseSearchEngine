@@ -2,6 +2,7 @@
 package kbasesearchengine;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Generated;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
@@ -20,6 +21,14 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * properties.
  * boolean exclude_subobjects - don't return any subobjects in the search results if true.
  *     Default false.
+ * list<string> source_tags - source tags are arbitrary strings applied to data at the data
+ *     source (for example, the workspace service). The source_tags list may optionally be
+ *     populated with a set of tags that will determine what data is returned in a search.
+ *     By default, the list behaves as a whitelist and only data with at least one of the
+ *     tags will be returned.
+ * source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
+ *     data with at least one of the tags will be excluded from the search results. If missing
+ *     or false, the default behavior is maintained.
  * </pre>
  * 
  */
@@ -27,23 +36,19 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
     "full_text_in_all",
-    "access_group_id",
     "object_name",
-    "parent_guid",
     "timestamp",
     "exclude_subobjects",
-    "lookupInKeys"
+    "lookupInKeys",
+    "source_tags",
+    "source_tags_blacklist"
 })
 public class MatchFilter {
 
     @JsonProperty("full_text_in_all")
     private java.lang.String fullTextInAll;
-    @JsonProperty("access_group_id")
-    private Long accessGroupId;
     @JsonProperty("object_name")
     private java.lang.String objectName;
-    @JsonProperty("parent_guid")
-    private java.lang.String parentGuid;
     /**
      * <p>Original spec-file type: MatchValue</p>
      * <pre>
@@ -63,6 +68,10 @@ public class MatchFilter {
     private Long excludeSubobjects;
     @JsonProperty("lookupInKeys")
     private Map<String, kbasesearchengine.MatchValue> lookupInKeys;
+    @JsonProperty("source_tags")
+    private List<String> sourceTags;
+    @JsonProperty("source_tags_blacklist")
+    private Long sourceTagsBlacklist;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("full_text_in_all")
@@ -80,21 +89,6 @@ public class MatchFilter {
         return this;
     }
 
-    @JsonProperty("access_group_id")
-    public Long getAccessGroupId() {
-        return accessGroupId;
-    }
-
-    @JsonProperty("access_group_id")
-    public void setAccessGroupId(Long accessGroupId) {
-        this.accessGroupId = accessGroupId;
-    }
-
-    public MatchFilter withAccessGroupId(Long accessGroupId) {
-        this.accessGroupId = accessGroupId;
-        return this;
-    }
-
     @JsonProperty("object_name")
     public java.lang.String getObjectName() {
         return objectName;
@@ -107,21 +101,6 @@ public class MatchFilter {
 
     public MatchFilter withObjectName(java.lang.String objectName) {
         this.objectName = objectName;
-        return this;
-    }
-
-    @JsonProperty("parent_guid")
-    public java.lang.String getParentGuid() {
-        return parentGuid;
-    }
-
-    @JsonProperty("parent_guid")
-    public void setParentGuid(java.lang.String parentGuid) {
-        this.parentGuid = parentGuid;
-    }
-
-    public MatchFilter withParentGuid(java.lang.String parentGuid) {
-        this.parentGuid = parentGuid;
         return this;
     }
 
@@ -196,6 +175,36 @@ public class MatchFilter {
         return this;
     }
 
+    @JsonProperty("source_tags")
+    public List<String> getSourceTags() {
+        return sourceTags;
+    }
+
+    @JsonProperty("source_tags")
+    public void setSourceTags(List<String> sourceTags) {
+        this.sourceTags = sourceTags;
+    }
+
+    public MatchFilter withSourceTags(List<String> sourceTags) {
+        this.sourceTags = sourceTags;
+        return this;
+    }
+
+    @JsonProperty("source_tags_blacklist")
+    public Long getSourceTagsBlacklist() {
+        return sourceTagsBlacklist;
+    }
+
+    @JsonProperty("source_tags_blacklist")
+    public void setSourceTagsBlacklist(Long sourceTagsBlacklist) {
+        this.sourceTagsBlacklist = sourceTagsBlacklist;
+    }
+
+    public MatchFilter withSourceTagsBlacklist(Long sourceTagsBlacklist) {
+        this.sourceTagsBlacklist = sourceTagsBlacklist;
+        return this;
+    }
+
     @JsonAnyGetter
     public Map<java.lang.String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -208,7 +217,7 @@ public class MatchFilter {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((("MatchFilter"+" [fullTextInAll=")+ fullTextInAll)+", accessGroupId=")+ accessGroupId)+", objectName=")+ objectName)+", parentGuid=")+ parentGuid)+", timestamp=")+ timestamp)+", excludeSubobjects=")+ excludeSubobjects)+", lookupInKeys=")+ lookupInKeys)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((("MatchFilter"+" [fullTextInAll=")+ fullTextInAll)+", objectName=")+ objectName)+", timestamp=")+ timestamp)+", excludeSubobjects=")+ excludeSubobjects)+", lookupInKeys=")+ lookupInKeys)+", sourceTags=")+ sourceTags)+", sourceTagsBlacklist=")+ sourceTagsBlacklist)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

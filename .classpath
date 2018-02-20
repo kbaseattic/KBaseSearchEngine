@@ -36,6 +36,7 @@
 	<classpathentry kind="lib" path="../jars/lib/jars/mongo/mongo-java-driver-3.4.2.jar"/>
 	<classpathentry kind="lib" path="../jars/lib/jars/equalsverifier/equalsverifier-2.2.2.jar"/>
 	<classpathentry kind="lib" path="../jars/lib/jars/mustache/compiler-0.9.3.jar"/>
-	<classpathentry kind="lib" path="../jars/lib/jars/kbase/auth2/kbase-auth2test-0.2.2.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/kbase/workspace/WorkspaceClient-0.8.0.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/kbase/auth2/kbase-auth2test-0.2.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

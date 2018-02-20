@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.UnauthorizedException;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceClient;
 
 /** The standard implementation of {@link CloneableWorkspaceClient}.
  * @author gaprice@lbl.gov

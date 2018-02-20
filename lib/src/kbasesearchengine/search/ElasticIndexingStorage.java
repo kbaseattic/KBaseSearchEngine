@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -41,7 +42,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 
 import com.google.common.base.Optional;
-
+import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
 
 import kbasesearchengine.common.GUID;
@@ -59,6 +60,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     private static final String SUBTYPE_INDEX_SUFFIX = "_sub";
     private static final String EXCLUDE_SUB_OJBS_URL_SUFFIX = ",-*" + SUBTYPE_INDEX_SUFFIX;
+    private static final String OBJ_GUID = "guid";
     private static final String OBJ_TIMESTAMP = "timestamp";
     private static final String OBJ_PROV_COMMIT_HASH = "prv_cmt";
     private static final String OBJ_PROV_MODULE_VERSION = "prv_ver";
@@ -68,9 +70,68 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private static final String OBJ_COPIER = "copier";
     private static final String OBJ_CREATOR = "creator";
     private static final String OBJ_NAME = "oname";
+    private static final String OBJ_PREFIX = "prefix";
+    private static final String OBJ_STORAGE_CODE = "str_cde";
+    private static final String OBJ_ACCESS_GROUP_ID = "accgrp";
+    private static final String OBJ_VERSION = "version";
+    private static final String OBJ_IS_LAST = "islast";
+    private static final String OBJ_PUBLIC = "public";
+    private static final String OBJ_SHARED = "shared";
+
+    // tags on the data originating at the source of the data
+    private static final String SOURCE_TAGS = "stags";
     
     private static final String SEARCH_OBJ_TYPE = "otype";
     private static final String SEARCH_OBJ_TYPE_VER = "otypever";
+
+    //readable names
+    private static final String R_OBJ_GUID = "guid";
+    private static final String R_OBJ_TIMESTAMP = "timestamp";
+    private static final String R_OBJ_PROV_COMMIT_HASH = "provenance_commit";
+    private static final String R_OBJ_PROV_MODULE_VERSION = "provenance_module_ver";
+    private static final String R_OBJ_PROV_METHOD = "provenance_method";
+    private static final String R_OBJ_PROV_MODULE = "provenance_module";
+    private static final String R_OBJ_MD5 = "md5";
+    private static final String R_OBJ_COPIER = "copier";
+    private static final String R_OBJ_CREATOR = "creator";
+    private static final String R_OBJ_NAME = "object_name";
+    private static final String R_OBJ_PREFIX = "guid_prefix";
+    private static final String R_OBJ_STORAGE_CODE = "storage_code";
+    private static final String R_OBJ_ACCESS_GROUP_ID = "access_group_id";
+    private static final String R_OBJ_VERSION = "version";
+    private static final String R_OBJ_IS_LAST = "is_last_version";
+    private static final String R_OBJ_PUBLIC = "is_public";
+    private static final String R_OBJ_SHARED = "is_shared";
+
+    // tags on the data originating at the source of the data
+    private static final String R_SOURCE_TAGS = "source_tags";
+
+    private static final String R_SEARCH_OBJ_TYPE = "type";
+    private static final String R_SEARCH_OBJ_TYPE_VER = "type_ver";
+
+    private static final ImmutableBiMap<String, String> READABLE_NAMES = ImmutableBiMap.
+            <String,String>builder()
+            .put(OBJ_GUID, R_OBJ_GUID)
+            .put(OBJ_TIMESTAMP, R_OBJ_TIMESTAMP)
+            .put(OBJ_PROV_COMMIT_HASH, R_OBJ_PROV_COMMIT_HASH)
+            .put(OBJ_PROV_MODULE_VERSION, R_OBJ_PROV_MODULE_VERSION)
+            .put(OBJ_PROV_METHOD, R_OBJ_PROV_METHOD)
+            .put(OBJ_PROV_MODULE, R_OBJ_PROV_MODULE)
+            .put(OBJ_MD5, R_OBJ_MD5)
+            .put(OBJ_COPIER, R_OBJ_COPIER)
+            .put(OBJ_CREATOR, R_OBJ_CREATOR)
+            .put(OBJ_NAME, R_OBJ_NAME)
+            .put(SOURCE_TAGS, R_SOURCE_TAGS)
+            .put(SEARCH_OBJ_TYPE, R_SEARCH_OBJ_TYPE)
+            .put(SEARCH_OBJ_TYPE_VER, R_SEARCH_OBJ_TYPE_VER)
+            .put(OBJ_PREFIX, R_OBJ_PREFIX)
+            .put(OBJ_STORAGE_CODE, R_OBJ_STORAGE_CODE)
+            .put(OBJ_ACCESS_GROUP_ID, R_OBJ_ACCESS_GROUP_ID)
+            .put(OBJ_VERSION, R_OBJ_VERSION)
+            .put(OBJ_IS_LAST, R_OBJ_IS_LAST)
+            .put(OBJ_PUBLIC, R_OBJ_PUBLIC)
+            .put(OBJ_SHARED, R_OBJ_SHARED)
+            .build();
 
     private HttpHost esHost;
     private String esUser;
@@ -331,9 +392,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.putAll(indexPart);
-        doc.put("guid", id.toString());
+        doc.put(OBJ_GUID, id.toString());
         doc.put(SEARCH_OBJ_TYPE, objectType.getType());
         doc.put(SEARCH_OBJ_TYPE_VER, objectType.getVersion());
+        doc.put(SOURCE_TAGS, data.getSourceTags());
 
         doc.put(OBJ_NAME, data.getName());
         doc.put(OBJ_CREATOR, data.getCreator());
@@ -345,13 +407,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put(OBJ_MD5, data.getMD5().orNull());
         
         doc.put(OBJ_TIMESTAMP, timestamp.toEpochMilli());
-        doc.put("prefix", toGUIDPrefix(id));
-        doc.put("str_cde", id.getStorageCode());
-        doc.put("accgrp", id.getAccessGroupId());
-        doc.put("version", id.getVersion());
-        doc.put("islast", lastVersion == id.getVersion());
-        doc.put("public", isPublic);
-        doc.put("shared", false);
+        doc.put(OBJ_PREFIX, toGUIDPrefix(id));
+        doc.put(OBJ_STORAGE_CODE, id.getStorageCode());
+        doc.put(OBJ_ACCESS_GROUP_ID, id.getAccessGroupId());
+        doc.put(OBJ_VERSION, id.getVersion());
+        doc.put(OBJ_IS_LAST, lastVersion == id.getVersion());
+        doc.put(OBJ_PUBLIC, isPublic);
+        doc.put(OBJ_SHARED, false);
         if (obj != null) {
             doc.put("ojson", obj.getJson());
             doc.put("pjson", parentJson);
@@ -1054,33 +1116,46 @@ public class ElasticIndexingStorage implements IndexingStorage {
         pp.objectKeys = true;
         return getObjectsByIds(ids, pp);
     }
-    
+
+    private Map<String, Object> createHighlightQuery(){
+        return  ImmutableMap.of("fields",
+                    ImmutableMap.of("*",
+                            ImmutableMap.of("require_field_match", false)));
+    }
+
     @Override
-    public List<ObjectData> getObjectsByIds(Set<GUID> ids, PostProcessing pp) 
+    public List<ObjectData> getObjectsByIds(final Set<GUID> ids, final PostProcessing pp)
             throws IOException {
 
-        Map<String, Object> doc = ImmutableMap.of("query",
-                                     ImmutableMap.of("bool",
+        final Map<String, Object> query = ImmutableMap.of("bool",
                                         ImmutableMap.of("filter",
                                            ImmutableMap.of("terms",
-                ImmutableMap.of("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList()))))));
-        //doc.put("_source", Arrays.asList("ojson"));
+                ImmutableMap.of("guid", ids.stream().map(u -> u.toString()).collect(Collectors.toList())))));
 
-        String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
-        Response resp = makeRequest("GET", urlPath, doc);
+        final Map<String, Object> doc = new LinkedHashMap<>();
+        doc.put("query", query);
+
+        if (Objects.nonNull(pp) && pp.objectHighlight) {
+            doc.put("highlight", createHighlightQuery());
+        }
+
+        final String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
+        final Response resp = makeRequest("GET", urlPath, doc);
         @SuppressWarnings("unchecked")
-        Map<String, Object> data = UObject.getMapper().readValue(
+        final Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
-        List<ObjectData> ret = new ArrayList<>();
+        final List<ObjectData> ret = new ArrayList<>();
         @SuppressWarnings("unchecked")
-        Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
+        final Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
+        final List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
-            ObjectData item = buildObjectData(obj, pp.objectInfo, pp.objectKeys, 
-                    pp.objectData, pp.objectDataIncludes);
+            final Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
+            @SuppressWarnings("unchecked")
+            final Map<String, List<String>> highlightRes =
+                    (Map<String, List<String>>) hit.get("highlight");
+            final ObjectData item = buildObjectData(obj, highlightRes, pp);
             ret.add(item);
         }
         return ret;
@@ -1088,13 +1163,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     private ObjectData buildObjectData(
             final Map<String, Object> obj,
-            final boolean info,
-            final boolean keys, 
-            final boolean json,
-            final List<String> objectDataIncludes) {
+            final Map<String, List<String>> highlight,
+            final PostProcessing pp) {
         // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
-        final ObjectData.Builder b = ObjectData.getBuilder(new GUID((String) obj.get("guid")));
-        if (info) {
+
+        GUID guid = new GUID((String) obj.get("guid"));
+        final ObjectData.Builder b = ObjectData.getBuilder(guid);
+        if (pp.objectInfo) {
             b.withNullableObjectName((String) obj.get(OBJ_NAME));
             b.withNullableCreator((String) obj.get(OBJ_CREATOR));
             b.withNullableCopier((String) obj.get(OBJ_COPIER));
@@ -1109,8 +1184,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
             // sometimes this is a long, sometimes it's an int
             b.withNullableTimestamp(Instant.ofEpochMilli(
                     ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
+            @SuppressWarnings("unchecked")
+            final List<String> sourceTags = (List<String>) obj.get(SOURCE_TAGS);
+            if (sourceTags != null) {
+                for (final String tag: sourceTags) {
+                    b.withSourceTag(tag);
+                }
+            }
         }
-        if (json) {
+        if (pp.objectData) {
             final String ojson = (String) obj.get("ojson");
             if (ojson != null) {
                 b.withNullableData(UObject.transformStringToObject(
@@ -1121,11 +1203,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 b.withNullableParentData(UObject.transformStringToObject(pjson, Object.class));
             }
         }
-        if (keys) {
+        if (pp.objectKeys) {
             for (final String key : obj.keySet()) {
                 if (key.startsWith("key.")) {
                     final Object objValue = obj.get(key);
-                    String textValue = null;
+                    String textValue;
                     if (objValue instanceof List) {
                         @SuppressWarnings("unchecked")
                         final List<Object> objValue2 = (List<Object>) objValue;
@@ -1134,13 +1216,37 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     } else {
                         textValue = String.valueOf(objValue);
                     }
-                    b.withKeyProperty(key.substring(4), textValue);
+                    b.withKeyProperty(stripKeyPrefix(key), textValue);
                 }
             }
         }
+
+        //because elastic sometimes returns highlight as null instead of empty map.
+        if (pp.objectHighlight && highlight != null) {
+            for(final String key : highlight.keySet()) {
+                b.withHighlight(getReadableKeyNames(key, guid), highlight.get(key));
+            }    
+        }
+
         return b.build();
     }
-    
+
+    private String getReadableKeyNames(final String key, final GUID guid)
+            throws IllegalStateException{
+        if (key.startsWith("key.")) {
+            return stripKeyPrefix(key);
+        } else if(READABLE_NAMES.containsKey(key)) {
+            return READABLE_NAMES.get(key);
+        } else {
+            //this should not happen. Untested
+            String message = "Object with guid " + guid.toString() + " has unexpected key: " + key;
+            throw new IllegalStateException(message);
+        }
+    }
+    private String stripKeyPrefix(final String key){
+        return key.substring(4);
+    }
+
     private Map<String, Object> createPublicShouldBlock(boolean withAllHistory) {
         List<Object> must0List = new ArrayList<>();
         must0List.add(createFilter("term", "public", true));
@@ -1183,44 +1289,26 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     //TODO VERS should this return SearchObjectType -> Integer map? Maybe an option to combine versions
     @Override
-    public Map<String, Integer> searchTypes(MatchFilter matchFilter,
-            AccessFilter accessFilter) throws IOException {
+    public Map<String, Integer> searchTypes(
+            final MatchFilter matchFilter,
+            final AccessFilter accessFilter)
+            throws IOException {
         Map<String, Object> mustForShared = createAccessMustBlock(accessFilter);
         if (mustForShared == null) {
             return Collections.emptyMap();
         }
-        List<Object> shouldList = new ArrayList<>();
-        // TODO: support for matchFilter.accessGroupId (e.g. reduce search scope to one group)
-        List<Object> matchFilters = new ArrayList<>(prepareMatchFilters(matchFilter));
-        // Public block (we exclude it for admin because it's covered by owner block)
-        if (accessFilter.withPublic && !accessFilter.isAdmin) {
-            shouldList.add(createPublicShouldBlock(accessFilter.withAllHistory));
-        }
-
-        // Owner block
-        shouldList.add(createOwnerShouldBlock(accessFilter));
-
-        // Shared block
-        shouldList.add(createSharedShouldBlock(mustForShared));
-        // Rest of query
-        Map<String, Object> query =
-                ImmutableMap.of("bool",
-                   ImmutableMap.of("must", matchFilters,
-                                   "filter", Arrays.asList(ImmutableMap.of("bool",
-                                                              ImmutableMap.of("should", shouldList)))));
-
-
         //TODO VERS if this aggregates by type version, need to add the version field to the terms
         Map<String, Object> aggs = ImmutableMap.of("types",
                                       ImmutableMap.of("terms",
                                          ImmutableMap.of("field", SEARCH_OBJ_TYPE)));
 
-        Map<String, Object> doc = ImmutableMap.of("query", query,
-                                                  "aggregations", aggs,
-                                                  "size", 0);
+        Map<String, Object> doc = ImmutableMap.of(
+                "query", createObjectQuery(matchFilter, accessFilter),
+                "aggregations", aggs,
+                "size", 0);
 
         String urlPath = "/" + indexNamePrefix + "*" +
-                (matchFilter.excludeSubObjects ? EXCLUDE_SUB_OJBS_URL_SUFFIX : "") +
+                (matchFilter.isExcludeSubObjects() ? EXCLUDE_SUB_OJBS_URL_SUFFIX : "") +
                 "/" + getDataTableName() + "/_search";
         Response resp = makeRequest("GET", urlPath, doc);
         @SuppressWarnings("unchecked")
@@ -1239,6 +1327,30 @@ public class ElasticIndexingStorage implements IndexingStorage {
             ret.put(objType, count);
         }
         return ImmutableMap.copyOf(ret);
+    }
+
+    private Map<String, Object> createObjectQuery(
+            final MatchFilter matchFilter,
+            final AccessFilter accessFilter) {
+        
+        final List<Object> shouldList = new ArrayList<>();
+        // Public block (we exclude it for admin because it's covered by owner block)
+        if (accessFilter.withPublic && !accessFilter.isAdmin) {
+            shouldList.add(createPublicShouldBlock(accessFilter.withAllHistory));
+        }
+
+        // Owner block
+        shouldList.add(createOwnerShouldBlock(accessFilter));
+
+        // Shared block
+        shouldList.add(createSharedShouldBlock(createAccessMustBlock(accessFilter)));
+        // Rest of query
+        
+        final Map<String, Object> bool = new HashMap<>();
+        bool.putAll(prepareMatchFilters(matchFilter));
+        bool.put("filter", Arrays.asList(ImmutableMap.of("bool", ImmutableMap.of(
+                "should", shouldList))));
+        return  ImmutableMap.of("bool", bool);
     }
     
     @Override
@@ -1275,49 +1387,64 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return searchIds(objectTypes, matchFilter, sorting, accessFilter, null).guids;
     }
 
-    private List<Map<String, Object>> prepareMatchFilters(MatchFilter matchFilter) {
-        List<Map<String, Object>> ret = new ArrayList<>();
-        if (matchFilter.fullTextInAll != null) {
-            LinkedHashMap<String, Object> query = new LinkedHashMap<>();
-            query.put("query", matchFilter.fullTextInAll);
+    private Map<String, Object> prepareMatchFilters(MatchFilter matchFilter) {
+        final List<Map<String, Object>> matches = new ArrayList<>();
+        if (matchFilter.getFullTextInAll().isPresent()) {
+            final LinkedHashMap<String, Object> query = new LinkedHashMap<>();
+            query.put("query", matchFilter.getFullTextInAll().get());
             query.put("operator", "and");
 
-            LinkedHashMap<String, Object> allQuery = new LinkedHashMap<>();
+            final LinkedHashMap<String, Object> allQuery = new LinkedHashMap<>();
             allQuery.put("_all", query);
 
-            LinkedHashMap<String, Object> match = new LinkedHashMap<>();
+            final LinkedHashMap<String, Object> match = new LinkedHashMap<>();
             match.put("match",allQuery);
-            ret.add(match);
+            matches.add(match);
         }
+        // TODO: support for matchFilter.accessGroupId (e.g. reduce search scope to one group)
         /*if (matchFilter.accessGroupId != null) {
             ret.add(createAccessMustBlock(new LinkedHashSet<>(Arrays.asList(
                     matchFilter.accessGroupId)), withAllHistory));
         }*/
-        if (matchFilter.objectName != null) {
-            ret.add(createFilter("match", OBJ_NAME, matchFilter.fullTextInAll));
+        if (matchFilter.getObjectName().isPresent()) {
+                                                    // this seems like a bug...?
+            matches.add(createFilter("match", OBJ_NAME, matchFilter.getFullTextInAll().get()));
         }
-        if (matchFilter.lookupInKeys != null) {
-            for (String keyName : matchFilter.lookupInKeys.keySet()) {
-                MatchValue value = matchFilter.lookupInKeys.get(keyName);
-                String keyProp = getKeyProperty(keyName);
-                if (value.value != null) {
-                    ret.add(createFilter("term", keyProp, value.value));
-                } else if (value.minInt != null || value.maxInt != null) {
-                    ret.add(createRangeFilter(keyProp, value.minInt, value.maxInt));
-                } else if (value.minDate != null || value.maxDate != null) {
-                    ret.add(createRangeFilter(keyProp, value.minDate, value.maxDate));
-                } else if (value.minDouble != null || value.maxDouble != null) {
-                    ret.add(createRangeFilter(keyProp, value.minDouble, value.maxDouble));
-                }
+        for (final String keyName : matchFilter.getLookupInKeys().keySet()) {
+            final MatchValue value = matchFilter.getLookupInKeys().get(keyName);
+            final String keyProp = getKeyProperty(keyName);
+            if (value.value != null) {
+                matches.add(createFilter("term", keyProp, value.value));
+            } else if (value.minInt != null || value.maxInt != null) {
+                matches.add(createRangeFilter(keyProp, value.minInt, value.maxInt));
+            } else if (value.minDate != null || value.maxDate != null) {
+                matches.add(createRangeFilter(keyProp, value.minDate, value.maxDate));
+            } else if (value.minDouble != null || value.maxDouble != null) {
+                matches.add(createRangeFilter(keyProp, value.minDouble, value.maxDouble));
             }
         }
-        if (matchFilter.timestamp != null) {
-            ret.add(createRangeFilter(OBJ_TIMESTAMP, matchFilter.timestamp.minDate, 
-                    matchFilter.timestamp.maxDate));
+        if (matchFilter.getTimestamp().isPresent()) {
+            matches.add(createRangeFilter(OBJ_TIMESTAMP, matchFilter.getTimestamp().get().minDate, 
+                    matchFilter.getTimestamp().get().maxDate));
+        }
+        
+        
+        final Map<String, Object> ret = new HashMap<>();
+        if (!matchFilter.getSourceTags().isEmpty()) {
+            final Map<String, Object> tagsQuery = ImmutableMap.of("terms", ImmutableMap.of(
+                    SOURCE_TAGS, matchFilter.getSourceTags()));
+            if (matchFilter.isSourceTagsBlacklist()) {
+                ret.put("must_not", tagsQuery);
+            } else {
+                matches.add(tagsQuery);
+            }
         }
         // TODO: support parent guid (reduce search scope to one object, e.g. features of one geneom)
-        if (ret.isEmpty()) {
-            ret.add(createFilter("match_all", null, null));
+        if (ret.isEmpty() && matches.isEmpty()) {
+            matches.add(createFilter("match_all", null, null));
+        }
+        if (!matches.isEmpty()) {
+            ret.put("must", matches);
         }
         return ret;
     }
@@ -1398,59 +1525,34 @@ public class ElasticIndexingStorage implements IndexingStorage {
         int pgCount = pg == null || pg.count == null ? 50 : pg.count;
         Pagination pagination = new Pagination(pgStart, pgCount);
         if (sorting == null || sorting.isEmpty()) {
-            SortingRule sr = new SortingRule();
-            sr.isTimestamp = true;
-            sr.ascending = true;
+            final SortingRule sr = SortingRule.getStandardPropertyBuilder(R_OBJ_TIMESTAMP).build();
             sorting = Arrays.asList(sr);
         }
         FoundHits ret = new FoundHits();
         ret.pagination = pagination;
         ret.sortingRules = sorting;
 
-        Map<String, Object> mustForShared = createAccessMustBlock(accessFilter);
+        final Map<String, Object> mustForShared = createAccessMustBlock(accessFilter);
         if (mustForShared == null) {
             ret.total = 0;
             ret.guids = Collections.emptySet();
             return ret;
         }
-        List<Object> shouldList = new ArrayList<>();
-        // TODO: support for matchFilter.accessGroupId  (e.g. reduce search scope to one group)
-        // Public block (we exclude it for admin because it's covered by owner block)
-        if (accessFilter.withPublic && !accessFilter.isAdmin) {
-            shouldList.add(createPublicShouldBlock(accessFilter.withAllHistory));
-        }
-        // Owner block
-        shouldList.add(createOwnerShouldBlock(accessFilter));
-        // Shared block
-        shouldList.add(createSharedShouldBlock(mustForShared));
-        // Rest of query
-        Map<String, Object> query =
-                ImmutableMap.of("bool",
-                   ImmutableMap.of("must", prepareMatchFilters(matchFilter),
-                                   "filter", Arrays.asList(
-                                           ImmutableMap.of("bool",
-                                              ImmutableMap.of("should", shouldList)))));
-
         Map<String, Object> doc = new LinkedHashMap<>();
-        doc.put("query", query);
+        
+        doc.put("query", createObjectQuery(matchFilter, accessFilter));
+        if (Objects.nonNull(pp) && pp.objectHighlight) {
+            doc.put("highlight", createHighlightQuery());
+        }
         doc.put("from", pagination.start);
         doc.put("size", pagination.count);
 
-        boolean loadObjects = pp != null && (pp.objectInfo || pp.objectData || pp.objectKeys);
+        boolean loadObjects = pp != null &&
+                (pp.objectInfo || pp.objectData || pp.objectKeys || pp.objectHighlight);
         if (!loadObjects) {
             doc.put("_source", Arrays.asList("guid"));
         }
-        List<Object> sort = new ArrayList<>();
-        doc.put("sort", sort);
-        for (SortingRule sr : sorting) {
-            String keyProp = sr.isTimestamp ? OBJ_TIMESTAMP : (sr.isObjectName ? OBJ_NAME : 
-                getKeyProperty(sr.keyName));
-
-            Map<String, Object> sortOrderWrapper = ImmutableMap.of(keyProp,
-                                                      ImmutableMap.of("order",
-                                                                      sr.ascending ? "asc" : "desc"));
-            sort.add(sortOrderWrapper);
-        }
+        doc.put("sort", createSortQuery(sorting));
 
         validateObjectTypes(objectTypes);
 
@@ -1469,39 +1571,62 @@ public class ElasticIndexingStorage implements IndexingStorage {
             indexName = String.join(",", rr);
         }
         
-        if (matchFilter.excludeSubObjects) {
+        if (matchFilter.isExcludeSubObjects()) {
             indexName += EXCLUDE_SUB_OJBS_URL_SUFFIX;
         }
 
-        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
+        final String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
+        final Response resp = makeRequest("GET", urlPath, ImmutableMap.copyOf(doc));
 
-        Response resp = makeRequest("GET", urlPath, ImmutableMap.copyOf(doc));
         @SuppressWarnings("unchecked")
-        Map<String, Object> data = UObject.getMapper().readValue(
+        final Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         ret.guids = new LinkedHashSet<>();
         @SuppressWarnings("unchecked")
-        Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
+        final Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
         ret.total = (Integer)hitMap.get("total");
-        if (loadObjects) {
-            ret.objects = new ArrayList<ObjectData>();
-        }
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
+        final List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
+        if (loadObjects) {
+            ret.objects = new ArrayList<>();
+        }
         for (Map<String, Object> hit : hitList) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
-            String guidText = (String)obj.get("guid");
+            final Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
+            @SuppressWarnings("unchecked")
+            final Map<String, List<String>> highlightRes =
+                    (Map<String, List<String>>) hit.get("highlight");
+            final String guidText = (String)obj.get("guid");
             ret.guids.add(new GUID(guidText));
             if (loadObjects) {
-                ret.objects.add(buildObjectData(obj, pp.objectInfo, pp.objectKeys, 
-                    pp.objectData, pp.objectDataIncludes));
+                ret.objects.add(buildObjectData(obj, highlightRes, pp));
             }
         }
         return ret;
     }
-    
-    private String getKeyProperty(String keyName) {
+
+    private List<Object> createSortQuery(final List<SortingRule> sorting) {
+        final List<Object> sort = new ArrayList<>();
+        for (final SortingRule sr : sorting) {
+            final Map<String, String> order = ImmutableMap.of
+                    ("order", sr.isAscending() ? "asc" : "desc");
+            final Map<String, Object> sortWrapper;
+            if (sr.isKeyProperty()) {
+                sortWrapper = ImmutableMap.of(getKeyProperty(sr.getKeyProperty().get()), order);
+            } else {
+                if (!READABLE_NAMES.inverse().containsKey(sr.getStandardProperty().get())) {
+                    throw new IllegalArgumentException("Unknown object property " +
+                            sr.getStandardProperty().get());
+                }
+                sortWrapper = ImmutableMap.of(
+                        READABLE_NAMES.inverse().get(sr.getStandardProperty().get()), order);
+            }
+            sort.add(sortWrapper);
+        }
+        return sort;
+    }
+
+    private String getKeyProperty(final String keyName) {
         return "key." + keyName;
     }
 
@@ -1677,6 +1802,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         props.put(SEARCH_OBJ_TYPE, keyword);
         props.put(SEARCH_OBJ_TYPE_VER, integer);
+        
+        props.put(SOURCE_TAGS, keyword);
 
         props.put(OBJ_NAME, ImmutableMap.of("type", "text"));
 
@@ -1690,14 +1817,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         props.put(OBJ_TIMESTAMP, ImmutableMap.of("type", "date"));
         
-        props.put("prefix", keyword);
-        props.put("str_cde", keyword);
-        props.put("accgrp", integer);
-        props.put("version", integer);
+        props.put(OBJ_PREFIX, keyword);
+        props.put(OBJ_STORAGE_CODE, keyword);
+        props.put(OBJ_ACCESS_GROUP_ID, integer);
+        props.put(OBJ_VERSION, integer);
 
-        props.put("islast", bool);
-        props.put("public", bool);
-        props.put("shared", bool);
+        props.put(OBJ_IS_LAST, bool);
+        props.put(OBJ_PUBLIC, bool);
+        props.put(OBJ_SHARED, bool);
 
         props.put("ojson", ImmutableMap.of(
                 "type", "keyword",

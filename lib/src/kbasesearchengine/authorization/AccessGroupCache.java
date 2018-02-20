@@ -19,7 +19,7 @@ import com.google.common.cache.Weigher;
 public class AccessGroupCache implements AccessGroupProvider {
     
     private final LoadingCache<String, List<Integer>> cache;
-    
+
     /** Create a cache.
      * @param provider the {@link AccessGroupProvider} whose results will be cached.
      * @param cacheLifeTimeInSec the number of seconds a set of access groups for a user should
@@ -52,6 +52,7 @@ public class AccessGroupCache implements AccessGroupProvider {
         if (provider == null) {
             throw new NullPointerException("provider");
         }
+
         if (cacheLifeTimeInSec < 1) {
             throw new IllegalArgumentException("cache lifetime must be at least one second");
         }

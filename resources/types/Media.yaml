@@ -1,0 +1,26 @@
+global-object-type: Media
+ui-type-name: Media
+storage-type: WS
+storage-object-type: KBaseBiochem.Media
+versions:
+- indexing-rules:
+  - path: id
+    keyword-type: string
+  - path: name
+    full-text: true
+  - path: external_source_id
+    full-text: true
+    ui-name: External Source
+  - path: type
+    keyword-type: string
+  - path: mediacompounds/{size}
+    keyword-type: integer
+  - path: isDefined
+    keyword-type: boolean
+    key-name: Denfined
+  - path: isMinimal
+    keyword-type: boolean
+    key-name: Minimal
+  - path: isAerobic
+    keyword-type: boolean
+    key-name: Aerobic
