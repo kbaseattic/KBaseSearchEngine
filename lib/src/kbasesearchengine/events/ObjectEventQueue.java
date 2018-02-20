@@ -82,12 +82,14 @@ public class ObjectEventQueue {
     }
 
     /** Add a new {@link StatusEventProcessingState#UNPROC} event to the queue.
-     * Events that already exist in the queue as determined by the event id are silently ignored.
+     * Events that already exist in the queue as determined by the event id are ignored.
      * Before any loaded events are added to the ready or processing states,
      * {@link #moveToReady()} must be called.
      * @param event the event to add.
+     * @return true if the object was added to the queue, false if the event already existed in
+     * the queue
      */
-    public void load(final StoredStatusEvent event) {
+    public boolean load(final StoredStatusEvent event) {
         Utils.nonNull(event, "event");
         if (!event.getState().equals(StatusEventProcessingState.UNPROC)) {
             throw new IllegalArgumentException("Illegal state for loading event: " +
@@ -100,7 +102,9 @@ public class ObjectEventQueue {
         if (!containedEvents.contains(event.getId())) {
             queue.add(event);
             containedEvents.add(event.getId());
+            return true;
         }
+        return false;
     }
     
     /** Get the event that the queue has determined are ready for processing, or absent if

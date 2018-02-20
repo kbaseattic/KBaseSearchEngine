@@ -462,7 +462,8 @@ public class ObjectEventQueueTest {
                 .build(),
                 new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
         
-        q.load(sse2);
+        final boolean loaded = q.load(sse2);
+        assertThat("incorrect loaded", loaded, is(false));
         
         assertQueueState(q, Optional.of(sse), Optional.absent(), 1);
         
@@ -471,7 +472,8 @@ public class ObjectEventQueueTest {
         
         assertQueueState(q, Optional.absent(), Optional.absent(), 0);
         
-        q.load(sse2);
+        final boolean loaded2 = q.load(sse2);
+        assertThat("incorrect loaded", loaded2, is(true));
         
         assertQueueState(q, Optional.absent(), Optional.absent(), 1);
         q.moveToReady();
@@ -487,7 +489,8 @@ public class ObjectEventQueueTest {
                 .build(),
                 new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
         
-        q.load(sse);
+        final boolean loaded = q.load(sse);
+        assertThat("incorrect loaded", loaded, is(true));
         
         assertQueueState(q, Optional.absent(), Optional.absent(), 1);
         
@@ -496,7 +499,8 @@ public class ObjectEventQueueTest {
                 .build(),
                 new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
         
-        q.load(sse2);
+        final boolean loaded2 = q.load(sse2);
+        assertThat("incorrect loaded", loaded2, is(false));
         
         assertQueueState(q, Optional.absent(), Optional.absent(), 1);
         
@@ -507,7 +511,8 @@ public class ObjectEventQueueTest {
         
         assertQueueState(q, Optional.absent(), Optional.absent(), 0);
         
-        q.load(sse2);
+        final boolean loaded3 = q.load(sse2);
+        assertThat("incorrect loaded", loaded3, is(true));
         
         assertQueueState(q, Optional.absent(), Optional.absent(), 1);
         q.moveToReady();
