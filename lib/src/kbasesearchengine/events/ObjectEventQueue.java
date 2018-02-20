@@ -48,6 +48,7 @@ public class ObjectEventQueue {
     private StoredStatusEvent ready = null;
     private StoredStatusEvent processing = null;
     private Instant blockTime = null;
+    private Set<StatusEventID> containedEvents = new HashSet<>();
     
     // could require an access group id and object id and reject any events that don't match
     
@@ -73,6 +74,7 @@ public class ObjectEventQueue {
         } else {
             throw new IllegalArgumentException("Illegal initial event state: " + state);
         }
+        containedEvents.add(initialEvent.getId());
     }
     
     private boolean isObjectLevelEvent(final StoredStatusEvent event) {
@@ -80,6 +82,7 @@ public class ObjectEventQueue {
     }
 
     /** Add a new {@link StatusEventProcessingState#UNPROC} event to the queue.
+     * Events that already exist in the queue as determined by the event id are silently ignored.
      * Before any loaded events are added to the ready or processing states,
      * {@link #moveToReady()} must be called.
      * @param event the event to add.
@@ -94,7 +97,10 @@ public class ObjectEventQueue {
             throw new IllegalArgumentException("Illegal type for loading event: " +
                     event.getEvent().getEventType());
         }
-        queue.add(event);
+        if (!containedEvents.contains(event.getId())) {
+            queue.add(event);
+            containedEvents.add(event.getId());
+        }
     }
     
     /** Get the event that the queue has determined are ready for processing, or absent if
@@ -137,6 +143,7 @@ public class ObjectEventQueue {
     public void setProcessingComplete(final StoredStatusEvent event) {
         Utils.nonNull(event, "event");
         if (processing != null && event.getId().equals(processing.getId())) {
+            containedEvents.remove(processing.getId());
             processing = null;
             moveToReady();
         } else {
