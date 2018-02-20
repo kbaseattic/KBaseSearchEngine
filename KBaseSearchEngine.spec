@@ -101,16 +101,19 @@ module KBaseSearchEngine {
         returns (SearchTypesOutput) authentication required;
 
     /*
-      Rule for sorting found results. 'key_name', 'is_timestamp' and
-      'is_object_name' are alternative way of defining what property
-      if used for sorting. Default order is ascending (if 
-      'descending' field is not set).
+      Rule for sorting results. 
+      
+      string property - the property to sort on. This may be a an object property - e.g. a 
+          field inside the object - or a standard property possessed by all objects, like a
+          timestamp or creator.
+      boolean is_object_property - true (the default) to specify an object property, false to
+          specify a standard property.
+      boolean ascending - true (the default) to sort ascending, false to sort descending.
     */
     typedef structure {
-        boolean is_timestamp;
-        boolean is_object_name;
-        string key_name;
-        boolean descending;
+        string property;
+        boolean is_object_property;
+        boolean ascending;
     } SortingRule;
 
     /*
