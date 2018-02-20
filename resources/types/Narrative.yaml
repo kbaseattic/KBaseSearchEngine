@@ -3,35 +3,117 @@ storage-type: WS
 storage-object-type: KBaseNarrative.Narrative
 versions:
 - indexing-rules:
+
+  # Index the narrative name/title as title
   - path: metadata/name
-    full-text: true
     key-name: title
-  - path: cells/[*]/source
+    ui-name: Title
+
+  # Index the narrative description
+  # Note: the narrative description is not actually used in the narrative (yet)
+  - path: metadata/description
     full-text: true
-    key-name: source
-  - path: cells/[*]/outputs/[*]/text
+    key-name: description
+    ui-name: Description
+
+  # Index the creator metadata field.
+  # Note that this is not the same as the workspace owner. It will be for the 
+  # initial creator of the narrative, but when a narrative is copied the creator 
+  # stays the same (the original creator) even though the workspace it is copied to 
+  # may have a different owner.
+  - path: metadata/creator
     full-text: true
-    key-name: code_output
-    ui-name: Code Output
-  - path: cells/[*]/outputs/[*]/data
-    full-text: true
-    transform: string
-    key-name: code_output
-    ui-name: Code Output
-  - path: cells/[*]/metadata/kbase/outputCell/widget/params
+    key-name: creator
+    ui-name: Creator    
+
+     # App ID for app cells.
+  -
+    path: cells/[*]/metadata/kbase/appCell/app/id
     full-text: true
     transform: values
-    key-name: app_output
-    ui-name: App Output
-  - path: cells/[*]/metadata/kbase/appCell/app/spec/info
+    key-name: apps
+
+  -
+    path: cells/[*]/metadata/kbase/attributes/icon
     full-text: true
     transform: values
-    key-name: app_info
-    ui-name: App Info
-  - path: cells/[*]/metadata/kbase/appCell/params
+    key-name: icons
+
+  -
+    path: cells/[*]/cell_type
     full-text: true
     transform: values
-    key-name: app_input
-  - path: cells/[*]/metadata/kbase/outputCell/jobId
-    keyword-type: string
-    key-name: job_ids
+    key-name: cell_type
+
+  # - path: cells/[*]/source
+  #   full-text: true
+  #   key-name: source
+
+  # Markdown cells
+  # TODO: extend the filter transform to utilize multiple
+  # filters. E.g. we want to filter IN markdown cells and OUT
+  # any which have embedded javascript (old narrative app cells.)
+
+  #
+  # The . path selection means to grab the entire array element
+  # (object) and pass it to the transform, not descend into the next or all (*) fields.
+  #
+  -
+    path: cells/[*]/.
+    full-text: true
+    transform: filter
+    filter-path: cell_type
+    filter-regex: ^markdown$
+    value-path: source
+    key-name: markdown_cells
+
+  # Code cells
+  # TODO: we want to include just pure code cells here, not 
+  # app cells which also have code. See above.
+  -
+    path: cells/[*]/.
+    full-text: true
+    transform: filter
+    filter-path: cell_type
+    filter-regex: ^code$
+    value-path: source
+    key-name: code_cells    
+
+ 
+
+  # - path: cells/[*]/outputs/[*]/text
+  #   full-text: true
+  #   key-name: code_output
+  #   ui-name: Code Output
+
+  # - path: cells/[*]/outputs/[*]/data
+  #   full-text: true
+  #   transform: string
+  #   key-name: code_output
+  #   ui-name: Code Output
+
+  # - path: cells/[*]/metadata/kbase/outputCell/widget/params
+  #   full-text: true
+  #   transform: values
+  #   key-name: app_output
+  #   ui-name: App Output
+
+  # - path: cells/[*]/metadata/kbase/appCell/app/spec/info
+  #   full-text: true
+  #   transform: values
+  #   key-name: app_info
+  #   ui-name: App Info
+
+  # - path: cells/[*]/metadata/kbase/appCell/params
+  #   full-text: true
+  #   transform: values
+  #   key-name: app_input
+
+  # - path: cells/[*]/metadata/kbase/appCell/app/id
+  #   transform: values
+  #   key-name: app_id  
+  #   ui-name: App ID
+
+  # - path: cells/[*]/metadata/kbase/outputCell/jobId
+  #   keyword-type: string
+  #   key-name: job_ids

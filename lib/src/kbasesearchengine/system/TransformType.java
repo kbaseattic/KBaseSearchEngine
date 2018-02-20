@@ -29,6 +29,9 @@ public enum TransformType {
      *  referenced by said GUID. External keyword name is defined in accompanying transformation
      *  property, e.g. lookup.mykeyofinterest.
      */
-    lookup;
+    lookup,
+
+    /** Transforms the value into a filter */
+    filter;
 }
 

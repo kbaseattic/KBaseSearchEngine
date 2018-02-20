@@ -110,7 +110,16 @@ public class SubObjectExtractor {
                                     "contains both '*' to select all fields and selection of " +
                                     "specific fields (" + selectedFields + "), at: " + 
                                     ObjectJsonPath.getPathText(path));
+                    } else if (selectedFields.contains(".")) {
+                        if (selection.getChildren().get(".").hasChildren()) {
+                            throw new ObjectParseException("Invalid selection: The selection path " +
+                                    "element '.' must be the final path element");
+                        }
+                        all = true;
+                        selectedFields.remove(".");
+                        allChild = selection.getChildren().get(".");
                     }
+
                     // process first token standing for start of object
                     if (!skipLvl) {
                         JsonTokenUtil.writeCurrentToken(jts, t, consumer.getOutput());
