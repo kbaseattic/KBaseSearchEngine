@@ -303,6 +303,22 @@ public class ElasticIndexingStorageTest {
         System.out.println("*** end testGenome***");
     }
 
+    @Test
+    public void testMediaCompound() throws Exception {
+        System.out.println("*** start testMediaCompound***");
+        indexObject("MediaCompound", "media01", new GUID("WS:1/1/1"), "Media.1");
+        Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("MediaCompound"),
+                MatchFilter.getBuilder().withLookupInKey("name", "cpd00009").build(),
+                null, AccessFilter.create().withAdmin(true));
+        Assert.assertEquals(1, guids.size());
+        ObjectData index = indexStorage.getObjectsByIds(guids).get(0);
+        System.out.println("Indexed: " + index.getKeyProperties());
+        Assert.assertEquals("-50.0", "" + index.getKeyProperties().get("minFlux"));
+        Assert.assertEquals("50.0", "" + index.getKeyProperties().get("maxFlux"));
+        Assert.assertEquals("0.001", "" + index.getKeyProperties().get("concentration"));
+        System.out.println("*** end testMediaCompound***");
+    }
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -999,7 +1015,7 @@ public class ElasticIndexingStorageTest {
                         "{\"whee\": \"imaprettypony\"}",
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
                 false);
-        
+
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
                         new SearchObjectType("Sort", 1),
@@ -1017,7 +1033,7 @@ public class ElasticIndexingStorageTest {
                         "{\"whee\": \"imaprettypony\"}",
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
                 false);
-        
+
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
                         new SearchObjectType("Sort", 1),
@@ -1035,7 +1051,7 @@ public class ElasticIndexingStorageTest {
                         "{\"whee\": \"in bruges\"}",
                         ImmutableMap.of("whee", Arrays.asList("in bruges")))),
                 false);
-        
+
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -1054,10 +1070,10 @@ public class ElasticIndexingStorageTest {
                         "{\"whee\": \"in bruges\"}",
                         ImmutableMap.of("whee", Arrays.asList("in bruges")))),
                 false);
-        
+
         final PostProcessing pp = new PostProcessing();
         pp.objectData = true;
-        
+
         final List<ObjectData> ret = indexStorage.searchObjects(
                 Collections.emptyList(),
                 MatchFilter.getBuilder().build(),
@@ -1067,12 +1083,12 @@ public class ElasticIndexingStorageTest {
                 null,
                 pp)
                 .objects;
-        
+
         final List<GUID> guids = ret.stream().map(od -> od.getGUID()).collect(Collectors.toList());
-        
+
         assertThat("incorrect sort order", guids, is(Arrays.asList(new GUID("WS:1/2/1"),
                 new GUID("WS:1/1/1"), new GUID("WS:1/4/1"), new GUID("WS:1/3/1"))));
-        
+
         final List<ObjectData> ret1 = indexStorage.searchObjects(
                 Collections.emptyList(),
                 MatchFilter.getBuilder().build(),
@@ -1083,14 +1099,14 @@ public class ElasticIndexingStorageTest {
                 null,
                 pp)
                 .objects;
-        
+
         final List<GUID> guids1 = ret1.stream().map(od -> od.getGUID())
                 .collect(Collectors.toList());
-        
+
         assertThat("incorrect sort order", guids1, is(Arrays.asList(new GUID("WS:1/4/1"),
                 new GUID("WS:1/3/1"), new GUID("WS:1/2/1"), new GUID("WS:1/1/1"))));
     }
-    
+
     @Test
     public void sortFail() {
         try {
@@ -1111,7 +1127,7 @@ public class ElasticIndexingStorageTest {
                     "Unknown object property bad key"));
         }
     }
-    
+
     private void prepareTestMultiwordSearch(GUID guid1, GUID guid2, GUID guid3) throws Exception {
         final SearchObjectType objectType = new SearchObjectType("Simple", 1);
         final IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("prop1"))
