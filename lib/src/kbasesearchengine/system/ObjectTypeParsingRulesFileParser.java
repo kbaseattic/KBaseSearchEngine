@@ -193,6 +193,26 @@ public class ObjectTypeParsingRulesFileParser {
             irBuilder.withUIHidden();
         }
         irBuilder.withNullableUILinkKey((String) rulesObj.get("ui-link-key"));
+
+
+        /*
+            filter
+        */
+        final String filterPath = (String)rulesObj.get("filter-path");
+        String filterRegex = (String)rulesObj.get("filter-regex");
+        final String valuePath = (String)rulesObj.get("value-path");
+        final boolean hasFilterPath = !Utils.isNullOrEmpty(filterPath);
+        final boolean hasValuePath = !Utils.isNullOrEmpty(valuePath);
+        if (hasFilterPath || hasValuePath) {
+            if (! (hasFilterPath && hasValuePath) ) {
+                throw new ObjectParseException(getMissingKeyParseMessage("filter-value-path"));
+            }
+            if (Utils.isNullOrEmpty(filterRegex)) {
+                filterRegex = ".+";
+            }
+            irBuilder.withFilter(filterPath, filterRegex, valuePath);
+        }
+
         return irBuilder.build();
     }
     

@@ -199,6 +199,14 @@ public class Transform {
                     "lookup transform target key cannot be null or whitespace");
             return new Transform(type, null, locationOrTargetKey, null, null);
         }
+
+        // eap: new filter. note that this "unkonwn" method (think of it as "determineTransform")
+        // must determine a concrete Tranform object via this sequence of conditions.
+        if (type.equals(TransformType.filter)) {
+            // eap: note: all the other context this transform needs is back in the parser -- the rule itself.
+            return new Transform(type, null, null, null, null);
+        }
+
         // ok it's a guid
         Utils.notNullOrEmpty(targetObjectType, "targetObjectType cannot be null or whitespace");
         Utils.nonNull(targetObjectTypeVersion, "targetObjectTypeVersion cannot be null");

@@ -358,7 +358,7 @@ public class IndexerWorkerIntegrationTest {
             pp.objectKeys = true;
             System.out.println("DEBUG: " + storage.getObjectsByIds(ids, pp));
         }
-        Assert.assertEquals(1, ids.size());
+        Assert.assertEquals(expectedCount, ids.size());
     }
     
     @Test
@@ -374,8 +374,31 @@ public class IndexerWorkerIntegrationTest {
                 .build();
         indexFewVersions(StoredStatusEvent.getBuilder(ev, new StatusEventID("-1"),
                 StatusEventProcessingState.UNPROC).build());
-        checkSearch(1, ImmutableList.of("Narrative"), "tree", wsid, false);
-        checkSearch(1, ImmutableList.of("Narrative"), "species", wsid, false);
+
+        // Note that although multiple narrative objects are indexed, they are all in the same 
+        // workspace with the same name, so we only ever get at most one item back.
+        // TODO: need to index different narratives under different names. 
+        // TODO: really, we should index narratives in separate workspaces
+
+        // Should match on the title of the example narrative.
+        checkSearch(1, ImmutableList.of("Narrative"), "Romans", wsid, false);
+
+        // Should match on a markdown cell
+        checkSearch(1, ImmutableList.of("Narrative"), "Welcome", wsid, false);
+
+        // There should be no "fubar" indexed.
+        checkSearch(0, ImmutableList.of("Narrative"), "fubar", wsid, false);
+
+        // SHould match on the app id within app cell metadata.
+        checkSearch(1, ImmutableList.of("Narrative"), "SpeciesTreeBuilder/insert_set_of_genomes_into_species_tree", wsid, false);
+
+        // If code cells were indexed this give o
+        checkSearch(1, ImmutableList.of("Narrative"), "import", wsid, true);
+
+        checkSearch(1, ImmutableList.of("Narrative"), "markdown", wsid, true);
+     
+        checkSearch(1, ImmutableList.of("Narrative"), "code", wsid, true);
+
         /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
                 System.currentTimeMillis(), "KBaseNarrative.Narrative", 
                 ObjectStatusEventType.CREATED, false));

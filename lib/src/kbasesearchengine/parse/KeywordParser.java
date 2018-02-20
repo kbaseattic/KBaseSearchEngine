@@ -9,9 +9,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
+import com.google.common.base.Optional;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
@@ -233,6 +240,8 @@ public class KeywordParser {
                 List<Object> input = (List<Object>)value;
                 List<Object> ret = new ArrayList<>();
                 for (Object item : input) {
+                    System.out.println("  item");
+                    System.out.println(item.toString());
                     addOrAddAll(transform(item, rule, sourceKeywords, lookup, objectRefPath), ret);
                 }
                 return ret;
@@ -245,7 +254,80 @@ public class KeywordParser {
                 }
                 return ret;
             }
+
             return String.valueOf(value);
+        case filter:
+            if (value == null) {
+                return null;
+            }
+            // TreeNode treeNode = (TreeNode)value;
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode treeNode = mapper.valueToTree(value);
+            if (treeNode instanceof JsonNode) {
+                // throw new ObjectParseException("at least we have a tree node here!!!");
+                // dig the value to match out of the map
+                // Map<String, Object> input = (Map<String, Object>)value;
+
+
+                // now we use the filter value path to dig the filter value out of the tree...
+                JsonNode tempNode = treeNode;
+
+                // Get the filter value.
+                Optional<ObjectJsonPath> filterValuePath = rule.getFilterPath();
+
+                if (!filterValuePath.isPresent()) {
+                    throw new ObjectParseException("Filter missing filter path");
+                }
+                
+                String[] path = filterValuePath.get().getPathItems();
+                for (String el : path) {
+                    tempNode = tempNode.path(el);
+                    if (tempNode.isMissingNode()) {
+                        // didn't find a node on this path, so it is a miss.
+                        return null;
+                    }
+                }
+                // eap: todo: better way of handling it not being a string... throw exception e.g.
+                String filterValue = tempNode.asText();
+
+                // Apply the test to the filter value.
+                Optional<Pattern> filterRegex = rule.getFilterRegex();
+
+                if (!filterRegex.isPresent()) {
+                    throw new ObjectParseException("Filter missing filter value regex");
+                }
+
+                Matcher matcher = filterRegex.get().matcher((String)filterValue);
+                if (!matcher.matches()) {
+                    return null;
+                }
+        
+
+                // Get the value to return;
+
+                Optional<ObjectJsonPath> valuePath = rule.getValuePath();
+
+                if (!valuePath.isPresent()) {
+                    throw new ObjectParseException("Filter missing the value path");
+                }
+
+                tempNode = treeNode;
+                path = valuePath.get().getPathItems();
+                for (String el : path) {
+                    tempNode = tempNode.path(el);
+                    if (tempNode.isMissingNode()) {
+                        // didn't find a node on this path, so it is a miss.
+                        System.out.println("Did not find node at " + el);
+                        return null;
+                    }
+                }
+                // eap: todo: better way of handling it not being a string... throw exception e.g.
+                String theValue = tempNode.asText();
+
+                return theValue;
+            } else {
+                throw new ObjectParseException("Filter transform only applies to TreeNode, applied to a: " + value.getClass().getName());
+            }            
         case string:
             return String.valueOf(value);
         case integer:

@@ -10,6 +10,8 @@ import java.util.Set;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import kbasesearchengine.common.JsonTokenUtil;
 import kbasesearchengine.common.ObjectJsonPath;
@@ -62,6 +64,23 @@ public class ValueCollector <T> {
 				        selection.getChildren().keySet());
 				boolean all = false;
 				ValueCollectingNode<T> allChild = null;
+
+				if (selectedFields.contains(".")) {
+					// The "." path element signifies that we should grab current node; it is stashed along
+					// with the rules attached to the "." path element.
+					// TODO: ensure that "." is the final path element; 
+					//       something like selection.getChildren().get(".").hasChildren()
+					if (selection.getChildren().get(".").hasChildren()) {
+						throw new ObjectParseException("Invalid selection: The selection path " +
+								"element '.' must be the final path element");
+					}
+					// JsonNode jsonNode = JsonTokenUtil.getTreeNode(jts);
+					JsonNode jsonNode = jts.readValueAsTree();
+					consumer.addValue(selection.getChildren().get(".").getRules(), jsonNode);
+					// we are done with this object now.
+					return;
+				} 
+
 				if (selectedFields.contains("*")) {
 					all = true;
 					selectedFields.remove("*");
@@ -71,7 +90,8 @@ public class ValueCollector <T> {
 								"contains both '*' to select all fields and selection of " +
 								"specific fields (" + selectedFields + "), at: " + 
 								ObjectJsonPath.getPathText(path));
-				}
+				} 
+
 				while (true) {
 					t = jts.nextToken();
 					if (t == JsonToken.END_OBJECT) {

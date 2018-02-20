@@ -3,7 +3,10 @@ package kbasesearchengine.system;
 import com.google.common.base.Optional;
 
 import kbasesearchengine.common.ObjectJsonPath;
+import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.tools.Utils;
+import java.util.regex.Pattern;
+
 
 /**
  * This class defines the rules for parsing source data, collecting portions
@@ -116,6 +119,10 @@ public class IndexingRules {
      */
     private final Optional<String> uiLinkKey;
     
+    private final Optional<ObjectJsonPath> filterPath;
+    private final Optional<Pattern> filterRegex;
+    private final Optional<ObjectJsonPath> valuePath;
+    
     private IndexingRules(
             final ObjectJsonPath path,
             final boolean fullText,
@@ -128,7 +135,10 @@ public class IndexingRules {
             final Object defaultValue,
             String uiName,
             final boolean uiHidden,
-            final String uiLinkKey) {
+            final String uiLinkKey,
+            final ObjectJsonPath filterPath,
+            final Pattern filterRegex,
+            final ObjectJsonPath valuePath) {
         this.path = Optional.fromNullable(path);
         this.fullText = fullText;
         this.keywordType = Optional.fromNullable(keywordType);
@@ -144,6 +154,9 @@ public class IndexingRules {
         this.uiName = uiName;
         this.uiHidden = uiHidden;
         this.uiLinkKey = Optional.fromNullable(uiLinkKey);
+        this.filterPath = Optional.fromNullable(filterPath);
+        this.filterRegex = Optional.fromNullable(filterRegex);
+        this.valuePath = Optional.fromNullable(valuePath);
     }
 
     /** Returns the path into an object to a value that is the target of this indexing rule.
@@ -254,6 +267,20 @@ public class IndexingRules {
     public Optional<String> getUiLinkKey() {
         return uiLinkKey;
     }
+
+    // eap:
+    public Optional<ObjectJsonPath> getFilterPath() {
+        return filterPath;
+    }
+
+    public Optional<ObjectJsonPath> getValuePath() {
+        return valuePath;
+    }
+
+    public Optional<Pattern> getFilterRegex() {
+        return filterRegex;
+    }
+    
     
     @Override
     public int hashCode() {
@@ -403,7 +430,10 @@ public class IndexingRules {
         private Object defaultValue = null;
         private boolean uiHidden = false;
         private String uiLinkKey = null;
-        
+        private ObjectJsonPath filterPath = null;
+        private Pattern filterRegex = null;
+        private ObjectJsonPath valuePath = null;
+    
         private Builder(final ObjectJsonPath path) {
             Utils.nonNull(path, "path");
             this.path = path;
@@ -532,6 +562,24 @@ public class IndexingRules {
             this.uiLinkKey = checkString(uiLinkKey);
             return this;
         }
+
+
+        /** Specify that the given path and regex are used to filter items which match this rule
+         * @param filterPath is a path into the object under consideration possibly containing a 
+         *                   value to which the regex is applied.
+         * @param filterRegex a regular expression string which will be applied to the value on the
+         *                    path.
+         * @param valuePath is a path leading to the value to index
+         * @return this builder
+         */
+        public Builder withFilter(final String filterPath, final String filterRegex, final String valuePath) 
+            throws ObjectParseException {
+            this.filterPath = new ObjectJsonPath(filterPath);
+            this.filterRegex = Pattern.compile(filterRegex);
+            this.valuePath = new ObjectJsonPath(valuePath);
+            return this;
+        }
+        
         
         /** Build the {@link IndexingRules}.
          * @return the rules.
@@ -539,7 +587,8 @@ public class IndexingRules {
         public IndexingRules build() {
             return new IndexingRules(path, fullText, keywordType, keyName,
                     transform, fromParent, notIndexed, sourceKey,
-                    defaultValue, uiName, uiHidden, uiLinkKey);
+                    defaultValue, uiName, uiHidden, uiLinkKey,
+                    filterPath, filterRegex, valuePath);
         }
         
     }
