@@ -752,4 +752,156 @@ public class AccessGroupEventQueueTest {
             TestCommon.assertExceptionCorrect(got, expected);
         }
     }
+    
+    @Test
+    public void ignoreAccessGroupEventsConstructor() {
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY).build();
+        
+        final AccessGroupEventQueue q = new AccessGroupEventQueue(Arrays.asList(sse));
+        
+        assertQueueState(q, set(sse), set(), 1);
+        
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        
+        final boolean loaded = q.load(sse2);
+        assertThat("incorrect load", loaded, is(false));
+        
+        assertQueueState(q, set(sse), set(), 1);
+        
+        q.moveReadyToProcessing();
+        q.setProcessingComplete(sse);
+
+        assertQueueState(q, set(), set(), 0);
+        
+        final boolean loaded2 = q.load(sse2);
+        assertThat("incorrect load", loaded2, is(true));
+        
+        assertQueueState(q, set(), set(), 1);
+        q.moveToReady();
+        assertQueueState(q, set(sse2), set(), 1);
+    }
+    
+    @Test
+    public void ignoreAccessGroupEventsLoad() {
+        final AccessGroupEventQueue q = new AccessGroupEventQueue();
+        
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        
+        final boolean loaded = q.load(sse);
+        assertThat("incorrect load", loaded, is(true));
+        
+        assertQueueState(q, set(), set(), 1);
+        
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        
+        
+        final boolean loaded2 = q.load(sse2);
+        assertThat("incorrect load", loaded2, is(false));
+        
+        assertQueueState(q, set(), set(), 1);
+        
+        q.moveToReady();
+        assertQueueState(q, set(sse), set(), 1);
+        q.moveReadyToProcessing();
+        q.setProcessingComplete(sse);
+
+        assertQueueState(q, set(), set(), 0);
+        
+        final boolean loaded3 = q.load(sse2);
+        assertThat("incorrect load", loaded3, is(true));
+        
+        assertQueueState(q, set(), set(), 1);
+        q.moveToReady();
+        assertQueueState(q, set(sse2), set(), 1);
+    }
+    
+    @Test
+    public void ignoreObjectEventsConstructor() {
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .withNullableObjectID("64")
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY).build();
+        
+        final AccessGroupEventQueue q = new AccessGroupEventQueue(Arrays.asList(sse));
+        
+        assertQueueState(q, set(sse), set(), 1);
+        
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_ALL_VERSIONS)
+                .withNullableObjectID("64")
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        
+        final boolean loaded = q.load(sse2);
+        assertThat("incorrect load", loaded, is(false));
+        
+        assertQueueState(q, set(sse), set(), 1);
+        
+        q.moveReadyToProcessing();
+        q.setProcessingComplete(sse);
+
+        assertQueueState(q, set(), set(), 0);
+        
+        final boolean loaded2 = q.load(sse2);
+        assertThat("incorrect load", loaded2, is(true));
+        
+        assertQueueState(q, set(), set(), 1);
+        q.moveToReady();
+        assertQueueState(q, set(sse2), set(), 1);
+    }
+    
+    @Test
+    public void ignoreObjectEventsLoad() {
+        final AccessGroupEventQueue q = new AccessGroupEventQueue();
+        
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .withNullableObjectID("42")
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        
+        final boolean loaded = q.load(sse);
+        assertThat("incorrect load", loaded, is(true));
+        
+        assertQueueState(q, set(), set(), 1);
+        
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                .withNullableObjectID("42")
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        
+        
+        final boolean loaded2 = q.load(sse2);
+        assertThat("incorrect load", loaded2, is(false));
+        
+        assertQueueState(q, set(), set(), 1);
+        
+        q.moveToReady();
+        assertQueueState(q, set(sse), set(), 1);
+        q.moveReadyToProcessing();
+        q.setProcessingComplete(sse);
+
+        assertQueueState(q, set(), set(), 0);
+        
+        final boolean loaded3 = q.load(sse2);
+        assertThat("incorrect load", loaded3, is(true));
+        
+        assertQueueState(q, set(), set(), 1);
+        q.moveToReady();
+        assertQueueState(q, set(sse2), set(), 1);
+    }
 }
