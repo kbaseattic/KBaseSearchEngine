@@ -1524,9 +1524,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         int pgCount = pg == null || pg.count == null ? 50 : pg.count;
         Pagination pagination = new Pagination(pgStart, pgCount);
         if (sorting == null || sorting.isEmpty()) {
-            SortingRule sr = new SortingRule();
-            sr.isTimestamp = true;
-            sr.ascending = true;
+            final SortingRule sr = SortingRule.getStandardPropertyBuilder(OBJ_TIMESTAMP).build();
             sorting = Arrays.asList(sr);
         }
         FoundHits ret = new FoundHits();
@@ -1554,13 +1552,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         List<Object> sort = new ArrayList<>();
         doc.put("sort", sort);
-        for (SortingRule sr : sorting) {
-            String keyProp = sr.isTimestamp ? OBJ_TIMESTAMP : (sr.isObjectName ? OBJ_NAME : 
-                getKeyProperty(sr.keyName));
+        for (final SortingRule sr : sorting) {
+            final String keyProp = sr.isKeyProperty() ? getKeyProperty(sr.getKeyProperty().get()) :
+                    sr.getStandardProperty().get();
 
-            Map<String, Object> sortOrderWrapper = ImmutableMap.of(keyProp,
-                                                      ImmutableMap.of("order",
-                                                                      sr.ascending ? "asc" : "desc"));
+            final Map<String, Object> sortOrderWrapper = ImmutableMap.of(
+                    keyProp, ImmutableMap.of("order", sr.isAscending() ? "asc" : "desc"));
             sort.add(sortOrderWrapper);
         }
 

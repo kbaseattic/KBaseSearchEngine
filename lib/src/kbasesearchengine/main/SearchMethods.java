@@ -39,6 +39,7 @@ import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.TypeStorage;
+import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.UObject;
 
 public class SearchMethods implements SearchInterface {
@@ -140,31 +141,31 @@ public class SearchMethods implements SearchInterface {
                 .withAdmin(admins.contains(user));
     }
     
-    private kbasesearchengine.search.SortingRule toSearch(SortingRule sr) {
+    private kbasesearchengine.search.SortingRule toSearch(final SortingRule sr) {
         if (sr == null) {
             return null;
         }
-        kbasesearchengine.search.SortingRule ret = new kbasesearchengine.search.SortingRule();
-        ret.isTimestamp = toBool(sr.getIsTimestamp());
-        ret.isObjectName = toBool(sr.getIsObjectName());
-        ret.keyName = sr.getKeyName();
-        ret.ascending = !toBool(sr.getDescending());
-        return ret;
+        final kbasesearchengine.search.SortingRule.Builder b;
+        //TODO CODE make an enum of valid standard property field names and check against input
+        if (toBool(sr.getIsTimestamp()) || Utils.isNullOrEmpty(sr.getKeyName())) {
+            b = kbasesearchengine.search.SortingRule.getStandardPropertyBuilder("timestamp");
+        } else {
+            b = kbasesearchengine.search.SortingRule.getKeyPropertyBuilder(sr.getKeyName());
+            
+        }
+        return b.withNullableIsAscending(toBool(sr.getDescending())).build();
     }
 
-    private SortingRule fromSearch(kbasesearchengine.search.SortingRule sr) {
+    private SortingRule fromSearch(final kbasesearchengine.search.SortingRule sr) {
         if (sr == null) {
             return null;
         }
-        SortingRule ret = new SortingRule();
-        if (sr.isTimestamp) {
-            ret.withIsTimestamp(1L);
-        } else if (sr.isObjectName) {
-            ret.withIsObjectName(1L);
-        } else {
-            ret.withKeyName(sr.keyName);
+        final SortingRule ret = new SortingRule();
+        if (sr.isKeyProperty()) {
+            ret.withKeyName(sr.getKeyProperty().get());
         }
-        ret.withDescending(sr.ascending ? 0L : 1L);
+        //TODO NNOW refactor to have is standard prop boolean and add standard prop
+        ret.withDescending(sr.isAscending() ? 0L : 1L);
         return ret;
     }
 

@@ -143,9 +143,7 @@ public class SearchMethodsTest {
         // what's returned doesn't matter, we're just checking that indexing storage gets the
         // right message
         
-        final SortingRule sr = new SortingRule();
-        sr.isTimestamp = true;
-        sr.ascending = true;
+        final SortingRule sr = SortingRule.getStandardPropertyBuilder("timestamp").build();
         
         final FoundHits fh = new FoundHits();
         fh.pagination = null;
@@ -309,11 +307,10 @@ public class SearchMethodsTest {
         final ArrayList<ObjectData> objs2 = new ArrayList<>();
         objs2.add(obj2);
 
-        final SortingRule sr = new SortingRule();
-        sr.isTimestamp = true;
-        sr.ascending = true;
+        final SortingRule sr = SortingRule.getStandardPropertyBuilder("timestamp").build();
 
-        final kbasesearchengine.search.MatchFilter filter = kbasesearchengine.search.MatchFilter.getBuilder()
+        final kbasesearchengine.search.MatchFilter filter =
+                kbasesearchengine.search.MatchFilter.getBuilder()
                 .withNullableFullTextInAll("test")
                 .build();
 
@@ -455,11 +452,10 @@ public class SearchMethodsTest {
         final ArrayList<ObjectData> objs = new ArrayList<>();
         objs.add(obj);
 
-        final SortingRule sr = new SortingRule();
-        sr.isTimestamp = true;
-        sr.ascending = true;
+        final SortingRule sr = SortingRule.getStandardPropertyBuilder("timestamp").build();
 
-        final kbasesearchengine.search.MatchFilter filter = kbasesearchengine.search.MatchFilter.getBuilder()
+        final kbasesearchengine.search.MatchFilter filter =
+                kbasesearchengine.search.MatchFilter.getBuilder()
                 .withNullableFullTextInAll("objname")
                 .build();
 
@@ -547,11 +543,10 @@ public class SearchMethodsTest {
         final ArrayList<ObjectData> objs = new ArrayList<>();
         objs.add(obj);
 
-        final SortingRule sr = new SortingRule();
-        sr.isTimestamp = true;
-        sr.ascending = true;
+        final SortingRule sr = SortingRule.getStandardPropertyBuilder("timestamp").build();
 
-        final kbasesearchengine.search.MatchFilter filter = kbasesearchengine.search.MatchFilter.getBuilder()
+        final kbasesearchengine.search.MatchFilter filter =
+                kbasesearchengine.search.MatchFilter.getBuilder()
                 .withNullableFullTextInAll("ws:1/2/3")
                 .build();
 

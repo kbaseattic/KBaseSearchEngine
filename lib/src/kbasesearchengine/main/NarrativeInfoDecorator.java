@@ -52,6 +52,9 @@ public class NarrativeInfoDecorator implements SearchInterface {
      * @param wsHandler a workspace event handler pointing at the workspace from which
      * data should be retrieved. This should be the same workspace as that from which the data
      * is indexed.
+     * @param authClient a client for the KBase authentication system.
+     * @param token a token to be used with the auth client. The token needs no particular
+     * privileges.
      */
     public NarrativeInfoDecorator(
             final SearchInterface searchInterface,
