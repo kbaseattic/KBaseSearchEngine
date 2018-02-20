@@ -39,7 +39,6 @@ import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.TypeStorage;
-import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.UObject;
 
 public class SearchMethods implements SearchInterface {
@@ -147,13 +146,12 @@ public class SearchMethods implements SearchInterface {
         }
         final kbasesearchengine.search.SortingRule.Builder b;
         //TODO CODE make an enum of valid standard property field names and check against input
-        if (toBool(sr.getIsTimestamp()) || Utils.isNullOrEmpty(sr.getKeyName())) {
-            b = kbasesearchengine.search.SortingRule.getStandardPropertyBuilder("timestamp");
+        if (toBool(sr.getIsObjectProperty(), true)) {
+            b = kbasesearchengine.search.SortingRule.getKeyPropertyBuilder(sr.getProperty());
         } else {
-            b = kbasesearchengine.search.SortingRule.getKeyPropertyBuilder(sr.getKeyName());
-            
+            b = kbasesearchengine.search.SortingRule.getStandardPropertyBuilder(sr.getProperty());
         }
-        return b.withNullableIsAscending(toBool(sr.getDescending())).build();
+        return b.withNullableIsAscending(toBool(sr.getAscending(), true)).build();
     }
 
     private SortingRule fromSearch(final kbasesearchengine.search.SortingRule sr) {
@@ -162,10 +160,13 @@ public class SearchMethods implements SearchInterface {
         }
         final SortingRule ret = new SortingRule();
         if (sr.isKeyProperty()) {
-            ret.withKeyName(sr.getKeyProperty().get());
+            ret.withProperty(sr.getKeyProperty().get());
+            ret.withIsObjectProperty(1L);
+        } else {
+            ret.withProperty(sr.getStandardProperty().get());
+            ret.withIsObjectProperty(0L);
         }
-        //TODO NNOW refactor to have is standard prop boolean and add standard prop
-        ret.withDescending(sr.isAscending() ? 0L : 1L);
+        ret.withAscending(sr.isAscending() ? 1L : 0L);
         return ret;
     }
 

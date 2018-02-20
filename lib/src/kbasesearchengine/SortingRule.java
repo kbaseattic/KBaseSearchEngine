@@ -14,90 +14,75 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 /**
  * <p>Original spec-file type: SortingRule</p>
  * <pre>
- * Rule for sorting found results. 'key_name', 'is_timestamp' and
- * 'is_object_name' are alternative way of defining what property
- * if used for sorting. Default order is ascending (if 
- * 'descending' field is not set).
+ * Rule for sorting results. 
+ * string property - the property to sort on. This may be a an object property - e.g. a 
+ *     field inside the object - or a standard property possessed by all objects, like a
+ *     timestamp or creator.
+ * boolean is_object_property - true (the default) to specify an object property, false to
+ *     specify a standard property.
+ * boolean ascending - true (the default) to sort ascending, false to sort descending.
  * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "is_timestamp",
-    "is_object_name",
-    "key_name",
-    "descending"
+    "property",
+    "is_object_property",
+    "ascending"
 })
 public class SortingRule {
 
-    @JsonProperty("is_timestamp")
-    private Long isTimestamp;
-    @JsonProperty("is_object_name")
-    private Long isObjectName;
-    @JsonProperty("key_name")
-    private String keyName;
-    @JsonProperty("descending")
-    private Long descending;
+    @JsonProperty("property")
+    private String property;
+    @JsonProperty("is_object_property")
+    private Long isObjectProperty;
+    @JsonProperty("ascending")
+    private Long ascending;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    @JsonProperty("is_timestamp")
-    public Long getIsTimestamp() {
-        return isTimestamp;
+    @JsonProperty("property")
+    public String getProperty() {
+        return property;
     }
 
-    @JsonProperty("is_timestamp")
-    public void setIsTimestamp(Long isTimestamp) {
-        this.isTimestamp = isTimestamp;
+    @JsonProperty("property")
+    public void setProperty(String property) {
+        this.property = property;
     }
 
-    public SortingRule withIsTimestamp(Long isTimestamp) {
-        this.isTimestamp = isTimestamp;
+    public SortingRule withProperty(String property) {
+        this.property = property;
         return this;
     }
 
-    @JsonProperty("is_object_name")
-    public Long getIsObjectName() {
-        return isObjectName;
+    @JsonProperty("is_object_property")
+    public Long getIsObjectProperty() {
+        return isObjectProperty;
     }
 
-    @JsonProperty("is_object_name")
-    public void setIsObjectName(Long isObjectName) {
-        this.isObjectName = isObjectName;
+    @JsonProperty("is_object_property")
+    public void setIsObjectProperty(Long isObjectProperty) {
+        this.isObjectProperty = isObjectProperty;
     }
 
-    public SortingRule withIsObjectName(Long isObjectName) {
-        this.isObjectName = isObjectName;
+    public SortingRule withIsObjectProperty(Long isObjectProperty) {
+        this.isObjectProperty = isObjectProperty;
         return this;
     }
 
-    @JsonProperty("key_name")
-    public String getKeyName() {
-        return keyName;
+    @JsonProperty("ascending")
+    public Long getAscending() {
+        return ascending;
     }
 
-    @JsonProperty("key_name")
-    public void setKeyName(String keyName) {
-        this.keyName = keyName;
+    @JsonProperty("ascending")
+    public void setAscending(Long ascending) {
+        this.ascending = ascending;
     }
 
-    public SortingRule withKeyName(String keyName) {
-        this.keyName = keyName;
-        return this;
-    }
-
-    @JsonProperty("descending")
-    public Long getDescending() {
-        return descending;
-    }
-
-    @JsonProperty("descending")
-    public void setDescending(Long descending) {
-        this.descending = descending;
-    }
-
-    public SortingRule withDescending(Long descending) {
-        this.descending = descending;
+    public SortingRule withAscending(Long ascending) {
+        this.ascending = ascending;
         return this;
     }
 
@@ -113,7 +98,7 @@ public class SortingRule {
 
     @Override
     public String toString() {
-        return ((((((((((("SortingRule"+" [isTimestamp=")+ isTimestamp)+", isObjectName=")+ isObjectName)+", keyName=")+ keyName)+", descending=")+ descending)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((("SortingRule"+" [property=")+ property)+", isObjectProperty=")+ isObjectProperty)+", ascending=")+ ascending)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

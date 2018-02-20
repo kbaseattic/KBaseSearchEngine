@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
@@ -41,6 +42,7 @@ import kbasesearchengine.MatchFilter;
 import kbasesearchengine.ObjectData;
 import kbasesearchengine.SearchObjectsInput;
 import kbasesearchengine.SearchObjectsOutput;
+import kbasesearchengine.SortingRule;
 import kbasesearchengine.authorization.TemporaryAuth2Client;
 import kbasesearchengine.authorization.TemporaryAuth2Client.Auth2Exception;
 import kbasesearchengine.common.FileUtil;
@@ -482,9 +484,68 @@ public class SearchAPIIntegrationTest {
             throw e;
         }
     }
-
-
     
+    @Test
+    public void sort() throws Exception {
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("sort"));
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Sort", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator1")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/1/1"),
+                ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
+                false);
+        
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Sort", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator2")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/2/1"),
+                ImmutableMap.of(new GUID("WS:1/2/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
+                false);
+        
+        final SearchObjectsOutput res = searchCli.searchObjects(new SearchObjectsInput()
+                .withAccessFilter(new AccessFilter())
+                .withMatchFilter(new MatchFilter())
+                .withSortingRules(Arrays.asList(new SortingRule()
+                        .withAscending(0L)
+                        .withIsObjectProperty(0L)
+                        .withProperty("creator"))));
+        
+        final List<String> guids = res.getObjects().stream().map(od -> od.getGuid()).collect(
+                Collectors.toList());
+        
+        assertThat("incorrect order", guids, is(Arrays.asList("WS:1/2/1", "WS:1/1/1")));
+        
+        assertThat("incorrect sort rules count", res.getSortingRules().size(), is(1));
+        
+        final SortingRule sr = res.getSortingRules().get(0);
+        
+        assertThat("incorrect property", sr.getProperty(), is("creator"));
+        assertThat("incorrect ascending", sr.getAscending(), is(0L));
+        assertThat("incorrect is object property", sr.getIsObjectProperty(), is(0L));
+    }
+
     @Test
     public void status() throws Exception {
         final Map<String, Object> res = searchCli.status();
