@@ -162,42 +162,47 @@ class KBaseSearchEngine(object):
            Double, parameter "source_tags" of list of String, parameter
            "source_tags_blacklist" of type "boolean" (A boolean. 0 = false,
            other = true.), parameter "sorting_rules" of list of type
-           "SortingRule" (Rule for sorting found results. 'key_name',
-           'is_timestamp' and 'is_object_name' are alternative way of
-           defining what property if used for sorting. Default order is
-           ascending (if 'descending' field is not set).) -> structure:
-           parameter "is_timestamp" of type "boolean" (A boolean. 0 = false,
-           other = true.), parameter "is_object_name" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "key_name" of
-           String, parameter "descending" of type "boolean" (A boolean. 0 =
-           false, other = true.), parameter "access_filter" of type
-           "AccessFilter" (Optional rules of access constraints. -
-           with_private - include data found in workspaces not marked as
-           public, default value is true, - with_public - include data found
-           in public workspaces, default value is false, - with_all_history -
-           include all versions (last one and all old versions) of objects
-           matching constrains, default value is false.) -> structure:
-           parameter "with_private" of type "boolean" (A boolean. 0 = false,
-           other = true.), parameter "with_public" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "with_all_history"
-           of type "boolean" (A boolean. 0 = false, other = true.), parameter
-           "pagination" of type "Pagination" (Pagination rules. Default
-           values are: start = 0, count = 50.) -> structure: parameter
-           "start" of Long, parameter "count" of Long, parameter
-           "post_processing" of type "PostProcessing" (Rules for what to
-           return about found objects. skip_info - do not include brief info
-           for object ('guid, 'parent_guid', 'object_name' and 'timestamp'
-           fields in ObjectData structure), skip_keys - do not include
-           keyword values for object ('key_props' field in ObjectData
-           structure), skip_data - do not include raw data for object ('data'
-           and 'parent_data' fields in ObjectData structure), ids_only -
-           shortcut to mark all three skips as true.) -> structure: parameter
-           "ids_only" of type "boolean" (A boolean. 0 = false, other =
-           true.), parameter "skip_info" of type "boolean" (A boolean. 0 =
-           false, other = true.), parameter "skip_keys" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "skip_data" of type
+           "SortingRule" (Rule for sorting results. string property - the
+           property to sort on. This may be a an object property - e.g. a
+           field inside the object - or a standard property possessed by all
+           objects, like a timestamp or creator. boolean is_object_property -
+           true (the default) to specify an object property, false to specify
+           a standard property. boolean ascending - true (the default) to
+           sort ascending, false to sort descending.) -> structure: parameter
+           "property" of String, parameter "is_object_property" of type
            "boolean" (A boolean. 0 = false, other = true.), parameter
-           "data_includes" of list of String
+           "ascending" of type "boolean" (A boolean. 0 = false, other =
+           true.), parameter "access_filter" of type "AccessFilter" (Optional
+           rules of access constraints. - with_private - include data found
+           in workspaces not marked as public, default value is true, -
+           with_public - include data found in public workspaces, default
+           value is false, - with_all_history - include all versions (last
+           one and all old versions) of objects matching constrains, default
+           value is false.) -> structure: parameter "with_private" of type
+           "boolean" (A boolean. 0 = false, other = true.), parameter
+           "with_public" of type "boolean" (A boolean. 0 = false, other =
+           true.), parameter "with_all_history" of type "boolean" (A boolean.
+           0 = false, other = true.), parameter "pagination" of type
+           "Pagination" (Pagination rules. Default values are: start = 0,
+           count = 50.) -> structure: parameter "start" of Long, parameter
+           "count" of Long, parameter "post_processing" of type
+           "PostProcessing" (Rules for what to return about found objects.
+           skip_info - do not include brief info for object ('guid,
+           'parent_guid', 'object_name' and 'timestamp' fields in ObjectData
+           structure), skip_keys - do not include keyword values for object
+           ('key_props' field in ObjectData structure), skip_data - do not
+           include raw data for object ('data' and 'parent_data' fields in
+           ObjectData structure), include_highlight - include highlights of
+           fields that matched query, ids_only - shortcut to mark all three
+           skips as true and include_highlight as false.) -> structure:
+           parameter "ids_only" of type "boolean" (A boolean. 0 = false,
+           other = true.), parameter "skip_info" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "skip_keys" of type
+           "boolean" (A boolean. 0 = false, other = true.), parameter
+           "skip_data" of type "boolean" (A boolean. 0 = false, other =
+           true.), parameter "include_highlight" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "data_includes" of
+           list of String
         :returns: instance of type "SearchObjectsOutput" (Output results for
            'search_objects' method. 'pagination' and 'sorting_rules' fields
            show actual input for pagination and sorting. total - total number
@@ -209,27 +214,33 @@ class KBaseSearchEngine(object):
            "Pagination" (Pagination rules. Default values are: start = 0,
            count = 50.) -> structure: parameter "start" of Long, parameter
            "count" of Long, parameter "sorting_rules" of list of type
-           "SortingRule" (Rule for sorting found results. 'key_name',
-           'is_timestamp' and 'is_object_name' are alternative way of
-           defining what property if used for sorting. Default order is
-           ascending (if 'descending' field is not set).) -> structure:
-           parameter "is_timestamp" of type "boolean" (A boolean. 0 = false,
-           other = true.), parameter "is_object_name" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "key_name" of
-           String, parameter "descending" of type "boolean" (A boolean. 0 =
-           false, other = true.), parameter "objects" of list of type
-           "ObjectData" (Properties of found object including metadata, raw
-           data and keywords. mapping<string, string> object_props - general
-           properties for all objects. This mapping contains the keys
-           'creator', 'copied', 'module', 'method', 'module_ver', and
-           'commit' - respectively the user that originally created the
-           object, the user that copied this incarnation of the object, and
-           the module and method used to create the object and their version
-           and version control commit hash. Not all keys may be present; if
-           not their values were not available in the search data.) ->
-           structure: parameter "guid" of type "GUID" (Global user
-           identificator. It has structure like this:
-           <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
+           "SortingRule" (Rule for sorting results. string property - the
+           property to sort on. This may be a an object property - e.g. a
+           field inside the object - or a standard property possessed by all
+           objects, like a timestamp or creator. boolean is_object_property -
+           true (the default) to specify an object property, false to specify
+           a standard property. boolean ascending - true (the default) to
+           sort ascending, false to sort descending.) -> structure: parameter
+           "property" of String, parameter "is_object_property" of type
+           "boolean" (A boolean. 0 = false, other = true.), parameter
+           "ascending" of type "boolean" (A boolean. 0 = false, other =
+           true.), parameter "objects" of list of type "ObjectData"
+           (Properties of found object including metadata, raw data and
+           keywords. mapping<string, list<string>> highlight - The keys are
+           the field names and the list contains the sections in each field
+           that matched the search query. Fields with no hits will not be
+           available. Short fields that matched are shown in their entirety.
+           Longer fields are shown as snippets preceded or followed by "...".
+           mapping<string, string> object_props - general properties for all
+           objects. This mapping contains the keys 'creator', 'copied',
+           'module', 'method', 'module_ver', and 'commit' - respectively the
+           user that originally created the object, the user that copied this
+           incarnation of the object, and the module and method used to
+           create the object and their version and version control commit
+           hash. Not all keys may be present; if not their values were not
+           available in the search data.) -> structure: parameter "guid" of
+           type "GUID" (Global user identificator. It has structure like
+           this: <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            parameter "parent_guid" of type "GUID" (Global user identificator.
            It has structure like this:
            <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
@@ -237,9 +248,10 @@ class KBaseSearchEngine(object):
            parameter "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "object_props" of mapping from String to
+           String, parameter "highlight" of mapping from String to list of
            String, parameter "total" of Long, parameter "search_time" of
            Long, parameter "access_group_narrative_info" of mapping from type
-           "access_group_id" (An data source access group ID (for instance,
+           "access_group_id" (A data source access group ID (for instance,
            the integer ID of a workspace).) to type "narrative_info"
            (Information about a workspace, which may or may not contain a
            KBase Narrative. This data is specific for data from the Workspace
@@ -273,13 +285,16 @@ class KBaseSearchEngine(object):
            'timestamp' fields in ObjectData structure), skip_keys - do not
            include keyword values for object ('key_props' field in ObjectData
            structure), skip_data - do not include raw data for object ('data'
-           and 'parent_data' fields in ObjectData structure), ids_only -
-           shortcut to mark all three skips as true.) -> structure: parameter
-           "ids_only" of type "boolean" (A boolean. 0 = false, other =
-           true.), parameter "skip_info" of type "boolean" (A boolean. 0 =
-           false, other = true.), parameter "skip_keys" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "skip_data" of type
-           "boolean" (A boolean. 0 = false, other = true.), parameter
+           and 'parent_data' fields in ObjectData structure),
+           include_highlight - include highlights of fields that matched
+           query, ids_only - shortcut to mark all three skips as true and
+           include_highlight as false.) -> structure: parameter "ids_only" of
+           type "boolean" (A boolean. 0 = false, other = true.), parameter
+           "skip_info" of type "boolean" (A boolean. 0 = false, other =
+           true.), parameter "skip_keys" of type "boolean" (A boolean. 0 =
+           false, other = true.), parameter "skip_data" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "include_highlight"
+           of type "boolean" (A boolean. 0 = false, other = true.), parameter
            "data_includes" of list of String
         :returns: instance of type "GetObjectsOutput" (Output results of
            get_objects method. mapping<access_group_id, narrative_info>
@@ -287,8 +302,13 @@ class KBaseSearchEngine(object):
            which the objects in the results reside. This data only applies to
            workspace objects.) -> structure: parameter "objects" of list of
            type "ObjectData" (Properties of found object including metadata,
-           raw data and keywords. mapping<string, string> object_props -
-           general properties for all objects. This mapping contains the keys
+           raw data and keywords. mapping<string, list<string>> highlight -
+           The keys are the field names and the list contains the sections in
+           each field that matched the search query. Fields with no hits will
+           not be available. Short fields that matched are shown in their
+           entirety. Longer fields are shown as snippets preceded or followed
+           by "...". mapping<string, string> object_props - general
+           properties for all objects. This mapping contains the keys
            'creator', 'copied', 'module', 'method', 'module_ver', and
            'commit' - respectively the user that originally created the
            object, the user that copied this incarnation of the object, and
@@ -305,9 +325,10 @@ class KBaseSearchEngine(object):
            parameter "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "object_props" of mapping from String to
+           String, parameter "highlight" of mapping from String to list of
            String, parameter "search_time" of Long, parameter
            "access_group_narrative_info" of mapping from type
-           "access_group_id" (An data source access group ID (for instance,
+           "access_group_id" (A data source access group ID (for instance,
            the integer ID of a workspace).) to type "narrative_info"
            (Information about a workspace, which may or may not contain a
            KBase Narrative. This data is specific for data from the Workspace

@@ -56,6 +56,9 @@ public class AccessGroupEventQueue {
     private StoredStatusEvent ready = null; // AG event ready for processing
     private StoredStatusEvent processing = null; // AG event processing
     private int size = 0; // keep a record of size rather than running through sub queues
+    // this contains only access group level events. Object level events are handled by their
+    // respective queues.
+    private Set<StatusEventID> containedEvents = new HashSet<>();
     
     /* should maybe initialize with an access group id and reject events that don't match */
     
@@ -126,30 +129,39 @@ public class AccessGroupEventQueue {
         } else {
             processing = e;
         }
+        containedEvents.add(e.getId());
     }
     
-    /** Add an new {@link StatusEventProcessingState#UNPROC} event to the queue. Before any
-     * loaded events are added to the ready or processing states, {@link #moveToReady()} must
-     * be called.
+    /** Add a new {@link StatusEventProcessingState#UNPROC} event to the queue.
+     * Events that already exist in the queue as determined by the event id are ignored.
+     * Before any loaded events are added to the ready or processing states,
+     * {@link #moveToReady()} must be called.
      * @param event the event to add.
+     * @return true if the event was added to the queue, false if ignored.
      */
-    public void load(final StoredStatusEvent event) {
+    public boolean load(final StoredStatusEvent event) {
         Utils.nonNull(event, "event");
         if (!event.getState().equals(StatusEventProcessingState.UNPROC)) {
             throw new IllegalArgumentException("Illegal state for loading event: " +
                     event.getState());
         }
+        boolean loaded = false;
         if (ACCESS_GROUP_EVENTS.contains(event.getEvent().getEventType())) {
-            accessGroupQueue.add(event);
+            if (!containedEvents.contains(event.getId())) {
+                accessGroupQueue.add(event);
+                containedEvents.add(event.getId());
+                loaded = true;
+            }
         } else {
             //TODO CODE add checks to StatusEvent to ensure object event types always have object IDs
             final String objID = event.getEvent().getAccessGroupObjectId().get();
             if (!objectQueues.containsKey(objID)) {
                 objectQueues.put(objID, new ObjectEventQueue());
             }
-            objectQueues.get(objID).load(event);
+            loaded = objectQueues.get(objID).load(event);
         }
-        size++;
+        size += loaded ? 1 : 0;
+        return loaded;
     }
     
     /** Moves any events that are ready for processing based on the queue rules into the ready
@@ -239,6 +251,7 @@ public class AccessGroupEventQueue {
         Utils.nonNull(event, "event");
         if (processing != null) {
             if (event.getId().equals(processing.getId())) {
+                containedEvents.remove(processing.getId());
                 processing = null;
                 size--;
                 for (final ObjectEventQueue oq: objectQueues.values()) {

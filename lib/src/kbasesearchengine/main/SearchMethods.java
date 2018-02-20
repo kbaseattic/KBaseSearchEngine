@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import kbasesearchengine.AccessFilter;
 import kbasesearchengine.GetObjectsInput;
@@ -36,6 +37,7 @@ import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.MatchFilter.Builder;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.TypeStorage;
 import us.kbase.common.service.UObject;
 
@@ -138,31 +140,33 @@ public class SearchMethods implements SearchInterface {
                 .withAdmin(admins.contains(user));
     }
     
-    private kbasesearchengine.search.SortingRule toSearch(SortingRule sr) {
+    private kbasesearchengine.search.SortingRule toSearch(final SortingRule sr) {
         if (sr == null) {
             return null;
         }
-        kbasesearchengine.search.SortingRule ret = new kbasesearchengine.search.SortingRule();
-        ret.isTimestamp = toBool(sr.getIsTimestamp());
-        ret.isObjectName = toBool(sr.getIsObjectName());
-        ret.keyName = sr.getKeyName();
-        ret.ascending = !toBool(sr.getDescending());
-        return ret;
+        final kbasesearchengine.search.SortingRule.Builder b;
+        //TODO CODE make an enum of valid standard property field names and check against input
+        if (toBool(sr.getIsObjectProperty(), true)) {
+            b = kbasesearchengine.search.SortingRule.getKeyPropertyBuilder(sr.getProperty());
+        } else {
+            b = kbasesearchengine.search.SortingRule.getStandardPropertyBuilder(sr.getProperty());
+        }
+        return b.withNullableIsAscending(toBool(sr.getAscending(), true)).build();
     }
 
-    private SortingRule fromSearch(kbasesearchengine.search.SortingRule sr) {
+    private SortingRule fromSearch(final kbasesearchengine.search.SortingRule sr) {
         if (sr == null) {
             return null;
         }
-        SortingRule ret = new SortingRule();
-        if (sr.isTimestamp) {
-            ret.withIsTimestamp(1L);
-        } else if (sr.isObjectName) {
-            ret.withIsObjectName(1L);
+        final SortingRule ret = new SortingRule();
+        if (sr.isKeyProperty()) {
+            ret.withProperty(sr.getKeyProperty().get());
+            ret.withIsObjectProperty(1L);
         } else {
-            ret.withKeyName(sr.keyName);
+            ret.withProperty(sr.getStandardProperty().get());
+            ret.withIsObjectProperty(0L);
         }
-        ret.withDescending(sr.ascending ? 0L : 1L);
+        ret.withAscending(sr.isAscending() ? 1L : 0L);
         return ret;
     }
 
@@ -183,11 +187,14 @@ public class SearchMethods implements SearchInterface {
             ret.objectInfo = true;
             ret.objectData = true;
             ret.objectKeys = true;
+            ret.objectHighlight = false;
         } else {
             boolean idsOnly = toBool(pp.getIdsOnly());
             ret.objectInfo = !(toBool(pp.getSkipInfo()) || idsOnly);
             ret.objectData = !(toBool(pp.getSkipData()) || idsOnly);
             ret.objectKeys = !(toBool(pp.getSkipKeys()) || idsOnly);
+            //default to false currently b/c of search tags. TODO: add search tags to black list?
+            ret.objectHighlight = toBool(pp.getIncludeHighlight()) && !idsOnly;
         }
         return ret;
     }
@@ -209,14 +216,22 @@ public class SearchMethods implements SearchInterface {
         if (od.getParentData().isPresent()) {
             ret.withParentData(new UObject(od.getParentData().get()));
         }
+
         ret.withObjectName(od.getObjectName().orNull());
         ret.withKeyProps(od.getKeyProperties());
+        ret.withHighlight(od.getHighlight());
+
+        final Optional<SearchObjectType> type = od.getType();
+        if (type.isPresent()) {
+            addObjectProp(ret, type.get().getType(), "type");
+            addObjectProp(ret, Integer.toString(type.get().getVersion()), "type_ver");
+        }
         addObjectProp(ret, od.getCreator().orNull(), "creator");
         addObjectProp(ret, od.getCopier().orNull(), "copied");
         addObjectProp(ret, od.getModule().orNull(), "module");
         addObjectProp(ret, od.getMethod().orNull(), "method");
         addObjectProp(ret, od.getModuleVersion().orNull(), "module_ver");
-        addObjectProp(ret, od.getCommitHash().orNull(), "commmit");
+        addObjectProp(ret, od.getCommitHash().orNull(), "commit");
         return ret;
     }
     
