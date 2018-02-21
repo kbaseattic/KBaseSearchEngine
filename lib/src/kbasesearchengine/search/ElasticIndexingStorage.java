@@ -1670,9 +1670,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 @Override
                 public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder) {
                     return requestConfigBuilder.setConnectTimeout(10000)
-                            .setSocketTimeout(120000);
+                            .setSocketTimeout(10 * 60 * 1000);
                 }
-            }).setMaxRetryTimeoutMillis(120000);
+            }).setMaxRetryTimeoutMillis(10 * 60 * 1000);
             List<Header> headers = new ArrayList<>();
             headers.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
             //headers.add(new BasicHeader("Role", "Read"));
