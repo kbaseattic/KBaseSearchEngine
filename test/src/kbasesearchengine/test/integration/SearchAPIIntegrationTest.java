@@ -31,11 +31,14 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
 import kbasesearchengine.AccessFilter;
+import kbasesearchengine.GetObjectsInput;
+import kbasesearchengine.GetObjectsOutput;
 import kbasesearchengine.KBaseSearchEngineClient;
 import kbasesearchengine.KBaseSearchEngineServer;
 import kbasesearchengine.MatchFilter;
@@ -565,6 +568,61 @@ public class SearchAPIIntegrationTest {
                 "version", "0.1.0-dev1");
         
         assertThat("incorrect status output", res, is(expected));
+    }
+    
+    /* **** Narrative pruner tests ***
+     * these should be removed once the narratives are indexed
+     * with custom code
+     */
+    
+    @Test
+    public void pruneNarrative() throws Exception {
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("narprune"));
+        
+        final Map<String, Object> data = new HashMap<>();
+        data.put("source", "a long string");
+        data.put("code_output", "another long string");
+        data.put("app_output", "yet another long string");
+        data.put("app_info", "yup, another long string here");
+        data.put("app_input", "my god will this reign of long string terror every end");
+        data.put("job_ids", "3");
+        data.put("title", "a title");
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Narrative", 1),
+                        new StorageObjectType("WS", "Narrative"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator1")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/1/1"),
+                ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
+                        new ObjectMapper().writeValueAsString(data),
+                        data.entrySet().stream().collect(Collectors.toMap(
+                                e -> e.getKey(), e -> Arrays.asList(e.getValue()))))),
+                false);
+        
+        final GetObjectsOutput ret = searchCli.getObjects(new GetObjectsInput()
+                .withGuids(Arrays.asList("WS:1/1/1")));
+        
+        assertThat("incorrect data count", ret.getObjects().size(), is(1));
+        final ObjectData od2 = ret.getObjects().get(0);
+        assertThat("incorrect data", od2.getData(), is((UObject) null));
+        assertThat("incorrect keyprops", od2.getKeyProps(),
+                is(ImmutableMap.of("title", "a title")));
+
+        final SearchObjectsOutput res = searchObjects(new MatchFilter());
+        
+        assertThat("incorrect data count", res.getObjects().size(), is(1));
+        final ObjectData od = res.getObjects().get(0);
+        assertThat("incorrect data", od.getData(), is((UObject) null));
+        assertThat("incorrect keyprops", od.getKeyProps(),
+                is(ImmutableMap.of("title", "a title")));
     }
     
     /* ****** Auth client tests - to be moved to their own suite *** 
