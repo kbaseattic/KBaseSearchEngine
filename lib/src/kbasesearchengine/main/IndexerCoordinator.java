@@ -256,6 +256,19 @@ public class IndexerCoordinator implements Stoppable {
                     queue.sizeNoMemoization());
             // start the cycle immediately if there were events in storage and the queue isn't full
             noWait = loadedEvents && queue.size() < maxQueueSize;
+            
+            /* 18/2/21: the next line is a Q&D fix to stop a fast loop.
+             * https://github.com/kbase/KBaseSearchEngine/pull/189 stopped the queue from
+             * filling with duplicate events, but it means that if there are any unprocessed
+             * events, they'll be loaded every cycle, which means that this loop continuously runs.
+             * 
+             * This change means the loop only runs 1/sec, period. When the coordinator is
+             * smarter about loading only events that aren't in memory (or maybe not even
+             * keeping unprocessed events in memory or something more drastic) the fast loop
+             * behavior can be restored.
+             * 
+             */
+            noWait = false;
             logger.logInfo("*** noWait: " + noWait);
             continuousCycles++;
         }

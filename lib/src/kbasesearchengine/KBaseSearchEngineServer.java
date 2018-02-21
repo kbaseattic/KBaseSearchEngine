@@ -39,6 +39,7 @@ import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.SearchInterface;
 import kbasesearchengine.main.SearchMethods;
 import kbasesearchengine.main.SearchVersion;
+import kbasesearchengine.main.TemporaryNarrativePruner;
 import kbasesearchengine.main.NarrativeInfoDecorator;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.system.FileLister;
@@ -157,11 +158,12 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         // update if we ever update the SDK to use the non-legacy endpoints
         final String auth2URL = authURL.split("api")[0];
         
-        search = new NarrativeInfoDecorator(
-                new SearchMethods(accessGroupProvider, esStorage, ss, admins),
-                new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient)),
-                new TemporaryAuth2Client(new URL(auth2URL)),
-                kbaseIndexerToken.getToken());
+        search = new TemporaryNarrativePruner(
+                new NarrativeInfoDecorator(
+                        new SearchMethods(accessGroupProvider, esStorage, ss, admins),
+                        new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient)),
+                        new TemporaryAuth2Client(new URL(auth2URL)),
+                        kbaseIndexerToken.getToken()));
         //END_CONSTRUCTOR
     }
 
