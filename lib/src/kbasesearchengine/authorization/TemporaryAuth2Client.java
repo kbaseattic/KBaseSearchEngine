@@ -6,6 +6,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -70,8 +71,8 @@ public class TemporaryAuth2Client implements AuthInfoProvider {
      * @throws IOException if an IO error occurs.
      * @throws Auth2Exception if the auth service returns an exception.
      */
-    @Override
-    public Map<String, String> findDisplayNames(
+    public Map<String, String> getUserDisplayNames(
+            final String token,
             final Set<String> userNames)
             throws IOException, Auth2Exception {
         Utils.notNullOrEmpty(token, "token cannot be null or whitespace only");
@@ -108,6 +109,34 @@ public class TemporaryAuth2Client implements AuthInfoProvider {
         try (final InputStream input = conn.getInputStream()) {
             return MAPPER.readValue(input, MAP_STRING_TYPE_REFERENCE);
         }
+    }
+
+    /** Get display names for a set of users. Users that do not exist in the auth service
+     * will not be shown in the results.
+     * @param userNames the set of usernames to process.
+     * @return a mapping of username to display name for each user.
+     * @throws IOException if an IO error occurs.
+     * @throws Auth2Exception if the auth service returns an exception.
+     */
+    public Map<String, String> findUserDisplayNames(
+            final Set<String> userNames)
+            throws IOException, Auth2Exception {
+        return this.getUserDisplayNames(token, userNames);
+    }
+
+    /** Get display name for a single user. User that does not exist in the auth service
+     * will not be shown in the result.
+     * @param userName the username to process.
+     * @return the display name for the given username.
+     * @throws IOException if an IO error occurs.
+     * @throws Auth2Exception if the auth service returns an exception.
+     */
+    @Override
+    public String findUserDisplayName(final String userName)
+            throws IOException, Auth2Exception {
+        final Set<String> userIds = new HashSet<>();
+        userIds.add(userName);
+        return this.findUserDisplayNames(userIds).getOrDefault(userName, null);
     }
 
     private Auth2Exception toException(final InputStream inputStream, final int responseCode)

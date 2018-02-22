@@ -1,10 +1,12 @@
 package kbasesearchengine.authorization;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import kbasesearchengine.authorization.TemporaryAuth2Client.Auth2Exception;
 
 import com.google.common.base.Ticker;
 import com.google.common.cache.CacheBuilder;
@@ -74,20 +76,19 @@ public class AuthCache implements AuthInfoProvider {
                 })
                 .build(new CacheLoader<String, String> () {
 
-                    @Override
                     public String load(String userName) throws Exception {
-                        return provider.findDisplayName(userName);
+                        return provider.findUserDisplayName(userName);
                     }
 
-                    @Override
                     public Map<String, String> loadAll(Set<String> userNames) throws Exception {
-                        return provider.findDisplayNames(userNames);
+                        return provider.findUserDisplayNames(userNames);
                     }
                  });
     }
 
     @Override
-    public String findDisplayName(String userName) throws IOException {
+    public String findUserDisplayName(final String userName)
+            throws IOException, Auth2Exception {
         try {
             return cache.get(userName);
         } catch (ExecutionException e) {
@@ -97,7 +98,8 @@ public class AuthCache implements AuthInfoProvider {
     }
 
     @Override
-    public Map<String, String> findDisplayNames(Set<String> userNames) throws IOException {
+    public Map<String, String> findUserDisplayNames(final Set<String> userNames)
+            throws IOException, Auth2Exception {
         try {
             return cache.getAll(userNames);
         } catch (ExecutionException e) {

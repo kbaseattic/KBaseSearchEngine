@@ -6,5 +6,6 @@ import java.io.IOException;
 import kbasesearchengine.authorization.TemporaryAuth2Client.Auth2Exception;
 
 public interface AuthInfoProvider {
-    public Map<String, String> findDisplayNames(Set<String> userIds) throws IOException, Auth2Exception;
+    public Map<String, String> findUserDisplayNames(Set<String> userNames) throws IOException, Auth2Exception;
+    public String findUserDisplayName(String userName) throws IOException, Auth2Exception;
 }
