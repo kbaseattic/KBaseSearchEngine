@@ -42,6 +42,7 @@ import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.SearchInterface;
 import kbasesearchengine.main.SearchMethods;
 import kbasesearchengine.main.SearchVersion;
+import kbasesearchengine.main.TemporaryNarrativePruner;
 import kbasesearchengine.main.NarrativeInfoDecorator;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.system.FileLister;
@@ -172,10 +173,12 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
                 2 * 3600,
                 50000 * 1000);
 
-        search = new NarrativeInfoDecorator(
-                new SearchMethods(accessGroupProvider, esStorage, ss, admins),
-                narrativeInfoProvider,
-                authInfoProvider);
+        search = new TemporaryNarrativePruner(
+                new NarrativeInfoDecorator(
+                        new SearchMethods(accessGroupProvider, esStorage, ss, admins),
+                        narrativeInfoProvider,
+                        authInfoProvider));
+        
         //END_CONSTRUCTOR
     }
 

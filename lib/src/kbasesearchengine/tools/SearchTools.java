@@ -238,7 +238,7 @@ public class SearchTools {
                         a.ref,
                         getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()),
                         getWsTypes(a.wsTypes, cfg.getWorkspaceTypes()),
-                        cfg.workerCodes());
+                        cfg.getWorkerCodes());
                 noCommand = false;
             } catch (EventGeneratorException | StorageInitException e) {
                 printError(e, a.verbose);
@@ -360,7 +360,7 @@ public class SearchTools {
         
         final IndexerWorker wrk = new IndexerWorker(
                 getID(id), Arrays.asList(weh), storage, indexStore, ss, tempDir, logger,
-                cfg.workerCodes());
+                cfg.getWorkerCodes());
         wrk.startIndexer();
         return wrk;
     }
