@@ -17,7 +17,8 @@ import com.google.common.cache.Weigher;
 /** A caching layer for auth info. Caches the results from the wrapped
  * {@link AuthInfoProvider} in memory for quick access.
  * @author gaprice@lbl.gov
- *
+ * @author ganapathy@bnl.gov
+ * 
  */
 public class AuthCache implements AuthInfoProvider {
 
