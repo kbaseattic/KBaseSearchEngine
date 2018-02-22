@@ -236,6 +236,7 @@ public class SearchTools {
                 runEventGenerator(
                         out,
                         a.ref,
+                        a.lastVersionOnly,
                         getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()),
                         getWsTypes(a.wsTypes, cfg.getWorkspaceTypes()),
                         cfg.getWorkerCodes());
@@ -542,6 +543,7 @@ public class SearchTools {
     private void runEventGenerator(
             final PrintStream logtarget,
             final String ref,
+            final boolean lastVersionOnly,
             final List<WorkspaceIdentifier> wsBlackList,
             final List<String> wsTypes,
             final Set<String> workerCodes)
@@ -551,6 +553,7 @@ public class SearchTools {
                 .withNullableRef(ref)
                 .withWorkspaceBlacklist(wsBlackList)
                 .withWorkerCodes(workerCodes)
+                .withLastVersionOnly(lastVersionOnly)
                 .withWorkspaceTypes(wsTypes);
         gen.build().generateEvents();
     }
@@ -672,6 +675,12 @@ public class SearchTools {
                 "The type of the object in a storage system (e.g. 'KBaseGenomes.Genome') with " +
                 "which to initialize a new search transformation spec. See --spec.")
         private String storageObjectType;
+        
+        @Parameter(names = {"--last-version-only"}, description = 
+                "When generating events, only generate events for the last version of each " +
+                "object. This parameter is ignored if a full ref including a version is " +
+                "provided in the ref argument.")
+        private boolean lastVersionOnly;
                         
         @Parameter(names = {"--version"}, description = "Print the software version and exit")
         private boolean version;
