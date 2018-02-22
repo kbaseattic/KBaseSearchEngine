@@ -23,7 +23,7 @@ import kbasesearchengine.tools.Utils;
  * @author gaprice@lbl.gov
  *
  */
-public class TemporaryAuth2Client {
+public class TemporaryAuth2Client implements AuthInfoProvider {
     
     //TODO TEST this will need a mocked auth server to test some of the error handling, noted below. We leave this for later.
     
@@ -33,6 +33,7 @@ public class TemporaryAuth2Client {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     
     private final URL authURL;
+    private String token;
     
     public TemporaryAuth2Client(URL authURL) {
         Utils.nonNull(authURL, "authURL");
@@ -44,7 +45,17 @@ public class TemporaryAuth2Client {
             }
         this.authURL = authURL;
     }
-    
+
+    /** Set token to be used in the auth API (to get display names)
+     * will not be shown in the results.
+     * @param token an auth token.
+     */
+    public TemporaryAuth2Client withToken(String token) {
+        Utils.nonNull(token, "Token");
+        this.token = token;
+        return this;
+    }
+
     /** Return the url of the auth service this client contacts.
      * @return the url.
      */
@@ -54,14 +65,13 @@ public class TemporaryAuth2Client {
     
     /** Get display names for a set of users. Users that do not exist in the auth service
      * will not be shown in the results.
-     * @param token an auth token.
      * @param userNames the set of usernames to process.
      * @return a mapping of username to display name for each user.
      * @throws IOException if an IO error occurs.
      * @throws Auth2Exception if the auth service returns an exception.
      */
-    public Map<String, String> getUserDisplayNames(
-            final String token,
+    @Override
+    public Map<String, String> findDisplayNames(
             final Set<String> userNames)
             throws IOException, Auth2Exception {
         Utils.notNullOrEmpty(token, "token cannot be null or whitespace only");
