@@ -31,9 +31,12 @@ import kbasesearchengine.authorization.AccessGroupCache;
 import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.authorization.TemporaryAuth2Client;
 import kbasesearchengine.authorization.WorkspaceAccessGroupProvider;
+import kbasesearchengine.main.NarrativeInfoCache;
+import kbasesearchengine.main.NarrativeInfoProvider;
+import kbasesearchengine.authorization.AuthCache;
+import kbasesearchengine.authorization.AuthInfoProvider;
+import kbasesearchengine.main.WorkspaceNarrativeInfoProvider;
 import kbasesearchengine.common.GUID;
-import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
-import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.main.GitInfo;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.SearchInterface;
@@ -156,12 +159,23 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         // this is a dirty hack so we don't have to provide 2 auth urls in the config
         // update if we ever update the SDK to use the non-legacy endpoints
         final String auth2URL = authURL.split("api")[0];
-        
+
+        // TODO check the parameters
+        final NarrativeInfoProvider narrativeInfoProvider = new NarrativeInfoCache(
+                new WorkspaceNarrativeInfoProvider(wsClient),
+                30,
+                50000 * 1000);
+
+        // TODO check the parameters
+        final AuthInfoProvider authInfoProvider = new AuthCache(
+                new TemporaryAuth2Client(new URL(auth2URL)).withToken(kbaseIndexerToken.getToken()),
+                2 * 3600,
+                50000 * 1000);
+
         search = new NarrativeInfoDecorator(
                 new SearchMethods(accessGroupProvider, esStorage, ss, admins),
-                new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient)),
-                new TemporaryAuth2Client(new URL(auth2URL)),
-                kbaseIndexerToken.getToken());
+                narrativeInfoProvider,
+                authInfoProvider);
         //END_CONSTRUCTOR
     }
 
