@@ -293,6 +293,7 @@ public class ObjectParserTest {
             @SuppressWarnings("unchecked")
             HashMap<String, Object> result = new ObjectMapper().readValue(jsonString,
                     HashMap.class);
+            assertThat(result.keySet().size(), is(expectedKeys.size()));
             assertThat(expectedKeys.containsAll(result.keySet()), is(true));
             assertThat(result.get("maxFlux"), is(expectedFlux.get(value_index)));
             assertThat(result.get("minFlux"), is(-expectedFlux.get(value_index)));
