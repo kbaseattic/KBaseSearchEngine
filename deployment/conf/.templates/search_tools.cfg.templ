@@ -7,6 +7,15 @@ search-mongo-db={{ default .Env.search_mongo_db "" }}
 search-mongo-user={{ default .Env.search_mongo_user "" }}
 search-mongo-pwd={{ default .Env.search_mongo_pwd "" }}
 
+# A comma delimited list of arbitrary strings serving as codes to match events to workers.
+# A worker started with one or more codes will only process events with at least one of those
+# codes. Events generated with one or more codes will only be processed on workers with at least
+# one of those codes.
+# A special code, 'default', will be processed on workers without any codes assigned or
+# workers with the 'default' code assigned. Events generated without any codes are assigned the
+# 'default' code.
+worker-codes={{ default .Env.worker_codes "" }}
+
 # INDEXER
 
 # ElasticSearch information. This is used when starting the indexer workers.
