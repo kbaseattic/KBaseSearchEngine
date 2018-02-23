@@ -19,8 +19,6 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.common.base.Optional;
@@ -812,9 +810,12 @@ public class IndexerWorker implements Stoppable {
             if (guidsToLoad.size() > 0) {
                 final List<ObjectData> objList =
                         retrier.retryFunc(g -> getObjectsByIds(g), guidsToLoad, null);
-                Map<GUID, ObjectData> loaded = 
-                        objList.stream().collect(Collectors.toMap(od -> od.getGUID(),
-                                Function.identity()));
+                // for some reason I don't understand a stream implementation would throw
+                // duplicate key errors on the ObjectData, which is the value
+                final Map<GUID, ObjectData> loaded = new HashMap<>();
+                for (final ObjectData od: objList) {
+                    loaded.put(od.getGUID(), od);
+                }
                 objLookupCache.putAll(loaded);
                 ret.putAll(loaded);
             }
