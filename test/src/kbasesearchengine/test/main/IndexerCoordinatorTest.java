@@ -176,7 +176,11 @@ public class IndexerCoordinatorTest {
                 .thenReturn(Optional.of(changeID(ready1, "foo3")));
 
         coordRunner.run();
-        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(3));
+        // changed when fast loop behavior removed 18/2/21
+//      assertThat("incorrect cycle count", coord.getContinuousCycles(), is(3));
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
+        coordRunner.run(); //added 18/2/21
+        coordRunner.run(); //added 18/2/21
         assertThat("incorrect queue size", coord.getQueueSize(), is(2));
         
         coordRunner.run(); // stop is called on first cycle
@@ -267,11 +271,13 @@ public class IndexerCoordinatorTest {
         
         when(storage.get(new StatusEventID("foo1")))
                 .thenReturn(Optional.of(ready1))
-                .thenReturn(Optional.of(proc1)) // 2nd loop of 1st run call
-                .thenReturn(Optional.of(idx1)); // this will return on the second run() call
+                .thenReturn(Optional.of(proc1)) // 2nd loop of 1st run call [18/2/21: 2nd run call]
+                .thenReturn(Optional.of(idx1)); // this will return on the second run() call [18/2/21: 3rd]
         
         coordRunner.run();
-        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(2));
+        // changed when fast loop behavior removed 18/2/21
+//        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(2));
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(2));
         
         verify(storage).setProcessingState(new StatusEventID("foo1"),
@@ -279,6 +285,7 @@ public class IndexerCoordinatorTest {
         verify(logger).logInfo(
                 "Moved event foo1 UNPUBLISH_ACCESS_GROUP WS:2/null from UNPROC to READY");
 
+        coordRunner.run(); // returns that event is ready 18/2/21
         coordRunner.run(); // this will move event1 out of the queue
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
@@ -331,7 +338,7 @@ public class IndexerCoordinatorTest {
                 "WS", Instant.ofEpochMilli(30000), StatusEventType.PUBLISH_ACCESS_GROUP)
                 .withNullableAccessGroupID(2)
                 .build(),
-                new StatusEventID("foo2"), StatusEventProcessingState.UNPROC).build();
+                new StatusEventID("foo3"), StatusEventProcessingState.UNPROC).build();
         
         final StoredStatusEvent ready1 = to(event1, StatusEventProcessingState.READY);
         
@@ -353,19 +360,28 @@ public class IndexerCoordinatorTest {
                 .thenReturn(Optional.of(ready1)); //queue blocks forever
         
         coordRunner.run();
-        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(2));
+        // changed when fast loop behavior removed 18/2/21
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
+//        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(2));
         assertThat("incorrect queue size", coord.getQueueSize(), is(1));
         
         verify(storage).setProcessingState(new StatusEventID("foo1"),
                 StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY);
         verify(logger).logInfo(
                 "Moved event foo1 UNPUBLISH_ACCESS_GROUP WS:2/null from UNPROC to READY");
+        
+        coordRunner.run(); // added 18/2/21
+        
         verify(storage).get(StatusEventProcessingState.UNPROC, 2);
         verify(storage, never()).get(StatusEventProcessingState.UNPROC, 1);
         
         coordRunner.run();
-        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(2));
+     // changed when fast loop behavior removed 18/2/21
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
+//        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(2));
         assertThat("incorrect queue size", coord.getQueueSize(), is(2));
+        
+        coordRunner.run(); // added 18/2/21
         
         verify(storage).get(StatusEventProcessingState.UNPROC, 1);
         
@@ -552,7 +568,9 @@ public class IndexerCoordinatorTest {
         final Runnable coordRunner = getIndexerRunnable(executor, coord);
         
         coordRunner.run();
-        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(2));
+        // changed when fast loop behavior removed 18/2/21
+//      assertThat("incorrect cycle count", coord.getContinuousCycles(), is(2));
+        assertThat("incorrect cycle count", coord.getContinuousCycles(), is(1));
         assertThat("incorrect queue size", coord.getQueueSize(), is(0));
         
         verify(storage).setProcessingState(new StatusEventID("foo1"),

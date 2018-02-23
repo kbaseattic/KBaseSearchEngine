@@ -697,23 +697,27 @@ public class AccessGroupEventQueueTest {
         final StoredStatusEvent objproc1 = ready(
                 "4", Instant.ofEpochMilli(10000), "foo1", StatusEventType.DELETE_ALL_VERSIONS);
         
-        final IllegalArgumentException expAccess = new IllegalArgumentException(
-                "More than one access level event is not allowed");
-        failConstruct(expAccess, agready, agproc);
-        failConstruct(expAccess, agproc, agready);
-        failConstruct(expAccess, agready, agready);
-        failConstruct(expAccess, agproc, agproc);
+        final String expAG =
+                "More than one access level event per access group ID is not allowed.\n";
+        failConstruct(new IllegalArgumentException(expAG +
+                "Existing: " + agready + "\nNew event: " + agproc), agready, agproc);
+        failConstruct(new IllegalArgumentException(expAG +
+                "Existing: " + agproc + "\nNew event: " + agready), agproc, agready);
+        failConstruct(new IllegalArgumentException(expAG +
+                "Existing: " + agready + "\nNew event: " + agready), agready, agready);
+        failConstruct(new IllegalArgumentException(expAG +
+                "Existing: " + agproc + "\nNew event: " + agproc), agproc, agproc);
         
-        final IllegalArgumentException expAccessPlus = new IllegalArgumentException(
-                "If an access group level event is in the ready or processing state, no " +
-                "other events may be submitted");
-        failConstruct(expAccessPlus, agready, objready1);
-        failConstruct(expAccessPlus, agready, objproc1);
-        failConstruct(expAccessPlus, agproc, objready1);
-        failConstruct(expAccessPlus, agproc, objproc1);
+        final String expAGPlus = "If an access group level event is in the ready or processing " +
+                "state, no other events may be submitted.\nAccess group event: ";
+        failConstruct(new IllegalArgumentException(expAGPlus + agready), agready, objready1);
+        failConstruct(new IllegalArgumentException(expAGPlus + agready), agready, objproc1);
+        failConstruct(new IllegalArgumentException(expAGPlus + agproc), agproc, objready1);
+        failConstruct(new IllegalArgumentException(expAGPlus + agproc), agproc, objproc1);
         
         final IllegalArgumentException expObj2 = new IllegalArgumentException(
-                "Already contains an event for object ID foo1");
+                "Already contains an event for object ID foo1.\n" + 
+                "Existing event: " + objready1 + "\nNew event: " + objproc1);
         failConstruct(expObj2, objready1, objproc1);
     }
     
@@ -747,5 +751,157 @@ public class AccessGroupEventQueueTest {
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
         }
+    }
+    
+    @Test
+    public void ignoreAccessGroupEventsConstructor() {
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY).build();
+        
+        final AccessGroupEventQueue q = new AccessGroupEventQueue(Arrays.asList(sse));
+        
+        assertQueueState(q, set(sse), set(), 1);
+        
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        
+        final boolean loaded = q.load(sse2);
+        assertThat("incorrect load", loaded, is(false));
+        
+        assertQueueState(q, set(sse), set(), 1);
+        
+        q.moveReadyToProcessing();
+        q.setProcessingComplete(sse);
+
+        assertQueueState(q, set(), set(), 0);
+        
+        final boolean loaded2 = q.load(sse2);
+        assertThat("incorrect load", loaded2, is(true));
+        
+        assertQueueState(q, set(), set(), 1);
+        q.moveToReady();
+        assertQueueState(q, set(sse2), set(), 1);
+    }
+    
+    @Test
+    public void ignoreAccessGroupEventsLoad() {
+        final AccessGroupEventQueue q = new AccessGroupEventQueue();
+        
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        
+        final boolean loaded = q.load(sse);
+        assertThat("incorrect load", loaded, is(true));
+        
+        assertQueueState(q, set(), set(), 1);
+        
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.PUBLISH_ACCESS_GROUP)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        
+        
+        final boolean loaded2 = q.load(sse2);
+        assertThat("incorrect load", loaded2, is(false));
+        
+        assertQueueState(q, set(), set(), 1);
+        
+        q.moveToReady();
+        assertQueueState(q, set(sse), set(), 1);
+        q.moveReadyToProcessing();
+        q.setProcessingComplete(sse);
+
+        assertQueueState(q, set(), set(), 0);
+        
+        final boolean loaded3 = q.load(sse2);
+        assertThat("incorrect load", loaded3, is(true));
+        
+        assertQueueState(q, set(), set(), 1);
+        q.moveToReady();
+        assertQueueState(q, set(sse2), set(), 1);
+    }
+    
+    @Test
+    public void ignoreObjectEventsConstructor() {
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .withNullableObjectID("64")
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY).build();
+        
+        final AccessGroupEventQueue q = new AccessGroupEventQueue(Arrays.asList(sse));
+        
+        assertQueueState(q, set(sse), set(), 1);
+        
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_ALL_VERSIONS)
+                .withNullableObjectID("64")
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        
+        final boolean loaded = q.load(sse2);
+        assertThat("incorrect load", loaded, is(false));
+        
+        assertQueueState(q, set(sse), set(), 1);
+        
+        q.moveReadyToProcessing();
+        q.setProcessingComplete(sse);
+
+        assertQueueState(q, set(), set(), 0);
+        
+        final boolean loaded2 = q.load(sse2);
+        assertThat("incorrect load", loaded2, is(true));
+        
+        assertQueueState(q, set(), set(), 1);
+        q.moveToReady();
+        assertQueueState(q, set(sse2), set(), 1);
+    }
+    
+    @Test
+    public void ignoreObjectEventsLoad() {
+        final AccessGroupEventQueue q = new AccessGroupEventQueue();
+        
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .withNullableObjectID("42")
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        
+        final boolean loaded = q.load(sse);
+        assertThat("incorrect load", loaded, is(true));
+        
+        assertQueueState(q, set(), set(), 1);
+        
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                .withNullableObjectID("42")
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        
+        
+        final boolean loaded2 = q.load(sse2);
+        assertThat("incorrect load", loaded2, is(false));
+        
+        assertQueueState(q, set(), set(), 1);
+        
+        q.moveToReady();
+        assertQueueState(q, set(sse), set(), 1);
+        q.moveReadyToProcessing();
+        q.setProcessingComplete(sse);
+
+        assertQueueState(q, set(), set(), 0);
+        
+        final boolean loaded3 = q.load(sse2);
+        assertThat("incorrect load", loaded3, is(true));
+        
+        assertQueueState(q, set(), set(), 1);
+        q.moveToReady();
+        assertQueueState(q, set(sse2), set(), 1);
     }
 }

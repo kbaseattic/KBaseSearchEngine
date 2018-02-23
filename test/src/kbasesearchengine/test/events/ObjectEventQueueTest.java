@@ -444,4 +444,78 @@ public class ObjectEventQueueTest {
         q.setProcessingComplete(sse2);
         assertEmpty(q);
     }
+    
+    @Test
+    public void ignoreDuplicateEventsConstructor() {
+        
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.READY).build();
+        
+        final ObjectEventQueue q = new ObjectEventQueue(sse);
+        
+        assertQueueState(q, Optional.of(sse), Optional.absent(), 1);
+        
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "baz", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        
+        final boolean loaded = q.load(sse2);
+        assertThat("incorrect loaded", loaded, is(false));
+        
+        assertQueueState(q, Optional.of(sse), Optional.absent(), 1);
+        
+        q.moveReadyToProcessing();
+        q.setProcessingComplete(sse);
+        
+        assertQueueState(q, Optional.absent(), Optional.absent(), 0);
+        
+        final boolean loaded2 = q.load(sse2);
+        assertThat("incorrect loaded", loaded2, is(true));
+        
+        assertQueueState(q, Optional.absent(), Optional.absent(), 1);
+        q.moveToReady();
+        assertQueueState(q, Optional.of(sse2), Optional.absent(), 1);
+    }
+    
+    @Test
+    public void ignoreDuplicateEventsLoad() {
+        final ObjectEventQueue q = new ObjectEventQueue();
+
+        final StoredStatusEvent sse = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "bar", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        
+        final boolean loaded = q.load(sse);
+        assertThat("incorrect loaded", loaded, is(true));
+        
+        assertQueueState(q, Optional.absent(), Optional.absent(), 1);
+        
+        final StoredStatusEvent sse2 = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                "baz", Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .build(),
+                new StatusEventID("foo"), StatusEventProcessingState.UNPROC).build();
+        
+        final boolean loaded2 = q.load(sse2);
+        assertThat("incorrect loaded", loaded2, is(false));
+        
+        assertQueueState(q, Optional.absent(), Optional.absent(), 1);
+        
+        q.moveToReady();
+        assertQueueState(q, Optional.of(sse), Optional.absent(), 1);
+        q.moveReadyToProcessing();
+        q.setProcessingComplete(sse);
+        
+        assertQueueState(q, Optional.absent(), Optional.absent(), 0);
+        
+        final boolean loaded3 = q.load(sse2);
+        assertThat("incorrect loaded", loaded3, is(true));
+        
+        assertQueueState(q, Optional.absent(), Optional.absent(), 1);
+        q.moveToReady();
+        assertQueueState(q, Optional.of(sse2), Optional.absent(), 1);
+    }
 }
