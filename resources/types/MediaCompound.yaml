@@ -5,8 +5,10 @@ storage-object-type: KBaseBiochem.Media
 versions:
 - inner-sub-type: MediaCompound
   path-to-sub-objects: "/mediacompounds/[*]/"
-  primary-key-path: id
+  primary-key-path: compound_ref
   indexing-rules:
+  - path: compound_ref
+    keyword-type: string
   - path: id
     keyword-type: string
     ui-name: ID
