@@ -287,7 +287,9 @@ public class ObjectParserTest {
         final List<String> expectedKeys = Arrays.asList("inchikey", "concentration",
                 "minFlux", "maxFlux", "id", "name", "compound_ref");
         final List<Double> expectedFlux = Arrays.asList( 100.0, 10.0, 50.0);
+        final List<String> names = Arrays.asList( "cpd00027", "cpd00013", "cpd00009");
         final Double expectedConcentration = 0.001;
+        final String inchikey = "WQZGKKKJIJFFOK-VFUOTHLCSA-N";
         int value_index = 0;
         for (String jsonString : guidToJson.values()) {
             @SuppressWarnings("unchecked")
@@ -295,9 +297,13 @@ public class ObjectParserTest {
                     HashMap.class);
             assertThat(result.keySet().size(), is(expectedKeys.size()));
             assertThat(expectedKeys.containsAll(result.keySet()), is(true));
+            assertThat(result.get("compound_ref"), is(expectedIds.get(value_index)));
+            assertThat(result.get("id"), is(names.get(value_index)));
+            assertThat(result.get("name"), is(names.get(value_index)));
             assertThat(result.get("maxFlux"), is(expectedFlux.get(value_index)));
             assertThat(result.get("minFlux"), is(-expectedFlux.get(value_index)));
             assertThat(result.get("concentration"), is(expectedConcentration));
+            assertThat(result.get("inchikey"), is(inchikey));
             value_index++;
         }
     }
