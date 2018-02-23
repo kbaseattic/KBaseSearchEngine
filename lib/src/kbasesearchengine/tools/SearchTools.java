@@ -2,7 +2,6 @@ package kbasesearchengine.tools;
 
 import static kbasesearchengine.tools.Utils.nonNull;
 
-import java.io.Console;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,7 +52,9 @@ import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.events.storage.StorageInitException;
 import kbasesearchengine.main.LineLogger;
+import kbasesearchengine.main.SearchVersion;
 import kbasesearchengine.main.Stoppable;
+import kbasesearchengine.main.GitInfo;
 import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.main.IndexerWorker;
 import kbasesearchengine.parse.ObjectParseException;
@@ -73,7 +75,7 @@ import us.kbase.auth.AuthException;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
 import us.kbase.common.service.UnauthorizedException;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceClient;
 
 /** Tools for working with Search. Note that this CLI is designed against the search prototype
  * event listener in the workspace service, and may need changes if the event listener is changed
@@ -83,20 +85,22 @@ import workspace.WorkspaceClient;
  */
 public class SearchTools {
     
+    //TODO TEST
+    
     private static final String NAME = "search_tools";
     private static final int MAX_Q_SIZE = 10000;
+    private static final GitInfo GIT = new GitInfo();
 
     /** Runs the CLI.
      * @param args the program arguments.
      */
     public static void main(String[] args) {
-        System.exit(new SearchTools(args, System.out, System.err, System.console()).execute());
+        System.exit(new SearchTools(args, System.out, System.err).execute());
     }
     
     private final String[] args;
     private final PrintStream out;
     private final PrintStream err;
-    private final Console console; 
     
     private MongoDatabase workspaceDB = null;
     private MongoDatabase searchDB = null;
@@ -111,15 +115,13 @@ public class SearchTools {
     public SearchTools(
             final String[] args,
             final PrintStream out,
-            final PrintStream err,
-            final Console console) { //TODO TEST will need to wrap this for testing so it's mockable
+            final PrintStream err) {
         nonNull(args, "args");
         nonNull(out, "out");
         nonNull(err, "err");
         this.args = args;
         this.out = out;
         this.err = err;
-        this.console = console;
         quietLogger();
     }
     
@@ -141,6 +143,10 @@ public class SearchTools {
         } catch (ParameterException e) {
             printError(e, a.verbose);
             return 1;
+        }
+        if (a.version) {
+            printVer();
+            return 0;
         }
         if (a.help) {
             usage(jc);
@@ -173,6 +179,7 @@ public class SearchTools {
         boolean noCommand = true; // this seems dumb...
         if (a.specPath != null) {
             try {
+                printVer();
                 new MinimalSpecGenerator().generateMinimalSearchSpec(
                         Paths.get(a.specPath), a.storageType, a.searchType, a.storageObjectType);
                 noCommand = false;
@@ -201,6 +208,7 @@ public class SearchTools {
         }
         if (a.startCoordinator) {
             try {
+                printVer();
                 final IndexerCoordinator coord = runCoordinator(cfg, out, err);
                 noCommand = false; 
                 waitForReturn(coord);
@@ -211,7 +219,7 @@ public class SearchTools {
         }
         if (startWorker) {
             try {
-                
+                printVer();
                 final IndexerWorker work = runWorker(cfg, a.startWorker, out, err);
                 noCommand = false;
                 waitForReturn(work);
@@ -224,12 +232,14 @@ public class SearchTools {
         }
         if (a.genWSEvents) {
             try {
+                printVer();
                 runEventGenerator(
                         out,
                         a.ref,
+                        a.lastVersionOnly,
                         getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()),
                         getWsTypes(a.wsTypes, cfg.getWorkspaceTypes()),
-                        cfg.workerCodes());
+                        cfg.getWorkerCodes());
                 noCommand = false;
             } catch (EventGeneratorException | StorageInitException e) {
                 printError(e, a.verbose);
@@ -291,27 +301,19 @@ public class SearchTools {
     }
     
     private void waitForReturn(final Stoppable stoppable) throws InterruptedException {
-        if (console == null) {
-            out.println("No console detected - process must be manually killed to stop.");
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                
-                @Override
-                public void run() {
-                    System.out.println("Waiting for task to stop");
-                    try {
-                        stoppable.stop(10 * 60 * 1000); // 10 mins
-                    } catch (InterruptedException e) {
-                        // do nothing, things are going down anyway
-                    }
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            
+            @Override
+            public void run() {
+                System.out.println("Waiting for task to stop");
+                try {
+                    stoppable.stop(10 * 60 * 1000); // 10 mins
+                } catch (InterruptedException e) {
+                    // do nothing, things are going down anyway
                 }
-            });
-            Thread.currentThread().join(); // waits forever
-        } else {
-            out.println("Press return to shut down process.");
-            console.readLine();
-            System.out.println("Waiting for task to stop");
-            stoppable.stop(10 * 60 * 1000); // 10 mins
-        }
+            }
+        });
+        stoppable.awaitShutdown();
     }
     
     private IndexerCoordinator runCoordinator(
@@ -359,7 +361,7 @@ public class SearchTools {
         
         final IndexerWorker wrk = new IndexerWorker(
                 getID(id), Arrays.asList(weh), storage, indexStore, ss, tempDir, logger,
-                cfg.workerCodes());
+                cfg.getWorkerCodes());
         wrk.startIndexer();
         return wrk;
     }
@@ -374,19 +376,26 @@ public class SearchTools {
         }
     }
 
-    private LineLogger buildLogger(final PrintStream logTarget,
-            final PrintStream errTarget) {
+    private LineLogger buildLogger(final PrintStream logTarget, final PrintStream errTarget) {
+        
         final LineLogger logger = new LineLogger() {
+            
+            private String decorate(final String log) {
+                final Instant now = Instant.now();
+                return now.toEpochMilli() + " " + now + " " + log;
+            }
+            
             @Override
             public void logInfo(final String line) {
-                logTarget.println(line);
+                logTarget.println(decorate(line));
             }
             @Override
             public void logError(final String line) {
-                errTarget.println(line);
+                errTarget.println(decorate(line));
             }
             @Override
             public void logError(final Throwable error) {
+                errTarget.print(decorate("Error: \n"));
                 error.printStackTrace(errTarget);
             }
             @Override
@@ -534,6 +543,7 @@ public class SearchTools {
     private void runEventGenerator(
             final PrintStream logtarget,
             final String ref,
+            final boolean lastVersionOnly,
             final List<WorkspaceIdentifier> wsBlackList,
             final List<String> wsTypes,
             final Set<String> workerCodes)
@@ -543,6 +553,7 @@ public class SearchTools {
                 .withNullableRef(ref)
                 .withWorkspaceBlacklist(wsBlackList)
                 .withWorkerCodes(workerCodes)
+                .withLastVersionOnly(lastVersionOnly)
                 .withWorkspaceTypes(wsTypes);
         gen.build().generateEvents();
     }
@@ -565,6 +576,11 @@ public class SearchTools {
         final StringBuilder sb = new StringBuilder();
         jc.usage(sb);
         out.println(sb.toString());
+    }
+    
+    private void printVer() {
+        out.println(String.format("Software version %s (commit %s)", SearchVersion.VERSION,
+                GIT.getGitCommit()));
     }
     
     private void printError(final Throwable e, final boolean verbose) {
@@ -659,6 +675,14 @@ public class SearchTools {
                 "The type of the object in a storage system (e.g. 'KBaseGenomes.Genome') with " +
                 "which to initialize a new search transformation spec. See --spec.")
         private String storageObjectType;
+        
+        @Parameter(names = {"--last-version-only"}, description = 
+                "When generating events, only generate events for the last version of each " +
+                "object. This parameter is ignored if a full ref including a version is " +
+                "provided in the ref argument.")
+        private boolean lastVersionOnly;
                         
+        @Parameter(names = {"--version"}, description = "Print the software version and exit")
+        private boolean version;
     }
 }

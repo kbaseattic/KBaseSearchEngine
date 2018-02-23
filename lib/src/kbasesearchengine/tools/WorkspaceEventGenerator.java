@@ -71,6 +71,8 @@ public class WorkspaceEventGenerator {
     private static final String WS_KEY_SCHEMAVER = "schemaver";
     private static final String WS_KEY_IN_UPDATE = "inupdate";
     
+    private static final String WS_EVENT_GEN = "WSEG";
+    
     //TODO EVENTGEN optimize by not pulling unneeded fields from db
 
     //TODO EVENTGEN handle data palettes: 1) remove all sharing for ws 2) pull DP 3) add share events for all DP objects. RC still possible.
@@ -87,6 +89,7 @@ public class WorkspaceEventGenerator {
     private final Set<WorkspaceIdentifier> wsBlackList;
     private final List<Pattern> wsTypes;
     private final Set<String> workerCodes;
+    private final boolean lastVersionOnly;
     
     private WorkspaceEventGenerator(
             final StatusEventStorage storage,
@@ -97,7 +100,8 @@ public class WorkspaceEventGenerator {
             final PrintStream logtarget,
             final Collection<WorkspaceIdentifier> wsBlackList,
             final Collection<String> wsTypes,
-            final Collection<String> workerCodes)
+            final Collection<String> workerCodes,
+            final boolean lastVersionOnly)
             throws EventGeneratorException {
         this.ws = ws;
         this.obj = obj;
@@ -108,6 +112,7 @@ public class WorkspaceEventGenerator {
         this.wsBlackList = Collections.unmodifiableSet(new HashSet<>(wsBlackList));
         this.wsTypes = processTypes(wsTypes);
         this.workerCodes = Collections.unmodifiableSet(new HashSet<>(workerCodes));
+        this.lastVersionOnly = lastVersionOnly;
         checkWorkspaceSchema();
     }
     
@@ -210,10 +215,10 @@ public class WorkspaceEventGenerator {
                         .append(WS_KEY_OBJ_ID, 1)
                         .append(WS_KEY_VER, -1)).iterator();
 
-        Versions vers = new Versions(vercur, 10000);
+        Versions vers = new Versions(vercur, 10000, null);
         while (!vers.isEmpty()) {
             processVers(wsid, vers, pub, tempNarr);
-            vers = new Versions(vercur, 10000);
+            vers = new Versions(vercur, 10000, vers.lastObjVer);
         }
     }
 
@@ -223,7 +228,8 @@ public class WorkspaceEventGenerator {
             final boolean pub,
             final boolean tempNarr)
             throws EventGeneratorException {
-        final Map<Integer, Document> objects = getObjects(wsid, vers.minObjId, vers.maxObjId);
+        final Map<Integer, Document> objects = getObjects(
+                wsid, vers.minObjId, vers.lastObjVer.objid);
         for (final Document ver: vers.versions) {
             final int objid = Math.toIntExact(ver.getLong(WS_KEY_OBJ_ID));
             final Document obj = objects.get(objid);
@@ -279,7 +285,8 @@ public class WorkspaceEventGenerator {
                     .withNullableisPublic(pub)
                     .build(),
                     StatusEventProcessingState.UNPROC,
-                    workerCodes);
+                    workerCodes,
+                    WS_EVENT_GEN);
         } catch (RetriableIndexingException e) {
             throw new EventGeneratorException(e.getMessage(), e); //TODO CODE retries
         }
@@ -307,33 +314,53 @@ public class WorkspaceEventGenerator {
         return ret;
     }
 
+    private class ObjVer {
+        
+        public final int objid;
+        public final int ver;
+        
+        private ObjVer(final int objid, final int ver) {
+            this.objid = objid;
+            this.ver = ver;
+        }
+    }
+    
     private class Versions {
         
         public final int minObjId;
-        public final int maxObjId;
+        // the last version of the maximum object id
+        public final ObjVer lastObjVer;
         public final List<Document> versions = new LinkedList<>();
         
-        /* It is expected that the cursor is sorted by object id */
-        public Versions(final MongoCursor<Document> vercur, final int count)
+        /* It is expected that the cursor is sorted by object id asc and then by version desc */
+        public Versions(
+                final MongoCursor<Document> vercur,
+                final int count,
+                ObjVer lastObjVer)
                 throws EventGeneratorException {
             int minId = Integer.MAX_VALUE;
-            int maxId = -1;
             try {
                 int i = 0;
                 while (vercur.hasNext() && i < count) {
                     final Document ver = vercur.next();
                     final int id = Math.toIntExact(ver.getLong(WS_KEY_OBJ_ID));
-                    if (id < minId) {
-                        minId = id;
+                    final int version = Math.toIntExact(ver.getInteger(WS_KEY_VER));
+                    if (lastObjVer == null) {
+                        lastObjVer = new ObjVer(id, version);
                     }
-                    if (id > maxId) {
-                        maxId = id;
+                    if (lastObjVer.objid != id) {
+                        lastObjVer = new ObjVer(id, version);
                     }
-                    versions.add(ver);
-                    i++;
+                    if (!lastVersionOnly || version == lastObjVer.ver) {
+                        if (id < minId) {
+                            minId = id;
+                        }
+                        versions.add(ver);
+                        i++;
+                    }
                 }
                 minObjId = minId;
-                maxObjId = maxId;
+                this.lastObjVer = lastObjVer;
             } catch (MongoException e) {
                 throw convert(e, "workspace");
             }
@@ -376,6 +403,7 @@ public class WorkspaceEventGenerator {
         private Collection<WorkspaceIdentifier> wsBlackList = new LinkedList<>();
         private Collection<String> wsTypes = new LinkedList<>();
         private Collection<String> workerCodes = new HashSet<>();
+        private boolean lastVersionOnly = false;
         
         public Builder(
                 final StatusEventStorage storage,
@@ -442,11 +470,16 @@ public class WorkspaceEventGenerator {
             this.workerCodes = workerCodes;
             return this;
         }
+        
+        public Builder withLastVersionOnly(final boolean lastVersionOnly) {
+            this.lastVersionOnly = lastVersionOnly;
+            return this;
+        }
 
         public WorkspaceEventGenerator build() throws EventGeneratorException {
             return new WorkspaceEventGenerator(
                     storage, workspaceDatabase, ws, obj, ver, logtarget, wsBlackList, wsTypes,
-                    workerCodes);
+                    workerCodes, ver > 0 ? false : lastVersionOnly);
         }
 
     }

@@ -9,6 +9,7 @@ public class PostProcessing {
     public boolean objectInfo;
     public boolean objectKeys;
     public boolean objectData;
+    public boolean objectHighlight;
     public List<String> objectDataIncludes;
     
     @Override
@@ -20,6 +21,7 @@ public class PostProcessing {
                 : objectDataIncludes.hashCode());
         result = prime * result + (objectInfo ? 1231 : 1237);
         result = prime * result + (objectKeys ? 1231 : 1237);
+        result = prime * result + (objectHighlight ? 1231 : 1237);
         return result;
     }
     
@@ -49,6 +51,9 @@ public class PostProcessing {
             return false;
         }
         if (objectKeys != other.objectKeys) {
+            return false;
+        }
+        if (objectHighlight != other.objectHighlight){
             return false;
         }
         return true;

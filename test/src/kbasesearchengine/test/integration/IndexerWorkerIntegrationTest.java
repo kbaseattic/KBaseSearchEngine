@@ -62,11 +62,11 @@ import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
 import us.kbase.common.test.controllers.mongo.MongoController;
 import us.kbase.test.auth2.authcontroller.AuthController;
-import workspace.CreateWorkspaceParams;
-import workspace.ObjectSaveData;
-import workspace.RegisterTypespecParams;
-import workspace.SaveObjectsParams;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.CreateWorkspaceParams;
+import us.kbase.workspace.ObjectSaveData;
+import us.kbase.workspace.RegisterTypespecParams;
+import us.kbase.workspace.SaveObjectsParams;
+import us.kbase.workspace.WorkspaceClient;
 
 public class IndexerWorkerIntegrationTest {
     
@@ -302,11 +302,11 @@ public class IndexerWorkerIntegrationTest {
 
         System.out.println("Genome: " + storage.getObjectsByIds(
                 storage.searchIds(objectTypes,
-                        MatchFilter.create().withFullTextInAll("test"), null, 
+                        MatchFilter.getBuilder().withNullableFullTextInAll("test").build(), null, 
                         AccessFilter.create().withAdmin(true), null).guids, pp).get(0));
         String query = "TrkA";
         Map<String, Integer> typeToCount = storage.searchTypes(
-                MatchFilter.create().withFullTextInAll(query), 
+                MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), 
                 AccessFilter.create().withAdmin(true));
         System.out.println("Counts per type: " + typeToCount);
         if (typeToCount.size() == 0) {
@@ -315,7 +315,7 @@ public class IndexerWorkerIntegrationTest {
         List<String> types = ImmutableList.of(typeToCount.keySet().iterator().next());
 
         Set<GUID> guids = storage.searchIds(types,
-                MatchFilter.create().withFullTextInAll(query), null, 
+                MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), null, 
                 AccessFilter.create().withAdmin(true), null).guids;
         System.out.println("GUIDs found: " + guids);
         ObjectData obj = storage.getObjectsByIds(guids, pp).get(0);
@@ -349,7 +349,7 @@ public class IndexerWorkerIntegrationTest {
             final boolean debugOutput)
             throws Exception {
         Set<GUID> ids = storage.searchIds(types,
-                MatchFilter.create().withFullTextInAll(query), null, 
+                MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), null, 
                 AccessFilter.create().withAccessGroups(accessGroupId), null).guids;
         if (debugOutput) {
             PostProcessing pp = new PostProcessing();

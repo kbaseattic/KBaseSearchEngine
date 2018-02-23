@@ -1,0 +1,16 @@
+global-object-type: ModelReactionProteinSubunit
+ui-type-name: Model Protein
+storage-type: WS
+storage-object-type: KBaseFBA.FBAModel
+versions:
+- inner-sub-type: ModelReactionProteinSubunit
+  path-to-sub-objects: /modelreactions/[*]/modelReactionProteins/[*]/modelReactionProteinSubunits/[*]/
+  primary-key-path: role
+  indexing-rules:
+  - path: role
+    keyword-type: string
+    ui-name: Role
+  - path: feature_refs
+    transform: values
+    keyword-type: string
+    ui-name: Feature ID

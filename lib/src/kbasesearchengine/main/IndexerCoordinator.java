@@ -52,6 +52,7 @@ public class IndexerCoordinator implements Stoppable {
     private final ScheduledExecutorService executor;
     private final EventQueue queue;
     private final Clock clock;
+    private final SignalMonitor signalMonitor;
     
     private final int maxQueueSize;
     private int continuousCycles = 0;
@@ -76,14 +77,21 @@ public class IndexerCoordinator implements Stoppable {
             final LineLogger logger,
             final int maximumQueueSize)
             throws InterruptedException, IndexingException {
-        this(storage, logger, maximumQueueSize, Executors.newSingleThreadScheduledExecutor(),
-                RETRY_FATAL_BACKOFF_MS_DEFAULT, Ticker.systemTicker(), Clock.systemDefaultZone());
+        this(
+                storage,
+                logger,
+                new SignalMonitor(),
+                maximumQueueSize,
+                Executors.newSingleThreadScheduledExecutor(),
+                RETRY_FATAL_BACKOFF_MS_DEFAULT,
+                Ticker.systemTicker(), Clock.systemDefaultZone());
     }
     
     /** Create an indexer coordinator solely for the purposes of testing. This constructor should
      * not be used for any other purpose.
      * @param storage the storage system containing events.
      * @param logger a logger.
+     * @param signalMonitor a monitor for detecting an internal shutdown.
      * @param maximumQueueSize the maximum number of events in the internal in-memory queue.
      * @param testExecutor a single thread executor for testing purposes, usually a mock.
      * @param retryFatalBackoffMS a list of times in milliseconds since the epoch. Starting with
@@ -102,6 +110,7 @@ public class IndexerCoordinator implements Stoppable {
     public IndexerCoordinator(
             final StatusEventStorage storage,
             final LineLogger logger,
+            final SignalMonitor signalMonitor,
             final int maximumQueueSize,
             final ScheduledExecutorService testExecutor,
             final List<Integer> retryFatalBackoffMS,
@@ -110,9 +119,11 @@ public class IndexerCoordinator implements Stoppable {
             throws InterruptedException, IndexingException {
         Utils.nonNull(storage, "storage");
         Utils.nonNull(logger, "logger");
+        Utils.nonNull(signalMonitor, "signalMonitor");
         if (maximumQueueSize < 1) {
             throw new IllegalArgumentException("maximumQueueSize must be at least 1");
         }
+        this.signalMonitor = signalMonitor;
         this.maxQueueSize = maximumQueueSize;
         this.logger = logger;
         this.storage = storage;
@@ -132,6 +143,10 @@ public class IndexerCoordinator implements Stoppable {
                 .build();
     }
     
+    @Override
+    public void awaitShutdown() throws InterruptedException {
+        signalMonitor.awaitSignal();
+    }
     /** Get the maximum size of the in memory queue.
      * @return
      */
@@ -155,6 +170,7 @@ public class IndexerCoordinator implements Stoppable {
             } catch (InterruptedException | FatalIndexingException e) {
                 logError(ErrorType.FATAL, e);
                 executor.shutdown();
+                signalMonitor.signal();
             } catch (Throwable e) {
                 logError(ErrorType.UNEXPECTED, e);
             }
@@ -225,6 +241,19 @@ public class IndexerCoordinator implements Stoppable {
             checkOnEventsInProcess();
             // start the cycle immediately if there were events in storage and the queue isn't full
             noWait = loadedEvents && queue.size() < maxQueueSize;
+            
+            /* 18/2/21: the next line is a Q&D fix to stop a fast loop.
+             * https://github.com/kbase/KBaseSearchEngine/pull/189 stopped the queue from
+             * filling with duplicate events, but it means that if there are any unprocessed
+             * events, they'll be loaded every cycle, which means that this loop continuously runs.
+             * 
+             * This change means the loop only runs 1/sec, period. When the coordinator is
+             * smarter about loading only events that aren't in memory (or maybe not even
+             * keeping unprocessed events in memory or something more drastic) the fast loop
+             * behavior can be restored.
+             * 
+             */
+            noWait = false;
             continuousCycles++;
         }
     }

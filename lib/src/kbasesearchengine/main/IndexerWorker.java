@@ -3,7 +3,9 @@ package kbasesearchengine.main;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -17,8 +19,6 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.common.base.Optional;
@@ -48,8 +48,10 @@ import kbasesearchengine.parse.ObjectParser;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
 import kbasesearchengine.search.IndexingStorage;
+import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.system.NoSuchTypeException;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.ParsingRulesSubtypeFirstComparator;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
@@ -75,6 +77,7 @@ public class IndexerWorker implements Stoppable {
     private final LineLogger logger;
     private final Map<String, EventHandler> eventHandlers = new HashMap<>();
     private ScheduledExecutorService executor = null;
+    private final SignalMonitor signalMonitor = new SignalMonitor();
     private boolean stopRunner = false;
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
@@ -133,6 +136,11 @@ public class IndexerWorker implements Stoppable {
         this.indexingStorage = indexingStorage;
     }
 
+    @Override
+    public void awaitShutdown() throws InterruptedException {
+        signalMonitor.awaitSignal();
+    }
+    
     public void startIndexer() {
         stopRunner = false;
         //TODO TEST add a way to inject an executor for testing purposes
@@ -154,6 +162,7 @@ public class IndexerWorker implements Stoppable {
                 } catch (InterruptedException | FatalIndexingException e) {
                     logError(ErrorType.FATAL, e);
                     executor.shutdown();
+                    signalMonitor.signal();
                 } catch (Throwable e) {
                     logError(ErrorType.UNEXPECTED, e);
                 }
@@ -520,8 +529,9 @@ public class IndexerWorker implements Stoppable {
             long loadTime = System.currentTimeMillis() - t1;
             logger.logInfo("[Indexer]   " + guid + ", loading time: " + loadTime + " ms.");
             logger.timeStat(guid, loadTime, 0, 0);
-            final Set<ObjectTypeParsingRules> parsingRules = 
-                    typeStorage.listObjectTypeParsingRules(storageObjectType);
+            final List<ObjectTypeParsingRules> parsingRules = new ArrayList<>( 
+                    typeStorage.listObjectTypeParsingRules(storageObjectType));
+            Collections.sort(parsingRules, new ParsingRulesSubtypeFirstComparator());
             for (final ObjectTypeParsingRules rule : parsingRules) {
                 final long t2 = System.currentTimeMillis();
                 final ParseObjectsRet parsedRet = parseObjects(guid, indexLookup,
@@ -681,8 +691,7 @@ public class IndexerWorker implements Stoppable {
     private class MOPLookupProvider implements ObjectLookupProvider {
         // storage code -> full ref path -> resolved guid
         private Map<String, Map<String, GUID>> refResolvingCache = new LinkedHashMap<>();
-        private Map<GUID, kbasesearchengine.search.ObjectData> objLookupCache =
-                new LinkedHashMap<>();
+        private Map<GUID, ObjectData> objLookupCache = new LinkedHashMap<>();
         private Map<GUID, SearchObjectType> guidToTypeCache = new LinkedHashMap<>();
         
         @Override
@@ -787,10 +796,9 @@ public class IndexerWorker implements Stoppable {
         }
 
         @Override
-        public Map<GUID, kbasesearchengine.search.ObjectData> lookupObjectsByGuid(
-                final Set<GUID> guids)
+        public Map<GUID, ObjectData> lookupObjectsByGuid(final Set<GUID> guids)
                 throws InterruptedException, IndexingException {
-            Map<GUID, kbasesearchengine.search.ObjectData> ret = new LinkedHashMap<>();
+            Map<GUID, ObjectData> ret = new LinkedHashMap<>();
             Set<GUID> guidsToLoad = new LinkedHashSet<>();
             for (GUID guid : guids) {
                 if (objLookupCache.containsKey(guid)) {
@@ -800,18 +808,21 @@ public class IndexerWorker implements Stoppable {
                 }
             }
             if (guidsToLoad.size() > 0) {
-                final List<kbasesearchengine.search.ObjectData> objList =
+                final List<ObjectData> objList =
                         retrier.retryFunc(g -> getObjectsByIds(g), guidsToLoad, null);
-                Map<GUID, kbasesearchengine.search.ObjectData> loaded = 
-                        objList.stream().collect(Collectors.toMap(od -> od.getGUID(),
-                                Function.identity()));
+                // for some reason I don't understand a stream implementation would throw
+                // duplicate key errors on the ObjectData, which is the value
+                final Map<GUID, ObjectData> loaded = new HashMap<>();
+                for (final ObjectData od: objList) {
+                    loaded.put(od.getGUID(), od);
+                }
                 objLookupCache.putAll(loaded);
                 ret.putAll(loaded);
             }
             return ret;
         }
         
-        private List<kbasesearchengine.search.ObjectData> getObjectsByIds(final Set<GUID> guids)
+        private List<ObjectData> getObjectsByIds(final Set<GUID> guids)
                 throws RetriableIndexingException {
             kbasesearchengine.search.PostProcessing pp = 
                     new kbasesearchengine.search.PostProcessing();
@@ -844,10 +855,14 @@ public class IndexerWorker implements Stoppable {
                 }
             }
             if (guidsToLoad.size() > 0) {
-                final List<kbasesearchengine.search.ObjectData> data =
+                final List<ObjectData> data =
                         retrier.retryFunc(g -> getObjectsByIds(g), guidsToLoad, null);
-                final Map<GUID, SearchObjectType> loaded = data.stream()
-                        .collect(Collectors.toMap(od -> od.getGUID(), od -> od.getType().get()));
+                // for some reason I don't understand a stream implementation would throw
+                // duplicate key errors on the od.getType(), which is the value
+                final Map<GUID, SearchObjectType> loaded = new HashMap<>();
+                for (final ObjectData od: data) {
+                    loaded.put(od.getGUID(), od.getType().get());
+                }
                 guidToTypeCache.putAll(loaded);
                 ret.putAll(loaded);
             }

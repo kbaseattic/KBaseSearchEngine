@@ -4,6 +4,7 @@ import static kbasesearchengine.test.common.TestCommon.set;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -18,6 +19,7 @@ import java.util.Comparator;
 import java.util.Map;
 
 import org.junit.Test;
+import org.mockito.InOrder;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -254,6 +256,114 @@ public class IndexerWorkerTest {
                     "Could not find the subobject id for one or more of the subobjects for " +
                     "object code:1/2/3 when applying search specification foo_1"));
         }
+    }
+    
+    @Test
+    public void subtypesIndexedFirst() throws Exception {
+        /* test that subtypes from an object are sent to the indexing storage first.
+         * This ensures that checks against a guid in the storage system mean that the indexing
+         * is complete. If subtypes can be indexed after the main object data, the check could
+         * pass while subtypes are still being indexed.
+         */
+        
+        final Map<String, Object> data = ImmutableMap.of(
+                "thingy", 1,
+                "thingy2", "foo",
+                "subobjs", Arrays.asList(
+                        ImmutableMap.of("id", "an id", "somedata", "data"))
+                );
+        
+        final EventHandler ws = mock(EventHandler.class);
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final IndexingStorage idxStore = mock(IndexingStorage.class);
+        final TypeStorage typeStore = mock(TypeStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        
+        final InOrder idxOrder = inOrder(idxStore);
+        
+        final Path tempDir = Paths.get(TestCommon.getTempDir()).toAbsolutePath()
+                .resolve("IndexerWorkerTest");
+        deleteRecursively(tempDir);
+        
+        when(ws.getStorageCode()).thenReturn("code");
+        
+        final IndexerWorker worker = new IndexerWorker(
+                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
+                null);
+        
+        final GUID guid = new GUID("code:1/2/3");
+        when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
+        
+        when(ws.load(eq(Arrays.asList(guid)), any(Path.class)))
+                .thenAnswer(new Answer<SourceData>() {
+
+                        @Override
+                        public SourceData answer(final InvocationOnMock inv) throws Throwable {
+                            final Path path = inv.getArgument(1);
+                            new ObjectMapper().writeValue(path.toFile(), data);
+                            return SourceData.getBuilder(
+                                    new UObject(path.toFile()), "myobj", "somedude")
+                                    .withNullableMD5("md5")
+                                    .build();
+                        }
+        });
+
+        final StorageObjectType storageObjectType = StorageObjectType
+                .fromNullableVersion("code", "sometype", 3);
+        
+        final ObjectTypeParsingRules subrule = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1), storageObjectType)
+                .toSubObjectRule("subfoo", new ObjectJsonPath("/subobjs/[*]/"),
+                        new ObjectJsonPath("id"))
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("somedata")).build())
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("id")).build())
+                .build();
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1), storageObjectType)
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("thingy")).build())
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("thingy2")).build())
+                .build();
+        
+        when(typeStore.listObjectTypeParsingRules(storageObjectType))
+                .thenReturn(set(rule, subrule));
+        
+        worker.processOneEvent(StatusEvent.getBuilder(
+                storageObjectType,
+                Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("2")
+                .withNullableVersion(3)
+                .withNullableisPublic(false)
+                .build());
+        
+        final ParsedObject posub = new ParsedObject(
+                new ObjectMapper().writeValueAsString(
+                        ImmutableMap.of( "id", "an id", "somedata", "data")),
+                ImmutableMap.of("somedata", Arrays.asList("data"),
+                        "id", Arrays.asList("an id")));
+        final ParsedObject po = new ParsedObject(
+                new ObjectMapper().writeValueAsString(
+                        ImmutableMap.of("thingy", 1, "thingy2", "foo")),
+                ImmutableMap.of("thingy", Arrays.asList(1),
+                        "thingy2", Arrays.asList("foo")));
+        
+        idxOrder.verify(idxStore).indexObjects(
+                eq(subrule),
+                any(SourceData.class),
+                eq(Instant.ofEpochMilli(10000)),
+                eq(null),
+                eq(guid),
+                eq(ImmutableMap.of(new GUID(guid, "subfoo", "an id"), posub)),
+                eq(false));
+        
+        idxOrder.verify(idxStore).indexObjects(
+                eq(rule),
+                any(SourceData.class),
+                eq(Instant.ofEpochMilli(10000)),
+                eq(null),
+                eq(guid),
+                eq(ImmutableMap.of(guid, po)),
+                eq(false));
     }
     
     private void deleteRecursively(final Path path) throws Exception {

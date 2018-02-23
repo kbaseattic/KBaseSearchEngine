@@ -55,15 +55,15 @@ import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UObject;
 import us.kbase.common.test.controllers.mongo.MongoController;
 import us.kbase.test.auth2.authcontroller.AuthController;
-import workspace.CreateWorkspaceParams;
-import workspace.GetObjects2Params;
-import workspace.ObjectSaveData;
-import workspace.ObjectSpecification;
-import workspace.ProvenanceAction;
-import workspace.RegisterTypespecParams;
-import workspace.SaveObjectsParams;
-import workspace.SubAction;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.CreateWorkspaceParams;
+import us.kbase.workspace.GetObjects2Params;
+import us.kbase.workspace.ObjectSaveData;
+import us.kbase.workspace.ObjectSpecification;
+import us.kbase.workspace.ProvenanceAction;
+import us.kbase.workspace.RegisterTypespecParams;
+import us.kbase.workspace.SaveObjectsParams;
+import us.kbase.workspace.SubAction;
+import us.kbase.workspace.WorkspaceClient;
 
 public class IndexerIntegrationTest {
     
@@ -194,6 +194,7 @@ public class IndexerIntegrationTest {
     
     private static void installSearchTypes(final Path target) throws IOException {
         installTestFile("EmptyAType.json", target);
+        installTestFile("OneStringThreeKeyNames.yaml", target);
         installTestFile("TwoVersions.yaml", target);
         installTestFile("NoIndexingRules.yaml", target);
     }
@@ -213,10 +214,12 @@ public class IndexerIntegrationTest {
         final WorkspaceClient wc = new WorkspaceClient(wsURL, wsadmintoken);
         wc.setIsInsecureHttpConnectionAllowed(true);
         ownModule(wc, "Empty");
+        ownModule(wc, "OneString");
         ownModule(wc, "TwoVersions");
         ownModule(wc, "TwoVersionsMapped");
         ownModule(wc, "NoIndexingRules");
         loadType(wc, "Empty", "Empty.spec", Arrays.asList("AType"));
+        loadType(wc, "OneString", "OneString.spec", Arrays.asList("AType"));
         loadType(wc, "TwoVersions", "TwoVersions1.spec", Arrays.asList("Type"));
         loadType(wc, "TwoVersions", "TwoVersions2.spec", Collections.emptyList());
         loadType(wc, "TwoVersionsMapped", "TwoVersionsMapped1.spec", Arrays.asList("Type"));
@@ -286,12 +289,13 @@ public class IndexerIntegrationTest {
     }
 
     @Test
-    public void singleNewVersion() throws Exception {
+    public void singleNewVersionWithSourceTags() throws Exception {
         // a basic test to ensure all the indexer guts are working together.
-        // also tests provenance
+        // also tests provenance and source tags
         
         wsCli1.createWorkspace(new CreateWorkspaceParams()
-                .withWorkspace("foo"));
+                .withWorkspace("foo")
+                .withMeta(ImmutableMap.of("searchtags", "narrative, refdata")));
         wsCli1.saveObjects(new SaveObjectsParams()
                 .withWorkspace("foo")
                 .withObjects(Arrays.asList(new ObjectSaveData()
@@ -330,6 +334,46 @@ public class IndexerIntegrationTest {
                 .withNullableTimestamp(indexedTimestamp)
                 .withNullableData(ImmutableMap.of("whee", "wugga"))
                 .withKeyProperty("whee", "wugga")
+                .withSourceTag("narrative")
+                .withSourceTag("refdata")
+                .build();
+        
+        assertThat("incorrect indexed object", indexedObj, is(expected));
+        assertWSTimestampCloseToIndexedTimestamp(timestamp, indexedTimestamp);
+    }
+    
+    @Test
+    public void threeKeyNames() throws Exception {
+        // tests that a spec with multiple keynames for the same field works.
+        
+        wsCli1.createWorkspace(new CreateWorkspaceParams().withWorkspace("foo"));
+        wsCli1.saveObjects(new SaveObjectsParams()
+                .withWorkspace("foo")
+                .withObjects(Arrays.asList(new ObjectSaveData()
+                        .withData(new UObject(ImmutableMap.of("foo", "bar")))
+                        .withName("bar")
+                        .withType("OneString.AType-1.0")
+                ))
+        );
+        final long timestamp = getWSTimeStamp("1/1/1");
+        
+        System.out.println("waiting 5s for event to trickle through the system");
+        Thread.sleep(5000); // wait for the indexer & worker to process the event
+        
+        final ObjectData indexedObj =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/1/1"))).get(0);
+        final Instant indexedTimestamp = indexedObj.getTimestamp().get();
+        
+        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:1/1/1"))
+                .withNullableObjectName("bar")
+                .withNullableType(new SearchObjectType("OneString", 1))
+                .withNullableCreator(userToken.getUserName())
+                .withNullableMD5("9bb58f26192e4ba00f01e2e7b136bbd8")
+                .withNullableTimestamp(indexedTimestamp)
+                .withNullableData(ImmutableMap.of("foo", "bar"))
+                .withKeyProperty("foo", "bar")
+                .withKeyProperty("foo1", "bar")
+                .withKeyProperty("foo2", "bar")
                 .build();
         
         assertThat("incorrect indexed object", indexedObj, is(expected));

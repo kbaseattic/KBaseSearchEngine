@@ -2,6 +2,7 @@
 package kbasesearchengine;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Generated;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
@@ -17,7 +18,10 @@ import us.kbase.common.service.UObject;
  * <pre>
  * Properties of found object including metadata, raw data and
  *     keywords.
- *     
+ * mapping<string, list<string>> highlight - The keys are the field names and the list 
+ *     contains the sections in each field that matched the search query. Fields with no
+ *     hits will not be available. Short fields that matched are shown in their entirety.
+ *     Longer fields are shown as snippets preceded or followed by "...".     
  * mapping<string, string> object_props - general properties for all objects. This mapping
  *     contains the keys 'creator', 'copied', 'module', 'method', 'module_ver', and 'commit' -
  *     respectively the user that originally created the object, the user that copied this
@@ -37,7 +41,8 @@ import us.kbase.common.service.UObject;
     "parent_data",
     "data",
     "key_props",
-    "object_props"
+    "object_props",
+    "highlight"
 })
 public class ObjectData {
 
@@ -57,6 +62,8 @@ public class ObjectData {
     private Map<String, String> keyProps;
     @JsonProperty("object_props")
     private Map<String, String> objectProps;
+    @JsonProperty("highlight")
+    private Map<String, List<String>> highlight;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("guid")
@@ -179,6 +186,21 @@ public class ObjectData {
         return this;
     }
 
+    @JsonProperty("highlight")
+    public Map<String, List<String>> getHighlight() {
+        return highlight;
+    }
+
+    @JsonProperty("highlight")
+    public void setHighlight(Map<String, List<String>> highlight) {
+        this.highlight = highlight;
+    }
+
+    public ObjectData withHighlight(Map<String, List<String>> highlight) {
+        this.highlight = highlight;
+        return this;
+    }
+
     @JsonAnyGetter
     public Map<java.lang.String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -191,7 +213,7 @@ public class ObjectData {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((((("ObjectData"+" [guid=")+ guid)+", parentGuid=")+ parentGuid)+", objectName=")+ objectName)+", timestamp=")+ timestamp)+", parentData=")+ parentData)+", data=")+ data)+", keyProps=")+ keyProps)+", objectProps=")+ objectProps)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((((("ObjectData"+" [guid=")+ guid)+", parentGuid=")+ parentGuid)+", objectName=")+ objectName)+", timestamp=")+ timestamp)+", parentData=")+ parentData)+", data=")+ data)+", keyProps=")+ keyProps)+", objectProps=")+ objectProps)+", highlight=")+ highlight)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

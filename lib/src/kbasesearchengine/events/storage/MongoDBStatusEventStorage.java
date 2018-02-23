@@ -73,6 +73,9 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     private static final String FLD_UPDATE_TIME = "updte";
     // the ID, if any, of the operator that last changed the event status. Arbitrary string.
     private static final String FLD_UPDATER = "updtr";
+    // the ID, if any, of the entity that stored the event. Arbitrary string.
+    private static final String FLD_STORED_BY = "stby";
+    private static final String FLD_STORED_TIME = "sttime";
     
     private static final String COL_EVENT = "searchEvents";
     
@@ -180,10 +183,12 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     public StoredStatusEvent store(
             final StatusEvent newEvent,
             final StatusEventProcessingState state,
-            Set<String> workerCodes)
+            Set<String> workerCodes,
+            final String storedBy)
             throws FatalRetriableIndexingException {
         Utils.nonNull(newEvent, "newEvent");
         Utils.nonNull(state, "state");
+        Utils.notNullOrEmpty(storedBy, "storedBy cannot be null or whitespace only");
         if (workerCodes == null || workerCodes.isEmpty()) {
             workerCodes = DEFAULT_WORKER_CODES_SET;
         }
@@ -192,8 +197,8 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 throw new IllegalArgumentException("null or whitespace only item in workerCodes");
             }
         }
-        
         final Optional<StorageObjectType> sot = newEvent.getStorageObjectType();
+        final Instant now = clock.instant();
         final Document doc = new Document()
                 .append(FLD_ACCESS_GROUP_ID, newEvent.getAccessGroupId().orNull())
                 .append(FLD_OBJECT_ID, newEvent.getAccessGroupObjectId().orNull())
@@ -208,7 +213,9 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 .append(FLD_NEW_NAME, newEvent.getNewName().orNull())
                 .append(FLD_PUBLIC, newEvent.isPublic().orNull())
                 .append(FLD_WORKER_CODES, workerCodes)
-                .append(FLD_TIMESTAMP, Date.from(newEvent.getTimestamp()));
+                .append(FLD_TIMESTAMP, Date.from(newEvent.getTimestamp()))
+                .append(FLD_STORED_BY, storedBy)
+                .append(FLD_STORED_TIME, Date.from(now));
         try {
             db.getCollection(COL_EVENT).insertOne(doc);
         } catch (MongoException e) {
@@ -216,7 +223,9 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                     "Failed event storage: " + e.getMessage(), e);
         }
         final StoredStatusEvent.Builder b = StoredStatusEvent.getBuilder(
-                newEvent, new StatusEventID(doc.getObjectId("_id").toString()), state);
+                newEvent, new StatusEventID(doc.getObjectId("_id").toString()), state)
+                .withNullableStoredBy(storedBy)
+                .withNullableStoreTime(now);
         for (final String code: workerCodes) {
             b.withWorkerCode(code);
         }
@@ -250,6 +259,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         final Instant time = event.getDate(FLD_TIMESTAMP).toInstant();
         final StatusEventType eventType = StatusEventType.valueOf(event.getString(FLD_EVENT_TYPE));
         final Date updateTime = event.getDate(FLD_UPDATE_TIME);
+        final Date storeTime = event.getDate(FLD_STORED_TIME);
         @SuppressWarnings("unchecked")
         List<String> workerCodes = (List<String>) event.get(FLD_WORKER_CODES);
         if (workerCodes == null || workerCodes.isEmpty()) {
@@ -271,7 +281,9 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 new StatusEventID(event.getObjectId("_id").toString()),
                 StatusEventProcessingState.valueOf(event.getString(FLD_STATUS)))
                 .withNullableUpdate(updateTime == null ? null : updateTime.toInstant(),
-                        event.getString(FLD_UPDATER));
+                        event.getString(FLD_UPDATER))
+                .withNullableStoredBy(event.getString(FLD_STORED_BY))
+                .withNullableStoreTime(storeTime == null ? null : storeTime.toInstant());
         for (final String code: workerCodes) {
             b2.withWorkerCode(code);
         }

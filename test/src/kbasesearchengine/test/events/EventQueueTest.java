@@ -108,15 +108,6 @@ public class EventQueueTest {
                 StatusEventProcessingState.READY, objectID);
     }
     
-    private StoredStatusEvent procVer(
-            final int accgrpID,
-            final String eventid,
-            final Instant time,
-            final String objectID) {
-        return createEvent(accgrpID, eventid, time, StatusEventType.NEW_VERSION,
-                StatusEventProcessingState.PROC, objectID);
-    }
-    
     private StoredStatusEvent loadUnproc(
             final EventQueue queue,
             final int accgrpID,
@@ -264,18 +255,15 @@ public class EventQueueTest {
                 1, "1", Instant.ofEpochMilli(10000), "1", StatusEventType.DELETE_ALL_VERSIONS);
         final StoredStatusEvent e2 = readyVer(
                 1, "2", Instant.ofEpochMilli(10000), "3");
-        final StoredStatusEvent e3 = procVer(
-                1, "3", Instant.ofEpochMilli(15000), "3");
         final StoredStatusEvent e4 = ready(
                 2, "4", Instant.ofEpochMilli(15000), "1", StatusEventType.COPY_ACCESS_GROUP);
 
-        final EventQueue q = new EventQueue(Arrays.asList(e1, e2, e3, e4));
+        final EventQueue q = new EventQueue(Arrays.asList(e1, e2, e4));
         
-        assertQueueState(q, set(e2, e4), set(e1, e3), 4);
+        assertQueueState(q, set(e2, e4), set(e1), 3);
         
         assertMoveToReadyCorrect(q, set());
         
-        q.setProcessingComplete(e3);
         assertQueueState(q, set(e2, e4), set(e1), 3);
         assertMoveToReadyCorrect(q, set());
         
@@ -322,5 +310,35 @@ public class EventQueueTest {
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
         }
+    }
+    
+    @Test
+    public void ignoreLoad() {
+        final EventQueue q = new EventQueue();
+        
+        final StoredStatusEvent sse = unproc(
+                1, "foo", Instant.ofEpochMilli(10000), "1", StatusEventType.NEW_VERSION);
+        q.load(sse);
+        
+        assertQueueState(q, set(), set(), 1);
+        
+        final StoredStatusEvent sse2 = unproc(
+                1, "foo", Instant.ofEpochMilli(10000), "1", StatusEventType.DELETE_ALL_VERSIONS);
+        
+        q.load(sse2);
+        assertQueueState(q, set(), set(), 1);
+        
+        q.moveToReady();
+        assertQueueState(q, set(sse), set(), 1);
+        q.moveReadyToProcessing();
+        q.setProcessingComplete(sse);
+        
+        assertEmpty(q);
+        
+        q.load(sse2);
+        assertQueueState(q, set(), set(), 1);
+        
+        q.moveToReady();
+        assertQueueState(q, set(sse2), set(), 1);
     }
 }

@@ -105,7 +105,7 @@ public class WorkspaceController {
         ws.add("mongodb-database", mongoDatabase);
         ws.add("auth-service-url", authRootURL.toString() + "/api/legacy/KBase");
         ws.add("auth-service-url-allow-insecure", "true");
-        ws.add("globus-url", authRootURL.toString() + "/api/legacy/Globus");
+        ws.add("globus-url", authRootURL.toString() + "/api/legacy/globus");
         ws.add("ws-admin", adminUser);
         ws.add("temp-dir", tempDir.resolve("temp_data"));
         ws.add("ignore-handle-service", "true");
