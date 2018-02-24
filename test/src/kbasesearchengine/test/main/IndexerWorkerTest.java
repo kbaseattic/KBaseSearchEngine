@@ -2,10 +2,12 @@ package kbasesearchengine.test.main;
 
 import static kbasesearchengine.test.common.TestCommon.set;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -83,7 +85,7 @@ public class IndexerWorkerTest {
         
         final IndexerWorker worker = new IndexerWorker(
                 "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null);
+                null, 1000);
         
         final GUID guid = new GUID("code:1/2/3");
         when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
@@ -220,7 +222,7 @@ public class IndexerWorkerTest {
         
         final IndexerWorker worker = new IndexerWorker(
                 "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null);
+                null, 1000);
         
         final GUID guid = new GUID("code:1/2/3");
         when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
@@ -289,7 +291,7 @@ public class IndexerWorkerTest {
         
         final IndexerWorker worker = new IndexerWorker(
                 "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null);
+                null, 1000);
         
         final GUID guid = new GUID("code:1/2/3");
         when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
@@ -364,6 +366,187 @@ public class IndexerWorkerTest {
                 eq(guid),
                 eq(ImmutableMap.of(guid, po)),
                 eq(false));
+    }
+    
+    @Test
+    public void indexPassTooManySubobjects() throws Exception {
+        /* tests the number of subobjects at the limit does not throw an exception
+         */
+        
+        final Map<String, Object> data = ImmutableMap.of(
+                "thingy", 1,
+                "thingy2", "foo",
+                "subobjs", Arrays.asList(
+                        ImmutableMap.of("id", "an id", "somedata", "data"),
+                        ImmutableMap.of("id", "an id2", "somedata", "data2"),
+                        ImmutableMap.of("id", "an id3", "somedata", "data3")
+                        )
+                );
+        
+        final EventHandler ws = mock(EventHandler.class);
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final IndexingStorage idxStore = mock(IndexingStorage.class);
+        final TypeStorage typeStore = mock(TypeStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        
+        final Path tempDir = Paths.get(TestCommon.getTempDir()).toAbsolutePath()
+                .resolve("IndexerWorkerTest");
+        deleteRecursively(tempDir);
+        
+        when(ws.getStorageCode()).thenReturn("code");
+        
+        final IndexerWorker worker = new IndexerWorker(
+                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
+                null, 3);
+        
+        final GUID guid = new GUID("code:1/2/3");
+        when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
+        
+        when(ws.load(eq(Arrays.asList(guid)), any(Path.class)))
+                .thenAnswer(new Answer<SourceData>() {
+
+                        @Override
+                        public SourceData answer(final InvocationOnMock inv) throws Throwable {
+                            final Path path = inv.getArgument(1);
+                            new ObjectMapper().writeValue(path.toFile(), data);
+                            return SourceData.getBuilder(
+                                    new UObject(path.toFile()), "myobj", "somedude")
+                                    .withNullableMD5("md5")
+                                    .build();
+                        }
+        });
+
+        final StorageObjectType storageObjectType = StorageObjectType
+                .fromNullableVersion("code", "sometype", 3);
+        
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1), storageObjectType)
+                .toSubObjectRule("subfoo", new ObjectJsonPath("/subobjs/[*]/"),
+                        new ObjectJsonPath("id"))
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("somedata"))
+                        .build())
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("id"))
+                        .build())
+                .build();
+        when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
+        
+        worker.processOneEvent(StatusEvent.getBuilder(
+                storageObjectType,
+                Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("2")
+                .withNullableVersion(3)
+                .withNullableisPublic(false)
+                .build());
+        
+        final ParsedObject po1 = new ParsedObject(
+                new ObjectMapper().writeValueAsString(
+                        ImmutableMap.of( "id", "an id", "somedata", "data")),
+                ImmutableMap.of("somedata", Arrays.asList("data"),
+                        "id", Arrays.asList("an id")));
+        final ParsedObject po2 = new ParsedObject(
+                new ObjectMapper().writeValueAsString(
+                        ImmutableMap.of("id", "an id2", "somedata", "data2")),
+                ImmutableMap.of("somedata", Arrays.asList("data2"),
+                        "id", Arrays.asList("an id2")));
+        final ParsedObject po3 = new ParsedObject(
+                new ObjectMapper().writeValueAsString(
+                        ImmutableMap.of("id", "an id3", "somedata", "data3")),
+                ImmutableMap.of("somedata", Arrays.asList("data3"),
+                        "id", Arrays.asList("an id3")));
+        
+        verify(idxStore).indexObjects(
+                eq(rule),
+                any(SourceData.class),
+                eq(Instant.ofEpochMilli(10000)),
+                eq(null),
+                eq(guid),
+                eq(ImmutableMap.of(
+                        new GUID(guid, "subfoo", "an id2"), po2,
+                        new GUID(guid, "subfoo", "an id3"), po3,
+                        new GUID(guid, "subfoo", "an id"), po1)),
+                eq(false));
+    }
+    
+    @Test
+    public void indexFailTooManySubobjects() throws Exception {
+        /* tests the number of subojects above the limit does throw an exception
+         */
+        
+        final Map<String, Object> data = ImmutableMap.of(
+                "thingy", 1,
+                "thingy2", "foo",
+                "subobjs", Arrays.asList(
+                        ImmutableMap.of("id", "an id", "somedata", "data"),
+                        ImmutableMap.of("id", "an id2", "somedata", "data2"),
+                        ImmutableMap.of("id", "an id3", "somedata", "data3")
+                        )
+                );
+        
+        final EventHandler ws = mock(EventHandler.class);
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final IndexingStorage idxStore = mock(IndexingStorage.class);
+        final TypeStorage typeStore = mock(TypeStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        
+        final Path tempDir = Paths.get(TestCommon.getTempDir()).toAbsolutePath()
+                .resolve("IndexerWorkerTest");
+        deleteRecursively(tempDir);
+        
+        when(ws.getStorageCode()).thenReturn("code");
+        
+        final IndexerWorker worker = new IndexerWorker(
+                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
+                null, 2);
+        
+        final GUID guid = new GUID("code:1/2/3");
+        when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
+        
+        when(ws.load(eq(Arrays.asList(guid)), any(Path.class)))
+                .thenAnswer(new Answer<SourceData>() {
+
+                        @Override
+                        public SourceData answer(final InvocationOnMock inv) throws Throwable {
+                            final Path path = inv.getArgument(1);
+                            new ObjectMapper().writeValue(path.toFile(), data);
+                            return SourceData.getBuilder(
+                                    new UObject(path.toFile()), "myobj", "somedude")
+                                    .withNullableMD5("md5")
+                                    .build();
+                        }
+        });
+
+        final StorageObjectType storageObjectType = StorageObjectType
+                .fromNullableVersion("code", "sometype", 3);
+        
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1), storageObjectType)
+                .toSubObjectRule("subfoo", new ObjectJsonPath("/subobjs/[*]/"),
+                        new ObjectJsonPath("id"))
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("somedata"))
+                        .build())
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("id"))
+                        .build())
+                .build();
+        when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
+        
+        try {
+            worker.processOneEvent(StatusEvent.getBuilder(
+                    storageObjectType,
+                    Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                    .withNullableAccessGroupID(1)
+                    .withNullableObjectID("2")
+                    .withNullableVersion(3)
+                    .withNullableisPublic(false)
+                    .build());
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, new UnprocessableEventIndexingException(
+                    "Object code:1/2/3 has 3 subobjects, exceeding the limit of 2"));
+        }
+        
+        verify(idxStore, never()).indexObjects(
+                any(), any(), any(), any(), any(), any(), anyBoolean());
     }
     
     private void deleteRecursively(final Path path) throws Exception {

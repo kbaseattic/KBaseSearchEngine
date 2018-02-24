@@ -90,6 +90,16 @@ public class SearchTools {
     private static final String NAME = "search_tools";
     private static final int MAX_Q_SIZE = 10000;
     private static final GitInfo GIT = new GitInfo();
+    
+    /* The maximum number of objects to index in the search system at once. With the 18/2/23
+     * implementation of ElasticSearch with a 10m load timeout, more than ~100K subobjects causes
+     * a timeout (note this number and the timeout might require a bit of tweaking to completely
+     * eliminate timeout errors).
+     * 
+     * Exceeding this number of object in a load will cause a failure after the parse step, so
+     * the ElasticSearch load isn't even attempted.
+     */
+    private static final int MAX_OBJECTS_PER_LOAD = 100_000;
 
     /** Runs the CLI.
      * @param args the program arguments.
@@ -361,7 +371,7 @@ public class SearchTools {
         
         final IndexerWorker wrk = new IndexerWorker(
                 getID(id), Arrays.asList(weh), storage, indexStore, ss, tempDir, logger,
-                cfg.getWorkerCodes());
+                cfg.getWorkerCodes(), MAX_OBJECTS_PER_LOAD);
         wrk.startIndexer();
         return wrk;
     }

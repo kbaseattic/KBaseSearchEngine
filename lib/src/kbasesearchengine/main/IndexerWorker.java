@@ -67,7 +67,7 @@ public class IndexerWorker implements Stoppable {
     private static final int RETRY_SLEEP_MS = 1000;
     private static final List<Integer> RETRY_FATAL_BACKOFF_MS = Arrays.asList(
             1000, 2000, 4000, 8000, 16000);
-    
+
     private final String id;
     private final File rootTempDir;
     private final StatusEventStorage storage;
@@ -79,6 +79,7 @@ public class IndexerWorker implements Stoppable {
     private ScheduledExecutorService executor = null;
     private final SignalMonitor signalMonitor = new SignalMonitor();
     private boolean stopRunner = false;
+    private final int maxObjectsPerLoad;
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
             RETRY_FATAL_BACKOFF_MS,
@@ -92,11 +93,13 @@ public class IndexerWorker implements Stoppable {
             final TypeStorage typeStorage,
             final File tempDir,
             final LineLogger logger,
-            final Set<String> workerCodes)
+            final Set<String> workerCodes,
+            final int maxObjectsPerLoad)
             throws IOException {
         Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
         Utils.nonNull(logger, "logger");
         Utils.nonNull(indexingStorage, "indexingStorage");
+        this.maxObjectsPerLoad = maxObjectsPerLoad;
         this.workerCodes = workerCodes;
         logger.logInfo("Worker codes: " + workerCodes);
         this.id = id;
@@ -134,6 +137,7 @@ public class IndexerWorker implements Stoppable {
         this.logger = logger;
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
+        maxObjectsPerLoad = 1000;
     }
 
     @Override
@@ -627,6 +631,11 @@ public class IndexerWorker implements Stoppable {
             }
             final Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(
                     obj, guid, rule);
+            if (guidToJson.size() > maxObjectsPerLoad) {
+                throw new UnprocessableEventIndexingException(String.format(
+                        "Object %s has %s subobjects, exceeding the limit of %s",
+                        guid, guidToJson.size(), maxObjectsPerLoad));
+            }
             for (final GUID subGuid : guidToJson.keySet()) {
                 final String json = guidToJson.get(subGuid);
                 guidToObj.put(subGuid, KeywordParser.extractKeywords(
