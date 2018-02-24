@@ -115,31 +115,6 @@ public class IndexerWorker implements Stoppable {
         this.indexingStorage = indexingStorage;
     }
     
-    /**
-     * For tests only !!!
-     */
-    public IndexerWorker(
-            final String id,
-            final IndexingStorage indexingStorage,
-            final TypeStorage typeStorage,
-            final File tempDir,
-            final LineLogger logger)
-                throws IOException {
-        Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
-        Utils.nonNull(logger, "logger");
-        this.workerCodes = null;
-        this.id = id;
-        this.storage = null;
-        this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
-                id + "_" + UUID.randomUUID().toString().substring(0,5));
-        logger.logInfo("Created temp dir " + rootTempDir.getAbsolutePath() +
-                " for indexer worker " + id);
-        this.logger = logger;
-        this.typeStorage = typeStorage;
-        this.indexingStorage = indexingStorage;
-        maxObjectsPerLoad = 1000;
-    }
-
     @Override
     public void awaitShutdown() throws InterruptedException {
         signalMonitor.awaitSignal();
