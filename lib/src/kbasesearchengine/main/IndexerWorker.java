@@ -614,7 +614,7 @@ public class IndexerWorker implements Stoppable {
             for (final GUID subGuid : guidToJson.keySet()) {
                 final String json = guidToJson.get(subGuid);
                 guidToObj.put(subGuid, KeywordParser.extractKeywords(
-                        rule.getGlobalObjectType(), json, parentJson,
+                        subGuid, rule.getGlobalObjectType(), json, parentJson,
                         rule.getIndexingRules(), indexLookup, newRefPath));
             }
             /* any errors here are due to file IO or parse exceptions.
