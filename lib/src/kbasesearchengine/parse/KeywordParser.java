@@ -28,9 +28,13 @@ import us.kbase.common.service.UObject;
 
 public class KeywordParser {
     
+    //TODO TEST
+    //TODO JAVADOC
+    
     //TODO EXP handle all exceptions
     
     public static ParsedObject extractKeywords(
+            final GUID subObjectGUID,
             final SearchObjectType searchObjectType,
             final String json,
             final String parentJson,
@@ -50,7 +54,7 @@ public class KeywordParser {
             public void addValue(List<IndexingRules> rulesList, Object value)
                     throws IndexingException, InterruptedException, ObjectParseException {
                 for (IndexingRules rule : rulesList) {
-                    processRule(rule, rule.getKeyName(), value, keywords, lookup, 
+                    processRule(subObjectGUID, rule, rule.getKeyName(), value, keywords, lookup, 
                             objectRefPath);
                 }
             }
@@ -70,7 +74,8 @@ public class KeywordParser {
                     List<Object> values = keywords.containsKey(key) ? keywords.get(key).values : 
                         null;
                     if (isEmpty(values)) {
-                        processRule(rule, key, null, keywords, lookup, objectRefPath);
+                        processRule(
+                                subObjectGUID, rule, key, null, keywords, lookup, objectRefPath);
                     }
                 }
             }
@@ -78,8 +83,8 @@ public class KeywordParser {
         for (String key : ruleMap.keySet()) {
             for (IndexingRules rule : ruleMap.get(key)) {
                 if (rule.isDerivedKey()) {
-                    processDerivedRule(searchObjectType, key, rule, ruleMap, keywords, lookup, 
-                            new LinkedHashSet<>(), objectRefPath);
+                    processDerivedRule(subObjectGUID, searchObjectType, key, rule, ruleMap,
+                            keywords, lookup, new LinkedHashSet<>(), objectRefPath);
                 }
             }
         }
@@ -89,6 +94,7 @@ public class KeywordParser {
     }
 
     private static List<Object> processDerivedRule(
+            final GUID subObjectGUID,
             final SearchObjectType searchObjectType, 
             final Map<String, List<IndexingRules>> ruleMap,
             final String key, 
@@ -103,8 +109,8 @@ public class KeywordParser {
         }
         List<Object> ret = null;
         for (IndexingRules rule : ruleMap.get(key)) {
-            ret = processDerivedRule(searchObjectType, key, rule, ruleMap, keywords, lookup, 
-                    keysWaitingInStack, callerRefPath);
+            ret = processDerivedRule(subObjectGUID, searchObjectType, key, rule, ruleMap, keywords,
+                    lookup, keysWaitingInStack, callerRefPath);
         }
         return ret;
     }
@@ -114,6 +120,7 @@ public class KeywordParser {
     }
 
     private static List<Object> processDerivedRule(
+            final GUID subObjectGuid,
             final SearchObjectType searchObjectType,
             final String key,
             final IndexingRules rule,
@@ -139,15 +146,16 @@ public class KeywordParser {
                     toVerRep(searchObjectType) + "/" + key);
         }
         keysWaitingInStack.add(key);
-        List<Object> values = processDerivedRule(searchObjectType, ruleMap, rule.getSourceKey().get(),
-                keywords, lookup, keysWaitingInStack, objectRefPath);
+        List<Object> values = processDerivedRule(subObjectGuid, searchObjectType, ruleMap,
+                rule.getSourceKey().get(), keywords, lookup, keysWaitingInStack, objectRefPath);
         if (rule.getTransform().isPresent() &&
                 rule.getTransform().get().getSubobjectIdKey().isPresent()) {
-            processDerivedRule(searchObjectType, ruleMap, rule.getTransform().get().getSubobjectIdKey().get(),
+            processDerivedRule(subObjectGuid, searchObjectType, ruleMap,
+                    rule.getTransform().get().getSubobjectIdKey().get(),
                     keywords, lookup, keysWaitingInStack, objectRefPath);
         }
         for (Object value : values) {
-            processRule(rule, key, value, keywords, lookup, objectRefPath);
+            processRule(subObjectGuid, rule, key, value, keywords, lookup, objectRefPath);
         }
         keysWaitingInStack.remove(key);
         List<Object> ret = keywords.containsKey(key) ? keywords.get(key).values : new ArrayList<>();
@@ -162,6 +170,7 @@ public class KeywordParser {
     }
     
     private static void processRule(
+            final GUID subObjectGUID,
             final IndexingRules rule,
             final String key,
             final Object value,
@@ -185,7 +194,8 @@ public class KeywordParser {
         }
         values.notIndexed = rule.isNotIndexed();
         if (rule.getTransform().isPresent()) {
-            valueFinal = transform(valueFinal, rule, keywords, lookup, objectRefPath);
+            valueFinal = transform(
+                    subObjectGUID, valueFinal, rule, keywords, lookup, objectRefPath);
         }
         addOrAddAll(valueFinal, values.values);
     }
@@ -202,29 +212,18 @@ public class KeywordParser {
     }
 
     @SuppressWarnings("unchecked")
-    private static Object transform(Object value, IndexingRules rule,
-            Map<String, InnerKeyValue> sourceKeywords, ObjectLookupProvider lookup,
-            List<GUID> objectRefPath)
+    private static Object transform(
+            final GUID subObjectGuid,
+            final Object value,
+            final IndexingRules rule,
+            final Map<String, InnerKeyValue> sourceKeywords,
+            final ObjectLookupProvider lookup,
+            final List<GUID> objectRefPath)
             throws IndexingException, InterruptedException, ObjectParseException {
         final Transform transform = rule.getTransform().get();
         switch (transform.getType()) {
         case location:
-            List<List<Object>> loc = (List<List<Object>>)value;
-            Map<LocationTransformType, Object> retLoc = new LinkedHashMap<>();
-            //TODO CODE if the subobject stuff in the ObjectParsingRules is left out this throws an indexing exception. Need to figure out cause.
-            retLoc.put(LocationTransformType.contig_id, loc.get(0).get(0));
-            String strand = (String)loc.get(0).get(2);
-            retLoc.put(LocationTransformType.strand, strand);
-            int start = (Integer)loc.get(0).get(1);
-            int len = (Integer)loc.get(0).get(3);
-            retLoc.put(LocationTransformType.length, len);
-            retLoc.put(LocationTransformType.start,
-                    strand.equals("+") ? start : (start - len + 1));
-            retLoc.put(LocationTransformType.stop, strand.equals("+") ? (start + len - 1) : start);
-            if (!transform.getLocation().isPresent()) {
-                return retLoc;
-            }
-            return retLoc.get(transform.getLocation().get());
+            return locationTransform(subObjectGuid, value, transform.getLocation().get());
         case values:
             if (value == null) {
                 return null;
@@ -233,7 +232,8 @@ public class KeywordParser {
                 List<Object> input = (List<Object>)value;
                 List<Object> ret = new ArrayList<>();
                 for (Object item : input) {
-                    addOrAddAll(transform(item, rule, sourceKeywords, lookup, objectRefPath), ret);
+                    addOrAddAll(transform(
+                            subObjectGuid, item, rule, sourceKeywords, lookup, objectRefPath), ret);
                 }
                 return ret;
             }
@@ -241,7 +241,8 @@ public class KeywordParser {
                 Map<String, Object> input = (Map<String, Object>)value;
                 List<Object> ret = new ArrayList<>();
                 for (Object item : input.values()) {
-                    addOrAddAll(transform(item, rule, sourceKeywords, lookup, objectRefPath), ret);
+                    addOrAddAll(transform(
+                            subObjectGuid, item, rule, sourceKeywords, lookup, objectRefPath), ret);
                 }
                 return ret;
             }
@@ -324,6 +325,48 @@ public class KeywordParser {
         }
     }
 
+    private static Object locationTransform(
+            final GUID subObjectGuid,
+            final Object value,
+            final LocationTransformType locationTransformType)
+            throws ObjectParseException {
+        final List<List<Object>> loc;
+        try {
+            @SuppressWarnings("unchecked")
+            final List<List<Object>> locloc = (List<List<Object>>) value;
+            loc = locloc;
+            if (loc.size() < 1) {
+                throw new ObjectParseException(String.format(
+                        "Expected location array for location transform for %s, got empty array",
+                        subObjectGuid));
+            }
+            if (loc.get(0).size() < 4) {
+                throw new ObjectParseException(String.format(
+                        "Expected location array for location transform for %s, got %s",
+                        subObjectGuid, loc.get(0)));
+            }
+        } catch (ClassCastException e) {
+            throw new ObjectParseException(String.format(
+                    "Expected location array for location transform for %s, got %s",
+                    subObjectGuid, value));
+        }
+        Map<LocationTransformType, Object> retLoc = new LinkedHashMap<>();
+        //TODO CODE if the subobject stuff in the ObjectParsingRules is left out this throws an indexing exception. Need to figure out cause.
+        //TODO CODE deal with type mismatch and null values
+        //TODO MISC what about euks here? Assumes 1 intron
+        retLoc.put(LocationTransformType.contig_id, loc.get(0).get(0));
+        String strand = (String)loc.get(0).get(2);
+        retLoc.put(LocationTransformType.strand, strand);
+        int start = (Integer)loc.get(0).get(1);
+        int len = (Integer)loc.get(0).get(3);
+        retLoc.put(LocationTransformType.length, len);
+        //TODO CODE what if this goes over the origin? Double check this is right
+        retLoc.put(LocationTransformType.start,
+                strand.equals("+") ? start : (start - len + 1));
+        retLoc.put(LocationTransformType.stop, strand.equals("+") ? (start + len - 1) : start);
+        return retLoc.get(locationTransformType);
+    }
+
     @SuppressWarnings("unchecked")
     private static Set<String> toStringSet(Object value) {
         Set<String> refs = new LinkedHashSet<>();
@@ -340,7 +383,7 @@ public class KeywordParser {
     private static void extractIndexingPart(String json, boolean fromParent,
             List<IndexingRules> indexingRules, ValueConsumer<List<IndexingRules>> consumer)
             throws IOException, ObjectParseException, JsonParseException,
-            IndexingException, InterruptedException {
+                IndexingException, InterruptedException {
         Map<ObjectJsonPath, List<IndexingRules>> pathToRules = new LinkedHashMap<>();
         for (IndexingRules rules : indexingRules) {
             if (rules.isDerivedKey()) {
