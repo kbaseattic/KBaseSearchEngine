@@ -19,8 +19,6 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.common.base.Optional;
@@ -69,7 +67,7 @@ public class IndexerWorker implements Stoppable {
     private static final int RETRY_SLEEP_MS = 1000;
     private static final List<Integer> RETRY_FATAL_BACKOFF_MS = Arrays.asList(
             1000, 2000, 4000, 8000, 16000);
-    
+
     private final String id;
     private final File rootTempDir;
     private final StatusEventStorage storage;
@@ -81,6 +79,7 @@ public class IndexerWorker implements Stoppable {
     private ScheduledExecutorService executor = null;
     private final SignalMonitor signalMonitor = new SignalMonitor();
     private boolean stopRunner = false;
+    private final int maxObjectsPerLoad;
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
             RETRY_FATAL_BACKOFF_MS,
@@ -94,11 +93,13 @@ public class IndexerWorker implements Stoppable {
             final TypeStorage typeStorage,
             final File tempDir,
             final LineLogger logger,
-            final Set<String> workerCodes)
+            final Set<String> workerCodes,
+            final int maxObjectsPerLoad)
             throws IOException {
         Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
         Utils.nonNull(logger, "logger");
         Utils.nonNull(indexingStorage, "indexingStorage");
+        this.maxObjectsPerLoad = maxObjectsPerLoad;
         this.workerCodes = workerCodes;
         logger.logInfo("Worker codes: " + workerCodes);
         this.id = id;
@@ -114,30 +115,6 @@ public class IndexerWorker implements Stoppable {
         this.indexingStorage = indexingStorage;
     }
     
-    /**
-     * For tests only !!!
-     */
-    public IndexerWorker(
-            final String id,
-            final IndexingStorage indexingStorage,
-            final TypeStorage typeStorage,
-            final File tempDir,
-            final LineLogger logger)
-                throws IOException {
-        Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
-        Utils.nonNull(logger, "logger");
-        this.workerCodes = null;
-        this.id = id;
-        this.storage = null;
-        this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
-                id + "_" + UUID.randomUUID().toString().substring(0,5));
-        logger.logInfo("Created temp dir " + rootTempDir.getAbsolutePath() +
-                " for indexer worker " + id);
-        this.logger = logger;
-        this.typeStorage = typeStorage;
-        this.indexingStorage = indexingStorage;
-    }
-
     @Override
     public void awaitShutdown() throws InterruptedException {
         signalMonitor.awaitSignal();
@@ -634,10 +611,15 @@ public class IndexerWorker implements Stoppable {
             }
             final Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(
                     obj, guid, rule);
+            if (guidToJson.size() > maxObjectsPerLoad) {
+                throw new UnprocessableEventIndexingException(String.format(
+                        "Object %s has %s subobjects, exceeding the limit of %s",
+                        guid, guidToJson.size(), maxObjectsPerLoad));
+            }
             for (final GUID subGuid : guidToJson.keySet()) {
                 final String json = guidToJson.get(subGuid);
                 guidToObj.put(subGuid, KeywordParser.extractKeywords(
-                        rule.getGlobalObjectType(), json, parentJson,
+                        subGuid, rule.getGlobalObjectType(), json, parentJson,
                         rule.getIndexingRules(), indexLookup, newRefPath));
             }
             /* any errors here are due to file IO or parse exceptions.
@@ -817,9 +799,12 @@ public class IndexerWorker implements Stoppable {
             if (guidsToLoad.size() > 0) {
                 final List<ObjectData> objList =
                         retrier.retryFunc(g -> getObjectsByIds(g), guidsToLoad, null);
-                Map<GUID, ObjectData> loaded = 
-                        objList.stream().collect(Collectors.toMap(od -> od.getGUID(),
-                                Function.identity()));
+                // for some reason I don't understand a stream implementation would throw
+                // duplicate key errors on the ObjectData, which is the value
+                final Map<GUID, ObjectData> loaded = new HashMap<>();
+                for (final ObjectData od: objList) {
+                    loaded.put(od.getGUID(), od);
+                }
                 objLookupCache.putAll(loaded);
                 ret.putAll(loaded);
             }
