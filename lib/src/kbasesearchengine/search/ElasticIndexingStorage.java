@@ -367,7 +367,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 pw.println(UObject.transformObjectToString(doc));
             }
             pw.close();
-            makeBulkRequest("POST", indexName, tempFile);
+            makeRequestBulk("POST", indexName, tempFile);
             updateLastVersionsInData(indexName, pguid, lastVersion);
         } finally {
             tempFile.delete();
@@ -1658,11 +1658,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return refreshIndex(toIndexString(rule));
     }
 
-    public Response makeRequest(String reqType, String urlPath, Map<String, ?> doc) 
-            throws IOException {
-        return makeRequest(reqType, urlPath, doc, Collections.<String, String>emptyMap());
-    }
-
     private RestClient getRestClient() {
         if (restClient == null) {
             RestClientBuilder restClientBld = RestClient.builder(esHost);
@@ -1691,25 +1686,44 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         return restClient;
     }
-    
-    public Response makeBulkRequest(String reqType, String indexName, File jsonData) 
+
+    public Response makeRequest(
+            final String reqType,
+            final String urlPath,
+            final Map<String, ?> doc) 
             throws IOException {
-        RestClient restClient = getRestClient();
+        return makeRequest(reqType, urlPath, doc, Collections.emptyMap());
+    }
+    
+    public Response makeRequestBulk(
+            final String reqType,
+            final String indexName,
+            final File jsonData) 
+            throws IOException {
         try (InputStream is = new FileInputStream(jsonData)) {
-            InputStreamEntity body = new InputStreamEntity(is);
-            Response response = restClient.performRequest(reqType, "/" + indexName + "/_bulk", 
-                    Collections.emptyMap(), body);
-            return response;
+            return makeRequest(reqType, "/" + indexName + "/_bulk", Collections.emptyMap(),
+                    new InputStreamEntity(is));
         }
     }
     
-    public Response makeRequest(String reqType, String urlPath, Map<String, ?> doc, 
-            Map<String, String> attributes) throws IOException {
+    private Response makeRequest(
+            final String reqType,
+            final String urlPath,
+            final Map<String, ?> doc, 
+            final Map<String, String> attributes)
+            throws IOException {
+        return makeRequest(reqType, urlPath, attributes, doc == null ? null : stringEntity(
+                UObject.transformObjectToString(doc)));
+    }
+
+    private Response makeRequest(
+            final String reqType,
+            final String urlPath,
+            final Map<String, String> attributes,
+            final HttpEntity body)
+            throws IOException {
         try {
-            HttpEntity body = doc == null ? null : stringEntity(
-                UObject.transformObjectToString(doc));
-            RestClient restClient = getRestClient();  //restClientBld.build();
-            return restClient.performRequest(reqType, urlPath, attributes, body);
+            return getRestClient().performRequest(reqType, urlPath, attributes, body);
         } catch (ResponseException ex) {
             throw new IOException(ex.getMessage(), ex);
         }

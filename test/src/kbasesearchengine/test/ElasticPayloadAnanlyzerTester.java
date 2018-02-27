@@ -131,7 +131,7 @@ public class ElasticPayloadAnanlyzerTester {
             if (saved == 0) {
                 break;
             }
-            indexStorage.makeBulkRequest("POST", "/" + indexName, tempFile);
+            indexStorage.makeRequestBulk("POST", "/" + indexName, tempFile);
         }
         indexStorage.makeRequest("POST", "/" + indexName + "/_refresh", null);
         System.out.println("Indexing is done in " + (System.currentTimeMillis() - t1) + " ms");
