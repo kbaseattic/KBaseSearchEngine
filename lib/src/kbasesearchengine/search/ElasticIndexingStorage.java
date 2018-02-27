@@ -1746,7 +1746,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             return getRestClient().performRequest(reqType, urlPath, attributes, body);
         } catch (ResponseException re) {
             if (re.getResponse().getStatusLine().getStatusCode() == 409) {
-                // this is really difficult to test, and so is not
+                // this is really difficult to test, and so is not tested
                 throw new IndexingConflictException(re.getMessage(), re);
             }
             throw new IOException(re.getMessage(), re);
