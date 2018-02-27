@@ -60,6 +60,7 @@ import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
 import kbasesearchengine.search.SortingRule;
 import kbasesearchengine.search.FoundHits;
+import kbasesearchengine.search.IndexingConflictException;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
@@ -185,7 +186,8 @@ public class ElasticIndexingStorageTest {
             final Instant timestamp,
             final String parentJsonValue,
             final boolean isPublic)
-            throws IOException, ObjectParseException, IndexingException, InterruptedException {
+            throws IOException, ObjectParseException, IndexingException, InterruptedException,
+                IndexingConflictException {
         ParsedObject obj = KeywordParser.extractKeywords(id, rule.getGlobalObjectType(), json,
                 parentJsonValue, rule.getIndexingRules(), objLookup, null);
         final SourceData data = SourceData.getBuilder(new UObject(json), objectName, "creator")

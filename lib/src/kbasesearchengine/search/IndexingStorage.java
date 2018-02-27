@@ -20,11 +20,14 @@ public interface IndexingStorage {
     
     /**
      * Adds object to searchable indexing storage.
-     * @param id  global object ID including: storage type, parent object reference, inner sub-type and inner sub-object unique key (last two are optional)
+     * @param id  global object ID including: storage type, parent object reference,
+     * inner sub-type and inner sub-object unique key (last two are optional)
      * @param objectType  global type of object
-     * @param jsonValue  object value (consisting of maps, lists and primitive types like number, string, boolean or null)
+     * @param jsonValue  object value (consisting of maps, lists and primitive types like
+     * number, string, boolean or null)
      * @param indexingRules  indexing rules
      * @throws IOException
+     * @throws IndexingConflictException if a conflict occurs while modifying the index. 
      */
     public void indexObject(
             ObjectTypeParsingRules rule,
@@ -34,7 +37,7 @@ public interface IndexingStorage {
             GUID guid,
             ParsedObject obj,
             boolean isPublic)
-            throws IOException;
+            throws IOException, IndexingConflictException;
 
     public void indexObjects(
             ObjectTypeParsingRules rule,
@@ -44,7 +47,7 @@ public interface IndexingStorage {
             GUID pguid,
             Map<GUID, ParsedObject> idToObj,
             boolean isPublic) 
-            throws IOException;
+            throws IOException, IndexingConflictException;
     
     /** Check that the parent objects (e.g. the access information) exists for a set of GUIDS.
      * Equivalent to {@link #checkParentGuidsExist(String, Set)} with a null String.
@@ -57,17 +60,21 @@ public interface IndexingStorage {
 
     public void flushIndexing(ObjectTypeParsingRules objectType) throws IOException;
     
-    public void shareObjects(Set<GUID> guids, int accessGroupId, boolean isPublicGroup) throws IOException;
+    public void shareObjects(Set<GUID> guids, int accessGroupId, boolean isPublicGroup)
+            throws IOException, IndexingConflictException;
 
-    public void unshareObjects(Set<GUID> guids, int accessGroupId) throws IOException;
+    public void unshareObjects(Set<GUID> guids, int accessGroupId)
+            throws IOException, IndexingConflictException;
 
-    public void publishObjects(Set<GUID> guids) throws IOException;
+    public void publishObjects(Set<GUID> guids) throws IOException, IndexingConflictException;
 
-    public void unpublishObjects(Set<GUID> guids) throws IOException;
+    public void unpublishObjects(Set<GUID> guids) throws IOException, IndexingConflictException;
 
-    public void publishObjectsExternally(Set<GUID> guids, int accessGroupId) throws IOException;
+    public void publishObjectsExternally(Set<GUID> guids, int accessGroupId)
+            throws IOException, IndexingConflictException;
 
-    public void unpublishObjectsExternally(Set<GUID> guids, int accessGroupId) throws IOException;
+    public void unpublishObjectsExternally(Set<GUID> guids, int accessGroupId)
+            throws IOException, IndexingConflictException;
 
     public List<ObjectData> getObjectsByIds(Set<GUID> guids) throws IOException;
     
@@ -122,31 +129,37 @@ public interface IndexingStorage {
      * @param newName the new name of the object.
      * @return the number of documents modified, including sub objects.
      * @throws IOException if an IO error occurs when contacting the indexing storage.
+     * @throws IndexingConflictException if a conflict occurs while modifying the index. 
      */
-    int setNameOnAllObjectVersions(GUID object, String newName) throws IOException;
+    int setNameOnAllObjectVersions(GUID object, String newName)
+            throws IOException, IndexingConflictException;
 
     /** Delete all versions of an object from its access group. The object may still be
      * accessible via other access groups.
      * @param guid the object to delete.
      * @throws IOException if an IO error occurs when contacting the indexing storage.
+     * @throws IndexingConflictException if a conflict occurs while modifying the index.
      */
-    void deleteAllVersions(GUID guid) throws IOException;
+    void deleteAllVersions(GUID guid) throws IOException, IndexingConflictException;
 
     /** Delete all versions of an object from its access group.
      * @param guid the object to delete.
      * @throws IOException if an IO error occurs when contacting the indexing storage.
+     * @throws IndexingConflictException if a conflict occurs while modifying the index. 
      */
-    void undeleteAllVersions(GUID guid) throws IOException;
+    void undeleteAllVersions(GUID guid) throws IOException, IndexingConflictException;
 
     /** Set all versions of an object to public.
      * @param guid the object to publish.
      * @throws IOException if an IO error occurs when contacting the indexing storage.
+     * @throws IndexingConflictException if a conflict occurs while modifying the index. 
      */
-    void publishAllVersions(GUID guid) throws IOException;
+    void publishAllVersions(GUID guid) throws IOException, IndexingConflictException;
 
     /** Make all versions of an object private.
      * @param guid the object to make private.
      * @throws IOException if an IO error occurs when contacting the indexing storage.
+     * @throws IndexingConflictException if a conflict occurs while modifying the index. 
      */
-    void unpublishAllVersions(GUID guid) throws IOException;
+    void unpublishAllVersions(GUID guid) throws IOException, IndexingConflictException;
 }
