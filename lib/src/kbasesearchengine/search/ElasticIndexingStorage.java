@@ -42,7 +42,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 
 import com.google.common.base.Optional;
-
+import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
 
 import kbasesearchengine.common.GUID;
@@ -84,7 +84,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private static final String SEARCH_OBJ_TYPE = "otype";
     private static final String SEARCH_OBJ_TYPE_VER = "otypever";
 
-
     //readable names
     private static final String R_OBJ_GUID = "guid";
     private static final String R_OBJ_TIMESTAMP = "timestamp";
@@ -110,7 +109,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private static final String R_SEARCH_OBJ_TYPE = "type";
     private static final String R_SEARCH_OBJ_TYPE_VER = "type_ver";
 
-    private static final ImmutableMap<String, String> readableNames = ImmutableMap.<String,String>builder()
+    private static final ImmutableBiMap<String, String> READABLE_NAMES = ImmutableBiMap.
+            <String,String>builder()
             .put(OBJ_GUID, R_OBJ_GUID)
             .put(OBJ_TIMESTAMP, R_OBJ_TIMESTAMP)
             .put(OBJ_PROV_COMMIT_HASH, R_OBJ_PROV_COMMIT_HASH)
@@ -1166,6 +1166,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final Map<String, List<String>> highlight,
             final PostProcessing pp) {
         // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
+
         GUID guid = new GUID((String) obj.get("guid"));
         final ObjectData.Builder b = ObjectData.getBuilder(guid);
         if (pp.objectInfo) {
@@ -1219,20 +1220,23 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 }
             }
         }
-        if (pp.objectHighlight) {
+
+        //because elastic sometimes returns highlight as null instead of empty map.
+        if (pp.objectHighlight && highlight != null) {
             for(final String key : highlight.keySet()) {
                 b.withHighlight(getReadableKeyNames(key, guid), highlight.get(key));
-            }
+            }    
         }
 
         return b.build();
     }
 
-    private String getReadableKeyNames(final String key, final GUID guid) throws IllegalStateException{
+    private String getReadableKeyNames(final String key, final GUID guid)
+            throws IllegalStateException{
         if (key.startsWith("key.")) {
             return stripKeyPrefix(key);
-        } else if(readableNames.containsKey(key)) {
-            return readableNames.get(key);
+        } else if(READABLE_NAMES.containsKey(key)) {
+            return READABLE_NAMES.get(key);
         } else {
             //this should not happen. Untested
             String message = "Object with guid " + guid.toString() + " has unexpected key: " + key;
@@ -1521,9 +1525,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         int pgCount = pg == null || pg.count == null ? 50 : pg.count;
         Pagination pagination = new Pagination(pgStart, pgCount);
         if (sorting == null || sorting.isEmpty()) {
-            SortingRule sr = new SortingRule();
-            sr.isTimestamp = true;
-            sr.ascending = true;
+            final SortingRule sr = SortingRule.getStandardPropertyBuilder(R_OBJ_TIMESTAMP).build();
             sorting = Arrays.asList(sr);
         }
         FoundHits ret = new FoundHits();
@@ -1545,21 +1547,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put("from", pagination.start);
         doc.put("size", pagination.count);
 
-        boolean loadObjects = pp != null && (pp.objectInfo || pp.objectData || pp.objectKeys || pp.objectHighlight);
+        boolean loadObjects = pp != null &&
+                (pp.objectInfo || pp.objectData || pp.objectKeys || pp.objectHighlight);
         if (!loadObjects) {
             doc.put("_source", Arrays.asList("guid"));
         }
-        List<Object> sort = new ArrayList<>();
-        doc.put("sort", sort);
-        for (SortingRule sr : sorting) {
-            String keyProp = sr.isTimestamp ? OBJ_TIMESTAMP : (sr.isObjectName ? OBJ_NAME : 
-                getKeyProperty(sr.keyName));
-
-            Map<String, Object> sortOrderWrapper = ImmutableMap.of(keyProp,
-                                                      ImmutableMap.of("order",
-                                                                      sr.ascending ? "asc" : "desc"));
-            sort.add(sortOrderWrapper);
-        }
+        doc.put("sort", createSortQuery(sorting));
 
         validateObjectTypes(objectTypes);
 
@@ -1612,6 +1605,27 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return ret;
     }
 
+    private List<Object> createSortQuery(final List<SortingRule> sorting) {
+        final List<Object> sort = new ArrayList<>();
+        for (final SortingRule sr : sorting) {
+            final Map<String, String> order = ImmutableMap.of
+                    ("order", sr.isAscending() ? "asc" : "desc");
+            final Map<String, Object> sortWrapper;
+            if (sr.isKeyProperty()) {
+                sortWrapper = ImmutableMap.of(getKeyProperty(sr.getKeyProperty().get()), order);
+            } else {
+                if (!READABLE_NAMES.inverse().containsKey(sr.getStandardProperty().get())) {
+                    throw new IllegalArgumentException("Unknown object property " +
+                            sr.getStandardProperty().get());
+                }
+                sortWrapper = ImmutableMap.of(
+                        READABLE_NAMES.inverse().get(sr.getStandardProperty().get()), order);
+            }
+            sort.add(sortWrapper);
+        }
+        return sort;
+    }
+
     private String getKeyProperty(final String keyName) {
         return "key." + keyName;
     }
@@ -1656,9 +1670,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 @Override
                 public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder) {
                     return requestConfigBuilder.setConnectTimeout(10000)
-                            .setSocketTimeout(120000);
+                            .setSocketTimeout(10 * 60 * 1000);
                 }
-            }).setMaxRetryTimeoutMillis(120000);
+            }).setMaxRetryTimeoutMillis(10 * 60 * 1000);
             List<Header> headers = new ArrayList<>();
             headers.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
             //headers.add(new BasicHeader("Role", "Read"));

@@ -177,7 +177,7 @@ public class SearchToolsConfig {
         return searchMongoPwd;
     }
     
-    public Set<String> workerCodes() {
+    public Set<String> getWorkerCodes() {
         return workerCodes;
     }
 

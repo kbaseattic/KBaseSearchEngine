@@ -8,6 +8,7 @@ import kbasesearchengine.SearchObjectsInput;
 import kbasesearchengine.SearchObjectsOutput;
 import kbasesearchengine.SearchTypesInput;
 import kbasesearchengine.SearchTypesOutput;
+import kbasesearchengine.SortingRule;
 import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.main.SearchInterface;
@@ -16,7 +17,6 @@ import kbasesearchengine.search.FoundHits;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
-import kbasesearchengine.search.SortingRule;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.test.common.TestCommon;
@@ -143,9 +143,9 @@ public class SearchMethodsTest {
         // what's returned doesn't matter, we're just checking that indexing storage gets the
         // right message
         
-        final SortingRule sr = new SortingRule();
-        sr.isTimestamp = true;
-        sr.ascending = true;
+        final kbasesearchengine.search.SortingRule sr = 
+                kbasesearchengine.search.SortingRule.getStandardPropertyBuilder("timestamp")
+                .build();
         
         final FoundHits fh = new FoundHits();
         fh.pagination = null;
@@ -309,11 +309,12 @@ public class SearchMethodsTest {
         final ArrayList<ObjectData> objs2 = new ArrayList<>();
         objs2.add(obj2);
 
-        final SortingRule sr = new SortingRule();
-        sr.isTimestamp = true;
-        sr.ascending = true;
+        final kbasesearchengine.search.SortingRule sr =
+                kbasesearchengine.search.SortingRule.getStandardPropertyBuilder("timestamp")
+                .build();
 
-        final kbasesearchengine.search.MatchFilter filter = kbasesearchengine.search.MatchFilter.getBuilder()
+        final kbasesearchengine.search.MatchFilter filter =
+                kbasesearchengine.search.MatchFilter.getBuilder()
                 .withNullableFullTextInAll("test")
                 .build();
 
@@ -455,11 +456,12 @@ public class SearchMethodsTest {
         final ArrayList<ObjectData> objs = new ArrayList<>();
         objs.add(obj);
 
-        final SortingRule sr = new SortingRule();
-        sr.isTimestamp = true;
-        sr.ascending = true;
+        final kbasesearchengine.search.SortingRule sr =
+                kbasesearchengine.search.SortingRule.getStandardPropertyBuilder("timestamp")
+                .build();
 
-        final kbasesearchengine.search.MatchFilter filter = kbasesearchengine.search.MatchFilter.getBuilder()
+        final kbasesearchengine.search.MatchFilter filter =
+                kbasesearchengine.search.MatchFilter.getBuilder()
                 .withNullableFullTextInAll("objname")
                 .build();
 
@@ -514,6 +516,7 @@ public class SearchMethodsTest {
         //additional properties are: type, creator, copied, module, method, module_ver, commit
         final ImmutableMap<String,String> expected = ImmutableMap.<String,String>builder()
                 .put("type", "Blah")
+                .put("type_ver", "1")
                 .put("creator", "user")
                 .put("copied", "user2")
                 .put("module", "module")
@@ -546,11 +549,12 @@ public class SearchMethodsTest {
         final ArrayList<ObjectData> objs = new ArrayList<>();
         objs.add(obj);
 
-        final SortingRule sr = new SortingRule();
-        sr.isTimestamp = true;
-        sr.ascending = true;
+        final kbasesearchengine.search.SortingRule sr =
+                kbasesearchengine.search.SortingRule.getStandardPropertyBuilder("timestamp")
+                .build();
 
-        final kbasesearchengine.search.MatchFilter filter = kbasesearchengine.search.MatchFilter.getBuilder()
+        final kbasesearchengine.search.MatchFilter filter =
+                kbasesearchengine.search.MatchFilter.getBuilder()
                 .withNullableFullTextInAll("ws:1/2/3")
                 .build();
 
@@ -601,6 +605,7 @@ public class SearchMethodsTest {
         //additional properties are: type, creator, copied, module, method, module_ver, commit
         final Map<String,String> expected = new HashMap<>();
                 expected.put("type", null);
+                expected.put("type_ver", null);
                 expected.put("creator", null);
                 expected.put("copied", null);
                 expected.put("module", null);
@@ -610,12 +615,95 @@ public class SearchMethodsTest {
         checkObjectProps(expected, actual);
     }
 
-    private void checkObjectProps(Map<String, String> expected, kbasesearchengine.ObjectData actual){
+    private void checkObjectProps(
+            final Map<String, String> expected,
+            final kbasesearchengine.ObjectData actual){
         Map<String, String > additonalProperties = actual.getObjectProps();
         for( String prop : additonalProperties.keySet()) {
             assertThat("key " + prop + " has correct value",
                     additonalProperties.get(prop), is(expected.get(prop)));
         }
+    }
+    
+    @Test
+    public void sort() throws Exception {
+        // tests that the sort inputs and outputs are correct.
+        
+        // minimal case
+        sort(new SortingRule().withProperty("prop"),
+                kbasesearchengine.search.SortingRule.getKeyPropertyBuilder("prop").build());
+        
+        // tests for is object prop
+        sort(new SortingRule().withProperty("prop1").withIsObjectProperty(null),
+                kbasesearchengine.search.SortingRule.getKeyPropertyBuilder("prop1").build());
+        sort(new SortingRule().withProperty("prop2").withIsObjectProperty(1L),
+                kbasesearchengine.search.SortingRule.getKeyPropertyBuilder("prop2").build());
+        sort(new SortingRule().withProperty("prop3").withIsObjectProperty(0L),
+                kbasesearchengine.search.SortingRule.getStandardPropertyBuilder("prop3").build());
+        
+        // tests for ascending
+        sort(new SortingRule().withProperty("prop4").withAscending(null),
+                kbasesearchengine.search.SortingRule.getKeyPropertyBuilder("prop4").build());
+        sort(new SortingRule().withProperty("prop5").withAscending(1L),
+                kbasesearchengine.search.SortingRule.getKeyPropertyBuilder("prop5").build());
+        sort(new SortingRule().withProperty("prop6").withAscending(0L),
+                kbasesearchengine.search.SortingRule.getKeyPropertyBuilder("prop6")
+                        .withNullableIsAscending(false).build());
+    }
+    
+    private void sort(
+            final SortingRule input,
+            final kbasesearchengine.search.SortingRule expected)
+            throws Exception {
+        final AccessGroupProvider agp = mock(AccessGroupProvider.class);
+        final IndexingStorage is = mock(IndexingStorage.class);
+        final TypeStorage ts = mock(TypeStorage.class);
+
+        final SearchInterface sm = new SearchMethods(agp, is, ts, Collections.emptySet());
+        
+        // what's returned doesn't matter, we're just checking that indexing storage gets the
+        // right message
+        
+        final FoundHits fh = new FoundHits();
+        fh.pagination = null;
+        fh.sortingRules = Arrays.asList(expected);
+        fh.total = 1;
+        fh.guids = set();
+        fh.objects = Collections.emptyList();
+        
+        when(is.searchObjects(
+                Arrays.asList("Genome"),
+                kbasesearchengine.search.MatchFilter.getBuilder().build(),
+                Arrays.asList(expected), // sort
+                new kbasesearchengine.search.AccessFilter().withAccessGroups(set()),
+                null, // pagination
+                PP_DEFAULT))
+                .thenReturn(fh);
+        
+        final SearchObjectsOutput res = sm.searchObjects(new SearchObjectsInput()
+                .withObjectTypes(Arrays.asList("Genome"))
+                .withMatchFilter(new MatchFilter())
+                .withAccessFilter(new AccessFilter())
+                .withSortingRules(Arrays.asList(input)),
+                "auser");
+
+        assertThat("incorrect objects", res.getObjects(), is(Collections.emptyList()));
+        assertThat("incorrect pagination", res.getPagination(), is((Pagination) null));
+        // if we want to check search time, need to mock a Clock. Don't bother for now.
+        // assertThat("incorrect objects", res.getSearchTime(), is(20));
+        // don't care about the sorting rules for this test, so just check size
+        assertThat("incorrect sorting rules count", res.getSortingRules().size(), is(1));
+        assertThat("incorrect total", res.getTotal(), is(1L));
+        
+        compare(res.getSortingRules().get(0), input);
+    }
+
+    private void compare(final SortingRule got, final SortingRule expected) {
+        assertThat("incorrect property", got.getProperty(), is(expected.getProperty()));
+        assertThat("incorrect ascending", got.getAscending(),
+                is(expected.getAscending() == null ? 1L : expected.getAscending()));
+        assertThat("incorrect is object property", got.getIsObjectProperty(),
+                is(expected.getIsObjectProperty() == null ? 1L : expected.getIsObjectProperty()));
     }
 
 }
