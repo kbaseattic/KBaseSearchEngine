@@ -1700,7 +1700,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         try {
             return makeRequest(reqType, urlPath, doc);
         } catch (IndexingConflictException e) {
-            // this is impossible to test, and so is not tested
+            // this is very difficult to test, and so is not tested
             throw new IOException(
                     "This operation is not expected to result in a conflict, yet it occurred: " +
                     e.getMessage(), e);
