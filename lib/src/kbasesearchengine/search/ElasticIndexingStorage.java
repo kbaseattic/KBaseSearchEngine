@@ -310,7 +310,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final GUID id,
             final ParsedObject obj,
             final boolean isPublic)
-            throws IOException {
+            throws IOException, IndexingConflictException {
         final GUID parentID = new GUID(id, null, null);
         indexObjects(rule, data, timestamp, parentJsonValue, parentID,
                 ImmutableMap.of(id, obj), isPublic);
@@ -328,7 +328,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final GUID pguid,
             final Map<GUID, ParsedObject> idToObj,
             final boolean isPublic)
-            throws IOException {
+            throws IOException, IndexingConflictException {
         final Map<GUID, ParsedObject> idToObjCopy = new HashMap<>(idToObj);
         String indexName = checkIndex(rule, false);
         for (GUID id : idToObjCopy.keySet()) {
@@ -438,7 +438,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                                                         .collect(Collectors.toList())))))));
 
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
-        Response resp = makeRequest("GET", urlPath, doc);
+        Response resp = makeRequestNoConflict("GET", urlPath, doc);
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
@@ -468,7 +468,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                         guids.stream().map(u -> u.toString()).collect(Collectors.toList())))))));
 
         String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_search";
-        Response resp = makeRequest("GET", urlPath, doc);
+        Response resp = makeRequestNoConflict("GET", urlPath, doc);
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
@@ -505,7 +505,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                                             "_source", Arrays.asList("pguid"));
 
         String urlPath = "/" + indexNamePrefix + "*/" + getAccessTableName() + "/_search";
-        Response resp = makeRequest("GET", urlPath, doc);
+        Response resp = makeRequestNoConflict("GET", urlPath, doc);
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
@@ -590,7 +590,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                                                   ImmutableMap.of("prefix", prefix))))));
 
         String urlPath = "/" + reqIndexName + "/" + getAccessTableName() + "/_search";
-        Response resp = makeRequest("GET", urlPath, doc);
+        Response resp = makeRequestNoConflict("GET", urlPath, doc);
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
@@ -614,7 +614,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     private int updateLastVersionsInData(String indexName, GUID parentGUID,
-            int lastVersion) throws IOException {
+            int lastVersion) throws IOException, IndexingConflictException {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
@@ -650,7 +650,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     private Map<GUID, String> checkParentDoc(String indexName, Set<GUID> parentGUIDs, 
-            boolean isPublic, int lastVersion) throws IOException {
+            boolean isPublic, int lastVersion) throws IOException, IndexingConflictException {
         boolean changed = false;
         Map<GUID, String> ret = new LinkedHashMap<>(lookupParentDocIds(indexName, parentGUIDs));
         for (GUID parentGUID : parentGUIDs) {
@@ -675,7 +675,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             doc.put("lastin", lastinGroupIds);
             doc.put("groups", accessGroupIds);
             doc.put("extpub", new ArrayList<Integer>());
-            Response resp = makeRequest("POST", "/" + indexName + "/" + getAccessTableName() + "/", 
+            Response resp = makeRequest("POST", "/" + indexName + "/" + getAccessTableName() + "/",
                     doc);
             @SuppressWarnings("unchecked")
             Map<String, Object> data = UObject.getMapper().readValue(
@@ -717,7 +717,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final Integer accessGroupId,
             final boolean includePublicAccessID,
             final boolean includeAdminAccessID)
-            throws IOException {
+            throws IOException, IndexingConflictException {
         /* this method will cause at most 6 script compilations, which seems like a lot...
          * Could make the script always the same and put in ifs but this should be ok for now.
          */
@@ -766,7 +766,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     private boolean removeAccessGroupForVersion(String indexName, GUID guid, 
-            int accessGroupId) throws IOException {
+            int accessGroupId) throws IOException, IndexingConflictException {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
@@ -808,7 +808,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     private boolean updateBooleanFieldInData(String indexName, GUID parentGUID,
-            String field, boolean value) throws IOException {
+            String field, boolean value) throws IOException, IndexingConflictException {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
@@ -842,7 +842,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
     public int setNameOnAllObjectVersions(final GUID object, final String newName)
-            throws IOException {
+            throws IOException, IndexingConflictException {
         return setFieldOnObject(object, OBJ_NAME, newName, true);
     }
     
@@ -853,7 +853,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final String field,
             final Object value,
             final boolean allVersions)
-            throws IOException {
+            throws IOException, IndexingConflictException {
         final String index = getAnyIndexPattern();
         final Map<String, Object> query;
         if (allVersions) {
@@ -878,7 +878,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
     public void shareObjects(Set<GUID> guids, int accessGroupId, 
-            boolean isExternalPublicGroup) throws IOException {
+            boolean isExternalPublicGroup) throws IOException, IndexingConflictException {
         Map<String, Set<GUID>> indexToGuids = groupParentIdsByIndex(guids);
         for (String indexName : indexToGuids.keySet()) {
             Set<GUID> toAddExtPub = new LinkedHashSet<GUID>();
@@ -920,7 +920,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
-    public void unshareObjects(Set<GUID> guids, int accessGroupId) throws IOException {
+    public void unshareObjects(Set<GUID> guids, int accessGroupId)
+            throws IOException, IndexingConflictException {
         Map<String, Set<GUID>> indexToGuids = groupParentIdsByIndex(guids);
         for (String indexName : indexToGuids.keySet()) {
             boolean needRefresh = false;
@@ -943,7 +944,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
-    public void deleteAllVersions(final GUID guid) throws IOException {
+    public void deleteAllVersions(final GUID guid) throws IOException, IndexingConflictException {
         // could optimize later by making LLV return the index name
         final Integer ver = loadLastVersion(null, guid, null);
         if (ver == null) {
@@ -965,7 +966,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
-    public void undeleteAllVersions(final GUID guid) throws IOException {
+    public void undeleteAllVersions(final GUID guid)
+            throws IOException, IndexingConflictException {
         // could optimize later by making LLV return the index name
         final Integer ver = loadLastVersion(null, guid, null);
         if (ver == null) {
@@ -985,30 +987,31 @@ public class ElasticIndexingStorage implements IndexingStorage {
     
     //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
-    public void publishObjects(Set<GUID> guids) throws IOException {
+    public void publishObjects(Set<GUID> guids) throws IOException, IndexingConflictException {
         shareObjects(guids, PUBLIC_ACCESS_GROUP, false);
     }
     
     //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
-    public void unpublishObjects(Set<GUID> guids) throws IOException {
+    public void unpublishObjects(Set<GUID> guids) throws IOException, IndexingConflictException {
         unshareObjects(guids, PUBLIC_ACCESS_GROUP);
     }
     
     //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
-    public void publishAllVersions(final GUID guid) throws IOException {
+    public void publishAllVersions(final GUID guid) throws IOException, IndexingConflictException {
         setFieldOnObject(guid, "public", true, true);
     }
     
     //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
-    public void unpublishAllVersions(final GUID guid) throws IOException {
+    public void unpublishAllVersions(final GUID guid)
+            throws IOException, IndexingConflictException {
         setFieldOnObject(guid, "public", false, true);
     }
 
     private boolean addExtPubForVersion(String indexName, GUID guid, 
-            int accessGroupId) throws IOException {
+            int accessGroupId) throws IOException, IndexingConflictException {
         // Check that we work with other than physical access group this object exists in.
         if (accessGroupId == guid.getAccessGroupId()) {
             throw new IllegalStateException("Access group should be external");
@@ -1043,7 +1046,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     @Override
-    public void publishObjectsExternally(Set<GUID> guids, int accessGroupId) throws IOException {
+    public void publishObjectsExternally(Set<GUID> guids, int accessGroupId)
+            throws IOException, IndexingConflictException {
         Map<String, Set<GUID>> indexToGuids = groupParentIdsByIndex(guids);
         for (String indexName : indexToGuids.keySet()) {
             boolean needRefresh = false;
@@ -1059,7 +1063,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     private boolean removeExtPubForVersion(String indexName, GUID guid, 
-            int accessGroupId) throws IOException {
+            int accessGroupId) throws IOException, IndexingConflictException {
         // Check that we work with other than physical access group this object exists in.
         if (accessGroupId == guid.getAccessGroupId()) {
             throw new IllegalStateException("Access group should be external");
@@ -1093,7 +1097,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
 
     @Override
-    public void unpublishObjectsExternally(Set<GUID> guids, int accessGroupId) throws IOException {
+    public void unpublishObjectsExternally(Set<GUID> guids, int accessGroupId)
+            throws IOException, IndexingConflictException {
         Map<String, Set<GUID>> indexToGuids = groupParentIdsByIndex(guids);
         for (String indexName : indexToGuids.keySet()) {
             boolean needRefresh = false;
@@ -1140,7 +1145,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
 
         final String urlPath = "/" + indexNamePrefix + "*/" + getDataTableName() + "/_search";
-        final Response resp = makeRequest("GET", urlPath, doc);
+        final Response resp = makeRequestNoConflict("GET", urlPath, doc);
         @SuppressWarnings("unchecked")
         final Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
@@ -1310,7 +1315,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         String urlPath = "/" + indexNamePrefix + "*" +
                 (matchFilter.isExcludeSubObjects() ? EXCLUDE_SUB_OJBS_URL_SUFFIX : "") +
                 "/" + getDataTableName() + "/_search";
-        Response resp = makeRequest("GET", urlPath, doc);
+        Response resp = makeRequestNoConflict("GET", urlPath, doc);
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
@@ -1576,7 +1581,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
 
         final String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
-        final Response resp = makeRequest("GET", urlPath, ImmutableMap.copyOf(doc));
+        final Response resp = makeRequestNoConflict("GET", urlPath, ImmutableMap.copyOf(doc));
 
         @SuppressWarnings("unchecked")
         final Map<String, Object> data = UObject.getMapper().readValue(
@@ -1634,17 +1639,17 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Set<String> ret = new TreeSet<>();
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
-                makeRequest("GET", "/_aliases", null).getEntity().getContent(), Map.class);
+                makeRequestNoConflict("GET", "/_aliases", null).getEntity().getContent(), Map.class);
         ret.addAll(data.keySet());
         return ret;
     }
     
     public Response deleteIndex(String indexName) throws IOException {
-        return makeRequest("DELETE", "/" + indexName, null);
+        return makeRequestNoConflict("DELETE", "/" + indexName, null);
     }
     
     public Response refreshIndex(String indexName) throws IOException {
-        return makeRequest("POST", "/" + indexName + "/_refresh", null);
+        return makeRequestNoConflict("POST", "/" + indexName + "/_refresh", null);
     }
     
     /** Refresh the elasticsearch index, where the index prefix is set by
@@ -1687,11 +1692,26 @@ public class ElasticIndexingStorage implements IndexingStorage {
         return restClient;
     }
 
-    public Response makeRequest(
+    public Response makeRequestNoConflict(
             final String reqType,
             final String urlPath,
             final Map<String, ?> doc) 
             throws IOException {
+        try {
+            return makeRequest(reqType, urlPath, doc);
+        } catch (IndexingConflictException e) {
+            // this is very difficult to test, and so is not tested
+            throw new IOException(
+                    "This operation is not expected to result in a conflict, yet it occurred: " +
+                    e.getMessage(), e);
+        }
+    }
+    
+    public Response makeRequest(
+            final String reqType,
+            final String urlPath,
+            final Map<String, ?> doc) 
+            throws IOException, IndexingConflictException {
         return makeRequest(reqType, urlPath, doc, Collections.emptyMap());
     }
     
@@ -1699,7 +1719,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final String reqType,
             final String indexName,
             final File jsonData) 
-            throws IOException {
+            throws IOException, IndexingConflictException {
         try (InputStream is = new FileInputStream(jsonData)) {
             return makeRequest(reqType, "/" + indexName + "/_bulk", Collections.emptyMap(),
                     new InputStreamEntity(is));
@@ -1711,7 +1731,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final String urlPath,
             final Map<String, ?> doc, 
             final Map<String, String> attributes)
-            throws IOException {
+            throws IOException, IndexingConflictException {
         return makeRequest(reqType, urlPath, attributes, doc == null ? null : stringEntity(
                 UObject.transformObjectToString(doc)));
     }
@@ -1721,11 +1741,15 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final String urlPath,
             final Map<String, String> attributes,
             final HttpEntity body)
-            throws IOException {
+            throws IOException, IndexingConflictException {
         try {
             return getRestClient().performRequest(reqType, urlPath, attributes, body);
-        } catch (ResponseException ex) {
-            throw new IOException(ex.getMessage(), ex);
+        } catch (ResponseException re) {
+            if (re.getResponse().getStatusLine().getStatusCode() == 409) {
+                // this is really difficult to test, and so is not tested
+                throw new IndexingConflictException(re.getMessage(), re);
+            }
+            throw new IOException(re.getMessage(), re);
         }
     }
     
@@ -1880,7 +1904,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> doc = new LinkedHashMap<>();
         doc.put("mappings", mappings);
 
-        makeRequest("PUT", "/" + indexName, doc);
+        makeRequestNoConflict("PUT", "/" + indexName, doc);
     }
     
     public void close() throws IOException {

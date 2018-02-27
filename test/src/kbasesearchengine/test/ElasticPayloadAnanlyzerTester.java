@@ -21,6 +21,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import kbasesearchengine.search.ElasticIndexingStorage;
+import kbasesearchengine.search.IndexingConflictException;
 import us.kbase.common.service.UObject;
 
 public class ElasticPayloadAnanlyzerTester {
@@ -41,7 +42,8 @@ public class ElasticPayloadAnanlyzerTester {
     }
     
     @SuppressWarnings("serial")
-    private static void createTables(String indexName) throws IOException {
+    private static void createTables(String indexName)
+            throws IOException, IndexingConflictException {
         // Index settings
         Map<String, Object> payloadAnalyzer = new LinkedHashMap<String, Object>() {{
             put("type", "custom");
