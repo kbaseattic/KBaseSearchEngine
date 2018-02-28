@@ -39,6 +39,7 @@ import com.google.common.collect.ImmutableMap;
 import junit.framework.Assert;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
+import kbasesearchengine.events.exceptions.ErrorType;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.handler.SourceData;
@@ -125,7 +126,7 @@ public class ElasticIndexingStorageTest {
                 try {
                     objList = indexStorage.getObjectsByIds(guids);
                 } catch (IOException e) {
-                    throw new FatalIndexingException(e.getMessage(), e);
+                    throw new FatalIndexingException(ErrorType.OTHER, e.getMessage(), e);
                 }
                 return objList.stream().collect(
                         Collectors.toMap(od -> od.getGUID(), Function.identity()));
@@ -153,7 +154,7 @@ public class ElasticIndexingStorageTest {
                     return indexStorage.getObjectsByIds(guids, pp).stream().collect(
                             Collectors.toMap(od -> od.getGUID(), od -> od.getType().get()));
                 } catch (IOException e) {
-                    throw new FatalIndexingException(e.getMessage(), e);
+                    throw new FatalIndexingException(ErrorType.OTHER, e.getMessage(), e);
                 }
             }
         };

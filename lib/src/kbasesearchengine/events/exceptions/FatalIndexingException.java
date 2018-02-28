@@ -8,12 +8,15 @@ package kbasesearchengine.events.exceptions;
 @SuppressWarnings("serial")
 public class FatalIndexingException extends IndexingException {
 
-    public FatalIndexingException(final String message) {
-        super(message);
+    public FatalIndexingException(final ErrorType errorType, final String message) {
+        super(errorType, message);
     }
     
-    public FatalIndexingException(final String message, final Throwable cause) {
-        super(message, cause);
+    public FatalIndexingException(
+            final ErrorType errorType,
+            final String message,
+            final Throwable cause) {
+        super(errorType, message, cause);
     }
     
 }

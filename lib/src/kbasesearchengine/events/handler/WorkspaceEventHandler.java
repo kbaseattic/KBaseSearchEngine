@@ -27,6 +27,7 @@ import kbasesearchengine.events.ChildStatusEvent;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StoredStatusEvent;
+import kbasesearchengine.events.exceptions.ErrorType;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
@@ -237,30 +238,30 @@ public class WorkspaceEventHandler implements EventHandler {
 
     private static IndexingException handleException(final JsonClientException e) {
         if (e instanceof UnauthorizedException) {
-            return new FatalIndexingException(e.getMessage(), e);
+            return new FatalIndexingException(ErrorType.OTHER, e.getMessage(), e);
         }
         if (e.getMessage() == null) {
             return new UnprocessableEventIndexingException(
-                    "Null error message from workspace server", e);
+                    ErrorType.OTHER, "Null error message from workspace server", e);
         } else if (e.getMessage().toLowerCase().contains("login")) {
             return new FatalIndexingException(
-                    "Workspace credentials are invalid: " + e.getMessage(), e);
+                    ErrorType.OTHER, "Workspace credentials are invalid: " + e.getMessage(), e);
         } else if (e.getMessage().toLowerCase().contains("did not start up properly")) {
-            return new FatalIndexingException("Fatal error returned from workspace: " +
-                    e.getMessage(), e);
+            return new FatalIndexingException(ErrorType.OTHER,
+                    "Fatal error returned from workspace: " + e.getMessage(), e);
         } else {
             // this may need to be expanded, some errors may require retries or total failures
             return new UnprocessableEventIndexingException(
-                    "Unrecoverable error from workspace on fetching object: " + e.getMessage(),
-                    e);
+                    ErrorType.OTHER, "Unrecoverable error from workspace on fetching object: " +
+                            e.getMessage(), e);
         }
     }
 
     private static RetriableIndexingException handleException(final IOException e) {
         if (e instanceof ConnectException) {
-            return new FatalRetriableIndexingException(e.getMessage(), e);
+            return new FatalRetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
         }
-        return new RetriableIndexingException(e.getMessage(), e);
+        return new RetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
     }
     
     @Override
@@ -582,8 +583,8 @@ public class WorkspaceEventHandler implements EventHandler {
         try {
             objid = Long.parseLong(event.getAccessGroupObjectId().get());
         } catch (NumberFormatException ne) {
-            throw new UnprocessableEventIndexingException("Illegal workspace object id: " +
-                    event.getAccessGroupObjectId());
+            throw new UnprocessableEventIndexingException(ErrorType.OTHER,
+                    "Illegal workspace object id: " + event.getAccessGroupObjectId());
         }
         final Map<String, Object> command = new HashMap<>();
         command.put("command", "getObjectHistory");

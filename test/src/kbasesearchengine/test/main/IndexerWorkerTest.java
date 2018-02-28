@@ -34,6 +34,7 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventType;
+import kbasesearchengine.events.exceptions.ErrorType;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
 import kbasesearchengine.events.exceptions.RetriesExceededIndexingException;
 import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
@@ -260,6 +261,7 @@ public class IndexerWorkerTest {
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, new UnprocessableEventIndexingException(
+                    ErrorType.OTHER,
                     "Could not find the subobject id for one or more of the subobjects for " +
                     "object code:1/2/3 when applying search specification foo_1"));
         }
@@ -547,6 +549,7 @@ public class IndexerWorkerTest {
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, new UnprocessableEventIndexingException(
+                    ErrorType.SUBOBJECT_COUNT,
                     "Object code:1/2/3 has 3 subobjects, exceeding the limit of 2"));
         }
         
@@ -662,7 +665,8 @@ public class IndexerWorkerTest {
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(
-                    got, new RetriesExceededIndexingException("conflict"));
+                    got, new RetriesExceededIndexingException(
+                            ErrorType.INDEXING_CONFLICT, "conflict"));
         }
         
         final String errmsg = "Retriable error in indexer, retry %s: " +
@@ -709,7 +713,8 @@ public class IndexerWorkerTest {
                     .build());
             fail("expected exception");
         } catch (Exception got) {
-            TestCommon.assertExceptionCorrect(got, new RetriableIndexingException("conflict"));
+            TestCommon.assertExceptionCorrect(got, new RetriableIndexingException(
+                    ErrorType.INDEXING_CONFLICT, "conflict"));
         }
     }
 
