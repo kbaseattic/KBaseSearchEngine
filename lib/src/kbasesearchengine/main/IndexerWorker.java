@@ -47,6 +47,7 @@ import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.parse.ObjectParser;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
+import kbasesearchengine.search.IndexingConflictException;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.system.NoSuchTypeException;
@@ -86,6 +87,7 @@ public class IndexerWorker implements Stoppable {
             (retrycount, event, except) -> logError(retrycount, event, except));
 
     public IndexerWorker(
+            // this is screaming for a configuration builder, esp if we configure the retry info
             final String id,
             final List<EventHandler> eventHandlers,
             final StatusEventStorage storage,
@@ -447,7 +449,7 @@ public class IndexerWorker implements Stoppable {
                 throw new UnprocessableEventIndexingException(
                         "Unsupported event type: " + ev.getEventType());
             }
-        } catch (IOException e) {
+        } catch (IOException | IndexingConflictException e) {
             // may want to make IndexingStorage throw more specific exceptions, but this will work
             // for now. Need to look more carefully at the code before that happens.
             throw new RetriableIndexingException(e.getMessage(), e);
@@ -549,7 +551,7 @@ public class IndexerWorker implements Stoppable {
         retrier.retryCons(i -> indexObjectInStorage(i), input, null);
     }
 
-    private void indexObjectInStorage(final List<?> input) throws FatalRetriableIndexingException {
+    private void indexObjectInStorage(final List<?> input) throws RetriableIndexingException {
         final ObjectTypeParsingRules rule = (ObjectTypeParsingRules) input.get(0);
         final SourceData obj = (SourceData) input.get(1);
         final Instant timestamp = (Instant) input.get(2);
@@ -562,6 +564,8 @@ public class IndexerWorker implements Stoppable {
         try {
             indexingStorage.indexObjects(
                     rule, obj, timestamp, parentJson, guid, guidToObj, isPublic);
+        } catch (IndexingConflictException e) {
+            throw new RetriableIndexingException(e.getMessage(), e);
         } catch (IOException e) {
             throw new FatalRetriableIndexingException(e.getMessage(), e);
         }
@@ -635,7 +639,8 @@ public class IndexerWorker implements Stoppable {
 //                false);
 //    }
     
-    private void undeleteAllVersions(final GUID guid) throws IOException {
+    private void undeleteAllVersions(final GUID guid)
+            throws IOException, IndexingConflictException {
         indexingStorage.undeleteAllVersions(guid);
     }
 
@@ -643,29 +648,33 @@ public class IndexerWorker implements Stoppable {
 //        indexingStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
 //    }
 
-    private void deleteAllVersions(final GUID guid) throws IOException {
+    private void deleteAllVersions(final GUID guid)
+            throws IOException, IndexingConflictException {
         indexingStorage.deleteAllVersions(guid);
     }
 
-    private void publish(GUID guid) throws IOException {
+    private void publish(final GUID guid) throws IOException, IndexingConflictException {
         indexingStorage.publishObjects(new LinkedHashSet<>(Arrays.asList(guid)));
     }
     
-    private void publishAllVersions(final GUID guid) throws IOException {
+    private void publishAllVersions(final GUID guid)
+            throws IOException, IndexingConflictException {
         indexingStorage.publishAllVersions(guid);
         //TODO DP need to handle objects in datapalette
     }
 
-    private void unpublish(GUID guid) throws IOException {
+    private void unpublish(final GUID guid) throws IOException, IndexingConflictException {
         indexingStorage.unpublishObjects(new LinkedHashSet<>(Arrays.asList(guid)));
     }
     
-    private void unpublishAllVersions(final GUID guid) throws IOException {
+    private void unpublishAllVersions(final GUID guid)
+            throws IOException, IndexingConflictException {
         indexingStorage.unpublishAllVersions(guid);
         //TODO DP need to handle objects in datapalette
     }
     
-    private void renameAllVersions(final GUID guid, final String newName) throws IOException {
+    private void renameAllVersions(final GUID guid, final String newName)
+            throws IOException, IndexingConflictException {
         indexingStorage.setNameOnAllObjectVersions(guid, newName);
     }
 
