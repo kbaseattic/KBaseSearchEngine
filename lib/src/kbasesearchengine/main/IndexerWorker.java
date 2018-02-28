@@ -143,11 +143,11 @@ public class IndexerWorker implements Stoppable {
                     // keep processing events until there are none left
                     processedEvent = performOneTick();
                 } catch (InterruptedException | FatalIndexingException e) {
-                    logError(ErrorDisp.FATAL, e);
+                    logError(LogPrefix.FATAL, e);
                     executor.shutdown();
                     signalMonitor.signal();
                 } catch (Throwable e) {
-                    logError(ErrorDisp.UNEXPECTED, e);
+                    logError(LogPrefix.UNEXPECTED, e);
                 }
             }
         }
@@ -171,29 +171,27 @@ public class IndexerWorker implements Stoppable {
         }
     }
     
-    // error disposition
-    private enum ErrorDisp {
+    private enum LogPrefix {
         STD, FATAL, UNEXPECTED;
     }
     
-    private void logError(final ErrorDisp errtype, final Throwable e) {
-        Utils.nonNull(errtype, "errtype");
-        final String msg;
-        if (ErrorDisp.FATAL.equals(errtype)) {
-            msg = "Fatal error in indexer, shutting down";
-        } else if (ErrorDisp.STD.equals(errtype)) {
-            msg = "Error in indexer";
-        } else if (ErrorDisp.UNEXPECTED.equals(errtype)) {
-            msg = "Unexpected error in indexer";
+    private void logError(final LogPrefix prefix, final Throwable e) {
+        final String logPrefix;
+        if (LogPrefix.FATAL.equals(prefix)) {
+            logPrefix = "Fatal error in indexer, shutting down";
+        } else if (LogPrefix.STD.equals(prefix)) {
+            logPrefix = "Error in indexer";
+        } else if (LogPrefix.UNEXPECTED.equals(prefix)) {
+            logPrefix = "Unexpected error in indexer";
         } else {
-            throw new RuntimeException("Unknown error type: " + errtype);
+            throw new RuntimeException("Unknown error type: " + prefix);
         }
-        logError(msg, e);
+        logError(logPrefix, e);
     }
 
-    private void logError(final String msg, final Throwable e) {
+    private void logError(final String logPrefix, final Throwable e) {
         // TODO LOG make log method that takes msg + e and have the logger figure out how to log it correctly
-        logger.logError(msg + ": " + e);
+        logger.logError(logPrefix + ": " + e);
         logger.logError(e);
     }
 
@@ -226,7 +224,7 @@ public class IndexerWorker implements Stoppable {
             try {
                 handler = getEventHandler(parentEvent);
             } catch (UnprocessableEventIndexingException e) {
-                logError(ErrorDisp.STD, e);
+                logError(LogPrefix.STD, e);
                 markEventProcessed(parentEvent, StatusEventProcessingState.FAIL);
                 return true;
             }
@@ -252,7 +250,7 @@ public class IndexerWorker implements Stoppable {
             throw e;
         } catch (Exception e) {
             // don't know how to respond to anything else, so mark event failed and keep going
-            logError(ErrorDisp.UNEXPECTED, e);
+            logError(LogPrefix.UNEXPECTED, e);
             markAsVisitedFailedPostError(parentEvent);
         }
     }
@@ -272,7 +270,7 @@ public class IndexerWorker implements Stoppable {
             throw e;
         } catch (Exception e) {
             // don't know how to respond to anything else, so mark event failed and keep going
-            logError(ErrorDisp.UNEXPECTED, e);
+            logError(LogPrefix.UNEXPECTED, e);
             markAsVisitedFailedPostError(parentEvent);
             return;
         }
