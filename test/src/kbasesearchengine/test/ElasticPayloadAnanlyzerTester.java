@@ -21,6 +21,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import kbasesearchengine.search.ElasticIndexingStorage;
+import kbasesearchengine.search.IndexingConflictException;
 import us.kbase.common.service.UObject;
 
 public class ElasticPayloadAnanlyzerTester {
@@ -41,7 +42,8 @@ public class ElasticPayloadAnanlyzerTester {
     }
     
     @SuppressWarnings("serial")
-    private static void createTables(String indexName) throws IOException {
+    private static void createTables(String indexName)
+            throws IOException, IndexingConflictException {
         // Index settings
         Map<String, Object> payloadAnalyzer = new LinkedHashMap<String, Object>() {{
             put("type", "custom");
@@ -131,7 +133,7 @@ public class ElasticPayloadAnanlyzerTester {
             if (saved == 0) {
                 break;
             }
-            indexStorage.makeBulkRequest("POST", "/" + indexName, tempFile);
+            indexStorage.makeRequestBulk("POST", "/" + indexName, tempFile);
         }
         indexStorage.makeRequest("POST", "/" + indexName + "/_refresh", null);
         System.out.println("Indexing is done in " + (System.currentTimeMillis() - t1) + " ms");

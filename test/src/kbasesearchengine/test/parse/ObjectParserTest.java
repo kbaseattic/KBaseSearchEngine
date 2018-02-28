@@ -269,8 +269,10 @@ public class ObjectParserTest {
 
         assertThat(guidToJson.size(), is(3));
 
-        final List<String> expectedIds = Arrays.asList("cpd00027", "cpd00013",
-                "cpd00009");
+        final List<String> expectedIds = Arrays.asList(
+                "48/1/1/compounds/id/cpd00027",
+                "48/1/1/compounds/id/cpd00013",
+                "48/1/1/compounds/id/cpd00009");
         int key_index = 0;
         for (GUID guidKey : guidToJson.keySet()) {
             assertThat(guidKey.getSubObjectId(), is(expectedIds.get(key_index)));
@@ -283,19 +285,25 @@ public class ObjectParserTest {
         }
 
         final List<String> expectedKeys = Arrays.asList("inchikey", "concentration",
-                "minFlux", "maxFlux", "id", "name");
+                "minFlux", "maxFlux", "id", "name", "compound_ref");
         final List<Double> expectedFlux = Arrays.asList( 100.0, 10.0, 50.0);
+        final List<String> names = Arrays.asList( "cpd00027", "cpd00013", "cpd00009");
         final Double expectedConcentration = 0.001;
+        final String inchikey = "WQZGKKKJIJFFOK-VFUOTHLCSA-N";
         int value_index = 0;
         for (String jsonString : guidToJson.values()) {
             @SuppressWarnings("unchecked")
             HashMap<String, Object> result = new ObjectMapper().readValue(jsonString,
                     HashMap.class);
+            assertThat(result.keySet().size(), is(expectedKeys.size()));
             assertThat(expectedKeys.containsAll(result.keySet()), is(true));
-            assertThat(result.get("id"), is(expectedIds.get(value_index)));
+            assertThat(result.get("compound_ref"), is(expectedIds.get(value_index)));
+            assertThat(result.get("id"), is(names.get(value_index)));
+            assertThat(result.get("name"), is(names.get(value_index)));
             assertThat(result.get("maxFlux"), is(expectedFlux.get(value_index)));
             assertThat(result.get("minFlux"), is(-expectedFlux.get(value_index)));
             assertThat(result.get("concentration"), is(expectedConcentration));
+            assertThat(result.get("inchikey"), is(inchikey));
             value_index++;
         }
     }
