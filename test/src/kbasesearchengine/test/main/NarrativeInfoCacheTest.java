@@ -3,7 +3,9 @@ package kbasesearchengine.test.main;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.io.IOException;
+import us.kbase.common.service.JsonClientException;
 import kbasesearchengine.main.NarrativeInfo;
 import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.wsTuple;
 import static org.hamcrest.CoreMatchers.is;
@@ -13,7 +15,10 @@ import static org.junit.Assert.fail;
 import org.junit.Test;
 
 import com.google.common.base.Ticker;
+import com.google.common.collect.ImmutableMap;
 
+import kbasesearchengine.events.handler.WorkspaceEventHandler;
+import kbasesearchengine.main.WorkspaceNarrativeInfoProvider;
 import kbasesearchengine.main.NarrativeInfoCache;
 import kbasesearchengine.main.NarrativeInfoProvider;
 import kbasesearchengine.test.common.TestCommon;
@@ -31,20 +36,20 @@ public class NarrativeInfoCacheTest {
                 10000);
 
         when(wrapped.findNarrativeInfo(65L)).thenReturn(
-                narrInfo(null, null, 1518126945000L, "owner1"),
-                narrInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"),
+                new NarrativeInfo(null, null, 1518126945000L, "owner1"),
+                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"),
                 null);
 
         compare(cache.findNarrativeInfo(65L),
-                narrInfo(null, null, 1518126945000L, "owner1"));
+                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
         compare(cache.findNarrativeInfo(65L),
-                narrInfo(null, null, 1518126945000L, "owner1"));
+                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
         Thread.sleep(1001);
 
         compare(cache.findNarrativeInfo(65L),
-                narrInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"));
+                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"));
         compare(cache.findNarrativeInfo(65L),
-                narrInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"));
+                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"));
     }
 
     @SuppressWarnings("unchecked")
@@ -60,16 +65,16 @@ public class NarrativeInfoCacheTest {
                 ticker);
 
         when(wrapped.findNarrativeInfo(65L)).thenReturn(
-                narrInfo(null, null, 1518126945000L, "owner1"),
-                narrInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"),
+                new NarrativeInfo(null, null, 1518126945000L, "owner1"),
+                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"),
                 null);
         when(ticker.read()).thenReturn(0L, 10000000001L, 20000000001L);
 
         compare(cache.findNarrativeInfo(65L),
-                narrInfo(null, null, 1518126945000L, "owner1"));
+                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
 
         compare(cache.findNarrativeInfo(65L),
-                narrInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"));
+                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"));
     }
 
     @SuppressWarnings("unchecked")
@@ -85,20 +90,20 @@ public class NarrativeInfoCacheTest {
                 ticker);
 
         when(wrapped.findNarrativeInfo(65L)).thenReturn(
-                narrInfo(null, null, 1518126945000L, "owner1"),
-                narrInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"),
+                new NarrativeInfo(null, null, 1518126945000L, "owner1"),
+                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"),
                 null);
         when(ticker.read()).thenReturn(0L, 5000000001L, 10000000001L, 15000000001L, 20000000001L);
 
         compare(cache.findNarrativeInfo(65L),
-                narrInfo(null, null, 1518126945000L, "owner1"));
+                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
         compare(cache.findNarrativeInfo(65L),
-                narrInfo(null, null, 1518126945000L, "owner1"));
+                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
 
         compare(cache.findNarrativeInfo(65L),
-                narrInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"));
+                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"));
         compare(cache.findNarrativeInfo(65L),
-                narrInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"));
+                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"));
     }
 
     @SuppressWarnings("unchecked")
@@ -106,44 +111,55 @@ public class NarrativeInfoCacheTest {
     public void expiresOnSize() throws Exception {
         // test that the cache expires values when it reaches the max size
         final NarrativeInfoProvider wrapped = mock(NarrativeInfoProvider.class);
-        final NarrativeInfoCache cache = new NarrativeInfoCache(wrapped, 10000, 10);
+        final NarrativeInfoCache cache = new NarrativeInfoCache(wrapped, 10000, 3);
 
         when(wrapped.findNarrativeInfo(65L)).thenReturn(
-                narrInfo(null, null, 1518126945000L, "owner1"),
-                narrInfo(null, null, 1518126957000L, "owner2"),
+                new NarrativeInfo(null, null, 1518126945000L, "owner1"),
+                new NarrativeInfo(null, null, 1518126957000L, "owner11"),
                 null);
         when(wrapped.findNarrativeInfo(2L)).thenReturn(
-                narrInfo("narrname", 1L, 10000L, "owner"),
-                narrInfo("narrname6", 2L, 20000L, "owner6"),
+                new NarrativeInfo("narrname2", 2L, 20000L, "owner2"),
+                new NarrativeInfo("narrname22", 22L, 22000L, "owner22"),
+                null);
+        when(wrapped.findNarrativeInfo(3L)).thenReturn(
+                new NarrativeInfo("narrname3", 3L, 30000L, "owner3"),
+                new NarrativeInfo("narrname33", 33L, 33000L, "owner33"),
                 null);
         when(wrapped.findNarrativeInfo(42L)).thenReturn(
-                narrInfo(null, null, 1518126945678L, "user1"),
-                narrInfo("mylovelynarrative", 3L, 1518126950678L, "user2"),
+                new NarrativeInfo(null, null, 1518126945678L, "user1"),
+                new NarrativeInfo("mylovelynarrative", 4L, 1518126950678L, "user2"),
                 null);
 
-        // load 9 narrative infos into a max 10 cache
+        // load 3 narrative infos into a max 4 cache
         compare(cache.findNarrativeInfo(65L),
-                narrInfo(null, null, 1518126945000L, "owner1"));
+                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
         compare(cache.findNarrativeInfo(2L),
-                narrInfo("narrname", 1L, 10000L, "owner"));
+                new NarrativeInfo("narrname2", 2L, 20000L, "owner2"));
+        compare(cache.findNarrativeInfo(3L),
+                new NarrativeInfo("narrname3", 3L, 30000L, "owner3"));
 
         // check cache access
         compare(cache.findNarrativeInfo(65L),
-                narrInfo(null, null, 1518126945000L, "owner1"));
+                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
         compare(cache.findNarrativeInfo(2L),
-                narrInfo("narrname", 1L, 10000L, "owner"));
+                new NarrativeInfo("narrname2", 2L, 20000L, "owner2"));
+        compare(cache.findNarrativeInfo(3L),
+                new NarrativeInfo("narrname3", 3L, 30000L, "owner3"));
 
         // force an expiration based on cache size
         compare(cache.findNarrativeInfo(42L),
-                narrInfo(null, null, 1518126945678L, "user1"));
+                new NarrativeInfo(null, null, 1518126945678L, "user1"));
 
-        // check that the largest value was expired
+        // check that the oldest value had expired
         compare(cache.findNarrativeInfo(65L),
-                narrInfo(null, null, 1518126957000L, "owner2"));
+                new NarrativeInfo(null, null, 1518126957000L, "owner11"));
+        // TODO: Need to check if the following results are correct
         compare(cache.findNarrativeInfo(2L),
-                narrInfo("narrname", 1L, 10000L, "owner"));
+                new NarrativeInfo("narrname22", 22L, 22000L, "owner22"));
+        compare(cache.findNarrativeInfo(3L),
+                new NarrativeInfo("narrname33", 33L, 33000L, "owner33"));
         compare(cache.findNarrativeInfo(42L),
-                narrInfo(null, null, 1518126945678L, "user1"));
+                new NarrativeInfo("mylovelynarrative", 4L, 1518126950678L, "user2"));
     }
 
     @Test
@@ -169,28 +185,6 @@ public class NarrativeInfoCacheTest {
         }
     }
 
-    @Test
-    public void getFailIOE() throws Exception {
-        final NarrativeInfoProvider wrapped = mock(NarrativeInfoProvider.class);
-        final NarrativeInfoCache cache = new NarrativeInfoCache(wrapped, 10000, 10);
-
-        when(wrapped.findNarrativeInfo(23L)).thenThrow(new IOException("well poop"));
-
-        findNarrativeInfo(cache, 23L, new IOException("well poop"));
-    }
-
-    private void findNarrativeInfo(
-            final NarrativeInfoCache cache,
-            final Long wsId,
-            final Exception expected) {
-        try {
-            cache.findNarrativeInfo(wsId);
-            fail("expected exception");
-        } catch (Exception got) {
-            TestCommon.assertExceptionCorrect(got, expected);
-        }
-    }
-
     private static void compare(
             final NarrativeInfo got,
             final NarrativeInfo expected) {
@@ -200,15 +194,66 @@ public class NarrativeInfoCacheTest {
         assertThat("incorrect owner", got.getWsOwnerUsername(), is(expected.getWsOwnerUsername()));
     }
 
-    private static NarrativeInfo narrInfo(
-            final String narrativeName,
-            final Long narrativeId,
-            final Long epoch,
-            final String owner) {
-        return new NarrativeInfo()
-                .withNarrativeName(narrativeName)
-                .withNarrativeId(narrativeId)
-                .withTimeLastSaved(epoch)
-                .withWsOwnerUsername(owner);
+    @Test
+    public void testWorkspaceNarrativeInfoProvider() throws Exception {
+
+        final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
+
+        final NarrativeInfoProvider wsnip = new WorkspaceNarrativeInfoProvider(weh);
+
+        // no narrative info at all
+        when(weh.getWorkspaceInfo(65)).thenReturn(wsTuple(
+                65, "name1", "owner1", "2018-02-08T21:55:45Z", 0, "r", "n", "unlocked",
+                Collections.emptyMap()));
+
+        // only narrative id
+        when(weh.getWorkspaceInfo(1)).thenReturn(wsTuple(
+                1, "name2", "owner2", "2018-02-08T21:55:57Z", 0, "r", "n", "unlocked",
+                ImmutableMap.of("narrative", "2")));
+
+        // only narrative name
+        when(weh.getWorkspaceInfo(2)).thenReturn(wsTuple(
+                2, "name3", "owner3", "2018-02-08T21:55:45.678Z", 0, "r", "n", "unlocked",
+                ImmutableMap.of("narrative_nice_name", "myhorridnarrative")));
+
+        // full narrative info
+        when(weh.getWorkspaceInfo(42)).thenReturn(wsTuple(
+                42, "name4", "owner4", "2018-02-08T21:55:50.678Z", 0, "r", "n", "unlocked",
+                ImmutableMap.of("narrative", "3", "narrative_nice_name", "mylovelynarrative")));
+
+        compare(wsnip.findNarrativeInfo(65L),
+                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
+        compare(wsnip.findNarrativeInfo(1L),
+                new NarrativeInfo(null, null, 1518126957000L, "owner2"));
+        compare(wsnip.findNarrativeInfo(2L),
+                new NarrativeInfo(null, null, 1518126945678L, "owner3"));
+        compare(wsnip.findNarrativeInfo(42L),
+                new NarrativeInfo("mylovelynarrative", 3L, 1518126950678L, "owner4"));
+    }
+
+    @Test
+    public void wsNarrativeInfoProviderFail() throws Exception {
+        failFindNarrativeInfo(new IOException("Test IO Exception"),
+                new IOException("Failed retrieving workspace info: Test IO Exception"));
+        failFindNarrativeInfo(new JsonClientException("workspace is turned off"),
+                new JsonClientException(
+                        "Failed retrieving workspace info: workspace is turned off"));
+    }
+
+    private void failFindNarrativeInfo(
+            final Exception toThrow,
+            final Exception expected)
+            throws Exception {
+        final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
+        final WorkspaceNarrativeInfoProvider wsnip = new WorkspaceNarrativeInfoProvider(weh);
+
+        when(weh.getWorkspaceInfo(65L)).thenThrow(toThrow);
+
+        try {
+            wsnip.findNarrativeInfo(65L);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
     }
 }
