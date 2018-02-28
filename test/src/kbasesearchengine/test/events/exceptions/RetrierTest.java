@@ -165,7 +165,7 @@ public class RetrierTest {
         final CollectingLogger collog = new CollectingLogger();
         final Retrier ret = new Retrier(1, 100, Collections.emptyList(), collog);
         final Instant start = Instant.now();
-        ret.retryCons(new TestConsumer<>("foo", 1, ErrorType.LOCATION_MISSING), "foo", null);
+        ret.retryCons(new TestConsumer<>("foo", 1, ErrorType.LOCATION_ERROR), "foo", null);
         final Instant end = Instant.now();
         
         assertThat("incorrect retries", collog.events.size(), is(1));
@@ -173,7 +173,7 @@ public class RetrierTest {
         assertThat("incorrect retry count", le.retryCount, is(1));
         assertThat("incorrect event", le.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le.exception, new RetriableIndexingException(
-                ErrorType.LOCATION_MISSING, "bar"));
+                ErrorType.LOCATION_ERROR, "bar"));
         assertCloseMS(start, le.time, 0, 60);
         assertCloseMS(start, end, 100, 60);
     }
@@ -377,7 +377,7 @@ public class RetrierTest {
         final Retrier ret = new Retrier(1, 100, Collections.emptyList(), collog);
         final Instant start = Instant.now();
         final long result = ret.retryFunc(new TestFunction<>(
-                "foo", 24L, 1, ErrorType.LOCATION_MISSING), "foo", null);
+                "foo", 24L, 1, ErrorType.LOCATION_ERROR), "foo", null);
         final Instant end = Instant.now();
         
         assertThat("incorrect result", result, is(24L));
@@ -386,7 +386,7 @@ public class RetrierTest {
         assertThat("incorrect retry count", le.retryCount, is(1));
         assertThat("incorrect event", le.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le.exception, new RetriableIndexingException(
-                ErrorType.LOCATION_MISSING, "bar"));
+                ErrorType.LOCATION_ERROR, "bar"));
         assertCloseMS(start, le.time, 0, 60);
         assertCloseMS(start, end, 100, 60);
     }

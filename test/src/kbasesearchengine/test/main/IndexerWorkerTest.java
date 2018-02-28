@@ -47,9 +47,11 @@ import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.search.IndexingConflictException;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.system.IndexingRules;
+import kbasesearchengine.system.LocationTransformType;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.StorageObjectType;
+import kbasesearchengine.system.Transform;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.test.common.TestCommon;
 import us.kbase.common.service.UObject;
@@ -718,4 +720,87 @@ public class IndexerWorkerTest {
         }
     }
 
+    @Test
+    public void contigLocationError() throws Exception {
+        /* tests the handling of missing contig location data when indexing an object. */
+        
+        final Map<String, Object> data = ImmutableMap.of(
+                "thingy", 1,
+                "thingy2", "foo",
+                "subobjs", Arrays.asList(
+                        ImmutableMap.of(
+                                "id", "an id",
+                                "somedata", "data",
+                                "location", Arrays.asList(
+                                        Arrays.asList("contig_id3", 24, "+", 941))),
+                        ImmutableMap.of("id", "an id2", "somedata", "data2")
+                        )
+                );
+        
+        final EventHandler ws = mock(EventHandler.class);
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final IndexingStorage idxStore = mock(IndexingStorage.class);
+        final TypeStorage typeStore = mock(TypeStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        
+        final Path tempDir = Paths.get(TestCommon.getTempDir()).toAbsolutePath()
+                .resolve("IndexerWorkerTest");
+        deleteRecursively(tempDir);
+        
+        when(ws.getStorageCode()).thenReturn("code");
+        
+        final IndexerWorker worker = new IndexerWorker(
+                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
+                null, 1000);
+        
+        final GUID guid = new GUID("code:1/2/3");
+        when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
+        
+        when(ws.load(eq(Arrays.asList(guid)), any(Path.class)))
+                .thenAnswer(new Answer<SourceData>() {
+
+                        @Override
+                        public SourceData answer(final InvocationOnMock inv) throws Throwable {
+                            final Path path = inv.getArgument(1);
+                            new ObjectMapper().writeValue(path.toFile(), data);
+                            return SourceData.getBuilder(
+                                    new UObject(path.toFile()), "myobj", "somedude")
+                                    .withNullableMD5("md5")
+                                    .build();
+                        }
+        });
+
+        final StorageObjectType storageObjectType = StorageObjectType
+                .fromNullableVersion("code", "sometype", 3);
+        
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1), storageObjectType)
+                .toSubObjectRule("subfoo", new ObjectJsonPath("/subobjs/[*]/"),
+                        new ObjectJsonPath("id"))
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("somedata")) .build())
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("location"))
+                        .withTransform(Transform.location(LocationTransformType.length))
+                        .build())
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("id")) .build())
+                .build();
+        when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
+        
+        try {
+            worker.processOneEvent(StatusEvent.getBuilder(
+                    storageObjectType,
+                    Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                    .withNullableAccessGroupID(1)
+                    .withNullableObjectID("2")
+                    .withNullableVersion(3)
+                    .withNullableisPublic(false)
+                    .build());
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(
+                    got, new UnprocessableEventIndexingException(ErrorType.LOCATION_ERROR,
+                            "Expected location array for location transform for " +
+                            "code:1/2/3:subfoo/an id2, got empty array"));
+        }
+    }
+    
 }

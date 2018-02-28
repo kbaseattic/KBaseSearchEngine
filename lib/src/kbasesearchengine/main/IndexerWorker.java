@@ -43,6 +43,7 @@ import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.events.storage.StatusEventStorage;
+import kbasesearchengine.parse.ContigLocationException;
 import kbasesearchengine.parse.KeywordParser;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.parse.ObjectParser;
@@ -631,8 +632,10 @@ public class IndexerWorker implements Stoppable {
              * File IO problems are generally going to mean something is very wrong
              * (like bad disk), since the file should already exist at this point.
              */
+        } catch (ContigLocationException e) {
+            throw new UnprocessableEventIndexingException(
+                    ErrorType.LOCATION_ERROR, e.getMessage(), e);
         } catch (ObjectParseException e) {
-            //TODO NNOW location exception
             throw new UnprocessableEventIndexingException(ErrorType.OTHER, e.getMessage(), e);
         } catch (IOException e) {
             throw new FatalRetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);

@@ -13,7 +13,7 @@ public enum ErrorType {
      */
 
     /** Lack of location data for a location transform. */
-    LOCATION_MISSING,
+    LOCATION_ERROR,
     
     /** An object has too many subobjects to index. */
     SUBOBJECT_COUNT,

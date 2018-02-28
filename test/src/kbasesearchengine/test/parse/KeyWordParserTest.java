@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableMap;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.events.exceptions.IndexingException;
+import kbasesearchengine.parse.ContigLocationException;
 import kbasesearchengine.parse.KeywordParser;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.parse.ParsedObject;
@@ -111,17 +112,17 @@ public class KeyWordParserTest {
         // why are there multiple arrays anyway...?
         failLocationTransform(new ObjectMapper().writeValueAsString(ImmutableMap.of(
                 "location", Collections.emptyList())),
-                new ObjectParseException("Expected location array for location transform for " +
+                new ContigLocationException("Expected location array for location transform for " +
                             "CODE:1/2/3:subtype/id, got empty array"));
         
         failLocationTransform(new ObjectMapper().writeValueAsString(ImmutableMap.of(
                 "location", Arrays.asList(Arrays.asList("cid", 1, "+")))),
-                new ObjectParseException("Expected location array for location transform for " +
+                new ContigLocationException("Expected location array for location transform for " +
                             "CODE:1/2/3:subtype/id, got [cid, 1, +]"));
         
         failLocationTransform(new ObjectMapper().writeValueAsString(ImmutableMap.of(
                 "location", Arrays.asList(ImmutableMap.of("foo", "bar")))),
-                new ObjectParseException("Expected location array for location transform for " +
+                new ContigLocationException("Expected location array for location transform for " +
                             "CODE:1/2/3:subtype/id, got [{foo=bar}]"));
     }
     
