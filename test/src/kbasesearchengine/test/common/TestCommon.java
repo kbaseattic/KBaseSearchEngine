@@ -24,6 +24,9 @@ import java.util.Properties;
 import java.util.Set;
 
 import kbasesearchengine.ObjectData;
+import kbasesearchengine.events.exceptions.IndexingException;
+import kbasesearchengine.events.exceptions.RetriableIndexingException;
+
 import org.apache.commons.io.IOUtils;
 import org.bson.Document;
 
@@ -181,6 +184,13 @@ public class TestCommon {
                 got.getLocalizedMessage(),
                 is(expected.getLocalizedMessage()));
         assertThat("incorrect exception type", got, instanceOf(expected.getClass()));
+        if (got instanceof IndexingException) {
+            assertThat("incorrect error code", ((IndexingException) got).getErrorType(),
+                    is(((IndexingException) expected).getErrorType()));
+        } else if (got instanceof RetriableIndexingException) {
+            assertThat("incorrect error code", ((RetriableIndexingException) got).getErrorType(),
+                    is(((RetriableIndexingException) expected).getErrorType()));
+        }
     }
     
     @SafeVarargs

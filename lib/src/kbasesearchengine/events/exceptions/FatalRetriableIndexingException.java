@@ -9,12 +9,15 @@ package kbasesearchengine.events.exceptions;
 @SuppressWarnings("serial")
 public class FatalRetriableIndexingException extends RetriableIndexingException {
 
-    public FatalRetriableIndexingException(final String message) {
-        super(message);
+    public FatalRetriableIndexingException(final ErrorType errorType, final String message) {
+        super(errorType, message);
     }
     
-    public FatalRetriableIndexingException(final String message, final Throwable cause) {
-        super(message, cause);
+    public FatalRetriableIndexingException(
+            final ErrorType errorType,
+            final String message,
+            final Throwable cause) {
+        super(errorType, message, cause);
     }
     
 }

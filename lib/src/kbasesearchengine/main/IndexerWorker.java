@@ -30,6 +30,7 @@ import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventWithId;
 import kbasesearchengine.events.StoredStatusEvent;
+import kbasesearchengine.events.exceptions.ErrorType;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
@@ -42,6 +43,7 @@ import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.events.storage.StatusEventStorage;
+import kbasesearchengine.parse.ContigLocationException;
 import kbasesearchengine.parse.KeywordParser;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.parse.ObjectParser;
@@ -141,11 +143,11 @@ public class IndexerWorker implements Stoppable {
                     // keep processing events until there are none left
                     processedEvent = performOneTick();
                 } catch (InterruptedException | FatalIndexingException e) {
-                    logError(ErrorType.FATAL, e);
+                    logError(LogPrefix.FATAL, e);
                     executor.shutdown();
                     signalMonitor.signal();
                 } catch (Throwable e) {
-                    logError(ErrorType.UNEXPECTED, e);
+                    logError(LogPrefix.UNEXPECTED, e);
                 }
             }
         }
@@ -169,28 +171,27 @@ public class IndexerWorker implements Stoppable {
         }
     }
     
-    private enum ErrorType {
+    private enum LogPrefix {
         STD, FATAL, UNEXPECTED;
     }
     
-    private void logError(final ErrorType errtype, final Throwable e) {
-        Utils.nonNull(errtype, "errtype");
-        final String msg;
-        if (ErrorType.FATAL.equals(errtype)) {
-            msg = "Fatal error in indexer, shutting down";
-        } else if (ErrorType.STD.equals(errtype)) {
-            msg = "Error in indexer";
-        } else if (ErrorType.UNEXPECTED.equals(errtype)) {
-            msg = "Unexpected error in indexer";
+    private void logError(final LogPrefix prefix, final Throwable e) {
+        final String logPrefix;
+        if (LogPrefix.FATAL.equals(prefix)) {
+            logPrefix = "Fatal error in indexer, shutting down";
+        } else if (LogPrefix.STD.equals(prefix)) {
+            logPrefix = "Error in indexer";
+        } else if (LogPrefix.UNEXPECTED.equals(prefix)) {
+            logPrefix = "Unexpected error in indexer";
         } else {
-            throw new RuntimeException("Unknown error type: " + errtype);
+            throw new RuntimeException("Unknown error type: " + prefix);
         }
-        logError(msg, e);
+        logError(logPrefix, e);
     }
 
-    private void logError(final String msg, final Throwable e) {
+    private void logError(final String logPrefix, final Throwable e) {
         // TODO LOG make log method that takes msg + e and have the logger figure out how to log it correctly
-        logger.logError(msg + ": " + e);
+        logger.logError(logPrefix + ": " + e);
         logger.logError(e);
     }
 
@@ -223,7 +224,7 @@ public class IndexerWorker implements Stoppable {
             try {
                 handler = getEventHandler(parentEvent);
             } catch (UnprocessableEventIndexingException e) {
-                logError(ErrorType.STD, e);
+                logError(LogPrefix.STD, e);
                 markEventProcessed(parentEvent, StatusEventProcessingState.FAIL);
                 return true;
             }
@@ -249,7 +250,7 @@ public class IndexerWorker implements Stoppable {
             throw e;
         } catch (Exception e) {
             // don't know how to respond to anything else, so mark event failed and keep going
-            logError(ErrorType.UNEXPECTED, e);
+            logError(LogPrefix.UNEXPECTED, e);
             markAsVisitedFailedPostError(parentEvent);
         }
     }
@@ -269,7 +270,7 @@ public class IndexerWorker implements Stoppable {
             throw e;
         } catch (Exception e) {
             // don't know how to respond to anything else, so mark event failed and keep going
-            logError(ErrorType.UNEXPECTED, e);
+            logError(LogPrefix.UNEXPECTED, e);
             markAsVisitedFailedPostError(parentEvent);
             return;
         }
@@ -309,7 +310,8 @@ public class IndexerWorker implements Stoppable {
             storage.setProcessingState(parentEvent.getId(), null, StatusEventProcessingState.FAIL);
         } catch (Exception e) {
             //ok then we're screwed
-            throw new FatalIndexingException("Can't mark events as failed: " + e.getMessage(), e);
+            throw new FatalIndexingException(ErrorType.OTHER, "Can't mark events as failed: " +
+                    e.getMessage(), e);
         }
     }
 
@@ -390,7 +392,7 @@ public class IndexerWorker implements Stoppable {
     private EventHandler getEventHandler(final String storageCode)
             throws UnprocessableEventIndexingException {
         if (!eventHandlers.containsKey(storageCode)) {
-            throw new UnprocessableEventIndexingException(String.format(
+            throw new UnprocessableEventIndexingException(ErrorType.OTHER, String.format(
                     "No event handler for storage code %s is registered", storageCode));
         }
         return eventHandlers.get(storageCode);
@@ -447,12 +449,14 @@ public class IndexerWorker implements Stoppable {
                 break;
             default:
                 throw new UnprocessableEventIndexingException(
-                        "Unsupported event type: " + ev.getEventType());
+                        ErrorType.OTHER, "Unsupported event type: " + ev.getEventType());
             }
-        } catch (IOException | IndexingConflictException e) {
+        } catch (IOException e) {
             // may want to make IndexingStorage throw more specific exceptions, but this will work
             // for now. Need to look more carefully at the code before that happens.
-            throw new RetriableIndexingException(e.getMessage(), e);
+            throw new RetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
+        } catch (IndexingConflictException e) {
+            throw new RetriableIndexingException(ErrorType.INDEXING_CONFLICT, e.getMessage(), e);
         }
     }
 
@@ -496,7 +500,7 @@ public class IndexerWorker implements Stoppable {
             FileUtil.getOrCreateSubDir(rootTempDir, guid.getStorageCode());
             tempFile = File.createTempFile("ws_srv_response_", ".json");
         } catch (IOException e) {
-            throw new FatalRetriableIndexingException(e.getMessage(), e);
+            throw new FatalRetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
         }
         if (indexLookup == null) {
             indexLookup = new MOPLookupProvider();
@@ -565,9 +569,9 @@ public class IndexerWorker implements Stoppable {
             indexingStorage.indexObjects(
                     rule, obj, timestamp, parentJson, guid, guidToObj, isPublic);
         } catch (IndexingConflictException e) {
-            throw new RetriableIndexingException(e.getMessage(), e);
+            throw new RetriableIndexingException(ErrorType.INDEXING_CONFLICT, e.getMessage(), e);
         } catch (IOException e) {
-            throw new FatalRetriableIndexingException(e.getMessage(), e);
+            throw new FatalRetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
         }
     }
 
@@ -611,8 +615,8 @@ public class IndexerWorker implements Stoppable {
             final Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(
                     obj, guid, rule);
             if (guidToJson.size() > maxObjectsPerLoad) {
-                throw new UnprocessableEventIndexingException(String.format(
-                        "Object %s has %s subobjects, exceeding the limit of %s",
+                throw new UnprocessableEventIndexingException(ErrorType.SUBOBJECT_COUNT,
+                        String.format("Object %s has %s subobjects, exceeding the limit of %s",
                         guid, guidToJson.size(), maxObjectsPerLoad));
             }
             for (final GUID subGuid : guidToJson.keySet()) {
@@ -626,10 +630,13 @@ public class IndexerWorker implements Stoppable {
              * File IO problems are generally going to mean something is very wrong
              * (like bad disk), since the file should already exist at this point.
              */
+        } catch (ContigLocationException e) {
+            throw new UnprocessableEventIndexingException(
+                    ErrorType.LOCATION_ERROR, e.getMessage(), e);
         } catch (ObjectParseException e) {
-            throw new UnprocessableEventIndexingException(e.getMessage(), e);
+            throw new UnprocessableEventIndexingException(ErrorType.OTHER, e.getMessage(), e);
         } catch (IOException e) {
-            throw new FatalRetriableIndexingException(e.getMessage(), e);
+            throw new FatalRetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
         }
         return new ParseObjectsRet(parentJson, guidToObj);
     }
@@ -738,7 +745,7 @@ public class IndexerWorker implements Stoppable {
                 return indexingStorage.checkParentGuidsExist(new HashSet<>(Arrays.asList(guid)))
                         .get(guid);
             } catch (IOException e) {
-                throw new RetriableIndexingException(e.getMessage(), e);
+                throw new RetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
             }
         }
         
@@ -825,7 +832,7 @@ public class IndexerWorker implements Stoppable {
             try {
                 return indexingStorage.getObjectsByIds(guids, pp);
             } catch (IOException e) {
-                throw new RetriableIndexingException(e.getMessage(), e);
+                throw new RetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
             }
         }
         

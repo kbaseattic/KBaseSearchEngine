@@ -26,6 +26,7 @@ import org.mockito.ArgumentMatcher;
 import com.google.common.collect.ImmutableMap;
 
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.events.exceptions.ErrorType;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
@@ -583,27 +584,28 @@ public class WorkspaceEventHandlerTest {
     @Test
     public void loadFailWSGetObjExceptions() throws Exception {
         failLoadWSGetObjException(new ConnectException("hot damn"),
-                new FatalRetriableIndexingException("hot damn"));
+                new FatalRetriableIndexingException(ErrorType.OTHER, "hot damn"));
         
         failLoadWSGetObjException(new IOException("pump yer brakes, kid"),
-                new RetriableIndexingException("pump yer brakes, kid"));
+                new RetriableIndexingException(ErrorType.OTHER, "pump yer brakes, kid"));
         
         failLoadWSGetObjException(new UnauthorizedException("dvd commentary"),
-                new FatalIndexingException("dvd commentary"));
+                new FatalIndexingException(ErrorType.OTHER, "dvd commentary"));
         
         failLoadWSGetObjException(new JsonClientException(null),
                 new UnprocessableEventIndexingException(
-                        "Null error message from workspace server"));
+                        ErrorType.OTHER, "Null error message from workspace server"));
         
         failLoadWSGetObjException(new JsonClientException("Couldn't Login"),
-                new FatalIndexingException("Workspace credentials are invalid: Couldn't Login"));
+                new FatalIndexingException(ErrorType.OTHER, 
+                        "Workspace credentials are invalid: Couldn't Login"));
         
         failLoadWSGetObjException(new JsonClientException("Did not start Up Properly"),
-                new FatalIndexingException(
+                new FatalIndexingException(ErrorType.OTHER, 
                         "Fatal error returned from workspace: Did not start Up Properly"));
         
         failLoadWSGetObjException(new JsonClientException("That man's a national treasure"),
-                new UnprocessableEventIndexingException(
+                new UnprocessableEventIndexingException(ErrorType.OTHER, 
                         "Unrecoverable error from workspace on fetching object: " +
                         "That man's a national treasure"));
     }
@@ -611,27 +613,28 @@ public class WorkspaceEventHandlerTest {
     @Test
     public void loadFailWSGetWSInfoExceptions() throws Exception {
         failLoadWSGetWSInfoException(new ConnectException("hot damn"),
-                new FatalRetriableIndexingException("hot damn"));
+                new FatalRetriableIndexingException(ErrorType.OTHER, "hot damn"));
         
         failLoadWSGetWSInfoException(new IOException("pump yer brakes, kid"),
-                new RetriableIndexingException("pump yer brakes, kid"));
+                new RetriableIndexingException(ErrorType.OTHER, "pump yer brakes, kid"));
         
         failLoadWSGetWSInfoException(new UnauthorizedException("dvd commentary"),
-                new FatalIndexingException("dvd commentary"));
+                new FatalIndexingException(ErrorType.OTHER, "dvd commentary"));
         
         failLoadWSGetWSInfoException(new JsonClientException(null),
                 new UnprocessableEventIndexingException(
-                        "Null error message from workspace server"));
+                        ErrorType.OTHER, "Null error message from workspace server"));
         
         failLoadWSGetWSInfoException(new JsonClientException("Couldn't Login"),
-                new FatalIndexingException("Workspace credentials are invalid: Couldn't Login"));
+                new FatalIndexingException(
+                        ErrorType.OTHER, "Workspace credentials are invalid: Couldn't Login"));
         
         failLoadWSGetWSInfoException(new JsonClientException("Did not start Up Properly"),
-                new FatalIndexingException(
+                new FatalIndexingException(ErrorType.OTHER, 
                         "Fatal error returned from workspace: Did not start Up Properly"));
         
         failLoadWSGetWSInfoException(new JsonClientException("That man's a national treasure"),
-                new UnprocessableEventIndexingException(
+                new UnprocessableEventIndexingException(ErrorType.OTHER, 
                         "Unrecoverable error from workspace on fetching object: " +
                         "That man's a national treasure"));
     }

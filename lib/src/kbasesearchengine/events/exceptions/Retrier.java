@@ -152,7 +152,7 @@ public class Retrier {
             throws InterruptedException, IndexingException {
         if (e instanceof FatalRetriableIndexingException) {
             if (fatalRetries - 1 >= fatalRetryBackoffsMS.size()) {
-                throw new FatalIndexingException(e.getMessage(), e);
+                throw new FatalIndexingException(e.getErrorType(), e.getMessage(), e);
             } else {
                 logger.log(fatalRetries, Optional.fromNullable(event), e);
                 TimeUnit.MILLISECONDS.sleep(fatalRetryBackoffsMS.get(fatalRetries - 1));
@@ -160,7 +160,7 @@ public class Retrier {
             }
         } else {
             if (retries > retryCount) {
-                throw new RetriesExceededIndexingException(e.getMessage(), e);
+                throw new RetriesExceededIndexingException(e.getErrorType(), e.getMessage(), e);
             } else {
                 logger.log(retries, Optional.fromNullable(event), e);
                 TimeUnit.MILLISECONDS.sleep(delayMS);
