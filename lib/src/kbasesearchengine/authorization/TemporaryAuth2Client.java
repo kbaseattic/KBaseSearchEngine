@@ -128,7 +128,6 @@ public class TemporaryAuth2Client implements AuthInfoProvider {
     public Map<String, String> findUserDisplayNames(
             final Iterable<? extends String> userNames)
             throws IOException, Auth2Exception {
-        System.out.println("2222222222222222: findUserDisplayNames()  " + userNames.toString());
         return getUserDisplayNames(token, userNames);
     }
 
