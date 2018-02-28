@@ -494,6 +494,18 @@ public class IndexerWorker implements Stoppable {
             ObjectLookupProvider indexLookup,
             final List<GUID> objectRefPath) 
             throws IndexingException, InterruptedException, RetriableIndexingException {
+        /* it'd be nice to be able to log the event ID with retry logging in sub methods,
+         * but this method handles calls from recursive indexing where the event id isn't
+         * available. Changing that would require passing the event all the way through the
+         * parsing code. Not sure if it's worth the trouble since the event ID *is* logged if
+         * retrying doesn't fix the problem.
+         * 
+         * Although, since this is single threaded, could make the event an instance variable,
+         * but that seems icky and we may want to make the workers multithreaded in the future.
+         * ThreadLocal?
+         * https://sites.google.com/site/unclebobconsultingllc/thread-local-a-convenient-abomination
+         * 
+         */
         long t1 = System.currentTimeMillis();
         final File tempFile;
         try {

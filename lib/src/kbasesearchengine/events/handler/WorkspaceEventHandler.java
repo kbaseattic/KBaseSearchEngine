@@ -243,6 +243,10 @@ public class WorkspaceEventHandler implements EventHandler {
         if (e.getMessage() == null) {
             return new UnprocessableEventIndexingException(
                     ErrorType.OTHER, "Null error message from workspace server", e);
+        } else if (e.getMessage().toLowerCase().contains("is deleted") ||
+                e.getMessage().toLowerCase().contains("has been deleted")) {
+            // need SDK error codes, bleah
+            return new UnprocessableEventIndexingException(ErrorType.DELETED, e.getMessage(), e);
         } else if (e.getMessage().toLowerCase().contains("login")) {
             return new FatalIndexingException(
                     ErrorType.OTHER, "Workspace credentials are invalid: " + e.getMessage(), e);
