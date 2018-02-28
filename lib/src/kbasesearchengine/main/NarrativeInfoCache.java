@@ -66,9 +66,8 @@ public class NarrativeInfoCache implements NarrativeInfoProvider {
                     @Override
                     public int weigh(Long wsId, NarrativeInfo narrativeInfo)
                     {
-                        // TODO this is supposed to return the size of the narrativeInfo
-                        // TODO Need to verify if this is right
-                        return narrativeInfo.getNumElements();
+                        // TODO Need to verify if this is correct
+                        return 1;
                     }
                 })
                 .build(new CacheLoader<Long, NarrativeInfo>() {

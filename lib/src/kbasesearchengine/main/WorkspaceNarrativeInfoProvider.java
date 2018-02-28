@@ -3,8 +3,8 @@ package kbasesearchengine.main;
 import java.io.IOException;
 import java.util.Map;
 
-import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
+import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.Tuple9;
@@ -30,11 +30,9 @@ public class WorkspaceNarrativeInfoProvider implements NarrativeInfoProvider {
     /** Create the provider.
      * @param wsClient a workspace client initialized with administrator credentials.
      */
-    public WorkspaceNarrativeInfoProvider(final WorkspaceClient wsClient) {
-        if (wsClient == null) {
-            throw new NullPointerException("WorkspaceClient");
-        }
-        this.wsHandler = new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient));
+    public WorkspaceNarrativeInfoProvider(final WorkspaceEventHandler wsHandler) {
+        Utils.nonNull(wsHandler, "WorkspaceHandler");
+        this.wsHandler = wsHandler;
     }
 
     /** For the given workspace ID, returns workspace info related to the narrative.
@@ -58,9 +56,7 @@ public class WorkspaceNarrativeInfoProvider implements NarrativeInfoProvider {
         final long timeMilli = WorkspaceEventHandler.parseDateToEpochMillis(wsInfo.getE4());
 
         final NarrativeInfo tempNarrInfo =
-                new NarrativeInfo()
-                        .withTimeLastSaved(timeMilli)         // modification time
-                        .withWsOwnerUsername(wsInfo.getE3()); // workspace user name
+                new NarrativeInfo(null, null, timeMilli, wsInfo.getE3());
 
         final Map<String, String> wsInfoMeta = wsInfo.getE9();
 

@@ -3,16 +3,36 @@ package kbasesearchengine.main;
 import kbasesearchengine.tools.Utils;
 
 /** Holds information from workspace related to the narrative.
+ * Used by AuthCache to save narrative information against workspace ID.
  * @author ganapathy@bnl.gov
  *
  */
 public class NarrativeInfo {
 
-    private static final int NUM_ELEMENTS = 4;
+    private static final int NUM_ELEMENTS = 4; // TODO: If this is not required for cache, this can be removed.
     private String narrativeName;
     private Long narrativeId;
     private Long timeLastSaved;
     private String wsOwnerUsername;
+
+    /** Constructs the narrative info got from workspace. Used by tests.
+     *  @param narrativeName the name of the narrative contained in the workspace,
+     *                       or null if the workspace does not contain a narrative.
+     *  @param narrativeId the id of the narrative contained in the workspace, or null.
+     *  @param timeLastSaved the modification time of the workspace in epoch milli.
+     *  @param wsOwnerUsername the unique user name of the workspace's owner.
+     */
+    public NarrativeInfo(final String narrativeName,
+                         final Long narrativeId,
+                         final Long timeLastSaved,
+                         final String wsOwnerUsername){
+        this.narrativeName = narrativeName;
+        this.narrativeId = narrativeId;
+        Utils.nonNull(timeLastSaved, "Time Last Saved");
+        this.timeLastSaved = timeLastSaved;
+        Utils.nonNull(wsOwnerUsername, "Workspace Owner Username");
+        this.wsOwnerUsername = wsOwnerUsername;
+    }
 
     /** Sets the narrative name
      * @param narrativeName the name of the narrative contained in the workspace,
@@ -78,5 +98,6 @@ public class NarrativeInfo {
     /** Get the size of this object's contents.
      * @return the number of elements.
      */
+    // TODO: If this is not required for cache, this can be removed.
     public int getNumElements() { return NUM_ELEMENTS; }
 }

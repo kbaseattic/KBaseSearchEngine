@@ -57,7 +57,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
             final NarrativeInfoProvider narrInfoProvider,
             final AuthInfoProvider authInfoProvider) {
 
-        Utils.nonNull(searchInterface, "searchInterface");
+        Utils.nonNull(searchInterface, "SearchInterface");
         Utils.nonNull(narrInfoProvider, "NarrativeInfoProvider");
         Utils.nonNull(authInfoProvider, "AuthInfoProvider");
         this.searchInterface = searchInterface;
@@ -124,7 +124,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
             userNames.add(tempNarrInfo.getE4());
             retVal.put(workspaceId, tempNarrInfo);
         }
-        final Map<String, String> displayNames = authInfoProvider.findDisplayNames(userNames);
+
+        final Map<String, String> displayNames = authInfoProvider.findUserDisplayNames(userNames);
         // e5 is the full / display name, e4 is the user name
         // defaults to the existing name so names from previous decorator layers aren't set to null
         retVal.values().stream().forEach(t -> t.withE5(

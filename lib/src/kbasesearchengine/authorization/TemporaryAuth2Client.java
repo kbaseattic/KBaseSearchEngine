@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
+import com.google.common.collect.Iterables;
 
 import kbasesearchengine.tools.Utils;
 
@@ -51,6 +52,9 @@ public class TemporaryAuth2Client implements AuthInfoProvider {
      * will not be shown in the results.
      * @param token an auth token.
      */
+    // TODO: Check this is used to set the token before findUserDisplayName(s)() is used.
+    // This is needed as the get() and getAll() methods can only take the cache key as a parameter
+    // and not an additional parameter for the token.
     public TemporaryAuth2Client withToken(String token) {
         Utils.nonNull(token, "Token");
         this.token = token;
@@ -66,6 +70,8 @@ public class TemporaryAuth2Client implements AuthInfoProvider {
     
     /** Get display names for a set of users. Users that do not exist in the auth service
      * will not be shown in the results.
+     * @param token parameter used with the auth service to retrieve informtation.
+     *              Note that the instance variable 'token' is not used here.
      * @param userNames the set of usernames to process.
      * @return a mapping of username to display name for each user.
      * @throws IOException if an IO error occurs.
@@ -73,7 +79,7 @@ public class TemporaryAuth2Client implements AuthInfoProvider {
      */
     public Map<String, String> getUserDisplayNames(
             final String token,
-            final Set<String> userNames)
+            final Iterable<? extends String> userNames)
             throws IOException, Auth2Exception {
         Utils.notNullOrEmpty(token, "token cannot be null or whitespace only");
         Utils.nonNull(userNames, "userNames");
@@ -82,7 +88,7 @@ public class TemporaryAuth2Client implements AuthInfoProvider {
                 throw new IllegalArgumentException("Null or whitespace only entry in userNames");
             }
         }
-        if (userNames.isEmpty()) {
+        if (Iterables.isEmpty(userNames)) {
             return Collections.emptyMap();
         }
         final String users = String.join(",", userNames);
@@ -112,20 +118,22 @@ public class TemporaryAuth2Client implements AuthInfoProvider {
     }
 
     /** Get display names for a set of users. Users that do not exist in the auth service
-     * will not be shown in the results.
+     * will not be shown in the results. Called by AuthCache. Uses the instance variable 'token'
      * @param userNames the set of usernames to process.
      * @return a mapping of username to display name for each user.
      * @throws IOException if an IO error occurs.
      * @throws Auth2Exception if the auth service returns an exception.
      */
+
     public Map<String, String> findUserDisplayNames(
-            final Set<String> userNames)
+            final Iterable<? extends String> userNames)
             throws IOException, Auth2Exception {
-        return this.getUserDisplayNames(token, userNames);
+        System.out.println("2222222222222222: findUserDisplayNames()  " + userNames.toString());
+        return getUserDisplayNames(token, userNames);
     }
 
-    /** Get display name for a single user. User that does not exist in the auth service
-     * will not be shown in the result.
+    /** Get display name for a single user. If the user does not exist in the auth service
+     * displayName will be null. Called by AuthCache
      * @param userName the username to process.
      * @return the display name for the given username.
      * @throws IOException if an IO error occurs.
@@ -136,7 +144,7 @@ public class TemporaryAuth2Client implements AuthInfoProvider {
             throws IOException, Auth2Exception {
         final Set<String> userIds = new HashSet<>();
         userIds.add(userName);
-        return this.findUserDisplayNames(userIds).getOrDefault(userName, null);
+        return this.getUserDisplayNames(token, userIds).getOrDefault(userName, null);
     }
 
     private Auth2Exception toException(final InputStream inputStream, final int responseCode)

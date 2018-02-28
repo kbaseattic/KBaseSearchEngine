@@ -1,8 +1,6 @@
 package kbasesearchengine.authorization;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -18,7 +16,7 @@ import com.google.common.cache.Weigher;
  * {@link AuthInfoProvider} in memory for quick access.
  * @author gaprice@lbl.gov
  * @author ganapathy@bnl.gov
- * 
+ *
  */
 public class AuthCache implements AuthInfoProvider {
 
@@ -72,16 +70,18 @@ public class AuthCache implements AuthInfoProvider {
                     @Override
                     public int weigh(String userName, String displayName) {
                         // TODO check what needs to be returned
-                        return displayName.length();
+                        return 1;
                     }
                 })
                 .build(new CacheLoader<String, String> () {
 
+                    @Override
                     public String load(String userName) throws Exception {
                         return provider.findUserDisplayName(userName);
                     }
 
-                    public Map<String, String> loadAll(Set<String> userNames) throws Exception {
+                    @Override
+                    public Map<String, String> loadAll(Iterable<? extends String> userNames) throws Exception {
                         return provider.findUserDisplayNames(userNames);
                     }
                  });
@@ -99,7 +99,7 @@ public class AuthCache implements AuthInfoProvider {
     }
 
     @Override
-    public Map<String, String> findUserDisplayNames(final Set<String> userNames)
+    public Map<String, String> findUserDisplayNames(final Iterable <? extends String> userNames)
             throws IOException, Auth2Exception {
         try {
             return cache.getAll(userNames);
