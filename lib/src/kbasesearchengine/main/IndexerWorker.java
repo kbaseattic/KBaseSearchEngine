@@ -44,6 +44,7 @@ import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.parse.ContigLocationException;
+import kbasesearchengine.parse.GUIDNotFoundException;
 import kbasesearchengine.parse.KeywordParser;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.parse.ObjectParser;
@@ -642,6 +643,10 @@ public class IndexerWorker implements Stoppable {
              * File IO problems are generally going to mean something is very wrong
              * (like bad disk), since the file should already exist at this point.
              */
+        } catch (GUIDNotFoundException e) {
+            //TODO NNOW add test
+            throw new UnprocessableEventIndexingException(
+                    ErrorType.GUID_NOT_FOUND, e.getMessage(), e);
         } catch (ContigLocationException e) {
             throw new UnprocessableEventIndexingException(
                     ErrorType.LOCATION_ERROR, e.getMessage(), e);
