@@ -644,7 +644,6 @@ public class IndexerWorker implements Stoppable {
              * (like bad disk), since the file should already exist at this point.
              */
         } catch (GUIDNotFoundException e) {
-            //TODO NNOW add test
             throw new UnprocessableEventIndexingException(
                     ErrorType.GUID_NOT_FOUND, e.getMessage(), e);
         } catch (ContigLocationException e) {
