@@ -596,6 +596,13 @@ public class WorkspaceEventHandlerTest {
                 new UnprocessableEventIndexingException(
                         ErrorType.OTHER, "Null error message from workspace server"));
         
+        failLoadWSGetObjException(new JsonClientException("Object Whatever has Been Deleted"),
+                new UnprocessableEventIndexingException(ErrorType.DELETED, 
+                        "Object Whatever has Been Deleted"));
+        failLoadWSGetObjException(new JsonClientException("Object Whatever is Deleted"),
+                new UnprocessableEventIndexingException(ErrorType.DELETED, 
+                        "Object Whatever is Deleted"));
+        
         failLoadWSGetObjException(new JsonClientException("Couldn't Login"),
                 new FatalIndexingException(ErrorType.OTHER, 
                         "Workspace credentials are invalid: Couldn't Login"));
@@ -624,6 +631,13 @@ public class WorkspaceEventHandlerTest {
         failLoadWSGetWSInfoException(new JsonClientException(null),
                 new UnprocessableEventIndexingException(
                         ErrorType.OTHER, "Null error message from workspace server"));
+        
+        failLoadWSGetWSInfoException(new JsonClientException("Object Whatever has Been Deleted"),
+                new UnprocessableEventIndexingException(ErrorType.DELETED, 
+                        "Object Whatever has Been Deleted"));
+        failLoadWSGetWSInfoException(new JsonClientException("Object Whatever is Deleted"),
+                new UnprocessableEventIndexingException(ErrorType.DELETED, 
+                        "Object Whatever is Deleted"));
         
         failLoadWSGetWSInfoException(new JsonClientException("Couldn't Login"),
                 new FatalIndexingException(

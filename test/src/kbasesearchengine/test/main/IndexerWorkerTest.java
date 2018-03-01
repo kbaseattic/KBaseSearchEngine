@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 
@@ -39,6 +40,7 @@ import kbasesearchengine.events.exceptions.RetriableIndexingException;
 import kbasesearchengine.events.exceptions.RetriesExceededIndexingException;
 import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
 import kbasesearchengine.events.handler.EventHandler;
+import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.IndexerWorker;
@@ -800,6 +802,97 @@ public class IndexerWorkerTest {
                     got, new UnprocessableEventIndexingException(ErrorType.LOCATION_ERROR,
                             "Expected location array for location transform for " +
                             "code:1/2/3:subfoo/an id2, got empty array"));
+        }
+    }
+    
+    @Test
+    public void guidNotFoundError() throws Exception {
+        /* tests the handling of missing guids when indexing an object. */
+        
+        final GUID guid = new GUID("code:1/2/3");
+        final GUID dependencyGUID = new GUID("code:4/5/6");
+        final SearchObjectType dependentType = new SearchObjectType("Assembly", 1);
+        
+        final Map<String, Object> data = ImmutableMap.of("assy_ref", dependencyGUID.toString());
+        
+        final EventHandler ws = mock(EventHandler.class);
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final IndexingStorage idxStore = mock(IndexingStorage.class);
+        final TypeStorage typeStore = mock(TypeStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        
+        final Path tempDir = Paths.get(TestCommon.getTempDir()).toAbsolutePath()
+                .resolve("IndexerWorkerTest");
+        deleteRecursively(tempDir);
+        
+        when(ws.getStorageCode()).thenReturn("code");
+        
+        final IndexerWorker worker = new IndexerWorker(
+                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
+                null, 1000);
+        
+        when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
+        
+        when(ws.load(eq(Arrays.asList(guid)), any(Path.class)))
+                .thenAnswer(new Answer<SourceData>() {
+
+                        @Override
+                        public SourceData answer(final InvocationOnMock inv) throws Throwable {
+                            final Path path = inv.getArgument(1);
+                            new ObjectMapper().writeValue(path.toFile(), data);
+                            return SourceData.getBuilder(
+                                    new UObject(path.toFile()), "myobj", "somedude")
+                                    .withNullableMD5("md5")
+                                    .build();
+                        }
+        });
+
+        final StorageObjectType storageObjectType = StorageObjectType
+                .fromNullableVersion("code", "KBaseGenome.Genome", 3);
+        
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1), storageObjectType)
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("assy_ref"))
+                        .withTransform(Transform.guid(dependentType))
+                        .build())
+                .build();
+        when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
+        
+        when(typeStore.getObjectTypeParsingRules(dependentType)).thenReturn(
+                ObjectTypeParsingRules.getBuilder(
+                        dependentType,
+                        new StorageObjectType("code", "KBaseAssy.Assembly"))
+                        .build());
+        
+        when(ws.buildReferencePaths(Arrays.asList(guid), set(dependencyGUID)))
+                .thenReturn(ImmutableMap.of(dependencyGUID, "code:1/2/3;code:4/5/6"));
+        
+        when(ws.resolveReferences(Arrays.asList(guid), set(dependencyGUID)))
+                .thenReturn(set(new ResolvedReference(dependencyGUID, dependencyGUID,
+                        new StorageObjectType("code", "Assembly"), Instant.ofEpochMilli(10000))));
+        
+        when(idxStore.checkParentGuidsExist(set(dependencyGUID)))
+                .thenReturn(ImmutableMap.of(dependencyGUID, true));
+        
+        // i.e. checkParentGuidsExist *does not* imply the indexing records exist
+        // because it appears that it doesn't because the parent / access document is written
+        // before the data documents, so race conditions can cause a problem
+        when(idxStore.getObjectsByIds(set(dependencyGUID))).thenReturn(Collections.emptyList());
+        
+        try {
+            worker.processOneEvent(StatusEvent.getBuilder(
+                    storageObjectType,
+                    Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                    .withNullableAccessGroupID(1)
+                    .withNullableObjectID("2")
+                    .withNullableVersion(3)
+                    .withNullableisPublic(false)
+                    .build());
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(
+                    got, new UnprocessableEventIndexingException(ErrorType.GUID_NOT_FOUND,
+                            "GUID code:4/5/6 not found"));
         }
     }
     

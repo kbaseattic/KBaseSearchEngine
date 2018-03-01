@@ -294,7 +294,7 @@ public class KeywordParser {
             final Map<GUID, SearchObjectType> guidToType = lookup.getTypesForGuids(guids);
             for (final GUID guid : guids) {
                 if (!guidToType.containsKey(guid)) {
-                    throw new ObjectParseException("GUID " + guid + " not found");
+                    throw new GUIDNotFoundException("GUID " + guid + " not found");
                 }
                 final SearchObjectType actualType = guidToType.get(guid);
                 if (!actualType.equals(type)) {
