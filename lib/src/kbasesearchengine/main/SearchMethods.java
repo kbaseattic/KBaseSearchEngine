@@ -140,31 +140,33 @@ public class SearchMethods implements SearchInterface {
                 .withAdmin(admins.contains(user));
     }
     
-    private kbasesearchengine.search.SortingRule toSearch(SortingRule sr) {
+    private kbasesearchengine.search.SortingRule toSearch(final SortingRule sr) {
         if (sr == null) {
             return null;
         }
-        kbasesearchengine.search.SortingRule ret = new kbasesearchengine.search.SortingRule();
-        ret.isTimestamp = toBool(sr.getIsTimestamp());
-        ret.isObjectName = toBool(sr.getIsObjectName());
-        ret.keyName = sr.getKeyName();
-        ret.ascending = !toBool(sr.getDescending());
-        return ret;
+        final kbasesearchengine.search.SortingRule.Builder b;
+        //TODO CODE make an enum of valid standard property field names and check against input
+        if (toBool(sr.getIsObjectProperty(), true)) {
+            b = kbasesearchengine.search.SortingRule.getKeyPropertyBuilder(sr.getProperty());
+        } else {
+            b = kbasesearchengine.search.SortingRule.getStandardPropertyBuilder(sr.getProperty());
+        }
+        return b.withNullableIsAscending(toBool(sr.getAscending(), true)).build();
     }
 
-    private SortingRule fromSearch(kbasesearchengine.search.SortingRule sr) {
+    private SortingRule fromSearch(final kbasesearchengine.search.SortingRule sr) {
         if (sr == null) {
             return null;
         }
-        SortingRule ret = new SortingRule();
-        if (sr.isTimestamp) {
-            ret.withIsTimestamp(1L);
-        } else if (sr.isObjectName) {
-            ret.withIsObjectName(1L);
+        final SortingRule ret = new SortingRule();
+        if (sr.isKeyProperty()) {
+            ret.withProperty(sr.getKeyProperty().get());
+            ret.withIsObjectProperty(1L);
         } else {
-            ret.withKeyName(sr.keyName);
+            ret.withProperty(sr.getStandardProperty().get());
+            ret.withIsObjectProperty(0L);
         }
-        ret.withDescending(sr.ascending ? 0L : 1L);
+        ret.withAscending(sr.isAscending() ? 1L : 0L);
         return ret;
     }
 

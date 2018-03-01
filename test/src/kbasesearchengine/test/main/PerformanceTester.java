@@ -1,5 +1,7 @@
 package kbasesearchengine.test.main;
 
+import static org.mockito.Mockito.mock;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -10,6 +12,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -32,6 +35,7 @@ import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StoredStatusEvent;
+import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.IndexerWorker;
 import kbasesearchengine.search.AccessFilter;
@@ -172,7 +176,8 @@ public class PerformanceTester {
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
         storage = esStorage;
-        mop = new IndexerWorker("test", esStorage, ss, tempDir, logger);
+        mop = new IndexerWorker("test", Arrays.asList(), mock(StatusEventStorage.class),
+                storage, ss, tempDir, logger, new HashSet<>(), 1000);
     }
     
     private static void deleteAllTestElasticIndices(HttpHost esHostPort, String esUser,

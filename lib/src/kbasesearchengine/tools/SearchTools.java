@@ -90,6 +90,16 @@ public class SearchTools {
     private static final String NAME = "search_tools";
     private static final int MAX_Q_SIZE = 10000;
     private static final GitInfo GIT = new GitInfo();
+    
+    /* The maximum number of objects to index in the search system at once. With the 18/2/23
+     * implementation of ElasticSearch with a 10m load timeout, more than ~100K subobjects causes
+     * a timeout (note this number and the timeout might require a bit of tweaking to completely
+     * eliminate timeout errors).
+     * 
+     * Exceeding this number of object in a load will cause a failure after the parse step, so
+     * the ElasticSearch load isn't even attempted.
+     */
+    private static final int MAX_OBJECTS_PER_LOAD = 100_000;
 
     /** Runs the CLI.
      * @param args the program arguments.
@@ -236,9 +246,10 @@ public class SearchTools {
                 runEventGenerator(
                         out,
                         a.ref,
+                        a.lastVersionOnly,
                         getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()),
                         getWsTypes(a.wsTypes, cfg.getWorkspaceTypes()),
-                        cfg.workerCodes());
+                        cfg.getWorkerCodes());
                 noCommand = false;
             } catch (EventGeneratorException | StorageInitException e) {
                 printError(e, a.verbose);
@@ -360,7 +371,7 @@ public class SearchTools {
         
         final IndexerWorker wrk = new IndexerWorker(
                 getID(id), Arrays.asList(weh), storage, indexStore, ss, tempDir, logger,
-                cfg.workerCodes());
+                cfg.getWorkerCodes(), MAX_OBJECTS_PER_LOAD);
         wrk.startIndexer();
         return wrk;
     }
@@ -542,6 +553,7 @@ public class SearchTools {
     private void runEventGenerator(
             final PrintStream logtarget,
             final String ref,
+            final boolean lastVersionOnly,
             final List<WorkspaceIdentifier> wsBlackList,
             final List<String> wsTypes,
             final Set<String> workerCodes)
@@ -551,6 +563,7 @@ public class SearchTools {
                 .withNullableRef(ref)
                 .withWorkspaceBlacklist(wsBlackList)
                 .withWorkerCodes(workerCodes)
+                .withLastVersionOnly(lastVersionOnly)
                 .withWorkspaceTypes(wsTypes);
         gen.build().generateEvents();
     }
@@ -672,6 +685,12 @@ public class SearchTools {
                 "The type of the object in a storage system (e.g. 'KBaseGenomes.Genome') with " +
                 "which to initialize a new search transformation spec. See --spec.")
         private String storageObjectType;
+        
+        @Parameter(names = {"--last-version-only"}, description = 
+                "When generating events, only generate events for the last version of each " +
+                "object. This parameter is ignored if a full ref including a version is " +
+                "provided in the ref argument.")
+        private boolean lastVersionOnly;
                         
         @Parameter(names = {"--version"}, description = "Print the software version and exit")
         private boolean version;

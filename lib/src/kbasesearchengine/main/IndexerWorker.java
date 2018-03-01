@@ -19,8 +19,6 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.common.base.Optional;
@@ -32,6 +30,7 @@ import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventWithId;
 import kbasesearchengine.events.StoredStatusEvent;
+import kbasesearchengine.events.exceptions.ErrorType;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
@@ -44,11 +43,14 @@ import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.events.storage.StatusEventStorage;
+import kbasesearchengine.parse.ContigLocationException;
+import kbasesearchengine.parse.GUIDNotFoundException;
 import kbasesearchengine.parse.KeywordParser;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.parse.ObjectParser;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.parse.KeywordParser.ObjectLookupProvider;
+import kbasesearchengine.search.IndexingConflictException;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.system.NoSuchTypeException;
@@ -69,7 +71,7 @@ public class IndexerWorker implements Stoppable {
     private static final int RETRY_SLEEP_MS = 1000;
     private static final List<Integer> RETRY_FATAL_BACKOFF_MS = Arrays.asList(
             1000, 2000, 4000, 8000, 16000);
-    
+
     private final String id;
     private final File rootTempDir;
     private final StatusEventStorage storage;
@@ -81,12 +83,14 @@ public class IndexerWorker implements Stoppable {
     private ScheduledExecutorService executor = null;
     private final SignalMonitor signalMonitor = new SignalMonitor();
     private boolean stopRunner = false;
+    private final int maxObjectsPerLoad;
     
     private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
             RETRY_FATAL_BACKOFF_MS,
             (retrycount, event, except) -> logError(retrycount, event, except));
 
     public IndexerWorker(
+            // this is screaming for a configuration builder, esp if we configure the retry info
             final String id,
             final List<EventHandler> eventHandlers,
             final StatusEventStorage storage,
@@ -94,11 +98,13 @@ public class IndexerWorker implements Stoppable {
             final TypeStorage typeStorage,
             final File tempDir,
             final LineLogger logger,
-            final Set<String> workerCodes)
+            final Set<String> workerCodes,
+            final int maxObjectsPerLoad)
             throws IOException {
         Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
         Utils.nonNull(logger, "logger");
         Utils.nonNull(indexingStorage, "indexingStorage");
+        this.maxObjectsPerLoad = maxObjectsPerLoad;
         this.workerCodes = workerCodes;
         logger.logInfo("Worker codes: " + workerCodes);
         this.id = id;
@@ -114,30 +120,6 @@ public class IndexerWorker implements Stoppable {
         this.indexingStorage = indexingStorage;
     }
     
-    /**
-     * For tests only !!!
-     */
-    public IndexerWorker(
-            final String id,
-            final IndexingStorage indexingStorage,
-            final TypeStorage typeStorage,
-            final File tempDir,
-            final LineLogger logger)
-                throws IOException {
-        Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
-        Utils.nonNull(logger, "logger");
-        this.workerCodes = null;
-        this.id = id;
-        this.storage = null;
-        this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
-                id + "_" + UUID.randomUUID().toString().substring(0,5));
-        logger.logInfo("Created temp dir " + rootTempDir.getAbsolutePath() +
-                " for indexer worker " + id);
-        this.logger = logger;
-        this.typeStorage = typeStorage;
-        this.indexingStorage = indexingStorage;
-    }
-
     @Override
     public void awaitShutdown() throws InterruptedException {
         signalMonitor.awaitSignal();
@@ -162,11 +144,11 @@ public class IndexerWorker implements Stoppable {
                     // keep processing events until there are none left
                     processedEvent = performOneTick();
                 } catch (InterruptedException | FatalIndexingException e) {
-                    logError(ErrorType.FATAL, e);
+                    logError(LogPrefix.FATAL, e);
                     executor.shutdown();
                     signalMonitor.signal();
                 } catch (Throwable e) {
-                    logError(ErrorType.UNEXPECTED, e);
+                    logError(LogPrefix.UNEXPECTED, e);
                 }
             }
         }
@@ -190,28 +172,27 @@ public class IndexerWorker implements Stoppable {
         }
     }
     
-    private enum ErrorType {
+    private enum LogPrefix {
         STD, FATAL, UNEXPECTED;
     }
     
-    private void logError(final ErrorType errtype, final Throwable e) {
-        Utils.nonNull(errtype, "errtype");
-        final String msg;
-        if (ErrorType.FATAL.equals(errtype)) {
-            msg = "Fatal error in indexer, shutting down";
-        } else if (ErrorType.STD.equals(errtype)) {
-            msg = "Error in indexer";
-        } else if (ErrorType.UNEXPECTED.equals(errtype)) {
-            msg = "Unexpected error in indexer";
+    private void logError(final LogPrefix prefix, final Throwable e) {
+        final String logPrefix;
+        if (LogPrefix.FATAL.equals(prefix)) {
+            logPrefix = "Fatal error in indexer, shutting down";
+        } else if (LogPrefix.STD.equals(prefix)) {
+            logPrefix = "Error in indexer";
+        } else if (LogPrefix.UNEXPECTED.equals(prefix)) {
+            logPrefix = "Unexpected error in indexer";
         } else {
-            throw new RuntimeException("Unknown error type: " + errtype);
+            throw new RuntimeException("Unknown error type: " + prefix);
         }
-        logError(msg, e);
+        logError(logPrefix, e);
     }
 
-    private void logError(final String msg, final Throwable e) {
+    private void logError(final String logPrefix, final Throwable e) {
         // TODO LOG make log method that takes msg + e and have the logger figure out how to log it correctly
-        logger.logError(msg + ": " + e);
+        logger.logError(logPrefix + ": " + e);
         logger.logError(e);
     }
 
@@ -244,7 +225,7 @@ public class IndexerWorker implements Stoppable {
             try {
                 handler = getEventHandler(parentEvent);
             } catch (UnprocessableEventIndexingException e) {
-                logError(ErrorType.STD, e);
+                logError(LogPrefix.STD, e);
                 markEventProcessed(parentEvent, StatusEventProcessingState.FAIL);
                 return true;
             }
@@ -270,7 +251,7 @@ public class IndexerWorker implements Stoppable {
             throw e;
         } catch (Exception e) {
             // don't know how to respond to anything else, so mark event failed and keep going
-            logError(ErrorType.UNEXPECTED, e);
+            logError(LogPrefix.UNEXPECTED, e);
             markAsVisitedFailedPostError(parentEvent);
         }
     }
@@ -290,7 +271,7 @@ public class IndexerWorker implements Stoppable {
             throw e;
         } catch (Exception e) {
             // don't know how to respond to anything else, so mark event failed and keep going
-            logError(ErrorType.UNEXPECTED, e);
+            logError(LogPrefix.UNEXPECTED, e);
             markAsVisitedFailedPostError(parentEvent);
             return;
         }
@@ -330,7 +311,8 @@ public class IndexerWorker implements Stoppable {
             storage.setProcessingState(parentEvent.getId(), null, StatusEventProcessingState.FAIL);
         } catch (Exception e) {
             //ok then we're screwed
-            throw new FatalIndexingException("Can't mark events as failed: " + e.getMessage(), e);
+            throw new FatalIndexingException(ErrorType.OTHER, "Can't mark events as failed: " +
+                    e.getMessage(), e);
         }
     }
 
@@ -411,7 +393,7 @@ public class IndexerWorker implements Stoppable {
     private EventHandler getEventHandler(final String storageCode)
             throws UnprocessableEventIndexingException {
         if (!eventHandlers.containsKey(storageCode)) {
-            throw new UnprocessableEventIndexingException(String.format(
+            throw new UnprocessableEventIndexingException(ErrorType.OTHER, String.format(
                     "No event handler for storage code %s is registered", storageCode));
         }
         return eventHandlers.get(storageCode);
@@ -468,12 +450,14 @@ public class IndexerWorker implements Stoppable {
                 break;
             default:
                 throw new UnprocessableEventIndexingException(
-                        "Unsupported event type: " + ev.getEventType());
+                        ErrorType.OTHER, "Unsupported event type: " + ev.getEventType());
             }
         } catch (IOException e) {
             // may want to make IndexingStorage throw more specific exceptions, but this will work
             // for now. Need to look more carefully at the code before that happens.
-            throw new RetriableIndexingException(e.getMessage(), e);
+            throw new RetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
+        } catch (IndexingConflictException e) {
+            throw new RetriableIndexingException(ErrorType.INDEXING_CONFLICT, e.getMessage(), e);
         }
     }
 
@@ -511,13 +495,25 @@ public class IndexerWorker implements Stoppable {
             ObjectLookupProvider indexLookup,
             final List<GUID> objectRefPath) 
             throws IndexingException, InterruptedException, RetriableIndexingException {
+        /* it'd be nice to be able to log the event ID with retry logging in sub methods,
+         * but this method handles calls from recursive indexing where the event id isn't
+         * available. Changing that would require passing the event all the way through the
+         * parsing code. Not sure if it's worth the trouble since the event ID *is* logged if
+         * retrying doesn't fix the problem.
+         * 
+         * Although, since this is single threaded, could make the event an instance variable,
+         * but that seems icky and we may want to make the workers multithreaded in the future.
+         * ThreadLocal?
+         * https://sites.google.com/site/unclebobconsultingllc/thread-local-a-convenient-abomination
+         * 
+         */
         long t1 = System.currentTimeMillis();
         final File tempFile;
         try {
             FileUtil.getOrCreateSubDir(rootTempDir, guid.getStorageCode());
             tempFile = File.createTempFile("ws_srv_response_", ".json");
         } catch (IOException e) {
-            throw new FatalRetriableIndexingException(e.getMessage(), e);
+            throw new FatalRetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
         }
         if (indexLookup == null) {
             indexLookup = new MOPLookupProvider();
@@ -572,7 +568,7 @@ public class IndexerWorker implements Stoppable {
         retrier.retryCons(i -> indexObjectInStorage(i), input, null);
     }
 
-    private void indexObjectInStorage(final List<?> input) throws FatalRetriableIndexingException {
+    private void indexObjectInStorage(final List<?> input) throws RetriableIndexingException {
         final ObjectTypeParsingRules rule = (ObjectTypeParsingRules) input.get(0);
         final SourceData obj = (SourceData) input.get(1);
         final Instant timestamp = (Instant) input.get(2);
@@ -585,8 +581,10 @@ public class IndexerWorker implements Stoppable {
         try {
             indexingStorage.indexObjects(
                     rule, obj, timestamp, parentJson, guid, guidToObj, isPublic);
+        } catch (IndexingConflictException e) {
+            throw new RetriableIndexingException(ErrorType.INDEXING_CONFLICT, e.getMessage(), e);
         } catch (IOException e) {
-            throw new FatalRetriableIndexingException(e.getMessage(), e);
+            throw new FatalRetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
         }
     }
 
@@ -629,10 +627,15 @@ public class IndexerWorker implements Stoppable {
             }
             final Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(
                     obj, guid, rule);
+            if (guidToJson.size() > maxObjectsPerLoad) {
+                throw new UnprocessableEventIndexingException(ErrorType.SUBOBJECT_COUNT,
+                        String.format("Object %s has %s subobjects, exceeding the limit of %s",
+                        guid, guidToJson.size(), maxObjectsPerLoad));
+            }
             for (final GUID subGuid : guidToJson.keySet()) {
                 final String json = guidToJson.get(subGuid);
                 guidToObj.put(subGuid, KeywordParser.extractKeywords(
-                        rule.getGlobalObjectType(), json, parentJson,
+                        subGuid, rule.getGlobalObjectType(), json, parentJson,
                         rule.getIndexingRules(), indexLookup, newRefPath));
             }
             /* any errors here are due to file IO or parse exceptions.
@@ -640,10 +643,16 @@ public class IndexerWorker implements Stoppable {
              * File IO problems are generally going to mean something is very wrong
              * (like bad disk), since the file should already exist at this point.
              */
+        } catch (GUIDNotFoundException e) {
+            throw new UnprocessableEventIndexingException(
+                    ErrorType.GUID_NOT_FOUND, e.getMessage(), e);
+        } catch (ContigLocationException e) {
+            throw new UnprocessableEventIndexingException(
+                    ErrorType.LOCATION_ERROR, e.getMessage(), e);
         } catch (ObjectParseException e) {
-            throw new UnprocessableEventIndexingException(e.getMessage(), e);
+            throw new UnprocessableEventIndexingException(ErrorType.OTHER, e.getMessage(), e);
         } catch (IOException e) {
-            throw new FatalRetriableIndexingException(e.getMessage(), e);
+            throw new FatalRetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
         }
         return new ParseObjectsRet(parentJson, guidToObj);
     }
@@ -653,7 +662,8 @@ public class IndexerWorker implements Stoppable {
 //                false);
 //    }
     
-    private void undeleteAllVersions(final GUID guid) throws IOException {
+    private void undeleteAllVersions(final GUID guid)
+            throws IOException, IndexingConflictException {
         indexingStorage.undeleteAllVersions(guid);
     }
 
@@ -661,29 +671,33 @@ public class IndexerWorker implements Stoppable {
 //        indexingStorage.unshareObjects(new LinkedHashSet<>(Arrays.asList(guid)), accessGroupId);
 //    }
 
-    private void deleteAllVersions(final GUID guid) throws IOException {
+    private void deleteAllVersions(final GUID guid)
+            throws IOException, IndexingConflictException {
         indexingStorage.deleteAllVersions(guid);
     }
 
-    private void publish(GUID guid) throws IOException {
+    private void publish(final GUID guid) throws IOException, IndexingConflictException {
         indexingStorage.publishObjects(new LinkedHashSet<>(Arrays.asList(guid)));
     }
     
-    private void publishAllVersions(final GUID guid) throws IOException {
+    private void publishAllVersions(final GUID guid)
+            throws IOException, IndexingConflictException {
         indexingStorage.publishAllVersions(guid);
         //TODO DP need to handle objects in datapalette
     }
 
-    private void unpublish(GUID guid) throws IOException {
+    private void unpublish(final GUID guid) throws IOException, IndexingConflictException {
         indexingStorage.unpublishObjects(new LinkedHashSet<>(Arrays.asList(guid)));
     }
     
-    private void unpublishAllVersions(final GUID guid) throws IOException {
+    private void unpublishAllVersions(final GUID guid)
+            throws IOException, IndexingConflictException {
         indexingStorage.unpublishAllVersions(guid);
         //TODO DP need to handle objects in datapalette
     }
     
-    private void renameAllVersions(final GUID guid, final String newName) throws IOException {
+    private void renameAllVersions(final GUID guid, final String newName)
+            throws IOException, IndexingConflictException {
         indexingStorage.setNameOnAllObjectVersions(guid, newName);
     }
 
@@ -747,7 +761,7 @@ public class IndexerWorker implements Stoppable {
                 return indexingStorage.checkParentGuidsExist(new HashSet<>(Arrays.asList(guid)))
                         .get(guid);
             } catch (IOException e) {
-                throw new RetriableIndexingException(e.getMessage(), e);
+                throw new RetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
             }
         }
         
@@ -812,9 +826,12 @@ public class IndexerWorker implements Stoppable {
             if (guidsToLoad.size() > 0) {
                 final List<ObjectData> objList =
                         retrier.retryFunc(g -> getObjectsByIds(g), guidsToLoad, null);
-                Map<GUID, ObjectData> loaded = 
-                        objList.stream().collect(Collectors.toMap(od -> od.getGUID(),
-                                Function.identity()));
+                // for some reason I don't understand a stream implementation would throw
+                // duplicate key errors on the ObjectData, which is the value
+                final Map<GUID, ObjectData> loaded = new HashMap<>();
+                for (final ObjectData od: objList) {
+                    loaded.put(od.getGUID(), od);
+                }
                 objLookupCache.putAll(loaded);
                 ret.putAll(loaded);
             }
@@ -831,7 +848,7 @@ public class IndexerWorker implements Stoppable {
             try {
                 return indexingStorage.getObjectsByIds(guids, pp);
             } catch (IOException e) {
-                throw new RetriableIndexingException(e.getMessage(), e);
+                throw new RetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
             }
         }
         

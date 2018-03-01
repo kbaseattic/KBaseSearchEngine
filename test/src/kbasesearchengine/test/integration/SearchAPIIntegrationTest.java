@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
@@ -30,17 +31,21 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
 import kbasesearchengine.AccessFilter;
+import kbasesearchengine.GetObjectsInput;
+import kbasesearchengine.GetObjectsOutput;
 import kbasesearchengine.KBaseSearchEngineClient;
 import kbasesearchengine.KBaseSearchEngineServer;
 import kbasesearchengine.MatchFilter;
 import kbasesearchengine.ObjectData;
 import kbasesearchengine.SearchObjectsInput;
 import kbasesearchengine.SearchObjectsOutput;
+import kbasesearchengine.SortingRule;
 import kbasesearchengine.authorization.TemporaryAuth2Client;
 import kbasesearchengine.authorization.TemporaryAuth2Client.Auth2Exception;
 import kbasesearchengine.common.FileUtil;
@@ -482,9 +487,68 @@ public class SearchAPIIntegrationTest {
             throw e;
         }
     }
-
-
     
+    @Test
+    public void sort() throws Exception {
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("sort"));
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Sort", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator1")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/1/1"),
+                ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
+                false);
+        
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Sort", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator2")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/2/1"),
+                ImmutableMap.of(new GUID("WS:1/2/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
+                false);
+        
+        final SearchObjectsOutput res = searchCli.searchObjects(new SearchObjectsInput()
+                .withAccessFilter(new AccessFilter())
+                .withMatchFilter(new MatchFilter())
+                .withSortingRules(Arrays.asList(new SortingRule()
+                        .withAscending(0L)
+                        .withIsObjectProperty(0L)
+                        .withProperty("creator"))));
+        
+        final List<String> guids = res.getObjects().stream().map(od -> od.getGuid()).collect(
+                Collectors.toList());
+        
+        assertThat("incorrect order", guids, is(Arrays.asList("WS:1/2/1", "WS:1/1/1")));
+        
+        assertThat("incorrect sort rules count", res.getSortingRules().size(), is(1));
+        
+        final SortingRule sr = res.getSortingRules().get(0);
+        
+        assertThat("incorrect property", sr.getProperty(), is("creator"));
+        assertThat("incorrect ascending", sr.getAscending(), is(0L));
+        assertThat("incorrect is object property", sr.getIsObjectProperty(), is(0L));
+    }
+
     @Test
     public void status() throws Exception {
         final Map<String, Object> res = searchCli.status();
@@ -504,6 +568,61 @@ public class SearchAPIIntegrationTest {
                 "version", "0.1.0-dev1");
         
         assertThat("incorrect status output", res, is(expected));
+    }
+    
+    /* **** Narrative pruner tests ***
+     * these should be removed once the narratives are indexed
+     * with custom code
+     */
+    
+    @Test
+    public void pruneNarrative() throws Exception {
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("narprune"));
+        
+        final Map<String, Object> data = new HashMap<>();
+        data.put("source", "a long string");
+        data.put("code_output", "another long string");
+        data.put("app_output", "yet another long string");
+        data.put("app_info", "yup, another long string here");
+        data.put("app_input", "my god will this reign of long string terror every end");
+        data.put("job_ids", "3");
+        data.put("title", "a title");
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Narrative", 1),
+                        new StorageObjectType("WS", "Narrative"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator1")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/1/1"),
+                ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
+                        new ObjectMapper().writeValueAsString(data),
+                        data.entrySet().stream().collect(Collectors.toMap(
+                                e -> e.getKey(), e -> Arrays.asList(e.getValue()))))),
+                false);
+        
+        final GetObjectsOutput ret = searchCli.getObjects(new GetObjectsInput()
+                .withGuids(Arrays.asList("WS:1/1/1")));
+        
+        assertThat("incorrect data count", ret.getObjects().size(), is(1));
+        final ObjectData od2 = ret.getObjects().get(0);
+        assertThat("incorrect data", od2.getData(), is((UObject) null));
+        assertThat("incorrect keyprops", od2.getKeyProps(),
+                is(ImmutableMap.of("title", "a title")));
+
+        final SearchObjectsOutput res = searchObjects(new MatchFilter());
+        
+        assertThat("incorrect data count", res.getObjects().size(), is(1));
+        final ObjectData od = res.getObjects().get(0);
+        assertThat("incorrect data", od.getData(), is((UObject) null));
+        assertThat("incorrect keyprops", od.getKeyProps(),
+                is(ImmutableMap.of("title", "a title")));
     }
     
     /* ****** Auth client tests - to be moved to their own suite *** 
