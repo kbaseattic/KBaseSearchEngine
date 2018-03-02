@@ -316,7 +316,17 @@ public class IndexerWorker implements Stoppable {
         }
     }
 
-    private StatusEventProcessingState processEvent(final StatusEventWithId ev)
+    /** Process an event.
+     * Events which call for indexing new data for which a set of parsing rules is not present
+     * are skipped.
+     * Attempting to process expandable events via this method will result in a
+     * {@link StatusEventProcessingState#FAIL}.
+     * @param ev the event to process.
+     * @return the state of the completed event.
+     * @throws InterruptedException if the thread is interrupted.
+     * @throws FatalIndexingException if an indexing exception occurs that is unrecoverable.
+     */
+    public StatusEventProcessingState processEvent(final StatusEventWithId ev)
             throws InterruptedException, FatalIndexingException {
         final Optional<StorageObjectType> type = ev.getEvent().getStorageObjectType();
         if (type.isPresent() && !isStorageTypeSupported(type.get())) {
@@ -328,7 +338,7 @@ public class IndexerWorker implements Stoppable {
                 toLogString(type) + ev.getEvent().toGUID() + "...");
         final long time = System.currentTimeMillis();
         try {
-            retrier.retryCons(e -> processOneEvent(e), ev.getEvent(), ev);
+            retrier.retryCons(e -> processEvent(e), ev.getEvent(), ev);
         } catch (IndexingException e) {
             handleException("Error processing event", ev, e);
             return StatusEventProcessingState.FAIL;
@@ -403,7 +413,7 @@ public class IndexerWorker implements Stoppable {
         return eventHandlers.get(storageCode);
     }
 
-    public void processOneEvent(final StatusEvent ev)
+    private void processEvent(final StatusEvent ev)
             throws IndexingException, InterruptedException, RetriableIndexingException {
         try {
             switch (ev.getEventType()) {

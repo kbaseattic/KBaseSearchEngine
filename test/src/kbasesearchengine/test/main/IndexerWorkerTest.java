@@ -1,14 +1,17 @@
 package kbasesearchengine.test.main;
 
 import static kbasesearchengine.test.common.TestCommon.set;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,6 +27,7 @@ import java.util.Comparator;
 import java.util.Map;
 
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -33,7 +37,10 @@ import com.google.common.collect.ImmutableMap;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
+import kbasesearchengine.events.ChildStatusEvent;
 import kbasesearchengine.events.StatusEvent;
+import kbasesearchengine.events.StatusEventID;
+import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.exceptions.ErrorType;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
@@ -63,6 +70,27 @@ public class IndexerWorkerTest {
     //TODO TEST add more worker tests
     
     /* these are strictly unit tests. */
+    
+    private class ThrowableMatcher implements ArgumentMatcher<Throwable> {
+
+        private final Throwable expected;
+        
+        private ThrowableMatcher(final Throwable expected) {
+            this.expected = expected;
+        }
+
+        @Override
+        public boolean matches(final Throwable got) {
+            try {
+                TestCommon.assertExceptionCorrect(got, expected);
+            } catch (AssertionError e) {
+                // ... and this is a grotesque hack
+                return false;
+            }
+            return true;
+        }
+        
+    }
     
     @Test
     public void idManglingBugPass() throws Exception {
@@ -129,14 +157,17 @@ public class IndexerWorkerTest {
                 .build();
         when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
         
-        worker.processOneEvent(StatusEvent.getBuilder(
-                storageObjectType,
-                Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
-                .withNullableAccessGroupID(1)
-                .withNullableObjectID("2")
-                .withNullableVersion(3)
-                .withNullableisPublic(false)
-                .build());
+        final StatusEventProcessingState res = worker.processEvent(
+                new ChildStatusEvent(StatusEvent.getBuilder(
+                        storageObjectType,
+                        Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID(1)
+                        .withNullableObjectID("2")
+                        .withNullableVersion(3)
+                        .withNullableisPublic(false)
+                        .build(),
+                        new StatusEventID("parentID")));
+        assertThat("incorrect state", res, is(StatusEventProcessingState.INDX));
         
         final ParsedObject po1 = new ParsedObject(
                 new ObjectMapper().writeValueAsString(
@@ -253,22 +284,31 @@ public class IndexerWorkerTest {
 
         when(typeStore.listObjectTypeParsingRules(storageObjectType))
                 .thenReturn(set(rules));
-        try {
-            worker.processOneEvent(StatusEvent.getBuilder(
-                    storageObjectType,
-                    Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
-                    .withNullableAccessGroupID(1)
-                    .withNullableObjectID("2")
-                    .withNullableVersion(3)
-                    .withNullableisPublic(false)
-                    .build());
-            fail("expected exception");
-        } catch (Exception got) {
-            TestCommon.assertExceptionCorrect(got, new UnprocessableEventIndexingException(
-                    ErrorType.OTHER,
-                    "Could not find the subobject id for one or more of the subobjects for " +
-                    "object code:1/2/3 when applying search specification foo_1"));
-        }
+        
+        final StatusEventProcessingState res = worker.processEvent(
+                new ChildStatusEvent(StatusEvent.getBuilder(
+                        storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID(1)
+                        .withNullableObjectID("2")
+                        .withNullableVersion(3)
+                        .withNullableisPublic(false)
+                        .build(),
+                        new StatusEventID("pid")));
+        assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
+        
+        verify(logger).logError("Error processing event for event NEW_VERSION with parent ID " +
+                "pid: kbasesearchengine.events.exceptions." +
+                "UnprocessableEventIndexingException: " +
+                "Could not find the subobject id for one or more of the subobjects for " +
+                "object code:1/2/3 when applying search specification foo_1");
+        
+        verify(logger).logError(argThat(new ThrowableMatcher(
+                new UnprocessableEventIndexingException(ErrorType.OTHER,
+                        "Could not find the subobject id for one or more of the subobjects for " +
+                                "object code:1/2/3 when applying search specification foo_1"))));
+        
+        verify(idxStore, never()).indexObjects(
+                any(), any(), any(), any(), any(), any(), anyBoolean());
     }
     
     @Test
@@ -340,14 +380,17 @@ public class IndexerWorkerTest {
         when(typeStore.listObjectTypeParsingRules(storageObjectType))
                 .thenReturn(set(rule, subrule));
         
-        worker.processOneEvent(StatusEvent.getBuilder(
-                storageObjectType,
-                Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
-                .withNullableAccessGroupID(1)
-                .withNullableObjectID("2")
-                .withNullableVersion(3)
-                .withNullableisPublic(false)
-                .build());
+        final StatusEventProcessingState res = worker.processEvent(
+                new ChildStatusEvent(StatusEvent.getBuilder(
+                        storageObjectType,
+                        Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID(1)
+                        .withNullableObjectID("2")
+                        .withNullableVersion(3)
+                        .withNullableisPublic(false)
+                        .build(),
+                        new StatusEventID("parentID")));
+        assertThat("incorrect state", res, is(StatusEventProcessingState.INDX));
         
         final ParsedObject posub = new ParsedObject(
                 new ObjectMapper().writeValueAsString(
@@ -441,14 +484,17 @@ public class IndexerWorkerTest {
                 .build();
         when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
         
-        worker.processOneEvent(StatusEvent.getBuilder(
-                storageObjectType,
-                Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
-                .withNullableAccessGroupID(1)
-                .withNullableObjectID("2")
-                .withNullableVersion(3)
-                .withNullableisPublic(false)
-                .build());
+        final StatusEventProcessingState res = worker.processEvent(
+                new ChildStatusEvent(StatusEvent.getBuilder(
+                        storageObjectType,
+                        Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID(1)
+                        .withNullableObjectID("2")
+                        .withNullableVersion(3)
+                        .withNullableisPublic(false)
+                        .build(),
+                        new StatusEventID("parentID")));
+        assertThat("incorrect state", res, is(StatusEventProcessingState.INDX));
         
         final ParsedObject po1 = new ParsedObject(
                 new ObjectMapper().writeValueAsString(
@@ -541,21 +587,25 @@ public class IndexerWorkerTest {
                 .build();
         when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
         
-        try {
-            worker.processOneEvent(StatusEvent.getBuilder(
-                    storageObjectType,
-                    Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
-                    .withNullableAccessGroupID(1)
-                    .withNullableObjectID("2")
-                    .withNullableVersion(3)
-                    .withNullableisPublic(false)
-                    .build());
-            fail("expected exception");
-        } catch (Exception got) {
-            TestCommon.assertExceptionCorrect(got, new UnprocessableEventIndexingException(
-                    ErrorType.SUBOBJECT_COUNT,
-                    "Object code:1/2/3 has 3 subobjects, exceeding the limit of 2"));
-        }
+        final StatusEventProcessingState res = worker.processEvent(
+                new ChildStatusEvent(StatusEvent.getBuilder(
+                        storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID(1)
+                        .withNullableObjectID("2")
+                        .withNullableVersion(3)
+                        .withNullableisPublic(false)
+                        .build(),
+                        new StatusEventID("pid")));
+        assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
+        
+        verify(logger).logError("Error processing event for event NEW_VERSION with parent ID " +
+                "pid: kbasesearchengine.events.exceptions." +
+                "UnprocessableEventIndexingException: Object code:1/2/3 has 3 subobjects, " +
+                "exceeding the limit of 2");
+        
+        verify(logger).logError(argThat(new ThrowableMatcher(
+                new UnprocessableEventIndexingException(ErrorType.SUBOBJECT_COUNT,
+                        "Object code:1/2/3 has 3 subobjects, exceeding the limit of 2"))));
         
         verify(idxStore, never()).indexObjects(
                 any(), any(), any(), any(), any(), any(), anyBoolean());
@@ -657,21 +707,16 @@ public class IndexerWorkerTest {
                             new GUID(guid, "subfoo", "an id"), po1)),
                     eq(false));
         
-        try {
-            worker.processOneEvent(StatusEvent.getBuilder(
-                    storageObjectType,
-                    Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
-                    .withNullableAccessGroupID(1)
-                    .withNullableObjectID("2")
-                    .withNullableVersion(3)
-                    .withNullableisPublic(false)
-                    .build());
-            fail("expected exception");
-        } catch (Exception got) {
-            TestCommon.assertExceptionCorrect(
-                    got, new RetriesExceededIndexingException(
-                            ErrorType.INDEXING_CONFLICT, "conflict"));
-        }
+        final StatusEventProcessingState res = worker.processEvent(
+                new ChildStatusEvent(StatusEvent.getBuilder(
+                        storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID(1)
+                        .withNullableObjectID("2")
+                        .withNullableVersion(3)
+                        .withNullableisPublic(false)
+                        .build(),
+                        new StatusEventID("pid")));
+        assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
         
         final String errmsg = "Retriable error in indexer, retry %s: " +
                 "kbasesearchengine.events.exceptions.RetriableIndexingException: conflict";
@@ -681,6 +726,17 @@ public class IndexerWorkerTest {
         verify(logger).logError(String.format(errmsg, 3));
         verify(logger).logError(String.format(errmsg, 4));
         verify(logger).logError(String.format(errmsg, 5));
+
+        verify(logger).logError("Error processing event for event NEW_VERSION with parent ID " +
+                "pid: kbasesearchengine.events.exceptions." +
+                "RetriesExceededIndexingException: " +
+                "conflict");
+
+        final RetriableIndexingException retryexception =
+                new RetriableIndexingException(ErrorType.INDEXING_CONFLICT, "conflict");
+        verify(logger, times(5)).logError(argThat(new ThrowableMatcher(retryexception)));
+        verify(logger).logError(argThat(new ThrowableMatcher(
+                new RetriesExceededIndexingException(ErrorType.INDEXING_CONFLICT, "conflict"))));
     }
     
     @Test
@@ -709,17 +765,35 @@ public class IndexerWorkerTest {
         doThrow(new IndexingConflictException("conflict", new IOException("placeholder")))
                 .when(idxStore).deleteAllVersions(new GUID("WS:3/6"));
         
-        try {
-            worker.processOneEvent(StatusEvent.getBuilder(
-                    "WS", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
-                    .withNullableAccessGroupID(3)
-                    .withNullableObjectID("6")
-                    .build());
-            fail("expected exception");
-        } catch (Exception got) {
-            TestCommon.assertExceptionCorrect(got, new RetriableIndexingException(
-                    ErrorType.INDEXING_CONFLICT, "conflict"));
-        }
+        final StatusEventProcessingState res = worker.processEvent(
+                new ChildStatusEvent(StatusEvent.getBuilder(
+                        "WS",Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
+                        .withNullableAccessGroupID(3)
+                        .withNullableObjectID("6")
+                        .build(),
+                        new StatusEventID("pid")));
+        assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
+        
+        final String errmsg = "Retriable error in indexer for event DELETE_ALL_VERSIONS with " +
+                "parent ID pid, retry %s: " +
+                "kbasesearchengine.events.exceptions.RetriableIndexingException: conflict";
+        
+        verify(logger).logError(String.format(errmsg, 1));
+        verify(logger).logError(String.format(errmsg, 2));
+        verify(logger).logError(String.format(errmsg, 3));
+        verify(logger).logError(String.format(errmsg, 4));
+        verify(logger).logError(String.format(errmsg, 5));
+
+        verify(logger).logError("Error processing event for event DELETE_ALL_VERSIONS with " +
+                "parent ID pid: kbasesearchengine.events.exceptions." +
+                "RetriesExceededIndexingException: " +
+                "conflict");
+
+        final RetriableIndexingException retryexception =
+                new RetriableIndexingException(ErrorType.INDEXING_CONFLICT, "conflict");
+        verify(logger, times(5)).logError(argThat(new ThrowableMatcher(retryexception)));
+        verify(logger).logError(argThat(new ThrowableMatcher(
+                new RetriesExceededIndexingException(ErrorType.INDEXING_CONFLICT, "conflict"))));
     }
 
     @Test
@@ -787,22 +861,31 @@ public class IndexerWorkerTest {
                 .build();
         when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
         
-        try {
-            worker.processOneEvent(StatusEvent.getBuilder(
-                    storageObjectType,
-                    Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
-                    .withNullableAccessGroupID(1)
-                    .withNullableObjectID("2")
-                    .withNullableVersion(3)
-                    .withNullableisPublic(false)
-                    .build());
-            fail("expected exception");
-        } catch (Exception got) {
-            TestCommon.assertExceptionCorrect(
-                    got, new UnprocessableEventIndexingException(ErrorType.LOCATION_ERROR,
-                            "Expected location array for location transform for " +
-                            "code:1/2/3:subfoo/an id2, got empty array"));
-        }
+        final StatusEventProcessingState res = worker.processEvent(
+                new ChildStatusEvent(StatusEvent.getBuilder(
+                        storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID(1)
+                        .withNullableObjectID("2")
+                        .withNullableVersion(3)
+                        .withNullableisPublic(false)
+                        .build(),
+                        new StatusEventID("pid")));
+        assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
+        
+        verify(logger).logError("Error processing event for event NEW_VERSION with parent ID " +
+                "pid: kbasesearchengine.events.exceptions." +
+                "UnprocessableEventIndexingException: " +
+                "Expected location array for location transform for " +
+                "code:1/2/3:subfoo/an id2, got empty array");
+        
+        verify(logger).logError(argThat(new ThrowableMatcher(
+                new UnprocessableEventIndexingException(ErrorType.LOCATION_ERROR,
+                        "Expected location array for location transform for " +
+                                "code:1/2/3:subfoo/an id2, got empty array"))));
+        
+        verify(idxStore, never()).indexObjects(
+                any(), any(), any(), any(), any(), any(), anyBoolean());
+        
     }
     
     @Test
@@ -879,21 +962,28 @@ public class IndexerWorkerTest {
         // before the data documents, so race conditions can cause a problem
         when(idxStore.getObjectsByIds(set(dependencyGUID))).thenReturn(Collections.emptyList());
         
-        try {
-            worker.processOneEvent(StatusEvent.getBuilder(
-                    storageObjectType,
-                    Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
-                    .withNullableAccessGroupID(1)
-                    .withNullableObjectID("2")
-                    .withNullableVersion(3)
-                    .withNullableisPublic(false)
-                    .build());
-            fail("expected exception");
-        } catch (Exception got) {
-            TestCommon.assertExceptionCorrect(
-                    got, new UnprocessableEventIndexingException(ErrorType.GUID_NOT_FOUND,
-                            "GUID code:4/5/6 not found"));
-        }
+        final StatusEventProcessingState res = worker.processEvent(
+                new ChildStatusEvent(StatusEvent.getBuilder(
+                        storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID(1)
+                        .withNullableObjectID("2")
+                        .withNullableVersion(3)
+                        .withNullableisPublic(false)
+                        .build(),
+                        new StatusEventID("pid")));
+        assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
+        
+        verify(logger).logError("Error processing event for event NEW_VERSION with parent ID " +
+                "pid: kbasesearchengine.events.exceptions." +
+                "UnprocessableEventIndexingException: " +
+                "GUID code:4/5/6 not found");
+        
+        verify(logger).logError(argThat(new ThrowableMatcher(
+                new UnprocessableEventIndexingException(ErrorType.GUID_NOT_FOUND,
+                        "GUID code:4/5/6 not found"))));
+        
+        verify(idxStore, never()).indexObjects(
+                any(), any(), any(), any(), any(), any(), anyBoolean());
     }
     
 }
