@@ -986,4 +986,45 @@ public class IndexerWorkerTest {
                 any(), any(), any(), any(), any(), any(), anyBoolean());
     }
     
+    @Test
+    public void skipEvent() throws Exception {
+        /* tests the handling of events where no search specifications are available. */
+        
+        final EventHandler ws = mock(EventHandler.class);
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final IndexingStorage idxStore = mock(IndexingStorage.class);
+        final TypeStorage typeStore = mock(TypeStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        
+        final Path tempDir = Paths.get(TestCommon.getTempDir()).toAbsolutePath()
+                .resolve("IndexerWorkerTest");
+        deleteRecursively(tempDir);
+        
+        when(ws.getStorageCode()).thenReturn("code");
+        
+        final StorageObjectType storageObjectType = StorageObjectType
+                .fromNullableVersion("code", "KBaseGenome.Genome", 3);
+        
+        final IndexerWorker worker = new IndexerWorker(
+                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
+                null, 1000);
+        
+        when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set());
+        
+        final StatusEventProcessingState res = worker.processEvent(
+                new ChildStatusEvent(StatusEvent.getBuilder(
+                        storageObjectType, Instant.ofEpochMilli(10000),
+                                StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID(1)
+                        .withNullableObjectID("2")
+                        .withNullableVersion(3)
+                        .withNullableisPublic(false)
+                        .build(),
+                        new StatusEventID("pid")));
+        assertThat("incorrect state", res, is(StatusEventProcessingState.UNINDX));
+        
+        verify(logger).logInfo(
+                "[Indexer] skipping NEW_VERSION, code:KBaseGenome.Genome-3, code:1/2/3");
+    }
+    
 }
