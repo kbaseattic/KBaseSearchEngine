@@ -856,6 +856,10 @@ public class MongoDBStatusEventStorageTest {
                         .append("name", "status_1_time_1")
                         .append("ns", "test_mongostorage.searchEvents"),
                 new Document()
+                        .append("key", new Document("status", 1).append("sttime", 1))
+                        .append("name", "status_1_sttime_1")
+                        .append("ns", "test_mongostorage.searchEvents"),
+                new Document()
                         .append("key", new Document("_id", 1))
                         .append("name", "_id_")
                         .append("ns", "test_mongostorage.searchEvents")
