@@ -319,7 +319,7 @@ public class IndexerWorker implements Stoppable {
     private StatusEventProcessingState processEvent(final StatusEventWithId ev)
             throws InterruptedException, FatalIndexingException {
         final Optional<StorageObjectType> type = ev.getEvent().getStorageObjectType();
-        if (type.isPresent() && !isStorageTypeSupported(ev)) {
+        if (type.isPresent() && !isStorageTypeSupported(type.get())) {
             logger.logInfo("[Indexer] skipping " + ev.getEvent().getEventType() + ", " + 
                     toLogString(type) + ev.getEvent().toGUID());
             return StatusEventProcessingState.UNINDX;
@@ -335,6 +335,10 @@ public class IndexerWorker implements Stoppable {
         }
         logger.logInfo("[Indexer]   (total time: " + (System.currentTimeMillis() - time) + "ms.)");
         return StatusEventProcessingState.INDX;
+    }
+    
+    private boolean isStorageTypeSupported(final StorageObjectType storageObjectType) {
+        return !typeStorage.listObjectTypeParsingRules(storageObjectType).isEmpty();
     }
     
     private ChildStatusEvent getNextSubEvent(Iterator<ChildStatusEvent> iter)
@@ -458,20 +462,6 @@ public class IndexerWorker implements Stoppable {
             throw new RetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
         } catch (IndexingConflictException e) {
             throw new RetriableIndexingException(ErrorType.INDEXING_CONFLICT, e.getMessage(), e);
-        }
-    }
-
-    // returns false if a non-fatal error prevents retrieving the info
-    private boolean isStorageTypeSupported(final StatusEventWithId ev)
-            throws InterruptedException, FatalIndexingException {
-        try {
-            return retrier.retryFunc(
-                    t -> !typeStorage.listObjectTypeParsingRules(
-                            ev.getEvent().getStorageObjectType().get()).isEmpty(),
-                    ev, ev);
-        } catch (IndexingException e) {
-            handleException("Error retrieving type info", ev, e);
-            return false;
         }
     }
 
