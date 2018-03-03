@@ -129,7 +129,7 @@ public class AccessGroupEventQueue {
         } else {
             processing = e;
         }
-        containedEvents.add(e.getId());
+        containedEvents.add(e.getID());
     }
     
     /** Add a new {@link StatusEventProcessingState#UNPROC} event to the queue.
@@ -147,9 +147,9 @@ public class AccessGroupEventQueue {
         }
         boolean loaded = false;
         if (ACCESS_GROUP_EVENTS.contains(event.getEvent().getEventType())) {
-            if (!containedEvents.contains(event.getId())) {
+            if (!containedEvents.contains(event.getID())) {
                 accessGroupQueue.add(event);
-                containedEvents.add(event.getId());
+                containedEvents.add(event.getID());
                 loaded = true;
             }
         } else {
@@ -250,8 +250,8 @@ public class AccessGroupEventQueue {
     public void setProcessingComplete(final StoredStatusEvent event) {
         Utils.nonNull(event, "event");
         if (processing != null) {
-            if (event.getId().equals(processing.getId())) {
-                containedEvents.remove(processing.getId());
+            if (event.getID().equals(processing.getID())) {
+                containedEvents.remove(processing.getID());
                 processing = null;
                 size--;
                 for (final ObjectEventQueue oq: objectQueues.values()) {

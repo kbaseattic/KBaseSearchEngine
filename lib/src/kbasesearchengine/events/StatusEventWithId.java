@@ -15,7 +15,7 @@ public interface StatusEventWithId {
     /** Get the id of the status event or the id of the status event's parent event.
      * @return the id.
      */
-    StatusEventID getId();
+    StatusEventID getID();
     
     /** Get whether the ID is for a parent event or the event itself.
      * @return true if the ID is for the parent event, false otherwise.

@@ -35,7 +35,7 @@ public class StoredStatusEventTest {
         final StoredStatusEvent sei = StoredStatusEvent.getBuilder(se, new StatusEventID("bar"),
                 StatusEventProcessingState.UNPROC)
                 .build();
-        assertThat("incorrect id", sei.getId(), is(new StatusEventID("bar")));
+        assertThat("incorrect id", sei.getID(), is(new StatusEventID("bar")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build()));
         assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));
@@ -70,7 +70,7 @@ public class StoredStatusEventTest {
                 .withNullableStoredBy("   \t  \n ")
                 .withNullableStoreTime(null)
                 .build();
-        assertThat("incorrect id", sei.getId(), is(new StatusEventID("bar")));
+        assertThat("incorrect id", sei.getID(), is(new StatusEventID("bar")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build()));
         assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));
@@ -105,7 +105,7 @@ public class StoredStatusEventTest {
                 StatusEventProcessingState.UNPROC)
                 .withNullableUpdate(Instant.ofEpochMilli(20000), updater)
                 .build();
-        assertThat("incorrect id", sei.getId(), is(new StatusEventID("bar")));
+        assertThat("incorrect id", sei.getID(), is(new StatusEventID("bar")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build()));
         assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));
@@ -138,7 +138,7 @@ public class StoredStatusEventTest {
                 .withNullableUpdate(Instant.ofEpochMilli(10000), "foo")
                 .withNullableUpdate(Instant.ofEpochMilli(20000), "bar")
                 .build();
-        assertThat("incorrect id", sei.getId(), is(new StatusEventID("baz")));
+        assertThat("incorrect id", sei.getID(), is(new StatusEventID("baz")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build()));
         assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));
@@ -171,7 +171,7 @@ public class StoredStatusEventTest {
                 .withNullableUpdate(Instant.ofEpochMilli(10000), "foo")
                 .withNullableUpdate(Instant.ofEpochMilli(20000), null)
                 .build();
-        assertThat("incorrect id", sei.getId(), is(new StatusEventID("baz")));
+        assertThat("incorrect id", sei.getID(), is(new StatusEventID("baz")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build()));
         assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));
@@ -207,7 +207,7 @@ public class StoredStatusEventTest {
                 .withNullableStoredBy("my man")
                 .withNullableStoreTime(Instant.ofEpochMilli(30000))
                 .build();
-        assertThat("incorrect id", sei.getId(), is(new StatusEventID("foo")));
+        assertThat("incorrect id", sei.getID(), is(new StatusEventID("foo")));
         assertThat("incorrect event", sei.getEvent(), is(StatusEvent.getBuilder(
                 "foo", Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS).build()));
         assertThat("incorrect state", sei.getState(), is(StatusEventProcessingState.UNPROC));

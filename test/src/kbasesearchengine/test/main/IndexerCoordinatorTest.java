@@ -224,7 +224,7 @@ public class IndexerCoordinatorTest {
             final StoredStatusEvent sse,
             final StatusEventProcessingState state,
             final String updater) {
-        return StoredStatusEvent.getBuilder(sse.getEvent(), sse.getId(), state)
+        return StoredStatusEvent.getBuilder(sse.getEvent(), sse.getID(), state)
                 .withNullableUpdate(
                         Instant.now(), updater == null ? sse.getUpdater().orNull() : updater)
                 .build();

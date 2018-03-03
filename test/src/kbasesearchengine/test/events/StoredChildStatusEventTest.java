@@ -66,6 +66,27 @@ public class StoredChildStatusEventTest {
                 "Child events may only have terminal states"));
     }
     
+    @Test
+    public void isAllowedState() {
+        assertThat("incorrect result", StoredChildStatusEvent.isAllowedState(
+                StatusEventProcessingState.UNPROC), is(false));
+        
+        assertThat("incorrect result", StoredChildStatusEvent.isAllowedState(
+                StatusEventProcessingState.READY), is(false));
+        
+        assertThat("incorrect result", StoredChildStatusEvent.isAllowedState(
+                StatusEventProcessingState.PROC), is(false));
+        
+        assertThat("incorrect result", StoredChildStatusEvent.isAllowedState(
+                StatusEventProcessingState.INDX), is(true));
+        
+        assertThat("incorrect result", StoredChildStatusEvent.isAllowedState(
+                StatusEventProcessingState.UNINDX), is(true));
+        
+        assertThat("incorrect result", StoredChildStatusEvent.isAllowedState(
+                StatusEventProcessingState.FAIL), is(true));
+    }
+    
     private void failConstruct(
             final ChildStatusEvent event,
             final StatusEventProcessingState state,

@@ -40,7 +40,7 @@ public class StoredChildStatusEvent {
         Utils.nonNull(state, "state");
         Utils.nonNull(id, "id");
         Utils.nonNull(storeTime, "storeTime");
-        if (!ALLOWED_STATES.contains(state)) {
+        if (!isAllowedState(state)) {
             throw new IllegalArgumentException("Child events may only have terminal states");
         }
         this.childEvent = childEvent;
@@ -49,6 +49,10 @@ public class StoredChildStatusEvent {
         this.storeTime = storeTime;
     }
 
+    public static boolean isAllowedState(final StatusEventProcessingState state) {
+        return ALLOWED_STATES.contains(state);
+    }
+    
     /** Get the child event.
      * @return the child event.
      */

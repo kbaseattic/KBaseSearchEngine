@@ -334,7 +334,7 @@ public class IndexerWorkerIntegrationTest {
                     .withNullableVersion(i)
                     .withNullableisPublic(ev.isPublic().get())
                     .build(),
-                    evid.getId(),
+                    evid.getID(),
                     StatusEventProcessingState.UNPROC)
                     .build();
             worker.processEvent(ev2);
