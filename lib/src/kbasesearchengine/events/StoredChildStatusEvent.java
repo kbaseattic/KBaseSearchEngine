@@ -19,7 +19,6 @@ public class StoredChildStatusEvent {
             new HashSet<>(Arrays.asList(StatusEventProcessingState.FAIL,
                     StatusEventProcessingState.INDX, StatusEventProcessingState.UNINDX));
 
-    // this is on the edge of needing a builder, but all the fields are required, so...
     private final ChildStatusEvent childEvent;
     private final StatusEventProcessingState state;
     private final StatusEventID id;
@@ -31,24 +30,23 @@ public class StoredChildStatusEvent {
      * @param id 
      * @param storeTime
      */
-    public StoredChildStatusEvent(
+    private StoredChildStatusEvent(
             final ChildStatusEvent childEvent,
             final StatusEventProcessingState state,
             final StatusEventID id,
             final Instant storeTime) {
-        Utils.nonNull(childEvent, "childEvent");
-        Utils.nonNull(state, "state");
-        Utils.nonNull(id, "id");
-        Utils.nonNull(storeTime, "storeTime");
-        if (!isAllowedState(state)) {
-            throw new IllegalArgumentException("Child events may only have terminal states");
-        }
         this.childEvent = childEvent;
         this.state = state;
         this.id = id;
         this.storeTime = storeTime;
     }
 
+    /** Check if an event processing state is allowed as a state for a child event. Child
+     * events can only possess terminal states - one of {@link StatusEventProcessingState#INDX},
+     * {@link StatusEventProcessingState#UNINDX}, or {@link StatusEventProcessingState#FAIL}.
+     * @param state the state to check.
+     * @return true if the state is allowed.
+     */
     public static boolean isAllowedState(final StatusEventProcessingState state) {
         return ALLOWED_STATES.contains(state);
     }
@@ -132,5 +130,65 @@ public class StoredChildStatusEvent {
             return false;
         }
         return true;
+    }
+    
+    /** Get a builder for a {@link StoredChildStatusEvent}.
+     * @param childEvent the child event.
+     * @param id the id of the child event in the storage system.
+     * @param storeTime the time the event was stored.
+     * @return a new builder.
+     */
+    public static Builder getBuilder(
+            final ChildStatusEvent childEvent,
+            final StatusEventID id,
+            final Instant storeTime) {
+        return new Builder(childEvent, id, storeTime);
+    }
+    
+    /** A builder for a {@link StoredChildStatusEvent}.
+     * @author gaprice@lbl.gov
+     *
+     */
+    public static class Builder {
+        
+        private final ChildStatusEvent childEvent;
+        private final StatusEventID id;
+        private final Instant storeTime;
+        private StatusEventProcessingState state = StatusEventProcessingState.FAIL;
+        
+        private Builder(
+                final ChildStatusEvent childEvent,
+                final StatusEventID id,
+                final Instant storeTime) {
+            Utils.nonNull(childEvent, "childEvent");
+            Utils.nonNull(id, "id");
+            Utils.nonNull(storeTime, "storeTime");
+            this.childEvent = childEvent;
+            this.id = id;
+            this.storeTime = storeTime;
+        }
+        
+        /** Change the state of the child event. By default the event state is set as 
+         * {@link StatusEventProcessingState#FAIL}. Allowed states are
+         * {@link StatusEventProcessingState#INDX}, {@link StatusEventProcessingState#UNINDX},
+         * and {@link StatusEventProcessingState#FAIL}.
+         * @param state the new state.
+         * @return this builder.
+         */
+        public Builder withState(final StatusEventProcessingState state) {
+            Utils.nonNull(state, "state");
+            if (!isAllowedState(state)) {
+                throw new IllegalArgumentException("Child events may only have terminal states");
+            }
+            this.state = state;
+            return this;
+        }
+        
+        /** Build the stored child event.
+         * @return the event.
+         */
+        public StoredChildStatusEvent build() {
+            return new StoredChildStatusEvent(childEvent, state, id, storeTime);
+        }
     }
 }

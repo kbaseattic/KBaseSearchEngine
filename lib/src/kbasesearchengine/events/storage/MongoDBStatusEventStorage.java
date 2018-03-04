@@ -236,7 +236,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 newEvent.getEvent(), StatusEventProcessingState.FAIL, now)
                 .append(FLD_PARENT_ID, newEvent.getID().getId());
         final StatusEventID newID = insertOne(COL_CHILD, doc);
-        return new StoredChildStatusEvent(newEvent, StatusEventProcessingState.FAIL, newID, now);
+        return StoredChildStatusEvent.getBuilder(newEvent, newID, now).build();
     }
 
     private StatusEventID insertOne(final String colEvent, final Document doc)
@@ -289,13 +289,14 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         if (event == null) {
             return Optional.absent();
         }
-        return Optional.of(new StoredChildStatusEvent(
+        return Optional.of(StoredChildStatusEvent.getBuilder(
                 new ChildStatusEvent(
                         toStatusEvent(event),
                         new StatusEventID(event.getString(FLD_PARENT_ID))),
-                StatusEventProcessingState.valueOf(event.getString(FLD_STATUS)),
                 new StatusEventID(event.getObjectId("_id").toString()),
-                event.getDate(FLD_STORED_TIME).toInstant()));
+                event.getDate(FLD_STORED_TIME).toInstant())
+                .withState(StatusEventProcessingState.valueOf(event.getString(FLD_STATUS)))
+                .build());
     }
 
     private Document getEventDoc(final StatusEventID id, final String colEvent)

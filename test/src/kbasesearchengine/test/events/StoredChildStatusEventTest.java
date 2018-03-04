@@ -25,15 +25,14 @@ public class StoredChildStatusEventTest {
     }
     
     @Test
-    public void construct() {
-        final StoredChildStatusEvent scse = new StoredChildStatusEvent(
+    public void constructMinimal() {
+        final StoredChildStatusEvent scse = StoredChildStatusEvent.getBuilder(
                 new ChildStatusEvent(
                         StatusEvent.getBuilder("Code", Instant.ofEpochMilli(20000L),
                                 StatusEventType.DELETE_ACCESS_GROUP).build(),
                         new StatusEventID("parent id")),
-                StatusEventProcessingState.FAIL,
                 new StatusEventID("my id"),
-                Instant.ofEpochMilli(10000));
+                Instant.ofEpochMilli(10000)).build();
         
         assertThat("incorrect event", scse.getChildEvent(), is(new ChildStatusEvent(
                         StatusEvent.getBuilder("Code", Instant.ofEpochMilli(20000L),
@@ -45,27 +44,26 @@ public class StoredChildStatusEventTest {
     }
     
     @Test
-    public void constructFail() {
-        final ChildStatusEvent c = new ChildStatusEvent(
-                StatusEvent.getBuilder("Code", Instant.ofEpochMilli(20000L),
-                        StatusEventType.DELETE_ACCESS_GROUP).build(),
-                new StatusEventID("parent id"));
-        final StatusEventProcessingState s = StatusEventProcessingState.INDX;
-        final StatusEventID i = new StatusEventID("foo");
-        final Instant t = Instant.ofEpochMilli(100000);
-        failConstruct(null, s, i, t, new NullPointerException("childEvent"));
-        failConstruct(c, null, i, t, new NullPointerException("state"));
-        failConstruct(c, s, null, t, new NullPointerException("id"));
-        failConstruct(c, s, i, null, new NullPointerException("storeTime"));
+    public void constructMaximal() {
+        final StoredChildStatusEvent scse = StoredChildStatusEvent.getBuilder(
+                new ChildStatusEvent(
+                        StatusEvent.getBuilder("Code", Instant.ofEpochMilli(20000L),
+                                StatusEventType.DELETE_ACCESS_GROUP).build(),
+                        new StatusEventID("parent id")),
+                new StatusEventID("my id"),
+                Instant.ofEpochMilli(10000))
+                .withState(StatusEventProcessingState.INDX)
+                .build();
         
-        failConstruct(c, StatusEventProcessingState.UNPROC, i, t, new IllegalArgumentException(
-                "Child events may only have terminal states"));
-        failConstruct(c, StatusEventProcessingState.READY, i, t, new IllegalArgumentException(
-                "Child events may only have terminal states"));
-        failConstruct(c, StatusEventProcessingState.PROC, i, t, new IllegalArgumentException(
-                "Child events may only have terminal states"));
+        assertThat("incorrect event", scse.getChildEvent(), is(new ChildStatusEvent(
+                        StatusEvent.getBuilder("Code", Instant.ofEpochMilli(20000L),
+                                StatusEventType.DELETE_ACCESS_GROUP).build(),
+                        new StatusEventID("parent id"))));
+        assertThat("incorrect state", scse.getState(), is(StatusEventProcessingState.INDX));
+        assertThat("incorrect id", scse.getID(), is(new StatusEventID("my id")));
+        assertThat("incorrect time", scse.getStoreTime(), is(Instant.ofEpochMilli(10000)));
     }
-    
+
     @Test
     public void isAllowedState() {
         assertThat("incorrect result", StoredChildStatusEvent.isAllowedState(
@@ -87,14 +85,52 @@ public class StoredChildStatusEventTest {
                 StatusEventProcessingState.FAIL), is(true));
     }
     
-    private void failConstruct(
+    @Test
+    public void startBuildFail() {
+        final ChildStatusEvent c = new ChildStatusEvent(
+                StatusEvent.getBuilder("Code", Instant.ofEpochMilli(20000L),
+                        StatusEventType.DELETE_ACCESS_GROUP).build(),
+                new StatusEventID("parent id"));
+        final StatusEventID i = new StatusEventID("foo");
+        final Instant t = Instant.ofEpochMilli(100000);
+        failStartBuild(null, i, t, new NullPointerException("childEvent"));
+        failStartBuild(c, null, t, new NullPointerException("id"));
+        failStartBuild(c, i, null, new NullPointerException("storeTime"));
+    }
+    
+    private void failStartBuild(
             final ChildStatusEvent event,
-            final StatusEventProcessingState state,
             final StatusEventID id,
             final Instant time,
             final Exception expected) {
         try {
-            new StoredChildStatusEvent(event, state, id, time);
+            StoredChildStatusEvent.getBuilder(event, id, time);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
+    
+    @Test
+    public void withStateFail() {
+        failWithState(null, new NullPointerException("state"));
+        failWithState(StatusEventProcessingState.UNPROC, new IllegalArgumentException(
+                "Child events may only have terminal states"));
+        failWithState(StatusEventProcessingState.READY, new IllegalArgumentException(
+                "Child events may only have terminal states"));
+        failWithState(StatusEventProcessingState.PROC, new IllegalArgumentException(
+                "Child events may only have terminal states"));
+    }
+    
+    private void failWithState(final StatusEventProcessingState state, final Exception expected) {
+        final ChildStatusEvent c = new ChildStatusEvent(
+                StatusEvent.getBuilder("Code", Instant.ofEpochMilli(20000L),
+                        StatusEventType.DELETE_ACCESS_GROUP).build(),
+                new StatusEventID("parent id"));
+        try {
+            StoredChildStatusEvent.getBuilder(
+                    c, new StatusEventID("foo"), Instant.ofEpochMilli(10000))
+                    .withState(state);
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
