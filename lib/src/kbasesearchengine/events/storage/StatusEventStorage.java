@@ -42,13 +42,19 @@ public interface StatusEventStorage {
             String storedBy)
             throws FatalRetriableIndexingException;
     
-    /** Store a status event that is a child of another status event. Child status events are
-     * immutable once stored. Note that no checking is done on the validity of the parent event's
-     * ID.
+    /** Store a status event that resulted in an error and that is a child of another status event.
+     * Child status events are immutable once stored. Note that no checking is done on the
+     * validity of the parent event's ID.
      * @param newEvent the child event to store.
+     * @param errorCode a 20 character or less string identifying the error type.
+     * @param error the error.
      * @return the stored child event.
      */
-    StoredChildStatusEvent store(ChildStatusEvent newEvent) throws FatalRetriableIndexingException;
+    StoredChildStatusEvent store(
+            ChildStatusEvent newEvent,
+            final String errorCode,
+            final Throwable error)
+            throws FatalRetriableIndexingException;
 
     /** Get an event by its ID.
      * @param id the id.
