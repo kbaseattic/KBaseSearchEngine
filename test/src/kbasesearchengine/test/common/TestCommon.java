@@ -175,8 +175,8 @@ public class TestCommon {
     }
     
     public static void assertExceptionCorrect(
-            final Exception got,
-            final Exception expected) {
+            final Throwable got,
+            final Throwable expected) {
         final StringWriter sw = new StringWriter();
         got.printStackTrace(new PrintWriter(sw));
         assertThat("incorrect exception. trace:\n" +

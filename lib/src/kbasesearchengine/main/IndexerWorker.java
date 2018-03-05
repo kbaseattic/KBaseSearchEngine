@@ -316,10 +316,20 @@ public class IndexerWorker implements Stoppable {
         }
     }
 
-    private StatusEventProcessingState processEvent(final StatusEventWithId ev)
+    /** Process an event.
+     * Events which call for indexing new data for which a set of parsing rules is not present
+     * are skipped.
+     * Attempting to process expandable events via this method will result in a
+     * {@link StatusEventProcessingState#FAIL}.
+     * @param ev the event to process.
+     * @return the state of the completed event.
+     * @throws InterruptedException if the thread is interrupted.
+     * @throws FatalIndexingException if an indexing exception occurs that is unrecoverable.
+     */
+    public StatusEventProcessingState processEvent(final StatusEventWithId ev)
             throws InterruptedException, FatalIndexingException {
         final Optional<StorageObjectType> type = ev.getEvent().getStorageObjectType();
-        if (type.isPresent() && !isStorageTypeSupported(ev)) {
+        if (type.isPresent() && !isStorageTypeSupported(type.get())) {
             logger.logInfo("[Indexer] skipping " + ev.getEvent().getEventType() + ", " + 
                     toLogString(type) + ev.getEvent().toGUID());
             return StatusEventProcessingState.UNINDX;
@@ -328,13 +338,17 @@ public class IndexerWorker implements Stoppable {
                 toLogString(type) + ev.getEvent().toGUID() + "...");
         final long time = System.currentTimeMillis();
         try {
-            retrier.retryCons(e -> processOneEvent(e), ev.getEvent(), ev);
+            retrier.retryCons(e -> processEvent(e), ev.getEvent(), ev);
         } catch (IndexingException e) {
             handleException("Error processing event", ev, e);
             return StatusEventProcessingState.FAIL;
         }
         logger.logInfo("[Indexer]   (total time: " + (System.currentTimeMillis() - time) + "ms.)");
         return StatusEventProcessingState.INDX;
+    }
+    
+    private boolean isStorageTypeSupported(final StorageObjectType storageObjectType) {
+        return !typeStorage.listObjectTypeParsingRules(storageObjectType).isEmpty();
     }
     
     private ChildStatusEvent getNextSubEvent(Iterator<ChildStatusEvent> iter)
@@ -399,7 +413,7 @@ public class IndexerWorker implements Stoppable {
         return eventHandlers.get(storageCode);
     }
 
-    public void processOneEvent(final StatusEvent ev)
+    private void processEvent(final StatusEvent ev)
             throws IndexingException, InterruptedException, RetriableIndexingException {
         try {
             switch (ev.getEventType()) {
@@ -458,20 +472,6 @@ public class IndexerWorker implements Stoppable {
             throw new RetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
         } catch (IndexingConflictException e) {
             throw new RetriableIndexingException(ErrorType.INDEXING_CONFLICT, e.getMessage(), e);
-        }
-    }
-
-    // returns false if a non-fatal error prevents retrieving the info
-    private boolean isStorageTypeSupported(final StatusEventWithId ev)
-            throws InterruptedException, FatalIndexingException {
-        try {
-            return retrier.retryFunc(
-                    t -> !typeStorage.listObjectTypeParsingRules(
-                            ev.getEvent().getStorageObjectType().get()).isEmpty(),
-                    ev, ev);
-        } catch (IndexingException e) {
-            handleException("Error retrieving type info", ev, e);
-            return false;
         }
     }
 
