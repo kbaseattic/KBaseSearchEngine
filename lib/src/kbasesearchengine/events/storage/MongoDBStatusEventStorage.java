@@ -373,7 +373,11 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 .withNullableUpdate(updateTime == null ? null : updateTime.toInstant(),
                         event.getString(FLD_UPDATER))
                 .withNullableStoredBy(event.getString(FLD_STORED_BY))
-                .withNullableStoreTime(storeTime == null ? null : storeTime.toInstant());
+                .withNullableStoreTime(storeTime == null ? null : storeTime.toInstant())
+                .withNullableError(
+                        event.getString(FLD_ERR_CODE),
+                        event.getString(FLD_ERR_MSG),
+                        event.getString(FLD_ERR_TRACE));
         for (final String code: workerCodes) {
             b2.withWorkerCode(code);
         }
@@ -434,16 +438,41 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
             final StatusEventProcessingState oldState,
             final StatusEventProcessingState newState)
             throws FatalRetriableIndexingException {
+        return setProcessingState(id, oldState, newState, null, null);
+    }
+    
+    @Override
+    public boolean setProcessingState(
+            final StatusEventID id,
+            final StatusEventProcessingState oldState,
+            final String errorCode,
+            final Throwable error)
+            throws FatalRetriableIndexingException {
+        Utils.nonNull(error, "error");
+        return setProcessingState(id, oldState, StatusEventProcessingState.FAIL, errorCode, error);
+    }
+
+    private boolean setProcessingState(
+            final StatusEventID id,
+            final StatusEventProcessingState oldState,
+            final StatusEventProcessingState newState,
+            final String errorCode,
+            final Throwable error)
+            throws FatalRetriableIndexingException {
         Utils.nonNull(id, "id");
         Utils.nonNull(newState, "newState");
+        final Document update = new Document(FLD_STATUS, newState.toString())
+                .append(FLD_UPDATE_TIME, Date.from(clock.instant()));
+        if (error != null) {
+            addError(update, errorCode, error);
+        }
         final Document query = new Document("_id", new ObjectId(id.getId()));
         if (oldState != null) {
             query.append(FLD_STATUS, oldState.toString());
         }
         try {
             final UpdateResult res = db.getCollection(COL_EVENT).updateOne(query, 
-                    new Document("$set", new Document(FLD_STATUS, newState.toString())
-                            .append(FLD_UPDATE_TIME, Date.from(clock.instant()))));
+                    new Document("$set", update));
             return res.getMatchedCount() == 1;
         } catch (MongoException e) {
             throw new FatalRetriableIndexingException(
