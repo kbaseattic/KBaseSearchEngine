@@ -311,4 +311,34 @@ public class EventQueueTest {
             TestCommon.assertExceptionCorrect(got, expected);
         }
     }
+    
+    @Test
+    public void ignoreLoad() {
+        final EventQueue q = new EventQueue();
+        
+        final StoredStatusEvent sse = unproc(
+                1, "foo", Instant.ofEpochMilli(10000), "1", StatusEventType.NEW_VERSION);
+        q.load(sse);
+        
+        assertQueueState(q, set(), set(), 1);
+        
+        final StoredStatusEvent sse2 = unproc(
+                1, "foo", Instant.ofEpochMilli(10000), "1", StatusEventType.DELETE_ALL_VERSIONS);
+        
+        q.load(sse2);
+        assertQueueState(q, set(), set(), 1);
+        
+        q.moveToReady();
+        assertQueueState(q, set(sse), set(), 1);
+        q.moveReadyToProcessing();
+        q.setProcessingComplete(sse);
+        
+        assertEmpty(q);
+        
+        q.load(sse2);
+        assertQueueState(q, set(), set(), 1);
+        
+        q.moveToReady();
+        assertQueueState(q, set(sse2), set(), 1);
+    }
 }

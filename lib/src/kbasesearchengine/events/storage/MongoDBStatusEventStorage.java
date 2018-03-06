@@ -31,6 +31,7 @@ import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.StatusEvent.Builder;
+import kbasesearchengine.events.exceptions.ErrorType;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.tools.Utils;
@@ -220,7 +221,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
             db.getCollection(COL_EVENT).insertOne(doc);
         } catch (MongoException e) {
             throw new FatalRetriableIndexingException(
-                    "Failed event storage: " + e.getMessage(), e);
+                    ErrorType.OTHER, "Failed event storage: " + e.getMessage(), e);
         }
         final StoredStatusEvent.Builder b = StoredStatusEvent.getBuilder(
                 newEvent, new StatusEventID(doc.getObjectId("_id").toString()), state)
@@ -242,7 +243,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                     new Document("_id", new ObjectId(id.getId()))).first();
         } catch (MongoException e) {
             throw new FatalRetriableIndexingException(
-                    "Failed getting event: " + e.getMessage(), e);
+                    ErrorType.OTHER, "Failed getting event: " + e.getMessage(), e);
         }
         if (event == null) {
             return Optional.absent();
@@ -310,7 +311,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
             }
         } catch (MongoException e) {
             throw new FatalRetriableIndexingException(
-                    "Failed getting events: " + e.getMessage(), e);
+                    ErrorType.OTHER, "Failed getting events: " + e.getMessage(), e);
         }
         return ret;
     }
@@ -334,7 +335,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
             return res.getMatchedCount() == 1;
         } catch (MongoException e) {
             throw new FatalRetriableIndexingException(
-                    "Failed setting event state: " + e.getMessage(), e);
+                    ErrorType.OTHER, "Failed setting event state: " + e.getMessage(), e);
         }
     }
 
@@ -376,7 +377,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                              .returnDocument(ReturnDocument.AFTER));
         } catch (MongoException e) {
             throw new FatalRetriableIndexingException(
-                    "Failed setting event state: " + e.getMessage(), e);
+                    ErrorType.OTHER, "Failed setting event state: " + e.getMessage(), e);
         }
         if (ret == null) {
             return Optional.absent();

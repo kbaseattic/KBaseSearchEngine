@@ -182,7 +182,7 @@ public class IndexerIntegrationTest {
         File tempDir = tempDirPath.resolve("WorkerTemp").toFile();
         tempDir.mkdirs();
         worker = new IndexerWorker("test", Arrays.asList(weh), storage, indexStorage,
-                ss, tempDir, logger, null);
+                ss, tempDir, logger, null, 1000);
         System.out.println("Starting indexer worker");
         worker.startIndexer();
         System.out.println("Creating indexer coordinator");

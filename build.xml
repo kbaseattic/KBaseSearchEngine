@@ -59,7 +59,7 @@
     <include name="jcommander/jcommander-1.48.jar"/>
     <include name="snakeyaml/snakeyaml-1.18.jar"/>
     <include name="equalsverifier/equalsverifier-2.2.2.jar"/>
-    <include name="kbase/auth2/kbase-auth2test-0.2.2.jar"/>
+    <include name="kbase/auth2/kbase-auth2test-0.2.3.jar"/>
     <!-- mockito and dependencies -->
     <include name="mockito/mockito-core-2.7.10.jar"/>
     <include name="bytebuddy/byte-buddy-1.6.8.jar"/>
@@ -175,17 +175,20 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <test name="kbasesearchengine.test.integration.IndexerIntegrationTest"/>
         <test name="kbasesearchengine.test.integration.IndexerWorkerIntegrationTest"/>
         <test name="kbasesearchengine.test.integration.SearchAPIIntegrationTest"/>
+        <test name="kbasesearchengine.test.main.GitInfoTest"/>
         <test name="kbasesearchengine.test.main.IndexerCoordinatorTest"/>
         <test name="kbasesearchengine.test.main.IndexerWorkerTest"/>
         <test name="kbasesearchengine.test.main.NarrativeInfoDecoratorTest"/>
         <test name="kbasesearchengine.test.main.SearchMethodsTest"/>
         <test name="kbasesearchengine.test.main.SignalMonitorTest"/>
         <test name="kbasesearchengine.test.parse.IdMapperTest"/>
+        <test name="kbasesearchengine.test.parse.KeyWordParserTest"/>
         <test name="kbasesearchengine.test.parse.ObjectParserTest"/>
         <test name="kbasesearchengine.test.parse.SubObjectExtractorTest"/>
         <test name="kbasesearchengine.test.search.ElasticIndexingStorageTest"/>
         <test name="kbasesearchengine.test.search.MatchFilterTest"/>
         <test name="kbasesearchengine.test.search.ObjectDataTest"/>
+        <test name="kbasesearchengine.test.search.SortingRuleTest"/>
         <test name="kbasesearchengine.test.system.IndexingRulesTest"/>
         <test name="kbasesearchengine.test.system.ObjectTypeParsingRulesTest"/>
         <test name="kbasesearchengine.test.system.ParsingRulesSubtypeFirstComparatorTest"/>

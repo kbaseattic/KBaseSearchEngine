@@ -3,6 +3,7 @@ package kbasesearchengine.test.search;
 import static kbasesearchengine.test.common.TestCommon.set;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,6 +39,7 @@ import com.google.common.collect.ImmutableMap;
 import junit.framework.Assert;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
+import kbasesearchengine.events.exceptions.ErrorType;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.handler.SourceData;
@@ -57,7 +59,9 @@ import kbasesearchengine.search.MatchFilter.Builder;
 import kbasesearchengine.search.MatchValue;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.search.PostProcessing;
+import kbasesearchengine.search.SortingRule;
 import kbasesearchengine.search.FoundHits;
+import kbasesearchengine.search.IndexingConflictException;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
@@ -122,7 +126,7 @@ public class ElasticIndexingStorageTest {
                 try {
                     objList = indexStorage.getObjectsByIds(guids);
                 } catch (IOException e) {
-                    throw new FatalIndexingException(e.getMessage(), e);
+                    throw new FatalIndexingException(ErrorType.OTHER, e.getMessage(), e);
                 }
                 return objList.stream().collect(
                         Collectors.toMap(od -> od.getGUID(), Function.identity()));
@@ -150,7 +154,7 @@ public class ElasticIndexingStorageTest {
                     return indexStorage.getObjectsByIds(guids, pp).stream().collect(
                             Collectors.toMap(od -> od.getGUID(), od -> od.getType().get()));
                 } catch (IOException e) {
-                    throw new FatalIndexingException(e.getMessage(), e);
+                    throw new FatalIndexingException(ErrorType.OTHER, e.getMessage(), e);
                 }
             }
         };
@@ -183,8 +187,9 @@ public class ElasticIndexingStorageTest {
             final Instant timestamp,
             final String parentJsonValue,
             final boolean isPublic)
-            throws IOException, ObjectParseException, IndexingException, InterruptedException {
-        ParsedObject obj = KeywordParser.extractKeywords(rule.getGlobalObjectType(), json,
+            throws IOException, ObjectParseException, IndexingException, InterruptedException,
+                IndexingConflictException {
+        ParsedObject obj = KeywordParser.extractKeywords(id, rule.getGlobalObjectType(), json,
                 parentJsonValue, rule.getIndexingRules(), objLookup, null);
         final SourceData data = SourceData.getBuilder(new UObject(json), objectName, "creator")
                 .build();
@@ -323,7 +328,7 @@ public class ElasticIndexingStorageTest {
         System.out.println("*** start testGeneTree***");
         indexObject("Tree", 0, "genetree01", new GUID("WS:1/1/1"), "GeneTree.1");
         Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Tree"),
-                MatchFilter.getBuilder().withLookupInKey("type", "GeneTree").build(), 
+                MatchFilter.getBuilder().withLookupInKey("type", "GeneTree").build(),
                 null, AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, guids.size());
         ObjectData index = indexStorage.getObjectsByIds(guids).get(0);
@@ -338,7 +343,7 @@ public class ElasticIndexingStorageTest {
         System.out.println("*** start testSpeciesTree***");
         indexObject("Tree", 0, "speciestree01", new GUID("WS:1/1/1"), "SpeciesTree.1");
         Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Tree"),
-                MatchFilter.getBuilder().withLookupInKey("type", "SpeciesTree").build(), 
+                MatchFilter.getBuilder().withLookupInKey("type", "SpeciesTree").build(),
                 null, AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, guids.size());
         ObjectData index = indexStorage.getObjectsByIds(guids).get(0);
@@ -409,6 +414,22 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals(1, ids.size());
         id = ids.iterator().next();
         Assert.assertEquals(expectedGUID, id);
+    }
+
+    @Test
+    public void testMediaCompound() throws Exception {
+        System.out.println("*** start testMediaCompound***");
+        indexObject("MediaCompound", "media01", new GUID("WS:1/1/1"), "Media.1");
+        Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("MediaCompound"),
+                MatchFilter.getBuilder().withLookupInKey("name", "cpd00009").build(),
+                null, AccessFilter.create().withAdmin(true));
+        Assert.assertEquals(1, guids.size());
+        ObjectData index = indexStorage.getObjectsByIds(guids).get(0);
+        System.out.println("Indexed: " + index.getKeyProperties());
+        Assert.assertEquals("-50.0", "" + index.getKeyProperties().get("minFlux"));
+        Assert.assertEquals("50.0", "" + index.getKeyProperties().get("maxFlux"));
+        Assert.assertEquals("0.001", "" + index.getKeyProperties().get("concentration"));
+        System.out.println("*** end testMediaCompound***");
     }
 
     @Rule
@@ -1086,6 +1107,138 @@ public class ElasticIndexingStorageTest {
                 null,
                 AccessFilter.create().withAccessGroups(2000));
         assertThat("incorrect objects found", res, is(guids));
+    }
+
+    @Test
+    public void sort() throws Exception {
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Sort", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "my name", "creator")
+                        .withNullableMethod("my method")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/1/1"),
+                ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
+                false);
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Sort", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "a name", "creator")
+                        .withNullableMethod("a method")
+                        .build(),
+                Instant.ofEpochMilli(20000),
+                null,
+                new GUID("WS:1/2/1"),
+                ImmutableMap.of(new GUID("WS:1/2/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
+                false);
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Sort", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "zoo", "creator")
+                .withNullableMethod("zoo method")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/3/1"),
+                ImmutableMap.of(new GUID("WS:1/3/1"), new ParsedObject(
+                        "{\"whee\": \"in bruges\"}",
+                        ImmutableMap.of("whee", Arrays.asList("in bruges")))),
+                false);
+
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Sort", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "crumbs", "creator")
+                        .withNullableMethod("crummy method")
+                        .build(),
+                Instant.ofEpochMilli(20000),
+                null,
+                new GUID("WS:1/4/1"),
+                ImmutableMap.of(new GUID("WS:1/4/1"), new ParsedObject(
+                        "{\"whee\": \"in bruges\"}",
+                        ImmutableMap.of("whee", Arrays.asList("in bruges")))),
+                false);
+
+        final PostProcessing pp = new PostProcessing();
+        pp.objectData = true;
+
+        final List<ObjectData> ret = indexStorage.searchObjects(
+                Collections.emptyList(),
+                MatchFilter.getBuilder().build(),
+                Arrays.asList(SortingRule.getKeyPropertyBuilder("whee").build(),
+                        SortingRule.getStandardPropertyBuilder("provenance_method").build()),
+                AccessFilter.create().withAccessGroups(1),
+                null,
+                pp)
+                .objects;
+
+        final List<GUID> guids = ret.stream().map(od -> od.getGUID()).collect(Collectors.toList());
+
+        assertThat("incorrect sort order", guids, is(Arrays.asList(new GUID("WS:1/2/1"),
+                new GUID("WS:1/1/1"), new GUID("WS:1/4/1"), new GUID("WS:1/3/1"))));
+
+        final List<ObjectData> ret1 = indexStorage.searchObjects(
+                Collections.emptyList(),
+                MatchFilter.getBuilder().build(),
+                Arrays.asList(SortingRule.getKeyPropertyBuilder("whee")
+                                .withNullableIsAscending(false).build(),
+                        SortingRule.getStandardPropertyBuilder("provenance_method").build()),
+                AccessFilter.create().withAccessGroups(1),
+                null,
+                pp)
+                .objects;
+
+        final List<GUID> guids1 = ret1.stream().map(od -> od.getGUID())
+                .collect(Collectors.toList());
+
+        assertThat("incorrect sort order", guids1, is(Arrays.asList(new GUID("WS:1/4/1"),
+                new GUID("WS:1/3/1"), new GUID("WS:1/2/1"), new GUID("WS:1/1/1"))));
+    }
+
+    @Test
+    public void sortFail() {
+        try {
+            final PostProcessing pp = new PostProcessing();
+            pp.objectData = true;
+            indexStorage.searchObjects(
+                    Collections.emptyList(),
+                    MatchFilter.getBuilder().build(),
+                    Arrays.asList(SortingRule.getKeyPropertyBuilder("whee")
+                                    .withNullableIsAscending(false).build(),
+                            SortingRule.getStandardPropertyBuilder("bad key").build()),
+                    AccessFilter.create().withAccessGroups(1),
+                    null,
+                    pp);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, new IllegalArgumentException(
+                    "Unknown object property bad key"));
+        }
     }
 
     private void prepareTestMultiwordSearch(GUID guid1, GUID guid2, GUID guid3) throws Exception {
