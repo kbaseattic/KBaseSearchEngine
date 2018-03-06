@@ -419,7 +419,7 @@ public class ElasticIndexingStorageTest {
     @Test
     public void testMediaCompound() throws Exception {
         System.out.println("*** start testMediaCompound***");
-        indexObject("MediaCompound", "media01", new GUID("WS:1/1/1"), "Media.1");
+        indexObject("MediaCompound", 0, "media01", new GUID("WS:1/1/1"), "Media.1");
         Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("MediaCompound"),
                 MatchFilter.getBuilder().withLookupInKey("name", "cpd00009").build(),
                 null, AccessFilter.create().withAdmin(true));
