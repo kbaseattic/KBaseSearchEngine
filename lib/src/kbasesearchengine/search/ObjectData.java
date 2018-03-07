@@ -39,6 +39,29 @@ public class ObjectData {
     private final Set<String> sourceTags;
     private final Map<String, List<String>> highlight;
 
+    @Override
+    public String toString() {
+        return "ObjectData{" +
+                "guid=" + guid +
+                ", parentGuid=" + parentGuid +
+                ", objectName=" + objectName +
+                ", type=" + type +
+                ", creator=" + creator +
+                ", copier=" + copier +
+                ", module=" + module +
+                ", method=" + method +
+                ", commitHash=" + commitHash +
+                ", moduleVersion=" + moduleVersion +
+                ", md5=" + md5 +
+                ", timestamp=" + timestamp +
+                ", parentData=" + parentData +
+                ", data=" + data +
+                ", keyProps=" + keyProps +
+                ", sourceTags=" + sourceTags +
+                ", highlight=" + highlight +
+                '}';
+    }
+
     private ObjectData(
             final GUID guid,
             final String objectName,

@@ -134,6 +134,11 @@ public class WorkspaceEventHandler implements EventHandler {
         for (final String tag: tags) {
             b.withSourceTag(tag);
         }
+        GUID guid = guids.get(0);    // get the guid from the input list
+        if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
+            boolean isPublicFlag = isPublic((long) guid.getAccessGroupId());
+            b.withIsPublic(isPublicFlag);
+        }
         if (pa != null) {
             b.withNullableModule(pa.getService())
                     .withNullableMethod(pa.getMethod())
@@ -191,6 +196,21 @@ public class WorkspaceEventHandler implements EventHandler {
         } catch (JsonClientException e) {
             throw handleException(e);
         }
+    }
+
+    public boolean isPublic(final long workspaceID)
+            throws RetriableIndexingException, IndexingException {
+        boolean retVal = false;
+        Tuple9<Long, String, String, String, Long, String,
+                String, String, Map<String, String>> wsInfo = getWorkspaceInfoInternal(workspaceID);
+        String flag = wsInfo.getE7();
+        if (flag.equals("r")) {
+            retVal = true;
+        }
+        else if(flag.equals("n")) {
+            retVal = false;
+        }
+        return retVal;
     }
 
     /** Get the workspace information for a workspace from the workspace service to which this
