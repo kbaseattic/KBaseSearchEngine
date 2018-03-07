@@ -168,11 +168,11 @@ public class IndexerCoordinator implements Stoppable {
             try {
                 runOneCycle();
             } catch (InterruptedException | FatalIndexingException e) {
-                logError(ErrorType.FATAL, e);
+                logError(true, e);
                 executor.shutdown();
                 signalMonitor.signal();
             } catch (Throwable e) {
-                logError(ErrorType.UNEXPECTED, e);
+                logError(false, e);
             }
         }
     }
@@ -187,18 +187,9 @@ public class IndexerCoordinator implements Stoppable {
         executor.awaitTermination(millisToWait, TimeUnit.MILLISECONDS);
     }
     
-    private enum ErrorType {
-        FATAL, UNEXPECTED;
-    }
-    
-    private void logError(final ErrorType errtype, final Throwable e) {
-        final String msg;
-        if (ErrorType.FATAL.equals(errtype)) {
-            msg = "Fatal error in indexer, shutting down";
-        } else { // has to be UNEXPECTED
-            msg = "Unexpected error in indexer";
-        }
-        logError(msg, e);
+    private void logError(final boolean fatal, final Throwable e) {
+        logError(fatal ?
+                "Fatal error in indexer, shutting down" : "Unexpected error in indexer", e);
     }
 
     private void logError(final String msg, final Throwable e) {
