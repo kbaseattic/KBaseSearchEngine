@@ -432,6 +432,25 @@ public class ElasticIndexingStorageTest {
         System.out.println("*** end testMediaCompound***");
     }
 
+    @Test
+    public void testTaxon() throws Exception {
+        System.out.println("*** start testTaxon***");
+        indexObject("Taxon", 0, "taxon01", new GUID("WS:1/1/1"), "Taxon.1");
+        Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Taxon"),
+                MatchFilter.getBuilder().withLookupInKey("scientific_name", "Azorhizobium").build(),
+                null, AccessFilter.create().withAdmin(true));
+        Assert.assertEquals(1, guids.size());
+        ObjectData index = indexStorage.getObjectsByIds(guids).get(0);
+        System.out.println("Indexed: " + index.getKeyProperties());
+        final String lineage = "cellular organisms; Bacteria; Proteobacteria; Alphaproteobacteria; Rhizobiales; Xanthobacteraceae";
+        final String aliases = "Azorhizobium Dreyfus et al. 1988 emend. Lang et al. 2013, Azotirhizobium";
+        Assert.assertEquals("Bacteria", "" + index.getKeyProperties().get("domain"));
+        Assert.assertEquals("Azorhizobium", "" + index.getKeyProperties().get("scientific_name"));
+        Assert.assertEquals(aliases, "" + index.getKeyProperties().get("aliases"));
+        Assert.assertEquals(lineage, "" + index.getKeyProperties().get("scientific_lineage"));
+        System.out.println("*** end testTaxon***");
+    }
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
