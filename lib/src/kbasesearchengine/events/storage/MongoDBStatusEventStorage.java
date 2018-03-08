@@ -89,6 +89,8 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         final LinkedList<IndexSpecification> event = new LinkedList<>();
         //find events by status and time stamp
         event.add(idxSpec(FLD_STATUS, 1, FLD_TIMESTAMP, 1, null));
+        // find events by status and store time
+        event.add(idxSpec(FLD_STATUS, 1, FLD_STORED_TIME, 1, null));
         indexes.put(COL_EVENT, event);
         return indexes;
     }
