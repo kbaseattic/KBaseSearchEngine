@@ -29,12 +29,6 @@ public class StoredChildStatusEvent {
     private final Optional<String> errorMessage;
     private final Optional<String> errorStackTrace;
     
-    /** Create a stored child status event.
-     * @param childEvent the child event.
-     * @param state the final state of the event.
-     * @param id the id of the event.
-     * @param storeTime the time the event was stored in the storage system.
-     */
     private StoredChildStatusEvent(
             final ChildStatusEvent childEvent,
             final StatusEventProcessingState state,
