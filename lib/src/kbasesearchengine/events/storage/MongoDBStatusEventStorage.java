@@ -25,10 +25,12 @@ import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.result.UpdateResult;
 
+import kbasesearchengine.events.ChildStatusEvent;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
+import kbasesearchengine.events.StoredChildStatusEvent;
 import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.StatusEvent.Builder;
 import kbasesearchengine.events.exceptions.ErrorType;
@@ -78,7 +80,10 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     private static final String FLD_STORED_BY = "stby";
     private static final String FLD_STORED_TIME = "sttime";
     
+    private static final String FLD_PARENT_ID = "parid";
+    
     private static final String COL_EVENT = "searchEvents";
+    private static final String COL_CHILD = "childEvents";
     
     private Map<String, List<IndexSpecification>> getIndexSpecs() {
         // should probably rework this and the index spec class
@@ -90,8 +95,15 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         //find events by status and time stamp
         event.add(idxSpec(FLD_STATUS, 1, FLD_TIMESTAMP, 1, null));
         // find events by status and store time
-        event.add(idxSpec(FLD_STATUS, 1, FLD_STORED_TIME, 1, null));
+        event.add(idxSpec(FLD_STORED_TIME, 1, FLD_STATUS, 1, null));
         indexes.put(COL_EVENT, event);
+        
+        // child event indexes
+        final LinkedList<IndexSpecification> child = new LinkedList<>();
+        // find events by status and store time
+        child.add(idxSpec(FLD_STORED_TIME, 1, FLD_STATUS, 1, null));
+        indexes.put(COL_CHILD, child);
+        
         return indexes;
     }
     
@@ -200,33 +212,12 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 throw new IllegalArgumentException("null or whitespace only item in workerCodes");
             }
         }
-        final Optional<StorageObjectType> sot = newEvent.getStorageObjectType();
         final Instant now = clock.instant();
-        final Document doc = new Document()
-                .append(FLD_ACCESS_GROUP_ID, newEvent.getAccessGroupId().orNull())
-                .append(FLD_OBJECT_ID, newEvent.getAccessGroupObjectId().orNull())
-                .append(FLD_VERSION, newEvent.getVersion().orNull())
-                .append(FLD_EVENT_TYPE, newEvent.getEventType())
-                .append(FLD_OBJECT_TYPE, sot.isPresent() ? sot.get().getType() : null)
-                .append(FLD_OBJECT_TYPE_VER, sot.isPresent() ?
-                        sot.get().getVersion().orNull() : null)
-                .append(FLD_STORAGE_CODE, newEvent.getStorageCode())
-                .append(FLD_STATUS, state.toString())
-                .append(FLD_EVENT_TYPE, newEvent.getEventType().toString())
-                .append(FLD_NEW_NAME, newEvent.getNewName().orNull())
-                .append(FLD_PUBLIC, newEvent.isPublic().orNull())
+        final Document doc = toStorageDocument(newEvent, state, now)
                 .append(FLD_WORKER_CODES, workerCodes)
-                .append(FLD_TIMESTAMP, Date.from(newEvent.getTimestamp()))
-                .append(FLD_STORED_BY, storedBy)
-                .append(FLD_STORED_TIME, Date.from(now));
-        try {
-            db.getCollection(COL_EVENT).insertOne(doc);
-        } catch (MongoException e) {
-            throw new FatalRetriableIndexingException(
-                    ErrorType.OTHER, "Failed event storage: " + e.getMessage(), e);
-        }
-        final StoredStatusEvent.Builder b = StoredStatusEvent.getBuilder(
-                newEvent, new StatusEventID(doc.getObjectId("_id").toString()), state)
+                .append(FLD_STORED_BY, storedBy);
+        final StatusEventID newID = insertOne(COL_EVENT, doc);
+        final StoredStatusEvent.Builder b = StoredStatusEvent.getBuilder(newEvent, newID, state)
                 .withNullableStoredBy(storedBy)
                 .withNullableStoreTime(now);
         for (final String code: workerCodes) {
@@ -236,31 +227,91 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     }
     
     @Override
+    public StoredChildStatusEvent store(final ChildStatusEvent newEvent)
+            throws FatalRetriableIndexingException {
+        Utils.nonNull(newEvent, "newEvent");
+        final Instant now = clock.instant();
+        final Document doc = toStorageDocument(
+                // TODO NNOW store exception
+                newEvent.getEvent(), StatusEventProcessingState.FAIL, now)
+                .append(FLD_PARENT_ID, newEvent.getID().getId());
+        final StatusEventID newID = insertOne(COL_CHILD, doc);
+        return StoredChildStatusEvent.getBuilder(newEvent, newID, now).build();
+    }
+
+    private StatusEventID insertOne(final String colEvent, final Document doc)
+            throws FatalRetriableIndexingException {
+        try {
+            db.getCollection(colEvent).insertOne(doc);
+        } catch (MongoException e) {
+            throw new FatalRetriableIndexingException(
+                    ErrorType.OTHER, "Failed event storage: " + e.getMessage(), e);
+        }
+        return new StatusEventID(doc.getObjectId("_id").toString());
+    }
+    
+    private Document toStorageDocument(
+            final StatusEvent newEvent,
+            final StatusEventProcessingState state,
+            final Instant now) {
+        final Optional<StorageObjectType> sot = newEvent.getStorageObjectType();
+        return new Document()
+                .append(FLD_ACCESS_GROUP_ID, newEvent.getAccessGroupId().orNull())
+                .append(FLD_OBJECT_ID, newEvent.getAccessGroupObjectId().orNull())
+                .append(FLD_VERSION, newEvent.getVersion().orNull())
+                .append(FLD_EVENT_TYPE, newEvent.getEventType())
+                .append(FLD_OBJECT_TYPE, sot.isPresent() ? sot.get().getType() : null)
+                .append(FLD_OBJECT_TYPE_VER, sot.isPresent() ?
+                        sot.get().getVersion().orNull() : null)
+                .append(FLD_STORAGE_CODE, newEvent.getStorageCode())
+                .append(FLD_EVENT_TYPE, newEvent.getEventType().toString())
+                .append(FLD_NEW_NAME, newEvent.getNewName().orNull())
+                .append(FLD_PUBLIC, newEvent.isPublic().orNull())
+                .append(FLD_TIMESTAMP, Date.from(newEvent.getTimestamp()))
+                .append(FLD_STATUS, state.toString())
+                .append(FLD_STORED_TIME, Date.from(now));
+    }
+
+    @Override
     public Optional<StoredStatusEvent> get(final StatusEventID id)
             throws FatalRetriableIndexingException {
+        final Document event = getEventDoc(id, COL_EVENT);
+        if (event == null) {
+            return Optional.absent();
+        }
+        return Optional.of(toStoredStatusEvent(event));
+    }
+
+    @Override
+    public Optional<StoredChildStatusEvent> getChild(final StatusEventID id)
+            throws FatalRetriableIndexingException {
+        final Document event = getEventDoc(id, COL_CHILD);
+        if (event == null) {
+            return Optional.absent();
+        }
+        return Optional.of(StoredChildStatusEvent.getBuilder(
+                new ChildStatusEvent(
+                        toStatusEvent(event),
+                        new StatusEventID(event.getString(FLD_PARENT_ID))),
+                new StatusEventID(event.getObjectId("_id").toString()),
+                event.getDate(FLD_STORED_TIME).toInstant())
+                .withState(StatusEventProcessingState.valueOf(event.getString(FLD_STATUS)))
+                .build());
+    }
+
+    private Document getEventDoc(final StatusEventID id, final String colEvent)
+            throws FatalRetriableIndexingException {
         Utils.nonNull(id, "id");
-        final Document event;
         try {
-            event = db.getCollection(COL_EVENT).find(
+            return db.getCollection(colEvent).find(
                     new Document("_id", new ObjectId(id.getId()))).first();
         } catch (MongoException e) {
             throw new FatalRetriableIndexingException(
                     ErrorType.OTHER, "Failed getting event: " + e.getMessage(), e);
         }
-        if (event == null) {
-            return Optional.absent();
-        }
-        return Optional.of(toEvent(event));
     }
 
-    private StoredStatusEvent toEvent(final Document event) {
-        final String storageCode = (String) event.get(FLD_STORAGE_CODE);
-        final String type = (String) event.get(FLD_OBJECT_TYPE);
-        final Integer ver = (Integer) event.get(FLD_OBJECT_TYPE_VER);
-        final StorageObjectType sot = type == null ? null :
-            StorageObjectType.fromNullableVersion(storageCode, type, ver);
-        final Instant time = event.getDate(FLD_TIMESTAMP).toInstant();
-        final StatusEventType eventType = StatusEventType.valueOf(event.getString(FLD_EVENT_TYPE));
+    private StoredStatusEvent toStoredStatusEvent(final Document event) {
         final Date updateTime = event.getDate(FLD_UPDATE_TIME);
         final Date storeTime = event.getDate(FLD_STORED_TIME);
         @SuppressWarnings("unchecked")
@@ -268,19 +319,8 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         if (workerCodes == null || workerCodes.isEmpty()) {
             workerCodes = DEFAULT_WORKER_CODES_LIST;
         }
-        final Builder b;
-        if (sot == null) {
-            b = StatusEvent.getBuilder(storageCode, time, eventType);
-        } else {
-            b = StatusEvent.getBuilder(sot, time, eventType);
-        }
         final StoredStatusEvent.Builder b2 = StoredStatusEvent.getBuilder(
-                b.withNullableAccessGroupID(event.getInteger(FLD_ACCESS_GROUP_ID))
-                        .withNullableObjectID(event.getString(FLD_OBJECT_ID))
-                        .withNullableVersion(event.getInteger(FLD_VERSION))
-                        .withNullableNewName(event.getString(FLD_NEW_NAME))
-                        .withNullableisPublic(event.getBoolean(FLD_PUBLIC))
-                        .build(),
+                toStatusEvent(event),
                 new StatusEventID(event.getObjectId("_id").toString()),
                 StatusEventProcessingState.valueOf(event.getString(FLD_STATUS)))
                 .withNullableUpdate(updateTime == null ? null : updateTime.toInstant(),
@@ -291,6 +331,29 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
             b2.withWorkerCode(code);
         }
         return b2.build();
+    }
+
+    private StatusEvent toStatusEvent(final Document event) {
+        final String storageCode = (String) event.get(FLD_STORAGE_CODE);
+        final String type = (String) event.get(FLD_OBJECT_TYPE);
+        final Integer ver = (Integer) event.get(FLD_OBJECT_TYPE_VER);
+        final StorageObjectType sot = type == null ? null :
+            StorageObjectType.fromNullableVersion(storageCode, type, ver);
+        final Instant time = event.getDate(FLD_TIMESTAMP).toInstant();
+        final StatusEventType eventType = StatusEventType.valueOf(event.getString(FLD_EVENT_TYPE));
+        final Builder b;
+        if (sot == null) {
+            b = StatusEvent.getBuilder(storageCode, time, eventType);
+        } else {
+            b = StatusEvent.getBuilder(sot, time, eventType);
+        }
+        return b
+                .withNullableAccessGroupID(event.getInteger(FLD_ACCESS_GROUP_ID))
+                .withNullableObjectID(event.getString(FLD_OBJECT_ID))
+                .withNullableVersion(event.getInteger(FLD_VERSION))
+                .withNullableNewName(event.getString(FLD_NEW_NAME))
+                .withNullableisPublic(event.getBoolean(FLD_PUBLIC))
+                .build();
     }
     
     // note returns in order of time stamp, oldest first (e.g FIFO)
@@ -309,7 +372,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                     .sort(new Document(FLD_TIMESTAMP, 1))
                     .limit(limit);
             for (final Document event: iter) {
-                ret.add(toEvent(event));
+                ret.add(toStoredStatusEvent(event));
             }
         } catch (MongoException e) {
             throw new FatalRetriableIndexingException(
@@ -384,7 +447,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         if (ret == null) {
             return Optional.absent();
         }
-        return Optional.of(toEvent(ret));
+        return Optional.of(toStoredStatusEvent(ret));
     }
 
 }

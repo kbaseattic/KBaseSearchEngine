@@ -205,7 +205,7 @@ public class IndexerWorker implements Stoppable {
             msg = String.format("Retriable error in indexer for event %s %s%s, retry %s",
                     event.get().getEvent().getEventType(),
                     event.get().isParentId() ? "with parent ID " : "",
-                    event.get().getId().getId(),
+                    event.get().getID().getId(),
                     retrycount);
         } else {
             msg = String.format("Retriable error in indexer, retry %s", retrycount);
@@ -245,7 +245,7 @@ public class IndexerWorker implements Stoppable {
             throws InterruptedException, FatalIndexingException {
         try {
             // should only throw fatal
-            retrier.retryCons(s -> s.setProcessingState(parentEvent.getId(),
+            retrier.retryCons(s -> s.setProcessingState(parentEvent.getID(),
                     StatusEventProcessingState.PROC, result), storage, parentEvent);
         } catch (FatalIndexingException | InterruptedException e) {
             throw e;
@@ -259,7 +259,7 @@ public class IndexerWorker implements Stoppable {
     private void expandAndProcess(final StoredStatusEvent parentEvent)
             throws FatalIndexingException, InterruptedException {
         logger.logInfo(String.format("[Indexer] Expanding event %s %s",
-                parentEvent.getEvent().getEventType(), parentEvent.getId().getId()));
+                parentEvent.getEvent().getEventType(), parentEvent.getID().getId()));
         final Iterator<ChildStatusEvent> childIter;
         try {
             childIter = retrier.retryFunc(e -> getSubEventIterator(e), parentEvent, parentEvent);
@@ -308,7 +308,7 @@ public class IndexerWorker implements Stoppable {
     private void markAsVisitedFailedPostError(final StoredStatusEvent parentEvent)
             throws FatalIndexingException {
         try {
-            storage.setProcessingState(parentEvent.getId(), null, StatusEventProcessingState.FAIL);
+            storage.setProcessingState(parentEvent.getID(), null, StatusEventProcessingState.FAIL);
         } catch (Exception e) {
             //ok then we're screwed
             throw new FatalIndexingException(ErrorType.OTHER, "Can't mark events as failed: " +
@@ -373,7 +373,7 @@ public class IndexerWorker implements Stoppable {
             final String msg = error + String.format(" for event %s %s%s",
                     event.getEvent().getEventType(),
                     event.isParentId() ? "with parent ID " : "",
-                    event.getId().getId());
+                    event.getID().getId());
             logError(msg, exception);
         }
     }

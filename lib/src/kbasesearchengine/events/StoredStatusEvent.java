@@ -50,7 +50,7 @@ public class StoredStatusEvent implements StatusEventWithId {
     }
 
     @Override
-    public StatusEventID getId() {
+    public StatusEventID getID() {
         return id;
     }
     
