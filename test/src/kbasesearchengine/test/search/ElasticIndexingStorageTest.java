@@ -324,6 +324,22 @@ public class ElasticIndexingStorageTest {
     }
 
     @Test
+    public void testPangenomeOrthologFamily() throws Exception {
+        System.out.println("*** start testPangenomeOrthologFamily***");
+        indexObject("PangenomeOrthologFamily", 0, "pangenome01", new GUID("WS:1/1/1"), "Pangenome.1");
+        Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("PangenomeOrthologFamily"),
+                ft("kb|g.220339.CDS.2352"),
+                null, AccessFilter.create().withAdmin(true));
+        Assert.assertEquals(1, guids.size());
+        ObjectData pangenome = indexStorage.getObjectsByIds(guids).get(0);
+        System.out.println("Genome index: " + pangenome.getKeyProperties());
+        Assert.assertEquals("kb|g.220339.CDS.2352", pangenome.getKeyProperties().get("id"));
+        Assert.assertEquals("hypothetical protein", pangenome.getKeyProperties().get("function"));
+        Assert.assertEquals("kb|g.220339.CDS.2352", pangenome.getKeyProperties().get("ortholog_genes"));
+        System.out.println("*** end testPangenomeOrthologFamily***");
+    }
+
+    @Test
     public void testGeneTree() throws Exception {
         System.out.println("*** start testGeneTree***");
         indexObject("Tree", 0, "genetree01", new GUID("WS:1/1/1"), "GeneTree.1");
@@ -351,6 +367,24 @@ public class ElasticIndexingStorageTest {
         Assert.assertTrue(index.getKeyProperties().containsKey("labels"));
         Assert.assertEquals("SpeciesTree", "" + index.getKeyProperties().get("type"));
         System.out.println("*** end testSpeciesTree***");
+    }
+
+    @Test
+    public void testRNASeqSampleSet() throws Exception {
+        System.out.println("*** start testRNASeqSampleSet***");
+        indexObject("RNASeqSampleSet", 0, "rnaseqsampleset01", new GUID("WS:1/1/1"), "RNASeqSampleSet.1");
+        Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("RNASeqSampleSet"),
+                MatchFilter.getBuilder().withLookupInKey("source", "NCBI SRP003951").build(),
+                null, AccessFilter.create().withAdmin(true));
+        Assert.assertEquals(1, guids.size());
+        ObjectData index = indexStorage.getObjectsByIds(guids).get(0);
+        System.out.println("Index: " + index.getKeyProperties());
+        String desc = "Arabidopsis thaliana wild type and hy5-215 seedlings grown under white light.";
+        Assert.assertEquals(desc, "" + index.getKeyProperties().get("sampleset_desc"));
+        Assert.assertEquals("NCBI SRP003951", "" + index.getKeyProperties().get("source"));
+        Assert.assertEquals("4", "" + index.getKeyProperties().get("num_samples"));
+        Assert.assertEquals("3", "" + index.getKeyProperties().get("num_replicates"));
+        System.out.println("*** end testRNASeqSampleSet***");
     }
 
     @Test
@@ -414,6 +448,38 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals(1, ids.size());
         id = ids.iterator().next();
         Assert.assertEquals(expectedGUID, id);
+    }
+
+    @Test
+    public void testNonCodingFeatureV2() throws Exception {
+        indexObject("GenomeNonCodingFeature", 0, "genome02", new GUID("WS:1/1/1"), "MyGenome.2");
+        Map<String, Integer> typeToCount = indexStorage.searchTypes(ft("repeat_region_1"),
+                AccessFilter.create().withAdmin(true));
+        Assert.assertEquals(1, typeToCount.size());
+        List<String> type = ImmutableList.of(typeToCount.keySet().iterator().next());
+        Assert.assertEquals(1, (int)typeToCount.get(type.get(0)));
+        GUID expectedGUID = new GUID("WS:1/1/1:NonCodingFeature/repeat_region_1");
+        // Admin mode
+        Set<GUID> ids = indexStorage.searchIds(type, ft("repeat_region_1"), null,
+                AccessFilter.create().withAdmin(true));
+        Assert.assertEquals(1, ids.size());
+        GUID id = ids.iterator().next();
+        Assert.assertEquals(expectedGUID, id);
+        Set<Integer> accessGroupIds = new LinkedHashSet<>(Arrays.asList(1, 2, 3));
+        List<ObjectData> objList = indexStorage.getObjectsByIds(
+                new HashSet<>(Arrays.asList(id)));
+        ObjectData featureIndex = objList.get(0);
+        System.out.println("GenomeFeature index: " + featureIndex.getKeyProperties());
+        Map<String, Object> obj = (Map<String, Object>)featureIndex.getData().get();
+        Assert.assertEquals("repeat_region_1", obj.get("id"));
+        Assert.assertEquals("repeat_region", obj.get("type"));
+        Assert.assertTrue(obj.containsKey("location"));
+        Assert.assertTrue(obj.containsKey("note"));
+        Assert.assertEquals("NC_000913", featureIndex.getKeyProperties().get("contig_id"));
+        String contigGuidText = featureIndex.getKeyProperties().get("contig_guid");
+        Assert.assertNotNull("missing contig_guid", contigGuidText);
+        ObjectData contigIndex = getIndexedObject(new GUID(contigGuidText));
+        Assert.assertEquals("NC_000913", "" + contigIndex.getKeyProperties().get("contig_id"));
     }
 
     @Test

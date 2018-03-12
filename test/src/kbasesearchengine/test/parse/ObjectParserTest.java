@@ -332,6 +332,7 @@ public class ObjectParserTest {
         expectedResult.put("sampleset_desc", "Arabidopsis thaliana wild type and hy5-215 seedlings grown under white light.");
         expectedResult.put("source", "NCBI SRP003951");
         expectedResult.put("num_samples", 4);
+        expectedResult.put("num_replicates", 3);
 
         assertThat(result, is(expectedResult));
     }
