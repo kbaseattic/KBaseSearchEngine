@@ -1,5 +1,5 @@
 global-object-type: GenomeNonCodingFeature
-ui-type-name: Genome Feature
+ui-type-name: Genome Non-codeing Feature
 storage-type: WS
 storage-object-type: KBaseGenomes.Genome
 versions:
@@ -41,8 +41,8 @@ versions:
     transform: location.stop
     keyword-type: integer
     key-name: stop
-  - path: protein_translation
-    not-indexed: true
+  - path: note
+    full-text: true
   - path: type
     keyword-type: string
     key-name: feature_type

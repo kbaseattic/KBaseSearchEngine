@@ -4,7 +4,7 @@ storage-type: WS
 storage-object-type: KBaseGenomes.Pangenome
 versions:
 - inner-sub-type: OrthologFamily
-  path-to-sub-objects: /orthologs/*/
+  path-to-sub-objects: /orthologs/[*]/
   primary-key-path: id
   indexing-rules:
   - path: id
@@ -17,7 +17,3 @@ versions:
     keyword-type: string
     key-name: ortholog_genes
     ui-name: Ortholog Genes
-  - path: orthologs/{size}
-    keyword-type: integer
-    key-name: ortholog_count
-    ui-name: Number of Orthologs
