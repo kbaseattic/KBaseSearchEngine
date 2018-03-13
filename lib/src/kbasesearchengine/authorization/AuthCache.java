@@ -26,22 +26,22 @@ public class AuthCache implements AuthInfoProvider {
      * @param provider the {@link AuthInfoProvider} whose results will be cached.
      * @param cacheLifeTimeInSec the number of seconds a set of auth info for a user should
      * remain in the cache.
-     * @param cacheSizeInAccessGroups the maximum number of auth info, across all users, to
-     * store in the cache.
+     * @param cacheSizeInAuthInfo the maximum number of auth info (display name), across all users,
+     * to store in the cache.
      */
     public AuthCache(
             final AuthInfoProvider provider,
             final int cacheLifeTimeInSec,
-            final int cacheSizeInAccessGroups) {
-        this(provider, cacheLifeTimeInSec, cacheSizeInAccessGroups, Ticker.systemTicker());
+            final int cacheSizeInAuthInfo) {
+        this(provider, cacheLifeTimeInSec, cacheSizeInAuthInfo, Ticker.systemTicker());
     }
 
     /** Create a cache for testing purposes.
      * @param provider the {@link AccessGroupProvider} whose results will be cached.
      * @param cacheLifeTimeInSec the number of seconds an set of access groups for a user should
      * remain in the cache.
-     * @param cacheSizeInAccessGroups the maximum number of access groups, across all users, to
-     * store in the cache.
+     * @param cacheSizeInAuthInfo the maximum number of auth info (display name), across all users,
+     * to store in the cache.
      * @param ticker a ticker implementation that allows controlling cache expiration with the
      * provided ticker rather than waiting for the system clock. This is exposed for testing
      * purposes.
@@ -49,7 +49,7 @@ public class AuthCache implements AuthInfoProvider {
     public AuthCache(
             final AuthInfoProvider provider,
             final int cacheLifeTimeInSec,
-            final int cacheSizeInAccessGroups,
+            final int cacheSizeInAuthInfo,
             final Ticker ticker) {
         if (provider == null) {
             throw new NullPointerException("provider");
@@ -58,13 +58,13 @@ public class AuthCache implements AuthInfoProvider {
         if (cacheLifeTimeInSec < 1) {
             throw new IllegalArgumentException("cache lifetime must be at least one second");
         }
-        if (cacheSizeInAccessGroups < 1) {
+        if (cacheSizeInAuthInfo < 1) {
             throw new IllegalArgumentException("cache size must be at least one");
         }
         cache = CacheBuilder.newBuilder()
                 .ticker(ticker)
                 .expireAfterWrite(cacheLifeTimeInSec, TimeUnit.SECONDS)
-                .maximumWeight(cacheSizeInAccessGroups)
+                .maximumWeight(cacheSizeInAuthInfo)
                 .weigher(new Weigher<String, String>() {
 
                     @Override
