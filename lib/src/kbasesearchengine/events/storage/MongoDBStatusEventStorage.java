@@ -244,7 +244,6 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         Utils.nonNull(newEvent, "newEvent");
         final Instant now = clock.instant();
         final Document doc = toStorageDocument(
-                // TODO NNOW store exception
                 newEvent.getEvent(), StatusEventProcessingState.FAIL, now)
                 .append(FLD_PARENT_ID, newEvent.getID().getId());
         addError(doc, errorCode, error);
