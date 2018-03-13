@@ -375,7 +375,30 @@ public class ObjectData {
     public static Builder getBuilder(final GUID guid) {
         return new Builder(guid);
     }
-    
+
+    @Override
+    public String toString() {
+        return "ObjectData{" +
+                "guid=" + guid +
+                ", parentGuid=" + parentGuid +
+                ", objectName=" + objectName +
+                ", type=" + type +
+                ", creator=" + creator +
+                ", copier=" + copier +
+                ", module=" + module +
+                ", method=" + method +
+                ", commitHash=" + commitHash +
+                ", moduleVersion=" + moduleVersion +
+                ", md5=" + md5 +
+                ", timestamp=" + timestamp +
+                ", parentData=" + parentData +
+                ", data=" + data +
+                ", keyProps=" + keyProps +
+                ", sourceTags=" + sourceTags +
+                ", highlight=" + highlight +
+                '}';
+    }
+
     /** An {@link ObjectData} builder.
      * @author gaprice@lbl.gov
      *
