@@ -5,11 +5,13 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.google.common.base.Optional;
+
 import kbasesearchengine.tools.Utils;
 
 /** A {@link ChildStatusEvent} that is stored in a storage system, and therefore has additional
- * attributes associated with that storage - an ID, the final state of the event, and the time
- * the event was stored.
+ * attributes associated with that storage - an ID, the final state of the event, the time
+ * the event was stored, and possibly error information.
  * @author gaprice@lbl.gov
  *
  */
@@ -23,22 +25,31 @@ public class StoredChildStatusEvent {
     private final StatusEventProcessingState state;
     private final StatusEventID id;
     private final Instant storeTime;
+    private final Optional<String> errorCode;
+    private final Optional<String> errorMessage;
+    private final Optional<String> errorStackTrace;
     
     /** Create a stored child status event.
      * @param childEvent the child event.
      * @param state the final state of the event.
-     * @param id 
-     * @param storeTime
+     * @param id the id of the event.
+     * @param storeTime the time the event was stored in the storage system.
      */
     private StoredChildStatusEvent(
             final ChildStatusEvent childEvent,
             final StatusEventProcessingState state,
             final StatusEventID id,
-            final Instant storeTime) {
+            final Instant storeTime,
+            final String errorCode,
+            final String errorMessage,
+            final String errorStackTrace) {
         this.childEvent = childEvent;
         this.state = state;
         this.id = id;
         this.storeTime = storeTime;
+        this.errorCode = Optional.fromNullable(errorCode);
+        this.errorMessage = Optional.fromNullable(errorMessage);
+        this.errorStackTrace = Optional.fromNullable(errorStackTrace);
     }
 
     /** Check if an event processing state is allowed as a state for a child event. Child
@@ -79,6 +90,27 @@ public class StoredChildStatusEvent {
     public Instant getStoreTime() {
         return storeTime;
     }
+    
+    /** Get the error code for the error associated with this event, if any.
+     * @return the error code.
+     */
+    public Optional<String> getErrorCode() {
+        return errorCode;
+    }
+
+    /** Get the error message for the error associated with this event, if any.
+     * @return the error message.
+     */
+    public Optional<String> getErrorMessage() {
+        return errorMessage;
+    }
+
+    /** Get the error stack trace for the error associated with this event, if any.
+     * @return the error stack trace.
+     */
+    public Optional<String> getErrorStackTrace() {
+        return errorStackTrace;
+    }
 
     @Override
     public int hashCode() {
@@ -86,6 +118,12 @@ public class StoredChildStatusEvent {
         int result = 1;
         result = prime * result
                 + ((childEvent == null) ? 0 : childEvent.hashCode());
+        result = prime * result
+                + ((errorCode == null) ? 0 : errorCode.hashCode());
+        result = prime * result
+                + ((errorMessage == null) ? 0 : errorMessage.hashCode());
+        result = prime * result
+                + ((errorStackTrace == null) ? 0 : errorStackTrace.hashCode());
         result = prime * result + ((id == null) ? 0 : id.hashCode());
         result = prime * result + ((state == null) ? 0 : state.hashCode());
         result = prime * result
@@ -110,6 +148,27 @@ public class StoredChildStatusEvent {
                 return false;
             }
         } else if (!childEvent.equals(other.childEvent)) {
+            return false;
+        }
+        if (errorCode == null) {
+            if (other.errorCode != null) {
+                return false;
+            }
+        } else if (!errorCode.equals(other.errorCode)) {
+            return false;
+        }
+        if (errorMessage == null) {
+            if (other.errorMessage != null) {
+                return false;
+            }
+        } else if (!errorMessage.equals(other.errorMessage)) {
+            return false;
+        }
+        if (errorStackTrace == null) {
+            if (other.errorStackTrace != null) {
+                return false;
+            }
+        } else if (!errorStackTrace.equals(other.errorStackTrace)) {
             return false;
         }
         if (id == null) {
@@ -155,6 +214,9 @@ public class StoredChildStatusEvent {
         private final StatusEventID id;
         private final Instant storeTime;
         private StatusEventProcessingState state = StatusEventProcessingState.FAIL;
+        private String errorCode = null;
+        private String errorMessage = null;
+        private String errorStackTrace = null;
         
         private Builder(
                 final ChildStatusEvent childEvent,
@@ -184,11 +246,36 @@ public class StoredChildStatusEvent {
             return this;
         }
         
+        /** Associate an error to this event. If errorCode is null, the error information will
+         * not be changed.
+         * @param errorCode a short code for the error.
+         * @param errorMessage a free text error message.
+         * @param errorStackTrace the error stack trace.
+         * @return this builder.
+         */
+        public Builder withNullableError(
+                final String errorCode,
+                final String errorMessage,
+                final String errorStackTrace) {
+            if (errorCode == null) {
+                return this;
+            }
+            Utils.notNullOrEmpty(errorCode, "errorCode cannot be null or whitespace only");
+            Utils.notNullOrEmpty(errorMessage, "errorMessage cannot be null or whitespace only");
+            Utils.notNullOrEmpty(errorStackTrace,
+                    "errorStackTrace cannot be null or whitespace only");
+            this.errorCode = errorCode;
+            this.errorMessage = errorMessage;
+            this.errorStackTrace = errorStackTrace;
+            return this;
+        }
+        
         /** Build the stored child event.
          * @return the event.
          */
         public StoredChildStatusEvent build() {
-            return new StoredChildStatusEvent(childEvent, state, id, storeTime);
+            return new StoredChildStatusEvent(childEvent, state, id, storeTime,
+                    errorCode, errorMessage, errorStackTrace);
         }
     }
 }

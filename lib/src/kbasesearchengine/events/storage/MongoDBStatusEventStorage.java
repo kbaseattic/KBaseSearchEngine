@@ -1,5 +1,7 @@
 package kbasesearchengine.events.storage;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
@@ -60,6 +62,9 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
             new HashSet<>(DEFAULT_WORKER_CODES_LIST));
     
     private static final int MAX_RETURNED_EVENTS = 10000;
+    private static final int MAX_ERR_CODE_LEN = 20;
+    private static final int TRUNC_ERR_MSG_LEN = 1000;
+    private static final int TRUNC_ERR_TRACE_LEN = 100_000;
     
     private static final String FLD_STATUS = "status";
     private static final String FLD_STORAGE_CODE = "strcde";
@@ -81,6 +86,10 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     private static final String FLD_STORED_TIME = "sttime";
     
     private static final String FLD_PARENT_ID = "parid";
+    
+    private static final String FLD_ERR_CODE = "errcde";
+    private static final String FLD_ERR_MSG = "errmsg";
+    private static final String FLD_ERR_TRACE = "errtrce";
     
     private static final String COL_EVENT = "searchEvents";
     private static final String COL_CHILD = "childEvents";
@@ -227,7 +236,10 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     }
     
     @Override
-    public StoredChildStatusEvent store(final ChildStatusEvent newEvent)
+    public StoredChildStatusEvent store(
+            final ChildStatusEvent newEvent,
+            final String errorCode,
+            final Throwable error) 
             throws FatalRetriableIndexingException {
         Utils.nonNull(newEvent, "newEvent");
         final Instant now = clock.instant();
@@ -235,8 +247,39 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 // TODO NNOW store exception
                 newEvent.getEvent(), StatusEventProcessingState.FAIL, now)
                 .append(FLD_PARENT_ID, newEvent.getID().getId());
+        addError(doc, errorCode, error);
         final StatusEventID newID = insertOne(COL_CHILD, doc);
-        return StoredChildStatusEvent.getBuilder(newEvent, newID, now).build();
+        return StoredChildStatusEvent.getBuilder(newEvent, newID, now)
+                .withNullableError(errorCode, doc.getString(FLD_ERR_MSG),
+                        doc.getString(FLD_ERR_TRACE))
+                .build();
+    }
+
+    // modifies doc in place
+    private void addError(final Document doc, final String errorCode, final Throwable error) {
+        checkErrorCode(errorCode);
+        Utils.nonNull(error, "error");
+        final StringWriter sw = new StringWriter();
+        error.printStackTrace(new PrintWriter(sw));
+        doc.append(FLD_ERR_CODE, errorCode)
+                .append(FLD_ERR_MSG, truncate(error.getMessage(), TRUNC_ERR_MSG_LEN))
+                .append(FLD_ERR_TRACE, truncate(sw.toString(), TRUNC_ERR_TRACE_LEN));
+    }
+
+    // assumes length > 3
+    private Object truncate(final String string, final int length) {
+        if (string.length() > length) {
+            return string.substring(0, length - 3) + "...";
+        }
+        return string;
+    }
+
+    private void checkErrorCode(final String errorCode) {
+        Utils.notNullOrEmpty(errorCode, "errorCode cannot be null or whitespace only");
+        if (errorCode.length() > MAX_ERR_CODE_LEN) {
+            throw new IllegalArgumentException("errorCode exceeds max length of " +
+                    MAX_ERR_CODE_LEN);
+        }
     }
 
     private StatusEventID insertOne(final String colEvent, final Document doc)
@@ -296,6 +339,10 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 new StatusEventID(event.getObjectId("_id").toString()),
                 event.getDate(FLD_STORED_TIME).toInstant())
                 .withState(StatusEventProcessingState.valueOf(event.getString(FLD_STATUS)))
+                .withNullableError(
+                        event.getString(FLD_ERR_CODE),
+                        event.getString(FLD_ERR_MSG),
+                        event.getString(FLD_ERR_TRACE))
                 .build());
     }
 
