@@ -1,7 +1,7 @@
 package kbasesearchengine.test.integration;
 
 import static kbasesearchengine.test.common.TestCommon.set;
-import static kbasesearchengine.test.main.NarrativeInfoDecoratorTest.narrInfo;
+import static kbasesearchengine.test.main.NarrativeInfoDecoratorTest.narrInfoTuple;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -401,7 +401,7 @@ public class SearchAPIIntegrationTest {
         TestCommon.compare(res.getObjects().get(0), expected1);
         
         final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
-                1L, narrInfo("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
+                1L, narrInfoTuple("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
         
         NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
     }
