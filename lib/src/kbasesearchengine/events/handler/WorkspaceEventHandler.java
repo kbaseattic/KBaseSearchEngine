@@ -449,7 +449,7 @@ public class WorkspaceEventHandler implements EventHandler {
                             .withNullableAccessGroupID(event.getEvent().getAccessGroupId().get())
                             .withNullableObjectID(++counter + "")
                             .build(),
-                    event.getId());
+                    event.getID());
         }
         
     }
@@ -633,7 +633,7 @@ public class WorkspaceEventHandler implements EventHandler {
                 .withNullableVersion(Math.toIntExact(obj.getE5()))
                 .withNullableisPublic(origEvent.getEvent().isPublic().get())
                 .build(),
-                origEvent.getId());
+                origEvent.getID());
     }
     
     private static String toWSRefPath(final List<GUID> objectRefPath) {
