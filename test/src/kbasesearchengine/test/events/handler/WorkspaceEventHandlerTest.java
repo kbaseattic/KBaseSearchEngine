@@ -87,7 +87,7 @@ public class WorkspaceEventHandlerTest {
                 WorkspaceEventHandler.parseDateToEpochMillis("2018-02-08T21:55:45+00:00"),
                 is(1518126945000L));
     }
-    
+
     @Test
     public void getWorkspaceInfo() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
@@ -106,7 +106,37 @@ public class WorkspaceEventHandlerTest {
         compare(res, wsTuple(64, "myws", "owner", "date", 32, "a",
                 "r", "unlocked", Collections.emptyMap()));
     }
-    
+
+    @Test
+    public void isPublicTrue() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(34))))
+                .thenReturn(new UObject(wsTuple(34, "myws1", "owner1", "date1", 34, "a",
+                        "r", "unlocked", Collections.emptyMap())));
+
+        assertThat("Incorrect Permission", weh.isPublic(34), is(true));
+    }
+
+    @Test
+    public void isPublicFalse() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(43))))
+                .thenReturn(new UObject(wsTuple(43, "myws2", "owner2", "date2", 43, "a",
+                        "n", "unlocked", Collections.emptyMap())));
+
+        assertThat("Incorrect Permission", weh.isPublic(43), is(false));
+    }
+
     private void compare(
             final Tuple9<Long, String, String, String, Long, String, String, String,
                     Map<String, String>> got,

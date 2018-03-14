@@ -37,7 +37,8 @@ public class SourceData {
             final Optional<String> commitHash,
             final Optional<String> version,
             final Optional<String> md5,
-            final Set<String> sourceTags) {
+            final Set<String> sourceTags,
+            final boolean isPublic) {
         this.data = data;
         this.name = name;
         this.creator = creator;
@@ -48,6 +49,7 @@ public class SourceData {
         this.version = version;
         this.md5 = md5;
         this.sourceTags = Collections.unmodifiableSet(sourceTags);
+        this.isPublic = isPublic;
     }
     
     /** Get the data.
@@ -250,7 +252,7 @@ public class SourceData {
          */
         public SourceData build() {
             return new SourceData(data, name, creator, copier, module, method, commitHash,
-                    version, md5, sourceTags);
+                    version, md5, sourceTags, isPublic);
         }
     }
     
