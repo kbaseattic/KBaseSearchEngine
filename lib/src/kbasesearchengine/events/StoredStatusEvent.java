@@ -24,6 +24,9 @@ public class StoredStatusEvent implements StatusEventWithId {
     private final Set<String> workerCodes;
     private final Optional<String> storedBy;
     private final Optional<Instant> storeTime;
+    private final Optional<String> errorCode;
+    private final Optional<String> errorMessage;
+    private final Optional<String> errorStackTrace;
     
     private StoredStatusEvent(
             final StatusEvent event,
@@ -33,7 +36,10 @@ public class StoredStatusEvent implements StatusEventWithId {
             final Optional<String> updater,
             final Set<String> workerCodes,
             final Optional<String> storedBy,
-            final Optional<Instant> storeTime) {
+            final Optional<Instant> storeTime,
+            final String errorCode,
+            final String errorMessage,
+            final String errorStackTrace) {
         this.event = event;
         this.id = id;
         this.state = state;
@@ -42,6 +48,9 @@ public class StoredStatusEvent implements StatusEventWithId {
         this.workerCodes = Collections.unmodifiableSet(workerCodes);
         this.storedBy = storedBy;
         this.storeTime = storeTime;
+        this.errorCode = Optional.fromNullable(errorCode);
+        this.errorMessage = Optional.fromNullable(errorMessage);
+        this.errorStackTrace = Optional.fromNullable(errorStackTrace);
     }
 
     @Override
@@ -102,6 +111,27 @@ public class StoredStatusEvent implements StatusEventWithId {
         return storeTime;
     }
     
+    /** Get the error code for the error associated with this event, if any.
+     * @return the error code.
+     */
+    public Optional<String> getErrorCode() {
+        return errorCode;
+    }
+
+    /** Get the error message for the error associated with this event, if any.
+     * @return the error message.
+     */
+    public Optional<String> getErrorMessage() {
+        return errorMessage;
+    }
+
+    /** Get the error stack trace for the error associated with this event, if any.
+     * @return the error stack trace.
+     */
+    public Optional<String> getErrorStackTrace() {
+        return errorStackTrace;
+    }
+    
     @Override
     public String toString() {
         StringBuilder builder2 = new StringBuilder();
@@ -121,6 +151,12 @@ public class StoredStatusEvent implements StatusEventWithId {
         builder2.append(storedBy);
         builder2.append(", storeTime=");
         builder2.append(storeTime);
+        builder2.append(", errorCode=");
+        builder2.append(errorCode);
+        builder2.append(", errorMessage=");
+        builder2.append(errorMessage);
+        builder2.append(", errorStackTrace=");
+        builder2.append(errorStackTrace);
         builder2.append("]");
         return builder2.toString();
     }
@@ -129,6 +165,12 @@ public class StoredStatusEvent implements StatusEventWithId {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
+        result = prime * result
+                + ((errorCode == null) ? 0 : errorCode.hashCode());
+        result = prime * result
+                + ((errorMessage == null) ? 0 : errorMessage.hashCode());
+        result = prime * result
+                + ((errorStackTrace == null) ? 0 : errorStackTrace.hashCode());
         result = prime * result + ((event == null) ? 0 : event.hashCode());
         result = prime * result + ((id == null) ? 0 : id.hashCode());
         result = prime * result + ((state == null) ? 0 : state.hashCode());
@@ -156,6 +198,27 @@ public class StoredStatusEvent implements StatusEventWithId {
             return false;
         }
         StoredStatusEvent other = (StoredStatusEvent) obj;
+        if (errorCode == null) {
+            if (other.errorCode != null) {
+                return false;
+            }
+        } else if (!errorCode.equals(other.errorCode)) {
+            return false;
+        }
+        if (errorMessage == null) {
+            if (other.errorMessage != null) {
+                return false;
+            }
+        } else if (!errorMessage.equals(other.errorMessage)) {
+            return false;
+        }
+        if (errorStackTrace == null) {
+            if (other.errorStackTrace != null) {
+                return false;
+            }
+        } else if (!errorStackTrace.equals(other.errorStackTrace)) {
+            return false;
+        }
         if (event == null) {
             if (other.event != null) {
                 return false;
@@ -238,6 +301,9 @@ public class StoredStatusEvent implements StatusEventWithId {
         private Set<String> workerCodes = new HashSet<>();
         private Optional<String> storedBy = Optional.absent();
         private Optional<Instant> storeTime = Optional.absent();
+        private String errorCode = null;
+        private String errorMessage = null;
+        private String errorStackTrace = null;
         
         private Builder(
                 final StatusEvent event,
@@ -300,12 +366,36 @@ public class StoredStatusEvent implements StatusEventWithId {
             return this;
         }
         
+        /** Associate an error to this event. If errorCode is null, the error information will
+         * not be changed.
+         * @param errorCode a short code for the error.
+         * @param errorMessage a free text error message.
+         * @param errorStackTrace the error stack trace.
+         * @return this builder.
+         */
+        public Builder withNullableError(
+                final String errorCode,
+                final String errorMessage,
+                final String errorStackTrace) {
+            if (errorCode == null) {
+                return this;
+            }
+            Utils.notNullOrEmpty(errorCode, "errorCode cannot be null or whitespace only");
+            Utils.notNullOrEmpty(errorMessage, "errorMessage cannot be null or whitespace only");
+            Utils.notNullOrEmpty(errorStackTrace,
+                    "errorStackTrace cannot be null or whitespace only");
+            this.errorCode = errorCode;
+            this.errorMessage = errorMessage;
+            this.errorStackTrace = errorStackTrace;
+            return this;
+        }
+        
         /** Build the {@link StoredStatusEvent}.
          * @return the event.
          */
         public StoredStatusEvent build() {
             return new StoredStatusEvent(event, id, state, updateTime, updater, workerCodes,
-                    storedBy, storeTime);
+                    storedBy, storeTime, errorCode, errorMessage, errorStackTrace);
         }
     }
 }
