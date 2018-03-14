@@ -38,10 +38,10 @@ versions:
                 path: taxonomy
                 full-text: true
             -
-                # Extract a full-text search field from the /scientific_name path.
+                # Extract a string from the /scientific_name path.
                 # The key name will be scientific_name.
                 path: scientific_name
-                full-text: true
+                keyword-type: string
             -
                 # Extract the number of features from a list at the /features path. The special
                 # {size} element directs the parser to return the size of a list or mapping. Since
@@ -51,6 +51,16 @@ versions:
                 path: features/{size}
                 keyword-type: integer
                 key-name: features
+            -
+                path: num_contigs
+                keyword-type: integer
+                key-name: contigs
+            -
+                path: source
+                keyword-type: string
+            -
+                path: source_id
+                keyword-type: string
             -
                 # Extract a reference to an Assembly object and transform it into a Globally
                 # Unique ID (GUID).
@@ -70,20 +80,6 @@ versions:
                 key-name: assembly_guid
                 # Don't show the guid in any UI context when displaying search data.
                 ui-hidden: true
-            -
-                # Extract a value from an object referred to by the object that is currently being
-                # indexed, and include it in the current object.
-                # The object can be found via the GUID in the assembly_guid key above. The source
-                # key must match the key name of another indexing rule in this spec that produces
-                # a GUID.
-                source-key: assembly_guid
-                # Extract the contigs field from the target object. 'contigs' must match a key
-                # name in the search type for the target object.
-                transform: lookup.key.contigs
-                # Index the extracted field as an integer.
-                keyword-type: integer
-                # The key for the extracted field will be contigs.
-                key-name: contigs
     -
         indexing-rules:
             -
@@ -97,12 +93,15 @@ versions:
                 full-text: true
             -
                 path: scientific_name
-                full-text: true
+                keyword-type: string
             -
                 path: notes
                 full-text: true
             -
                 path: source
+                keyword-type: string
+            -
+                path: source_id
                 keyword-type: string
             -
                 path: features/{size}
@@ -144,6 +143,10 @@ versions:
                 keyword-type: boolean
                 ui-name: Suspect Genome
             -
+                path: num_contigs
+                keyword-type: integer
+                key-name: contigs
+            -
                 path: assembly_ref
                 transform: guid
                 target-object-type: Assembly
@@ -152,8 +155,3 @@ versions:
                 keyword-type: string
                 key-name: assembly_guid
                 ui-hidden: true
-            -
-                source-key: assembly_guid
-                transform: lookup.key.contigs
-                keyword-type: integer
-                key-name: contigs

@@ -58,7 +58,7 @@ versions:
     key-name: genome_taxonomy
   - from-parent: true
     path: scientific_name
-    full-text: true
+    keyword-type: string
     key-name: genome_scientific_name
   - from-parent: true
     path: assembly_ref

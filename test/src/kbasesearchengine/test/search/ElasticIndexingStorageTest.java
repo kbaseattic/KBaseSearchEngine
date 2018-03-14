@@ -297,6 +297,8 @@ public class ElasticIndexingStorageTest {
         ObjectData genomeIndex = indexStorage.getObjectsByIds(guids).get(0);
         //System.out.println("Genome index: " + genomeIndex);
         Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("features"));
+        Assert.assertEquals("KBase", "" + genomeIndex.getKeyProperties().get("source"));
+        Assert.assertEquals("NewGenome", "" + genomeIndex.getKeyProperties().get("source_id"));
         Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("features"));
         Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contigs"));
         String assemblyGuidText = genomeIndex.getKeyProperties().get("assembly_guid");
@@ -399,6 +401,8 @@ public class ElasticIndexingStorageTest {
         ObjectData genomeIndex = indexStorage.getObjectsByIds(guids).get(0);
         //System.out.println("Genome index: " + genomeIndex);
         Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("features"));
+        Assert.assertEquals("KBase", "" + genomeIndex.getKeyProperties().get("source"));
+        Assert.assertEquals("NewGenome", "" + genomeIndex.getKeyProperties().get("source_id"));
         Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("features"));
         Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contigs"));
         String assemblyGuidText = genomeIndex.getKeyProperties().get("assembly_guid");
