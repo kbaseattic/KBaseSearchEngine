@@ -95,7 +95,7 @@ public class IdMapperTest {
     }
     
     private static InputStream getJsonResource(String name) throws Exception {
-        return IdMapperTest.class.getResourceAsStream(name + ".json.properties");
+        return IdMapperTest.class.getResourceAsStream("data/" + name + ".json.properties");
     }
     
     private static JsonParser getParsedJsonResource(String name) throws Exception {

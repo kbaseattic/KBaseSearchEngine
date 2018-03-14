@@ -9,12 +9,15 @@ package kbasesearchengine.events.exceptions;
 @SuppressWarnings("serial")
 public class UnprocessableEventIndexingException extends IndexingException {
 
-    public UnprocessableEventIndexingException(final String message) {
-        super(message);
+    public UnprocessableEventIndexingException(final ErrorType errorType, final String message) {
+        super(errorType, message);
     }
     
-    public UnprocessableEventIndexingException(final String message, final Throwable cause) {
-        super(message, cause);
+    public UnprocessableEventIndexingException(
+            final ErrorType errorType,
+            final String message,
+            final Throwable cause) {
+        super(errorType, message, cause);
     }
     
 }

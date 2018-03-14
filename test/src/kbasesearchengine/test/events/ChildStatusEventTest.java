@@ -30,7 +30,7 @@ public class ChildStatusEventTest {
         
         assertThat("incorrect event", e.getEvent(), is(StatusEvent.getBuilder(
                 "ws", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP).build()));
-        assertThat("incorrect id", e.getId(), is(new StatusEventID("whee")));
+        assertThat("incorrect id", e.getID(), is(new StatusEventID("whee")));
         assertThat("incorrect is parent", e.isParentId(), is(true));
     }
     

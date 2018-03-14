@@ -79,8 +79,7 @@ versions:
   - path: functions
     transform: values
     full-text: true
-  - path: aliases/[*]/
-    full-text: true
+  - path: aliases/[*]
     key-name: aliases
   - path: location
     transform: location.contig_id
@@ -113,10 +112,6 @@ versions:
   - path: type
     keyword-type: string
     key-name: feature_type
-  - path: ontology_terms/*/
-    transform: values
-    keyword-type: string
-    key-name: ontology_terms
   - from-parent: true
     path: domain
     keyword-type: string

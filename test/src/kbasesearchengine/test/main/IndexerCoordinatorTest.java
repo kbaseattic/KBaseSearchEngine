@@ -33,6 +33,7 @@ import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StoredStatusEvent;
+import kbasesearchengine.events.exceptions.ErrorType;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.events.exceptions.IndexingException;
@@ -223,7 +224,7 @@ public class IndexerCoordinatorTest {
             final StoredStatusEvent sse,
             final StatusEventProcessingState state,
             final String updater) {
-        return StoredStatusEvent.getBuilder(sse.getEvent(), sse.getId(), state)
+        return StoredStatusEvent.getBuilder(sse.getEvent(), sse.getID(), state)
                 .withNullableUpdate(
                         Instant.now(), updater == null ? sse.getUpdater().orNull() : updater)
                 .build();
@@ -594,7 +595,7 @@ public class IndexerCoordinatorTest {
                 Arrays.asList(1, 1), ST, SC);
         
         when(storage.get(StatusEventProcessingState.UNPROC, 3)).thenThrow(
-                new FatalRetriableIndexingException("wheee!"));
+                new FatalRetriableIndexingException(ErrorType.OTHER, "wheee!"));
         
         final Runnable coordRunner = getIndexerRunnable(executor, coord);
         
@@ -617,9 +618,9 @@ public class IndexerCoordinatorTest {
         verify(logger, times(3)).logError(retExpCaptor.capture());
         
         final List<Exception> expected = Arrays.asList(
-                new FatalRetriableIndexingException("wheee!"),
-                new FatalRetriableIndexingException("wheee!"),
-                new FatalIndexingException("wheee!"));
+                new FatalRetriableIndexingException(ErrorType.OTHER, "wheee!"),
+                new FatalRetriableIndexingException(ErrorType.OTHER, "wheee!"),
+                new FatalIndexingException(ErrorType.OTHER, "wheee!"));
         
         for (int i = 0; i < expected.size(); i++) {
             TestCommon.assertExceptionCorrect(retExpCaptor.getAllValues().get(i), expected.get(i));
@@ -685,7 +686,8 @@ public class IndexerCoordinatorTest {
         
         when(storage.setProcessingState(new StatusEventID("foo1"),
                 StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY)).thenThrow(
-                        new FatalRetriableIndexingException("oof ouch owie my bones"));
+                        new FatalRetriableIndexingException(
+                                ErrorType.OTHER, "oof ouch owie my bones"));
         
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(0));
@@ -707,8 +709,8 @@ public class IndexerCoordinatorTest {
         verify(logger, times(2)).logError(retExpCaptor.capture());
         
         final List<Exception> expected = Arrays.asList(
-                new FatalRetriableIndexingException("oof ouch owie my bones"),
-                new FatalIndexingException("oof ouch owie my bones"));
+                new FatalRetriableIndexingException(ErrorType.OTHER, "oof ouch owie my bones"),
+                new FatalIndexingException(ErrorType.OTHER, "oof ouch owie my bones"));
         
         for (int i = 0; i < expected.size(); i++) {
             TestCommon.assertExceptionCorrect(retExpCaptor.getAllValues().get(i), expected.get(i));
@@ -737,7 +739,7 @@ public class IndexerCoordinatorTest {
         when(storage.get(StatusEventProcessingState.UNPROC, 3)).thenReturn(Arrays.asList(event1));
         
         when(storage.get(new StatusEventID("foo1"))).thenThrow(
-                        new FatalRetriableIndexingException("yay"));
+                        new FatalRetriableIndexingException(ErrorType.OTHER, "yay"));
         
         coordRunner.run();
         assertThat("incorrect cycle count", coord.getContinuousCycles(), is(0));
@@ -769,10 +771,10 @@ public class IndexerCoordinatorTest {
         verify(logger, times(4)).logError(retExpCaptor.capture());
         
         final List<Exception> expected = Arrays.asList(
-                new FatalRetriableIndexingException("yay"),
-                new FatalRetriableIndexingException("yay"),
-                new FatalRetriableIndexingException("yay"),
-                new FatalIndexingException("yay"));
+                new FatalRetriableIndexingException(ErrorType.OTHER, "yay"),
+                new FatalRetriableIndexingException(ErrorType.OTHER, "yay"),
+                new FatalRetriableIndexingException(ErrorType.OTHER, "yay"),
+                new FatalIndexingException(ErrorType.OTHER, "yay"));
         
         for (int i = 0; i < expected.size(); i++) {
             TestCommon.assertExceptionCorrect(retExpCaptor.getAllValues().get(i), expected.get(i));
