@@ -1,0 +1,18 @@
+global-object-type: Taxon
+ui-type-name: Taxon
+storage-type: WS
+storage-object-type: KBaseGenomeAnnotations.Taxon
+versions:
+- indexing-rules:
+  - path: scientific_name
+    keyword-type: string
+    ui-name: Scientific Name
+  - path: scientific_lineage
+    full-text: true
+    ui-name: Scientific Lineage
+  - path: domain
+    keyword-type: string
+    ui-name: Domain
+  - path: aliases
+    transform: values
+    ui-name: Aliases
