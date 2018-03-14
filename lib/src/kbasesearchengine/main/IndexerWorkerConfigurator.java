@@ -1,9 +1,11 @@
 package kbasesearchengine.main;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,6 +30,9 @@ public class IndexerWorkerConfigurator {
     private final LineLogger logger;
     private final Map<String, EventHandler> eventHandlers;
     private final int maxObjectsPerLoad;
+    private final int retryCount;
+    private final int retrySleepMS;
+    private final List<Integer> retryFatalBackoffMS;
     
     private IndexerWorkerConfigurator(
             final String id,
@@ -38,7 +43,10 @@ public class IndexerWorkerConfigurator {
             final Set<String> workerCodes,
             final LineLogger logger,
             final Map<String, EventHandler> eventHandlers,
-            final int maxObjectsPerLoad) {
+            final int maxObjectsPerLoad,
+            final int retryCount,
+            final int retrySleepMS,
+            final List<Integer> retryFatalBackoffMS) {
         this.id = id;
         this.rootTempDir = rootTempDir;
         this.eventStorage = eventStorage;
@@ -48,6 +56,9 @@ public class IndexerWorkerConfigurator {
         this.logger = logger;
         this.eventHandlers = Collections.unmodifiableMap(eventHandlers);
         this.maxObjectsPerLoad = maxObjectsPerLoad;
+        this.retryCount = retryCount;
+        this.retrySleepMS = retrySleepMS;
+        this.retryFatalBackoffMS = Collections.unmodifiableList(retryFatalBackoffMS);
     }
 
     /** Get the ID of the worker.
@@ -119,6 +130,29 @@ public class IndexerWorkerConfigurator {
         return maxObjectsPerLoad;
     }
     
+    /** Get the number of times the worker should retry non-fatal functions before giving up and
+     * marking an event as failed.
+     * @return the number of times the worker should retry non-fatal functions.
+     */
+    public int getRetryCount() {
+        return retryCount;
+    }
+
+    /** Get the sleep time in milliseconds between retries for non-fatal functions.
+     * @return the sleep time.
+     */
+    public int getRetrySleepMS() {
+        return retrySleepMS;
+    }
+
+    /** Get the backoff times in milliseconds between retries for fatal functions.
+     * This is typically an exponential backoff. When the last retry fails, the worker shuts down.
+     * @return the back off times.
+     */
+    public List<Integer> getRetryFatalBackoffMS() {
+        return retryFatalBackoffMS;
+    }
+
     /** Get a builder for a {@link IndexerWorkerConfigurator}. Note that a call to
      * {@link Builder#withStorage(StatusEventStorage, TypeStorage, IndexingStorage)} is required
      * before calling {@link Builder#build()}.
@@ -151,6 +185,9 @@ public class IndexerWorkerConfigurator {
         private final Map<String, EventHandler> eventHandlers = new HashMap<>();
         private final Set<String> workerCodes = new HashSet<>();
         private int maxObjectsPerLoad = 100_000;
+        private int retryCount = 5;
+        private int retrySleepMS = 1000;
+        private List<Integer> retryFatalBackOffMS = Arrays.asList(1000, 2000, 4000, 8000, 16000);
         
         private Builder(
                 final String workerID,
@@ -223,6 +260,59 @@ public class IndexerWorkerConfigurator {
             return this;
         }
         
+        /** Add the number of times the worker should retry non-fatal functions before giving up
+         * and marking an event as failed to the configurator.
+         * The default is 5 retries.
+         * @param retryCount the retry count.
+         * @return this builder.
+         */
+        public Builder withRetryCount(final int retryCount) {
+            if (retryCount < 1) {
+                throw new IllegalArgumentException("retryCount must be at least 1");
+            }
+            this.retryCount = retryCount;
+            return this;
+        }
+        
+        /** Add the sleep time in milliseconds between retries for non-fatal functions to the
+         * configurator.
+         * The default is 1 second.
+         * @param retrySleepMS the sleep time.
+         * @return this builder.
+         */
+        public Builder withRetrySleepTimeMS(final int retrySleepMS) {
+            if (retrySleepMS < 1) {
+                throw new IllegalArgumentException("retrySleepMS must be at least 1");
+            }
+            this.retrySleepMS = retrySleepMS;
+            return this;
+        }
+        
+        /** Add the backoff times in milliseconds between retries for fatal functions to the
+         * configurator.
+         * This is typically an exponential backoff. When the last retry fails, the worker shuts
+         * down.
+         * 
+         * The default is 1, 2, 4, 8, and 16 seconds.
+         * @param retryBackoffMS the backoff times.
+         * @return this builder.
+         */
+        public Builder withRetryFatalBackoffTimeMS(final Integer... retryBackoffMS) {
+            Utils.nonNull(retryBackoffMS, "retryBackoffMS");
+            final List<Integer> retry = Arrays.asList(retryBackoffMS);
+            if (retry.isEmpty()) {
+                throw new IllegalArgumentException("Must provide at least one retry backoff time");
+            }
+            for (final Integer i : retry) {
+                if (i == null || i < 1) {
+                    throw new IllegalArgumentException(
+                            "The entries of retryBackoffMS must be non-null and at least 1");
+                }
+            }
+            this.retryFatalBackOffMS = retry;
+            return this;
+        }
+        
         /** Build the {@link IndexerWorkerConfigurator}.
          * @return a new {@link IndexerWorkerConfigurator}.
          */
@@ -231,7 +321,8 @@ public class IndexerWorkerConfigurator {
                 throw new IllegalArgumentException("storage systems must be set");
             }
             return new IndexerWorkerConfigurator(id, rootTempDir, eventStorage, typeStorage,
-                    indexingStorage, workerCodes, logger, eventHandlers, maxObjectsPerLoad);
+                    indexingStorage, workerCodes, logger, eventHandlers, maxObjectsPerLoad,
+                    retryCount, retrySleepMS, retryFatalBackOffMS);
         }
     }
 

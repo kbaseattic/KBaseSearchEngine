@@ -66,11 +66,6 @@ public class IndexerWorker implements Stoppable {
     //TODO JAVADOC
     //TODO TESTS
     
-    private static final int RETRY_COUNT = 5;
-    private static final int RETRY_SLEEP_MS = 1000;
-    private static final List<Integer> RETRY_FATAL_BACKOFF_MS = Arrays.asList(
-            1000, 2000, 4000, 8000, 16000);
-
     private final String id;
     private final File rootTempDir;
     private final StatusEventStorage storage;
@@ -83,10 +78,7 @@ public class IndexerWorker implements Stoppable {
     private final SignalMonitor signalMonitor = new SignalMonitor();
     private boolean stopRunner = false;
     private final int maxObjectsPerLoad;
-    
-    private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
-            RETRY_FATAL_BACKOFF_MS,
-            (retrycount, event, except) -> logError(retrycount, event, except));
+    private final Retrier retrier;
 
     public IndexerWorker(final IndexerWorkerConfigurator config) throws IOException {
         this.maxObjectsPerLoad = config.getMaxObjectsPerLoad();
@@ -103,6 +95,9 @@ public class IndexerWorker implements Stoppable {
         this.storage = config.getEventStorage();
         this.typeStorage = config.getTypeStorage();
         this.indexingStorage = config.getIndexingStorage();
+        this.retrier = new Retrier(config.getRetryCount(), config.getRetrySleepMS(),
+                config.getRetryFatalBackoffMS(),
+                (retrycount, event, except) -> logError(retrycount, event, except));
     }
     
     @Override
