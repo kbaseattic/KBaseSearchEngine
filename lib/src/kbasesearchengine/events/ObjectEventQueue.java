@@ -74,7 +74,7 @@ public class ObjectEventQueue {
         } else {
             throw new IllegalArgumentException("Illegal initial event state: " + state);
         }
-        containedEvents.add(initialEvent.getId());
+        containedEvents.add(initialEvent.getID());
     }
     
     private boolean isObjectLevelEvent(final StoredStatusEvent event) {
@@ -99,9 +99,9 @@ public class ObjectEventQueue {
             throw new IllegalArgumentException("Illegal type for loading event: " +
                     event.getEvent().getEventType());
         }
-        if (!containedEvents.contains(event.getId())) {
+        if (!containedEvents.contains(event.getID())) {
             queue.add(event);
-            containedEvents.add(event.getId());
+            containedEvents.add(event.getID());
             return true;
         }
         return false;
@@ -146,8 +146,8 @@ public class ObjectEventQueue {
      */
     public void setProcessingComplete(final StoredStatusEvent event) {
         Utils.nonNull(event, "event");
-        if (processing != null && event.getId().equals(processing.getId())) {
-            containedEvents.remove(processing.getId());
+        if (processing != null && event.getID().equals(processing.getID())) {
+            containedEvents.remove(processing.getID());
             processing = null;
             moveToReady();
         } else {

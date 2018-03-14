@@ -294,7 +294,7 @@ public class KeywordParser {
             final Map<GUID, SearchObjectType> guidToType = lookup.getTypesForGuids(guids);
             for (final GUID guid : guids) {
                 if (!guidToType.containsKey(guid)) {
-                    throw new ObjectParseException("GUID " + guid + " not found");
+                    throw new GUIDNotFoundException("GUID " + guid + " not found");
                 }
                 final SearchObjectType actualType = guidToType.get(guid);
                 if (!actualType.equals(type)) {
@@ -329,24 +329,24 @@ public class KeywordParser {
             final GUID subObjectGuid,
             final Object value,
             final LocationTransformType locationTransformType)
-            throws ObjectParseException {
+            throws ContigLocationException {
         final List<List<Object>> loc;
         try {
             @SuppressWarnings("unchecked")
             final List<List<Object>> locloc = (List<List<Object>>) value;
             loc = locloc;
             if (loc.size() < 1) {
-                throw new ObjectParseException(String.format(
+                throw new ContigLocationException(String.format(
                         "Expected location array for location transform for %s, got empty array",
                         subObjectGuid));
             }
             if (loc.get(0).size() < 4) {
-                throw new ObjectParseException(String.format(
+                throw new ContigLocationException(String.format(
                         "Expected location array for location transform for %s, got %s",
                         subObjectGuid, loc.get(0)));
             }
         } catch (ClassCastException e) {
-            throw new ObjectParseException(String.format(
+            throw new ContigLocationException(String.format(
                     "Expected location array for location transform for %s, got %s",
                     subObjectGuid, value));
         }
