@@ -322,6 +322,36 @@ public class IndexerWorkerIntegrationTest {
         System.out.println("Feature: " + obj);
     }
 
+    @Test
+    public void testSubobjectPublicOrPrivate() throws Exception {
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                new StorageObjectType("WS", "KBaseGenomes.Genome"),
+                Instant.now(),
+                StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID(wsid)
+                        .withNullableObjectID("3")
+                        .withNullableVersion(1)
+                        .withNullableisPublic(true)
+                        .build(),
+                new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC)
+                .build();
+        worker.processEvent(ev);
+        PostProcessing pp = new PostProcessing();
+        pp.objectInfo = true;
+        pp.objectData = true;
+        pp.objectKeys = true;
+
+        List<String> objectTypes = ImmutableList.of("Genome", "Assembly");
+
+        System.out.println("=========================  BEGIN  ======================================");
+        Set<GUID> guids = storage.searchIds(objectTypes,
+                MatchFilter.getBuilder().build(), null,
+                AccessFilter.create().withAdmin(true).withPublic(false), null).guids;
+        System.out.println("GUIDs found: " + guids);
+        System.out.println("=========================  END  ======================================");
+    }
+    
     private void indexFewVersions(final StoredStatusEvent evid) throws Exception {
         final StatusEvent ev = evid.getEvent();
         for (int i = Math.max(1, ev.getVersion().get() - 5); i <= ev.getVersion().get(); i++) {
