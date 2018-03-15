@@ -130,6 +130,13 @@ public class IndexerWorkerConfiguratorTest {
         } catch (UnsupportedOperationException e) {
             // test passed
         }
+        
+        try {
+            cfg.getRetryFatalBackoffMS().add(1);
+            fail("expected exception");
+        } catch (UnsupportedOperationException e) {
+            // test passed
+        }
     }
     
     @Test
