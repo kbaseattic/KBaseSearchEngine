@@ -1310,6 +1310,9 @@ public class IndexerWorkerTest {
                 .withNullableisPublic(false)
                 .build(),
                 new StatusEventID("parentID"));
+
+        when(ws.updateEvent(event.getEvent())).thenReturn(event.getEvent());
+
         try {
             worker.processEvent(event);
             fail("expected exception");
@@ -1382,6 +1385,8 @@ public class IndexerWorkerTest {
                 .withNullableisPublic(false)
                 .build(),
                 new StatusEventID("parentID"));
+
+        when(ws.updateEvent(event.getEvent())).thenReturn(event.getEvent());
         
         when(storage.store(eq(event), eq("OTHER"), argThat(new ThrowableMatcher(
                 new FatalIndexingException(ErrorType.OTHER, "WS is super broke yo")))))
