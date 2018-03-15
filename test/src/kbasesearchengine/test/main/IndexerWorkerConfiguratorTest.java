@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 
 import org.junit.Test;
@@ -18,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.IndexerWorkerConfigurator;
+import kbasesearchengine.main.IndexerWorkerConfigurator.Builder;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.system.TypeStorage;
@@ -46,6 +48,10 @@ public class IndexerWorkerConfiguratorTest {
         assertThat("incorrect event handlers", cfg.getEventHandlers(), is(Collections.emptyMap()));
         assertThat("incorrect wrk codes", cfg.getWorkerCodes(), is(Collections.emptySet()));
         assertThat("incorrect max objects", cfg.getMaxObjectsPerLoad(), is(100_000));
+        assertThat("incorrect retry count", cfg.getRetryCount(), is(5));
+        assertThat("incorrect retry sleep", cfg.getRetrySleepMS(), is(1000));
+        assertThat("incorrect retry fatal", cfg.getRetryFatalBackoffMS(), is(Arrays.asList(
+                1000, 2000, 4000, 8000, 16000)));
     }
     
     @Test
@@ -68,6 +74,9 @@ public class IndexerWorkerConfiguratorTest {
                 .withMaxObjectsPerIndexingLoad(1)
                 .withWorkerCode("foo")
                 .withWorkerCode("bar")
+                .withRetryCount(1)
+                .withRetrySleepTimeMS(1)
+                .withRetryFatalBackoffTimeMS(1, 6, 3, 42)
                 .build();
         
         assertThat("incorrect id", cfg.getWorkerID(), is("id"));
@@ -80,6 +89,10 @@ public class IndexerWorkerConfiguratorTest {
                 "sc1", eh1, "sc2", eh2)));
         assertThat("incorrect wrk codes", cfg.getWorkerCodes(), is(set("foo", "bar")));
         assertThat("incorrect max objects", cfg.getMaxObjectsPerLoad(), is(1));
+        assertThat("incorrect retry count", cfg.getRetryCount(), is(1));
+        assertThat("incorrect retry sleep", cfg.getRetrySleepMS(), is(1));
+        assertThat("incorrect retry fatal", cfg.getRetryFatalBackoffMS(), is(Arrays.asList(
+                1, 6, 3, 42)));
     }
     
     @Test
@@ -113,6 +126,13 @@ public class IndexerWorkerConfiguratorTest {
         
         try {
             cfg.getWorkerCodes().add("baz");
+            fail("expected exception");
+        } catch (UnsupportedOperationException e) {
+            // test passed
+        }
+        
+        try {
+            cfg.getRetryFatalBackoffMS().add(1);
             fail("expected exception");
         } catch (UnsupportedOperationException e) {
             // test passed
@@ -173,10 +193,7 @@ public class IndexerWorkerConfiguratorTest {
     
     @Test
     public void withEventHandlerFail() {
-        final IndexerWorkerConfigurator.Builder cfg = IndexerWorkerConfigurator.getBuilder(
-                "id", Paths.get("f"), mock(LineLogger.class))
-                .withStorage(mock(StatusEventStorage.class), mock(TypeStorage.class),
-                        mock(IndexingStorage.class));
+        final IndexerWorkerConfigurator.Builder cfg = getBuilder();
         
         failWithEventHandler(cfg, null, new NullPointerException("handler"));
         
@@ -196,7 +213,6 @@ public class IndexerWorkerConfiguratorTest {
             final EventHandler handler,
             final Exception expected) {
         try {
-            
             builder.withEventHandler(handler);
             fail("expected exception");
         } catch (Exception got) {
@@ -214,10 +230,7 @@ public class IndexerWorkerConfiguratorTest {
     
     private void failWithWorkerCode(final String workerCode, final Exception expected) {
         try {
-            IndexerWorkerConfigurator.getBuilder("id", Paths.get("f"), mock(LineLogger.class))
-                    .withStorage(mock(StatusEventStorage.class), mock(TypeStorage.class),
-                            mock(IndexingStorage.class))
-                    .withWorkerCode(workerCode);
+            getBuilder().withWorkerCode(workerCode);
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
@@ -231,10 +244,56 @@ public class IndexerWorkerConfiguratorTest {
     
     private void failWithMaxObjects(final int maxObjects, final Exception expected) {
         try {
-            IndexerWorkerConfigurator.getBuilder("id", Paths.get("f"), mock(LineLogger.class))
-                    .withStorage(mock(StatusEventStorage.class), mock(TypeStorage.class),
-                            mock(IndexingStorage.class))
-                    .withMaxObjectsPerIndexingLoad(maxObjects);
+            getBuilder().withMaxObjectsPerIndexingLoad(maxObjects);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
+
+    private Builder getBuilder() {
+        return IndexerWorkerConfigurator.getBuilder("id", Paths.get("f"), mock(LineLogger.class))
+                .withStorage(mock(StatusEventStorage.class), mock(TypeStorage.class),
+                        mock(IndexingStorage.class));
+    }
+    
+    @Test
+    public void withRetryCountFail() {
+        try {
+            getBuilder().withRetryCount(0);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, new IllegalArgumentException(
+                    "retryCount must be at least 1"));
+        }
+    }
+    
+    @Test
+    public void withRetrySleepFail() {
+        try {
+            getBuilder().withRetrySleepTimeMS(0);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, new IllegalArgumentException(
+                    "retrySleepMS must be at least 1"));
+        }
+    }
+    
+    @Test
+    public void withRetryFatalBackoffFail() {
+        failWithRetryFatalBackoff(new IllegalArgumentException(
+                "Must provide at least one retry backoff time"));
+        failWithRetryFatalBackoff(new NullPointerException("retryBackoffMS"), (Integer[]) null);
+        failWithRetryFatalBackoff(new IllegalArgumentException(
+                "The entries of retryBackoffMS must be non-null and at least 1"),
+                (Integer) null, 6, 10);
+        failWithRetryFatalBackoff(new IllegalArgumentException(
+                "The entries of retryBackoffMS must be non-null and at least 1"), 6, 0, 10);
+    }
+    
+    private void failWithRetryFatalBackoff(final Exception expected, final Integer... backoff) {
+        try {
+            getBuilder().withRetryFatalBackoffTimeMS(backoff);
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);

@@ -465,11 +465,11 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals(1, ids.size());
         GUID id = ids.iterator().next();
         Assert.assertEquals(expectedGUID, id);
-        Set<Integer> accessGroupIds = new LinkedHashSet<>(Arrays.asList(1, 2, 3));
         List<ObjectData> objList = indexStorage.getObjectsByIds(
                 new HashSet<>(Arrays.asList(id)));
         ObjectData featureIndex = objList.get(0);
         System.out.println("GenomeFeature index: " + featureIndex.getKeyProperties());
+        @SuppressWarnings("unchecked")
         Map<String, Object> obj = (Map<String, Object>)featureIndex.getData().get();
         Assert.assertEquals("repeat_region_1", obj.get("id"));
         Assert.assertEquals("repeat_region", obj.get("type"));
