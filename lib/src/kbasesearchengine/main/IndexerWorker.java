@@ -59,7 +59,6 @@ import kbasesearchengine.system.ParsingRulesSubtypeFirstComparator;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
-import kbasesearchengine.tools.Utils;
 import org.apache.commons.io.FileUtils;
 
 public class IndexerWorker implements Stoppable {
@@ -79,7 +78,7 @@ public class IndexerWorker implements Stoppable {
     private final IndexingStorage indexingStorage;
     private final Set<String> workerCodes;
     private final LineLogger logger;
-    private final Map<String, EventHandler> eventHandlers = new HashMap<>();
+    private final Map<String, EventHandler> eventHandlers;
     private ScheduledExecutorService executor = null;
     private final SignalMonitor signalMonitor = new SignalMonitor();
     private boolean stopRunner = false;
@@ -89,35 +88,21 @@ public class IndexerWorker implements Stoppable {
             RETRY_FATAL_BACKOFF_MS,
             (retrycount, event, except) -> logError(retrycount, event, except));
 
-    public IndexerWorker(
-            // this is screaming for a configuration builder, esp if we configure the retry info
-            final String id,
-            final List<EventHandler> eventHandlers,
-            final StatusEventStorage storage,
-            final IndexingStorage indexingStorage,
-            final TypeStorage typeStorage,
-            final File tempDir,
-            final LineLogger logger,
-            final Set<String> workerCodes,
-            final int maxObjectsPerLoad)
-            throws IOException {
-        Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
-        Utils.nonNull(logger, "logger");
-        Utils.nonNull(indexingStorage, "indexingStorage");
-        this.maxObjectsPerLoad = maxObjectsPerLoad;
-        this.workerCodes = workerCodes;
-        logger.logInfo("Worker codes: " + workerCodes);
-        this.id = id;
-        this.logger = logger;
-        this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
+    public IndexerWorker(final IndexerWorkerConfigurator config) throws IOException {
+        this.maxObjectsPerLoad = config.getMaxObjectsPerLoad();
+        this.workerCodes = config.getWorkerCodes();
+        this.logger = config.getLogger();
+        this.logger.logInfo("Worker codes: " + workerCodes);
+        this.id = config.getWorkerID();
+        this.rootTempDir = FileUtil.getOrCreateCleanSubDir(config.getRootTempDir().toFile(),
                 id + "_" + UUID.randomUUID().toString().substring(0,5));
-        logger.logInfo("Created temp dir " + rootTempDir.getAbsolutePath() +
+        this.logger.logInfo("Created temp dir " + rootTempDir.getAbsolutePath() +
                                                      " for indexer worker " + id);
         
-        eventHandlers.stream().forEach(eh -> this.eventHandlers.put(eh.getStorageCode(), eh));
-        this.storage = storage;
-        this.typeStorage = typeStorage;
-        this.indexingStorage = indexingStorage;
+        this.eventHandlers = config.getEventHandlers();
+        this.storage = config.getEventStorage();
+        this.typeStorage = config.getTypeStorage();
+        this.indexingStorage = config.getIndexingStorage();
     }
     
     @Override

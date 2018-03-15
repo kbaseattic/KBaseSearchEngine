@@ -56,6 +56,7 @@ import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.IndexerWorker;
+import kbasesearchengine.main.IndexerWorkerConfigurator;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.search.IndexingConflictException;
@@ -126,9 +127,12 @@ public class IndexerWorkerTest {
         
         when(ws.getStorageCode()).thenReturn("code");
         
-        final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null, 1000);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
+        
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
         
         final GUID guid = new GUID("code:1/2/3");
         when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
@@ -266,9 +270,12 @@ public class IndexerWorkerTest {
         
         when(ws.getStorageCode()).thenReturn("code");
         
-        final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null, 1000);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
+        
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
         
         final GUID guid = new GUID("code:1/2/3");
         when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
@@ -352,9 +359,12 @@ public class IndexerWorkerTest {
         
         when(ws.getStorageCode()).thenReturn("code");
         
-        final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null, 1000);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
+        
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
         
         final GUID guid = new GUID("code:1/2/3");
         when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
@@ -461,9 +471,13 @@ public class IndexerWorkerTest {
         
         when(ws.getStorageCode()).thenReturn("code");
         
-        final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null, 3);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws)
+                .withMaxObjectsPerIndexingLoad(3);
+        
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
         
         final GUID guid = new GUID("code:1/2/3");
         when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
@@ -567,9 +581,13 @@ public class IndexerWorkerTest {
         
         when(ws.getStorageCode()).thenReturn("code");
         
-        final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null, 2);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws)
+                .withMaxObjectsPerIndexingLoad(2);
+        
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
         
         final GUID guid = new GUID("code:1/2/3");
         when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
@@ -673,9 +691,12 @@ public class IndexerWorkerTest {
         
         when(ws.getStorageCode()).thenReturn("code");
         
-        final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null, 1000);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
+        
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
         
         final GUID guid = new GUID("code:1/2/3");
         when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
@@ -786,9 +807,12 @@ public class IndexerWorkerTest {
         
         when(ws.getStorageCode()).thenReturn("code");
         
-        final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null, 1000);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
+        
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
         
         doThrow(new IndexingConflictException("conflict", new IOException("placeholder")))
                 .when(idxStore).deleteAllVersions(new GUID("WS:3/6"));
@@ -856,9 +880,12 @@ public class IndexerWorkerTest {
         
         when(ws.getStorageCode()).thenReturn("code");
         
-        final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null, 1000);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
+        
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
         
         final GUID guid = new GUID("code:1/2/3");
         when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
@@ -946,9 +973,12 @@ public class IndexerWorkerTest {
         
         when(ws.getStorageCode()).thenReturn("code");
         
-        final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null, 1000);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
+        
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
         
         when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
         
@@ -1045,9 +1075,12 @@ public class IndexerWorkerTest {
         final StorageObjectType storageObjectType = StorageObjectType
                 .fromNullableVersion("code", "KBaseGenome.Genome", 3);
         
-        final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null, 1000);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
+        
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
         
         when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set());
         
@@ -1084,11 +1117,14 @@ public class IndexerWorkerTest {
         
         when(ws.getStorageCode()).thenReturn("code");
         
-        final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null, 1000);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
         
-        when(storage.setAndGetProcessingState(StatusEventProcessingState.READY, null,
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
+        
+        when(storage.setAndGetProcessingState(StatusEventProcessingState.READY, set(),
                 StatusEventProcessingState.PROC, "myid"))
                 .thenThrow(new FatalRetriableIndexingException(ErrorType.OTHER, "bonk"));
         
@@ -1124,11 +1160,14 @@ public class IndexerWorkerTest {
         
         when(ws.getStorageCode()).thenReturn("code");
         
-        final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null, 1000);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
         
-        when(storage.setAndGetProcessingState(StatusEventProcessingState.READY, null,
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
+        
+        when(storage.setAndGetProcessingState(StatusEventProcessingState.READY, set(),
                 StatusEventProcessingState.PROC, "myid"))
                 .thenReturn(Optional.absent());
         
@@ -1150,11 +1189,14 @@ public class IndexerWorkerTest {
         
         when(ws.getStorageCode()).thenReturn("code1");
         
-        final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null, 1000);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
         
-        when(storage.setAndGetProcessingState(StatusEventProcessingState.READY, null,
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
+        
+        when(storage.setAndGetProcessingState(StatusEventProcessingState.READY, set(),
                 StatusEventProcessingState.PROC, "myid"))
                 .thenReturn(Optional.of(StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                         "CODE", Instant.ofEpochMilli(10000L), StatusEventType.COPY_ACCESS_GROUP)
@@ -1202,9 +1244,12 @@ public class IndexerWorkerTest {
         
         when(ws.getStorageCode()).thenReturn("code");
         
-        final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null, 1000);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
+        
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
         
         final StorageObjectType storageObjectType = StorageObjectType
                 .fromNullableVersion("code", "sometype", 3);
@@ -1271,9 +1316,12 @@ public class IndexerWorkerTest {
         
         when(ws.getStorageCode()).thenReturn("code");
         
-        final IndexerWorker worker = new IndexerWorker(
-                "myid", Arrays.asList(ws), storage, idxStore, typeStore, tempDir.toFile(), logger,
-                null, 1000);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
+        
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
         
         final StorageObjectType storageObjectType = StorageObjectType
                 .fromNullableVersion("code", "sometype", 3);
