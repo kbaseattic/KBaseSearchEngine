@@ -565,7 +565,7 @@ public class SearchAPIIntegrationTest {
         final Map<String, Object> expected = ImmutableMap.of(
                 "state", "OK",
                 "message", "",
-                "version", "0.1.0-dev1");
+                "version", "0.1.0");
         
         assertThat("incorrect status output", res, is(expected));
     }

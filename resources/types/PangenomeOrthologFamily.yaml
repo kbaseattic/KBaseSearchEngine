@@ -1,0 +1,19 @@
+global-object-type: PangenomeOrthologFamily
+ui-type-name: Pangenome Ortholog Family
+storage-type: WS
+storage-object-type: KBaseGenomes.Pangenome
+versions:
+- inner-sub-type: OrthologFamily
+  path-to-sub-objects: /orthologs/[*]/
+  primary-key-path: id
+  indexing-rules:
+  - path: id
+    keyword-type: string
+    ui-name: ID
+  - path: function
+    full-text: true
+  - path: orthologs/[*]/0
+    transform: values
+    keyword-type: string
+    key-name: ortholog_genes
+    ui-name: Ortholog Genes

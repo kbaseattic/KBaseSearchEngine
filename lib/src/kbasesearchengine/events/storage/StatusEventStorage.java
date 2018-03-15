@@ -42,13 +42,20 @@ public interface StatusEventStorage {
             String storedBy)
             throws FatalRetriableIndexingException;
     
-    /** Store a status event that is a child of another status event. Child status events are
-     * immutable once stored. Note that no checking is done on the validity of the parent event's
-     * ID.
+    /** Store a status event that resulted in an error and that is a child of another status event.
+     * Child status events are immutable once stored. Note that no checking is done on the
+     * validity of the parent event's ID.
+     * If the error message or stack trace are long, they will be silently truncated.
      * @param newEvent the child event to store.
+     * @param errorCode a 20 character or less string identifying the error type.
+     * @param error the error.
      * @return the stored child event.
      */
-    StoredChildStatusEvent store(ChildStatusEvent newEvent) throws FatalRetriableIndexingException;
+    StoredChildStatusEvent store(
+            ChildStatusEvent newEvent,
+            final String errorCode,
+            final Throwable error)
+            throws FatalRetriableIndexingException;
 
     /** Get an event by its ID.
      * @param id the id.
@@ -111,6 +118,7 @@ public interface StatusEventStorage {
             StatusEventProcessingState newState)
             throws FatalRetriableIndexingException;
 
+
     /**
      * Resets all failed events simply by setting their state from FAIL to
      * UNPROC.
@@ -118,4 +126,22 @@ public interface StatusEventStorage {
     void resetFailedEvents()
             throws FatalRetriableIndexingException;
 
+
+    /** Mark an event as a {@link StatusEventProcessingState.FAIL} with error information.
+     * If the error message or stack trace are long, they will be silently truncated.
+     * @param id the id of the event to modify.
+     * @param oldState the expected state of the event. If non-null, an event is only modified
+     * if both the id and the oldState match.
+     * @param errorCode a 20 character or less string identifying the error type.
+     * @param error the error.
+     * @return true if the event was updated, false if the event was not found in the storage
+     * system.
+     * @throws FatalRetriableIndexingException if an error occurs while setting the state.
+     */
+    boolean setProcessingState(
+            final StatusEventID id,
+            final StatusEventProcessingState oldState,
+            final String errorCode,
+            final Throwable error)
+            throws FatalRetriableIndexingException;
 }

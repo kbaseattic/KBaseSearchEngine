@@ -15,7 +15,6 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +57,7 @@ import kbasesearchengine.main.Stoppable;
 import kbasesearchengine.main.GitInfo;
 import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.main.IndexerWorker;
+import kbasesearchengine.main.IndexerWorkerConfigurator;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.IndexingStorage;
@@ -384,9 +384,14 @@ public class SearchTools {
         final EventHandler weh = new WorkspaceEventHandler(
                 new CloneableWorkspaceClientImpl(wsClient));
         
-        final IndexerWorker wrk = new IndexerWorker(
-                getID(id), Arrays.asList(weh), storage, indexStore, ss, tempDir, logger,
-                cfg.getWorkerCodes(), MAX_OBJECTS_PER_LOAD);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                getID(id), tempDir.toPath(), logger)
+                .withStorage(storage, ss, indexStore)
+                .withEventHandler(weh)
+                .withMaxObjectsPerIndexingLoad(MAX_OBJECTS_PER_LOAD);
+        cfg.getWorkerCodes().stream().forEach(wc -> wrkCfg.withWorkerCode(wc));
+        
+        final IndexerWorker wrk = new IndexerWorker(wrkCfg.build());
         wrk.startIndexer();
         return wrk;
     }
