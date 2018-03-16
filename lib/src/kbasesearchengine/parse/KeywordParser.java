@@ -421,7 +421,7 @@ public class KeywordParser {
         public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids) 
                 throws InterruptedException, IndexingException;
         public ObjectTypeParsingRules getTypeDescriptor(SearchObjectType type)
-                throws IndexingException, NoSuchTypeException;
+                throws NoSuchTypeException;
     }
 
     private static class InnerKeyValue {

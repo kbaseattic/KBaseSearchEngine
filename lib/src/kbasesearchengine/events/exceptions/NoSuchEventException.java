@@ -10,6 +10,6 @@ import kbasesearchengine.events.StoredStatusEvent;
 public class NoSuchEventException extends RuntimeException {
     
     public NoSuchEventException(final StoredStatusEvent event) {
-        super(String.format("Event with ID %s not found", event.getId().getId()));
+        super(String.format("Event with ID %s not found", event.getID().getId()));
     }
 }

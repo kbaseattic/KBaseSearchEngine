@@ -40,6 +40,7 @@ import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.IndexerWorker;
+import kbasesearchengine.main.IndexerWorkerConfigurator;
 import kbasesearchengine.search.AccessFilter;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.IndexingStorage;
@@ -176,8 +177,13 @@ public class IndexerWorkerIntegrationTest {
         esStorage.setIndexNamePrefix(esIndexPrefix);
         storage = esStorage;
         
-        worker = new IndexerWorker("test", Arrays.asList(weh), eventStorage, esStorage,
-                ss, tempDirPath.resolve("WorkerTemp").toFile(), logger, null, 1000);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "test", tempDirPath.resolve("WorkerTemp"), logger)
+                .withStorage(eventStorage, ss, esStorage)
+                .withEventHandler(weh);
+        
+        worker = new IndexerWorker(wrkCfg.build());
+        
         loadTypes(wsUrl, wsadmintoken);
         wsid = (int) loadTestData(wsUrl, userToken);
     }
@@ -364,7 +370,7 @@ public class IndexerWorkerIntegrationTest {
                     .withNullableVersion(i)
                     .withNullableisPublic(ev.isPublic().get())
                     .build(),
-                    evid.getId(),
+                    evid.getID(),
                     StatusEventProcessingState.UNPROC)
                     .build();
             worker.processEvent(ev2);

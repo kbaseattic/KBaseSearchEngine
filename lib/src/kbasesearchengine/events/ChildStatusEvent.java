@@ -23,7 +23,7 @@ public class ChildStatusEvent implements StatusEventWithId {
     }
 
     @Override
-    public StatusEventID getId() {
+    public StatusEventID getID() {
         return parentId;
     }
 
