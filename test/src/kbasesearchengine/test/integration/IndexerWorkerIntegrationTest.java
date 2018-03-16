@@ -292,7 +292,7 @@ public class IndexerWorkerIntegrationTest {
                 new StatusEventID("-1"),
                 StatusEventProcessingState.UNPROC)
                 .build();
-        worker.processOneEvent(ev.getEvent());
+        worker.processEvent(ev);
         PostProcessing pp = new PostProcessing();
         pp.objectInfo = true;
         pp.objectData = true;
@@ -334,10 +334,10 @@ public class IndexerWorkerIntegrationTest {
                     .withNullableVersion(i)
                     .withNullableisPublic(ev.isPublic().get())
                     .build(),
-                    evid.getId(),
+                    evid.getID(),
                     StatusEventProcessingState.UNPROC)
                     .build();
-            worker.processOneEvent(ev2.getEvent());
+            worker.processEvent(ev2);
         }
     }
     

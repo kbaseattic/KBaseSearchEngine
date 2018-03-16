@@ -244,7 +244,7 @@ public class PerformanceTester {
                         .build();
                 long t2 = System.currentTimeMillis();
                 try {
-                    mop.processOneEvent(ev.getEvent());
+                    mop.processEvent(ev);
                     processTime += System.currentTimeMillis() - t2;
                 } catch (Exception ex) {
                     ex.printStackTrace();

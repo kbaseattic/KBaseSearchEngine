@@ -164,6 +164,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <test name="kbasesearchengine.test.events.ObjectEventQueueTest"/>
         <test name="kbasesearchengine.test.events.StatusEventIDTest"/>
         <test name="kbasesearchengine.test.events.StatusEventTest"/>
+        <test name="kbasesearchengine.test.events.StoredChildStatusEventTest"/>
         <test name="kbasesearchengine.test.events.StoredStatusEventTest"/>
         <test name="kbasesearchengine.test.events.exceptions.RetrierTest"/>
         <test name="kbasesearchengine.test.events.exceptions.ExceptionTest"/>

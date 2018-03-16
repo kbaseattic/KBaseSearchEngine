@@ -168,11 +168,11 @@ public class IndexerCoordinator implements Stoppable {
             try {
                 runOneCycle();
             } catch (InterruptedException | FatalIndexingException e) {
-                logError(ErrorType.FATAL, e);
+                logError(true, e);
                 executor.shutdown();
                 signalMonitor.signal();
             } catch (Throwable e) {
-                logError(ErrorType.UNEXPECTED, e);
+                logError(false, e);
             }
         }
     }
@@ -187,18 +187,9 @@ public class IndexerCoordinator implements Stoppable {
         executor.awaitTermination(millisToWait, TimeUnit.MILLISECONDS);
     }
     
-    private enum ErrorType {
-        FATAL, UNEXPECTED;
-    }
-    
-    private void logError(final ErrorType errtype, final Throwable e) {
-        final String msg;
-        if (ErrorType.FATAL.equals(errtype)) {
-            msg = "Fatal error in indexer, shutting down";
-        } else { // has to be UNEXPECTED
-            msg = "Unexpected error in indexer";
-        }
-        logError(msg, e);
+    private void logError(final boolean fatal, final Throwable e) {
+        logError(fatal ?
+                "Fatal error in indexer, shutting down" : "Unexpected error in indexer", e);
     }
 
     private void logError(final String msg, final Throwable e) {
@@ -215,7 +206,7 @@ public class IndexerCoordinator implements Stoppable {
         if (event.isPresent()) {
             // no child events here, all ids are for the event itself
             msg = String.format("Retriable error in indexer for event %s %s, retry %s",
-                    event.get().getEvent().getEventType(), event.get().getId().getId(),
+                    event.get().getEvent().getEventType(), event.get().getID().getId(),
                     retrycount);
         } else {
             msg = String.format("Retriable error in indexer, retry %s", retrycount);
@@ -278,11 +269,11 @@ public class IndexerCoordinator implements Stoppable {
             // since the queue doesn't mutate the state, if the state is not UNPROC
             // it's not in that state in the DB either
             if (sse.getState().equals(StatusEventProcessingState.UNPROC)) {
-                retrier.retryCons(e -> storage.setProcessingState(e.getId(),
+                retrier.retryCons(e -> storage.setProcessingState(e.getID(),
                         StatusEventProcessingState.UNPROC, StatusEventProcessingState.READY),
                         sse, sse);
                 logger.logInfo(String.format("Moved event %s %s %s from %s to %s",
-                        sse.getId().getId(), sse.getEvent().getEventType(),
+                        sse.getID().getId(), sse.getEvent().getEventType(),
                         sse.getEvent().toGUID(), StatusEventProcessingState.UNPROC,
                         StatusEventProcessingState.READY));
             }
@@ -292,7 +283,7 @@ public class IndexerCoordinator implements Stoppable {
     private void checkOnEventsInProcess() throws InterruptedException, IndexingException {
         for (final StoredStatusEvent sse: queue.getProcessing()) {
             final Optional<StoredStatusEvent> fromStorage =
-                    retrier.retryFunc(s -> s.get(sse.getId()), storage, sse);
+                    retrier.retryFunc(s -> s.get(sse.getID()), storage, sse);
             if (fromStorage.isPresent()) {
                 final StoredStatusEvent e = fromStorage.get();
                 final StatusEventProcessingState state = e.getState();
@@ -301,14 +292,14 @@ public class IndexerCoordinator implements Stoppable {
                     queue.setProcessingComplete(e);
                     logger.logInfo(String.format(
                             "Event %s %s %s completed processing with state %s on worker %s",
-                            e.getId().getId(), e.getEvent().getEventType(),
+                            e.getID().getId(), e.getEvent().getEventType(),
                             e.getEvent().toGUID(), state, e.getUpdater().orNull()));
                 } else {
                     logDelayedEvent(e);
                 }
             } else {
                 logger.logError(String.format("Event %s is in the in-memory queue but not " +
-                        "in the storage system. Removing from queue", sse.getId().getId()));
+                        "in the storage system. Removing from queue", sse.getID().getId()));
                 queue.setProcessingComplete(sse);
             }
         }
@@ -320,14 +311,14 @@ public class IndexerCoordinator implements Stoppable {
         final Instant lastStateChange = e.getUpdateTime().get();
         final Instant now = clock.instant();
         if (now.isAfter(lastStateChange.plus(1, ChronoUnit.HOURS))) {
-            final Instant lastlog = cache.getIfPresent(e.getId());
+            final Instant lastlog = cache.getIfPresent(e.getID());
             if (lastlog == null || now.isAfter(lastlog.plus(1, ChronoUnit.HOURS))) {
-                cache.put(e.getId(), now);
+                cache.put(e.getID(), now);
                 final long hours = Duration.between(lastStateChange, now).toHours();
                 logger.logInfo(String.format(
                             "Event %s %s %s in state %s has been processing for %s hours " + 
                             "on worker %s",
-                            e.getId().getId(), e.getEvent().getEventType(),
+                            e.getID().getId(), e.getEvent().getEventType(),
                             e.getEvent().toGUID(), e.getState(), hours, e.getUpdater().orNull()));
             }
         }
