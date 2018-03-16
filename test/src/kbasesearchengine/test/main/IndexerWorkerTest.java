@@ -714,6 +714,8 @@ public class IndexerWorkerTest {
         final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
                 "myid", tempDir, logger)
                 .withStorage(storage, typeStore, idxStore)
+                .withRetryCount(3)
+                .withRetrySleepTimeMS(20)
                 .withEventHandler(ws);
         
         final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
@@ -794,8 +796,6 @@ public class IndexerWorkerTest {
         verify(logger).logError(String.format(errmsg, 1));
         verify(logger).logError(String.format(errmsg, 2));
         verify(logger).logError(String.format(errmsg, 3));
-        verify(logger).logError(String.format(errmsg, 4));
-        verify(logger).logError(String.format(errmsg, 5));
 
         verify(logger).logError("Error processing event for event NEW_VERSION with parent ID " +
                 "pid: kbasesearchengine.events.exceptions." +
@@ -804,7 +804,7 @@ public class IndexerWorkerTest {
 
         final RetriableIndexingException retryexception =
                 new RetriableIndexingException(ErrorType.INDEXING_CONFLICT, "conflict");
-        verify(logger, times(5)).logError(argThat(new ThrowableMatcher(retryexception)));
+        verify(logger, times(3)).logError(argThat(new ThrowableMatcher(retryexception)));
         verify(logger).logError(argThat(new ThrowableMatcher(
                 new RetriesExceededIndexingException(ErrorType.INDEXING_CONFLICT, "conflict"))));
         
@@ -834,7 +834,9 @@ public class IndexerWorkerTest {
         final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
                 "myid", tempDir, logger)
                 .withStorage(storage, typeStore, idxStore)
-                .withEventHandler(ws);
+                .withEventHandler(ws)
+                .withRetryCount(4)
+                .withRetrySleepTimeMS(10);
         
         final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
         
@@ -858,11 +860,11 @@ public class IndexerWorkerTest {
                 "parent ID pid, retry %s: " +
                 "kbasesearchengine.events.exceptions.RetriableIndexingException: conflict";
         
-//        verify(logger).logError(String.format(errmsg, 1));
-//        verify(logger).logError(String.format(errmsg, 2));
-//        verify(logger).logError(String.format(errmsg, 3));
-//        verify(logger).logError(String.format(errmsg, 4));
-//        verify(logger).logError(String.format(errmsg, 5));
+
+        verify(logger).logError(String.format(errmsg, 1));
+        verify(logger).logError(String.format(errmsg, 2));
+        verify(logger).logError(String.format(errmsg, 3));
+        verify(logger).logError(String.format(errmsg, 4));
 
         verify(logger).logError("Error processing event for event DELETE_ALL_VERSIONS with " +
                 "parent ID pid: kbasesearchengine.events.exceptions." +
@@ -871,7 +873,7 @@ public class IndexerWorkerTest {
 
         final RetriableIndexingException retryexception =
                 new RetriableIndexingException(ErrorType.INDEXING_CONFLICT, "conflict");
-        verify(logger, times(5)).logError(argThat(new ThrowableMatcher(retryexception)));
+        verify(logger, times(4)).logError(argThat(new ThrowableMatcher(retryexception)));
         verify(logger).logError(argThat(new ThrowableMatcher(
                 new RetriesExceededIndexingException(ErrorType.INDEXING_CONFLICT, "conflict"))));
         
@@ -1156,7 +1158,8 @@ public class IndexerWorkerTest {
         final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
                 "myid", tempDir, logger)
                 .withStorage(storage, typeStore, idxStore)
-                .withEventHandler(ws);
+                .withEventHandler(ws)
+                .withRetryFatalBackoffTimeMS(10, 20, 30);
         
         final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
         
@@ -1178,8 +1181,6 @@ public class IndexerWorkerTest {
         verify(logger).logError(String.format(errmsg, 1));
         verify(logger).logError(String.format(errmsg, 2));
         verify(logger).logError(String.format(errmsg, 3));
-        verify(logger).logError(String.format(errmsg, 4));
-        verify(logger).logError(String.format(errmsg, 5));
     }
     
     @Test
@@ -1358,7 +1359,8 @@ public class IndexerWorkerTest {
         final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
                 "myid", tempDir, logger)
                 .withStorage(storage, typeStore, idxStore)
-                .withEventHandler(ws);
+                .withEventHandler(ws)
+                .withRetryFatalBackoffTimeMS(10, 20);
         
         final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
         
@@ -1408,9 +1410,6 @@ public class IndexerWorkerTest {
         
         verify(logger).logError(String.format(errmsg, 1));
         verify(logger).logError(String.format(errmsg, 2));
-        verify(logger).logError(String.format(errmsg, 3));
-        verify(logger).logError(String.format(errmsg, 4));
-        verify(logger).logError(String.format(errmsg, 5));
         
         verify(idxStore, never()).indexObjects(
                 any(), any(), any(), any(), any(), any(), anyBoolean());
