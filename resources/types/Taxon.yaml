@@ -13,6 +13,9 @@ versions:
   - path: domain
     keyword-type: string
     ui-name: Domain
+  - path: genetic_code
+    keyword-type: integer
+    ui-name: Genetic Code
   - path: aliases
     transform: values
     ui-name: Aliases

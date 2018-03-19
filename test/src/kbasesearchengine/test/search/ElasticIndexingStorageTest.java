@@ -516,6 +516,7 @@ public class ElasticIndexingStorageTest {
         final String aliases = "Azorhizobium Dreyfus et al. 1988 emend. Lang et al. 2013, Azotirhizobium";
         Assert.assertEquals("Bacteria", "" + index.getKeyProperties().get("domain"));
         Assert.assertEquals("Azorhizobium", "" + index.getKeyProperties().get("scientific_name"));
+        Assert.assertEquals("11", "" + index.getKeyProperties().get("genetic_code"));
         Assert.assertEquals(aliases, "" + index.getKeyProperties().get("aliases"));
         Assert.assertEquals(lineage, "" + index.getKeyProperties().get("scientific_lineage"));
         System.out.println("*** end testTaxon***");
