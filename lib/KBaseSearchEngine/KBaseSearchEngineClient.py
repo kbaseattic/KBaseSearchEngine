@@ -68,7 +68,7 @@ class KBaseSearchEngine(object):
            parameter "min_date" of Long, parameter "max_date" of Long,
            parameter "min_double" of Double, parameter "max_double" of
            Double, parameter "exclude_subobjects" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "lookupInKeys" of
+           boolean. 0 = false, other = true.), parameter "lookup_in_keys" of
            mapping from String to type "MatchValue" (Optional rules of
            defining constraints for values of particular term (keyword).
            Appropriate field depends on type of keyword. For instance in case
@@ -145,7 +145,7 @@ class KBaseSearchEngine(object):
            parameter "min_date" of Long, parameter "max_date" of Long,
            parameter "min_double" of Double, parameter "max_double" of
            Double, parameter "exclude_subobjects" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "lookupInKeys" of
+           boolean. 0 = false, other = true.), parameter "lookup_in_keys" of
            mapping from String to type "MatchValue" (Optional rules of
            defining constraints for values of particular term (keyword).
            Appropriate field depends on type of keyword. For instance in case

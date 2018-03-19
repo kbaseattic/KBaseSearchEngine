@@ -57,7 +57,7 @@ module KBaseSearchEngine {
         string object_name;
         MatchValue timestamp;
         boolean exclude_subobjects;
-        mapping<string, MatchValue> lookupInKeys;
+        mapping<string, MatchValue> lookup_in_keys;
         list<string> source_tags;
         boolean source_tags_blacklist;
     } MatchFilter;
