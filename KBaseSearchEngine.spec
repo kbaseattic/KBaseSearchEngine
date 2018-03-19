@@ -144,7 +144,6 @@ module KBaseSearchEngine {
         boolean skip_keys;
         boolean skip_data;
         boolean include_highlight;
-        list<string> data_includes;
     } PostProcessing;
 
     /*

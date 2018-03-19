@@ -307,7 +307,6 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
@@ -387,7 +386,6 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
@@ -497,7 +495,6 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
 boolean is an int
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
@@ -540,7 +537,6 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
 boolean is an int
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
@@ -1242,7 +1238,6 @@ skip_info has a value which is a KBaseSearchEngine.boolean
 skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
 include_highlight has a value which is a KBaseSearchEngine.boolean
-data_includes has a value which is a reference to a list where each element is a string
 
 </pre>
 
@@ -1256,7 +1251,6 @@ skip_info has a value which is a KBaseSearchEngine.boolean
 skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
 include_highlight has a value which is a KBaseSearchEngine.boolean
-data_includes has a value which is a reference to a list where each element is a string
 
 
 =end text

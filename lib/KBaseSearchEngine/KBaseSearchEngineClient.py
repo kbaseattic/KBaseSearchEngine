@@ -201,8 +201,7 @@ class KBaseSearchEngine(object):
            "boolean" (A boolean. 0 = false, other = true.), parameter
            "skip_data" of type "boolean" (A boolean. 0 = false, other =
            true.), parameter "include_highlight" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "data_includes" of
-           list of String
+           boolean. 0 = false, other = true.)
         :returns: instance of type "SearchObjectsOutput" (Output results for
            'search_objects' method. 'pagination' and 'sorting_rules' fields
            show actual input for pagination and sorting. total - total number
@@ -294,8 +293,7 @@ class KBaseSearchEngine(object):
            true.), parameter "skip_keys" of type "boolean" (A boolean. 0 =
            false, other = true.), parameter "skip_data" of type "boolean" (A
            boolean. 0 = false, other = true.), parameter "include_highlight"
-           of type "boolean" (A boolean. 0 = false, other = true.), parameter
-           "data_includes" of list of String
+           of type "boolean" (A boolean. 0 = false, other = true.)
         :returns: instance of type "GetObjectsOutput" (Output results of
            get_objects method. mapping<access_group_id, narrative_info>
            access_group_narrative_info - information about the workspaces in

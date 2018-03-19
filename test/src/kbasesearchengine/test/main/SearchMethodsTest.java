@@ -324,7 +324,6 @@ public class SearchMethodsTest {
         pp1.objectData = false;
         pp1.objectKeys = false;
         pp1.objectInfo = false;
-        pp1.objectDataIncludes=null;
 
         //returns nothing
         final PostProcessing pp2 = new PostProcessing();
@@ -332,7 +331,6 @@ public class SearchMethodsTest {
         pp2.objectData = false;
         pp2.objectKeys = false;
         pp2.objectInfo = false;
-        pp2.objectDataIncludes=null;
 
         final FoundHits fh1 = new FoundHits();
         fh1.pagination = null;
@@ -470,7 +468,6 @@ public class SearchMethodsTest {
         pp1.objectData = true;
         pp1.objectKeys = true;
         pp1.objectInfo = true;
-        pp1.objectDataIncludes=null;
 
 
         final FoundHits fh1 = new FoundHits();
@@ -563,8 +560,6 @@ public class SearchMethodsTest {
         pp1.objectData = true;
         pp1.objectKeys = false;
         pp1.objectInfo = true;
-        pp1.objectDataIncludes=null;
-
 
         final FoundHits fh1 = new FoundHits();
         fh1.pagination = null;
