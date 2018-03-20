@@ -149,10 +149,9 @@ public class ElasticIndexingStorageTest {
                 PostProcessing pp = new PostProcessing();
                 pp.objectData = false;
                 pp.objectKeys = false;
-                pp.objectInfo = true;
                 try {
                     return indexStorage.getObjectsByIds(guids, pp).stream().collect(
-                            Collectors.toMap(od -> od.getGUID(), od -> od.getType().get()));
+                            Collectors.toMap(od -> od.getGUID(), od -> od.getType()));
                 } catch (IOException e) {
                     throw new FatalIndexingException(ErrorType.OTHER, e.getMessage(), e);
                 }
@@ -681,7 +680,6 @@ public class ElasticIndexingStorageTest {
         Set<GUID> ret = indexStorage.searchIds(objTypes, MatchFilter.getBuilder().withLookupInKey(
                 keyName, new MatchValue(value)).build(), null, af);
         PostProcessing pp = new PostProcessing();
-        pp.objectInfo = true;
         pp.objectData = true;
         pp.objectKeys = true;
         indexStorage.getObjectsByIds(ret, pp);
@@ -949,9 +947,8 @@ public class ElasticIndexingStorageTest {
         final ObjectData indexedObj1 =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/2/3"))).get(0);
         
-        final ObjectData expected1 = ObjectData.getBuilder(new GUID("WS:1/2/3"))
+        final ObjectData expected1 = ObjectData.getBuilder(new GUID("WS:1/2/3"), type1)
                 .withNullableObjectName("o1")
-                .withNullableType(type1)
                 .withNullableCreator("creator")
                 .withNullableTimestamp(indexedObj1.getTimestamp().get())
                 .withNullableData(ImmutableMap.of("bar", 1))
@@ -966,9 +963,8 @@ public class ElasticIndexingStorageTest {
         final ObjectData indexedObj2 =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:4/5/6"))).get(0);
 
-        final ObjectData expected2 = ObjectData.getBuilder(new GUID("WS:4/5/6"))
+        final ObjectData expected2 = ObjectData.getBuilder(new GUID("WS:4/5/6"), type2)
                 .withNullableObjectName("o2")
-                .withNullableType(type2)
                 .withNullableCreator("creator")
                 .withNullableTimestamp(indexedObj2.getTimestamp().get())
                 .withNullableData(ImmutableMap.of("bar", "whee"))
@@ -1005,9 +1001,9 @@ public class ElasticIndexingStorageTest {
         final ObjectData indexedObj =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1000/1/1"))).get(0);
         
-        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:1000/1/1"))
+        final ObjectData expected = ObjectData.getBuilder(
+                new GUID("WS:1000/1/1"), new SearchObjectType("NoIndexingRules", 1))
                 .withNullableObjectName("objname")
-                .withNullableType(new SearchObjectType("NoIndexingRules", 1))
                 .withNullableCreator("creator")
                 .withNullableCommitHash("commit")
                 .withNullableCopier("cop")
@@ -1139,9 +1135,9 @@ public class ElasticIndexingStorageTest {
         final ObjectData indexedObj =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:2000/1/1"))).get(0);
         
-        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:2000/1/1"))
+        final ObjectData expected = ObjectData.getBuilder(
+                new GUID("WS:2000/1/1"), new SearchObjectType("SourceTags", 1))
                 .withNullableObjectName("objname")
-                .withNullableType(new SearchObjectType("SourceTags", 1))
                 .withNullableCreator("creator")
                 .withSourceTag("refdata")
                 .withSourceTag("testnarr")

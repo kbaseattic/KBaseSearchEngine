@@ -3,7 +3,6 @@ package kbasesearchengine.main;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -13,7 +12,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import kbasesearchengine.AccessFilter;
 import kbasesearchengine.GetObjectsInput;
@@ -21,7 +19,6 @@ import kbasesearchengine.GetObjectsOutput;
 import kbasesearchengine.KeyDescription;
 import kbasesearchengine.MatchFilter;
 import kbasesearchengine.MatchValue;
-import kbasesearchengine.ObjectData;
 import kbasesearchengine.Pagination;
 import kbasesearchengine.PostProcessing;
 import kbasesearchengine.SearchObjectsInput;
@@ -37,7 +34,6 @@ import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.MatchFilter.Builder;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
-import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.TypeStorage;
 import us.kbase.common.service.UObject;
 
@@ -184,13 +180,11 @@ public class SearchMethods implements SearchInterface {
         kbasesearchengine.search.PostProcessing ret = 
                 new kbasesearchengine.search.PostProcessing();
         if (pp == null) {
-            ret.objectInfo = true;
             ret.objectData = true;
             ret.objectKeys = true;
             ret.objectHighlight = false;
         } else {
             boolean idsOnly = toBool(pp.getIdsOnly());
-            ret.objectInfo = !(toBool(pp.getSkipInfo()) || idsOnly);
             ret.objectData = !(toBool(pp.getSkipData()) || idsOnly);
             ret.objectKeys = !(toBool(pp.getSkipKeys()) || idsOnly);
             //default to false currently b/c of search tags. TODO: add search tags to black list?
@@ -203,7 +197,6 @@ public class SearchMethods implements SearchInterface {
             final kbasesearchengine.search.ObjectData od) {
         final kbasesearchengine.ObjectData ret = new kbasesearchengine.ObjectData();
         ret.withGuid(od.getGUID().toString());
-        ret.withObjectProps(new HashMap<>());
         if (od.getParentGUID().isPresent()) {
             ret.withParentGuid(od.getParentGUID().get().toString());
         }
@@ -220,27 +213,20 @@ public class SearchMethods implements SearchInterface {
         ret.withObjectName(od.getObjectName().orNull());
         ret.withKeyProps(od.getKeyProperties());
         ret.withHighlight(od.getHighlight());
+        
+        ret.withType(od.getType().getType());
+        ret.withTypeVer((long) od.getType().getVersion());
 
-        final Optional<SearchObjectType> type = od.getType();
-        if (type.isPresent()) {
-            addObjectProp(ret, type.get().getType(), "type");
-            addObjectProp(ret, Integer.toString(type.get().getVersion()), "type_ver");
-        }
-        addObjectProp(ret, od.getCreator().orNull(), "creator");
-        addObjectProp(ret, od.getCopier().orNull(), "copied");
-        addObjectProp(ret, od.getModule().orNull(), "module");
-        addObjectProp(ret, od.getMethod().orNull(), "method");
-        addObjectProp(ret, od.getModuleVersion().orNull(), "module_ver");
-        addObjectProp(ret, od.getCommitHash().orNull(), "commit");
+        ret.withCreator(od.getCreator().orNull());
+        ret.withCopier(od.getCopier().orNull());
+        ret.withMod(od.getModule().orNull());
+        ret.withMethod(od.getMethod().orNull());
+        ret.withModuleVer(od.getModuleVersion().orNull());
+        ret.withCommit(od.getCommitHash().orNull());
+        
         return ret;
     }
     
-    private void addObjectProp(final ObjectData ret, final String prop, final String propkey) {
-        if (prop != null) {
-            ret.getObjectProps().put(propkey, prop);
-        }
-    }
-
     @Override
     public SearchTypesOutput searchTypes(SearchTypesInput params, String user) throws Exception {
         long t1 = System.currentTimeMillis();

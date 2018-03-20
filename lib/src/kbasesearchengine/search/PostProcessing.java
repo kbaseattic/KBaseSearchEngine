@@ -4,7 +4,6 @@ public class PostProcessing {
     
     //TODO CODE everything about this class
     
-    public boolean objectInfo;
     public boolean objectKeys;
     public boolean objectData;
     public boolean objectHighlight;
@@ -15,7 +14,6 @@ public class PostProcessing {
         int result = 1;
         result = prime * result + (objectData ? 1231 : 1237);
         result = prime * result + (objectHighlight ? 1231 : 1237);
-        result = prime * result + (objectInfo ? 1231 : 1237);
         result = prime * result + (objectKeys ? 1231 : 1237);
         return result;
     }
@@ -36,9 +34,6 @@ public class PostProcessing {
             return false;
         }
         if (objectHighlight != other.objectHighlight) {
-            return false;
-        }
-        if (objectInfo != other.objectInfo) {
             return false;
         }
         if (objectKeys != other.objectKeys) {
