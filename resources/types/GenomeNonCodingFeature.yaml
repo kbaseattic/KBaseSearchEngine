@@ -8,7 +8,7 @@ versions:
   primary-key-path: id
   indexing-rules:
   - path: id
-    keyword-type: string
+    keyword-type: keyword
   - path: functions
     transform: values
     full-text: true
@@ -35,7 +35,7 @@ versions:
     key-name: start
   - path: location
     transform: location.strand
-    keyword-type: string
+    keyword-type: keyword
     key-name: strand
   - path: location
     transform: location.stop
@@ -44,11 +44,11 @@ versions:
   - path: note
     full-text: true
   - path: type
-    keyword-type: string
+    keyword-type: keyword
     key-name: feature_type
   - from-parent: true
     path: domain
-    keyword-type: string
+    keyword-type: keyword
     key-name: genome_domain
   - from-parent: true
     path: taxonomy
@@ -56,7 +56,7 @@ versions:
     key-name: genome_taxonomy
   - from-parent: true
     path: scientific_name
-    keyword-type: string
+    keyword-type: keyword
     key-name: genome_scientific_name
   - from-parent: true
     path: assembly_ref
@@ -64,7 +64,7 @@ versions:
     target-object-type: Assembly
     target-object-type-version: 1
     optional-default-value: []
-    keyword-type: string
+    keyword-type: keyword
     key-name: assembly_guid
     ui-hidden: true
     not-indexed: true

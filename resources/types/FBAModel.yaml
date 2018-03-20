@@ -5,13 +5,13 @@ storage-object-type: KBaseFBA.FBAModel
 versions:
 - indexing-rules:
   - path: id
-    keyword-type: string
+    keyword-type: keyword
   - path: name
     full-text: true
   - path: source
     full-text: true
   - path: type
-    keyword-type: string
+    keyword-type: keyword
   - path: modelcompartments/{size}
     keyword-type: integer
     ui-name: Model Compartments
@@ -26,7 +26,7 @@ versions:
     target-object-type: Genome
     target-object-type-version: 1
     optional-default-value: []
-    keyword-type: string
+    keyword-type: keyword
     key-name: genome_guid
     ui-hidden: true
   - source-key: genome_guid

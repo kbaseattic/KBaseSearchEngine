@@ -14,7 +14,7 @@ versions:
     full-text: true
     key-name: files
   - path: phred_type
-    keyword-type: string
+    keyword-type: keyword
   - path: read_count
     keyword-type: integer
     ui-name: Number of reads
