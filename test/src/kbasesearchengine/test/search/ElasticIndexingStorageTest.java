@@ -300,6 +300,7 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals("KBase", "" + genomeIndex.getKeyProperties().get("source"));
         Assert.assertEquals("NewGenome", "" + genomeIndex.getKeyProperties().get("source_id"));
         Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("features"));
+        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("cdss"));
         Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contigs"));
         String assemblyGuidText = genomeIndex.getKeyProperties().get("assembly_guid");
         Assert.assertNotNull(assemblyGuidText);

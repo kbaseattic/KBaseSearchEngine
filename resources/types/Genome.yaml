@@ -52,6 +52,16 @@ versions:
                 keyword-type: integer
                 key-name: features
             -
+                path: cdss/{size}
+                keyword-type: integer
+                key-name: cdss
+                ui-name: CDSs
+            -
+                path: mrnas/{size}
+                keyword-type: integer
+                key-name: mrnas
+                ui-name: mRNAs
+            -
                 path: num_contigs
                 keyword-type: integer
                 key-name: contigs
