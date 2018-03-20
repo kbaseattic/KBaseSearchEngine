@@ -23,25 +23,25 @@ versions:
         # transforms performed upon said fields.
         indexing-rules:
             -
-                # Extract a string from the /id path. The key name will be id.
+                # Extract a keyword from the /id path. The key name will be id.
                 path: id
-                keyword-type: string
+                keyword-type: keyword
             -
-                # Extract a string from the /domain path. The key name will be domain.
+                # Extract a keyword from the /domain path. The key name will be domain.
                 path: domain
-                keyword-type: string
+                keyword-type: keyword
             -
                 # Extract a full-text search field from the /taxonomy path. A full-text field is
-                # parsed into tokens which can be searched on individually, as opposed to a string
+                # parsed into tokens which can be searched on individually, as opposed to a keyword
                 # field which is an opaque block and must be matched in its entirety.
                 # The key name will be taxonomy.
                 path: taxonomy
                 full-text: true
             -
-                # Extract a string from the /scientific_name path.
+                # Extract a full-text search field from the /scientific_name path.
                 # The key name will be scientific_name.
                 path: scientific_name
-                keyword-type: string
+                full-text: true
             -
                 # Extract the number of features from a list at the /features path. The special
                 # {size} element directs the parser to return the size of a list or mapping. Since
@@ -50,27 +50,27 @@ versions:
                 # first section of the path.
                 path: features/{size}
                 keyword-type: integer
-                key-name: features
+                key-name: feature_count
             -
                 path: cdss/{size}
                 keyword-type: integer
-                key-name: cdss
+                key-name: cds_count
                 ui-name: CDSs
             -
                 path: mrnas/{size}
                 keyword-type: integer
-                key-name: mrnas
+                key-name: mrna_count
                 ui-name: mRNAs
             -
                 path: num_contigs
                 keyword-type: integer
-                key-name: contigs
+                key-name: contig_count
             -
                 path: source
-                keyword-type: string
+                keyword-type: keyword
             -
                 path: source_id
-                keyword-type: string
+                keyword-type: keyword
             -
                 # Extract a reference to an Assembly object and transform it into a Globally
                 # Unique ID (GUID).
@@ -84,8 +84,8 @@ versions:
                 target-object-type-version: 1
                 # If there is no value at the path location, substitute an empty list instead.
                 optional-default-value: []
-                # Index the transformed GUID as a string.
-                keyword-type: string
+                # Index the transformed GUID as a keyword.
+                keyword-type: keyword
                 # The key for the transformed GUID in the search document will be assembly_guid.
                 key-name: assembly_guid
                 # Don't show the guid in any UI context when displaying search data.
@@ -94,44 +94,44 @@ versions:
         indexing-rules:
             -
                 path: id
-                keyword-type: string
+                keyword-type: keyword
             -
                 path: domain
-                keyword-type: string
+                keyword-type: keyword
             -
                 path: taxonomy
                 full-text: true
             -
                 path: scientific_name
-                keyword-type: string
+                full-text: true
             -
                 path: notes
                 full-text: true
             -
                 path: source
-                keyword-type: string
+                keyword-type: keyword
             -
                 path: source_id
-                keyword-type: string
+                keyword-type: keyword
             -
                 path: features/{size}
                 keyword-type: integer
-                key-name: features
+                key-name: feature_count
                 ui-name: Features
             -
                 path: cdss/{size}
                 keyword-type: integer
-                key-name: cdss
+                key-name: cds_count
                 ui-name: CDSs
             -
                 path: mrnas/{size}
                 keyword-type: integer
-                key-name: mrnas
+                key-name: mrna_count
                 ui-name: mRNAs
             -
                 path: non_coding_features/{size}
                 keyword-type: integer
-                key-name: non_coding_features
+                key-name: non_coding_feature_count
                 ui-name: Non Coding Features
             -
                 path: warnings
@@ -140,13 +140,13 @@ versions:
             -
                 path: feature_counts
                 transform: values
-                keyword-type: string
+                keyword-type: keyword
                 key-name: feature_types
                 ui-name: Feature Types
             -
                 path: genome_tiers
                 transform: values
-                keyword-type: string
+                keyword-type: keyword
                 ui-name: Genome Tiers
             -
                 path: suspect
@@ -155,13 +155,13 @@ versions:
             -
                 path: num_contigs
                 keyword-type: integer
-                key-name: contigs
+                key-name: contig_count
             -
                 path: assembly_ref
                 transform: guid
                 target-object-type: Assembly
                 target-object-type-version: 1
                 optional-default-value: []
-                keyword-type: string
+                keyword-type: keyword
                 key-name: assembly_guid
                 ui-hidden: true
