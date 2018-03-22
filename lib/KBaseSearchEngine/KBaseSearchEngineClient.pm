@@ -129,7 +129,7 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	object_name has a value which is a string
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
-	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 	source_tags has a value which is a reference to a list where each element is a string
 	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
@@ -168,7 +168,7 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	object_name has a value which is a string
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
-	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 	source_tags has a value which is a reference to a list where each element is a string
 	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
@@ -275,7 +275,7 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	object_name has a value which is a string
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
-	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 	source_tags has a value which is a reference to a list where each element is a string
 	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
@@ -307,7 +307,6 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
@@ -355,7 +354,7 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	object_name has a value which is a string
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
-	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 	source_tags has a value which is a reference to a list where each element is a string
 	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
@@ -387,7 +386,6 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
@@ -497,7 +495,6 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
 boolean is an int
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
@@ -540,7 +537,6 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
 boolean is an int
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
@@ -980,7 +976,7 @@ full_text_in_all has a value which is a string
 object_name has a value which is a string
 timestamp has a value which is a KBaseSearchEngine.MatchValue
 exclude_subobjects has a value which is a KBaseSearchEngine.boolean
-lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 source_tags has a value which is a reference to a list where each element is a string
 source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 
@@ -995,7 +991,7 @@ full_text_in_all has a value which is a string
 object_name has a value which is a string
 timestamp has a value which is a KBaseSearchEngine.MatchValue
 exclude_subobjects has a value which is a KBaseSearchEngine.boolean
-lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 source_tags has a value which is a reference to a list where each element is a string
 source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 
@@ -1242,7 +1238,6 @@ skip_info has a value which is a KBaseSearchEngine.boolean
 skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
 include_highlight has a value which is a KBaseSearchEngine.boolean
-data_includes has a value which is a reference to a list where each element is a string
 
 </pre>
 
@@ -1256,7 +1251,6 @@ skip_info has a value which is a KBaseSearchEngine.boolean
 skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
 include_highlight has a value which is a KBaseSearchEngine.boolean
-data_includes has a value which is a reference to a list where each element is a string
 
 
 =end text
@@ -1326,18 +1320,28 @@ post_processing has a value which is a KBaseSearchEngine.PostProcessing
 
 =item Description
 
-Properties of found object including metadata, raw data and
-    keywords.
-mapping<string, list<string>> highlight - The keys are the field names and the list 
-    contains the sections in each field that matched the search query. Fields with no
-    hits will not be available. Short fields that matched are shown in their entirety.
-    Longer fields are shown as snippets preceded or followed by "...".     
+Properties of an object including metadata, raw data and keywords.
+GUID guid - the object's guid.
+GUID parent_guid - the guid of the object's parent if the object is a subobject (e.g.
+    features for genomes).
+object_name - the object's name.
+timestamp - the creation date for the object in milliseconds since the epoch.
+parent_data - raw data extracted from the subobject's parent object. The data contents will
+    vary from object to object. Null if the object is not a subobject.
+data - raw data extracted from the object. The data contents will vary from object to object.
+key_props - keyword properties of the object. These fields have been extracted from the object
+   and possibly transformed based on the search specification for the object.
+   The contents will vary from object to object.
 mapping<string, string> object_props - general properties for all objects. This mapping
     contains the keys 'creator', 'copied', 'module', 'method', 'module_ver', and 'commit' -
     respectively the user that originally created the object, the user that copied this
     incarnation of the object, and the module and method used to create the object and
     their version and version control commit hash. Not all keys may be present; if not
     their values were not available in the search data.
+mapping<string, list<string>> highlight - The keys are the field names and the list 
+    contains the sections in each field that matched the search query. Fields with no
+    hits will not be available. Short fields that matched are shown in their entirety.
+    Longer fields are shown as snippets preceded or followed by "...".
 
 
 =item Definition

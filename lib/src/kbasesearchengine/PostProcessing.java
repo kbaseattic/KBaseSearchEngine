@@ -2,7 +2,6 @@
 package kbasesearchengine;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.annotation.Generated;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
@@ -37,8 +36,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "skip_info",
     "skip_keys",
     "skip_data",
-    "include_highlight",
-    "data_includes"
+    "include_highlight"
 })
 public class PostProcessing {
 
@@ -52,9 +50,7 @@ public class PostProcessing {
     private Long skipData;
     @JsonProperty("include_highlight")
     private Long includeHighlight;
-    @JsonProperty("data_includes")
-    private List<String> dataIncludes;
-    private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
+    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("ids_only")
     public Long getIdsOnly() {
@@ -131,34 +127,19 @@ public class PostProcessing {
         return this;
     }
 
-    @JsonProperty("data_includes")
-    public List<String> getDataIncludes() {
-        return dataIncludes;
-    }
-
-    @JsonProperty("data_includes")
-    public void setDataIncludes(List<String> dataIncludes) {
-        this.dataIncludes = dataIncludes;
-    }
-
-    public PostProcessing withDataIncludes(List<String> dataIncludes) {
-        this.dataIncludes = dataIncludes;
-        return this;
-    }
-
     @JsonAnyGetter
-    public Map<java.lang.String, Object> getAdditionalProperties() {
+    public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
     @JsonAnySetter
-    public void setAdditionalProperties(java.lang.String name, Object value) {
+    public void setAdditionalProperties(String name, Object value) {
         this.additionalProperties.put(name, value);
     }
 
     @Override
-    public java.lang.String toString() {
-        return ((((((((((((((("PostProcessing"+" [idsOnly=")+ idsOnly)+", skipInfo=")+ skipInfo)+", skipKeys=")+ skipKeys)+", skipData=")+ skipData)+", includeHighlight=")+ includeHighlight)+", dataIncludes=")+ dataIncludes)+", additionalProperties=")+ additionalProperties)+"]");
+    public String toString() {
+        return ((((((((((((("PostProcessing"+" [idsOnly=")+ idsOnly)+", skipInfo=")+ skipInfo)+", skipKeys=")+ skipKeys)+", skipData=")+ skipData)+", includeHighlight=")+ includeHighlight)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
