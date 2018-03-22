@@ -298,8 +298,11 @@ public class KeywordParser {
                 }
                 final SearchObjectType actualType = guidToType.get(guid);
                 if (!actualType.equals(type)) {
-                    throw new ObjectParseException("GUID " + guid + " has unexpected type: " +
-                            actualType);
+                    throw new ObjectParseException(String.format(
+                            "During recursive processing of %s, found GUID %s has type %s v%s, " +
+                            "expected %s v%s",
+                            subObjectGuid, guid, actualType.getType(), actualType.getVersion(),
+                            type.getType(), type.getVersion()));
                 }
             }
             return guids.stream().map(GUID::toString).collect(Collectors.toList());
