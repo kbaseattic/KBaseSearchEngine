@@ -1,0 +1,2254 @@
+{
+    "mrnas": [
+        {
+            "id": "PROKKA_00001_mRNA",
+            "parent_gene": "PROKKA_00001",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    79,
+                    "+",
+                    1383
+                ]
+            ],
+            "md5": "a1d01ad7681006a9054e9c234dbdf404",
+            "cds": "PROKKA_00001_CDS"
+        },
+        {
+            "id": "PROKKA_00002_mRNA",
+            "parent_gene": "PROKKA_00002",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    1482,
+                    "+",
+                    1101
+                ]
+            ],
+            "md5": "1750da96fb0f8ca51e30c7021cb70e61",
+            "cds": "PROKKA_00002_CDS"
+        },
+        {
+            "id": "PROKKA_00003_mRNA",
+            "parent_gene": "PROKKA_00003",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    2744,
+                    "+",
+                    1083
+                ]
+            ],
+            "md5": "619e8cc0b02f5c291ebd374f0988485e",
+            "cds": "PROKKA_00003_CDS"
+        },
+        {
+            "id": "PROKKA_00004_mRNA",
+            "parent_gene": "PROKKA_00004",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    3843,
+                    "+",
+                    2418
+                ]
+            ],
+            "md5": "7fcda4404b90afb4b108484c8f6a6680",
+            "cds": "PROKKA_00004_CDS"
+        },
+        {
+            "id": "PROKKA_00005_mRNA",
+            "parent_gene": "PROKKA_00005",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    6997,
+                    "-",
+                    657
+                ]
+            ],
+            "md5": "bb3a79eb731a9606542161c0b5b04b3e",
+            "cds": "PROKKA_00005_CDS"
+        },
+        {
+            "id": "PROKKA_00006_mRNA",
+            "parent_gene": "PROKKA_00006",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    7124,
+                    "+",
+                    849
+                ]
+            ],
+            "md5": "4049769c2238d94c9665fbcd9656ffdc",
+            "cds": "PROKKA_00006_CDS"
+        },
+        {
+            "id": "PROKKA_00007_mRNA",
+            "parent_gene": "PROKKA_00007",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    8128,
+                    "+",
+                    1044
+                ]
+            ],
+            "md5": "0d6373eb2d2f1c4eab5112244f4106bb",
+            "cds": "PROKKA_00007_CDS"
+        },
+        {
+            "id": "PROKKA_00008_mRNA",
+            "parent_gene": "PROKKA_00008",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    11301,
+                    "-",
+                    2067
+                ]
+            ],
+            "md5": "a5ddb874da4c14f81a6c4b7c931d4778",
+            "cds": "PROKKA_00008_CDS"
+        },
+        {
+            "id": "PROKKA_00009_mRNA",
+            "parent_gene": "PROKKA_00009",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    12216,
+                    "-",
+                    906
+                ]
+            ],
+            "md5": "fcf9e13f06f045944eef9b3163fa2c62",
+            "cds": "PROKKA_00009_CDS"
+        },
+        {
+            "id": "PROKKA_00010_mRNA",
+            "parent_gene": "PROKKA_00010",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    12335,
+                    "+",
+                    573
+                ]
+            ],
+            "md5": "879cd000aae64fce6dc81088832691c2",
+            "cds": "PROKKA_00010_CDS"
+        },
+        {
+            "id": "PROKKA_00011_mRNA",
+            "parent_gene": "PROKKA_00011",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    16184,
+                    "-",
+                    3189
+                ]
+            ],
+            "md5": "c8549abaac761ec8fc58ae4fbe7ce5d9",
+            "cds": "PROKKA_00011_CDS"
+        },
+        {
+            "id": "PROKKA_00012_mRNA",
+            "parent_gene": "PROKKA_00012",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    16818,
+                    "-",
+                    438
+                ]
+            ],
+            "md5": "59d3f9f7d522316f1b215901fea2f5b6",
+            "cds": "PROKKA_00012_CDS"
+        },
+        {
+            "id": "PROKKA_00013_mRNA",
+            "parent_gene": "PROKKA_00013",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    17099,
+                    "-",
+                    246
+                ]
+            ],
+            "md5": "75e12c2cd4f966f8249015bcb83da6ef",
+            "cds": "PROKKA_00013_CDS"
+        },
+        {
+            "id": "PROKKA_00014_mRNA",
+            "parent_gene": "PROKKA_00014",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    17258,
+                    "-",
+                    141
+                ]
+            ],
+            "md5": "8d498fc742847a34293505d3e2ecfccc",
+            "cds": "PROKKA_00014_CDS"
+        },
+        {
+            "id": "PROKKA_00015_mRNA",
+            "parent_gene": "PROKKA_00015",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    18451,
+                    "-",
+                    1194
+                ]
+            ],
+            "md5": "b779bf41390a4915bb5203409a6c56e8",
+            "cds": "PROKKA_00015_CDS"
+        },
+        {
+            "id": "PROKKA_00016_mRNA",
+            "parent_gene": "PROKKA_00016",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    19428,
+                    "-",
+                    768
+                ]
+            ],
+            "md5": "0bd35aab9ad023315b0923ef5afbe03d",
+            "cds": "PROKKA_00016_CDS"
+        },
+        {
+            "id": "PROKKA_00017_mRNA",
+            "parent_gene": "PROKKA_00017",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    19889,
+                    "-",
+                    396
+                ]
+            ],
+            "md5": "1ef8844210785292f0c87d759888347f",
+            "cds": "PROKKA_00017_CDS"
+        },
+        {
+            "id": "PROKKA_00018_mRNA",
+            "parent_gene": "PROKKA_00018",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    21150,
+                    "-",
+                    1164
+                ]
+            ],
+            "md5": "6194256847e7e30abd5a85d2d76760e9",
+            "cds": "PROKKA_00018_CDS"
+        },
+        {
+            "id": "PROKKA_00019_mRNA",
+            "parent_gene": "PROKKA_00019",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    23323,
+                    "-",
+                    2151
+                ]
+            ],
+            "md5": "b78d2efd55ac989a996782cfbaec85ac",
+            "cds": "PROKKA_00019_CDS"
+        },
+        {
+            "id": "PROKKA_00020_mRNA",
+            "parent_gene": "PROKKA_00020",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    23767,
+                    "+",
+                    1320
+                ]
+            ],
+            "md5": "5b77937a2bf79fd242472bc67bc52fa9",
+            "cds": "PROKKA_00020_CDS"
+        },
+        {
+            "id": "PROKKA_00021_mRNA",
+            "parent_gene": "PROKKA_00021",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    25102,
+                    "+",
+                    615
+                ]
+            ],
+            "md5": "17a9ee76df08b1eea6320d7a2c3c4c15",
+            "cds": "PROKKA_00021_CDS"
+        },
+        {
+            "id": "PROKKA_00022_mRNA",
+            "parent_gene": "PROKKA_00022",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    25794,
+                    "+",
+                    1458
+                ]
+            ],
+            "md5": "62041f7dbea32e451ce5d978aae8d759",
+            "cds": "PROKKA_00022_CDS"
+        },
+        {
+            "id": "PROKKA_00023_mRNA",
+            "parent_gene": "PROKKA_00023",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    27253,
+                    "+",
+                    525
+                ]
+            ],
+            "md5": "dc25a8ec224476c7d0b7505ce99c39b7",
+            "cds": "PROKKA_00023_CDS"
+        },
+        {
+            "id": "PROKKA_00024_mRNA",
+            "parent_gene": "PROKKA_00024",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    28148,
+                    "-",
+                    309
+                ]
+            ],
+            "md5": "09ec28582bc933370d1f8e2eff52290d",
+            "cds": "PROKKA_00024_CDS"
+        },
+        {
+            "id": "PROKKA_00025_mRNA",
+            "parent_gene": "PROKKA_00025",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    28348,
+                    "+",
+                    555
+                ]
+            ],
+            "md5": "509d0f90f6151073365aebd804d2b471",
+            "cds": "PROKKA_00025_CDS"
+        },
+        {
+            "id": "PROKKA_00026_mRNA",
+            "parent_gene": "PROKKA_00026",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    30391,
+                    "-",
+                    1443
+                ]
+            ],
+            "md5": "6794fecc7a041094d87bd404978a554a",
+            "cds": "PROKKA_00026_CDS"
+        },
+        {
+            "id": "PROKKA_00027_mRNA",
+            "parent_gene": "PROKKA_00027",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    31812,
+                    "-",
+                    1410
+                ]
+            ],
+            "md5": "d707fc09a3e350d05cd5da0c1dcc0c5a",
+            "cds": "PROKKA_00027_CDS"
+        },
+        {
+            "id": "PROKKA_00028_mRNA",
+            "parent_gene": "PROKKA_00028",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    33117,
+                    "-",
+                    1290
+                ]
+            ],
+            "md5": "d9412561881396cbbcdb494e025d4d48",
+            "cds": "PROKKA_00028_CDS"
+        },
+        {
+            "id": "PROKKA_00029_mRNA",
+            "parent_gene": "PROKKA_00029",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    34073,
+                    "-",
+                    957
+                ]
+            ],
+            "md5": "ad9a679659c992b0e0ac1016c14fc795",
+            "cds": "PROKKA_00029_CDS"
+        },
+        {
+            "id": "PROKKA_00030_mRNA",
+            "parent_gene": "PROKKA_00030",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    34595,
+                    "-",
+                    507
+                ]
+            ],
+            "md5": "03df7abb02fc0e31722374a910ec3160",
+            "cds": "PROKKA_00030_CDS"
+        }
+    ],
+    "domain": "Bacteria",
+    "genetic_code": 11,
+    "features": [
+        {
+            "function": "Chromosomal replication initiator protein DnaA",
+            "mrnas": [
+                "PROKKA_00001_mRNA"
+            ],
+            "protein_translation": "MAVSLWQQCIGRLQDELSAQQFSMWIRPLQAEMDGDTLVLYAPNRFVLDWVRDKYINIINQFFTEQMGNDAPKLRFDIGSRPSAKKPEPAPVAAVRVPNPQTKASVGTSFNTTEPVANTNHRSNINPTYQFDNFVEGKSNQLGKAAALQVAENPGGAYNPLFLYGGTGLGKTHLLHAVGNGIIKNNPNAKVVYMHSERFVQDMVKALQNNAIEEFKRYYRSVDALFIDDIQFFANKDRSQEEFFHTFNALLEGNHQIILTSDRYPKEIDGVEDRLKSRFGWGLTVAIEPPELETRVAILMRKAQESGINLPDEVAFFIAKRLRSNVRELEGALNRVIANANFTGRPITIDFVREALRDLLALQEKLVTIDNIQKTVAEYYKIKMADMLSKRRSRSVARPRQVAMALSKELTNQSLPEIGDAFGGRDHTTVLHACRKIAQLREESHDIKEDYANLIRTLSS",
+            "dna_sequence_length": 1383,
+            "protein_translation_length": 460,
+            "cdss": [
+                "PROKKA_00001_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    79,
+                    "+",
+                    1383
+                ]
+            ],
+            "dna_sequence": "GTGGCGGTTTCACTTTGGCAACAATGTATCGGAAGACTGCAAGACGAGCTTTCTGCTCAGCAGTTCAGTATGTGGATCAGACCGTTACAAGCCGAAATGGATGGAGATACTTTGGTGCTTTATGCGCCTAACCGCTTCGTGCTCGATTGGGTTAGGGATAAATACATCAACATCATTAATCAGTTTTTTACTGAGCAAATGGGTAATGATGCACCTAAGTTACGCTTCGATATCGGTAGCCGTCCGTCAGCGAAAAAGCCTGAGCCAGCACCTGTTGCGGCTGTGCGTGTGCCTAATCCCCAAACCAAAGCCTCAGTAGGGACTTCATTTAATACTACTGAGCCTGTTGCCAATACCAATCATCGCAGCAATATCAATCCCACTTACCAATTCGATAACTTCGTCGAGGGTAAGTCTAACCAACTTGGCAAAGCGGCCGCACTACAAGTGGCTGAAAATCCAGGTGGTGCCTATAACCCACTGTTCCTTTATGGCGGTACGGGTTTAGGTAAGACCCACTTATTACATGCTGTGGGTAATGGCATCATTAAAAATAATCCTAATGCCAAGGTGGTTTACATGCATTCCGAGCGTTTTGTGCAAGACATGGTCAAAGCGCTACAAAACAATGCGATCGAAGAATTCAAACGTTACTACCGTAGTGTCGATGCGCTGTTTATCGACGATATTCAATTCTTTGCCAATAAAGACAGATCGCAGGAAGAATTTTTCCATACCTTTAACGCGTTGCTTGAAGGTAATCATCAGATCATCCTGACATCGGATCGTTATCCTAAAGAGATCGACGGGGTAGAGGACAGATTAAAATCTCGTTTCGGTTGGGGCTTAACGGTTGCGATTGAGCCGCCAGAGCTCGAAACCCGTGTGGCGATTTTGATGCGTAAAGCCCAGGAGAGTGGTATCAATCTCCCCGACGAAGTCGCCTTCTTTATTGCTAAGCGCTTACGTTCAAACGTTCGCGAGTTAGAAGGGGCGTTAAACCGCGTGATCGCCAACGCTAACTTTACTGGCCGCCCAATAACGATTGATTTTGTGCGTGAAGCCCTGCGTGACCTCTTGGCACTGCAGGAAAAATTAGTCACTATAGACAACATTCAGAAAACCGTAGCTGAATACTACAAAATCAAGATGGCTGATATGTTGTCTAAGCGTCGTTCGCGCAGTGTTGCGCGCCCTAGACAAGTGGCCATGGCGTTATCCAAAGAATTAACTAACCAGAGCTTGCCGGAAATTGGTGATGCCTTTGGTGGTCGAGATCACACCACAGTGTTACATGCCTGTCGTAAGATTGCTCAGCTACGGGAAGAGAGTCACGACATTAAAGAAGATTATGCTAACTTGATTAGAACCTTATCTTCTTAA",
+            "md5": "a1d01ad7681006a9054e9c234dbdf404",
+            "type": "gene",
+            "id": "PROKKA_00001",
+            "aliases": [
+                "dnaA"
+            ]
+        },
+        {
+            "function": "DNA polymerase III subunit beta",
+            "mrnas": [
+                "PROKKA_00002_mRNA"
+            ],
+            "ontology_terms": {
+                "SSO": {
+                    "SSO:000002079": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA polymerase III alpha subunit (EC 2.7.7.7)",
+                        "id": "SSO:000002079",
+                        "evidence": []
+                    },
+                    "SSO:000002078": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA polymerase II (EC 2.7.7.7)",
+                        "id": "SSO:000002078",
+                        "evidence": []
+                    },
+                    "SSO:000002086": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA polymerase IV (EC 2.7.7.7)",
+                        "id": "SSO:000002086",
+                        "evidence": []
+                    },
+                    "SSO:000002080": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA polymerase III beta subunit (EC 2.7.7.7)",
+                        "id": "SSO:000002080",
+                        "evidence": []
+                    },
+                    "SSO:000002081": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA polymerase III chi subunit (EC 2.7.7.7)",
+                        "id": "SSO:000002081",
+                        "evidence": []
+                    },
+                    "SSO:000002082": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA polymerase III delta prime subunit (EC 2.7.7.7)",
+                        "id": "SSO:000002082",
+                        "evidence": []
+                    },
+                    "SSO:000002083": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA polymerase III delta subunit (EC 2.7.7.7)",
+                        "id": "SSO:000002083",
+                        "evidence": []
+                    },
+                    "SSO:000002085": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA polymerase III subunits gamma and tau (EC 2.7.7.7)",
+                        "id": "SSO:000002085",
+                        "evidence": []
+                    },
+                    "SSO:000002077": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA polymerase I (EC 2.7.7.7)",
+                        "id": "SSO:000002077",
+                        "evidence": []
+                    },
+                    "SSO:000001029": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Archaeal DNA polymerase II large subunit (EC 2.7.7.7)",
+                        "id": "SSO:000001029",
+                        "evidence": []
+                    },
+                    "SSO:000001028": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Archaeal DNA polymerase I (EC 2.7.7.7)",
+                        "id": "SSO:000001028",
+                        "evidence": []
+                    },
+                    "SSO:000001030": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Archaeal DNA polymerase II small subunit (EC 2.7.7.7)",
+                        "id": "SSO:000001030",
+                        "evidence": []
+                    },
+                    "SSO:000002084": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA polymerase III epsilon subunit (EC 2.7.7.7)",
+                        "id": "SSO:000002084",
+                        "evidence": []
+                    }
+                }
+            },
+            "dna_sequence_length": 1101,
+            "protein_translation": "MKFSIDRDALLKPLQLVCGAVERRHNLPILANLLVEVSGHSLKMTGTDLEVELVGQAVIHGDIEEGRTTVPAKKLLDIVKSLPEQSELKVEQQDNKWLLRSGRSRFSLATLPAEEYPNVEAFQAEIEFTLKQGVLKSLIDATQFSMANQDVRYYLNGLLLETEGNVLRAIATDGHRLALSHRTIDAQLPEKQVIVPRKGVMEMARLLEADDLDIAIAIGDNAIRATTSTTVFTSKLVDGRFPDYRRVLPKGGDKIVIASRNHFKQALTRASILSNEKFRGVRIQLEAGLLKITANNPEQEEAEEIIDVDYNNQPLEIGFNVSYLLDVLNNLKSDDVRITLIDGNSSALLENHLEEDSMYVVMPMRL",
+            "cdss": [
+                "PROKKA_00002_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    1482,
+                    "+",
+                    1101
+                ]
+            ],
+            "dna_sequence": "ATGAAATTTTCAATTGATAGGGACGCCCTATTAAAGCCGCTTCAATTGGTTTGTGGTGCGGTAGAAAGACGCCATAACTTGCCTATTTTGGCAAATCTCCTTGTAGAAGTTAGTGGTCACTCACTCAAAATGACAGGTACTGACCTCGAAGTTGAGTTAGTGGGCCAGGCGGTCATTCATGGTGATATCGAAGAAGGTCGTACTACAGTTCCAGCTAAGAAGCTGTTAGACATAGTTAAATCCTTACCCGAGCAAAGCGAGCTTAAGGTCGAGCAACAAGATAACAAATGGTTGTTACGCTCTGGCCGTAGCCGTTTCTCGCTGGCAACCCTGCCCGCTGAAGAATACCCCAATGTGGAAGCCTTTCAGGCGGAAATCGAATTTACCCTTAAGCAAGGCGTGCTGAAGTCACTGATTGATGCGACTCAGTTTTCGATGGCGAACCAAGACGTTCGTTACTATCTGAATGGTTTATTGCTCGAAACCGAAGGGAATGTGCTGCGCGCCATTGCTACCGACGGTCATCGCTTAGCCTTAAGTCACAGAACCATAGATGCGCAATTACCTGAAAAACAAGTGATCGTGCCCCGTAAAGGCGTGATGGAAATGGCGCGTTTGTTGGAAGCCGATGATTTAGATATCGCTATTGCCATTGGTGATAATGCTATTCGTGCGACCACCAGCACCACAGTCTTTACCAGCAAATTAGTCGATGGTCGTTTCCCCGATTATCGCCGTGTGTTACCTAAGGGCGGTGATAAAATCGTTATCGCCAGCCGTAACCACTTCAAGCAAGCCTTAACCCGTGCTTCTATTTTATCGAATGAGAAGTTTCGCGGTGTACGCATTCAGTTAGAAGCGGGATTACTGAAAATCACCGCCAATAACCCAGAGCAGGAAGAAGCGGAAGAAATCATCGATGTGGATTACAACAATCAGCCACTCGAAATTGGTTTCAACGTCAGTTACTTATTGGATGTGCTAAACAACCTTAAGTCCGATGATGTACGTATCACCTTAATCGATGGTAACTCGAGTGCTTTATTGGAAAACCACCTGGAAGAAGATTCCATGTATGTGGTTATGCCGATGCGCTTATAG",
+            "protein_translation_length": 366,
+            "md5": "1750da96fb0f8ca51e30c7021cb70e61",
+            "type": "gene",
+            "id": "PROKKA_00002",
+            "aliases": [
+                "dnaN",
+                "2.7.7.7"
+            ]
+        },
+        {
+            "function": "DNA replication and repair protein RecF",
+            "mrnas": [
+                "PROKKA_00003_mRNA"
+            ],
+            "protein_translation": "MSLIRLNIDSFRNIQLAQLSPSSGINLIYGQNGSGKTSILEAIYFLGMGRSFRSHLSQRVINNEQDKLTLFATLNLPRGDSKIGLRRFRSGETEVKIDGEKVKRLSTLAETLPIQVITPESFSLLFEGPKSRRQFIDWGAFHSDPQFYAAWVNVRRVLKQRNQLLRNNSSYDQIQYWDREFVRYTEQVTEIRNRYVDSLNELLKGIIGEFLPQVDVKVSFTRGWDSKTDFAQLLESQYPRDLATGHTVSGPHKADLRLRVGSLPAQDALSRGQLKLLVCALRIAQGKLLKQQIDKHSIYLVDDLPSELDAQHRQLLLKQLVDTGAQVFVTAIEPAAIVDSLHTPPSRMFHVEQGRVTVIE",
+            "dna_sequence_length": 1083,
+            "protein_translation_length": 360,
+            "cdss": [
+                "PROKKA_00003_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    2744,
+                    "+",
+                    1083
+                ]
+            ],
+            "dna_sequence": "ATGAGTCTTATCCGTCTTAATATTGATTCTTTTCGCAATATTCAATTGGCGCAACTGAGCCCTAGTTCTGGGATCAATCTTATTTATGGCCAAAATGGCAGTGGCAAAACCAGCATACTCGAGGCTATTTACTTTCTCGGAATGGGGCGTTCGTTTCGCAGTCATTTATCCCAACGGGTGATCAATAACGAACAGGATAAGTTAACCCTGTTTGCGACCTTAAATTTGCCCCGTGGCGACAGTAAAATCGGCTTGCGACGTTTCCGGAGTGGCGAAACCGAAGTCAAAATCGACGGGGAAAAGGTGAAACGGCTATCGACCTTAGCCGAAACTTTACCTATCCAAGTGATCACGCCGGAAAGCTTTTCGCTCCTGTTTGAAGGACCTAAATCCCGTCGACAGTTTATCGATTGGGGCGCCTTTCATTCTGATCCACAGTTTTATGCGGCATGGGTGAATGTAAGACGGGTGCTAAAGCAACGAAATCAATTGCTTAGAAATAACTCTTCCTATGATCAAATCCAATATTGGGATCGGGAGTTTGTCCGTTATACCGAGCAGGTCACAGAAATACGAAACCGTTATGTAGACTCGTTAAATGAGCTACTTAAGGGTATAATCGGGGAGTTTTTACCGCAGGTAGATGTTAAGGTTTCATTTACCCGCGGCTGGGATAGCAAAACGGATTTTGCACAACTTCTCGAATCCCAATATCCCAGAGATTTGGCTACGGGTCATACCGTCAGCGGTCCCCATAAAGCTGACCTCAGACTTCGTGTAGGTAGTTTACCGGCGCAGGATGCCCTGTCCCGTGGTCAATTGAAATTATTAGTCTGTGCACTGCGTATTGCACAGGGAAAGTTGCTCAAACAACAAATAGATAAACACAGTATTTATCTTGTGGATGATCTTCCATCCGAGTTGGATGCACAGCATAGGCAGCTATTGCTTAAGCAGCTAGTGGACACAGGTGCGCAAGTGTTTGTCACTGCCATTGAGCCTGCAGCAATAGTCGATTCGTTACACACGCCTCCCAGTAGGATGTTCCATGTGGAACAGGGACGTGTAACGGTAATTGAATAA",
+            "md5": "619e8cc0b02f5c291ebd374f0988485e",
+            "type": "gene",
+            "id": "PROKKA_00003",
+            "aliases": [
+                "recF_1"
+            ]
+        },
+        {
+            "function": "DNA gyrase subunit B",
+            "mrnas": [
+                "PROKKA_00004_mRNA"
+            ],
+            "ontology_terms": {
+                "SSO": {
+                    "SSO:000002116": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA topoisomerase II (EC 5.99.1.3)",
+                        "id": "SSO:000002116",
+                        "evidence": []
+                    },
+                    "SSO:000002068": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA gyrase subunit B (EC 5.99.1.3)",
+                        "id": "SSO:000002068",
+                        "evidence": []
+                    },
+                    "SSO:000002067": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA gyrase subunit A (EC 5.99.1.3)",
+                        "id": "SSO:000002067",
+                        "evidence": []
+                    },
+                    "SSO:000002125": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA topoisomerase VI subunit A (EC 5.99.1.3)",
+                        "id": "SSO:000002125",
+                        "evidence": []
+                    },
+                    "SSO:000002126": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA topoisomerase VI subunit B (EC 5.99.1.3)",
+                        "id": "SSO:000002126",
+                        "evidence": []
+                    }
+                }
+            },
+            "dna_sequence_length": 2418,
+            "protein_translation": "MSENSYDSSSIKVLKGLDAVRKRPGMYIGDTDDGTGLHHMVFEVVDNSIDEALAGHCTDITITIHVDGSVSVRDDGRGIPVAIHPEEGVSAAEVIMTVLHAGGKFDDNSYKVSGGLHGVGVSVVNALSKKLQLTIRREGKVHEQFYTHGVPDEPIKVIGDATKTGTEIRFWPSEETFSDVEFHFEILAKRVRELSFLNSGVGIRLVDERDNKNEFFKYEGGISAFVDYLNRNKTPVNKDVFHFMQEREDGITVEVAMQWNDGYQESIFCFTNNIPQRDGGTHLAGFRSALTRNLNNYMENEGYNKKGKTNATGDDAREGLTAVISVKVPDPKFSSQTKDKLVSSEVKAAVEQTMGEKLNDYLLENPADAKLIVGKIVDAARAREAARKAREMTRRKGALDLGGLPGKLADCQEKDPGLSEIYIVEGDSAGGSAKQGRNRKNQAILPLKGKILNVEKARFDKMLSSQEVATLITALGCGIGRDEYNPDKTRYHNIIIMTDADVDGSHIRTLLLTFFFRQMPELIERGYVYIAQPPLFKVKKGKQEQYLKDEAALTQYLTTQALDGTSIYPSQGAPGMSGEPLERLVTQYREVEAIVARLEQRYPTQITNRMLYHPMINNEMLADEGKMKEWIDAFIHELVELENSGVLYSGEPVLDPERKVYLPKITIRKHGIDTHYLFSYDFFQSTDYQRIGKLGAALEGLIEVGGYVQRGDRVKEVGSFIEALDWTIGEAKRGLYIQRYKGLGEMNPEQLWETTMDPESRRMLQVTIDDAVGADQLFTCLMGDQVEPRRDFIEANALNVANLDV",
+            "cdss": [
+                "PROKKA_00004_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    3843,
+                    "+",
+                    2418
+                ]
+            ],
+            "dna_sequence": "ATGTCAGAGAATAGTTACGATTCTTCGAGTATTAAGGTCCTAAAGGGCCTTGATGCAGTACGTAAGAGACCTGGGATGTATATTGGTGACACCGACGACGGTACGGGTCTACATCATATGGTGTTCGAAGTAGTCGATAACTCTATCGATGAAGCCTTAGCCGGCCATTGTACTGATATCACTATTACTATCCATGTGGATGGTTCGGTCTCCGTTCGCGACGACGGCCGTGGTATTCCTGTGGCGATTCACCCGGAAGAAGGCGTGTCTGCCGCCGAGGTGATCATGACGGTACTGCACGCGGGCGGTAAGTTCGACGATAACTCTTATAAAGTGTCAGGTGGTCTGCACGGCGTGGGTGTATCGGTAGTTAACGCGCTGTCTAAAAAGCTGCAGTTAACCATTCGCCGCGAAGGAAAAGTCCACGAGCAGTTTTATACCCACGGTGTACCTGACGAGCCAATCAAAGTGATCGGCGATGCGACTAAAACCGGTACCGAAATCCGTTTCTGGCCAAGTGAAGAAACCTTCAGCGATGTTGAGTTCCACTTCGAGATTCTGGCAAAGCGCGTGCGCGAACTGTCATTCCTCAACTCAGGCGTGGGTATCCGCTTAGTCGACGAGCGTGACAATAAGAATGAATTCTTTAAATACGAAGGCGGTATCAGCGCATTCGTTGATTACCTAAACCGTAATAAAACGCCAGTAAACAAAGACGTATTCCACTTTATGCAAGAGCGTGAAGATGGCATTACCGTTGAAGTGGCGATGCAGTGGAACGATGGTTACCAAGAAAGCATTTTCTGTTTTACCAACAACATTCCACAGCGTGATGGTGGTACTCACCTAGCGGGTTTCCGTAGTGCGTTGACACGTAACCTCAACAACTACATGGAAAACGAAGGTTATAACAAGAAAGGCAAAACTAACGCGACAGGCGATGACGCCCGCGAAGGTTTAACGGCCGTGATTTCAGTTAAAGTGCCTGATCCTAAGTTCAGCTCGCAAACTAAAGACAAGTTAGTCTCTAGCGAAGTGAAAGCCGCGGTTGAACAAACCATGGGTGAAAAGCTAAACGACTATCTGCTGGAAAACCCTGCCGATGCTAAGTTAATCGTCGGTAAGATTGTCGATGCGGCCCGTGCCCGTGAAGCGGCGCGTAAAGCCCGTGAAATGACCCGTCGTAAAGGCGCACTCGATTTAGGTGGTTTGCCAGGTAAGCTGGCGGATTGCCAAGAGAAAGACCCTGGTCTTTCAGAAATCTACATAGTGGAAGGGGACTCTGCTGGCGGTAGCGCTAAGCAGGGACGTAACCGTAAGAACCAAGCGATTCTGCCACTGAAAGGTAAAATCTTAAACGTTGAGAAAGCGCGTTTCGATAAAATGCTTTCTTCTCAAGAGGTTGCAACGCTAATTACCGCACTTGGCTGTGGTATTGGTCGCGACGAATACAACCCGGATAAGACGCGTTACCACAACATCATCATCATGACGGATGCCGACGTCGACGGCTCGCACATTCGTACCTTGCTGTTGACCTTCTTCTTCCGCCAAATGCCTGAACTGATTGAACGTGGTTATGTGTATATTGCTCAGCCGCCTTTATTCAAAGTGAAGAAAGGTAAGCAAGAACAATATCTCAAAGACGAAGCAGCACTGACTCAGTATCTGACCACTCAAGCGTTAGATGGTACTAGCATTTACCCATCTCAAGGTGCGCCAGGTATGTCGGGTGAACCATTAGAGCGTTTAGTGACTCAGTATCGTGAAGTGGAAGCGATTGTTGCTCGTTTAGAGCAACGTTACCCAACGCAGATCACCAACCGCATGCTTTATCATCCAATGATCAACAACGAGATGTTGGCGGATGAAGGCAAGATGAAGGAATGGATCGACGCCTTTATCCATGAGCTGGTGGAATTAGAAAACAGCGGTGTGTTGTATTCTGGTGAGCCTGTACTCGATCCTGAGCGTAAAGTGTATCTGCCGAAGATCACTATCCGTAAACACGGTATCGATACACACTACCTGTTCAGCTACGATTTCTTCCAATCAACTGATTACCAACGCATTGGTAAGTTAGGTGCGGCGCTCGAAGGCCTGATTGAAGTCGGTGGTTATGTACAGCGTGGCGACCGTGTGAAGGAAGTGGGTAGCTTCATTGAAGCGTTAGATTGGACCATCGGCGAAGCCAAACGTGGCCTCTATATCCAACGCTATAAAGGATTGGGTGAGATGAACCCTGAGCAATTGTGGGAAACCACGATGGATCCTGAATCTCGCCGCATGCTGCAAGTGACGATTGATGATGCCGTTGGTGCGGATCAGCTGTTTACTTGTTTGATGGGCGACCAAGTGGAACCACGCCGTGACTTTATCGAAGCCAACGCGCTGAACGTGGCTAACTTAGACGTTTAA",
+            "protein_translation_length": 805,
+            "md5": "7fcda4404b90afb4b108484c8f6a6680",
+            "type": "gene",
+            "id": "PROKKA_00004",
+            "aliases": [
+                "gyrB",
+                "5.99.1.3"
+            ]
+        },
+        {
+            "function": "Stringent starvation protein A",
+            "mrnas": [
+                "PROKKA_00005_mRNA"
+            ],
+            "protein_translation": "MELYIGNKNYSSWSLRAWLMAAKSGIQFDEILLQLDTDSFYQRLKSISPTLKVPTLIDGNITVWDSLSICEYINDTYLSGSAWPQDPKQKAKARSFACEMHSGFHALRNALPMNIRAHRYVELSSAVLQDIARIDNIWSQQMAEFATTQGTWLFGKWSIADMMFAPVVMRFFTYEIEVSQASRAYMEFIVSQPEMQAWIQAAKAETEIVDADEAGVDR",
+            "dna_sequence_length": 657,
+            "protein_translation_length": 218,
+            "cdss": [
+                "PROKKA_00005_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    6997,
+                    "-",
+                    657
+                ]
+            ],
+            "dna_sequence": "ATGGAACTCTATATTGGCAATAAAAACTACTCTAGTTGGTCACTCCGCGCTTGGTTAATGGCTGCAAAATCAGGTATTCAGTTCGATGAAATCCTATTACAGCTCGATACCGATAGCTTTTATCAGCGGCTCAAATCCATTTCGCCTACCTTAAAAGTTCCAACTCTCATCGATGGAAATATTACGGTTTGGGATTCGCTGTCGATTTGCGAATATATCAACGATACTTATCTTTCAGGTTCTGCCTGGCCACAAGACCCGAAACAAAAAGCGAAGGCTCGCTCCTTCGCCTGTGAAATGCATTCAGGCTTTCATGCCCTGCGAAATGCCCTGCCGATGAATATCCGTGCCCATCGTTATGTCGAATTAAGCTCTGCCGTGTTGCAGGATATTGCCCGCATCGACAATATATGGTCACAGCAAATGGCAGAGTTTGCCACCACCCAAGGCACTTGGTTATTTGGCAAATGGTCGATAGCCGATATGATGTTTGCGCCGGTTGTGATGCGCTTCTTCACCTATGAGATTGAAGTCTCCCAAGCGAGTCGAGCCTATATGGAATTTATCGTGAGCCAGCCAGAAATGCAGGCCTGGATACAAGCCGCTAAAGCCGAAACTGAAATAGTGGACGCCGACGAGGCAGGTGTTGATAGATAG",
+            "md5": "bb3a79eb731a9606542161c0b5b04b3e",
+            "type": "gene",
+            "id": "PROKKA_00005",
+            "aliases": [
+                "sspA_1"
+            ]
+        },
+        {
+            "function": "Hydrogen peroxide-inducible genes activator",
+            "mrnas": [
+                "PROKKA_00006_mRNA"
+            ],
+            "protein_translation": "MDIEALRSFVAFVDTGSFTRAAMQTYKTQSAVSMQMKRLEQELGKTLFVKEGRNLVLSTEGQRFGLYAKQLLQLHDETVTTIKQTQVGTQLHLGCPDDYAESVLPRIVALLHGHIKQLDLQITCASSQKLRIMLDTGQLDAAIVTRLPESDEGYLLQTSKGVWVSASGSNLSDADPLPIALFQKDCKFHIAALDGLMKQDRHYQLLACSSSAAALKAIVAKDLAISAMAECSVSASLNIIDSETLPPLPVVAVALVISAKAYSPINAELAKQIARGYQSYLE",
+            "dna_sequence_length": 849,
+            "protein_translation_length": 282,
+            "cdss": [
+                "PROKKA_00006_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    7124,
+                    "+",
+                    849
+                ]
+            ],
+            "dna_sequence": "ATGGATATAGAAGCGCTGCGCAGCTTTGTGGCATTTGTCGATACCGGGAGTTTTACCCGCGCGGCAATGCAAACCTATAAGACTCAATCTGCCGTCAGTATGCAAATGAAGCGCTTAGAGCAAGAGCTGGGAAAAACGCTCTTTGTAAAAGAGGGGCGAAACTTAGTCTTATCTACCGAAGGCCAACGTTTTGGCTTATACGCTAAGCAATTACTGCAACTACACGATGAGACTGTCACAACCATTAAGCAGACTCAAGTCGGCACGCAATTGCATTTAGGTTGTCCCGATGACTATGCCGAATCCGTGTTACCGCGGATAGTGGCGTTGTTACATGGTCACATTAAGCAACTCGATCTTCAAATTACTTGCGCCTCAAGCCAAAAGCTGCGGATCATGCTGGATACCGGGCAACTCGATGCGGCGATAGTGACTCGTTTGCCCGAGTCCGATGAAGGCTACTTATTACAAACCTCGAAAGGCGTTTGGGTGAGCGCGAGTGGTTCGAACTTGAGTGATGCCGATCCGTTACCCATAGCGCTTTTCCAAAAGGATTGTAAATTCCATATTGCGGCGTTAGATGGATTGATGAAGCAAGATAGGCATTATCAGTTGTTGGCCTGTAGCAGCAGTGCTGCGGCTCTTAAAGCGATAGTGGCTAAGGATTTGGCTATTAGTGCCATGGCTGAATGCAGTGTATCGGCATCACTGAATATTATTGATTCTGAAACACTTCCACCCTTGCCTGTGGTCGCCGTCGCACTGGTTATTTCCGCTAAAGCTTACTCACCCATAAATGCGGAGTTGGCCAAGCAAATTGCGCGGGGCTATCAAAGCTACTTGGAATAA",
+            "md5": "4049769c2238d94c9665fbcd9656ffdc",
+            "type": "gene",
+            "id": "PROKKA_00006",
+            "aliases": [
+                "oxyR_1"
+            ]
+        },
+        {
+            "function": "hypothetical protein",
+            "mrnas": [
+                "PROKKA_00007_mRNA"
+            ],
+            "protein_translation": "MIKSIFNKIFNIREQTILERPKSFSQTDLSKPVTAVSGKQQPEEPQDTSVSIDLAALFYSLLFPARTKDAGGVANNLERRVMAEIELALASPQVIAEKVLKLPSKVLELDRKLAEPQFDTKDLLALIEKDPLLSVEVLKLCNSPAFKRGDREVTSLQQALVQLGREQLRRFVTSCLVREMLDIKPIYFRRFGAEIWRHSMQVAFLTSELSEEDRDTAFLLGLLHDVGKLAIFKMLLDAFVQAEPGEQPNSWLFRQVMTAKSLTLSALLAKHWQLPSTFETELDKLAHVHTRPNEGISAVVWRANIISEISMLQQASKLPADMLGNLLALVGLEPAQFEALHEKLQQF",
+            "dna_sequence_length": 1044,
+            "protein_translation_length": 347,
+            "cdss": [
+                "PROKKA_00007_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    8128,
+                    "+",
+                    1044
+                ]
+            ],
+            "dna_sequence": "TTGATTAAGTCCATATTTAATAAAATCTTTAATATTCGTGAACAGACTATTCTTGAGCGGCCTAAAAGCTTTAGTCAAACCGATCTCAGCAAACCTGTAACGGCTGTCTCTGGTAAGCAACAGCCGGAAGAGCCGCAGGATACTTCTGTGAGTATTGACCTTGCGGCACTGTTTTACAGCCTGTTATTTCCGGCCAGAACTAAAGATGCTGGTGGCGTTGCCAATAACCTTGAACGGCGCGTCATGGCTGAAATAGAGCTCGCCTTAGCATCGCCACAAGTGATAGCCGAAAAAGTGCTGAAGCTTCCCTCAAAGGTTTTGGAATTAGACCGTAAATTAGCTGAGCCACAGTTTGATACTAAGGACTTGTTGGCGTTAATCGAGAAAGATCCCTTACTGAGCGTCGAAGTGCTTAAACTGTGTAACTCTCCGGCCTTTAAGCGTGGCGATCGAGAGGTAACAAGCTTGCAGCAGGCATTAGTGCAACTTGGCCGTGAACAGTTACGCCGCTTTGTGACGAGCTGCCTAGTACGAGAGATGCTAGATATTAAACCCATTTATTTTCGACGCTTTGGTGCCGAGATTTGGCGTCATTCGATGCAGGTAGCCTTTTTAACCAGTGAACTGAGTGAAGAAGATAGAGACACCGCATTCCTATTAGGATTACTGCATGATGTGGGTAAGCTCGCCATCTTTAAAATGCTACTCGATGCCTTTGTACAAGCAGAACCTGGAGAGCAGCCAAATTCTTGGTTATTCCGACAAGTGATGACAGCCAAATCACTCACGTTAAGTGCTTTGTTGGCAAAGCATTGGCAATTGCCAAGTACCTTTGAAACCGAGTTGGATAAATTAGCCCATGTCCACACTCGACCAAATGAGGGGATTTCCGCAGTGGTTTGGCGCGCCAATATCATCAGTGAGATTTCGATGCTGCAGCAAGCGAGTAAATTACCTGCCGACATGCTGGGCAACTTATTAGCCTTGGTTGGACTGGAGCCCGCTCAATTCGAAGCATTGCACGAAAAACTTCAGCAGTTTTAA",
+            "md5": "0d6373eb2d2f1c4eab5112244f4106bb",
+            "type": "gene",
+            "id": "PROKKA_00007",
+            "aliases": []
+        },
+        {
+            "function": "Glycine--tRNA ligase beta subunit",
+            "mrnas": [
+                "PROKKA_00008_mRNA"
+            ],
+            "ontology_terms": {
+                "SSO": {
+                    "SSO:000003317": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase beta chain , mitochondrial (EC 6.1.1.14)",
+                        "id": "SSO:000003317",
+                        "evidence": []
+                    },
+                    "SSO:000003316": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase beta chain , chloroplast (EC 6.1.1.14)",
+                        "id": "SSO:000003316",
+                        "evidence": []
+                    },
+                    "SSO:000003315": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase beta chain (EC 6.1.1.14)",
+                        "id": "SSO:000003315",
+                        "evidence": []
+                    },
+                    "SSO:000003314": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase alpha chain , mitochondrial (EC 6.1.1.14)",
+                        "id": "SSO:000003314",
+                        "evidence": []
+                    },
+                    "SSO:000003313": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase alpha chain , chloroplast (EC 6.1.1.14)",
+                        "id": "SSO:000003313",
+                        "evidence": []
+                    },
+                    "SSO:000003312": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase alpha chain (EC 6.1.1.14)",
+                        "id": "SSO:000003312",
+                        "evidence": []
+                    },
+                    "SSO:000003311": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase , mitochondrial (EC 6.1.1.14)",
+                        "id": "SSO:000003311",
+                        "evidence": []
+                    },
+                    "SSO:000003310": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase , chloroplast (EC 6.1.1.14)",
+                        "id": "SSO:000003310",
+                        "evidence": []
+                    },
+                    "SSO:000003308": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase (EC 6.1.1.14)",
+                        "id": "SSO:000003308",
+                        "evidence": []
+                    },
+                    "SSO:000003309": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase , carboxy-terminal 114 amino acids (EC 6.1.1.14)",
+                        "id": "SSO:000003309",
+                        "evidence": []
+                    }
+                }
+            },
+            "dna_sequence_length": 2067,
+            "protein_translation": "MNFENLLIELGTEELPPKALRKLAESFLANFTEELTKADLAFKSAVWYAAPRRLAINVTELAIAQADKIVEKRGPAVSSAFDAEGKPTKAAEGWARGNGITVDQAERLVTDKGEWLVYNAKVEGVETKSLIAAMAQRALDKLPIPKPMRWGSSKTQFIRPVHTATMLLGSELIEGELLGIKSARNVRGHRFMGTGFELDHADNYLTLLKEKGKVIADYESRKALIKADAEKAAAKIGGTADIEDDLLEEVTSLVEWPVVLTASFEEKFLNVPSEALVYTMKGDQKYFPVFDEAGKLLPNFIFVANIESKDPAQIIAGNEKVVRPRLADAEFFFNTDKKHTLESRLPSLETVLFQQQLGTLKDKVTRISALAAFIAEQTGANAVDAARAGLLSKTDLMTNMVMEFTDTQGTMGMHYARLDGETEAVALAMEEQYKPKFSGDTVPTAAVSCAVALADKLDTLVGIFGIGQAPKGAADPFALRRAAIGVLRIIVENKLPLDLVTLIAKAQELHGTNLSNANASDEVLEFLMARFRAWYQDKGIDVDVILAVLARRPTRPADFDSRINAVSHFRSLEASSALAAANKRVSNILAKVEGELPTAINSALLAEAAEQALAAKLAELQPQLAPLFANADYQQALTLLSSLRESVDQFFEDVMVMADDEALKNNRLALLNNLREQFLHVADISLLQ",
+            "cdss": [
+                "PROKKA_00008_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    11301,
+                    "-",
+                    2067
+                ]
+            ],
+            "dna_sequence": "ATGAATTTTGAAAACTTACTCATCGAGTTAGGCACTGAAGAATTGCCGCCAAAGGCGCTGCGTAAACTGGCTGAGTCTTTCTTAGCGAACTTTACCGAAGAATTAACTAAAGCCGATTTAGCTTTTAAATCAGCTGTTTGGTACGCTGCGCCCCGCCGTCTAGCCATTAATGTGACTGAACTAGCGATTGCTCAAGCGGACAAAATCGTTGAAAAACGCGGCCCAGCTGTCAGCTCAGCCTTCGATGCCGAAGGTAAACCAACGAAAGCCGCTGAAGGTTGGGCACGTGGTAACGGTATTACCGTTGACCAAGCTGAGCGTTTAGTGACAGACAAAGGTGAATGGCTGGTTTATAACGCCAAAGTCGAAGGCGTTGAAACCAAGAGCTTAATCGCTGCTATGGCACAACGTGCTTTAGATAAGTTACCTATTCCTAAGCCAATGCGCTGGGGAAGCAGCAAGACACAATTCATTCGCCCTGTTCACACCGCCACTATGTTGTTAGGCAGTGAGTTAATCGAAGGTGAATTACTCGGCATTAAATCGGCACGCAATGTTCGTGGCCACCGCTTTATGGGGACAGGCTTCGAGCTTGACCATGCAGACAACTACCTGACACTGCTGAAAGAAAAAGGTAAAGTCATCGCCGATTACGAAAGCCGTAAAGCCTTAATCAAAGCCGATGCGGAAAAAGCGGCCGCTAAGATTGGTGGCACCGCCGATATCGAAGACGACCTGCTGGAAGAAGTCACCTCTTTAGTTGAATGGCCAGTCGTATTAACCGCAAGCTTTGAAGAGAAGTTCTTGAACGTGCCTTCAGAGGCCTTGGTTTATACGATGAAGGGCGATCAGAAATACTTCCCAGTATTCGATGAAGCCGGTAAGTTACTGCCAAACTTCATCTTTGTCGCGAACATCGAATCAAAAGATCCGGCGCAAATCATTGCGGGTAACGAGAAAGTGGTTCGTCCACGCTTGGCCGACGCCGAGTTCTTCTTCAATACCGACAAAAAACACACGCTGGAATCACGTTTACCAAGTCTTGAGACCGTCTTGTTCCAACAACAACTCGGTACCTTAAAAGACAAAGTCACTCGTATCTCTGCCCTAGCCGCCTTTATTGCCGAGCAAACTGGCGCTAACGCCGTTGATGCCGCCCGTGCTGGTTTATTGTCTAAAACAGACTTAATGACCAATATGGTGATGGAGTTTACCGATACTCAAGGCACTATGGGCATGCATTACGCCCGTCTAGACGGTGAAACTGAAGCCGTAGCCTTGGCGATGGAAGAGCAATACAAGCCAAAATTCTCTGGCGATACGGTTCCGACAGCAGCGGTATCTTGCGCAGTAGCTTTAGCGGATAAACTCGACACCTTAGTCGGTATCTTCGGTATTGGTCAGGCACCTAAGGGCGCTGCCGACCCATTCGCACTGCGCCGCGCCGCTATCGGTGTGCTACGCATTATCGTTGAGAACAAGTTGCCACTGGACTTAGTGACCCTAATTGCTAAGGCTCAAGAACTCCATGGCACTAACTTAAGCAACGCGAATGCAAGCGATGAAGTGCTTGAGTTCTTAATGGCGCGTTTCCGTGCTTGGTACCAAGATAAAGGTATCGATGTTGACGTGATCCTCGCCGTATTAGCACGTCGCCCAACTCGCCCAGCTGATTTTGATAGCCGTATCAATGCGGTATCACACTTCAGAAGCTTAGAAGCCTCTAGTGCTCTGGCAGCGGCGAATAAGCGTGTGTCTAACATTCTGGCGAAAGTGGAAGGCGAATTACCTACAGCAATTAATTCGGCTCTGTTAGCCGAAGCCGCAGAACAAGCATTAGCCGCTAAGCTTGCCGAACTGCAACCTCAACTCGCTCCACTGTTTGCAAATGCAGATTACCAACAGGCATTAACGCTGCTGTCGAGCTTACGTGAAAGTGTTGACCAGTTCTTCGAAGACGTGATGGTTATGGCGGATGACGAAGCATTGAAAAACAACCGTTTAGCACTGCTTAATAACCTACGTGAGCAGTTCTTACATGTTGCGGATATTTCTCTGCTTCAGTAA",
+            "protein_translation_length": 688,
+            "md5": "a5ddb874da4c14f81a6c4b7c931d4778",
+            "type": "gene",
+            "id": "PROKKA_00008",
+            "aliases": [
+                "glyS",
+                "6.1.1.14"
+            ]
+        },
+        {
+            "function": "Glycine--tRNA ligase alpha subunit",
+            "mrnas": [
+                "PROKKA_00009_mRNA"
+            ],
+            "ontology_terms": {
+                "SSO": {
+                    "SSO:000003317": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase beta chain , mitochondrial (EC 6.1.1.14)",
+                        "id": "SSO:000003317",
+                        "evidence": []
+                    },
+                    "SSO:000003316": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase beta chain , chloroplast (EC 6.1.1.14)",
+                        "id": "SSO:000003316",
+                        "evidence": []
+                    },
+                    "SSO:000003315": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase beta chain (EC 6.1.1.14)",
+                        "id": "SSO:000003315",
+                        "evidence": []
+                    },
+                    "SSO:000003314": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase alpha chain , mitochondrial (EC 6.1.1.14)",
+                        "id": "SSO:000003314",
+                        "evidence": []
+                    },
+                    "SSO:000003313": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase alpha chain , chloroplast (EC 6.1.1.14)",
+                        "id": "SSO:000003313",
+                        "evidence": []
+                    },
+                    "SSO:000003312": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase alpha chain (EC 6.1.1.14)",
+                        "id": "SSO:000003312",
+                        "evidence": []
+                    },
+                    "SSO:000003311": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase , mitochondrial (EC 6.1.1.14)",
+                        "id": "SSO:000003311",
+                        "evidence": []
+                    },
+                    "SSO:000003310": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase , chloroplast (EC 6.1.1.14)",
+                        "id": "SSO:000003310",
+                        "evidence": []
+                    },
+                    "SSO:000003308": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase (EC 6.1.1.14)",
+                        "id": "SSO:000003308",
+                        "evidence": []
+                    },
+                    "SSO:000003309": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Glycyl-tRNA synthetase , carboxy-terminal 114 amino acids (EC 6.1.1.14)",
+                        "id": "SSO:000003309",
+                        "evidence": []
+                    }
+                }
+            },
+            "dna_sequence_length": 906,
+            "protein_translation": "MTTKHDVKTFQGFILTLQEYWAQQGCAIVQPLDMEVGAGTFHPQTFLRSLGPEPMSSAYVQPSRRPTDGRYGENPNRLQHYYQFQVVLKPSPDNIQELYLGSLQALGIDTQIHDIRFVEDNWESPTLGAWGLGWEVWLNGMEVTQFTYFQQVGGLECSPVTGEITYGLERLAMYIQGVDSVYDLVWTDGPMGRITYGDVFHQNEVEQSTYNFEHADVDFMFALFDQCEKMCQHLLSLEKPLPLPAYEQVMKASHAFNLLDARHAISVTERQRYILRVRTMAKAVAESYYQAREALGFPMCK",
+            "cdss": [
+                "PROKKA_00009_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    12216,
+                    "-",
+                    906
+                ]
+            ],
+            "dna_sequence": "ATGACGACGAAACACGACGTAAAAACATTTCAGGGTTTCATTCTAACCCTACAGGAATATTGGGCGCAGCAAGGCTGTGCAATCGTTCAACCTTTAGATATGGAAGTCGGTGCGGGTACATTCCACCCACAAACTTTCCTACGCTCTCTAGGGCCTGAGCCAATGAGCAGTGCCTATGTGCAGCCATCGCGCCGCCCTACCGACGGCCGTTACGGTGAAAACCCAAACCGTCTGCAGCACTACTACCAATTCCAAGTCGTGTTAAAACCGTCACCGGATAATATCCAAGAACTCTATTTAGGTTCTCTGCAAGCTCTTGGTATTGATACACAAATCCATGATATCCGTTTTGTAGAAGACAACTGGGAATCACCAACGCTCGGCGCTTGGGGTCTGGGTTGGGAAGTCTGGTTAAACGGCATGGAAGTGACTCAGTTTACTTACTTCCAACAGGTCGGCGGCTTAGAGTGTAGCCCTGTCACGGGTGAGATCACCTACGGTTTAGAGCGTCTCGCCATGTATATCCAAGGTGTGGATAGCGTATACGACCTCGTATGGACCGATGGCCCAATGGGTCGCATCACCTACGGCGATGTGTTCCACCAAAACGAAGTTGAGCAATCGACCTATAACTTTGAGCACGCAGACGTAGACTTTATGTTTGCCCTGTTCGATCAATGCGAAAAGATGTGTCAGCACTTATTGTCGCTTGAAAAACCATTACCTCTGCCAGCCTATGAGCAAGTGATGAAAGCCTCGCATGCTTTCAACCTGCTCGATGCACGCCACGCCATTTCAGTGACTGAACGTCAGCGTTATATCCTGCGCGTTCGTACAATGGCTAAAGCCGTTGCTGAATCCTATTATCAGGCACGCGAAGCGCTTGGCTTCCCAATGTGTAAGTAG",
+            "protein_translation_length": 301,
+            "md5": "fcf9e13f06f045944eef9b3163fa2c62",
+            "type": "gene",
+            "id": "PROKKA_00009",
+            "aliases": [
+                "glyQ",
+                "6.1.1.14"
+            ]
+        },
+        {
+            "function": "DNA-3-methyladenine glycosylase 1",
+            "mrnas": [
+                "PROKKA_00010_mRNA"
+            ],
+            "ontology_terms": {
+                "SSO": {
+                    "SSO:000002129": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "DNA-3-methyladenine glycosylase (EC 3.2.2.20)",
+                        "id": "SSO:000002129",
+                        "evidence": []
+                    }
+                }
+            },
+            "dna_sequence_length": 573,
+            "protein_translation": "MEEIRCNWVSDDPLYREYHDKVWGRPVYDSKELFAKLCLDGQQAGLSWITILKKQQNYEQAFADFEPAVIATFDDAKVEELMNNPGIVRNRLKIHSIIRNAKGYLAYTADGKDFAEFLWSFVGGKPLVNQFTSMSQVPAQTPESEAMSKALKKLGFNFVGPTICYAFMQAVGMVNDHLVDCIAYDACCGG",
+            "cdss": [
+                "PROKKA_00010_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    12335,
+                    "+",
+                    573
+                ]
+            ],
+            "dna_sequence": "ATGGAAGAAATCCGCTGTAATTGGGTCAGCGATGATCCCTTGTATCGTGAGTACCACGATAAGGTGTGGGGGCGCCCAGTTTATGATTCGAAGGAGTTATTTGCCAAGCTCTGTTTAGACGGGCAACAAGCTGGGTTGTCTTGGATTACTATCTTAAAGAAACAACAAAATTACGAACAAGCCTTTGCGGATTTTGAGCCCGCAGTGATTGCAACTTTCGACGATGCTAAGGTAGAGGAGTTGATGAACAATCCTGGTATTGTTCGTAATCGCCTTAAGATCCATTCGATTATTCGTAATGCAAAAGGTTATTTAGCCTACACTGCGGATGGCAAAGATTTTGCTGAATTTCTGTGGAGCTTTGTTGGTGGTAAGCCTTTGGTTAATCAGTTTACTTCTATGTCGCAGGTGCCAGCACAGACACCTGAGTCTGAGGCCATGTCCAAGGCGTTAAAAAAACTCGGCTTTAACTTTGTTGGCCCAACGATTTGTTATGCTTTTATGCAGGCAGTGGGAATGGTGAACGATCATCTAGTTGATTGCATCGCCTATGATGCTTGCTGTGGCGGCTAA",
+            "protein_translation_length": 190,
+            "md5": "879cd000aae64fce6dc81088832691c2",
+            "type": "gene",
+            "id": "PROKKA_00010",
+            "aliases": [
+                "tag",
+                "3.2.2.20"
+            ]
+        },
+        {
+            "function": "Protein TolB",
+            "mrnas": [
+                "PROKKA_00011_mRNA"
+            ],
+            "protein_translation": "MLKPKLTPLYIALMLGLSSHAVQATDAQKTSWDVNAPANAPLEKVTIDVTEGTWMNISVSPDGKHLVFDLLGDIYQIPVTGGEAKPLAQGIAWQMQPVYSPDGKHIAFTSDADGGDNIWIMDADGSNPRTVTTETFRLLNSPAWSPDSQYLVGRKHFTASRSLGAGEVWLYHVAGGEGVKLTERPNDEKDLGEPAYSPDGRYIYFSQDDTPGKTFHYSKDSVNGIYKIKRYDTQTGDIEILIEGTGGAIRPTPSPDGTKLAYIKRDDFQSSLYLLDLKSGETTKLYGDLDRDMQETWAIHGVYPTMAWTQDNKDIFFWAKGKINRLNVANKTVTNIPFSVKTQLDVQPSVRFKQDIDKDVFDVKMLRMAQVSPDGSKVAFEALGKIWLKTLPDGKMSRLTELGNDIEELYPQWSRDGKNIVFTTWNDQDQGTVQVISAKGGKAKQLSTEPGKYVEPTFSPNGELVVYRKTQGGHLTPRTWSQEPGLYKVDLKTKQNKKITAEGYQAQFGASADRIFFMNTGENDTPQLASINLDGFDKRVHYSSKHATEFRVSPDGEQLAFAERFKVWVTPFAKHGETVEIGPNASNLPVTQLSVRAGESISWNSKSNQLYWTLGPELYQANVDSQYLKKDEQAKPSIINLGFTEKADVPRGTVAFVGGKVITMENDQVIDKGVVIVKDNHILTVGDANTAIPKDAQVIDIGGKSIMPGLFDAHAHGAQADDEIVPQQNWALYSGLSLGVTTIHDPSNDTTEIFAASEQQKAGHIVGPRIFSTGTILYGANAPGYTSHIDSLDDAKFHLERLKKVGAFSVKSYNQPRRNQRQQVIAAARELEMMVVPEGGSLLQHNLTMVADGHTTVEHSLPVANIYNDIKQFWSQTKVGYTPTLVVAYGGISGENYWYDKTDVWAHPRLSMYVPSDILQARSMRRPHAPDSHYNHFNVAKVANEFNKLGVHSNIGAHGQREGLAAHWEMWMFAQGGMSNMDVLKTATINPATTFGLEHQLGSIKTGKLADLIVIDGDPLADIRLTDKVTFTMVNGKLFDAESMNQLNGNKQQRKPFFFEKI",
+            "dna_sequence_length": 3189,
+            "protein_translation_length": 1062,
+            "cdss": [
+                "PROKKA_00011_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    16184,
+                    "-",
+                    3189
+                ]
+            ],
+            "dna_sequence": "ATGTTGAAACCTAAGCTGACACCGCTTTATATCGCCCTGATGCTTGGCCTTAGTTCCCATGCCGTACAGGCAACAGACGCCCAAAAAACCAGTTGGGACGTCAATGCGCCAGCCAATGCTCCACTAGAAAAAGTGACCATAGATGTAACCGAAGGCACTTGGATGAACATCAGTGTCAGCCCTGATGGTAAACATTTAGTGTTTGATTTATTGGGTGATATTTATCAAATCCCCGTCACAGGTGGCGAAGCCAAACCATTAGCTCAAGGCATAGCTTGGCAAATGCAGCCCGTGTATAGCCCAGATGGTAAGCACATTGCCTTCACCTCTGATGCAGATGGTGGCGACAATATTTGGATTATGGACGCCGACGGCAGCAATCCACGCACTGTCACGACGGAAACCTTTCGTTTACTCAACAGTCCTGCGTGGAGCCCTGATTCGCAATATTTAGTCGGTCGTAAGCATTTTACCGCCAGTCGTAGTTTAGGCGCCGGCGAAGTCTGGCTCTATCATGTCGCCGGTGGCGAAGGCGTTAAACTCACCGAACGTCCTAACGATGAAAAGGATTTAGGCGAGCCAGCCTATTCACCCGATGGCCGCTATATCTATTTCAGTCAGGATGATACTCCGGGGAAAACTTTCCATTATTCCAAAGACTCAGTAAACGGCATCTATAAAATCAAGCGTTACGATACCCAAACGGGTGATATTGAAATCTTGATCGAAGGAACCGGTGGCGCCATTCGTCCAACACCGAGTCCTGACGGCACCAAACTGGCGTATATCAAGCGAGATGATTTCCAATCCTCTTTGTATTTACTCGATTTAAAATCCGGCGAAACGACTAAACTGTACGGCGATTTAGACCGCGATATGCAAGAGACCTGGGCAATCCACGGTGTCTATCCCACTATGGCTTGGACTCAAGATAACAAAGATATTTTTTTCTGGGCTAAAGGCAAAATCAATCGTCTGAATGTGGCCAATAAAACGGTCACCAACATTCCCTTCAGCGTCAAAACCCAGTTAGATGTGCAGCCTTCAGTACGCTTTAAACAAGATATTGATAAGGATGTGTTCGACGTAAAAATGCTGCGAATGGCACAAGTTTCACCGGATGGCAGTAAGGTCGCCTTTGAAGCATTAGGTAAAATCTGGTTGAAGACGCTTCCCGACGGCAAGATGTCACGCTTAACCGAGTTAGGTAACGACATTGAAGAACTCTATCCCCAGTGGTCGCGTGATGGCAAAAATATTGTCTTCACAACTTGGAATGACCAAGACCAGGGCACAGTACAAGTGATCAGTGCAAAAGGCGGCAAAGCGAAACAACTTTCAACAGAACCAGGCAAATACGTTGAGCCCACCTTCTCACCCAATGGTGAGCTGGTTGTGTATCGCAAAACCCAAGGTGGACACCTCACGCCTCGCACTTGGTCGCAGGAACCTGGCCTGTACAAGGTTGATTTAAAAACCAAACAGAATAAGAAAATCACTGCAGAGGGTTATCAAGCACAATTCGGCGCTTCGGCAGACCGCATTTTCTTTATGAACACTGGTGAAAACGACACGCCACAGCTTGCCTCAATTAACCTAGATGGGTTTGATAAGCGCGTTCACTACAGCAGTAAGCATGCAACCGAATTTAGAGTTTCACCCGACGGCGAACAACTGGCCTTTGCCGAGCGTTTTAAAGTTTGGGTTACCCCCTTTGCTAAACATGGTGAAACGGTTGAAATCGGCCCTAACGCCAGCAATCTTCCCGTCACCCAGTTAAGTGTGCGAGCTGGCGAAAGCATCAGCTGGAATAGCAAGAGTAACCAACTCTATTGGACTCTTGGCCCAGAACTGTACCAAGCCAATGTTGATTCCCAGTATCTTAAAAAGGACGAGCAAGCGAAGCCAAGCATTATCAACTTAGGCTTTACCGAAAAGGCAGATGTTCCACGTGGAACAGTCGCCTTTGTCGGCGGCAAAGTGATCACCATGGAAAATGATCAAGTGATCGATAAGGGCGTAGTGATCGTCAAAGACAACCATATTCTAACCGTTGGCGATGCAAACACGGCAATTCCAAAGGATGCACAAGTCATCGATATAGGTGGCAAATCCATTATGCCCGGTTTGTTCGATGCGCATGCCCATGGTGCTCAGGCCGACGATGAAATCGTGCCACAACAAAACTGGGCACTCTACTCTGGATTATCCTTAGGCGTGACAACTATTCATGATCCGTCAAACGATACCACTGAGATTTTTGCCGCCTCGGAACAGCAAAAAGCAGGTCACATTGTTGGTCCACGCATTTTCTCGACTGGAACAATTCTCTATGGCGCAAATGCTCCCGGCTACACCTCGCATATCGACTCACTCGATGATGCGAAATTCCATTTAGAGCGACTGAAAAAAGTTGGTGCCTTTAGCGTTAAGAGCTACAACCAACCGCGTCGCAATCAAAGACAACAGGTTATCGCTGCAGCTCGCGAACTCGAAATGATGGTCGTGCCAGAGGGTGGCAGCTTGCTACAGCATAACCTCACCATGGTTGCCGATGGCCATACAACCGTAGAACACTCATTACCCGTGGCAAATATTTATAACGATATTAAACAGTTCTGGAGCCAAACTAAGGTCGGTTACACTCCAACCTTAGTCGTCGCCTACGGCGGCATCTCGGGTGAAAACTATTGGTACGATAAGACCGATGTGTGGGCACATCCACGTTTGTCTATGTATGTGCCAAGCGACATTTTGCAGGCTCGCTCAATGCGTCGCCCCCATGCACCAGACAGTCACTACAACCACTTCAATGTTGCTAAAGTCGCGAATGAGTTCAATAAGTTAGGTGTGCATTCAAATATTGGCGCCCACGGTCAGCGTGAGGGTTTAGCCGCACATTGGGAAATGTGGATGTTCGCCCAAGGCGGTATGAGCAATATGGATGTGCTCAAAACAGCGACCATCAACCCAGCCACCACCTTCGGTCTAGAGCATCAACTTGGCTCAATTAAAACAGGTAAACTTGCAGACTTAATCGTAATCGATGGCGACCCATTAGCGGATATTCGACTCACAGATAAAGTCACTTTTACCATGGTCAATGGTAAGTTGTTCGACGCTGAGTCGATGAACCAACTCAATGGTAACAAGCAACAGCGTAAGCCTTTCTTCTTCGAGAAAATCTAA",
+            "md5": "c8549abaac761ec8fc58ae4fbe7ce5d9",
+            "type": "gene",
+            "id": "PROKKA_00011",
+            "aliases": [
+                "tolB_1"
+            ]
+        },
+        {
+            "function": "hypothetical protein",
+            "mrnas": [
+                "PROKKA_00012_mRNA"
+            ],
+            "protein_translation": "MPKLVAIAYKTVKRGPMNEVLCANVTQHSGVEKDVFGRPGKRQVTVLSLQQWQIACQSIDANLPWTTRRANLLVDGYSFGAADVGKQLRIGDLCLEVTGETDPCKKMEQAHAGLESALTPDWRGGVTCRVINDAMIHIGDPVTLD",
+            "dna_sequence_length": 438,
+            "protein_translation_length": 145,
+            "cdss": [
+                "PROKKA_00012_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    16818,
+                    "-",
+                    438
+                ]
+            ],
+            "dna_sequence": "ATGCCGAAACTAGTTGCTATCGCCTACAAAACGGTTAAACGCGGGCCAATGAACGAAGTGCTATGCGCGAATGTCACCCAGCACAGCGGCGTCGAAAAAGATGTTTTTGGTCGCCCGGGTAAACGGCAAGTCACGGTACTGTCGCTGCAGCAGTGGCAAATAGCTTGTCAGAGCATAGATGCAAATTTACCTTGGACGACTCGCCGAGCAAACCTATTAGTCGATGGATATAGTTTTGGGGCAGCGGATGTGGGTAAGCAGCTCCGCATTGGTGATCTCTGCCTCGAAGTAACAGGTGAAACCGATCCCTGCAAGAAGATGGAACAGGCTCATGCTGGCTTGGAATCCGCGCTTACTCCCGATTGGCGAGGCGGCGTCACCTGCCGTGTCATCAATGATGCCATGATCCATATCGGCGACCCCGTTACATTAGACTAA",
+            "md5": "59d3f9f7d522316f1b215901fea2f5b6",
+            "type": "gene",
+            "id": "PROKKA_00012",
+            "aliases": []
+        },
+        {
+            "function": "Sulfurtransferase TusA",
+            "mrnas": [
+                "PROKKA_00013_mRNA"
+            ],
+            "protein_translation": "MNDVFSTAQHKLDALGLRCPEPVMMVRKTVRQMAQGETLLIIADDPATTRDIPSFCEFMDHTLIASETSQTPYQYLIKKGL",
+            "dna_sequence_length": 246,
+            "protein_translation_length": 81,
+            "cdss": [
+                "PROKKA_00013_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    17099,
+                    "-",
+                    246
+                ]
+            ],
+            "dna_sequence": "ATGAACGACGTTTTCTCAACCGCACAACACAAACTGGATGCACTTGGTTTACGCTGCCCTGAACCGGTAATGATGGTGCGCAAAACGGTAAGACAAATGGCACAAGGTGAAACCCTGCTTATCATCGCAGATGATCCTGCGACCACACGTGATATTCCCAGCTTTTGCGAATTTATGGACCACACACTGATCGCCAGTGAAACCAGCCAAACACCCTATCAATATCTAATTAAAAAGGGACTCTAA",
+            "md5": "75e12c2cd4f966f8249015bcb83da6ef",
+            "type": "gene",
+            "id": "PROKKA_00013",
+            "aliases": [
+                "tusA_1",
+                "2.8.1.-"
+            ]
+        },
+        {
+            "function": "hypothetical protein",
+            "mrnas": [
+                "PROKKA_00014_mRNA"
+            ],
+            "protein_translation": "MMLFHVEHFDGFEQTSVWLEQFQPHHKLRASTWFIQITGVTLANSV",
+            "dna_sequence_length": 141,
+            "protein_translation_length": 46,
+            "cdss": [
+                "PROKKA_00014_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    17258,
+                    "-",
+                    141
+                ]
+            ],
+            "dna_sequence": "ATGATGTTGTTCCACGTGGAACATTTCGATGGTTTCGAGCAAACATCTGTTTGGCTGGAGCAATTCCAGCCCCATCACAAATTAAGGGCATCAACTTGGTTTATCCAAATCACTGGAGTAACATTAGCCAATTCTGTTTAA",
+            "md5": "8d498fc742847a34293505d3e2ecfccc",
+            "type": "gene",
+            "id": "PROKKA_00014",
+            "aliases": []
+        },
+        {
+            "function": "Diguanylate cyclase DosC",
+            "mrnas": [
+                "PROKKA_00015_mRNA"
+            ],
+            "protein_translation": "MLQTDQTLFEQMRITELEIDFRKSLFSFTLADVRALQSFKPVIEANIDKIVDDFYGLQTSVSEIALLIGDSDTLARLRTAQRRYVLDLFNGVYDLEYVNNRLRIGLVHKRIGVEPKLYLSAVHTLKELIYAEINNSVKDAAQNERIRIAIDKLVLFDVTLVFDTYIRSLVSEIENAKDKAERYAQSMESKVKERTQQLEELSQTDPLTGLLNVRHLQEFATRILRAAQRRAEPVSVIYLDVDDFKHFNDSQGHRAGDEVLRAVAQSIKESTRAEDHCFRYGGDEFCIIMPNCREEQARDHFIERFNQNIKRHLNNISLSFGIVDTGPYDYDDANTLIHKADQKMYSYKRARAAKSQLPATAANDLKTEMSNIETLNLDAAEFCPHESASPIIDKIAE",
+            "dna_sequence_length": 1194,
+            "protein_translation_length": 397,
+            "cdss": [
+                "PROKKA_00015_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    18451,
+                    "-",
+                    1194
+                ]
+            ],
+            "dna_sequence": "ATGCTGCAAACGGATCAAACGCTTTTTGAACAAATGCGGATCACTGAGCTTGAGATTGATTTTCGCAAATCCTTGTTCTCTTTTACCTTGGCGGATGTCAGAGCGCTTCAATCCTTCAAGCCTGTGATTGAAGCGAACATAGACAAAATCGTTGATGACTTCTATGGCCTGCAAACCAGTGTATCTGAAATTGCGTTGTTGATTGGTGACTCCGACACTCTGGCTCGTTTGCGTACCGCTCAGAGACGCTATGTGCTTGACCTGTTTAATGGTGTGTACGATTTAGAATATGTAAACAACCGCCTAAGGATTGGCTTAGTGCACAAACGTATCGGCGTCGAACCCAAACTCTACCTCTCTGCCGTTCATACCCTAAAAGAACTGATTTATGCGGAGATTAACAACTCGGTTAAAGACGCCGCTCAAAATGAACGCATTAGAATCGCCATCGACAAGCTAGTGCTTTTCGATGTTACCTTAGTGTTTGATACATATATTCGCAGCTTGGTTTCTGAAATTGAGAACGCCAAAGACAAGGCGGAACGTTACGCTCAAAGTATGGAGAGCAAAGTCAAAGAGCGTACTCAACAACTCGAAGAGTTATCTCAAACAGATCCATTAACCGGCTTACTAAACGTGCGTCACTTGCAGGAATTTGCCACTCGCATCCTAAGAGCCGCGCAAAGACGTGCCGAACCCGTAAGCGTTATTTATCTCGATGTGGATGACTTCAAACACTTTAATGATAGCCAAGGCCATAGAGCGGGAGATGAAGTACTCAGAGCCGTCGCTCAATCAATAAAGGAAAGTACCCGAGCGGAAGACCATTGTTTTCGCTATGGTGGTGATGAGTTTTGTATCATCATGCCCAACTGCCGTGAGGAACAAGCCAGAGATCATTTTATCGAACGCTTTAACCAGAATATCAAGCGCCATCTGAATAACATCTCATTAAGCTTTGGCATCGTGGATACTGGCCCCTACGACTACGATGATGCCAATACCCTAATCCATAAAGCCGATCAAAAAATGTATAGCTACAAACGCGCACGAGCAGCTAAATCACAGTTACCAGCGACGGCAGCCAATGATTTAAAAACCGAGATGAGCAACATAGAGACTCTAAACCTCGACGCAGCAGAGTTCTGCCCCCATGAATCAGCTTCGCCAATCATAGATAAAATCGCCGAATAA",
+            "md5": "b779bf41390a4915bb5203409a6c56e8",
+            "type": "gene",
+            "id": "PROKKA_00015",
+            "aliases": [
+                "dosC_1",
+                "2.7.7.65"
+            ]
+        },
+        {
+            "function": "hypothetical protein",
+            "mrnas": [
+                "PROKKA_00016_mRNA"
+            ],
+            "protein_translation": "MESRRAELSVIKDWVQYWRKYMPRLGARKLYTLIKSKLVEHDIKLGRDGFFTYLRSEGLLVKPKKSYTKTTFSKHWMKKHPNLLKEEGLHDAGHVLVSDITYLESDQGVHYLSLVTDASSRKIVGHHVSKDMKAESVVKALKMAIKDKRYIGNAVHHSDRGLQYCSAVYQNALQASQIQPSMTDGYDCYQNALAERVNGILKQEFLLHRCRTFAELKILVRESIAIYNDMRPHLSLNMATPNQVHNRKGQLLELA",
+            "dna_sequence_length": 768,
+            "protein_translation_length": 255,
+            "cdss": [
+                "PROKKA_00016_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    19428,
+                    "-",
+                    768
+                ]
+            ],
+            "dna_sequence": "ATGGAAAGTCGTAGAGCTGAGCTATCGGTCATCAAAGACTGGGTCCAGTACTGGCGTAAATATATGCCAAGGTTAGGGGCCCGTAAGCTCTACACGTTGATAAAATCCAAGCTGGTTGAGCACGATATTAAACTCGGGCGAGATGGGTTCTTTACCTATTTGAGAAGTGAAGGTTTACTGGTTAAACCGAAGAAAAGCTACACAAAAACCACGTTCAGCAAACACTGGATGAAGAAGCATCCTAATTTGCTGAAAGAGGAAGGACTGCATGATGCAGGGCATGTACTGGTCAGTGATATCACCTATCTTGAGTCAGACCAAGGTGTGCACTACCTGTCACTGGTCACCGATGCCAGTTCTCGTAAGATAGTCGGTCATCACGTGAGTAAAGACATGAAAGCCGAGAGTGTGGTGAAAGCGTTAAAAATGGCCATAAAAGATAAACGCTATATCGGCAACGCAGTGCATCACTCAGACAGAGGTTTACAATACTGCTCAGCAGTTTATCAGAATGCGCTTCAGGCGAGCCAAATCCAGCCGTCAATGACGGATGGTTATGATTGCTACCAAAATGCATTGGCAGAAAGAGTGAATGGCATACTGAAGCAGGAGTTTTTACTGCACCGATGTAGGACATTTGCGGAGCTGAAGATACTTGTTAGAGAATCGATAGCAATATACAACGATATGAGACCGCATCTGAGTTTGAATATGGCAACCCCTAATCAGGTGCACAATAGAAAAGGCCAGCTACTGGAGCTGGCCTAA",
+            "md5": "0bd35aab9ad023315b0923ef5afbe03d",
+            "type": "gene",
+            "id": "PROKKA_00016",
+            "aliases": []
+        },
+        {
+            "function": "hypothetical protein",
+            "mrnas": [
+                "PROKKA_00017_mRNA"
+            ],
+            "protein_translation": "MTTSINSSRKRTQRDYTLAFKLGVVERVEKGEMTYKQAQAHFGIQGRSTVLVWLRKHGRLDWSKPFQHPLMPKSKETPAETIKRLERELAEEKLRNKILNGMVDIMDNEYGAGLRKKYLSGTSGKQKATAK",
+            "dna_sequence_length": 396,
+            "protein_translation_length": 131,
+            "cdss": [
+                "PROKKA_00017_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    19889,
+                    "-",
+                    396
+                ]
+            ],
+            "dna_sequence": "ATGACAACATCAATTAACTCAAGCCGTAAGCGCACACAACGAGATTACACCTTAGCCTTTAAATTAGGCGTTGTAGAGCGTGTTGAAAAAGGCGAAATGACGTACAAACAAGCCCAAGCCCATTTTGGTATTCAAGGCCGTTCAACGGTACTCGTTTGGCTTAGAAAACATGGTAGACTCGATTGGTCGAAACCTTTTCAGCATCCCCTTATGCCTAAGTCAAAAGAAACCCCTGCCGAAACTATCAAGCGCCTTGAACGTGAGTTAGCAGAAGAGAAACTGCGTAACAAAATCCTCAATGGTATGGTTGATATCATGGACAATGAATATGGAGCAGGCCTCAGAAAAAAGTACTTATCCGGTACGTCTGGCAAGCAAAAAGCAACGGCGAAATAA",
+            "md5": "1ef8844210785292f0c87d759888347f",
+            "type": "gene",
+            "id": "PROKKA_00017",
+            "aliases": []
+        },
+        {
+            "function": "3-ketoacyl-CoA thiolase",
+            "mrnas": [
+                "PROKKA_00018_mRNA"
+            ],
+            "ontology_terms": {
+                "SSO": {
+                    "SSO:000000701": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Acetyl-CoA C-acyltransferase (EC 2.3.1.16)",
+                        "id": "SSO:000000701",
+                        "evidence": []
+                    },
+                    "SSO:000000312": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "3-ketoacyl-CoA thiolase (EC 2.3.1.16)",
+                        "id": "SSO:000000312",
+                        "evidence": []
+                    },
+                    "SSO:000000313": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "3-ketoacyl-CoA thiolase [isoleucine degradation] (EC 2.3.1.16)",
+                        "id": "SSO:000000313",
+                        "evidence": []
+                    }
+                }
+            },
+            "dna_sequence_length": 1164,
+            "protein_translation": "MKQAVIVDCIRTPMGRSKAGVFRNVRAETLSAELMKGLLLRNPQLDPNTIEDVIWGCVQQTLEQGFNIARNASLLAGIPKTAGAVTVNRLCGSSMEAIHQAARAIMTGMGDTFIIGGVEHMGHVPMNHGVDFHPGLANNVAKASGMMGLTAEMLGKLHGITREQQDAFAVRSHQRAHAATVEGRFAKEIYGIEGHDANGALIKVLHDEVIRPETSMESLAALRPVFDPANGTVTAGTSSALSDGASAMLVMEESKARALGLPIRARIRSMAVAGCDAAIMGYGPVPATQKALARAGITVNDLDVIELNEAFAAQSLPCVKDLGLLDVVDEKINLNGGAIALGHPLGCSGARISTTLINLMEHKDATLGLATMCIGLGQGIATVFERV",
+            "cdss": [
+                "PROKKA_00018_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    21150,
+                    "-",
+                    1164
+                ]
+            ],
+            "dna_sequence": "ATGAAACAAGCTGTTATCGTAGATTGCATTCGTACTCCTATGGGCCGTTCTAAGGCTGGGGTGTTCCGTAATGTACGTGCAGAAACACTCTCTGCCGAATTAATGAAAGGTCTATTACTGCGTAACCCGCAATTAGATCCCAATACTATTGAAGACGTGATTTGGGGCTGCGTGCAGCAAACCCTAGAGCAAGGCTTCAACATTGCCCGTAACGCATCATTGCTGGCAGGTATCCCGAAGACGGCTGGCGCCGTGACAGTCAACCGCCTATGCGGTTCTTCAATGGAAGCCATCCATCAAGCCGCTCGCGCAATCATGACTGGCATGGGCGACACCTTTATCATTGGTGGTGTTGAACACATGGGCCACGTGCCAATGAACCACGGTGTGGACTTCCACCCAGGTTTAGCCAATAACGTCGCTAAAGCGTCAGGCATGATGGGCTTAACCGCTGAGATGTTAGGTAAGCTGCACGGTATTACCCGTGAGCAGCAAGATGCCTTTGCAGTGCGTTCACACCAACGCGCTCACGCAGCGACTGTTGAAGGCCGCTTTGCCAAGGAAATCTATGGCATCGAAGGCCATGATGCTAACGGCGCGCTGATTAAAGTGCTGCACGACGAAGTGATTCGTCCAGAAACCTCAATGGAATCATTAGCGGCGCTGCGTCCAGTATTCGACCCTGCAAACGGTACAGTGACTGCCGGTACCTCTTCAGCATTATCTGACGGCGCTTCGGCGATGTTAGTCATGGAAGAGTCTAAAGCGCGCGCTTTAGGTCTACCAATCCGTGCCCGTATCCGCTCAATGGCCGTTGCAGGTTGTGACGCGGCAATCATGGGTTACGGTCCAGTACCTGCTACTCAAAAAGCACTGGCTCGCGCAGGCATCACAGTCAATGATTTAGATGTTATCGAACTGAACGAAGCCTTTGCCGCGCAATCTTTACCCTGCGTGAAAGATTTAGGCCTGTTGGATGTGGTCGATGAGAAGATTAACCTCAACGGTGGTGCTATCGCGCTTGGCCATCCACTGGGTTGCTCTGGTGCGCGTATTTCAACGACGCTGATCAACCTGATGGAACACAAAGATGCGACCTTAGGTTTAGCGACTATGTGTATCGGTTTAGGCCAAGGTATTGCGACCGTTTTCGAACGCGTTTAA",
+            "protein_translation_length": 387,
+            "md5": "6194256847e7e30abd5a85d2d76760e9",
+            "type": "gene",
+            "id": "PROKKA_00018",
+            "aliases": [
+                "fadA",
+                "2.3.1.16"
+            ]
+        },
+        {
+            "function": "Fatty acid oxidation complex subunit alpha",
+            "mrnas": [
+                "PROKKA_00019_mRNA"
+            ],
+            "protein_translation": "MIYQSPTIQVELLEDNIAKLCFNAPGSVNKFDRETLASLDAALDSIKQQSNIQALVLTSGKDTFIVGADITEFLGLFAQDDAVLLSWVEQANAVFNKLEDLPFPTASAIKGFALGGGCEAILATDFRIADTTAKIGLPETKLGIIPGFGGTVRLPRVIGADNALEWITTGKDQRPEDALKVGAVDAVVAPEALEAAAIQMLKDAVAEKLDWQARRQRKMSPLTLPKLEAMMSFTTAKGMVFAVAGKHYPAPMAAVSVVEQAATKGRSDALQIEHQAFIKLAKTDVAKALIGIFLNDQLVKGKAKKAGKLAKDVKSAAVLGAGIMGGGIAYQSASKGTPIVMKDIAQPALDLGLGEAAKLLSAQVARGRSTPEKMAKVLNNITPALDYAPVKHADVVVEAVVEHPKVKAQVLAEVEQYVSEDAIIASNTSTISINLLAKSMKKPERFCGMHFFNPVHKMPLVEVIRGEHSSEETIASVVAYASKMGKTPIVVNDCPGFFVNRVLFPYFAGFNGLLAEGGDFAAIDKVMEKQFGWPMGPAYLLDVVGLDTGHHAQAVMAEGFPDRMGKSGNDAIDVMFENKRLGQKNGKGFYAYSVDSRGKPKKDVDPTSYELLKAAFGEQKAFDADEIIARTMIPMIIETVRCLEEGIVASPAEADMGLVYGLGFPPFRGGVFRYLDTMGVANFVALADKYAHLGGLYQVTDAMRTLAANNGSYYQA",
+            "dna_sequence_length": 2151,
+            "protein_translation_length": 716,
+            "cdss": [
+                "PROKKA_00019_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    23323,
+                    "-",
+                    2151
+                ]
+            ],
+            "dna_sequence": "ATGATCTACCAAAGTCCTACAATTCAGGTTGAGTTACTCGAGGATAATATTGCCAAGCTGTGCTTTAACGCACCCGGTTCGGTGAACAAATTCGACAGAGAAACACTCGCCTCACTCGATGCCGCATTAGATAGCATTAAACAACAATCAAACATTCAGGCTTTAGTGCTGACCTCAGGTAAAGATACCTTTATCGTGGGTGCCGACATTACTGAATTTTTAGGCTTATTCGCACAGGATGATGCGGTACTGCTCTCTTGGGTTGAACAGGCCAACGCCGTATTCAACAAACTCGAAGATTTACCTTTCCCAACCGCTTCAGCGATTAAAGGTTTCGCCCTAGGCGGCGGTTGTGAAGCTATTCTGGCAACGGATTTCCGTATCGCCGACACCACAGCCAAAATCGGCCTGCCCGAAACCAAACTGGGCATTATCCCAGGCTTTGGTGGCACAGTGCGTTTACCACGTGTGATAGGTGCGGATAACGCCCTTGAGTGGATCACCACGGGTAAAGATCAGCGTCCAGAAGATGCCTTAAAAGTCGGTGCGGTTGATGCAGTTGTTGCGCCAGAGGCTTTAGAAGCCGCCGCCATTCAAATGCTAAAAGATGCAGTTGCAGAAAAGCTTGATTGGCAAGCCCGTCGCCAACGTAAGATGTCACCACTGACCTTACCAAAACTCGAAGCCATGATGTCTTTCACTACCGCTAAAGGCATGGTGTTTGCGGTTGCGGGTAAACACTACCCAGCACCTATGGCGGCAGTCAGCGTTGTTGAACAAGCGGCGACCAAAGGCCGCAGCGACGCACTGCAAATTGAACATCAGGCGTTTATCAAGTTAGCGAAAACCGATGTAGCCAAGGCGTTGATCGGTATCTTCTTGAATGACCAATTAGTCAAAGGCAAAGCTAAAAAAGCGGGCAAACTCGCTAAAGATGTGAAAAGCGCCGCCGTATTAGGTGCTGGCATCATGGGTGGCGGTATCGCTTACCAAAGCGCCAGTAAAGGCACGCCAATAGTAATGAAGGATATCGCTCAACCTGCATTAGATTTAGGTTTAGGCGAAGCCGCTAAACTGTTATCTGCGCAAGTTGCTCGCGGCCGCTCTACCCCAGAAAAAATGGCTAAGGTGCTGAACAACATCACTCCAGCCTTAGACTATGCTCCAGTTAAACATGCTGACGTGGTTGTCGAAGCCGTAGTTGAGCATCCAAAAGTGAAGGCACAAGTACTGGCGGAAGTTGAACAATACGTGAGTGAAGATGCGATTATCGCCTCTAACACGTCAACTATTTCAATCAACCTGCTAGCAAAGAGCATGAAGAAGCCTGAGCGTTTCTGCGGTATGCACTTCTTCAACCCTGTGCACAAAATGCCATTGGTTGAAGTTATTCGTGGCGAGCACAGCTCAGAAGAAACCATCGCATCTGTTGTTGCCTACGCCAGCAAAATGGGTAAAACCCCAATCGTTGTTAACGATTGCCCGGGTTTCTTCGTTAACCGCGTACTCTTCCCTTACTTTGCAGGCTTTAACGGCCTGCTCGCCGAAGGTGGCGACTTTGCCGCTATCGATAAAGTGATGGAAAAACAATTCGGCTGGCCAATGGGCCCTGCTTACCTGCTAGACGTTGTCGGCCTAGACACGGGGCACCACGCGCAAGCGGTAATGGCCGAAGGCTTCCCCGATCGTATGGGCAAATCTGGCAATGACGCGATTGACGTGATGTTCGAGAACAAACGTCTCGGTCAGAAGAATGGTAAAGGTTTCTACGCTTACTCTGTAGATAGCCGCGGTAAGCCAAAGAAAGATGTCGACCCAACCAGCTACGAGCTGCTGAAAGCCGCCTTTGGTGAGCAAAAAGCATTCGATGCGGATGAGATCATCGCCCGCACTATGATCCCAATGATTATCGAAACCGTTCGCTGTTTAGAAGAAGGCATTGTGGCTTCACCTGCCGAAGCGGATATGGGCTTGGTCTATGGTTTAGGTTTCCCTCCATTCCGTGGTGGTGTATTCCGTTACTTAGATACTATGGGCGTAGCCAACTTTGTCGCCTTAGCTGATAAATACGCTCACTTAGGTGGTTTGTATCAAGTCACCGACGCCATGCGCACCCTTGCAGCCAACAACGGTAGCTACTACCAAGCCTAA",
+            "md5": "b78d2efd55ac989a996782cfbaec85ac",
+            "type": "gene",
+            "id": "PROKKA_00019",
+            "aliases": [
+                "fadB"
+            ]
+        },
+        {
+            "function": "Xaa-Pro dipeptidase",
+            "mrnas": [
+                "PROKKA_00020_mRNA"
+            ],
+            "ontology_terms": {
+                "SSO": {
+                    "SSO:000008955": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Xaa-Pro dipeptidase PepQ (EC 3.4.13.9)",
+                        "id": "SSO:000008955",
+                        "evidence": []
+                    },
+                    "SSO:000006363": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Proline dipeptidase (EC 3.4.13.9)",
+                        "id": "SSO:000006363",
+                        "evidence": []
+                    }
+                }
+            },
+            "dna_sequence_length": 1320,
+            "protein_translation": "MDHLAHHYHAHIAELNRRVAEIVSREALSGLVIHSGQPHRMFLDDINYPFKANPHFKAWLPVLDNPNCWLVVNGRDKPQLIFYHPVDFWHKVSDVPEMFWTEHFEIKLLTKADKVAELLPSDITNWAYLGEHLDVAEVLGFTSRNPDSVMSYLHFHRTTKTEYELECMRRANQIAVQGHLAAKNAFYNGASEFEIQQQYLSAVGQGENEVPYGNIIALNQNAAILHYTALEHQNPARRLSFLIDAGASYFGYASDITRTYAFEKNRFDELITAMNKAQLELIDMMRPGVRYPDLHLATHGKVAQMLLDFELATGDAQGLVDQGITSAFFPHGLGHMLGLQVHDVGGFAFDERGTHIPAPEAHPFLRCTRILAPNQVLTMEPGLYIIDTLLNELKQDSRDQQINWRTVDELRPFGGIRIEDNVIVHQDRNENMTRELGLA",
+            "cdss": [
+                "PROKKA_00020_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    23767,
+                    "+",
+                    1320
+                ]
+            ],
+            "dna_sequence": "ATGGATCACTTGGCTCATCACTATCATGCCCACATCGCCGAGCTTAATCGTCGAGTCGCTGAAATTGTATCGCGTGAAGCATTATCAGGTTTAGTGATCCACTCGGGTCAGCCACATCGAATGTTTTTGGACGACATTAATTATCCTTTTAAAGCCAATCCCCACTTCAAGGCTTGGTTACCTGTGTTGGATAACCCTAACTGCTGGTTAGTAGTAAACGGTCGCGATAAGCCACAACTGATTTTTTATCACCCTGTGGACTTTTGGCATAAGGTGTCTGACGTGCCGGAGATGTTCTGGACCGAGCATTTTGAGATCAAGTTACTCACTAAGGCCGATAAGGTTGCCGAGCTATTGCCTAGCGATATCACCAACTGGGCTTATTTAGGTGAGCATTTAGATGTGGCTGAGGTACTGGGTTTCACCAGTCGCAATCCTGACTCTGTGATGAGCTATCTGCATTTCCACCGTACCACTAAAACCGAATATGAACTCGAATGTATGCGCCGTGCGAACCAGATCGCGGTGCAAGGGCATTTAGCGGCTAAAAATGCCTTCTATAACGGTGCCAGCGAGTTTGAAATTCAGCAGCAGTATTTATCTGCCGTGGGACAGGGCGAGAACGAAGTGCCCTACGGTAATATCATTGCCTTAAACCAAAATGCGGCGATTTTGCATTACACCGCGCTCGAGCATCAAAATCCGGCGCGGCGCTTATCTTTTTTAATCGATGCGGGCGCCAGTTATTTTGGCTACGCGTCGGATATCACGCGTACCTATGCGTTTGAGAAGAATCGTTTCGATGAATTGATCACTGCCATGAACAAGGCGCAGCTCGAACTGATCGATATGATGCGCCCAGGTGTGCGTTATCCCGATTTACACTTGGCTACCCATGGCAAAGTCGCGCAAATGCTGTTGGATTTTGAGTTAGCCACGGGCGATGCCCAAGGCTTAGTCGACCAAGGCATAACCAGCGCCTTCTTCCCCCACGGACTCGGCCATATGTTAGGCTTGCAAGTACATGATGTGGGAGGTTTTGCCTTCGATGAGCGTGGTACCCATATTCCGGCCCCTGAGGCCCATCCGTTCCTGCGTTGCACCCGCATTTTAGCGCCAAACCAAGTGCTAACGATGGAGCCAGGATTATACATTATCGATACTTTACTCAATGAGCTAAAACAAGATAGCCGTGACCAGCAGATCAATTGGCGCACCGTTGATGAGTTGCGACCTTTCGGTGGTATCCGTATCGAGGACAATGTGATTGTGCATCAGGATCGAAACGAAAATATGACCCGCGAGCTGGGCTTAGCGTGA",
+            "protein_translation_length": 439,
+            "md5": "5b77937a2bf79fd242472bc67bc52fa9",
+            "type": "gene",
+            "id": "PROKKA_00020",
+            "aliases": [
+                "pepQ_1",
+                "3.4.13.9"
+            ]
+        },
+        {
+            "function": "IMPACT family member YigZ",
+            "mrnas": [
+                "PROKKA_00021_mRNA"
+            ],
+            "protein_translation": "MLESYLIPSESVQIEEEIKHSRFISFLFHCTSIEQLKLVLTDIRRDYPGASHYCYAFIAGAPNDSIAIGSSDDGEPAGSAGRPMLAVLQGANLGEVGAVVVRFYGGTKLGVGGLVRAYTSGLRQGLGQLPTRVKQLRYPAKLHCDYTQLRDVEHLLQQLEAVIIDKQFAEAVDIHFEIGKQQQGILNESLATLSQGSLRAEFDL",
+            "dna_sequence_length": 615,
+            "protein_translation_length": 204,
+            "cdss": [
+                "PROKKA_00021_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    25102,
+                    "+",
+                    615
+                ]
+            ],
+            "dna_sequence": "GTGCTCGAAAGTTATCTGATACCGAGTGAAAGTGTGCAGATAGAAGAAGAGATAAAGCATAGCCGCTTTATCTCTTTTCTATTTCATTGCACGAGCATAGAACAACTGAAGTTAGTACTTACTGACATAAGGCGAGATTATCCCGGCGCCAGCCATTACTGCTATGCCTTTATCGCAGGAGCGCCTAACGACAGCATTGCCATCGGTTCGAGTGACGATGGTGAGCCAGCGGGCAGCGCAGGTCGTCCAATGCTCGCAGTATTACAAGGCGCGAATCTCGGTGAAGTCGGTGCCGTAGTGGTGCGTTTCTATGGCGGTACTAAGTTAGGCGTAGGCGGTTTAGTGCGTGCCTATACCTCAGGATTACGCCAAGGTTTAGGGCAATTGCCGACGCGAGTGAAGCAATTACGTTATCCGGCAAAACTGCATTGTGATTACACCCAATTAAGGGATGTTGAGCATTTACTGCAGCAGTTAGAAGCGGTGATCATCGATAAGCAATTTGCCGAAGCCGTTGATATCCATTTTGAAATAGGCAAACAGCAGCAGGGCATATTGAATGAATCTCTGGCAACTTTGAGTCAGGGCAGCCTGCGCGCAGAGTTTGATCTGTGA",
+            "md5": "17a9ee76df08b1eea6320d7a2c3c4c15",
+            "type": "gene",
+            "id": "PROKKA_00021",
+            "aliases": [
+                "yigZ"
+            ]
+        },
+        {
+            "function": "Trk system potassium uptake protein TrkH",
+            "mrnas": [
+                "PROKKA_00022_mRNA"
+            ],
+            "protein_translation": "MQYKTIIRIIGLLIGLFSITMLPPALIAIWYNDGGGTAFIQAFFVSLFIGFWLWYPNRRCKEELRTREGFLIVVLFWTVLGSIGALPFIFSSQPDLSWTDSFFESFSALTTTGATVIVGLDSLPKAILFYRHMLQWLGGMGIIVLAVAILPVLGVGGMQLYRAEIPGPVKDSKMTPRIAETAKALWYIYLLLTIACAGAYWLAGMSVFDAVCHSFSTIAIGGFSTHDASMGYFDSSVINLICVFFLIVSAVNFSVHFAAFSRRGINFRVYFRDTEFKMLVAIQLVLTAICFLTLYHSGIYDSPEETLDHALFQAVSVATTAGFGTESFHMWPLFLPILLIFSSFIGGCGGSTAGGIKVIRVILLLLQGSRELKRLVHPKAMFSIRIGSKALPDRVVDAVWGFFSAYALVFVLCMLALMAMGLDDITAFSATAACLNNLGPGLGEVASNYASIGDGAKWVLVVAMLFGRLEVFTLLILFTPTFWRD",
+            "dna_sequence_length": 1458,
+            "protein_translation_length": 485,
+            "cdss": [
+                "PROKKA_00022_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    25794,
+                    "+",
+                    1458
+                ]
+            ],
+            "dna_sequence": "ATGCAATACAAAACCATAATAAGAATCATAGGTCTGCTTATCGGCCTGTTCTCTATCACTATGCTGCCGCCAGCCTTAATCGCCATTTGGTATAACGATGGCGGTGGTACTGCGTTTATTCAGGCATTTTTTGTCAGCTTATTTATCGGTTTTTGGCTCTGGTATCCTAATCGTCGCTGCAAAGAGGAATTACGAACCCGCGAGGGGTTTCTGATTGTGGTCCTGTTCTGGACCGTTCTTGGCTCTATCGGTGCCTTACCCTTTATCTTCTCAAGCCAACCCGATCTCAGCTGGACCGACAGTTTTTTCGAATCATTCTCCGCACTGACCACCACGGGAGCCACAGTCATTGTCGGGCTGGACTCCTTGCCAAAGGCCATTCTGTTTTATCGACATATGCTGCAATGGCTCGGCGGTATGGGGATCATCGTTTTAGCCGTGGCGATTCTGCCTGTGCTGGGCGTTGGGGGCATGCAGCTGTATCGCGCCGAGATTCCTGGCCCTGTGAAGGACAGTAAGATGACGCCGAGGATTGCCGAAACGGCCAAGGCGTTATGGTACATCTATCTATTGCTAACCATTGCCTGTGCGGGCGCTTATTGGCTGGCGGGAATGAGCGTTTTCGATGCCGTGTGTCACTCGTTTTCGACCATCGCTATCGGGGGCTTTTCGACCCACGATGCCAGTATGGGATACTTCGACAGCTCAGTGATCAACCTGATTTGCGTGTTCTTTTTGATTGTCTCGGCGGTGAACTTTAGCGTGCACTTTGCGGCATTTTCGCGCCGCGGGATCAATTTTAGAGTCTATTTTCGAGATACCGAGTTCAAGATGCTGGTGGCGATTCAGTTGGTGTTAACGGCGATTTGTTTCTTAACCCTTTATCACTCAGGGATTTATGATTCGCCAGAGGAAACCTTAGATCACGCCTTATTCCAAGCGGTTTCGGTGGCGACAACCGCTGGCTTTGGTACCGAAAGCTTCCATATGTGGCCACTGTTTCTGCCGATTCTGTTGATTTTCTCAAGCTTTATCGGTGGTTGTGGTGGTTCAACTGCGGGCGGGATTAAGGTGATCCGGGTTATCCTACTGCTGTTGCAAGGTTCGCGCGAACTTAAACGCCTCGTTCACCCTAAGGCGATGTTCTCGATTCGTATCGGCTCCAAGGCGCTGCCTGACCGGGTTGTCGATGCCGTGTGGGGATTCTTCTCCGCCTATGCCTTAGTCTTCGTGCTGTGTATGTTAGCGCTGATGGCTATGGGGTTGGATGATATTACCGCCTTTAGTGCCACGGCGGCCTGCTTAAATAACCTCGGTCCGGGTCTTGGGGAAGTAGCGAGTAATTACGCCAGTATTGGTGATGGTGCTAAATGGGTGCTGGTGGTAGCCATGTTATTTGGTCGCCTCGAAGTCTTTACCTTGCTGATTTTGTTCACGCCAACTTTCTGGAGGGATTAA",
+            "md5": "62041f7dbea32e451ce5d978aae8d759",
+            "type": "gene",
+            "id": "PROKKA_00022",
+            "aliases": [
+                "trkH_1"
+            ]
+        },
+        {
+            "function": "Protoporphyrinogen IX dehydrogenase [menaquinone]",
+            "mrnas": [
+                "PROKKA_00023_mRNA"
+            ],
+            "protein_translation": "MQTLIIYSTIDGQTLEICRKIKTLAEQAGEQVSLVTLEQAEALSLADFDKVLIGASIRYGKHRPDLYQFVNRNHAVLDSKINGFFTVNVVARKPLKNTPETNPYMQKFLKLSLWQPQQLAVFAGKIDYPKYGLFDRTMIRFIMWMTKGPTDLKGTFEFTDWGKVEAFGVHFSKL",
+            "dna_sequence_length": 525,
+            "protein_translation_length": 174,
+            "cdss": [
+                "PROKKA_00023_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    27253,
+                    "+",
+                    525
+                ]
+            ],
+            "dna_sequence": "ATGCAGACACTAATCATCTATTCGACAATAGATGGCCAAACACTGGAAATCTGCCGCAAAATCAAAACGCTTGCCGAACAAGCGGGTGAGCAGGTGTCGTTAGTGACCTTAGAACAGGCCGAAGCCTTAAGCCTTGCCGATTTCGATAAAGTGTTGATTGGTGCGAGCATTCGTTATGGCAAACATAGGCCCGATCTCTACCAGTTTGTGAATCGTAACCATGCAGTGCTGGACAGTAAAATCAACGGCTTCTTTACCGTGAATGTGGTGGCGCGTAAGCCATTAAAGAACACGCCAGAAACCAATCCTTACATGCAAAAGTTCCTCAAATTATCCCTGTGGCAGCCACAGCAATTGGCGGTGTTTGCGGGCAAGATTGATTACCCTAAATACGGCTTGTTTGACCGCACTATGATCCGTTTTATCATGTGGATGACAAAGGGACCGACCGATCTAAAGGGCACCTTCGAGTTTACCGACTGGGGTAAAGTCGAAGCCTTTGGGGTACACTTTAGCAAGCTGTAA",
+            "md5": "dc25a8ec224476c7d0b7505ce99c39b7",
+            "type": "gene",
+            "id": "PROKKA_00023",
+            "aliases": [
+                "hemG_1",
+                "1.3.5.3"
+            ]
+        },
+        {
+            "function": "Biofilm growth-associated repressor",
+            "mrnas": [
+                "PROKKA_00024_mRNA"
+            ],
+            "protein_translation": "MQNDIDVNAMVTNAESAAKWLKAIANPYRLMILCLLLDKELSVTELNATVPLSQSALSQHLAVLRAEDLVDTRKSSQIVYYKLKNEEVTQVISILHSRYCAV",
+            "dna_sequence_length": 309,
+            "protein_translation_length": 102,
+            "cdss": [
+                "PROKKA_00024_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    28148,
+                    "-",
+                    309
+                ]
+            ],
+            "dna_sequence": "ATGCAAAATGATATAGATGTAAATGCAATGGTAACTAATGCGGAAAGTGCGGCTAAATGGCTCAAAGCCATAGCGAATCCTTATCGCTTAATGATTTTGTGCCTATTGCTGGATAAAGAGCTAAGCGTAACCGAGCTGAATGCAACTGTGCCCTTGAGCCAGTCGGCGCTATCACAGCATTTGGCGGTATTGCGAGCCGAAGACTTGGTCGATACCCGTAAGAGCTCGCAAATAGTGTATTACAAGCTTAAGAATGAAGAAGTCACCCAAGTGATTTCCATTCTGCACAGCCGTTACTGCGCCGTATAA",
+            "md5": "09ec28582bc933370d1f8e2eff52290d",
+            "type": "gene",
+            "id": "PROKKA_00024",
+            "aliases": [
+                "bigR"
+            ]
+        },
+        {
+            "function": "Protoporphyrinogen IX dehydrogenase [menaquinone]",
+            "mrnas": [
+                "PROKKA_00025_mRNA"
+            ],
+            "protein_translation": "MTRILVLYFTRGGHTAKIANAIAQQLTLRGAKVDLVDINSAAATKINWPDYQLVALGACVLYGTYDKSVFQFIEQHAPALSALPNSFFCVNVVARNPEKRIPENNKYLQKFIALSPWTPADLKIIAGKVDYPSWPWYDRLMIQLIMKITKGPTDPKAVIDYTDWEDVKVYADHLLTLAEVTEPA",
+            "dna_sequence_length": 555,
+            "protein_translation_length": 184,
+            "cdss": [
+                "PROKKA_00025_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    28348,
+                    "+",
+                    555
+                ]
+            ],
+            "dna_sequence": "ATGACACGCATTCTGGTGCTTTATTTTACCCGTGGTGGCCATACGGCCAAGATAGCGAATGCGATTGCGCAACAACTCACGCTGCGTGGCGCCAAGGTGGACTTGGTGGATATTAATAGTGCGGCGGCAACCAAGATTAACTGGCCCGATTATCAACTGGTAGCGCTAGGGGCTTGTGTACTCTATGGTACCTACGATAAGAGTGTATTTCAGTTTATAGAGCAACACGCTCCGGCCTTAAGTGCGTTGCCAAACAGTTTCTTCTGCGTCAACGTGGTGGCGCGTAACCCAGAGAAACGCATCCCAGAGAACAACAAATACCTGCAAAAATTCATTGCCTTATCACCTTGGACTCCCGCCGATTTGAAGATTATCGCCGGTAAGGTGGATTACCCCTCGTGGCCCTGGTACGACAGACTGATGATCCAGTTGATTATGAAAATCACCAAAGGACCAACGGATCCTAAGGCGGTGATCGATTATACCGACTGGGAAGATGTGAAGGTCTATGCCGACCATCTGCTAACCTTGGCCGAGGTTACTGAACCCGCCTAA",
+            "md5": "509d0f90f6151073365aebd804d2b471",
+            "type": "gene",
+            "id": "PROKKA_00025",
+            "aliases": [
+                "hemG_2",
+                "1.3.5.3"
+            ]
+        },
+        {
+            "function": "Trk system potassium uptake protein TrkH",
+            "mrnas": [
+                "PROKKA_00026_mRNA"
+            ],
+            "protein_translation": "MLNFRPLLFILGLFLSMLTAFMLAPLLLAVFNGEETVGAFMLSALVTGICASLCLHNGQSKTINLNIRDMFLLTSLTWLIVSLFAAMPFTLYHGIGYTDAFFETMSGITTTGSTVLSGLDTMDHSILIWRSLLQWLGGIGFIVMAVAILPFLNVGGMRLFRTESSDWSDKAVPRTQNMAKHLFFIYILLTVMCCVAYHIAGMTWFQAINHAMTTLSTGGYSTSDNSMAAFSNSAHWVGVVFMAAGGLPLLMFVQMIQQRDFTVWNDAQVKGFLFFLTFVSCFIGFWLWQTRDIALIDALRLSSFNVVSVVTTTGYGLTDYGAWGAFANIAFLFLMFVGSCSGSTSGGIKIFRFQIAGAIMREQLKQQCHPNGIFRERYNNRLISEDIVRSLITFVLLFMFVIVGLSVILVLTGLDPMTSFTGAITAVTNVGPGLGPIIGPAGNFSTLPDLAKWALSLGMLLGRLEILTVAVLFHPSFWKY",
+            "dna_sequence_length": 1443,
+            "protein_translation_length": 480,
+            "cdss": [
+                "PROKKA_00026_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    30391,
+                    "-",
+                    1443
+                ]
+            ],
+            "dna_sequence": "ATGCTGAACTTTAGACCGCTATTGTTTATTTTGGGGCTGTTTCTGTCGATGTTAACAGCCTTTATGTTAGCGCCCCTGCTCCTTGCCGTATTCAACGGTGAGGAAACCGTGGGCGCTTTCATGCTGTCGGCCTTAGTCACTGGGATTTGCGCCAGCCTCTGTTTGCATAACGGCCAGAGCAAAACCATTAACCTCAATATTCGCGATATGTTTCTGCTCACCAGCCTCACTTGGCTGATCGTGAGCCTATTTGCCGCCATGCCTTTTACCTTGTACCACGGCATTGGCTATACAGACGCCTTCTTCGAGACCATGTCCGGCATTACCACCACAGGTTCAACCGTGCTCTCAGGCTTAGATACTATGGACCACAGTATCTTAATCTGGCGCTCGTTGTTGCAATGGCTCGGCGGTATCGGCTTTATCGTGATGGCGGTAGCGATTCTGCCCTTCTTAAACGTCGGTGGTATGCGGCTGTTCCGCACCGAGTCATCGGATTGGAGCGATAAGGCGGTACCGCGCACACAAAACATGGCTAAGCATTTATTTTTTATCTATATTTTGCTGACTGTGATGTGCTGCGTTGCCTACCATATTGCTGGCATGACTTGGTTTCAAGCCATTAACCATGCGATGACCACACTGTCGACGGGGGGCTATTCGACCTCAGATAACTCGATGGCGGCGTTTTCAAACTCAGCCCATTGGGTTGGCGTTGTGTTTATGGCGGCGGGAGGCTTACCCCTGCTGATGTTTGTGCAGATGATCCAACAGCGAGACTTTACCGTCTGGAACGATGCTCAAGTCAAAGGCTTCTTGTTTTTCCTCACTTTTGTGTCTTGTTTTATTGGCTTCTGGCTGTGGCAAACGCGGGATATCGCCCTTATCGACGCGCTGCGCCTCTCCAGCTTTAACGTGGTTTCCGTGGTCACCACCACAGGTTATGGTTTAACCGACTACGGCGCTTGGGGCGCATTTGCGAATATCGCGTTTTTATTCTTAATGTTTGTCGGCAGCTGCTCGGGCTCCACCTCTGGCGGGATTAAAATCTTCCGCTTCCAAATTGCCGGCGCCATTATGCGCGAGCAGTTAAAGCAGCAATGCCATCCCAATGGCATCTTCCGGGAGCGCTATAACAACCGTCTGATCAGTGAAGATATTGTGCGCTCACTGATCACCTTTGTGCTGCTGTTTATGTTTGTGATTGTTGGACTCTCGGTGATTCTGGTGCTGACTGGGCTAGACCCCATGACCAGCTTTACCGGCGCTATTACCGCAGTCACCAACGTAGGCCCTGGGCTTGGCCCCATCATTGGTCCTGCGGGTAACTTCTCGACGCTGCCCGATTTGGCTAAATGGGCACTTTCTTTGGGTATGTTGCTCGGCCGCTTAGAGATTTTAACCGTGGCTGTACTGTTCCATCCCAGTTTTTGGAAATACTAA",
+            "md5": "6794fecc7a041094d87bd404978a554a",
+            "type": "gene",
+            "id": "PROKKA_00026",
+            "aliases": [
+                "trkH_2"
+            ]
+        },
+        {
+            "function": "Trk system potassium uptake protein TrkA",
+            "mrnas": [
+                "PROKKA_00027_mRNA"
+            ],
+            "protein_translation": "MKIIILGAGQVGGTLAENLVGENNDITIVDSDKSRLRALQDKYDLRVVAGHGAHPDVLKEAGAEDADMLIAVTNSDECNMVACQMAYSLFGTPTKIARIRSEPYLAMRDKLFIDSETKNSEGRPRGGFVIDELIAPEQLVTAYIQRLVEYPGALQVLEFAEGRLSLVAVRAYYGGPLVGNALAALREHMPNIDTRVAAIFRQGRPIMPRGTTIIEADDEVFFVADSRHIRAVMSEMQKLDNSYRNIMIAGGGNIGLGLAKRLERTHSVKLIEHKFERAETLSEQLENTTVFCGDASDQELLLEEHIDQTDVFIAVTNDDEANIMSALLAKRMGAKKVMVLIQREAYVDIVQEANIDIAISPQQATISALLTHIRQGDICNVYSLRRGAAEAIEAIAHGDSSTSKVVGKAIGDIKLPPGTTIGAIVRNEEVLMAHDKTVIEQGDHVILFLVNKKFVGEVEKLFQPSAFFF",
+            "dna_sequence_length": 1410,
+            "protein_translation_length": 469,
+            "cdss": [
+                "PROKKA_00027_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    31812,
+                    "-",
+                    1410
+                ]
+            ],
+            "dna_sequence": "ATGAAAATTATCATATTAGGTGCGGGTCAAGTCGGGGGAACCTTGGCCGAAAATTTGGTGGGTGAAAACAACGATATCACCATAGTCGATAGCGACAAATCCAGATTACGCGCCCTGCAGGATAAATATGACCTTCGCGTCGTGGCGGGCCACGGTGCCCACCCCGATGTACTGAAAGAGGCTGGCGCCGAAGATGCCGACATGCTGATTGCTGTGACGAACAGCGATGAATGCAACATGGTTGCCTGCCAGATGGCCTACAGCCTATTTGGTACACCGACTAAAATCGCCCGTATTCGCTCCGAACCTTATCTGGCGATGCGCGATAAATTATTTATCGACAGTGAAACCAAAAATAGTGAGGGGCGCCCTCGCGGTGGTTTTGTGATCGATGAGCTTATCGCACCTGAGCAGTTAGTAACCGCTTACATTCAACGTTTGGTTGAATATCCAGGGGCGCTGCAAGTGCTCGAATTTGCCGAAGGTCGCTTAAGTTTGGTTGCGGTTCGCGCCTATTACGGCGGCCCTTTAGTCGGTAATGCCTTGGCCGCGCTTCGCGAGCATATGCCAAATATTGATACCCGGGTGGCGGCGATTTTCCGCCAAGGTCGCCCTATCATGCCCCGAGGTACGACTATTATCGAAGCCGATGACGAAGTGTTTTTCGTGGCCGACAGTCGCCATATCCGCGCGGTGATGAGTGAGATGCAAAAGCTGGATAACTCCTACCGCAATATCATGATTGCTGGCGGTGGTAACATCGGCTTAGGCCTCGCTAAACGCCTCGAACGCACCCACTCGGTCAAGCTGATTGAGCATAAGTTTGAACGCGCCGAAACACTCTCTGAACAGCTTGAAAACACGACAGTATTTTGTGGTGACGCCTCAGATCAAGAGTTGCTGCTCGAAGAACATATCGACCAAACCGACGTGTTTATTGCCGTCACCAACGACGATGAAGCCAACATCATGTCCGCCCTGTTAGCTAAACGTATGGGGGCGAAAAAGGTGATGGTGTTGATCCAACGCGAAGCCTATGTGGATATTGTGCAGGAAGCTAATATCGATATCGCGATTTCACCCCAGCAGGCGACGATTTCAGCCTTACTAACCCACATCCGCCAAGGCGATATCTGTAACGTGTATTCCTTACGCCGCGGCGCCGCCGAAGCGATTGAAGCCATTGCCCATGGCGACTCCAGCACCTCTAAGGTTGTTGGCAAGGCGATTGGTGATATCAAGCTGCCGCCGGGAACCACCATTGGCGCCATAGTGCGTAATGAAGAAGTGCTGATGGCCCACGACAAGACAGTGATAGAACAAGGGGATCACGTGATCCTGTTCCTCGTGAACAAAAAGTTTGTCGGCGAAGTCGAGAAACTGTTCCAACCTAGCGCCTTCTTCTTCTAA",
+            "md5": "d707fc09a3e350d05cd5da0c1dcc0c5a",
+            "type": "gene",
+            "id": "PROKKA_00027",
+            "aliases": [
+                "trkA"
+            ]
+        },
+        {
+            "function": "Ribosomal RNA small subunit methyltransferase B",
+            "mrnas": [
+                "PROKKA_00028_mRNA"
+            ],
+            "ontology_terms": {
+                "SSO": {
+                    "SSO:000000057": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "16S rRNA (cytosine(967)-C(5))-methyltransferase (EC 2.1.1.176)",
+                        "id": "SSO:000000057",
+                        "evidence": []
+                    }
+                }
+            },
+            "dna_sequence_length": 1290,
+            "protein_translation": "MMNLRALAAKAIFEVLEKGVSLSVALPEQQKHLASGKDKALLAELCYGVMRTLPQIEKRVAECLAKPLKGKQRIIHQLLIVGCYQLYFTRIPSHAAISETAEACRQLKFEGMVKVVNGVLRNIQRQLTPLSTESETLSYNTPGWLIKRLKAAYPDNWQEIILQSHERPPMWLRNNRLSQSRDEYLAALSELEIEASAGLSDDAILLAHPKDVTTLPRFHEGAASVQDGAAQWAATLLAPQANELILDACAAPGGKSCHLLELEPSIQLVAVDFDAKRLERVQQNLDRLSLKAEVIHGDAANIDSWWQGEQFDRILLDAPCSATGVIRRHPDIKWLRKNHDIEELAELQRQILDHCWKWLKPGGTLLYATCSILPQENRDQISAFLARTADAKLDTLAQQASSQDIGWQITPGQHNMDGFYYARLLKATH",
+            "cdss": [
+                "PROKKA_00028_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    33117,
+                    "-",
+                    1290
+                ]
+            ],
+            "dna_sequence": "ATGATGAACTTGCGTGCACTGGCGGCCAAAGCCATCTTCGAAGTCTTAGAGAAAGGTGTGTCACTTTCAGTTGCCCTACCAGAACAGCAAAAGCATCTAGCAAGTGGTAAAGATAAAGCCCTGCTCGCAGAGCTCTGCTACGGCGTGATGCGCACCTTACCGCAGATCGAAAAACGCGTGGCTGAGTGTTTGGCTAAGCCGCTGAAAGGTAAGCAAAGGATTATCCACCAGCTATTAATTGTTGGCTGTTATCAACTTTACTTCACCCGTATTCCAAGCCACGCCGCCATCTCCGAAACCGCCGAGGCTTGTCGTCAGTTAAAATTTGAGGGCATGGTAAAGGTCGTCAATGGCGTGCTGCGTAATATTCAGCGCCAATTAACGCCGCTAAGCACTGAGTCAGAGACCTTAAGCTACAACACGCCGGGCTGGTTAATTAAGCGCTTAAAAGCCGCATATCCCGATAATTGGCAAGAGATAATCCTGCAAAGCCATGAGCGTCCACCTATGTGGCTACGCAACAATCGCCTCTCCCAAAGCCGCGATGAATACCTTGCCGCCCTGAGTGAGCTTGAGATAGAAGCGAGTGCTGGCCTCAGTGATGATGCCATTCTACTTGCCCATCCTAAGGATGTGACGACATTACCGCGCTTCCACGAAGGTGCGGCATCGGTGCAAGATGGTGCAGCACAATGGGCCGCGACCTTACTGGCTCCGCAAGCCAACGAACTGATCCTCGATGCCTGCGCGGCACCGGGCGGTAAGAGTTGCCATTTACTCGAACTTGAACCCAGCATCCAACTGGTCGCCGTCGATTTCGATGCTAAACGTCTCGAGCGCGTGCAACAGAACCTTGACCGTTTGTCATTAAAAGCGGAAGTTATTCATGGCGATGCAGCCAACATCGACTCATGGTGGCAGGGTGAACAGTTTGATCGTATCTTACTCGACGCGCCTTGCTCGGCGACGGGCGTAATCCGCCGTCATCCCGATATCAAGTGGTTACGCAAAAACCATGACATCGAAGAACTGGCTGAGCTGCAAAGACAAATTCTTGATCACTGCTGGAAGTGGCTCAAACCCGGTGGCACACTCCTGTATGCAACTTGCTCTATTTTGCCGCAGGAAAATCGAGACCAAATTAGTGCATTTTTAGCCAGAACCGCAGATGCTAAGCTAGACACACTTGCCCAGCAGGCTTCAAGCCAAGATATAGGTTGGCAAATCACGCCGGGACAACACAACATGGATGGGTTTTATTACGCCCGTTTATTGAAAGCGACCCATTAG",
+            "protein_translation_length": 429,
+            "md5": "d9412561881396cbbcdb494e025d4d48",
+            "type": "gene",
+            "id": "PROKKA_00028",
+            "aliases": [
+                "rsmB_1",
+                "2.1.1.176"
+            ]
+        },
+        {
+            "function": "Methionyl-tRNA formyltransferase",
+            "mrnas": [
+                "PROKKA_00029_mRNA"
+            ],
+            "ontology_terms": {
+                "SSO": {
+                    "SSO:000004840": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Methionyl-tRNA formyltransferase (EC 2.1.2.9)",
+                        "id": "SSO:000004840",
+                        "evidence": []
+                    }
+                }
+            },
+            "dna_sequence_length": 957,
+            "protein_translation": "MKPLNIIFAGTPDFAARHLQALINSHHNVIAVYTQPDRPAGRGKKLTASPVKELAVSHNIPVYQPGSLRKEPAQQELAALNADIMVVVAYGLILPKVVLDTPRLGCINVHGSILPRWRGAAPIQRALWAGDKETGVTIMQMDVGLDTGDMLLKTYLPIEDDDTSATLYEKLALQGPDALLQALEGLANGTLTAEKQDEALANYAEKLSKEEARLDWSKSATQLWQEVRAFNPWPVSYFEHQGNTIKVWQTQVSTTSSNAAPGTIISASKKGIEVATGDGVLTLLSMQLPGKKPLSVADILNARGDWFTPNTRLNHEAQ",
+            "cdss": [
+                "PROKKA_00029_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    34073,
+                    "-",
+                    957
+                ]
+            ],
+            "dna_sequence": "TTGAAACCACTCAATATCATCTTCGCCGGAACACCGGATTTTGCCGCTCGCCATTTACAGGCGCTGATTAACTCACATCACAATGTGATTGCCGTCTACACTCAGCCGGACAGACCCGCAGGGCGCGGTAAAAAACTCACCGCCAGCCCAGTTAAAGAACTCGCAGTCAGCCACAACATTCCGGTTTATCAGCCAGGCTCACTGCGTAAAGAACCCGCACAGCAAGAACTTGCCGCCCTCAATGCCGATATTATGGTAGTGGTCGCCTACGGCTTGATTCTGCCAAAAGTGGTGCTCGACACGCCGCGTTTAGGCTGTATCAATGTTCACGGTTCTATTCTGCCACGCTGGCGCGGTGCAGCGCCGATTCAACGCGCGTTGTGGGCCGGCGATAAAGAGACCGGCGTGACTATCATGCAAATGGATGTCGGCCTAGATACTGGCGACATGCTGCTGAAAACCTACTTGCCGATTGAAGATGATGATACTTCAGCCACCCTTTACGAGAAGTTAGCTCTGCAAGGACCAGACGCGCTACTGCAAGCACTCGAAGGTTTAGCCAACGGCACTCTAACGGCTGAAAAACAAGATGAAGCCTTAGCGAACTACGCCGAAAAACTCAGTAAAGAAGAAGCGAGGCTCGATTGGAGCAAATCTGCGACCCAATTATGGCAAGAAGTCCGCGCCTTCAATCCTTGGCCTGTGAGCTATTTTGAGCACCAAGGCAATACCATCAAGGTGTGGCAGACCCAAGTCAGCACCACCAGCAGCAATGCCGCACCTGGCACTATTATCAGCGCCAGTAAAAAAGGCATTGAAGTCGCCACCGGCGATGGTGTGTTAACTCTGCTCAGCATGCAATTACCCGGTAAAAAACCACTCAGCGTGGCCGACATACTCAACGCCCGCGGCGACTGGTTTACCCCAAATACTCGTCTAAATCACGAGGCGCAATAA",
+            "protein_translation_length": 318,
+            "md5": "ad9a679659c992b0e0ac1016c14fc795",
+            "type": "gene",
+            "id": "PROKKA_00029",
+            "aliases": [
+                "fmt",
+                "2.1.2.9"
+            ]
+        },
+        {
+            "function": "Peptide deformylase 1",
+            "mrnas": [
+                "PROKKA_00030_mRNA"
+            ],
+            "ontology_terms": {
+                "SSO": {
+                    "SSO:000005794": {
+                        "term_lineage": [],
+                        "ontology_ref": "6308/8/1",
+                        "term_name": "Peptide deformylase (EC 3.5.1.88)",
+                        "id": "SSO:000005794",
+                        "evidence": []
+                    }
+                }
+            },
+            "dna_sequence_length": 507,
+            "protein_translation": "MALLKVLRFPDERLRTQATPVTEFTAELQTQIDDMFETMYQEKGIGLAATQVDYHKQLIVMDLQDEVDRPKVFINPEIIASSGDFCNEEGCLSVPGIYAKVDRAEFVTVKALDRHGNEFTVEADELFAICIQHEMDHLKGKLFVDYLSPLKRQRIKQKLEKAARQDAK",
+            "cdss": [
+                "PROKKA_00030_CDS"
+            ],
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    34595,
+                    "-",
+                    507
+                ]
+            ],
+            "dna_sequence": "ATGGCACTATTAAAAGTTTTACGCTTTCCCGATGAAAGATTGCGAACTCAAGCGACCCCGGTCACAGAGTTTACTGCTGAGTTGCAAACGCAAATCGATGATATGTTCGAGACCATGTACCAAGAAAAAGGCATTGGTCTGGCAGCAACCCAGGTCGACTATCATAAACAACTGATCGTGATGGATTTACAAGACGAGGTCGATCGCCCTAAAGTCTTTATCAATCCCGAAATTATTGCCAGTAGCGGTGATTTCTGTAACGAAGAGGGTTGTTTGTCGGTCCCCGGTATCTATGCCAAGGTCGACCGCGCCGAGTTTGTTACCGTCAAGGCACTGGATAGACACGGTAATGAATTCACCGTTGAAGCCGATGAGCTGTTTGCTATTTGTATTCAGCATGAAATGGATCACCTGAAAGGTAAGTTATTTGTCGATTACCTGTCGCCATTGAAGCGCCAACGGATCAAACAGAAACTTGAAAAAGCGGCCAGACAGGACGCCAAATAA",
+            "protein_translation_length": 168,
+            "md5": "03df7abb02fc0e31722374a910ec3160",
+            "type": "gene",
+            "id": "PROKKA_00030",
+            "aliases": [
+                "def1",
+                "3.5.1.88"
+            ]
+        }
+    ],
+    "scientific_name": "test",
+    "cdss": [
+        {
+            "function": "Chromosomal replication initiator protein DnaA",
+            "parent_gene": "PROKKA_00001",
+            "ontology_terms": {},
+            "protein_translation": "MAVSLWQQCIGRLQDELSAQQFSMWIRPLQAEMDGDTLVLYAPNRFVLDWVRDKYINIINQFFTEQMGNDAPKLRFDIGSRPSAKKPEPAPVAAVRVPNPQTKASVGTSFNTTEPVANTNHRSNINPTYQFDNFVEGKSNQLGKAAALQVAENPGGAYNPLFLYGGTGLGKTHLLHAVGNGIIKNNPNAKVVYMHSERFVQDMVKALQNNAIEEFKRYYRSVDALFIDDIQFFANKDRSQEEFFHTFNALLEGNHQIILTSDRYPKEIDGVEDRLKSRFGWGLTVAIEPPELETRVAILMRKAQESGINLPDEVAFFIAKRLRSNVRELEGALNRVIANANFTGRPITIDFVREALRDLLALQEKLVTIDNIQKTVAEYYKIKMADMLSKRRSRSVARPRQVAMALSKELTNQSLPEIGDAFGGRDHTTVLHACRKIAQLREESHDIKEDYANLIRTLSS",
+            "parent_mrna": "PROKKA_00001_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    79,
+                    "+",
+                    1383
+                ]
+            ],
+            "protein_translation_length": 460,
+            "aliases": [
+                "dnaA"
+            ],
+            "id": "PROKKA_00001_CDS",
+            "md5": "a1d01ad7681006a9054e9c234dbdf404"
+        },
+        {
+            "function": "DNA polymerase III subunit beta",
+            "parent_gene": "PROKKA_00002",
+            "ontology_terms": {},
+            "protein_translation": "MKFSIDRDALLKPLQLVCGAVERRHNLPILANLLVEVSGHSLKMTGTDLEVELVGQAVIHGDIEEGRTTVPAKKLLDIVKSLPEQSELKVEQQDNKWLLRSGRSRFSLATLPAEEYPNVEAFQAEIEFTLKQGVLKSLIDATQFSMANQDVRYYLNGLLLETEGNVLRAIATDGHRLALSHRTIDAQLPEKQVIVPRKGVMEMARLLEADDLDIAIAIGDNAIRATTSTTVFTSKLVDGRFPDYRRVLPKGGDKIVIASRNHFKQALTRASILSNEKFRGVRIQLEAGLLKITANNPEQEEAEEIIDVDYNNQPLEIGFNVSYLLDVLNNLKSDDVRITLIDGNSSALLENHLEEDSMYVVMPMRL",
+            "parent_mrna": "PROKKA_00002_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    1482,
+                    "+",
+                    1101
+                ]
+            ],
+            "protein_translation_length": 366,
+            "aliases": [
+                "dnaN",
+                "2.7.7.7"
+            ],
+            "id": "PROKKA_00002_CDS",
+            "md5": "1750da96fb0f8ca51e30c7021cb70e61"
+        },
+        {
+            "function": "DNA replication and repair protein RecF",
+            "parent_gene": "PROKKA_00003",
+            "ontology_terms": {},
+            "protein_translation": "MSLIRLNIDSFRNIQLAQLSPSSGINLIYGQNGSGKTSILEAIYFLGMGRSFRSHLSQRVINNEQDKLTLFATLNLPRGDSKIGLRRFRSGETEVKIDGEKVKRLSTLAETLPIQVITPESFSLLFEGPKSRRQFIDWGAFHSDPQFYAAWVNVRRVLKQRNQLLRNNSSYDQIQYWDREFVRYTEQVTEIRNRYVDSLNELLKGIIGEFLPQVDVKVSFTRGWDSKTDFAQLLESQYPRDLATGHTVSGPHKADLRLRVGSLPAQDALSRGQLKLLVCALRIAQGKLLKQQIDKHSIYLVDDLPSELDAQHRQLLLKQLVDTGAQVFVTAIEPAAIVDSLHTPPSRMFHVEQGRVTVIE",
+            "parent_mrna": "PROKKA_00003_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    2744,
+                    "+",
+                    1083
+                ]
+            ],
+            "protein_translation_length": 360,
+            "aliases": [
+                "recF_1"
+            ],
+            "id": "PROKKA_00003_CDS",
+            "md5": "619e8cc0b02f5c291ebd374f0988485e"
+        },
+        {
+            "function": "DNA gyrase subunit B",
+            "parent_gene": "PROKKA_00004",
+            "ontology_terms": {},
+            "protein_translation": "MSENSYDSSSIKVLKGLDAVRKRPGMYIGDTDDGTGLHHMVFEVVDNSIDEALAGHCTDITITIHVDGSVSVRDDGRGIPVAIHPEEGVSAAEVIMTVLHAGGKFDDNSYKVSGGLHGVGVSVVNALSKKLQLTIRREGKVHEQFYTHGVPDEPIKVIGDATKTGTEIRFWPSEETFSDVEFHFEILAKRVRELSFLNSGVGIRLVDERDNKNEFFKYEGGISAFVDYLNRNKTPVNKDVFHFMQEREDGITVEVAMQWNDGYQESIFCFTNNIPQRDGGTHLAGFRSALTRNLNNYMENEGYNKKGKTNATGDDAREGLTAVISVKVPDPKFSSQTKDKLVSSEVKAAVEQTMGEKLNDYLLENPADAKLIVGKIVDAARAREAARKAREMTRRKGALDLGGLPGKLADCQEKDPGLSEIYIVEGDSAGGSAKQGRNRKNQAILPLKGKILNVEKARFDKMLSSQEVATLITALGCGIGRDEYNPDKTRYHNIIIMTDADVDGSHIRTLLLTFFFRQMPELIERGYVYIAQPPLFKVKKGKQEQYLKDEAALTQYLTTQALDGTSIYPSQGAPGMSGEPLERLVTQYREVEAIVARLEQRYPTQITNRMLYHPMINNEMLADEGKMKEWIDAFIHELVELENSGVLYSGEPVLDPERKVYLPKITIRKHGIDTHYLFSYDFFQSTDYQRIGKLGAALEGLIEVGGYVQRGDRVKEVGSFIEALDWTIGEAKRGLYIQRYKGLGEMNPEQLWETTMDPESRRMLQVTIDDAVGADQLFTCLMGDQVEPRRDFIEANALNVANLDV",
+            "parent_mrna": "PROKKA_00004_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    3843,
+                    "+",
+                    2418
+                ]
+            ],
+            "protein_translation_length": 805,
+            "aliases": [
+                "gyrB",
+                "5.99.1.3"
+            ],
+            "id": "PROKKA_00004_CDS",
+            "md5": "7fcda4404b90afb4b108484c8f6a6680"
+        },
+        {
+            "function": "Stringent starvation protein A",
+            "parent_gene": "PROKKA_00005",
+            "ontology_terms": {},
+            "protein_translation": "MELYIGNKNYSSWSLRAWLMAAKSGIQFDEILLQLDTDSFYQRLKSISPTLKVPTLIDGNITVWDSLSICEYINDTYLSGSAWPQDPKQKAKARSFACEMHSGFHALRNALPMNIRAHRYVELSSAVLQDIARIDNIWSQQMAEFATTQGTWLFGKWSIADMMFAPVVMRFFTYEIEVSQASRAYMEFIVSQPEMQAWIQAAKAETEIVDADEAGVDR",
+            "parent_mrna": "PROKKA_00005_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    6997,
+                    "-",
+                    657
+                ]
+            ],
+            "protein_translation_length": 218,
+            "aliases": [
+                "sspA_1"
+            ],
+            "id": "PROKKA_00005_CDS",
+            "md5": "bb3a79eb731a9606542161c0b5b04b3e"
+        },
+        {
+            "function": "Hydrogen peroxide-inducible genes activator",
+            "parent_gene": "PROKKA_00006",
+            "ontology_terms": {},
+            "protein_translation": "MDIEALRSFVAFVDTGSFTRAAMQTYKTQSAVSMQMKRLEQELGKTLFVKEGRNLVLSTEGQRFGLYAKQLLQLHDETVTTIKQTQVGTQLHLGCPDDYAESVLPRIVALLHGHIKQLDLQITCASSQKLRIMLDTGQLDAAIVTRLPESDEGYLLQTSKGVWVSASGSNLSDADPLPIALFQKDCKFHIAALDGLMKQDRHYQLLACSSSAAALKAIVAKDLAISAMAECSVSASLNIIDSETLPPLPVVAVALVISAKAYSPINAELAKQIARGYQSYLE",
+            "parent_mrna": "PROKKA_00006_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    7124,
+                    "+",
+                    849
+                ]
+            ],
+            "protein_translation_length": 282,
+            "aliases": [
+                "oxyR_1"
+            ],
+            "id": "PROKKA_00006_CDS",
+            "md5": "4049769c2238d94c9665fbcd9656ffdc"
+        },
+        {
+            "function": "hypothetical protein",
+            "parent_gene": "PROKKA_00007",
+            "ontology_terms": {},
+            "protein_translation": "MIKSIFNKIFNIREQTILERPKSFSQTDLSKPVTAVSGKQQPEEPQDTSVSIDLAALFYSLLFPARTKDAGGVANNLERRVMAEIELALASPQVIAEKVLKLPSKVLELDRKLAEPQFDTKDLLALIEKDPLLSVEVLKLCNSPAFKRGDREVTSLQQALVQLGREQLRRFVTSCLVREMLDIKPIYFRRFGAEIWRHSMQVAFLTSELSEEDRDTAFLLGLLHDVGKLAIFKMLLDAFVQAEPGEQPNSWLFRQVMTAKSLTLSALLAKHWQLPSTFETELDKLAHVHTRPNEGISAVVWRANIISEISMLQQASKLPADMLGNLLALVGLEPAQFEALHEKLQQF",
+            "parent_mrna": "PROKKA_00007_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    8128,
+                    "+",
+                    1044
+                ]
+            ],
+            "protein_translation_length": 347,
+            "aliases": [],
+            "id": "PROKKA_00007_CDS",
+            "md5": "0d6373eb2d2f1c4eab5112244f4106bb"
+        },
+        {
+            "function": "Glycine--tRNA ligase beta subunit",
+            "parent_gene": "PROKKA_00008",
+            "ontology_terms": {},
+            "protein_translation": "MNFENLLIELGTEELPPKALRKLAESFLANFTEELTKADLAFKSAVWYAAPRRLAINVTELAIAQADKIVEKRGPAVSSAFDAEGKPTKAAEGWARGNGITVDQAERLVTDKGEWLVYNAKVEGVETKSLIAAMAQRALDKLPIPKPMRWGSSKTQFIRPVHTATMLLGSELIEGELLGIKSARNVRGHRFMGTGFELDHADNYLTLLKEKGKVIADYESRKALIKADAEKAAAKIGGTADIEDDLLEEVTSLVEWPVVLTASFEEKFLNVPSEALVYTMKGDQKYFPVFDEAGKLLPNFIFVANIESKDPAQIIAGNEKVVRPRLADAEFFFNTDKKHTLESRLPSLETVLFQQQLGTLKDKVTRISALAAFIAEQTGANAVDAARAGLLSKTDLMTNMVMEFTDTQGTMGMHYARLDGETEAVALAMEEQYKPKFSGDTVPTAAVSCAVALADKLDTLVGIFGIGQAPKGAADPFALRRAAIGVLRIIVENKLPLDLVTLIAKAQELHGTNLSNANASDEVLEFLMARFRAWYQDKGIDVDVILAVLARRPTRPADFDSRINAVSHFRSLEASSALAAANKRVSNILAKVEGELPTAINSALLAEAAEQALAAKLAELQPQLAPLFANADYQQALTLLSSLRESVDQFFEDVMVMADDEALKNNRLALLNNLREQFLHVADISLLQ",
+            "parent_mrna": "PROKKA_00008_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    11301,
+                    "-",
+                    2067
+                ]
+            ],
+            "protein_translation_length": 688,
+            "aliases": [
+                "glyS",
+                "6.1.1.14"
+            ],
+            "id": "PROKKA_00008_CDS",
+            "md5": "a5ddb874da4c14f81a6c4b7c931d4778"
+        },
+        {
+            "function": "Glycine--tRNA ligase alpha subunit",
+            "parent_gene": "PROKKA_00009",
+            "ontology_terms": {},
+            "protein_translation": "MTTKHDVKTFQGFILTLQEYWAQQGCAIVQPLDMEVGAGTFHPQTFLRSLGPEPMSSAYVQPSRRPTDGRYGENPNRLQHYYQFQVVLKPSPDNIQELYLGSLQALGIDTQIHDIRFVEDNWESPTLGAWGLGWEVWLNGMEVTQFTYFQQVGGLECSPVTGEITYGLERLAMYIQGVDSVYDLVWTDGPMGRITYGDVFHQNEVEQSTYNFEHADVDFMFALFDQCEKMCQHLLSLEKPLPLPAYEQVMKASHAFNLLDARHAISVTERQRYILRVRTMAKAVAESYYQAREALGFPMCK",
+            "parent_mrna": "PROKKA_00009_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    12216,
+                    "-",
+                    906
+                ]
+            ],
+            "protein_translation_length": 301,
+            "aliases": [
+                "glyQ",
+                "6.1.1.14"
+            ],
+            "id": "PROKKA_00009_CDS",
+            "md5": "fcf9e13f06f045944eef9b3163fa2c62"
+        },
+        {
+            "function": "DNA-3-methyladenine glycosylase 1",
+            "parent_gene": "PROKKA_00010",
+            "ontology_terms": {},
+            "protein_translation": "MEEIRCNWVSDDPLYREYHDKVWGRPVYDSKELFAKLCLDGQQAGLSWITILKKQQNYEQAFADFEPAVIATFDDAKVEELMNNPGIVRNRLKIHSIIRNAKGYLAYTADGKDFAEFLWSFVGGKPLVNQFTSMSQVPAQTPESEAMSKALKKLGFNFVGPTICYAFMQAVGMVNDHLVDCIAYDACCGG",
+            "parent_mrna": "PROKKA_00010_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    12335,
+                    "+",
+                    573
+                ]
+            ],
+            "protein_translation_length": 190,
+            "aliases": [
+                "tag",
+                "3.2.2.20"
+            ],
+            "id": "PROKKA_00010_CDS",
+            "md5": "879cd000aae64fce6dc81088832691c2"
+        },
+        {
+            "function": "Protein TolB",
+            "parent_gene": "PROKKA_00011",
+            "ontology_terms": {},
+            "protein_translation": "MLKPKLTPLYIALMLGLSSHAVQATDAQKTSWDVNAPANAPLEKVTIDVTEGTWMNISVSPDGKHLVFDLLGDIYQIPVTGGEAKPLAQGIAWQMQPVYSPDGKHIAFTSDADGGDNIWIMDADGSNPRTVTTETFRLLNSPAWSPDSQYLVGRKHFTASRSLGAGEVWLYHVAGGEGVKLTERPNDEKDLGEPAYSPDGRYIYFSQDDTPGKTFHYSKDSVNGIYKIKRYDTQTGDIEILIEGTGGAIRPTPSPDGTKLAYIKRDDFQSSLYLLDLKSGETTKLYGDLDRDMQETWAIHGVYPTMAWTQDNKDIFFWAKGKINRLNVANKTVTNIPFSVKTQLDVQPSVRFKQDIDKDVFDVKMLRMAQVSPDGSKVAFEALGKIWLKTLPDGKMSRLTELGNDIEELYPQWSRDGKNIVFTTWNDQDQGTVQVISAKGGKAKQLSTEPGKYVEPTFSPNGELVVYRKTQGGHLTPRTWSQEPGLYKVDLKTKQNKKITAEGYQAQFGASADRIFFMNTGENDTPQLASINLDGFDKRVHYSSKHATEFRVSPDGEQLAFAERFKVWVTPFAKHGETVEIGPNASNLPVTQLSVRAGESISWNSKSNQLYWTLGPELYQANVDSQYLKKDEQAKPSIINLGFTEKADVPRGTVAFVGGKVITMENDQVIDKGVVIVKDNHILTVGDANTAIPKDAQVIDIGGKSIMPGLFDAHAHGAQADDEIVPQQNWALYSGLSLGVTTIHDPSNDTTEIFAASEQQKAGHIVGPRIFSTGTILYGANAPGYTSHIDSLDDAKFHLERLKKVGAFSVKSYNQPRRNQRQQVIAAARELEMMVVPEGGSLLQHNLTMVADGHTTVEHSLPVANIYNDIKQFWSQTKVGYTPTLVVAYGGISGENYWYDKTDVWAHPRLSMYVPSDILQARSMRRPHAPDSHYNHFNVAKVANEFNKLGVHSNIGAHGQREGLAAHWEMWMFAQGGMSNMDVLKTATINPATTFGLEHQLGSIKTGKLADLIVIDGDPLADIRLTDKVTFTMVNGKLFDAESMNQLNGNKQQRKPFFFEKI",
+            "parent_mrna": "PROKKA_00011_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    16184,
+                    "-",
+                    3189
+                ]
+            ],
+            "protein_translation_length": 1062,
+            "aliases": [
+                "tolB_1"
+            ],
+            "id": "PROKKA_00011_CDS",
+            "md5": "c8549abaac761ec8fc58ae4fbe7ce5d9"
+        },
+        {
+            "function": "hypothetical protein",
+            "parent_gene": "PROKKA_00012",
+            "ontology_terms": {},
+            "protein_translation": "MPKLVAIAYKTVKRGPMNEVLCANVTQHSGVEKDVFGRPGKRQVTVLSLQQWQIACQSIDANLPWTTRRANLLVDGYSFGAADVGKQLRIGDLCLEVTGETDPCKKMEQAHAGLESALTPDWRGGVTCRVINDAMIHIGDPVTLD",
+            "parent_mrna": "PROKKA_00012_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    16818,
+                    "-",
+                    438
+                ]
+            ],
+            "protein_translation_length": 145,
+            "aliases": [],
+            "id": "PROKKA_00012_CDS",
+            "md5": "59d3f9f7d522316f1b215901fea2f5b6"
+        },
+        {
+            "function": "Sulfurtransferase TusA",
+            "parent_gene": "PROKKA_00013",
+            "ontology_terms": {},
+            "protein_translation": "MNDVFSTAQHKLDALGLRCPEPVMMVRKTVRQMAQGETLLIIADDPATTRDIPSFCEFMDHTLIASETSQTPYQYLIKKGL",
+            "parent_mrna": "PROKKA_00013_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    17099,
+                    "-",
+                    246
+                ]
+            ],
+            "protein_translation_length": 81,
+            "aliases": [
+                "tusA_1",
+                "2.8.1.-"
+            ],
+            "id": "PROKKA_00013_CDS",
+            "md5": "75e12c2cd4f966f8249015bcb83da6ef"
+        },
+        {
+            "function": "hypothetical protein",
+            "parent_gene": "PROKKA_00014",
+            "ontology_terms": {},
+            "protein_translation": "MMLFHVEHFDGFEQTSVWLEQFQPHHKLRASTWFIQITGVTLANSV",
+            "parent_mrna": "PROKKA_00014_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    17258,
+                    "-",
+                    141
+                ]
+            ],
+            "protein_translation_length": 46,
+            "aliases": [],
+            "id": "PROKKA_00014_CDS",
+            "md5": "8d498fc742847a34293505d3e2ecfccc"
+        },
+        {
+            "function": "Diguanylate cyclase DosC",
+            "parent_gene": "PROKKA_00015",
+            "ontology_terms": {},
+            "protein_translation": "MLQTDQTLFEQMRITELEIDFRKSLFSFTLADVRALQSFKPVIEANIDKIVDDFYGLQTSVSEIALLIGDSDTLARLRTAQRRYVLDLFNGVYDLEYVNNRLRIGLVHKRIGVEPKLYLSAVHTLKELIYAEINNSVKDAAQNERIRIAIDKLVLFDVTLVFDTYIRSLVSEIENAKDKAERYAQSMESKVKERTQQLEELSQTDPLTGLLNVRHLQEFATRILRAAQRRAEPVSVIYLDVDDFKHFNDSQGHRAGDEVLRAVAQSIKESTRAEDHCFRYGGDEFCIIMPNCREEQARDHFIERFNQNIKRHLNNISLSFGIVDTGPYDYDDANTLIHKADQKMYSYKRARAAKSQLPATAANDLKTEMSNIETLNLDAAEFCPHESASPIIDKIAE",
+            "parent_mrna": "PROKKA_00015_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    18451,
+                    "-",
+                    1194
+                ]
+            ],
+            "protein_translation_length": 397,
+            "aliases": [
+                "dosC_1",
+                "2.7.7.65"
+            ],
+            "id": "PROKKA_00015_CDS",
+            "md5": "b779bf41390a4915bb5203409a6c56e8"
+        },
+        {
+            "function": "hypothetical protein",
+            "parent_gene": "PROKKA_00016",
+            "ontology_terms": {},
+            "protein_translation": "MESRRAELSVIKDWVQYWRKYMPRLGARKLYTLIKSKLVEHDIKLGRDGFFTYLRSEGLLVKPKKSYTKTTFSKHWMKKHPNLLKEEGLHDAGHVLVSDITYLESDQGVHYLSLVTDASSRKIVGHHVSKDMKAESVVKALKMAIKDKRYIGNAVHHSDRGLQYCSAVYQNALQASQIQPSMTDGYDCYQNALAERVNGILKQEFLLHRCRTFAELKILVRESIAIYNDMRPHLSLNMATPNQVHNRKGQLLELA",
+            "parent_mrna": "PROKKA_00016_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    19428,
+                    "-",
+                    768
+                ]
+            ],
+            "protein_translation_length": 255,
+            "aliases": [],
+            "id": "PROKKA_00016_CDS",
+            "md5": "0bd35aab9ad023315b0923ef5afbe03d"
+        },
+        {
+            "function": "hypothetical protein",
+            "parent_gene": "PROKKA_00017",
+            "ontology_terms": {},
+            "protein_translation": "MTTSINSSRKRTQRDYTLAFKLGVVERVEKGEMTYKQAQAHFGIQGRSTVLVWLRKHGRLDWSKPFQHPLMPKSKETPAETIKRLERELAEEKLRNKILNGMVDIMDNEYGAGLRKKYLSGTSGKQKATAK",
+            "parent_mrna": "PROKKA_00017_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    19889,
+                    "-",
+                    396
+                ]
+            ],
+            "protein_translation_length": 131,
+            "aliases": [],
+            "id": "PROKKA_00017_CDS",
+            "md5": "1ef8844210785292f0c87d759888347f"
+        },
+        {
+            "function": "3-ketoacyl-CoA thiolase",
+            "parent_gene": "PROKKA_00018",
+            "ontology_terms": {},
+            "protein_translation": "MKQAVIVDCIRTPMGRSKAGVFRNVRAETLSAELMKGLLLRNPQLDPNTIEDVIWGCVQQTLEQGFNIARNASLLAGIPKTAGAVTVNRLCGSSMEAIHQAARAIMTGMGDTFIIGGVEHMGHVPMNHGVDFHPGLANNVAKASGMMGLTAEMLGKLHGITREQQDAFAVRSHQRAHAATVEGRFAKEIYGIEGHDANGALIKVLHDEVIRPETSMESLAALRPVFDPANGTVTAGTSSALSDGASAMLVMEESKARALGLPIRARIRSMAVAGCDAAIMGYGPVPATQKALARAGITVNDLDVIELNEAFAAQSLPCVKDLGLLDVVDEKINLNGGAIALGHPLGCSGARISTTLINLMEHKDATLGLATMCIGLGQGIATVFERV",
+            "parent_mrna": "PROKKA_00018_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    21150,
+                    "-",
+                    1164
+                ]
+            ],
+            "protein_translation_length": 387,
+            "aliases": [
+                "fadA",
+                "2.3.1.16"
+            ],
+            "id": "PROKKA_00018_CDS",
+            "md5": "6194256847e7e30abd5a85d2d76760e9"
+        },
+        {
+            "function": "Fatty acid oxidation complex subunit alpha",
+            "parent_gene": "PROKKA_00019",
+            "ontology_terms": {},
+            "protein_translation": "MIYQSPTIQVELLEDNIAKLCFNAPGSVNKFDRETLASLDAALDSIKQQSNIQALVLTSGKDTFIVGADITEFLGLFAQDDAVLLSWVEQANAVFNKLEDLPFPTASAIKGFALGGGCEAILATDFRIADTTAKIGLPETKLGIIPGFGGTVRLPRVIGADNALEWITTGKDQRPEDALKVGAVDAVVAPEALEAAAIQMLKDAVAEKLDWQARRQRKMSPLTLPKLEAMMSFTTAKGMVFAVAGKHYPAPMAAVSVVEQAATKGRSDALQIEHQAFIKLAKTDVAKALIGIFLNDQLVKGKAKKAGKLAKDVKSAAVLGAGIMGGGIAYQSASKGTPIVMKDIAQPALDLGLGEAAKLLSAQVARGRSTPEKMAKVLNNITPALDYAPVKHADVVVEAVVEHPKVKAQVLAEVEQYVSEDAIIASNTSTISINLLAKSMKKPERFCGMHFFNPVHKMPLVEVIRGEHSSEETIASVVAYASKMGKTPIVVNDCPGFFVNRVLFPYFAGFNGLLAEGGDFAAIDKVMEKQFGWPMGPAYLLDVVGLDTGHHAQAVMAEGFPDRMGKSGNDAIDVMFENKRLGQKNGKGFYAYSVDSRGKPKKDVDPTSYELLKAAFGEQKAFDADEIIARTMIPMIIETVRCLEEGIVASPAEADMGLVYGLGFPPFRGGVFRYLDTMGVANFVALADKYAHLGGLYQVTDAMRTLAANNGSYYQA",
+            "parent_mrna": "PROKKA_00019_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    23323,
+                    "-",
+                    2151
+                ]
+            ],
+            "protein_translation_length": 716,
+            "aliases": [
+                "fadB"
+            ],
+            "id": "PROKKA_00019_CDS",
+            "md5": "b78d2efd55ac989a996782cfbaec85ac"
+        },
+        {
+            "function": "Xaa-Pro dipeptidase",
+            "parent_gene": "PROKKA_00020",
+            "ontology_terms": {},
+            "protein_translation": "MDHLAHHYHAHIAELNRRVAEIVSREALSGLVIHSGQPHRMFLDDINYPFKANPHFKAWLPVLDNPNCWLVVNGRDKPQLIFYHPVDFWHKVSDVPEMFWTEHFEIKLLTKADKVAELLPSDITNWAYLGEHLDVAEVLGFTSRNPDSVMSYLHFHRTTKTEYELECMRRANQIAVQGHLAAKNAFYNGASEFEIQQQYLSAVGQGENEVPYGNIIALNQNAAILHYTALEHQNPARRLSFLIDAGASYFGYASDITRTYAFEKNRFDELITAMNKAQLELIDMMRPGVRYPDLHLATHGKVAQMLLDFELATGDAQGLVDQGITSAFFPHGLGHMLGLQVHDVGGFAFDERGTHIPAPEAHPFLRCTRILAPNQVLTMEPGLYIIDTLLNELKQDSRDQQINWRTVDELRPFGGIRIEDNVIVHQDRNENMTRELGLA",
+            "parent_mrna": "PROKKA_00020_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    23767,
+                    "+",
+                    1320
+                ]
+            ],
+            "protein_translation_length": 439,
+            "aliases": [
+                "pepQ_1",
+                "3.4.13.9"
+            ],
+            "id": "PROKKA_00020_CDS",
+            "md5": "5b77937a2bf79fd242472bc67bc52fa9"
+        },
+        {
+            "function": "IMPACT family member YigZ",
+            "parent_gene": "PROKKA_00021",
+            "ontology_terms": {},
+            "protein_translation": "MLESYLIPSESVQIEEEIKHSRFISFLFHCTSIEQLKLVLTDIRRDYPGASHYCYAFIAGAPNDSIAIGSSDDGEPAGSAGRPMLAVLQGANLGEVGAVVVRFYGGTKLGVGGLVRAYTSGLRQGLGQLPTRVKQLRYPAKLHCDYTQLRDVEHLLQQLEAVIIDKQFAEAVDIHFEIGKQQQGILNESLATLSQGSLRAEFDL",
+            "parent_mrna": "PROKKA_00021_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    25102,
+                    "+",
+                    615
+                ]
+            ],
+            "protein_translation_length": 204,
+            "aliases": [
+                "yigZ"
+            ],
+            "id": "PROKKA_00021_CDS",
+            "md5": "17a9ee76df08b1eea6320d7a2c3c4c15"
+        },
+        {
+            "function": "Trk system potassium uptake protein TrkH",
+            "parent_gene": "PROKKA_00022",
+            "ontology_terms": {},
+            "protein_translation": "MQYKTIIRIIGLLIGLFSITMLPPALIAIWYNDGGGTAFIQAFFVSLFIGFWLWYPNRRCKEELRTREGFLIVVLFWTVLGSIGALPFIFSSQPDLSWTDSFFESFSALTTTGATVIVGLDSLPKAILFYRHMLQWLGGMGIIVLAVAILPVLGVGGMQLYRAEIPGPVKDSKMTPRIAETAKALWYIYLLLTIACAGAYWLAGMSVFDAVCHSFSTIAIGGFSTHDASMGYFDSSVINLICVFFLIVSAVNFSVHFAAFSRRGINFRVYFRDTEFKMLVAIQLVLTAICFLTLYHSGIYDSPEETLDHALFQAVSVATTAGFGTESFHMWPLFLPILLIFSSFIGGCGGSTAGGIKVIRVILLLLQGSRELKRLVHPKAMFSIRIGSKALPDRVVDAVWGFFSAYALVFVLCMLALMAMGLDDITAFSATAACLNNLGPGLGEVASNYASIGDGAKWVLVVAMLFGRLEVFTLLILFTPTFWRD",
+            "parent_mrna": "PROKKA_00022_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    25794,
+                    "+",
+                    1458
+                ]
+            ],
+            "protein_translation_length": 485,
+            "aliases": [
+                "trkH_1"
+            ],
+            "id": "PROKKA_00022_CDS",
+            "md5": "62041f7dbea32e451ce5d978aae8d759"
+        },
+        {
+            "function": "Protoporphyrinogen IX dehydrogenase [menaquinone]",
+            "parent_gene": "PROKKA_00023",
+            "ontology_terms": {},
+            "protein_translation": "MQTLIIYSTIDGQTLEICRKIKTLAEQAGEQVSLVTLEQAEALSLADFDKVLIGASIRYGKHRPDLYQFVNRNHAVLDSKINGFFTVNVVARKPLKNTPETNPYMQKFLKLSLWQPQQLAVFAGKIDYPKYGLFDRTMIRFIMWMTKGPTDLKGTFEFTDWGKVEAFGVHFSKL",
+            "parent_mrna": "PROKKA_00023_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    27253,
+                    "+",
+                    525
+                ]
+            ],
+            "protein_translation_length": 174,
+            "aliases": [
+                "hemG_1",
+                "1.3.5.3"
+            ],
+            "id": "PROKKA_00023_CDS",
+            "md5": "dc25a8ec224476c7d0b7505ce99c39b7"
+        },
+        {
+            "function": "Biofilm growth-associated repressor",
+            "parent_gene": "PROKKA_00024",
+            "ontology_terms": {},
+            "protein_translation": "MQNDIDVNAMVTNAESAAKWLKAIANPYRLMILCLLLDKELSVTELNATVPLSQSALSQHLAVLRAEDLVDTRKSSQIVYYKLKNEEVTQVISILHSRYCAV",
+            "parent_mrna": "PROKKA_00024_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    28148,
+                    "-",
+                    309
+                ]
+            ],
+            "protein_translation_length": 102,
+            "aliases": [
+                "bigR"
+            ],
+            "id": "PROKKA_00024_CDS",
+            "md5": "09ec28582bc933370d1f8e2eff52290d"
+        },
+        {
+            "function": "Protoporphyrinogen IX dehydrogenase [menaquinone]",
+            "parent_gene": "PROKKA_00025",
+            "ontology_terms": {},
+            "protein_translation": "MTRILVLYFTRGGHTAKIANAIAQQLTLRGAKVDLVDINSAAATKINWPDYQLVALGACVLYGTYDKSVFQFIEQHAPALSALPNSFFCVNVVARNPEKRIPENNKYLQKFIALSPWTPADLKIIAGKVDYPSWPWYDRLMIQLIMKITKGPTDPKAVIDYTDWEDVKVYADHLLTLAEVTEPA",
+            "parent_mrna": "PROKKA_00025_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    28348,
+                    "+",
+                    555
+                ]
+            ],
+            "protein_translation_length": 184,
+            "aliases": [
+                "hemG_2",
+                "1.3.5.3"
+            ],
+            "id": "PROKKA_00025_CDS",
+            "md5": "509d0f90f6151073365aebd804d2b471"
+        },
+        {
+            "function": "Trk system potassium uptake protein TrkH",
+            "parent_gene": "PROKKA_00026",
+            "ontology_terms": {},
+            "protein_translation": "MLNFRPLLFILGLFLSMLTAFMLAPLLLAVFNGEETVGAFMLSALVTGICASLCLHNGQSKTINLNIRDMFLLTSLTWLIVSLFAAMPFTLYHGIGYTDAFFETMSGITTTGSTVLSGLDTMDHSILIWRSLLQWLGGIGFIVMAVAILPFLNVGGMRLFRTESSDWSDKAVPRTQNMAKHLFFIYILLTVMCCVAYHIAGMTWFQAINHAMTTLSTGGYSTSDNSMAAFSNSAHWVGVVFMAAGGLPLLMFVQMIQQRDFTVWNDAQVKGFLFFLTFVSCFIGFWLWQTRDIALIDALRLSSFNVVSVVTTTGYGLTDYGAWGAFANIAFLFLMFVGSCSGSTSGGIKIFRFQIAGAIMREQLKQQCHPNGIFRERYNNRLISEDIVRSLITFVLLFMFVIVGLSVILVLTGLDPMTSFTGAITAVTNVGPGLGPIIGPAGNFSTLPDLAKWALSLGMLLGRLEILTVAVLFHPSFWKY",
+            "parent_mrna": "PROKKA_00026_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    30391,
+                    "-",
+                    1443
+                ]
+            ],
+            "protein_translation_length": 480,
+            "aliases": [
+                "trkH_2"
+            ],
+            "id": "PROKKA_00026_CDS",
+            "md5": "6794fecc7a041094d87bd404978a554a"
+        },
+        {
+            "function": "Trk system potassium uptake protein TrkA",
+            "parent_gene": "PROKKA_00027",
+            "ontology_terms": {},
+            "protein_translation": "MKIIILGAGQVGGTLAENLVGENNDITIVDSDKSRLRALQDKYDLRVVAGHGAHPDVLKEAGAEDADMLIAVTNSDECNMVACQMAYSLFGTPTKIARIRSEPYLAMRDKLFIDSETKNSEGRPRGGFVIDELIAPEQLVTAYIQRLVEYPGALQVLEFAEGRLSLVAVRAYYGGPLVGNALAALREHMPNIDTRVAAIFRQGRPIMPRGTTIIEADDEVFFVADSRHIRAVMSEMQKLDNSYRNIMIAGGGNIGLGLAKRLERTHSVKLIEHKFERAETLSEQLENTTVFCGDASDQELLLEEHIDQTDVFIAVTNDDEANIMSALLAKRMGAKKVMVLIQREAYVDIVQEANIDIAISPQQATISALLTHIRQGDICNVYSLRRGAAEAIEAIAHGDSSTSKVVGKAIGDIKLPPGTTIGAIVRNEEVLMAHDKTVIEQGDHVILFLVNKKFVGEVEKLFQPSAFFF",
+            "parent_mrna": "PROKKA_00027_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    31812,
+                    "-",
+                    1410
+                ]
+            ],
+            "protein_translation_length": 469,
+            "aliases": [
+                "trkA"
+            ],
+            "id": "PROKKA_00027_CDS",
+            "md5": "d707fc09a3e350d05cd5da0c1dcc0c5a"
+        },
+        {
+            "function": "Ribosomal RNA small subunit methyltransferase B",
+            "parent_gene": "PROKKA_00028",
+            "ontology_terms": {},
+            "protein_translation": "MMNLRALAAKAIFEVLEKGVSLSVALPEQQKHLASGKDKALLAELCYGVMRTLPQIEKRVAECLAKPLKGKQRIIHQLLIVGCYQLYFTRIPSHAAISETAEACRQLKFEGMVKVVNGVLRNIQRQLTPLSTESETLSYNTPGWLIKRLKAAYPDNWQEIILQSHERPPMWLRNNRLSQSRDEYLAALSELEIEASAGLSDDAILLAHPKDVTTLPRFHEGAASVQDGAAQWAATLLAPQANELILDACAAPGGKSCHLLELEPSIQLVAVDFDAKRLERVQQNLDRLSLKAEVIHGDAANIDSWWQGEQFDRILLDAPCSATGVIRRHPDIKWLRKNHDIEELAELQRQILDHCWKWLKPGGTLLYATCSILPQENRDQISAFLARTADAKLDTLAQQASSQDIGWQITPGQHNMDGFYYARLLKATH",
+            "parent_mrna": "PROKKA_00028_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    33117,
+                    "-",
+                    1290
+                ]
+            ],
+            "protein_translation_length": 429,
+            "aliases": [
+                "rsmB_1",
+                "2.1.1.176"
+            ],
+            "id": "PROKKA_00028_CDS",
+            "md5": "d9412561881396cbbcdb494e025d4d48"
+        },
+        {
+            "function": "Methionyl-tRNA formyltransferase",
+            "parent_gene": "PROKKA_00029",
+            "ontology_terms": {},
+            "protein_translation": "MKPLNIIFAGTPDFAARHLQALINSHHNVIAVYTQPDRPAGRGKKLTASPVKELAVSHNIPVYQPGSLRKEPAQQELAALNADIMVVVAYGLILPKVVLDTPRLGCINVHGSILPRWRGAAPIQRALWAGDKETGVTIMQMDVGLDTGDMLLKTYLPIEDDDTSATLYEKLALQGPDALLQALEGLANGTLTAEKQDEALANYAEKLSKEEARLDWSKSATQLWQEVRAFNPWPVSYFEHQGNTIKVWQTQVSTTSSNAAPGTIISASKKGIEVATGDGVLTLLSMQLPGKKPLSVADILNARGDWFTPNTRLNHEAQ",
+            "parent_mrna": "PROKKA_00029_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    34073,
+                    "-",
+                    957
+                ]
+            ],
+            "protein_translation_length": 318,
+            "aliases": [
+                "fmt",
+                "2.1.2.9"
+            ],
+            "id": "PROKKA_00029_CDS",
+            "md5": "ad9a679659c992b0e0ac1016c14fc795"
+        },
+        {
+            "function": "Peptide deformylase 1",
+            "parent_gene": "PROKKA_00030",
+            "ontology_terms": {},
+            "protein_translation": "MALLKVLRFPDERLRTQATPVTEFTAELQTQIDDMFETMYQEKGIGLAATQVDYHKQLIVMDLQDEVDRPKVFINPEIIASSGDFCNEEGCLSVPGIYAKVDRAEFVTVKALDRHGNEFTVEADELFAICIQHEMDHLKGKLFVDYLSPLKRQRIKQKLEKAARQDAK",
+            "parent_mrna": "PROKKA_00030_mRNA",
+            "location": [
+                [
+                    "gi|113968346|ref|NC_008321.1|",
+                    34595,
+                    "-",
+                    507
+                ]
+            ],
+            "protein_translation_length": 168,
+            "aliases": [
+                "def1",
+                "3.5.1.88"
+            ],
+            "id": "PROKKA_00030_CDS",
+            "md5": "03df7abb02fc0e31722374a910ec3160"
+        }
+    ],
+    "assembly_ref": "4/1/1",
+    "id": "Unknown",
+    "source": "PROKKA annotation pipeline",
+    "reference_annotation": 0,
+    "gc_content": 0.478944654246543,
+    "dna_size": 4706287
+}
