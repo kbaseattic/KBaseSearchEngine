@@ -238,13 +238,13 @@ public class IndexerWorkerIntegrationTest {
         loadData(wc, wsid5, "Genome5", "KBaseGenomes.Genome-1.0", "GenomeObject5");
     }
 
-    private static void loadTypes(final WorkspaceClient wsClient) throws Exception {
-        loadType(wsClient, "KBaseFile", "KBaseFile_ci_1477697265343",
+    private static void loadTypes(final WorkspaceClient wc) throws Exception {
+        loadType(wc, "KBaseFile", "KBaseFile_ci_1477697265343",
                 Arrays.asList("SingleEndLibrary", "PairedEndLibrary"));
-        loadType(wsClient, "KBaseGenomeAnnotations", "KBaseGenomeAnnotations_ci_1471308269061",
+        loadType(wc, "KBaseGenomeAnnotations", "KBaseGenomeAnnotations_ci_1471308269061",
                 Arrays.asList("Assembly"));
-        loadType(wsClient, "KBaseGenomes", "KBaseGenomes_ci_1482357978770", Arrays.asList("Genome"));
-        loadType(wsClient, "KBaseNarrative", "KBaseNarrative_ci_1436483557716",
+        loadType(wc, "KBaseGenomes", "KBaseGenomes_ci_1482357978770", Arrays.asList("Genome"));
+        loadType(wc, "KBaseNarrative", "KBaseNarrative_ci_1436483557716",
                 Arrays.asList("Narrative"));
     }
 

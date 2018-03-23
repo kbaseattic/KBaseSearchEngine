@@ -221,7 +221,7 @@ public class WorkspaceEventHandlerTest {
             return matches;
         }
     }
-    
+
     @Test
     public void loadNoPathMinimal() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
@@ -285,17 +285,17 @@ public class WorkspaceEventHandlerTest {
                                 .withCreator("creator")
                                 .withCopied("7/8/9")
                                 .withCopySourceInaccessible(0L)
-                                .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
-                                        1, "wsname", "checksum", 44, Collections.emptyMap()))))));
-        
-        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(1))))
-                .thenReturn(new UObject(wsTuple(1, "wsname", "username", "date", 7, "r", "n",
+                                .withInfo(objTuple(5, "objname", "sometype", "date", 6, "copier",
+                                        4, "wsname", "checksum", 44, Collections.emptyMap()))))));
+
+        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(4))))
+                .thenReturn(new UObject(wsTuple(4, "wsname4", "username4", "date4", 4, "r", "n",
                         "unlocked", Collections.emptyMap())));
-        
+
         final SourceData sd = new WorkspaceEventHandler(clonecli)
                 .load(Arrays.asList(new GUID("WS:1/2/3"), new GUID("WS:4/5/6")),
                         Paths.get("somefile"));
-        
+
         final SourceData expected = SourceData.getBuilder(
                 new UObject(ImmutableMap.of("genome", "data")), "objname", "creator")
                 .withNullableCopier("copier")
@@ -305,9 +305,9 @@ public class WorkspaceEventHandlerTest {
                 .withNullableModule("serv")
                 .withNullableVersion("sver")
                 .build();
-        
+
         compare(sd, expected);
-        
+
         verify(cloned).setStreamingModeOn(true);
         verify(cloned)._setFileForNextRpcResponse(new File("somefile"));
     }
