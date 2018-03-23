@@ -1452,7 +1452,6 @@ public class ElasticIndexingStorageTest {
         assertThat("overlapping ranges did not return intersection", hits5.guids, is(set(guid2)));
     }
 
-
     @Test
     public void addHighlighting() throws Exception {
         GUID guid1 = new GUID("WS:11/1/2");
@@ -1501,5 +1500,35 @@ public class ElasticIndexingStorageTest {
             Map<String, List<String>> res = obj.getHighlight();
             assertThat("Incorrect highlighting", res, is(result2));
         }
+    }
+    
+    @Test
+    public void noSubObjects() throws Exception {
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("subtype", 1),
+                        new StorageObjectType("WS", "parenttype"))
+                        .toSubObjectRule(
+                                "subtype", new ObjectJsonPath("/foo"), new ObjectJsonPath("/bar"))
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "someguy").build(),
+                Instant.ofEpochMilli(10000L),
+                "{}",
+                new GUID("WS:1/2/3"),
+                Collections.emptyMap(), // this should not generally happen for subobjects,
+                                        // but can in pathological cases
+                true);
+        
+        final FoundHits res = indexStorage.searchObjects(
+                Collections.emptyList(),
+                MatchFilter.getBuilder().build(),
+                null, // sorting rule
+                AccessFilter.create().withPublic(true),
+                null, // pagination
+                null); // post processing
+        
+        assertThat("no data stored", res.guids.isEmpty(), is(true));
+        assertThat("no data stored", res.objects, is((Set<ObjectData>) null));
+        assertThat("no data stored", res.total, is(0));
     }
 }
