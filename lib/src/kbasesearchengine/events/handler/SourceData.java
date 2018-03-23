@@ -25,7 +25,7 @@ public class SourceData {
     private final Optional<String> version;
     private final Optional<String> md5;
     private final Set<String> sourceTags;
-    private boolean isPublic;
+    private final boolean isPublic;
 
     private SourceData(
             final UObject data,

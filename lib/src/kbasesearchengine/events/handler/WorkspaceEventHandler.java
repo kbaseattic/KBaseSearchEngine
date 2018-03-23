@@ -201,17 +201,9 @@ public class WorkspaceEventHandler implements EventHandler {
 
     public boolean isPublic(final long workspaceID)
             throws RetriableIndexingException, IndexingException {
-        boolean retVal = false;
         Tuple9<Long, String, String, String, Long, String,
                 String, String, Map<String, String>> wsInfo = getWorkspaceInfoInternal(workspaceID);
-        String flag = wsInfo.getE7();
-        if (flag.equals("r")) {
-            retVal = true;
-        }
-        else if(flag.equals("n")) {
-            retVal = false;
-        }
-        return retVal;
+        return wsInfo.getE7().equals("r");
     }
 
     /** Get the workspace information for a workspace from the workspace service to which this
