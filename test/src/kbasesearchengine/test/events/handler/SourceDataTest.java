@@ -36,12 +36,13 @@ public class SourceDataTest {
         assertThat("incorrect version", sd.getVersion(), is(Optional.absent()));
         assertThat("incorrect md5", sd.getMD5(), is(Optional.absent()));
         assertThat("incorrect tags", sd.getSourceTags(), is(set()));
+        assertThat("incorrect permission", sd.isPublic(), is(false));
     }
     
     @Test
     public void buildMaximal() {
         final SourceData sd = SourceData.getBuilder(
-                new UObject(ImmutableMap.of("foo1", "bar1")), "name1", "creator1")
+                new UObject(ImmutableMap.of("foo1", "bar1")), "name1", "creator1", true)
                 .withNullableCommitHash("commit")
                 .withNullableCopier("copier")
                 .withNullableMethod("meth")
@@ -50,7 +51,6 @@ public class SourceDataTest {
                 .withNullableMD5("md5")
                 .withSourceTag("refdata")
                 .withSourceTag("testworkspace")
-                .withIsPublic(true)
                 .build();
         
         assertThat("incorrect data", sd.getData().asClassInstance(Map.class),
@@ -90,6 +90,7 @@ public class SourceDataTest {
         assertThat("incorrect version", sd.getVersion(), is(Optional.absent()));
         assertThat("incorrect md5", sd.getMD5(), is(Optional.absent()));
         assertThat("incorrect tags", sd.getSourceTags(), is(set()));
+        assertThat("incorrect permission", sd.isPublic(), is(false));
     }
     
     @Test
@@ -115,6 +116,7 @@ public class SourceDataTest {
         assertThat("incorrect version", sd.getVersion(), is(Optional.absent()));
         assertThat("incorrect md5", sd.getMD5(), is(Optional.absent()));
         assertThat("incorrect tags", sd.getSourceTags(), is(set()));
+        assertThat("incorrect permission", sd.isPublic(), is(false));
     }
     
     @Test

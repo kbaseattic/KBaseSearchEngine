@@ -126,20 +126,19 @@ public class WorkspaceEventHandler implements EventHandler {
         if (ret.getCopied() == null && ret.getCopySourceInaccessible() == 0) {
             copier = null;
         }
+        GUID guid = guids.get(guids.size() - 1);  // get the last guid from the input list
+        // Get the global permission of the workspace and add it to SourceData
+        boolean isPublicFlag = false;
+        if (guid.getStorageCode().equals(getStorageCode())) {
+            isPublicFlag = isPublic((long) guid.getAccessGroupId());
+        }
         final SourceData.Builder b = SourceData.getBuilder(
-                ret.getData(), ret.getInfo().getE2(), ret.getCreator())
+                ret.getData(), ret.getInfo().getE2(), ret.getCreator(), isPublicFlag)
                 .withNullableCopier(copier)
                 .withNullableMD5(ret.getInfo().getE9());
                 //TODO CODE get the timestamp from ret rather than using event timestamp
         for (final String tag: tags) {
             b.withSourceTag(tag);
-        }
-        GUID guid = guids.get(0);    // get the guid from the input list
-        if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
-            boolean isPublicFlag = isPublic((long) guid.getAccessGroupId());
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.  GUID: " + guid.toString());
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.  FLAG: " + isPublicFlag);
-            b.withIsPublic(isPublicFlag);
         }
         if (pa != null) {
             b.withNullableModule(pa.getService())

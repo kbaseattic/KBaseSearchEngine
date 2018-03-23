@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Set;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+
 import kbasesearchengine.common.FileUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
@@ -68,9 +70,10 @@ import us.kbase.workspace.ObjectSaveData;
 import us.kbase.workspace.RegisterTypespecParams;
 import us.kbase.workspace.SaveObjectsParams;
 import us.kbase.workspace.WorkspaceClient;
+import us.kbase.workspace.SetGlobalPermissionsParams;
 
 public class IndexerWorkerIntegrationTest {
-    
+
     /* these tests bring up mongodb, elasticsearch, and the workspace and test the worker
      * interactions with those services.
      */
@@ -83,11 +86,13 @@ public class IndexerWorkerIntegrationTest {
     private static MongoDatabase db;
     private static ElasticSearchController es;
     private static WorkspaceController ws;
-    
+
     private static int wsid;
-    
+    private static int wsid2, wsid3, wsid4, wsid5;
+    private static WorkspaceClient wsClientUser;
+
     private static Path tempDirPath;
-    
+
     @BeforeClass
     public static void prepare() throws Exception {
         TestCommon.stfuLoggers();
@@ -105,7 +110,7 @@ public class IndexerWorkerIntegrationTest {
         mc = new MongoClient("localhost:" + mongo.getServerPort());
         final String dbName = "DataStatus";
         db = mc.getDatabase(dbName);
-        
+
         // set up auth
         auth = new AuthController(
                 TestCommon.getJarsDir(),
@@ -120,10 +125,10 @@ public class IndexerWorkerIntegrationTest {
         final String token2 = TestCommon.createLoginToken(authURL, "user2");
         final AuthToken userToken = new AuthToken(token1, "user1");
         final AuthToken wsadmintoken = new AuthToken(token2, "user2");
-        
+
         // set up elastic search
         es = new ElasticSearchController(TestCommon.getElasticSearchExe(), tempDirPath);
-        
+
         // set up Workspace
         ws = new WorkspaceController(
                 TestCommon.getWorkspaceVersion(),
@@ -135,10 +140,10 @@ public class IndexerWorkerIntegrationTest {
                 authURL,
                 tempDirPath);
         System.out.println("Started workspace on port " + ws.getServerPort());
-        
+
         final Path typesDir = Paths.get(TestCommon.TYPES_REPO_DIR);
         final Path mappingsDir = Paths.get(TestCommon.TYPE_MAP_REPO_DIR);
-        
+
         URL wsUrl = new URL("http://localhost:" + ws.getServerPort());
 
         final String esIndexPrefix = "test_" + System.currentTimeMillis() + ".";
@@ -164,59 +169,82 @@ public class IndexerWorkerIntegrationTest {
                 "yaml", new YAMLTypeMappingParser());
         final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir,
                 new ObjectTypeParsingRulesFileParser(), parsers, new FileLister(), logger);
-        
+
         final StatusEventStorage eventStorage = new MongoDBStatusEventStorage(db);
-        final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, wsadmintoken);
-        wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
-        
+        final WorkspaceClient wsClientAdmin = new WorkspaceClient(wsUrl, wsadmintoken);
+        wsClientAdmin.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
+
+        wsClientUser = new WorkspaceClient(wsUrl, userToken);
+        wsClientUser.setIsInsecureHttpConnectionAllowed(true);
+
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(
-                new CloneableWorkspaceClientImpl(wsClient));
-        
+                new CloneableWorkspaceClientImpl(wsClientAdmin));
+
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
                 FileUtil.getOrCreateSubDir(tempDirPath.toFile(), "esbulk"));
         esStorage.setIndexNamePrefix(esIndexPrefix);
         storage = esStorage;
-        
+
         final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
                 "test", tempDirPath.resolve("WorkerTemp"), logger)
                 .withStorage(eventStorage, ss, esStorage)
                 .withEventHandler(weh);
-        
+
         worker = new IndexerWorker(wrkCfg.build());
-        
-        loadTypes(wsUrl, wsadmintoken);
-        wsid = (int) loadTestData(wsUrl, userToken);
+
+        loadTypes(wsClientAdmin);
+        wsid = (int) loadTestData(wsClientUser);
+
+        loadTestPermissionData(wsClientUser);
     }
-    
-    private static long loadTestData(final URL wsUrl, final AuthToken usertoken)
+
+    private static long loadTestData(final WorkspaceClient wc)
             throws IOException, JsonClientException {
-        final WorkspaceClient wc = new WorkspaceClient(wsUrl, usertoken);
-        wc.setIsInsecureHttpConnectionAllowed(true);
+
         final long wsid = wc.createWorkspace(new CreateWorkspaceParams().withWorkspace("MOPTest"))
                 .getE1();
-        
+
         loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject1");
         loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject2");
         loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject3");
         loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject4");
         loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject5");
-        
+
         loadData(wc, wsid, "Assy", "KBaseGenomeAnnotations.Assembly-1.0", "AssemblyObject");
         loadData(wc, wsid, "Genome", "KBaseGenomes.Genome-1.0", "GenomeObject");
         loadData(wc, wsid, "Paired", "KBaseFile.PairedEndLibrary-1.0", "PairedEndLibraryObject");
         loadData(wc, wsid, "reads.2", "KBaseFile.SingleEndLibrary-1.0", "SingleEndLibraryObject");
         return wsid;
     }
-    
-    private static void loadTypes(final URL wsURL, final AuthToken wsadmintoken) throws Exception {
-        final WorkspaceClient wc = new WorkspaceClient(wsURL, wsadmintoken);
-        wc.setIsInsecureHttpConnectionAllowed(true);
-        loadType(wc, "KBaseFile", "KBaseFile_ci_1477697265343",
+
+    private static void loadTestPermissionData(final WorkspaceClient wc)
+            throws IOException, JsonClientException {
+
+        wsid2 = (int)(long)wc.createWorkspace(new CreateWorkspaceParams().withWorkspace("WS2PermissionTest"))
+                .getE1();
+        loadData(wc, wsid2, "Assy2", "KBaseGenomeAnnotations.Assembly-1.0", "AssemblyObject");
+
+        wsid3 = (int)(long)wc.createWorkspace(new CreateWorkspaceParams().withWorkspace("WS3PermissionTest"))
+                .getE1();
+        loadData(wc, wsid3, "Genome3", "KBaseGenomes.Genome-1.0", "GenomeObject3");
+
+        wsid4 = (int)(long)wc.createWorkspace(new CreateWorkspaceParams().withWorkspace("WS4PermissionTest"))
+                .getE1();
+        loadData(wc, wsid4, "Assy4", "KBaseGenomeAnnotations.Assembly-1.0", "AssemblyObject");
+        wc.setGlobalPermission(new SetGlobalPermissionsParams().withId((long)wsid4).withNewPermission("r"));
+
+        wsid5 = (int)(long)wc.createWorkspace(new CreateWorkspaceParams().withWorkspace("WS5PermissionTest"))
+                .getE1();
+        loadData(wc, wsid5, "Genome5", "KBaseGenomes.Genome-1.0", "GenomeObject5");
+    }
+
+    private static void loadTypes(final WorkspaceClient wsClient) throws Exception {
+        loadType(wsClient, "KBaseFile", "KBaseFile_ci_1477697265343",
                 Arrays.asList("SingleEndLibrary", "PairedEndLibrary"));
-        loadType(wc, "KBaseGenomeAnnotations", "KBaseGenomeAnnotations_ci_1471308269061",
+        loadType(wsClient, "KBaseGenomeAnnotations", "KBaseGenomeAnnotations_ci_1471308269061",
                 Arrays.asList("Assembly"));
-        loadType(wc, "KBaseGenomes", "KBaseGenomes_ci_1482357978770", Arrays.asList("Genome"));
-        loadType(wc, "KBaseNarrative", "KBaseNarrative_ci_1436483557716",
+        loadType(wsClient, "KBaseGenomes", "KBaseGenomes_ci_1482357978770", Arrays.asList("Genome"));
+        loadType(wsClient, "KBaseNarrative", "KBaseNarrative_ci_1436483557716",
                 Arrays.asList("Narrative"));
     }
 
@@ -328,36 +356,96 @@ public class IndexerWorkerIntegrationTest {
         System.out.println("Feature: " + obj);
     }
 
-    @Test
-    public void testSubobjectPublicOrPrivate() throws Exception {
+    private void setWsPermission(int wsId, String objId, String objType, boolean publicFlag) throws Exception {
+        wsClientUser.setGlobalPermission(new SetGlobalPermissionsParams().withId((long)wsId).
+                withNewPermission(publicFlag ? "r":"n"));
+
         final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
-                new StorageObjectType("WS", "KBaseGenomes.Genome"),
+                new StorageObjectType("WS", objType),
                 Instant.now(),
                 StatusEventType.NEW_VERSION)
-                        .withNullableAccessGroupID(wsid)
-                        .withNullableObjectID("3")
+                        .withNullableAccessGroupID(wsId)
+                        .withNullableObjectID(objId)
                         .withNullableVersion(1)
-                        .withNullableisPublic(true)
+                        .withNullableisPublic(publicFlag)
                         .build(),
                 new StatusEventID("-1"),
                 StatusEventProcessingState.UNPROC)
                 .build();
         worker.processEvent(ev);
+    }
+
+    private Set<GUID> lookupIdsByKey(List<String> objTypes, AccessFilter af) throws IOException {
+        Set<GUID> ret = storage.searchIds(objTypes, MatchFilter.getBuilder().build(),
+                null, af, null).guids;
         PostProcessing pp = new PostProcessing();
         pp.objectInfo = true;
         pp.objectData = true;
         pp.objectKeys = true;
+        storage.getObjectsByIds(ret, pp);
+        return ret;
+    }
+
+    @Test
+    public void testObjectsPublic() throws Exception {
+
+        GUID assemblyId2 = new GUID("WS:2/1/1");
+        GUID genomeId3 = new GUID("WS:3/1/1");
 
         List<String> objectTypes = ImmutableList.of("Genome", "Assembly");
 
-        System.out.println("=========================  BEGIN  ======================================");
-        Set<GUID> guids = storage.searchIds(objectTypes,
-                MatchFilter.getBuilder().build(), null,
-                AccessFilter.create().withAdmin(true).withPublic(false), null).guids;
-        System.out.println("GUIDs found: " + guids);
+        System.out.println("=========================  BEGIN PUBLIC  ======================================");
+
+        setWsPermission(wsid3, "1", "KBaseGenomes.Genome", true);
+
+        Set<GUID> guids = lookupIdsByKey(objectTypes, AccessFilter.create().withAccessGroups(10).withPublic(true));
+        System.out.println("GUIDs found: T, T  " + guids);
+        Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(genomeId3));
+        Assert.assertFalse("Set contains: " + guids.toString(), guids.contains(assemblyId2));
+
+        setWsPermission(wsid2, "1", "KBaseGenomeAnnotations.Assembly", true);
+
+        guids = lookupIdsByKey(objectTypes, AccessFilter.create().withAccessGroups(10).withPublic(true));
+        System.out.println("GUIDs found: T, T  " + guids);
+
+        Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(genomeId3));
+        Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(assemblyId2));
+
         System.out.println("=========================  END  ======================================");
     }
-    
+
+    @Test
+    public void testObjectsPrivate() throws Exception {
+
+        GUID assemblyId4 = new GUID("WS:4/1/1");
+        GUID genomeId5 = new GUID("WS:5/1/1");
+        List<String> objectTypes = ImmutableList.of("Genome", "Assembly");
+
+        System.out.println("=========================  BEGIN  PRIVATE  ======================================");
+
+        setWsPermission(wsid5, "1", "KBaseGenomes.Genome", false);
+
+        Set<GUID> guids = lookupIdsByKey(objectTypes, AccessFilter.create().withAccessGroups(10).withPublic(true));
+        System.out.println("GUIDs found: F, T  " + guids);
+        Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(assemblyId4));
+        Assert.assertFalse("Set contains: " + guids.toString(), guids.contains(genomeId5));
+
+        setWsPermission(wsid5, "1", "KBaseGenomes.Genome", true);
+
+        guids = lookupIdsByKey(objectTypes, AccessFilter.create().withAccessGroups(10).withPublic(true));
+        System.out.println("GUIDs found: F, F  " + guids);
+        Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(assemblyId4));
+        Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(genomeId5));
+
+        setWsPermission(wsid4, "1", "KBaseGenomeAnnotations.Assembly", false);
+
+        guids = lookupIdsByKey(objectTypes, AccessFilter.create().withAccessGroups(10).withPublic(true));
+        System.out.println("GUIDs found: F, F  " + guids);
+        Assert.assertFalse("Set contains: " + guids.toString(), guids.contains(assemblyId4));
+        Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(genomeId5));
+        System.out.println("=========================  END  ======================================");
+    }
+
     private void indexFewVersions(final StoredStatusEvent evid) throws Exception {
         final StatusEvent ev = evid.getEvent();
         for (int i = Math.max(1, ev.getVersion().get() - 5); i <= ev.getVersion().get(); i++) {

@@ -531,6 +531,8 @@ public class IndexerWorker implements Stoppable {
                 logger.logInfo("[Indexer]   " + toVerRep(rule.getGlobalObjectType()) +
                         ", parsing time: " + parsingTime + " ms.");
                 long t3 = System.currentTimeMillis();
+                logger.logInfo("[Indexer]   " + toVerRep(rule.getGlobalObjectType()) +
+                        ", isPublic: " + obj.isPublic());
                 indexObjectInStorage(guid, timestamp, obj.isPublic(), obj, rule,
                         parsedRet.guidToObj, parsedRet.parentJson);
                 long indexTime = System.currentTimeMillis() - t3;
