@@ -299,6 +299,8 @@ public class ElasticIndexingStorageTest {
         Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("feature_count"));
         Assert.assertEquals("KBase", "" + genomeIndex.getKeyProperties().get("source"));
         Assert.assertEquals("NewGenome", "" + genomeIndex.getKeyProperties().get("source_id"));
+        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name"));
+        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name_keyword"));
         Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("feature_count"));
         Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("cds_count"));
         Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contig_count"));
@@ -404,6 +406,8 @@ public class ElasticIndexingStorageTest {
         Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("feature_count"));
         Assert.assertEquals("KBase", "" + genomeIndex.getKeyProperties().get("source"));
         Assert.assertEquals("NewGenome", "" + genomeIndex.getKeyProperties().get("source_id"));
+        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name"));
+        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name_keyword"));
         Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("feature_count"));
         Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contig_count"));
         String assemblyGuidText = genomeIndex.getKeyProperties().get("assembly_guid");

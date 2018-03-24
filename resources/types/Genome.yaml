@@ -43,6 +43,11 @@ versions:
                 path: scientific_name
                 full-text: true
             -
+                # for sorting by scientific name we need a keyword form
+                path: scientific_name
+                key-name: scientific_name_keyword
+                keyword-type: keyword
+            -
                 # Extract the number of features from a list at the /features path. The special
                 # {size} element directs the parser to return the size of a list or mapping. Since
                 # this number will be an integer, the keyword type is set as such.
@@ -104,6 +109,11 @@ versions:
             -
                 path: scientific_name
                 full-text: true
+            -
+                # for sorting by scientific name we need a keyword form
+                path: scientific_name
+                key-name: scientific_name_keyword
+                keyword-type: keyword
             -
                 path: notes
                 full-text: true
