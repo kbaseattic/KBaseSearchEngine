@@ -531,9 +531,7 @@ public class IndexerWorker implements Stoppable {
                 logger.logInfo("[Indexer]   " + toVerRep(rule.getGlobalObjectType()) +
                         ", parsing time: " + parsingTime + " ms.");
                 long t3 = System.currentTimeMillis();
-                logger.logInfo("[Indexer]   " + toVerRep(rule.getGlobalObjectType()) +
-                        ", isPublic: " + obj.isPublic());
-                indexObjectInStorage(guid, timestamp, obj.isPublic(), obj, rule,
+                indexObjectInStorage(guid, timestamp, obj, rule,
                         parsedRet.guidToObj, parsedRet.parentJson);
                 long indexTime = System.currentTimeMillis() - t3;
                 logger.logInfo("[Indexer]   " + toVerRep(rule.getGlobalObjectType()) +
@@ -552,14 +550,13 @@ public class IndexerWorker implements Stoppable {
     private void indexObjectInStorage(
             final GUID guid,
             final Instant timestamp,
-            final boolean isPublic,
             final SourceData obj,
             final ObjectTypeParsingRules rule,
             final Map<GUID, ParsedObject> guidToObj,
             final String parentJson)
             throws InterruptedException, IndexingException {
         final List<?> input = Arrays.asList(rule, obj, timestamp, parentJson, guid, guidToObj,
-                isPublic);
+                obj.isPublic());
         retrier.retryCons(i -> indexObjectInStorage(i), input, null);
     }
 

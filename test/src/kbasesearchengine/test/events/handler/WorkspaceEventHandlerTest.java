@@ -107,36 +107,6 @@ public class WorkspaceEventHandlerTest {
                 "r", "unlocked", Collections.emptyMap()));
     }
 
-    @Test
-    public void isPublicTrue() throws Exception {
-        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
-        final WorkspaceClient wscli = mock(WorkspaceClient.class);
-        when(clonecli.getClient()).thenReturn(wscli);
-
-        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
-
-        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(34))))
-                .thenReturn(new UObject(wsTuple(34, "myws1", "owner1", "date1", 34, "a",
-                        "r", "unlocked", Collections.emptyMap())));
-
-        assertThat("Incorrect Permission", weh.isPublic(34), is(true));
-    }
-
-    @Test
-    public void isPublicFalse() throws Exception {
-        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
-        final WorkspaceClient wscli = mock(WorkspaceClient.class);
-        when(clonecli.getClient()).thenReturn(wscli);
-
-        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
-
-        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(43))))
-                .thenReturn(new UObject(wsTuple(43, "myws2", "owner2", "date2", 43, "a",
-                        "n", "unlocked", Collections.emptyMap())));
-
-        assertThat("Incorrect Permission", weh.isPublic(43), is(false));
-    }
-
     private void compare(
             final Tuple9<Long, String, String, String, Long, String, String, String,
                     Map<String, String>> got,
@@ -358,7 +328,7 @@ public class WorkspaceEventHandlerTest {
     }
     
     @Test
-    public void loadWithNullSubActionsAndTags() throws Exception {
+    public void loadWithNullSubActionsAndTagsAndPrivate() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
         final WorkspaceClient cloned = mock(WorkspaceClient.class);
         final WorkspaceClient wscli = mock(WorkspaceClient.class);
@@ -397,6 +367,7 @@ public class WorkspaceEventHandlerTest {
                 .withSourceTag("foo")
                 .withSourceTag("bar")
                 .withSourceTag("baz")
+                .withIsPublic(false)
                 .build();
         
         compare(sd, expected);
@@ -404,7 +375,47 @@ public class WorkspaceEventHandlerTest {
         verify(cloned).setStreamingModeOn(true);
         verify(cloned)._setFileForNextRpcResponse(new File("somefile"));
     }
-    
+
+    @Test
+    public void loadWithNullSubActionsAndPublic() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        when(cloned.administer(argThat(new AdminGetObjectsAnswerMatcher("2/2/3"))))
+                .thenReturn(new UObject(new GetObjects2Results().withData(Arrays.asList(
+                        new ObjectData()
+                                .withData(new UObject(ImmutableMap.of("genome", "data")))
+                                .withProvenance(Arrays.asList(new ProvenanceAction()
+                                        .withSubactions(null)))
+                                .withCreator("creator")
+                                .withCopySourceInaccessible(0L)
+                                .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
+                                        2, "wsname", "checksum", 44, Collections.emptyMap()))))));
+
+        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(2))))
+                .thenReturn(new UObject(wsTuple(2, "wsname", "username", "date", 7, "r", "r",
+                        "unlocked",
+                        Collections.emptyMap())));
+
+        final SourceData sd = new WorkspaceEventHandler(clonecli)
+                .load(Arrays.asList(new GUID("WS:2/2/3")),
+                        Paths.get("somefile"));
+
+        final SourceData expected = SourceData.getBuilder(
+                new UObject(ImmutableMap.of("genome", "data")), "objname", "creator")
+                .withNullableMD5("checksum")
+                .withIsPublic(true)
+                .build();
+
+        compare(sd, expected);
+
+        verify(cloned).setStreamingModeOn(true);
+        verify(cloned)._setFileForNextRpcResponse(new File("somefile"));
+    }
+
     @Test
     public void loadWithNoProvMethod() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);

@@ -119,7 +119,7 @@ public class WorkspaceEventHandler implements EventHandler {
 
         final ObjectData ret = getObjectData(guids, file);
         final long workspaceId = ret.getInfo().getE7();
-        Tuple9<Long, String, String, String, Long, String,
+        final Tuple9<Long, String, String, String, Long, String,
                 String, String, Map<String, String>> wsInfo = getWorkspaceInfoInternal(workspaceId);
         final List<String> tags = getTags(wsInfo.getE9().get(META_SEARCH_TAGS));
         final boolean isPublicFlag = wsInfo.getE7().equals("r");
