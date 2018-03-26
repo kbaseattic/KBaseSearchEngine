@@ -42,7 +42,7 @@ public class SourceDataTest {
     @Test
     public void buildMaximal() {
         final SourceData sd = SourceData.getBuilder(
-                new UObject(ImmutableMap.of("foo1", "bar1")), "name1", "creator1", true)
+                new UObject(ImmutableMap.of("foo1", "bar1")), "name1", "creator1")
                 .withNullableCommitHash("commit")
                 .withNullableCopier("copier")
                 .withNullableMethod("meth")
@@ -51,6 +51,7 @@ public class SourceDataTest {
                 .withNullableMD5("md5")
                 .withSourceTag("refdata")
                 .withSourceTag("testworkspace")
+                .withIsPublic(true)
                 .build();
         
         assertThat("incorrect data", sd.getData().asClassInstance(Map.class),

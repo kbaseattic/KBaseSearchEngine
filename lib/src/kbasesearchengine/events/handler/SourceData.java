@@ -133,22 +133,10 @@ public class SourceData {
      * @param data the data.
      * @param name the name of the data.
      * @param creator the creator of the data.
-     * @param isPublic if the data has global permission
      * @return a builder.
      */
-    public static Builder getBuilder(
-            final UObject data,
-            final String name,
-            final String creator,
-            final boolean isPublic) {
-        return new Builder(data, name, creator, isPublic);
-    }
-
-    public static Builder getBuilder(
-            final UObject data,
-            final String name,
-            final String creator) {
-        return new Builder(data, name, creator, false);
+    public static Builder getBuilder(final UObject data, final String name, final String creator) {
+        return new Builder(data, name, creator);
     }
 
     /** A builder for SourceData instances.
@@ -167,19 +155,16 @@ public class SourceData {
         private Optional<String> version = Optional.absent();
         private Optional<String> md5 = Optional.absent();
         private final Set<String> sourceTags = new HashSet<>();
-        private final boolean isPublic;
+        private boolean isPublic;
 
-        private Builder(final UObject data, final String name, final String creator, final boolean isPublic) {
+        private Builder(final UObject data, final String name, final String creator) {
             Utils.nonNull(data, "data");
             Utils.notNullOrEmpty(name, "name cannot be null or the empty string");
             Utils.notNullOrEmpty(creator, "creator cannot be null or the empty string");
             this.data = data;
             this.name = name;
             this.creator = creator;
-            this.isPublic = isPublic;
-        }
-        private Builder(final UObject data, final String name, final String creator) {
-            this(data, name, creator, false);
+            this.isPublic = false;
         }
 
         private Optional<String> checkNullOrEmpty(final String s) {
@@ -251,6 +236,15 @@ public class SourceData {
         public Builder withSourceTag(final String sourceTag) {
             Utils.notNullOrEmpty(sourceTag, "sourceTag cannot be null or whitespace only");
             sourceTags.add(sourceTag);
+            return this;
+        }
+
+        /** Add a public or private flag of the data.
+         * @param isPublic private or public flag.
+         * @return this builder.
+         */
+        public Builder withIsPublic(final boolean isPublic) {
+            this.isPublic = isPublic;
             return this;
         }
 

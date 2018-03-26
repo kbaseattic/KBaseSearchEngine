@@ -116,8 +116,14 @@ public class WorkspaceEventHandler implements EventHandler {
         Utils.nonNull(guids, "guids");
         Utils.noNulls(guids, "null item in guids");
         Utils.nonNull(file, "file");
+
         final ObjectData ret = getObjectData(guids, file);
-        final List<String> tags = getTags(ret);
+        final long workspaceId = ret.getInfo().getE7();
+        Tuple9<Long, String, String, String, Long, String,
+                String, String, Map<String, String>> wsInfo = getWorkspaceInfoInternal(workspaceId);
+        final List<String> tags = getTags(wsInfo.getE9().get(META_SEARCH_TAGS));
+        final boolean isPublicFlag = wsInfo.getE7().equals("r");
+
         // we'll assume here that there's only one provenance action. This may need more thought
         // if that's not true.
         final ProvenanceAction pa = ret.getProvenance().isEmpty() ?
@@ -126,20 +132,15 @@ public class WorkspaceEventHandler implements EventHandler {
         if (ret.getCopied() == null && ret.getCopySourceInaccessible() == 0) {
             copier = null;
         }
-        GUID guid = guids.get(guids.size() - 1);  // get the last guid from the input list
-        // Get the global permission of the workspace and add it to SourceData
-        boolean isPublicFlag = false;
-        if (guid.getStorageCode().equals(getStorageCode())) {
-            isPublicFlag = isPublic((long) guid.getAccessGroupId());
-        }
         final SourceData.Builder b = SourceData.getBuilder(
-                ret.getData(), ret.getInfo().getE2(), ret.getCreator(), isPublicFlag)
+                ret.getData(), ret.getInfo().getE2(), ret.getCreator())
                 .withNullableCopier(copier)
                 .withNullableMD5(ret.getInfo().getE9());
                 //TODO CODE get the timestamp from ret rather than using event timestamp
         for (final String tag: tags) {
             b.withSourceTag(tag);
         }
+        b.withIsPublic(isPublicFlag);
         if (pa != null) {
             b.withNullableModule(pa.getService())
                     .withNullableMethod(pa.getMethod())
@@ -162,10 +163,8 @@ public class WorkspaceEventHandler implements EventHandler {
         return b.build();
     }
 
-    private List<String> getTags(final ObjectData objectdata)
+    private List<String> getTags(String tags)
             throws RetriableIndexingException, IndexingException {
-        final String tags = getWorkspaceInfoInternal(objectdata.getInfo().getE7()).getE9()
-                .get(META_SEARCH_TAGS);
         final List<String> ret = new LinkedList<>();
         if (tags != null) {
             for (String tag: tags.split(",")) {
@@ -197,13 +196,6 @@ public class WorkspaceEventHandler implements EventHandler {
         } catch (JsonClientException e) {
             throw handleException(e);
         }
-    }
-
-    public boolean isPublic(final long workspaceID)
-            throws RetriableIndexingException, IndexingException {
-        Tuple9<Long, String, String, String, Long, String,
-                String, String, Map<String, String>> wsInfo = getWorkspaceInfoInternal(workspaceID);
-        return wsInfo.getE7().equals("r");
     }
 
     /** Get the workspace information for a workspace from the workspace service to which this
