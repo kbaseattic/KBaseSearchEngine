@@ -111,7 +111,7 @@ public class NarrativeInfoCacheTest {
     public void expiresOnSize() throws Exception {
         // test that the cache expires values when it reaches the max size
         final NarrativeInfoProvider wrapped = mock(NarrativeInfoProvider.class);
-        final NarrativeInfoCache cache = new NarrativeInfoCache(wrapped, 10000, 3);
+        final NarrativeInfoCache cache = new NarrativeInfoCache(wrapped, 10000, 14);
 
         when(wrapped.findNarrativeInfo(65L)).thenReturn(
                 new NarrativeInfo(null, null, 1518126945000L, "owner1"),
@@ -130,7 +130,7 @@ public class NarrativeInfoCacheTest {
                 new NarrativeInfo("mylovelynarrative", 4L, 1518126950678L, "user2"),
                 null);
 
-        // load 3 narrative infos into a max 4 cache
+        // load 12 narrative infos into a max 14 cache
         compare(cache.findNarrativeInfo(65L),
                 new NarrativeInfo(null, null, 1518126945000L, "owner1"));
         compare(cache.findNarrativeInfo(2L),
@@ -153,7 +153,7 @@ public class NarrativeInfoCacheTest {
         // check that the oldest value had expired
         compare(cache.findNarrativeInfo(65L),
                 new NarrativeInfo(null, null, 1518126957000L, "owner11"));
-        // TODO: Need to check if the following results are correct
+        //TODO: Expect that the following tests would return "owner2", "owner3" and "user1". But they do not.
         compare(cache.findNarrativeInfo(2L),
                 new NarrativeInfo("narrname22", 22L, 22000L, "owner22"));
         compare(cache.findNarrativeInfo(3L),

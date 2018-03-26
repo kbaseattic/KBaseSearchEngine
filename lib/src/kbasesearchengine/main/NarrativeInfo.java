@@ -9,7 +9,7 @@ import kbasesearchengine.tools.Utils;
  */
 public class NarrativeInfo {
 
-    private static final int NUM_ELEMENTS = 4; // TODO: If this is not required for cache, this can be removed.
+    private static final int NUM_ELEMENTS = 4;
     private String narrativeName;
     private Long narrativeId;
     private Long timeLastSaved;
@@ -98,6 +98,15 @@ public class NarrativeInfo {
     /** Get the size of this object's contents.
      * @return the number of elements.
      */
-    // TODO: If this is not required for cache, this can be removed.
     public int getNumElements() { return NUM_ELEMENTS; }
+
+    @Override
+    public String toString() {
+        return "NarrativeInfo{" +
+                "narrativeName='" + narrativeName + '\'' +
+                ", narrativeId=" + narrativeId +
+                ", timeLastSaved=" + timeLastSaved +
+                ", wsOwnerUsername='" + wsOwnerUsername + '\'' +
+                '}';
+    }
 }
