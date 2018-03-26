@@ -273,18 +273,30 @@ public class TestCommon {
         return (Map<String, String>) m.get(unmodifiable);
     }
 
-
     public static void compare(final ObjectData got, final ObjectData expected) {
         // no hashcode and equals compiled into ObjectData
         // or UObject for that matter
         assertThat("incorrect add props", got.getAdditionalProperties(),
                 is(Collections.emptyMap()));
-        assertThat("incorrect data", got.getData().asClassInstance(Map.class),
-                is(expected.getData().asClassInstance(Map.class)));
+        if (got.getData() == null) {
+            assertThat("incorrect data", got.getData(), is(expected.getData()));
+        } else {
+            assertThat("incorrect data", got.getData().asClassInstance(Object.class),
+                    is(expected.getData().asClassInstance(Object.class)));
+        }
         assertThat("incorrect guid", got.getGuid(), is(expected.getGuid()));
         assertThat("incorrect key props", got.getKeyProps(), is(expected.getKeyProps()));
         assertThat("incorrect obj name", got.getObjectName(), is(expected.getObjectName()));
-        assertThat("incorrect obj props", got.getObjectProps(), is(expected.getObjectProps()));
+        
+        assertThat("incorrect type", got.getType(), is(expected.getType()));
+        assertThat("incorrect type", got.getTypeVer(), is(expected.getTypeVer()));
+        assertThat("incorrect type", got.getCreator(), is(expected.getCreator()));
+        assertThat("incorrect type", got.getCopier(), is(expected.getCopier()));
+        assertThat("incorrect type", got.getMod(), is(expected.getMod()));
+        assertThat("incorrect type", got.getMethod(), is(expected.getMethod()));
+        assertThat("incorrect type", got.getModuleVer(), is(expected.getModuleVer()));
+        assertThat("incorrect type", got.getCommit(), is(expected.getCommit()));
+        
         if (got.getParentData() == null) {
             assertThat("incorrect parent data", got.getParentData(), is(expected.getParentData()));
         } else {

@@ -15,16 +15,13 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * <p>Original spec-file type: PostProcessing</p>
  * <pre>
  * Rules for what to return about found objects.
- * skip_info - do not include brief info for object ('guid,
- *     'parent_guid', 'object_name' and 'timestamp' fields in
- *     ObjectData structure),
  * skip_keys - do not include keyword values for object 
  *     ('key_props' field in ObjectData structure),
  * skip_data - do not include raw data for object ('data' and 
  *     'parent_data' fields in ObjectData structure),
  * include_highlight - include highlights of fields that
  *      matched query,
- * ids_only - shortcut to mark all three skips as true and 
+ * ids_only - shortcut to mark both skips as true and 
  *      include_highlight as false.
  * </pre>
  * 
@@ -33,7 +30,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
     "ids_only",
-    "skip_info",
     "skip_keys",
     "skip_data",
     "include_highlight"
@@ -42,8 +38,6 @@ public class PostProcessing {
 
     @JsonProperty("ids_only")
     private Long idsOnly;
-    @JsonProperty("skip_info")
-    private Long skipInfo;
     @JsonProperty("skip_keys")
     private Long skipKeys;
     @JsonProperty("skip_data")
@@ -64,21 +58,6 @@ public class PostProcessing {
 
     public PostProcessing withIdsOnly(Long idsOnly) {
         this.idsOnly = idsOnly;
-        return this;
-    }
-
-    @JsonProperty("skip_info")
-    public Long getSkipInfo() {
-        return skipInfo;
-    }
-
-    @JsonProperty("skip_info")
-    public void setSkipInfo(Long skipInfo) {
-        this.skipInfo = skipInfo;
-    }
-
-    public PostProcessing withSkipInfo(Long skipInfo) {
-        this.skipInfo = skipInfo;
         return this;
     }
 
@@ -139,7 +118,7 @@ public class PostProcessing {
 
     @Override
     public String toString() {
-        return ((((((((((((("PostProcessing"+" [idsOnly=")+ idsOnly)+", skipInfo=")+ skipInfo)+", skipKeys=")+ skipKeys)+", skipData=")+ skipData)+", includeHighlight=")+ includeHighlight)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((("PostProcessing"+" [idsOnly=")+ idsOnly)+", skipKeys=")+ skipKeys)+", skipData=")+ skipData)+", includeHighlight=")+ includeHighlight)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
