@@ -5,14 +5,14 @@ storage-object-type: KBaseBiochem.Media
 versions:
 - indexing-rules:
   - path: id
-    keyword-type: string
+    keyword-type: keyword
   - path: name
     full-text: true
   - path: external_source_id
     full-text: true
     ui-name: External Source
   - path: type
-    keyword-type: string
+    keyword-type: keyword
   - path: mediacompounds/{size}
     keyword-type: integer
   - path: isDefined

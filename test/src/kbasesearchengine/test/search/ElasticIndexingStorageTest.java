@@ -291,19 +291,24 @@ public class ElasticIndexingStorageTest {
         indexObject("Genome", 0, "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
         Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Genome"),
                 MatchFilter.getBuilder().withLookupInKey(
-                        "features", new MatchValue(1, null)).build(),
+                        "feature_count", new MatchValue(1, null)).build(),
                 null, AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, guids.size());
         ObjectData genomeIndex = indexStorage.getObjectsByIds(guids).get(0);
         //System.out.println("Genome index: " + genomeIndex);
-        Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("features"));
-        Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("features"));
-        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contigs"));
+        Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("feature_count"));
+        Assert.assertEquals("KBase", "" + genomeIndex.getKeyProperties().get("source"));
+        Assert.assertEquals("NewGenome", "" + genomeIndex.getKeyProperties().get("source_id"));
+        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name"));
+        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name_keyword"));
+        Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("feature_count"));
+        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("cds_count"));
+        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contig_count"));
         String assemblyGuidText = genomeIndex.getKeyProperties().get("assembly_guid");
         Assert.assertNotNull(assemblyGuidText);
         ObjectData assemblyIndex = getIndexedObject(new GUID(assemblyGuidText));
         //System.out.println("Assembly index: " + genomeIndex);
-        Assert.assertEquals("1", "" + assemblyIndex.getKeyProperties().get("contigs"));
+        Assert.assertEquals("1", "" + assemblyIndex.getKeyProperties().get("contig_count"));
         System.out.println("*** end testGenome***");
     }
 
@@ -393,19 +398,23 @@ public class ElasticIndexingStorageTest {
         indexObject("Genome", 1, "genome02", new GUID("WS:1/1/1"), "MyGenome.2");
         Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Genome"),
                 MatchFilter.getBuilder().withLookupInKey(
-                        "features", new MatchValue(1, null)).build(),
+                        "feature_count", new MatchValue(1, null)).build(),
                 null, AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, guids.size());
         ObjectData genomeIndex = indexStorage.getObjectsByIds(guids).get(0);
         //System.out.println("Genome index: " + genomeIndex);
-        Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("features"));
-        Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("features"));
-        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contigs"));
+        Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("feature_count"));
+        Assert.assertEquals("KBase", "" + genomeIndex.getKeyProperties().get("source"));
+        Assert.assertEquals("NewGenome", "" + genomeIndex.getKeyProperties().get("source_id"));
+        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name"));
+        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name_keyword"));
+        Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("feature_count"));
+        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contig_count"));
         String assemblyGuidText = genomeIndex.getKeyProperties().get("assembly_guid");
         Assert.assertNotNull(assemblyGuidText);
         ObjectData assemblyIndex = getIndexedObject(new GUID(assemblyGuidText));
         //System.out.println("Assembly index: " + genomeIndex);
-        Assert.assertEquals("1", "" + assemblyIndex.getKeyProperties().get("contigs"));
+        Assert.assertEquals("1", "" + assemblyIndex.getKeyProperties().get("contig_count"));
         System.out.println("*** end testGenomeV2***");
     }
 
@@ -512,6 +521,7 @@ public class ElasticIndexingStorageTest {
         final String aliases = "Azorhizobium Dreyfus et al. 1988 emend. Lang et al. 2013, Azotirhizobium";
         Assert.assertEquals("Bacteria", "" + index.getKeyProperties().get("domain"));
         Assert.assertEquals("Azorhizobium", "" + index.getKeyProperties().get("scientific_name"));
+        Assert.assertEquals("11", "" + index.getKeyProperties().get("genetic_code"));
         Assert.assertEquals(aliases, "" + index.getKeyProperties().get("aliases"));
         Assert.assertEquals(lineage, "" + index.getKeyProperties().get("scientific_lineage"));
         System.out.println("*** end testTaxon***");

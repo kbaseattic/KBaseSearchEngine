@@ -10,4 +10,4 @@ versions:
   - path: num_replicates
     key-type: integer
   - path: source
-    key-type: string
+    key-type: keyword

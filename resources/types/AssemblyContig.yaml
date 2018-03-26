@@ -8,7 +8,7 @@ versions:
   primary-key-path: contig_id
   indexing-rules:
   - path: contig_id
-    keyword-type: string
+    keyword-type: keyword
     ui-name: ID
   - path: description
     full-text: true
