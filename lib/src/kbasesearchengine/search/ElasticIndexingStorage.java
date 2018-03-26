@@ -329,12 +329,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final Map<GUID, ParsedObject> idToObj,
             final boolean isPublic)
             throws IOException, IndexingConflictException {
+        if (rule.getSubObjectType().isPresent() && idToObj.isEmpty()) {
+            return; // nothing to index. Only parent objects should get general records (see below)
+        }
         final Map<GUID, ParsedObject> idToObjCopy = new HashMap<>(idToObj);
         String indexName = checkIndex(rule, false);
         for (GUID id : idToObjCopy.keySet()) {
             GUID parentGuid = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
                     id.getAccessGroupObjectId(), id.getVersion(), null, null);
             if (!parentGuid.equals(pguid)) {
+                //TODO CODE make this something that the worker error handling can work with
                 throw new IllegalStateException("Object GUID doesn't match parent GUID");
             }
         }
