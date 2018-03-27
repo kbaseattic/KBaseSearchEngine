@@ -680,6 +680,7 @@ public class SearchTools {
                 "MUST have unique ids. Set the id to '-' to generate a random id.")
         private String startWorker;
 
+        // TODO SCT-398 It's pretty clear that many of the errors we're seeing (too many features/contigs, location missing) are pointless to re-run, so we're going to want to be able to select failed events with more precision.
         @Parameter(names = {"-f", "--reset-failed-events"}, description =
                 "Reset events with the FAIL processing state to the UNPROC (not processed) " +
                 " processing state so these events can be rerun by the indexer coordinator and" +
