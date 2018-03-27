@@ -753,27 +753,16 @@ public class WorkspaceEventHandler implements EventHandler {
 
         Map<String, Object> command;
         // wsid and objid of the object that the specified StatusEvent is an event for
-        final String wsid = ev.getAccessGroupId().get().toString();
-        final String objid = ev.getAccessGroupObjectId().get();
+        final long wsid = ev.getAccessGroupId().get();
+        final long objid = Long.decode(ev.getAccessGroupObjectId().get());
 
         // check if name has changed and update state of lastestName
-        ObjectSpecification os = new ObjectSpecification().withRef(wsid+"/"+objid);
-
-        final List<ObjectSpecification> getInfoInput = new ArrayList<>();
-        getInfoInput.add(os);
-
-        command = new HashMap<>();
-        command.put("command", "getObjectInfo");
-        command.put("params", new GetObjectInfo3Params().withObjects(getInfoInput));
-
-        final GetObjectInfo3Results objInfo;
         try {
-            objInfo = ws.getClient().administer(new UObject(command))
-                    .asClassInstance(GetObjectInfo3Results.class);
-            String name = objInfo.getInfos().get(0).getE2();
-            if (!Utils.isNullOrEmpty(name)) {
-                latestName = name;
-            }
+            final String name = getObjectInfo(wsid, objid, Optional.absent()).
+                                                              getInfos().get(0).getE2();
+
+            latestName = name;
+
         } catch (IOException e) {
             throw handleException(e);
         } catch (JsonClientException e) {
@@ -798,9 +787,7 @@ public class WorkspaceEventHandler implements EventHandler {
 
             final String isPublic = getWorkspaceInfo(ev.getAccessGroupId().get()).getE6();
 
-            if (!Utils.isNullOrEmpty(isPublic)) {
-                latestIsPublic = (isPublic == "n") ? true: false;
-            }
+            latestIsPublic = (isPublic == "n") ? false: true;
         } catch (IOException ex) {
             throw new RetriableIndexingException(ErrorType.OTHER, ex.getMessage());
         } catch (JsonClientException ex) {
@@ -840,10 +827,10 @@ public class WorkspaceEventHandler implements EventHandler {
         final Boolean latestIsPublic = getLatestIsPublic(ev);
 
         StatusEvent updatedEvent = StatusEvent.
-                getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(), ev.getEventType()).
+                getBuilder(ev.getStorageObjectType().orNull(), ev.getTimestamp(), ev.getEventType()).
                 withNullableAccessGroupID(ev.getAccessGroupId().get()).
                 withNullableObjectID(ev.getAccessGroupObjectId().get()).
-                withNullableVersion(ev.getVersion().get()).
+                withNullableVersion(ev.getVersion().orNull()).
                 withNullableisPublic(latestIsPublic).
                 withNullableNewName(latestName).build();
 
