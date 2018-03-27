@@ -678,32 +678,8 @@ public class WorkspaceEventHandler implements EventHandler {
         return String.join(";", refpath);
     }
 
-    @Override
-    public StatusEvent updateEvent(final StatusEvent ev)
-            throws IndexingException,
-                   RetriableIndexingException {
-
-        // only object level events are updated below
-        if (!ObjectEventQueue.OBJ_LVL_EVENTS.contains(ev.getEventType())) {
-            return ev;
-        }
-
-        // brute force get latest state and update event as event can be played
-        // out of order in the case of failed events being replayed.
-
-        // states to update
-        final StatusEventType latestEventType = ev.getEventType();
-        Boolean latestIsPublic = null;
-        String latestName = null;
-
-        if (ev.isPublic().isPresent()) {
-            latestIsPublic = ev.isPublic().get().booleanValue();
-        }
-        if (ev.getNewName().isPresent()) {
-            latestName = ev.getNewName().get().toString();
-        }
-
-
+    private final StatusEvent updateEventForDeletion(final StatusEvent ev)
+              throws RetriableIndexingException {
         // wsid and objid of the object that the specified StatusEvent is an event for
         final int wsid = ev.getAccessGroupId().get();
         final long objid = Long.valueOf(ev.getAccessGroupObjectId().get().toString()).longValue();
@@ -730,9 +706,9 @@ public class WorkspaceEventHandler implements EventHandler {
         command = new HashMap<>();
         command.put("command", "listObjects");
         command.put("params", new ListObjectsParams().
-                                         withIds(Arrays.asList((long)wsid)).
-                                         withMinObjectID(objid-1).
-                                         withMaxObjectID(objid+1));
+                withIds(Arrays.asList((long)wsid)).
+                withMinObjectID(objid-1).
+                withMaxObjectID(objid+1));
         try {
             boolean objidExists = false;
 
@@ -762,10 +738,25 @@ public class WorkspaceEventHandler implements EventHandler {
             throw new RetriableIndexingException(ErrorType.OTHER, ex.getMessage());
         }
 
+        return ev;
+    }
+
+    private String getLatestName(StatusEvent ev)
+                     throws IndexingException,
+                            RetriableIndexingException {
+        String latestName = null;
+
+        if (ev.getNewName().isPresent()) {
+            latestName = ev.getNewName().get().toString();
+        }
+
+        Map<String, Object> command;
+        // wsid and objid of the object that the specified StatusEvent is an event for
+        final String wsid = ev.getAccessGroupId().get().toString();
+        final String objid = ev.getAccessGroupObjectId().get();
+
         // check if name has changed and update state of lastestName
-        ObjectSpecification os = new ObjectSpecification().withRef(
-        ev.getAccessGroupId().get().toString() + "/" +
-                        ev.getAccessGroupObjectId().get());
+        ObjectSpecification os = new ObjectSpecification().withRef(wsid+"/"+objid);
 
         final List<ObjectSpecification> getInfoInput = new ArrayList<>();
         getInfoInput.add(os);
@@ -777,10 +768,10 @@ public class WorkspaceEventHandler implements EventHandler {
         final GetObjectInfo3Results objInfo;
         try {
             objInfo = ws.getClient().administer(new UObject(command))
-                                        .asClassInstance(GetObjectInfo3Results.class);
+                    .asClassInstance(GetObjectInfo3Results.class);
             String name = objInfo.getInfos().get(0).getE2();
             if (!Utils.isNullOrEmpty(name)) {
-                    latestName = name;
+                latestName = name;
             }
         } catch (IOException e) {
             throw handleException(e);
@@ -788,12 +779,25 @@ public class WorkspaceEventHandler implements EventHandler {
             throw handleException(e);
         }
 
-        // check if permissions have changed and update state of isPublic
+        return latestName;
+    }
+
+    private Boolean getLatestIsPublic(StatusEvent ev)
+                            throws IndexingException,
+                                   RetriableIndexingException {
+
+        Boolean latestIsPublic = null;
+        Map<String, Object> command;
+
+        if (ev.isPublic().isPresent()) {
+            latestIsPublic = ev.isPublic().get().booleanValue();
+        }
+
         try {
             command = new HashMap<>();
             command.put("command", "getWorkspaceInfo");
             command.put("params", new WorkspaceIdentity()
-                            .withId((long) ev.getAccessGroupId().get()));
+                    .withId((long) ev.getAccessGroupId().get()));
 
             final String isPublic;
 
@@ -807,8 +811,40 @@ public class WorkspaceEventHandler implements EventHandler {
             throw new RetriableIndexingException(ErrorType.OTHER, ex.getMessage());
         }
 
+        return latestIsPublic;
+    }
+
+    @Override
+    public StatusEvent updateEvent(final StatusEvent ev)
+            throws IndexingException,
+                   RetriableIndexingException {
+
+        // only object level events are updated below
+        if (!ObjectEventQueue.OBJ_LVL_EVENTS.contains(ev.getEventType())) {
+            return ev;
+        }
+
+        // brute force get latest state and update event as event can be played
+        // out of order in the case of failed events being replayed.
+
+        // check deletion state
+        {
+            final StatusEvent updatedEvent = updateEventForDeletion(ev);
+            // if event was updated (event type gets changed to
+            // StatusEventType.DELETE_ALL_VERSIONS
+            if (!updatedEvent.equals(ev)) {
+                return updatedEvent;
+            }
+        }
+
+        // get latest name
+        final String latestName = getLatestName(ev);
+
+        // check if permissions have changed and update state of isPublic
+        final Boolean latestIsPublic = getLatestIsPublic(ev);
+
         StatusEvent updatedEvent = StatusEvent.
-                getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(), latestEventType).
+                getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(), ev.getEventType()).
                 withNullableAccessGroupID(ev.getAccessGroupId().get()).
                 withNullableObjectID(ev.getAccessGroupObjectId().get()).
                 withNullableVersion(ev.getVersion().get()).
