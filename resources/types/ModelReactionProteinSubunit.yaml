@@ -8,9 +8,9 @@ versions:
   primary-key-path: role
   indexing-rules:
   - path: role
-    keyword-type: string
+    keyword-type: keyword
     ui-name: Role
   - path: feature_refs
     transform: values
-    keyword-type: string
+    keyword-type: keyword
     ui-name: Feature ID

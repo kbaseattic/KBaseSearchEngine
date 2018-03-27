@@ -43,7 +43,6 @@ public class SearchMethodsTest {
     private final static PostProcessing PP_DEFAULT = new PostProcessing();
     static {
         PP_DEFAULT.objectData = true;
-        PP_DEFAULT.objectInfo = true;
         PP_DEFAULT.objectKeys = true;
     }
 
@@ -296,11 +295,11 @@ public class SearchMethodsTest {
         highlight.add("<em>test</em>");
 
         final kbasesearchengine.search.ObjectData obj = kbasesearchengine.search.ObjectData
-                .getBuilder(new GUID("ws:1/2/3"))
+                .getBuilder(new GUID("ws:1/2/3"), new SearchObjectType("t", 1))
                 .withHighlight("field", highlight).build();
 
         final kbasesearchengine.search.ObjectData obj2 = kbasesearchengine.search.ObjectData
-                .getBuilder(new GUID("ws:4/5/6"))
+                .getBuilder(new GUID("ws:4/5/6"), new SearchObjectType("t", 1))
                 .build();
 
         final ArrayList<ObjectData> objs = new ArrayList<>();
@@ -323,16 +322,12 @@ public class SearchMethodsTest {
         pp1.objectHighlight = true;
         pp1.objectData = false;
         pp1.objectKeys = false;
-        pp1.objectInfo = false;
-        pp1.objectDataIncludes=null;
 
         //returns nothing
         final PostProcessing pp2 = new PostProcessing();
         pp2.objectHighlight = false;
         pp2.objectData = false;
         pp2.objectKeys = false;
-        pp2.objectInfo = false;
-        pp2.objectDataIncludes=null;
 
         final FoundHits fh1 = new FoundHits();
         fh1.pagination = null;
@@ -374,7 +369,6 @@ public class SearchMethodsTest {
         kbasesearchengine.PostProcessing option1 = new kbasesearchengine.PostProcessing()
                 .withIncludeHighlight(1L)
                 .withSkipKeys(1L)
-                .withSkipInfo(1L)
                 .withSkipData(1L);
 
         final SearchObjectsOutput res1 = searchObjects(idx, option1, "test");
@@ -430,7 +424,7 @@ public class SearchMethodsTest {
     }
 
     @Test
-    public void ObjectDataConversion() throws Exception {
+    public void objectDataConversion() throws Exception {
         final  IndexingStorage idx = mock(IndexingStorage.class);
 
         GUID guid = new GUID("ws:1/2/3");
@@ -438,13 +432,11 @@ public class SearchMethodsTest {
 
         //highlight already tested seperately. TODO add parent GUID && object
         //fields that are not added to kbasesearchengine.ObjectData are omitted for sanity
-        final kbasesearchengine.search.ObjectData obj = kbasesearchengine.search.ObjectData
-                .getBuilder(guid)
+        final ObjectData obj = ObjectData.getBuilder(guid, new SearchObjectType("Blah" , 1))
                 .withNullableTimestamp(time)
                 .withNullableData("obj")
                 .withNullableObjectName("objname")
                 .withKeyProperty("key", "prop")
-                .withNullableType(new SearchObjectType("Blah" , 1))
                 .withNullableCreator("user")
                 .withNullableCopier("user2")
                 .withNullableModule("module")
@@ -469,8 +461,6 @@ public class SearchMethodsTest {
         pp1.objectHighlight = false;
         pp1.objectData = true;
         pp1.objectKeys = true;
-        pp1.objectInfo = true;
-        pp1.objectDataIncludes=null;
 
 
         final FoundHits fh1 = new FoundHits();
@@ -495,49 +485,39 @@ public class SearchMethodsTest {
         kbasesearchengine.PostProcessing option1 = new kbasesearchengine.PostProcessing()
                 .withIncludeHighlight(0L)
                 .withSkipKeys(0L)
-                .withSkipInfo(0L)
                 .withSkipData(0L);
 
         final SearchObjectsOutput res1 = searchObjects(idx, option1, "objname");
 
         assertThat("did not find objects", res1.getObjects().size() == 1, is(true));
         kbasesearchengine.ObjectData actual = res1.getObjects().get(0);
-        assertThat("incorrect timestamp", actual.getTimestamp(), is(time.toEpochMilli()));
-        Map <String, String> expectedKeyProps = new HashMap<>();
-        expectedKeyProps.put("key", "prop");
-        assertThat("incorrect key props", actual.getKeyProps(), is(expectedKeyProps));
 
-        assertThat("incorrect data", actual.getData().toString(),
-                is(new UObject("obj").toString()));
-        assertThat("incorrect guid", actual.getGuid(), is(guid.toString()));
-
-        assertThat("incorrect obj name", actual.getObjectName(), is("objname"));
-
-        //additional properties are: type, creator, copied, module, method, module_ver, commit
-        final ImmutableMap<String,String> expected = ImmutableMap.<String,String>builder()
-                .put("type", "Blah")
-                .put("type_ver", "1")
-                .put("creator", "user")
-                .put("copied", "user2")
-                .put("module", "module")
-                .put("method", "method")
-                .put("module_ver", "2")
-                .put("commit", "commitHash")
-                .build();
-        checkObjectProps(expected, actual);
+        TestCommon.compare(actual, new kbasesearchengine.ObjectData()
+                .withTimestamp(time.toEpochMilli())
+                .withKeyProps(ImmutableMap.of("key", "prop"))
+                .withData(new UObject("obj"))
+                .withGuid(guid.toString())
+                .withObjectName("objname")
+                .withType("Blah")
+                .withTypeVer(1L)
+                .withCreator("user")
+                .withCopier("user2")
+                .withMod("module")
+                .withMethod("method")
+                .withModuleVer("2")
+                .withCommit("commitHash"));
     }
 
     @Test
-    public void ObjectDataConversionNullable() throws Exception {
+    public void objectDataConversionNullable() throws Exception {
         final  IndexingStorage idx = mock(IndexingStorage.class);
         GUID guid = new GUID("ws:1/2/3");
 
         final kbasesearchengine.search.ObjectData obj = kbasesearchengine.search.ObjectData
-                .getBuilder(guid)
+                .getBuilder(guid, new SearchObjectType("NoNulls", 1))
                 .withNullableTimestamp(null)
                 .withNullableData(null)
                 .withNullableObjectName(null)
-                .withNullableType(null)
                 .withNullableCreator(null)
                 .withNullableCopier(null)
                 .withNullableModule(null)
@@ -562,9 +542,6 @@ public class SearchMethodsTest {
         pp1.objectHighlight = false;
         pp1.objectData = true;
         pp1.objectKeys = false;
-        pp1.objectInfo = true;
-        pp1.objectDataIncludes=null;
-
 
         final FoundHits fh1 = new FoundHits();
         fh1.pagination = null;
@@ -588,7 +565,6 @@ public class SearchMethodsTest {
         kbasesearchengine.PostProcessing option1 = new kbasesearchengine.PostProcessing()
                 .withIncludeHighlight(0L)
                 .withSkipKeys(1L)
-                .withSkipInfo(0L)
                 .withSkipData(0L);
 
         final SearchObjectsOutput res1 = searchObjects(idx, option1, "ws:1/2/3");
@@ -596,35 +572,22 @@ public class SearchMethodsTest {
         assertThat("did not find objects", res1.getObjects().size() == 1, is(true));
         kbasesearchengine.ObjectData actual = res1.getObjects().get(0);
 
-        assertThat("incorrect timestamp", actual.getTimestamp() == null, is(true));
-        assertThat("incorrect data", actual.getData() == null,
-                is(true));
-        assertThat("incorrect guid", actual.getGuid(), is(guid.toString()));
-        assertThat("incorrect obj name", actual.getObjectName() == null, is(true));
-
-        //additional properties are: type, creator, copied, module, method, module_ver, commit
-        final Map<String,String> expected = new HashMap<>();
-                expected.put("type", null);
-                expected.put("type_ver", null);
-                expected.put("creator", null);
-                expected.put("copied", null);
-                expected.put("module", null);
-                expected.put("method", null);
-                expected.put("module_ver", null);
-                expected.put("commit", null);
-        checkObjectProps(expected, actual);
+        TestCommon.compare(actual, new kbasesearchengine.ObjectData()
+                .withTimestamp(null)
+                .withKeyProps(new HashMap<>())
+                .withData(null)
+                .withGuid(guid.toString())
+                .withObjectName(null)
+                .withType("NoNulls")
+                .withTypeVer(1L)
+                .withCreator(null)
+                .withCopier(null)
+                .withMod(null)
+                .withMethod(null)
+                .withModuleVer(null)
+                .withCommit(null));
     }
 
-    private void checkObjectProps(
-            final Map<String, String> expected,
-            final kbasesearchengine.ObjectData actual){
-        Map<String, String > additonalProperties = actual.getObjectProps();
-        for( String prop : additonalProperties.keySet()) {
-            assertThat("key " + prop + " has correct value",
-                    additonalProperties.get(prop), is(expected.get(prop)));
-        }
-    }
-    
     @Test
     public void sort() throws Exception {
         // tests that the sort inputs and outputs are correct.

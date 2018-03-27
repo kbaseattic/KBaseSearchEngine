@@ -533,8 +533,9 @@ public class IndexerWorker implements Stoppable {
                 final ParseObjectsRet parsedRet = parseObjects(guid, indexLookup,
                         newRefPath, obj, rule);
                 long parsingTime = System.currentTimeMillis() - t2;
-                logger.logInfo("[Indexer]   " + toVerRep(rule.getGlobalObjectType()) +
-                        ", parsing time: " + parsingTime + " ms.");
+                logger.logInfo(String.format("[Indexer]   Parsed %s %s in %s ms.",
+                        parsedRet.guidToObj.size(), toVerRep(rule.getGlobalObjectType()),
+                        parsingTime));
                 long t3 = System.currentTimeMillis();
                 indexObjectInStorage(guid, timestamp, isPublic, obj, rule,
                         parsedRet.guidToObj, parsedRet.parentJson);
@@ -841,7 +842,6 @@ public class IndexerWorker implements Stoppable {
                     new kbasesearchengine.search.PostProcessing();
             pp.objectData = false;
             pp.objectKeys = true;
-            pp.objectInfo = true;
             try {
                 return indexingStorage.getObjectsByIds(guids, pp);
             } catch (IOException e) {
@@ -874,7 +874,7 @@ public class IndexerWorker implements Stoppable {
                 // duplicate key errors on the od.getType(), which is the value
                 final Map<GUID, SearchObjectType> loaded = new HashMap<>();
                 for (final ObjectData od: data) {
-                    loaded.put(od.getGUID(), od.getType().get());
+                    loaded.put(od.getGUID(), od.getType());
                 }
                 guidToTypeCache.putAll(loaded);
                 ret.putAll(loaded);

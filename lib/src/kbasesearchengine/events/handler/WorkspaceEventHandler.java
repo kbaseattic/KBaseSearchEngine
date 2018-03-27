@@ -668,7 +668,7 @@ public class WorkspaceEventHandler implements EventHandler {
     private static String toWSRefPath(final List<GUID> objectRefPath) {
         final List<String> refpath = new LinkedList<>();
         for (final GUID g: objectRefPath) {
-            if (!g.getStorageCode().equals("WS")) {
+            if (!g.getStorageCode().equals(STORAGE_CODE)) {
                 throw new IllegalArgumentException(String.format(
                         "GUID %s is not a workspace object", g));
             }

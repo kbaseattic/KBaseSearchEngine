@@ -149,10 +149,9 @@ public class ElasticIndexingStorageTest {
                 PostProcessing pp = new PostProcessing();
                 pp.objectData = false;
                 pp.objectKeys = false;
-                pp.objectInfo = true;
                 try {
                     return indexStorage.getObjectsByIds(guids, pp).stream().collect(
-                            Collectors.toMap(od -> od.getGUID(), od -> od.getType().get()));
+                            Collectors.toMap(od -> od.getGUID(), od -> od.getType()));
                 } catch (IOException e) {
                     throw new FatalIndexingException(ErrorType.OTHER, e.getMessage(), e);
                 }
@@ -291,19 +290,24 @@ public class ElasticIndexingStorageTest {
         indexObject("Genome", 0, "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
         Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Genome"),
                 MatchFilter.getBuilder().withLookupInKey(
-                        "features", new MatchValue(1, null)).build(),
+                        "feature_count", new MatchValue(1, null)).build(),
                 null, AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, guids.size());
         ObjectData genomeIndex = indexStorage.getObjectsByIds(guids).get(0);
         //System.out.println("Genome index: " + genomeIndex);
-        Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("features"));
-        Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("features"));
-        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contigs"));
+        Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("feature_count"));
+        Assert.assertEquals("KBase", "" + genomeIndex.getKeyProperties().get("source"));
+        Assert.assertEquals("NewGenome", "" + genomeIndex.getKeyProperties().get("source_id"));
+        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name"));
+        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name_keyword"));
+        Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("feature_count"));
+        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("cds_count"));
+        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contig_count"));
         String assemblyGuidText = genomeIndex.getKeyProperties().get("assembly_guid");
         Assert.assertNotNull(assemblyGuidText);
         ObjectData assemblyIndex = getIndexedObject(new GUID(assemblyGuidText));
         //System.out.println("Assembly index: " + genomeIndex);
-        Assert.assertEquals("1", "" + assemblyIndex.getKeyProperties().get("contigs"));
+        Assert.assertEquals("1", "" + assemblyIndex.getKeyProperties().get("contig_count"));
         System.out.println("*** end testGenome***");
     }
 
@@ -393,19 +397,23 @@ public class ElasticIndexingStorageTest {
         indexObject("Genome", 1, "genome02", new GUID("WS:1/1/1"), "MyGenome.2");
         Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Genome"),
                 MatchFilter.getBuilder().withLookupInKey(
-                        "features", new MatchValue(1, null)).build(),
+                        "feature_count", new MatchValue(1, null)).build(),
                 null, AccessFilter.create().withAdmin(true));
         Assert.assertEquals(1, guids.size());
         ObjectData genomeIndex = indexStorage.getObjectsByIds(guids).get(0);
         //System.out.println("Genome index: " + genomeIndex);
-        Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("features"));
-        Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("features"));
-        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contigs"));
+        Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("feature_count"));
+        Assert.assertEquals("KBase", "" + genomeIndex.getKeyProperties().get("source"));
+        Assert.assertEquals("NewGenome", "" + genomeIndex.getKeyProperties().get("source_id"));
+        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name"));
+        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name_keyword"));
+        Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("feature_count"));
+        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contig_count"));
         String assemblyGuidText = genomeIndex.getKeyProperties().get("assembly_guid");
         Assert.assertNotNull(assemblyGuidText);
         ObjectData assemblyIndex = getIndexedObject(new GUID(assemblyGuidText));
         //System.out.println("Assembly index: " + genomeIndex);
-        Assert.assertEquals("1", "" + assemblyIndex.getKeyProperties().get("contigs"));
+        Assert.assertEquals("1", "" + assemblyIndex.getKeyProperties().get("contig_count"));
         System.out.println("*** end testGenomeV2***");
     }
 
@@ -512,6 +520,7 @@ public class ElasticIndexingStorageTest {
         final String aliases = "Azorhizobium Dreyfus et al. 1988 emend. Lang et al. 2013, Azotirhizobium";
         Assert.assertEquals("Bacteria", "" + index.getKeyProperties().get("domain"));
         Assert.assertEquals("Azorhizobium", "" + index.getKeyProperties().get("scientific_name"));
+        Assert.assertEquals("11", "" + index.getKeyProperties().get("genetic_code"));
         Assert.assertEquals(aliases, "" + index.getKeyProperties().get("aliases"));
         Assert.assertEquals(lineage, "" + index.getKeyProperties().get("scientific_lineage"));
         System.out.println("*** end testTaxon***");
@@ -681,7 +690,6 @@ public class ElasticIndexingStorageTest {
         Set<GUID> ret = indexStorage.searchIds(objTypes, MatchFilter.getBuilder().withLookupInKey(
                 keyName, new MatchValue(value)).build(), null, af);
         PostProcessing pp = new PostProcessing();
-        pp.objectInfo = true;
         pp.objectData = true;
         pp.objectKeys = true;
         indexStorage.getObjectsByIds(ret, pp);
@@ -949,9 +957,8 @@ public class ElasticIndexingStorageTest {
         final ObjectData indexedObj1 =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/2/3"))).get(0);
         
-        final ObjectData expected1 = ObjectData.getBuilder(new GUID("WS:1/2/3"))
+        final ObjectData expected1 = ObjectData.getBuilder(new GUID("WS:1/2/3"), type1)
                 .withNullableObjectName("o1")
-                .withNullableType(type1)
                 .withNullableCreator("creator")
                 .withNullableTimestamp(indexedObj1.getTimestamp().get())
                 .withNullableData(ImmutableMap.of("bar", 1))
@@ -966,9 +973,8 @@ public class ElasticIndexingStorageTest {
         final ObjectData indexedObj2 =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:4/5/6"))).get(0);
 
-        final ObjectData expected2 = ObjectData.getBuilder(new GUID("WS:4/5/6"))
+        final ObjectData expected2 = ObjectData.getBuilder(new GUID("WS:4/5/6"), type2)
                 .withNullableObjectName("o2")
-                .withNullableType(type2)
                 .withNullableCreator("creator")
                 .withNullableTimestamp(indexedObj2.getTimestamp().get())
                 .withNullableData(ImmutableMap.of("bar", "whee"))
@@ -1005,9 +1011,9 @@ public class ElasticIndexingStorageTest {
         final ObjectData indexedObj =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1000/1/1"))).get(0);
         
-        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:1000/1/1"))
+        final ObjectData expected = ObjectData.getBuilder(
+                new GUID("WS:1000/1/1"), new SearchObjectType("NoIndexingRules", 1))
                 .withNullableObjectName("objname")
-                .withNullableType(new SearchObjectType("NoIndexingRules", 1))
                 .withNullableCreator("creator")
                 .withNullableCommitHash("commit")
                 .withNullableCopier("cop")
@@ -1139,9 +1145,9 @@ public class ElasticIndexingStorageTest {
         final ObjectData indexedObj =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:2000/1/1"))).get(0);
         
-        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:2000/1/1"))
+        final ObjectData expected = ObjectData.getBuilder(
+                new GUID("WS:2000/1/1"), new SearchObjectType("SourceTags", 1))
                 .withNullableObjectName("objname")
-                .withNullableType(new SearchObjectType("SourceTags", 1))
                 .withNullableCreator("creator")
                 .withSourceTag("refdata")
                 .withSourceTag("testnarr")
@@ -1452,7 +1458,6 @@ public class ElasticIndexingStorageTest {
         assertThat("overlapping ranges did not return intersection", hits5.guids, is(set(guid2)));
     }
 
-
     @Test
     public void addHighlighting() throws Exception {
         GUID guid1 = new GUID("WS:11/1/2");
@@ -1501,5 +1506,35 @@ public class ElasticIndexingStorageTest {
             Map<String, List<String>> res = obj.getHighlight();
             assertThat("Incorrect highlighting", res, is(result2));
         }
+    }
+    
+    @Test
+    public void noSubObjects() throws Exception {
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("subtype", 1),
+                        new StorageObjectType("WS", "parenttype"))
+                        .toSubObjectRule(
+                                "subtype", new ObjectJsonPath("/foo"), new ObjectJsonPath("/bar"))
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "someguy").build(),
+                Instant.ofEpochMilli(10000L),
+                "{}",
+                new GUID("WS:1/2/3"),
+                Collections.emptyMap(), // this should not generally happen for subobjects,
+                                        // but can in pathological cases
+                true);
+        
+        final FoundHits res = indexStorage.searchObjects(
+                Collections.emptyList(),
+                MatchFilter.getBuilder().build(),
+                null, // sorting rule
+                AccessFilter.create().withPublic(true),
+                null, // pagination
+                null); // post processing
+        
+        assertThat("no data stored", res.guids.isEmpty(), is(true));
+        assertThat("no data stored", res.objects, is((Set<ObjectData>) null));
+        assertThat("no data stored", res.total, is(0));
     }
 }
