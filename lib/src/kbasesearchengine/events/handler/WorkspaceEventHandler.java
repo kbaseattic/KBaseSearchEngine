@@ -710,8 +710,8 @@ public class WorkspaceEventHandler implements EventHandler {
         command.put("command", "listObjects");
         command.put("params", new ListObjectsParams().
                 withIds(Arrays.asList((long)wsid)).
-                withMinObjectID(objid - 1).
-                withMaxObjectID(objid + 1));
+                withMinObjectID(objid).
+                withMaxObjectID(objid));
         try {
             boolean objidExists = false;
 
@@ -736,9 +736,7 @@ public class WorkspaceEventHandler implements EventHandler {
         } catch (IOException ex) {
             throw new RetriableIndexingException(ErrorType.OTHER, ex.getMessage());
         } catch (JsonClientException ex) {
-            // really think it should be IndexingException here
-            // but IndexingException has a protected constructor
-            throw new RetriableIndexingException(ErrorType.OTHER, ex.getMessage());
+            handleException(ex);
         }
 
         return ev;
@@ -797,21 +795,16 @@ public class WorkspaceEventHandler implements EventHandler {
         }
 
         try {
-            command = new HashMap<>();
-            command.put("command", "getWorkspaceInfo");
-            command.put("params", new WorkspaceIdentity()
-                    .withId((long) ev.getAccessGroupId().get()));
 
-            final String isPublic;
-
-            isPublic = ws.getClient().administer(new UObject(command))
-                    .asClassInstance(WS_INFO_TYPEREF).getE6();
+            final String isPublic = getWorkspaceInfo(ev.getAccessGroupId().get()).getE6();
 
             if (!Utils.isNullOrEmpty(isPublic)) {
                 latestIsPublic = (isPublic == "n") ? true: false;
             }
-        } catch (IOException | JsonClientException ex) {
+        } catch (IOException ex) {
             throw new RetriableIndexingException(ErrorType.OTHER, ex.getMessage());
+        } catch (JsonClientException ex) {
+            handleException(ex);
         }
 
         return latestIsPublic;
