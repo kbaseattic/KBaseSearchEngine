@@ -217,22 +217,25 @@ public class WorkspaceEventHandler implements EventHandler {
     }
 
 
-    /** Get the workspace information for an object from the workspace service to which this
-     * handler is communicating.
+    /** Get the workspace information for an object from the workspace service
+     * to which this handler is communicating.
      * @param workspaceID the integer ID of the workspace.
      * @param objectId the integer ID of the object.
+     * @param verId the integer version ID of the object.
      * @return the object info as returned from the workspace.
      * @throws IOException if an IO exception occurs.
      * @throws JsonClientException if an error retrieving the data occurs.
      */
     private GetObjectInfo3Results getObjectInfo(
-                                       final long workspaceID,
-                                       final long objectId)
+            final Long workspaceID,
+            final Long objectId,
+            final Optional<Long> verId)
             throws IOException, JsonClientException {
 
         final ObjectSpecification os = new ObjectSpecification().
                 withWsid(workspaceID).
-                withObjid(objectId);
+                withObjid(objectId).
+                withVer(verId.orNull());
 
         final List<ObjectSpecification> getInfoInput = new ArrayList<>();
         getInfoInput.add(os);
@@ -242,7 +245,7 @@ public class WorkspaceEventHandler implements EventHandler {
         command.put("params", new GetObjectInfo3Params().withObjects(getInfoInput));
 
         return ws.getClient().administer(new UObject(command))
-                    .asClassInstance(GetObjectInfo3Results.class);
+                .asClassInstance(GetObjectInfo3Results.class);
     }
     
     
