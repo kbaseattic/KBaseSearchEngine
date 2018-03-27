@@ -29,11 +29,14 @@ public class ObjectEventQueue {
     /* may want to initialize with an access group & object ID and ensure that all incoming
      * events match
      */
-    
-    public static final Set<StatusEventType> OBJ_LVL_EVENTS = new HashSet<>(Arrays.asList(
-            StatusEventType.DELETE_ALL_VERSIONS, StatusEventType.NEW_ALL_VERSIONS,
-            StatusEventType.PUBLISH_ALL_VERSIONS, StatusEventType.RENAME_ALL_VERSIONS,
-            StatusEventType.UNDELETE_ALL_VERSIONS, StatusEventType.UNPUBLISH_ALL_VERSIONS,
+
+    private static final Set<StatusEventType> OBJ_LVL_EVENTS = new HashSet<>(Arrays.asList(
+            StatusEventType.DELETE_ALL_VERSIONS,
+            StatusEventType.NEW_ALL_VERSIONS,
+            StatusEventType.PUBLISH_ALL_VERSIONS,
+            StatusEventType.RENAME_ALL_VERSIONS,
+            StatusEventType.UNDELETE_ALL_VERSIONS,
+            StatusEventType.UNPUBLISH_ALL_VERSIONS,
             StatusEventType.NEW_VERSION));
     
     private final PriorityQueue<StoredStatusEvent> queue = new PriorityQueue<StoredStatusEvent>(
@@ -78,7 +81,11 @@ public class ObjectEventQueue {
     }
     
     private boolean isObjectLevelEvent(final StoredStatusEvent event) {
-        return OBJ_LVL_EVENTS.contains(event.getEvent().getEventType());
+        return isObjectLevelEvent(event.getEvent());
+    }
+
+    public static boolean isObjectLevelEvent(final StatusEvent event) {
+        return OBJ_LVL_EVENTS.contains(event.getEventType());
     }
 
     /** Add a new {@link StatusEventProcessingState#UNPROC} event to the queue.

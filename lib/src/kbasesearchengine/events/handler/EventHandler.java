@@ -14,7 +14,7 @@ import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.events.exceptions.IndexingExceptionUncheckedWrapper;
 import kbasesearchengine.events.exceptions.RetriableIndexingException;
 import kbasesearchengine.events.exceptions.RetriableIndexingExceptionUncheckedWrapper;
-import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
+
 
 /** An interface for handling search events. The interface abstracts away event source specific
  * operations.
@@ -96,7 +96,8 @@ public interface EventHandler {
      *
      * @param ev event to update
      * @return a new updated event
-     * @throws UnprocessableEventIndexingException
+     * @throws IndexingException
+     * @throws RetriableIndexingException
      */
     StatusEvent updateEvent(StatusEvent ev)
             throws IndexingException, RetriableIndexingException;

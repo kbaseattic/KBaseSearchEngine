@@ -823,7 +823,7 @@ public class WorkspaceEventHandler implements EventHandler {
                    RetriableIndexingException {
 
         // only object level events are updated below
-        if (!ObjectEventQueue.OBJ_LVL_EVENTS.contains(ev.getEventType())) {
+        if (!ObjectEventQueue.isObjectLevelEvent(ev)) {
             return ev;
         }
 
