@@ -685,16 +685,16 @@ public class WorkspaceEventHandler implements EventHandler {
               throws RetriableIndexingException {
         // wsid and objid of the object that the specified StatusEvent is an event for
         final int wsid = ev.getAccessGroupId().get();
-        final long objid = Long.valueOf(ev.getAccessGroupObjectId().get().toString()).longValue();
+        final long objid = Long.valueOf(ev.getAccessGroupObjectId().get()).longValue();
 
         Map<String, Object> command;
 
         // check if workspace is permanently deleted or marked as deleted
         try {
             final Tuple9 tuple = getWorkspaceInfo(wsid);
-        } catch(IOException ex) {
+        } catch (IOException ex) {
             throw new RetriableIndexingException(ErrorType.OTHER, ex.getMessage());
-        } catch(JsonClientException ex) {
+        } catch (JsonClientException ex) {
             // hacky: if exception message is changed, this logic will silently fail
             if (ex.getMessage().contains("No workspace with id ")) {
                 return StatusEvent.
@@ -710,8 +710,8 @@ public class WorkspaceEventHandler implements EventHandler {
         command.put("command", "listObjects");
         command.put("params", new ListObjectsParams().
                 withIds(Arrays.asList((long)wsid)).
-                withMinObjectID(objid-1).
-                withMaxObjectID(objid+1));
+                withMinObjectID(objid - 1).
+                withMaxObjectID(objid + 1));
         try {
             boolean objidExists = false;
 
