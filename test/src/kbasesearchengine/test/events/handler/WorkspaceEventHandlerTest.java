@@ -15,11 +15,17 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import junit.framework.Assert;
+import kbasesearchengine.events.StatusEvent;
+import kbasesearchengine.events.StatusEventType;
+import kbasesearchengine.system.StorageObjectType;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 
@@ -41,6 +47,7 @@ import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple9;
 import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
+import us.kbase.workspace.GetObjectInfo3Results;
 import us.kbase.workspace.GetObjects2Params;
 import us.kbase.workspace.GetObjects2Results;
 import us.kbase.workspace.ObjectData;
@@ -695,5 +702,150 @@ public class WorkspaceEventHandlerTest {
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
         }
+    }
+
+    @Test
+    public void updateEventAccessGroupEvent() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                "WS",
+                           Instant.ofEpochMilli(20000),
+                           StatusEventType.PUBLISH_ACCESS_GROUP)
+                           .withNullableAccessGroupID(1)
+                           .build();
+
+        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(1))))
+                .thenReturn(new UObject(wsTuple(1, "wsname", "username", "date", 7, "r", "n",
+                        "unlocked", Collections.emptyMap())));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        // update event
+        StatusEvent updatedEvent = weh.updateEvent(event);
+
+        // access group events are not updated, so we expect to get back the original event
+        Assert.assertEquals("expected the same event object", event, updatedEvent);
+    }
+
+    @Test
+    public void updateEventWorkspacePermanentlyDeleted() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newName")
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(1))))
+                .thenThrow(new JsonClientException("No workspace with id 1 exists!"));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        // update event
+        StatusEvent updatedEvent = weh.updateEvent(event);
+
+        // since workspace does not exist, we expect to get back an updated event
+        Assert.assertNotSame("expected different event object", event, updatedEvent);
+        Assert.assertEquals(updatedEvent.getEventType(), StatusEventType.DELETE_ALL_VERSIONS);
+    }
+
+    @Test
+    public void updateEventObjectDeleted() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newName")
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        List<Tuple11<Long, String, String, String,
+                Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
+        objList.add(objTuple(5L, "someName", "sometype", "date", 3L, "copier",
+                5L, "wsname", "checksum", 44, Collections.emptyMap()));
+
+        when(wscli.administer(any()))
+                // for deleted workspace check
+                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "r", "n",
+                        "unlocked", Collections.emptyMap())))
+                // for deleted objects check
+                .thenReturn(new UObject(objList));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        // update event
+        StatusEvent updatedEvent = weh.updateEvent(event);
+
+        // since deleted object check fails (objid 1L is not present), we expect to get back an updated event
+        Assert.assertNotSame("expected different event object", event, updatedEvent);
+        Assert.assertEquals(updatedEvent.getEventType(), StatusEventType.DELETE_ALL_VERSIONS);
+    }
+
+    @Test
+    public void updateEventObjectRenamedAndIsPublic() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newNameInEvent")
+                .withNullableisPublic(Boolean.TRUE)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        List<Tuple11<Long, String, String, String,
+                Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
+        objList.add(objTuple(1L, "newNameInWorkSpace", "sometype", "date", 1L, "copier",
+                1L, "wsname", "checksum", 44, Collections.emptyMap()));
+
+        when(wscli.administer(any()))
+                // for deleted workspace check
+                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "n", "n",
+                        "unlocked", Collections.emptyMap())))
+                // for deleted objects check
+                .thenReturn(new UObject(objList))
+                // for name check
+                .thenReturn(new UObject(new GetObjectInfo3Results().withInfos(objList)))
+                // for isPublic check
+                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "n", "n",
+                        "unlocked", Collections.emptyMap())));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        StatusEvent updatedEvent = weh.updateEvent(event);
+
+        // since name and isPublic flag are different in the mocked workspace and object, we expect to get back an updated event
+        Assert.assertNotSame("expected different event object", event, updatedEvent);
+        Assert.assertEquals("newNameInWorkSpace", updatedEvent.getNewName().get());
+        Assert.assertEquals(Boolean.FALSE, updatedEvent.isPublic().get());
     }
 }

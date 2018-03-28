@@ -719,7 +719,7 @@ public class WorkspaceEventHandler implements EventHandler {
                     .asClassInstance(List.class);
 
             for (List obj : objList) {
-                final long id = (long) ((Integer) obj.get(0)).intValue();
+                final long id = ((Number) obj.get(0)).longValue();
                 if (id == objid) {
                     objidExists = true;
                     break;
@@ -827,7 +827,7 @@ public class WorkspaceEventHandler implements EventHandler {
         final Boolean latestIsPublic = getLatestIsPublic(ev);
 
         StatusEvent updatedEvent = StatusEvent.
-                getBuilder(ev.getStorageObjectType().orNull(), ev.getTimestamp(), ev.getEventType()).
+                getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(), ev.getEventType()).
                 withNullableAccessGroupID(ev.getAccessGroupId().get()).
                 withNullableObjectID(ev.getAccessGroupObjectId().get()).
                 withNullableVersion(ev.getVersion().orNull()).
