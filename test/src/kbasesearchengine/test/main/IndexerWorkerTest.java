@@ -197,8 +197,7 @@ public class IndexerWorkerTest {
                 eq(guid),
                 eq(ImmutableMap.of(
                         new GUID(guid, "subfoo", "an id2"), po2,
-                        new GUID(guid, "subfoo", "an id"), po1)),
-                eq(false));
+                        new GUID(guid, "subfoo", "an id"), po1)));
     }
     
     @Test
@@ -320,7 +319,7 @@ public class IndexerWorkerTest {
                                 "object code:1/2/3 when applying search specification foo_1"))));
         
         verify(idxStore, never()).indexObjects(
-                any(), any(), any(), any(), any(), any(), anyBoolean());
+                any(), any(), any(), any(), any(), any());
         
         verify(storage).store(eq(event), eq("OTHER"), argThat(new ThrowableMatcher(
                 new UnprocessableEventIndexingException(ErrorType.OTHER,
@@ -431,8 +430,7 @@ public class IndexerWorkerTest {
                 eq(Instant.ofEpochMilli(10000)),
                 eq(null),
                 eq(guid),
-                eq(ImmutableMap.of(new GUID(guid, "subfoo", "an id"), posub)),
-                eq(false));
+                eq(ImmutableMap.of(new GUID(guid, "subfoo", "an id"), posub)));
         
         idxOrder.verify(idxStore).indexObjects(
                 eq(rule),
@@ -440,8 +438,7 @@ public class IndexerWorkerTest {
                 eq(Instant.ofEpochMilli(10000)),
                 eq(null),
                 eq(guid),
-                eq(ImmutableMap.of(guid, po)),
-                eq(false));
+                eq(ImmutableMap.of(guid, po)));
     }
     
     @Test
@@ -547,8 +544,7 @@ public class IndexerWorkerTest {
                 eq(ImmutableMap.of(
                         new GUID(guid, "subfoo", "an id2"), po2,
                         new GUID(guid, "subfoo", "an id3"), po3,
-                        new GUID(guid, "subfoo", "an id"), po1)),
-                eq(false));
+                        new GUID(guid, "subfoo", "an id"), po1)));
     }
     
     @Test
@@ -643,7 +639,7 @@ public class IndexerWorkerTest {
                         "Object code:1/2/3 has 3 subobjects, exceeding the limit of 2"))));
         
         verify(idxStore, never()).indexObjects(
-                any(), any(), any(), any(), any(), any(), anyBoolean());
+                any(), any(), any(), any(), any(), any());
         
         verify(storage).setProcessingState(
                 eq(new StatusEventID("myid")),
@@ -752,8 +748,7 @@ public class IndexerWorkerTest {
                     eq(guid),
                     eq(ImmutableMap.of(
                             new GUID(guid, "subfoo", "an id2"), po2,
-                            new GUID(guid, "subfoo", "an id"), po1)),
-                    eq(false));
+                            new GUID(guid, "subfoo", "an id"), po1)));
         
         final ChildStatusEvent event = new ChildStatusEvent(StatusEvent.getBuilder(
                 storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
@@ -943,7 +938,7 @@ public class IndexerWorkerTest {
                                 "code:1/2/3:subfoo/an id2, got empty array"))));
         
         verify(idxStore, never()).indexObjects(
-                any(), any(), any(), any(), any(), any(), anyBoolean());
+                any(), any(), any(), any(), any(), any());
         
         verify(storage).store(eq(event), eq("LOCATION_ERROR"), argThat(new ThrowableMatcher(
                 new UnprocessableEventIndexingException(ErrorType.LOCATION_ERROR,
@@ -1050,7 +1045,7 @@ public class IndexerWorkerTest {
                         "GUID code:4/5/6 not found"))));
         
         verify(idxStore, never()).indexObjects(
-                any(), any(), any(), any(), any(), any(), anyBoolean());
+                any(), any(), any(), any(), any(), any());
         
         verify(storage).store(eq(event), eq("GUID_NOT_FOUND"), argThat(new ThrowableMatcher(
                 new UnprocessableEventIndexingException(ErrorType.GUID_NOT_FOUND,
@@ -1218,7 +1213,7 @@ public class IndexerWorkerTest {
                         "No event handler for storage code CODE is registered"))));
         
         verify(idxStore, never()).indexObjects(
-                any(), any(), any(), any(), any(), any(), anyBoolean());
+                any(), any(), any(), any(), any(), any());
         
         verify(storage).setProcessingState(
                 eq(new StatusEventID("an id")),
@@ -1291,7 +1286,7 @@ public class IndexerWorkerTest {
                 new FatalIndexingException(ErrorType.OTHER, "WS is super broke yo"))));
         
         verify(idxStore, never()).indexObjects(
-                any(), any(), any(), any(), any(), any(), anyBoolean());
+                any(), any(), any(), any(), any(), any());
         
         verify(storage).store(eq(event), eq("OTHER"), argThat(new ThrowableMatcher(
                 new FatalIndexingException(ErrorType.OTHER, "WS is super broke yo"))));
@@ -1370,6 +1365,6 @@ public class IndexerWorkerTest {
         verify(logger).logError(String.format(errmsg, 2));
         
         verify(idxStore, never()).indexObjects(
-                any(), any(), any(), any(), any(), any(), anyBoolean());
+                any(), any(), any(), any(), any(), any());
     }
 }

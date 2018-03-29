@@ -555,8 +555,7 @@ public class IndexerWorker implements Stoppable {
             final Map<GUID, ParsedObject> guidToObj,
             final String parentJson)
             throws InterruptedException, IndexingException {
-        final List<?> input = Arrays.asList(rule, obj, timestamp, parentJson, guid, guidToObj,
-                obj.isPublic());
+        final List<?> input = Arrays.asList(rule, obj, timestamp, parentJson, guid, guidToObj);
         retrier.retryCons(i -> indexObjectInStorage(i), input, null);
     }
 
@@ -568,11 +567,10 @@ public class IndexerWorker implements Stoppable {
         final GUID guid = (GUID) input.get(4);
         @SuppressWarnings("unchecked")
         final Map<GUID, ParsedObject> guidToObj = (Map<GUID, ParsedObject>) input.get(5);
-        final Boolean isPublic = (Boolean) input.get(6);
-        
+
         try {
             indexingStorage.indexObjects(
-                    rule, obj, timestamp, parentJson, guid, guidToObj, isPublic);
+                    rule, obj, timestamp, parentJson, guid, guidToObj);
         } catch (IndexingConflictException e) {
             throw new RetriableIndexingException(ErrorType.INDEXING_CONFLICT, e.getMessage(), e);
         } catch (IOException e) {

@@ -305,8 +305,7 @@ public class SearchAPIIntegrationTest {
                 new GUID("WS:1/1/1"),
                 ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
                         "{\"whee\": \"imaprettypony1\"}",
-                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
-                false);
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))));
         
         final ObjectData expected1 = new ObjectData()
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
@@ -332,8 +331,7 @@ public class SearchAPIIntegrationTest {
                 new GUID("WS:1/2/1"),
                 ImmutableMap.of(new GUID("WS:1/2/1"), new ParsedObject(
                         "{\"whee\": \"imaprettypony\"}",
-                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
-                false);
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))));
         
         final ObjectData expected2 = new ObjectData()
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony")))
@@ -381,8 +379,7 @@ public class SearchAPIIntegrationTest {
                 new GUID("WS:1/1/1"),
                 ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
                         "{\"whee\": \"imaprettypony1\"}",
-                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
-                false);
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))));
         
         final ObjectData expected1 = new ObjectData()
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
@@ -427,8 +424,7 @@ public class SearchAPIIntegrationTest {
                 new GUID("WS:1/1/1"),
                 ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
                         "{\"whee\": \"imaprettypony1\"}",
-                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
-                false);
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))));
 
         //default for highlighting is off -- mainly b/c of search tags
         final kbasesearchengine.PostProcessing pp = new kbasesearchengine.PostProcessing();
@@ -507,8 +503,7 @@ public class SearchAPIIntegrationTest {
                 new GUID("WS:1/1/1"),
                 ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
                         "{\"whee\": \"imaprettypony1\"}",
-                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
-                false);
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))));
         
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -524,8 +519,7 @@ public class SearchAPIIntegrationTest {
                 new GUID("WS:1/2/1"),
                 ImmutableMap.of(new GUID("WS:1/2/1"), new ParsedObject(
                         "{\"whee\": \"imaprettypony1\"}",
-                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
-                false);
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))));
         
         final SearchObjectsOutput res = searchCli.searchObjects(new SearchObjectsInput()
                 .withAccessFilter(new AccessFilter())
@@ -604,8 +598,7 @@ public class SearchAPIIntegrationTest {
                 ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
                         new ObjectMapper().writeValueAsString(data),
                         data.entrySet().stream().collect(Collectors.toMap(
-                                e -> e.getKey(), e -> Arrays.asList(e.getValue()))))),
-                false);
+                                e -> e.getKey(), e -> Arrays.asList(e.getValue()))))));
         
         final GetObjectsOutput ret = searchCli.getObjects(new GetObjectsInput()
                 .withGuids(Arrays.asList("WS:1/1/1")));

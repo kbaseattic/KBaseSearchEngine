@@ -308,12 +308,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final Instant timestamp,
             final String parentJsonValue,
             final GUID id,
-            final ParsedObject obj,
-            final boolean isPublic)
+            final ParsedObject obj)
             throws IOException, IndexingConflictException {
         final GUID parentID = new GUID(id, null, null);
         indexObjects(rule, data, timestamp, parentJsonValue, parentID,
-                ImmutableMap.of(id, obj), isPublic);
+                ImmutableMap.of(id, obj));
     }
     
     // TODO CODE this function should just take a class rather than a zillion arguments
@@ -326,8 +325,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final Instant timestamp, 
             final String parentJsonValue,
             final GUID pguid,
-            final Map<GUID, ParsedObject> idToObj,
-            final boolean isPublic)
+            final Map<GUID, ParsedObject> idToObj)
             throws IOException, IndexingConflictException {
         final Map<GUID, ParsedObject> idToObjCopy = new HashMap<>(idToObj);
         String indexName = checkIndex(rule, false);
@@ -344,7 +342,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             PrintWriter pw = new PrintWriter(tempFile);
             int lastVersion = loadLastVersion(indexName, pguid, pguid.getVersion());
             final String esParentId = checkParentDoc(indexName, new LinkedHashSet<>(
-                    Arrays.asList(pguid)), isPublic, lastVersion).get(pguid);
+                    Arrays.asList(pguid)), data.isPublic(), lastVersion).get(pguid);
             if (idToObjCopy.isEmpty()) {
                 // there were no search objects parsed from the source object, so just index
                 // the general object information
@@ -354,7 +352,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             for (GUID id : idToObjCopy.keySet()) {
                 final ParsedObject obj = idToObjCopy.get(id);
                 final Map<String, Object> doc = convertObject(id, rule.getGlobalObjectType(), obj,
-                        data, timestamp, parentJsonValue, isPublic, lastVersion);
+                        data, timestamp, parentJsonValue, data.isPublic(), lastVersion);
                 final Map<String, Object> index = new HashMap<>();
                 index.put("_index", indexName);
                 index.put("_type", getDataTableName());

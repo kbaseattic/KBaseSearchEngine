@@ -239,8 +239,8 @@ public class SourceData {
             return this;
         }
 
-        /** Add a public or private flag of the data.
-         * @param isPublic private or public flag.
+        /** Add a public or private flag for the data.
+         * @param isPublic private or public flag. The default value is false.
          * @return this builder.
          */
         public Builder withIsPublic(final boolean isPublic) {

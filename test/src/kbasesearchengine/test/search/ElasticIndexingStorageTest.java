@@ -192,8 +192,8 @@ public class ElasticIndexingStorageTest {
         ParsedObject obj = KeywordParser.extractKeywords(id, rule.getGlobalObjectType(), json,
                 parentJsonValue, rule.getIndexingRules(), objLookup, null);
         final SourceData data = SourceData.getBuilder(new UObject(json), objectName, "creator")
-                .build();
-        indexStorage.indexObject(rule, data, timestamp, parentJsonValue, id, obj, isPublic);
+                .withIsPublic(isPublic).build();
+        indexStorage.indexObject(rule, data, timestamp, parentJsonValue, id, obj);
     }
     
     private static void indexObject(
@@ -999,8 +999,7 @@ public class ElasticIndexingStorageTest {
                 Instant.ofEpochMilli(10000),
                 null,
                 new GUID("WS:1000/1/1"),
-                Collections.emptyMap(),
-                false);
+                Collections.emptyMap());
         
         final ObjectData indexedObj =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1000/1/1"))).get(0);
@@ -1037,8 +1036,7 @@ public class ElasticIndexingStorageTest {
                 new GUID("WS:2000/1/1"),
                 ImmutableMap.of(new GUID("WS:2000/1/1"), new ParsedObject(
                         "{\"whee\": \"imaprettypony\"}",
-                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
-                false);
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))));
         
         // sub object
         indexStorage.indexObjects(
@@ -1056,8 +1054,7 @@ public class ElasticIndexingStorageTest {
                 new GUID("WS:2000/2/1"),
                 ImmutableMap.of(new GUID("WS:2000/2/1:sub/yay"), new ParsedObject(
                         "{\"whee\": \"imaprettypony\"}",
-                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
-                false);
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))));
         
         final Set<GUID> res = indexStorage.searchIds(
                 Collections.emptyList(),
@@ -1113,8 +1110,7 @@ public class ElasticIndexingStorageTest {
                 new GUID("WS:2000/1/1"),
                 ImmutableMap.of(new GUID("WS:2000/1/1"), new ParsedObject(
                         "{\"whee\": \"imaprettypony\"}",
-                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
-                false);
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))));
         
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -1132,8 +1128,7 @@ public class ElasticIndexingStorageTest {
                 new GUID("WS:2000/2/1"),
                 ImmutableMap.of(new GUID("WS:2000/2/1"), new ParsedObject(
                         "{\"whee\": \"imaprettypony\"}",
-                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
-                false);
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))));
         
         // check tags are in returned data
         final ObjectData indexedObj =
@@ -1211,8 +1206,7 @@ public class ElasticIndexingStorageTest {
                 new GUID("WS:1/1/1"),
                 ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
                         "{\"whee\": \"imaprettypony\"}",
-                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
-                false);
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))));
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -1229,8 +1223,7 @@ public class ElasticIndexingStorageTest {
                 new GUID("WS:1/2/1"),
                 ImmutableMap.of(new GUID("WS:1/2/1"), new ParsedObject(
                         "{\"whee\": \"imaprettypony\"}",
-                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
-                false);
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))));
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -1247,8 +1240,7 @@ public class ElasticIndexingStorageTest {
                 new GUID("WS:1/3/1"),
                 ImmutableMap.of(new GUID("WS:1/3/1"), new ParsedObject(
                         "{\"whee\": \"in bruges\"}",
-                        ImmutableMap.of("whee", Arrays.asList("in bruges")))),
-                false);
+                        ImmutableMap.of("whee", Arrays.asList("in bruges")))));
 
 
         indexStorage.indexObjects(
@@ -1266,8 +1258,7 @@ public class ElasticIndexingStorageTest {
                 new GUID("WS:1/4/1"),
                 ImmutableMap.of(new GUID("WS:1/4/1"), new ParsedObject(
                         "{\"whee\": \"in bruges\"}",
-                        ImmutableMap.of("whee", Arrays.asList("in bruges")))),
-                false);
+                        ImmutableMap.of("whee", Arrays.asList("in bruges")))));
 
         final PostProcessing pp = new PostProcessing();
         pp.objectData = true;
