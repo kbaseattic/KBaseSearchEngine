@@ -120,9 +120,10 @@ public class AuthCacheTest {
 
         assertThat("Incorrect display names", cache.findUserDisplayNames(set("user1", "user2")),
                 is(ImmutableMap.of("user1", "display1", "user2", "display2")));
-        // TODO:  Not clear why the following test is failing
-        //assertThat("Incorrect display names", cache.findUserDisplayNames(set("user1", "user2")),
-        //        is(ImmutableMap.of("user1", "display1", "user2", "display2")));
+        // TODO:  Not clear why the following test is failing,
+        // returning "display11" and "display22", expected "display1" and "display2"
+//        assertThat("Incorrect display names", cache.findUserDisplayNames(set("user1", "user2")),
+//                is(ImmutableMap.of("user1", "display1", "user2", "display2")));
 
         assertThat("Incorrect display names", cache.findUserDisplayNames(set("user1", "user2")),
                 is(ImmutableMap.of("user1", "display11", "user2", "display22")));

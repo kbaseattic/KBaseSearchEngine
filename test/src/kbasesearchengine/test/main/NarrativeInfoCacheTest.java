@@ -153,7 +153,7 @@ public class NarrativeInfoCacheTest {
         // check that the oldest value had expired
         compare(cache.findNarrativeInfo(65L),
                 new NarrativeInfo(null, null, 1518126957000L, "owner11"));
-        //TODO: Expect that the following tests would return "owner2", "owner3" and "user1". But they do not.
+        //TODO: Expect that the following tests would return "owner2", "owner3" and "user1". But they return the following instead.
         compare(cache.findNarrativeInfo(2L),
                 new NarrativeInfo("narrname22", 22L, 22000L, "owner22"));
         compare(cache.findNarrativeInfo(3L),
