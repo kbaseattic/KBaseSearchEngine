@@ -309,6 +309,34 @@ public class ObjectParserTest {
     }
 
     /**
+     * Testing parsing RNASeqSampleSet object
+     *
+     * @throws Exception
+     */
+    @Test
+    public void parseObjectsRNASeqSampleSetTest() throws Exception {
+
+        final String jsonResource = "rnaseqsampleset01";
+        final String type = "RNASeqSampleSet";
+        final String guid = "WS:1/1/1";
+
+        final Map<GUID, String> guidToJson = parseSubObjects(type, jsonResource, guid);
+
+        assertThat(guidToJson.size(), is(1));
+        final String jsonString = guidToJson.values().iterator().next();
+        @SuppressWarnings("unchecked")
+        HashMap<String, Object> result = new ObjectMapper().readValue(jsonString, HashMap.class);
+
+        HashMap<String, Object> expectedResult = new HashMap<String, Object>();
+        expectedResult.put("sampleset_desc", "Arabidopsis thaliana wild type and hy5-215 seedlings grown under white light.");
+        expectedResult.put("source", "NCBI SRP003951");
+        expectedResult.put("num_samples", 4);
+        expectedResult.put("num_replicates", 3);
+
+        assertThat(result, is(expectedResult));
+    }
+
+    /**
      * Testing parsing FBAModel object
      *
      * @throws Exception
@@ -337,7 +365,7 @@ public class ObjectParserTest {
         expectedResult.put("type", "GenomeScale");
         expectedResult.put("genome_ref", "1/2/1");
 
-        assertThat(expectedResult, is(result));
+        assertThat(result, is(expectedResult));
     }
 
     /**
@@ -488,12 +516,12 @@ public class ObjectParserTest {
      * @throws Exception
      */
     public static Map<GUID, String> parseSubObjects(String type, String jsonResource,
-            String guidString, int rule_version) throws Exception {
+            String guidString, int rule_version, String... keys) throws Exception {
 
         final GUID guid = new GUID(guidString);
 
         final InputStream inputStream = ObjectParserTest.class
-                .getResourceAsStream(jsonResource + ".json.properties");
+                .getResourceAsStream("data/"+jsonResource + ".json.properties");
         final Reader reader = new InputStreamReader(inputStream);
 
         final UObject data = UObject.fromJsonString(CharStreams.toString(reader));

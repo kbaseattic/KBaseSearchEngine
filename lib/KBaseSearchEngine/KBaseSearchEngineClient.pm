@@ -129,7 +129,7 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	object_name has a value which is a string
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
-	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 	source_tags has a value which is a reference to a list where each element is a string
 	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
@@ -168,7 +168,7 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	object_name has a value which is a string
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
-	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 	source_tags has a value which is a reference to a list where each element is a string
 	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
@@ -275,7 +275,7 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	object_name has a value which is a string
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
-	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 	source_tags has a value which is a reference to a list where each element is a string
 	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
@@ -303,11 +303,9 @@ Pagination is a reference to a hash where the following keys are defined:
 	count has a value which is an int
 PostProcessing is a reference to a hash where the following keys are defined:
 	ids_only has a value which is a KBaseSearchEngine.boolean
-	skip_info has a value which is a KBaseSearchEngine.boolean
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
@@ -320,10 +318,17 @@ ObjectData is a reference to a hash where the following keys are defined:
 	parent_guid has a value which is a KBaseSearchEngine.GUID
 	object_name has a value which is a string
 	timestamp has a value which is an int
+	type has a value which is a string
+	type_ver has a value which is an int
+	creator has a value which is a string
+	copier has a value which is a string
+	mod has a value which is a string
+	method has a value which is a string
+	module_ver has a value which is a string
+	commit has a value which is a string
 	parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
-	object_props has a value which is a reference to a hash where the key is a string and the value is a string
 	highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
 GUID is a string
 access_group_id is an int
@@ -355,7 +360,7 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	object_name has a value which is a string
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
 	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
-	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 	source_tags has a value which is a reference to a list where each element is a string
 	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
@@ -383,11 +388,9 @@ Pagination is a reference to a hash where the following keys are defined:
 	count has a value which is an int
 PostProcessing is a reference to a hash where the following keys are defined:
 	ids_only has a value which is a KBaseSearchEngine.boolean
-	skip_info has a value which is a KBaseSearchEngine.boolean
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
@@ -400,10 +403,17 @@ ObjectData is a reference to a hash where the following keys are defined:
 	parent_guid has a value which is a KBaseSearchEngine.GUID
 	object_name has a value which is a string
 	timestamp has a value which is an int
+	type has a value which is a string
+	type_ver has a value which is an int
+	creator has a value which is a string
+	copier has a value which is a string
+	mod has a value which is a string
+	method has a value which is a string
+	module_ver has a value which is a string
+	commit has a value which is a string
 	parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
-	object_props has a value which is a reference to a hash where the key is a string and the value is a string
 	highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
 GUID is a string
 access_group_id is an int
@@ -493,11 +503,9 @@ GetObjectsInput is a reference to a hash where the following keys are defined:
 GUID is a string
 PostProcessing is a reference to a hash where the following keys are defined:
 	ids_only has a value which is a KBaseSearchEngine.boolean
-	skip_info has a value which is a KBaseSearchEngine.boolean
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
 boolean is an int
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
@@ -508,10 +516,17 @@ ObjectData is a reference to a hash where the following keys are defined:
 	parent_guid has a value which is a KBaseSearchEngine.GUID
 	object_name has a value which is a string
 	timestamp has a value which is an int
+	type has a value which is a string
+	type_ver has a value which is an int
+	creator has a value which is a string
+	copier has a value which is a string
+	mod has a value which is a string
+	method has a value which is a string
+	module_ver has a value which is a string
+	commit has a value which is a string
 	parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
-	object_props has a value which is a reference to a hash where the key is a string and the value is a string
 	highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
 access_group_id is an int
 narrative_info is a reference to a list containing 5 items:
@@ -536,11 +551,9 @@ GetObjectsInput is a reference to a hash where the following keys are defined:
 GUID is a string
 PostProcessing is a reference to a hash where the following keys are defined:
 	ids_only has a value which is a KBaseSearchEngine.boolean
-	skip_info has a value which is a KBaseSearchEngine.boolean
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
 boolean is an int
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
@@ -551,10 +564,17 @@ ObjectData is a reference to a hash where the following keys are defined:
 	parent_guid has a value which is a KBaseSearchEngine.GUID
 	object_name has a value which is a string
 	timestamp has a value which is an int
+	type has a value which is a string
+	type_ver has a value which is an int
+	creator has a value which is a string
+	copier has a value which is a string
+	mod has a value which is a string
+	method has a value which is a string
+	module_ver has a value which is a string
+	commit has a value which is a string
 	parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
-	object_props has a value which is a reference to a hash where the key is a string and the value is a string
 	highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
 access_group_id is an int
 narrative_info is a reference to a list containing 5 items:
@@ -980,7 +1000,7 @@ full_text_in_all has a value which is a string
 object_name has a value which is a string
 timestamp has a value which is a KBaseSearchEngine.MatchValue
 exclude_subobjects has a value which is a KBaseSearchEngine.boolean
-lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 source_tags has a value which is a reference to a list where each element is a string
 source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 
@@ -995,7 +1015,7 @@ full_text_in_all has a value which is a string
 object_name has a value which is a string
 timestamp has a value which is a KBaseSearchEngine.MatchValue
 exclude_subobjects has a value which is a KBaseSearchEngine.boolean
-lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 source_tags has a value which is a reference to a list where each element is a string
 source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 
@@ -1218,16 +1238,13 @@ count has a value which is an int
 =item Description
 
 Rules for what to return about found objects.
-skip_info - do not include brief info for object ('guid,
-    'parent_guid', 'object_name' and 'timestamp' fields in
-    ObjectData structure),
 skip_keys - do not include keyword values for object 
     ('key_props' field in ObjectData structure),
 skip_data - do not include raw data for object ('data' and 
     'parent_data' fields in ObjectData structure),
 include_highlight - include highlights of fields that
      matched query,
-ids_only - shortcut to mark all three skips as true and 
+ids_only - shortcut to mark both skips as true and 
      include_highlight as false.
 
 
@@ -1238,11 +1255,9 @@ ids_only - shortcut to mark all three skips as true and
 <pre>
 a reference to a hash where the following keys are defined:
 ids_only has a value which is a KBaseSearchEngine.boolean
-skip_info has a value which is a KBaseSearchEngine.boolean
 skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
 include_highlight has a value which is a KBaseSearchEngine.boolean
-data_includes has a value which is a reference to a list where each element is a string
 
 </pre>
 
@@ -1252,11 +1267,9 @@ data_includes has a value which is a reference to a list where each element is a
 
 a reference to a hash where the following keys are defined:
 ids_only has a value which is a KBaseSearchEngine.boolean
-skip_info has a value which is a KBaseSearchEngine.boolean
 skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
 include_highlight has a value which is a KBaseSearchEngine.boolean
-data_includes has a value which is a reference to a list where each element is a string
 
 
 =end text
@@ -1326,18 +1339,33 @@ post_processing has a value which is a KBaseSearchEngine.PostProcessing
 
 =item Description
 
-Properties of found object including metadata, raw data and
-    keywords.
+Properties of an object including metadata, raw data and keywords.
+GUID guid - the object's guid.
+GUID parent_guid - the guid of the object's parent if the object is a subobject (e.g.
+    features for genomes).
+object_name - the object's name.
+timestamp - the creation date for the object in milliseconds since the epoch.
+string type - the type of the data in the search index.
+int type_ver - the version of the search type.
+string creator - the username of the user that created that data.
+string copier - if this instance of the data is a copy, the username of the user that
+    copied the data.
+string mod - the name of the KBase SDK module that was used to create the data.
+string method - the name of the method in the KBase SDK module that was used to create the
+    data.
+string module_ver - the version of the KBase SDK module that was used to create the data.
+string commit - the version control commit hash of the KBase SDK module that was used to
+    create the data. 
+parent_data - raw data extracted from the subobject's parent object. The data contents will
+    vary from object to object. Null if the object is not a subobject.
+data - raw data extracted from the object. The data contents will vary from object to object.
+key_props - keyword properties of the object. These fields have been extracted from the object
+   and possibly transformed based on the search specification for the object.
+   The contents will vary from object to object.
 mapping<string, list<string>> highlight - The keys are the field names and the list 
     contains the sections in each field that matched the search query. Fields with no
     hits will not be available. Short fields that matched are shown in their entirety.
-    Longer fields are shown as snippets preceded or followed by "...".     
-mapping<string, string> object_props - general properties for all objects. This mapping
-    contains the keys 'creator', 'copied', 'module', 'method', 'module_ver', and 'commit' -
-    respectively the user that originally created the object, the user that copied this
-    incarnation of the object, and the module and method used to create the object and
-    their version and version control commit hash. Not all keys may be present; if not
-    their values were not available in the search data.
+    Longer fields are shown as snippets preceded or followed by "...".
 
 
 =item Definition
@@ -1350,10 +1378,17 @@ guid has a value which is a KBaseSearchEngine.GUID
 parent_guid has a value which is a KBaseSearchEngine.GUID
 object_name has a value which is a string
 timestamp has a value which is an int
+type has a value which is a string
+type_ver has a value which is an int
+creator has a value which is a string
+copier has a value which is a string
+mod has a value which is a string
+method has a value which is a string
+module_ver has a value which is a string
+commit has a value which is a string
 parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 data has a value which is an UnspecifiedObject, which can hold any non-null object
 key_props has a value which is a reference to a hash where the key is a string and the value is a string
-object_props has a value which is a reference to a hash where the key is a string and the value is a string
 highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
 
 </pre>
@@ -1367,10 +1402,17 @@ guid has a value which is a KBaseSearchEngine.GUID
 parent_guid has a value which is a KBaseSearchEngine.GUID
 object_name has a value which is a string
 timestamp has a value which is an int
+type has a value which is a string
+type_ver has a value which is an int
+creator has a value which is a string
+copier has a value which is a string
+mod has a value which is a string
+method has a value which is a string
+module_ver has a value which is a string
+commit has a value which is a string
 parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 data has a value which is an UnspecifiedObject, which can hold any non-null object
 key_props has a value which is a reference to a hash where the key is a string and the value is a string
-object_props has a value which is a reference to a hash where the key is a string and the value is a string
 highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
 
 

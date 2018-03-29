@@ -35,6 +35,7 @@ import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.main.IndexerWorker;
+import kbasesearchengine.main.IndexerWorkerConfigurator;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.IndexingStorage;
@@ -181,8 +182,14 @@ public class IndexerIntegrationTest {
         System.out.println("Creating indexer worker");
         File tempDir = tempDirPath.resolve("WorkerTemp").toFile();
         tempDir.mkdirs();
-        worker = new IndexerWorker("test", Arrays.asList(weh), storage, indexStorage,
-                ss, tempDir, logger, null, 1000);
+        
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "test", tempDir.toPath(), logger)
+                .withStorage(storage, ss, indexStorage)
+                .withEventHandler(weh);
+        
+        worker = new IndexerWorker(wrkCfg.build());
+        
         System.out.println("Starting indexer worker");
         worker.startIndexer();
         System.out.println("Creating indexer coordinator");
@@ -322,9 +329,9 @@ public class IndexerIntegrationTest {
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/1/1"))).get(0);
         final Instant indexedTimestamp = indexedObj.getTimestamp().get();
         
-        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:1/1/1"))
+        final ObjectData expected = ObjectData.getBuilder(
+                new GUID("WS:1/1/1"), new SearchObjectType("EmptyAType", 1))
                 .withNullableObjectName("bar")
-                .withNullableType(new SearchObjectType("EmptyAType", 1))
                 .withNullableCreator(userToken.getUserName())
                 .withNullableModule("serv")
                 .withNullableMethod("meth")
@@ -364,9 +371,9 @@ public class IndexerIntegrationTest {
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/1/1"))).get(0);
         final Instant indexedTimestamp = indexedObj.getTimestamp().get();
         
-        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:1/1/1"))
+        final ObjectData expected = ObjectData.getBuilder(
+                new GUID("WS:1/1/1"), new SearchObjectType("OneString", 1))
                 .withNullableObjectName("bar")
-                .withNullableType(new SearchObjectType("OneString", 1))
                 .withNullableCreator(userToken.getUserName())
                 .withNullableMD5("9bb58f26192e4ba00f01e2e7b136bbd8")
                 .withNullableTimestamp(indexedTimestamp)
@@ -439,9 +446,9 @@ public class IndexerIntegrationTest {
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/2/1"))).get(0);
         final Instant indexedTimestamp2 = indexedObj2.getTimestamp().get();
         
-        final ObjectData expected1 = ObjectData.getBuilder(new GUID("WS:1/1/1"))
+        final ObjectData expected1 = ObjectData.getBuilder(
+                new GUID("WS:1/1/1"), new SearchObjectType("TwoVers", 2))
                 .withNullableObjectName("obj1")
-                .withNullableType(new SearchObjectType("TwoVers", 2))
                 .withNullableCreator(userToken.getUserName())
                 .withNullableMD5("d20dd9b7a7cd69471b2b13ae7593de90")
                 .withNullableTimestamp(indexedTimestamp1)
@@ -450,9 +457,9 @@ public class IndexerIntegrationTest {
                 .withKeyProperty("whoo", "thingy")
                 .build();
         
-        final ObjectData expected2 = ObjectData.getBuilder(new GUID("WS:1/2/1"))
+        final ObjectData expected2 = ObjectData.getBuilder(
+                new GUID("WS:1/2/1"), new SearchObjectType("TwoVers", 2))
                 .withNullableObjectName("obj2")
-                .withNullableType(new SearchObjectType("TwoVers", 2))
                 .withNullableCreator(userToken.getUserName())
                 .withNullableMD5("51368afbd22bcf7987b98ca28607c67d")
                 .withNullableTimestamp(indexedTimestamp2)
@@ -507,9 +514,9 @@ public class IndexerIntegrationTest {
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/2/1"))).get(0);
         final Instant indexedTimestamp2 = indexedObj2.getTimestamp().get();
         
-        final ObjectData expected1 = ObjectData.getBuilder(new GUID("WS:1/1/1"))
+        final ObjectData expected1 = ObjectData.getBuilder(
+                new GUID("WS:1/1/1"), new SearchObjectType("TwoVers", 1))
                 .withNullableObjectName("obj1")
-                .withNullableType(new SearchObjectType("TwoVers", 1))
                 .withNullableCreator(userToken.getUserName())
                 .withNullableMD5("d20dd9b7a7cd69471b2b13ae7593de90")
                 .withNullableTimestamp(indexedTimestamp1)
@@ -517,9 +524,9 @@ public class IndexerIntegrationTest {
                 .withKeyProperty("whee", "wugga")
                 .build();
         
-        final ObjectData expected2 = ObjectData.getBuilder(new GUID("WS:1/2/1"))
+        final ObjectData expected2 = ObjectData.getBuilder(
+                new GUID("WS:1/2/1"), new SearchObjectType("TwoVers", 2))
                 .withNullableObjectName("obj2")
-                .withNullableType(new SearchObjectType("TwoVers", 2))
                 .withNullableCreator(userToken.getUserName())
                 .withNullableMD5("51368afbd22bcf7987b98ca28607c67d")
                 .withNullableTimestamp(indexedTimestamp2)
@@ -564,9 +571,9 @@ public class IndexerIntegrationTest {
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/1/1"))).get(0);
         final Instant indexedTimestamp = indexedObj.getTimestamp().get();
         
-        final ObjectData expected = ObjectData.getBuilder(new GUID("WS:1/1/1"))
+        final ObjectData expected = ObjectData.getBuilder(
+                new GUID("WS:1/1/1"), new SearchObjectType("NoIndexRules", 1))
                 .withNullableObjectName("obj1")
-                .withNullableType(new SearchObjectType("NoIndexRules", 1))
                 .withNullableCreator(userToken.getUserName())
                 .withNullableMD5("d20dd9b7a7cd69471b2b13ae7593de90")
                 .withNullableTimestamp(indexedTimestamp)

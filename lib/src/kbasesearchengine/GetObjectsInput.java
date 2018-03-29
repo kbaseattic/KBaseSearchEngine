@@ -33,16 +33,13 @@ public class GetObjectsInput {
      * <p>Original spec-file type: PostProcessing</p>
      * <pre>
      * Rules for what to return about found objects.
-     * skip_info - do not include brief info for object ('guid,
-     *     'parent_guid', 'object_name' and 'timestamp' fields in
-     *     ObjectData structure),
      * skip_keys - do not include keyword values for object 
      *     ('key_props' field in ObjectData structure),
      * skip_data - do not include raw data for object ('data' and 
      *     'parent_data' fields in ObjectData structure),
      * include_highlight - include highlights of fields that
      *      matched query,
-     * ids_only - shortcut to mark all three skips as true and 
+     * ids_only - shortcut to mark both skips as true and 
      *      include_highlight as false.
      * </pre>
      * 
@@ -70,16 +67,13 @@ public class GetObjectsInput {
      * <p>Original spec-file type: PostProcessing</p>
      * <pre>
      * Rules for what to return about found objects.
-     * skip_info - do not include brief info for object ('guid,
-     *     'parent_guid', 'object_name' and 'timestamp' fields in
-     *     ObjectData structure),
      * skip_keys - do not include keyword values for object 
      *     ('key_props' field in ObjectData structure),
      * skip_data - do not include raw data for object ('data' and 
      *     'parent_data' fields in ObjectData structure),
      * include_highlight - include highlights of fields that
      *      matched query,
-     * ids_only - shortcut to mark all three skips as true and 
+     * ids_only - shortcut to mark both skips as true and 
      *      include_highlight as false.
      * </pre>
      * 
@@ -93,16 +87,13 @@ public class GetObjectsInput {
      * <p>Original spec-file type: PostProcessing</p>
      * <pre>
      * Rules for what to return about found objects.
-     * skip_info - do not include brief info for object ('guid,
-     *     'parent_guid', 'object_name' and 'timestamp' fields in
-     *     ObjectData structure),
      * skip_keys - do not include keyword values for object 
      *     ('key_props' field in ObjectData structure),
      * skip_data - do not include raw data for object ('data' and 
      *     'parent_data' fields in ObjectData structure),
      * include_highlight - include highlights of fields that
      *      matched query,
-     * ids_only - shortcut to mark all three skips as true and 
+     * ids_only - shortcut to mark both skips as true and 
      *      include_highlight as false.
      * </pre>
      * 

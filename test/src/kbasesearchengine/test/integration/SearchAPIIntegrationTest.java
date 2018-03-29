@@ -312,7 +312,9 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
-                .withObjectProps(ImmutableMap.of("creator", "creator" , "type", "SourceTags", "type_ver", "1"))
+                .withCreator("creator")
+                .withType("SourceTags")
+                .withTypeVer(1L)
                 .withObjectName("objname1")
                 .withTimestamp(10000L);
         
@@ -339,7 +341,9 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony")))
                 .withGuid("WS:1/2/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony"))
-                .withObjectProps(ImmutableMap.of("creator", "creator" , "type", "SourceTags", "type_ver", "1"))
+                .withCreator("creator")
+                .withType("SourceTags")
+                .withTypeVer(1L)
                 .withObjectName("objname2")
                 .withTimestamp(10000L);
         
@@ -356,7 +360,7 @@ public class SearchAPIIntegrationTest {
         assertThat("incorrect object count", res2.getObjects().size(), is(1));
         TestCommon.compare(res2.getObjects().get(0), expected1);
     }
-    
+
 //    @Test
 //    public void narrativeDecoration() throws Exception {
 //        final long wsdate = WorkspaceEventHandler.parseDateToEpochMillis(wsCli1.createWorkspace(
@@ -442,7 +446,9 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
-                .withObjectProps(ImmutableMap.of("creator", "creator", "type", "SourceTags", "type_ver", "1"))
+                .withCreator("creator")
+                .withType("SourceTags")
+                .withTypeVer(1L)
                 .withObjectName("objname1")
                 .withHighlight(highlight)
                 .withTimestamp(10000L);
@@ -565,7 +571,7 @@ public class SearchAPIIntegrationTest {
         final Map<String, Object> expected = ImmutableMap.of(
                 "state", "OK",
                 "message", "",
-                "version", "0.1.0-dev1");
+                "version", "0.1.0");
         
         assertThat("incorrect status output", res, is(expected));
     }
