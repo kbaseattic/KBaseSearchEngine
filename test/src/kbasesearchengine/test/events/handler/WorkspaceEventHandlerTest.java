@@ -377,7 +377,7 @@ public class WorkspaceEventHandlerTest {
     }
 
     @Test
-    public void loadWithNullSubActionsAndPublic() throws Exception {
+    public void loadPublic() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
         final WorkspaceClient cloned = mock(WorkspaceClient.class);
         final WorkspaceClient wscli = mock(WorkspaceClient.class);
@@ -388,8 +388,7 @@ public class WorkspaceEventHandlerTest {
                 .thenReturn(new UObject(new GetObjects2Results().withData(Arrays.asList(
                         new ObjectData()
                                 .withData(new UObject(ImmutableMap.of("genome", "data")))
-                                .withProvenance(Arrays.asList(new ProvenanceAction()
-                                        .withSubactions(null)))
+                                .withProvenance(Collections.emptyList())
                                 .withCreator("creator")
                                 .withCopySourceInaccessible(0L)
                                 .withInfo(objTuple(2, "objname", "sometype", "date", 3, "copier",
