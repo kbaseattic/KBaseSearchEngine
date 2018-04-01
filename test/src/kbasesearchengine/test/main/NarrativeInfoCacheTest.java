@@ -10,6 +10,7 @@ import kbasesearchengine.main.NarrativeInfo;
 import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.wsTuple;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
@@ -111,26 +112,30 @@ public class NarrativeInfoCacheTest {
     public void expiresOnSize() throws Exception {
         // test that the cache expires values when it reaches the max size
         final NarrativeInfoProvider wrapped = mock(NarrativeInfoProvider.class);
-        final NarrativeInfoCache cache = new NarrativeInfoCache(wrapped, 10000, 14);
+        final NarrativeInfoCache cache = new NarrativeInfoCache(wrapped, 10000, 15);
 
         when(wrapped.findNarrativeInfo(65L)).thenReturn(
                 new NarrativeInfo(null, null, 1518126945000L, "owner1"),
                 new NarrativeInfo(null, null, 1518126957000L, "owner11"),
+                new NarrativeInfo(null, null, 1518126959000L, "owner111"),
                 null);
         when(wrapped.findNarrativeInfo(2L)).thenReturn(
                 new NarrativeInfo("narrname2", 2L, 20000L, "owner2"),
                 new NarrativeInfo("narrname22", 22L, 22000L, "owner22"),
+                new NarrativeInfo("narrname222", 222L, 222000L, "owner222"),
                 null);
         when(wrapped.findNarrativeInfo(3L)).thenReturn(
                 new NarrativeInfo("narrname3", 3L, 30000L, "owner3"),
                 new NarrativeInfo("narrname33", 33L, 33000L, "owner33"),
+                new NarrativeInfo("narrname333", 333L, 333000L, "owner333"),
                 null);
         when(wrapped.findNarrativeInfo(42L)).thenReturn(
                 new NarrativeInfo(null, null, 1518126945678L, "user1"),
                 new NarrativeInfo("mylovelynarrative", 4L, 1518126950678L, "user2"),
+                new NarrativeInfo("mytestnarrative", 44L, 1518126950678L, "user3"),
                 null);
 
-        // load 12 narrative infos into a max 14 cache
+        // load 12 narrative infos into a max 15 cache
         compare(cache.findNarrativeInfo(65L),
                 new NarrativeInfo(null, null, 1518126945000L, "owner1"));
         compare(cache.findNarrativeInfo(2L),
@@ -150,14 +155,36 @@ public class NarrativeInfoCacheTest {
         compare(cache.findNarrativeInfo(42L),
                 new NarrativeInfo(null, null, 1518126945678L, "user1"));
 
-        // check that the oldest value had expired
+        // check that with every access, the oldest value had expired
+        // 65 had expired. When this is loaded, 2 would be removed from cache
         compare(cache.findNarrativeInfo(65L),
                 new NarrativeInfo(null, null, 1518126957000L, "owner11"));
-        //TODO: Expect that the following tests would return "owner2", "owner3" and "user1". But they return the following instead.
+        // 2 is not in cache. Its next value is cached. So 3 would be removed from cache
         compare(cache.findNarrativeInfo(2L),
                 new NarrativeInfo("narrname22", 22L, 22000L, "owner22"));
+        // 3 is not in cache. Its next value is cached. So 42 would be removed from cache
         compare(cache.findNarrativeInfo(3L),
                 new NarrativeInfo("narrname33", 33L, 33000L, "owner33"));
+        // 42 is not in cache. Its next value is cached. So now 65 would be removed from cache
+        compare(cache.findNarrativeInfo(42L),
+                new NarrativeInfo("mylovelynarrative", 4L, 1518126950678L, "user2"));
+
+        // 65 not in cache. Its next value is cached. But this removes 2 from cache
+        compare(cache.findNarrativeInfo(65L),
+                new NarrativeInfo(null, null, 1518126959000L, "owner111"));
+        // 3 is still in cache with the same value
+        compare(cache.findNarrativeInfo(3L),
+                new NarrativeInfo("narrname33", 33L, 33000L, "owner33"));
+        // 42 is still in cache with the same value
+        compare(cache.findNarrativeInfo(42L),
+                new NarrativeInfo("mylovelynarrative", 4L, 1518126950678L, "user2"));
+        // 2 not in cache. The next value of 2 is cached now. 65 is removed from cache
+        compare(cache.findNarrativeInfo(2L),
+                new NarrativeInfo("narrname222", 222L, 222000L, "owner222"));
+        // 3 is in cache
+        compare(cache.findNarrativeInfo(3L),
+                new NarrativeInfo("narrname33", 33L, 33000L, "owner33"));
+        //42 is in cache
         compare(cache.findNarrativeInfo(42L),
                 new NarrativeInfo("mylovelynarrative", 4L, 1518126950678L, "user2"));
     }

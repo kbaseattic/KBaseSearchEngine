@@ -116,14 +116,13 @@ public class AuthCacheTest {
                 ImmutableMap.of("user1", "display1", "user2", "display2"),
                 ImmutableMap.of("user1", "display11", "user2", "display22"),
                 null);
-        when(ticker.read()).thenReturn(0L, 5000000001L, 10000000001L, 15000000001L, 20000000001L);
+        when(ticker.read()).thenReturn(0L, 0L, 5000000001L, 5000000001L, 10000000001L, 10000000001L,
+                15000000001L, 15000000001L, 20000000001L, 25000000001L);
 
         assertThat("Incorrect display names", cache.findUserDisplayNames(set("user1", "user2")),
                 is(ImmutableMap.of("user1", "display1", "user2", "display2")));
-        // TODO:  Not clear why the following test is failing,
-        // returning "display11" and "display22", expected "display1" and "display2"
-//        assertThat("Incorrect display names", cache.findUserDisplayNames(set("user1", "user2")),
-//                is(ImmutableMap.of("user1", "display1", "user2", "display2")));
+        assertThat("Incorrect display names", cache.findUserDisplayNames(set("user1", "user2")),
+                is(ImmutableMap.of("user1", "display1", "user2", "display2")));
 
         assertThat("Incorrect display names", cache.findUserDisplayNames(set("user1", "user2")),
                 is(ImmutableMap.of("user1", "display11", "user2", "display22")));
@@ -140,7 +139,7 @@ public class AuthCacheTest {
         final AuthCache cache = new AuthCache(
                 wrapped,
                 10000,
-                5);
+                4);
 
         when(wrapped.findUserDisplayNames(set("user1"))).thenReturn(
                 ImmutableMap.of("user1", "display1"),
@@ -179,7 +178,7 @@ public class AuthCacheTest {
                 ImmutableMap.of("user5", "display55", "user6", "display66"),
                 null);
 
-        // load 4 auth infos into a max 5 cache
+        // load 4 auth infos into a max 4 cache
         assertThat("Incorrect display names", cache.findUserDisplayNames(set("user1", "user2")),
                 is(ImmutableMap.of("user1", "display1", "user2", "display2")));
 
@@ -194,18 +193,18 @@ public class AuthCacheTest {
                 is(ImmutableMap.of("user3", "display3", "user4", "display4")));
 
         // force an expiration based on cache size
+        // This removes 'user1' and 'user2'
         assertThat("Incorrect display names", cache.findUserDisplayNames(set("user5", "user6")),
                 is(ImmutableMap.of("user5", "display5", "user6", "display6")));
-
-        // TODO: Need to check the following test. Supposed to return Display11 and Display22??
+        // Next value of 'user1' and 'user2' are cached which would remove 'user3' and 'user4' from the cache
         assertThat("Incorrect display names", cache.findUserDisplayNames(set("user1", "user2")),
-                is(ImmutableMap.of("user1", "display1", "user2", "display2")));
-
+                is(ImmutableMap.of("user1", "display11", "user2", "display22")));
+        // Next value of 'user3' and 'user4' are cached which would remove 'user5' and 'user6' from the cache
         assertThat("Incorrect display names", cache.findUserDisplayNames(set("user3", "user4")),
-                is(ImmutableMap.of("user3", "display3", "user4", "display4")));
-
+                is(ImmutableMap.of("user3", "display33", "user4", "display44")));
+        // Next value of 'user5' and 'user6' are cached which would remove 'user1' and 'user2' from the cache
         assertThat("Incorrect display names", cache.findUserDisplayNames(set("user5", "user6")),
-                is(ImmutableMap.of("user5", "display5", "user6", "display6")));
+                is(ImmutableMap.of("user5", "display55", "user6", "display66")));
     }
 
     @Test
