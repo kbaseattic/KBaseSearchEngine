@@ -783,8 +783,6 @@ public class WorkspaceEventHandlerTest {
 
         List<Tuple11<Long, String, String, String,
                 Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
-        objList.add(objTuple(5L, "someName", "sometype", "date", 3L, "copier",
-                5L, "wsname", "checksum", 44, Collections.emptyMap()));
 
         when(wscli.administer(any()))
                 // for deleted workspace check
