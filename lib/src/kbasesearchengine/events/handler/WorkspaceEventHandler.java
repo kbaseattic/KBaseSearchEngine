@@ -743,11 +743,6 @@ public class WorkspaceEventHandler implements EventHandler {
     private String getLatestName(StatusEvent ev)
                      throws IndexingException,
                             RetriableIndexingException {
-        String latestName = null;
-
-        if (ev.getNewName().isPresent()) {
-            latestName = ev.getNewName().get().toString();
-        }
 
         // wsid and objid of the object that the specified StatusEvent is an event for
         final long wsid = ev.getAccessGroupId().get();
@@ -755,43 +750,32 @@ public class WorkspaceEventHandler implements EventHandler {
 
         // check if name has changed and update state of lastestName
         try {
-            final String name = getObjectInfo(wsid, objid, Optional.absent()).
+            return getObjectInfo(wsid, objid, Optional.absent()).
                                                               getInfos().get(0).getE2();
-
-            latestName = name;
 
         } catch (IOException e) {
             throw handleException(e);
         } catch (JsonClientException e) {
             throw handleException(e);
         }
-
-        return latestName;
     }
 
     private Boolean getLatestIsPublic(StatusEvent ev)
                             throws IndexingException,
                                    RetriableIndexingException {
-
-        Boolean latestIsPublic = null;
-        Map<String, Object> command;
-
-        if (ev.isPublic().isPresent()) {
-            latestIsPublic = ev.isPublic().get().booleanValue();
-        }
+        String isPublic = null;
 
         try {
 
-            final String isPublic = getWorkspaceInfo(ev.getAccessGroupId().get()).getE6();
+            isPublic = getWorkspaceInfo(ev.getAccessGroupId().get()).getE6();
 
-            latestIsPublic = (isPublic == "n") ? false: true;
-        } catch (IOException ex) {
+                    } catch (IOException ex) {
             handleException(ex);
         } catch (JsonClientException ex) {
             handleException(ex);
         }
 
-        return latestIsPublic;
+        return (isPublic == "n") ? false: true;
     }
 
     @Override
