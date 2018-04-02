@@ -689,7 +689,7 @@ public class WorkspaceEventHandler implements EventHandler {
 
         // check if workspace is permanently deleted or marked as deleted
         try {
-            final Tuple9 tuple = getWorkspaceInfo(wsid);
+            getWorkspaceInfo(wsid);
         } catch (IOException ex) {
             handleException(ex);
         } catch (JsonClientException ex) {
@@ -700,6 +700,9 @@ public class WorkspaceEventHandler implements EventHandler {
                                 StatusEventType.DELETE_ALL_VERSIONS).
                         withNullableAccessGroupID(wsid).
                         withNullableObjectID(Long.toString(objid)).build();
+            }
+            else {
+                handleException(ex);
             }
         }
 
