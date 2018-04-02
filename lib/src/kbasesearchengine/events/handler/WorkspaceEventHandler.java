@@ -240,7 +240,7 @@ public class WorkspaceEventHandler implements EventHandler {
         final List<ObjectSpecification> getInfoInput = new ArrayList<>();
         getInfoInput.add(os);
 
-        Map<String, Object> command = new HashMap<>();
+        final Map<String, Object> command = new HashMap<>();
         command.put("command", "getObjectInfo");
         command.put("params", new GetObjectInfo3Params().withObjects(getInfoInput));
 
@@ -414,7 +414,7 @@ public class WorkspaceEventHandler implements EventHandler {
             final StatusEventType newType)
             throws RetriableIndexingException, IndexingException {
 
-        long workspaceId = (long) event.getEvent().getAccessGroupId().get();
+        final long workspaceId = (long) event.getEvent().getAccessGroupId().get();
         
         final long objcount;
         try {
@@ -687,13 +687,11 @@ public class WorkspaceEventHandler implements EventHandler {
         final int wsid = ev.getAccessGroupId().get();
         final long objid = Long.valueOf(ev.getAccessGroupObjectId().get()).longValue();
 
-        Map<String, Object> command;
-
         // check if workspace is permanently deleted or marked as deleted
         try {
             final Tuple9 tuple = getWorkspaceInfo(wsid);
         } catch (IOException ex) {
-            throw new RetriableIndexingException(ErrorType.OTHER, ex.getMessage());
+            handleException(ex);
         } catch (JsonClientException ex) {
             // hacky: if exception message is changed, this logic will silently fail
             if (ex.getMessage().contains("No workspace with id ")) {
@@ -706,6 +704,7 @@ public class WorkspaceEventHandler implements EventHandler {
         }
 
         // check if object is permanently deleted or marked as deleted
+        final Map<String, Object> command;
         command = new HashMap<>();
         command.put("command", "listObjects");
         command.put("params", new ListObjectsParams().
@@ -734,7 +733,7 @@ public class WorkspaceEventHandler implements EventHandler {
                         withNullableObjectID(Long.toString(objid)).build();
             }
         } catch (IOException ex) {
-            throw new RetriableIndexingException(ErrorType.OTHER, ex.getMessage());
+            handleException(ex);
         } catch (JsonClientException ex) {
             handleException(ex);
         }
@@ -751,7 +750,6 @@ public class WorkspaceEventHandler implements EventHandler {
             latestName = ev.getNewName().get().toString();
         }
 
-        Map<String, Object> command;
         // wsid and objid of the object that the specified StatusEvent is an event for
         final long wsid = ev.getAccessGroupId().get();
         final long objid = Long.decode(ev.getAccessGroupObjectId().get());
@@ -789,7 +787,7 @@ public class WorkspaceEventHandler implements EventHandler {
 
             latestIsPublic = (isPublic == "n") ? false: true;
         } catch (IOException ex) {
-            throw new RetriableIndexingException(ErrorType.OTHER, ex.getMessage());
+            handleException(ex);
         } catch (JsonClientException ex) {
             handleException(ex);
         }

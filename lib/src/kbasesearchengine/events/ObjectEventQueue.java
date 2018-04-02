@@ -84,6 +84,12 @@ public class ObjectEventQueue {
         return isObjectLevelEvent(event.getEvent());
     }
 
+
+    /**
+     *
+     * @param event A status event.
+     * @return True if the specified event has an object level event type. Else return false.
+     */
     public static boolean isObjectLevelEvent(final StatusEvent event) {
         return OBJ_LVL_EVENTS.contains(event.getEventType());
     }
