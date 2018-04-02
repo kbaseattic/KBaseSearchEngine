@@ -92,7 +92,8 @@ public interface EventHandler {
 
     /** Takes the specified event and returns a new event object that is a clone
      * of the specified event and that reflects the latest state of the object
-     * that it is an event for.
+     * that it is an event for if the state of the state of the object has changed. If the
+     * state of the object has not changed, the same event object is returned.
      *
      * @param ev event to update
      * @return a new updated event
