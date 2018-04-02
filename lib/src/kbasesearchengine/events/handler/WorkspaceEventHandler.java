@@ -720,12 +720,8 @@ public class WorkspaceEventHandler implements EventHandler {
             final List<List> objList = ws.getClient().administer(new UObject(command))
                     .asClassInstance(List.class);
 
-            for (List obj : objList) {
-                final long id = ((Number) obj.get(0)).longValue();
-                if (id == objid) {
-                    objidExists = true;
-                    break;
-                }
+            if(objList != null && objList.size() > 0) {
+                objidExists = true;
             }
 
             if (!objidExists) {
