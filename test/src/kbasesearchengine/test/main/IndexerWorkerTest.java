@@ -1133,7 +1133,7 @@ public class IndexerWorkerTest {
                     got, new FatalIndexingException(ErrorType.OTHER, "bonk"));
         }
         
-        final String errmsg = "Retriable error in indexer, retry %s: " +
+        final String errmsg = "Fatal retriable error in indexer, retry %s: " +
                 "kbasesearchengine.events.exceptions.FatalRetriableIndexingException: bonk";
         
         verify(logger).logError(String.format(errmsg, 1));
@@ -1356,8 +1356,8 @@ public class IndexerWorkerTest {
                     new FatalIndexingException(ErrorType.OTHER, "Storage is also super broke yo"));
         }
         
-        final String errmsg = "Retriable error in indexer for event NEW_VERSION with parent ID " +
-                "parentID, retry %s: " +
+        final String errmsg = "Fatal retriable error in indexer for event NEW_VERSION " +
+                "with parent ID parentID, retry %s: " +
                 "kbasesearchengine.events.exceptions.FatalRetriableIndexingException: " +
                 "Storage is also super broke yo";
         

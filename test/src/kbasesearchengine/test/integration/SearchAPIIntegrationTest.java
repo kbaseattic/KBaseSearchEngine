@@ -311,7 +311,9 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
-                .withObjectProps(ImmutableMap.of("creator", "creator" , "type", "SourceTags", "type_ver", "1"))
+                .withCreator("creator")
+                .withType("SourceTags")
+                .withTypeVer(1L)
                 .withObjectName("objname1")
                 .withTimestamp(10000L);
         
@@ -337,7 +339,9 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony")))
                 .withGuid("WS:1/2/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony"))
-                .withObjectProps(ImmutableMap.of("creator", "creator" , "type", "SourceTags", "type_ver", "1"))
+                .withCreator("creator")
+                .withType("SourceTags")
+                .withTypeVer(1L)
                 .withObjectName("objname2")
                 .withTimestamp(10000L);
         
@@ -385,10 +389,9 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
-                .withObjectProps(ImmutableMap.of(
-                        "creator", "creator",
-                        "type", "Deco",
-                        "type_ver", "1"))
+                .withCreator("creator")
+                .withType("Deco")
+                .withTypeVer(1L)
                 .withObjectName("objname1")
                 .withTimestamp(10000L);
         
@@ -438,7 +441,9 @@ public class SearchAPIIntegrationTest {
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
-                .withObjectProps(ImmutableMap.of("creator", "creator", "type", "SourceTags", "type_ver", "1"))
+                .withCreator("creator")
+                .withType("SourceTags")
+                .withTypeVer(1L)
                 .withObjectName("objname1")
                 .withHighlight(highlight)
                 .withTimestamp(10000L);

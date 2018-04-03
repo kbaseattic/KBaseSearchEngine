@@ -6,7 +6,7 @@ versions:
   - path: name
     full-text: true
   - path: type
-    keyword-type: string
+    keyword-type: keyword
     ui-name: Pangenome Type
   - path: genome_refs/{size}
     keyword-type: integer

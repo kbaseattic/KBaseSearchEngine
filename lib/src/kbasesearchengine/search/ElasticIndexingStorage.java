@@ -327,12 +327,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final GUID pguid,
             final Map<GUID, ParsedObject> idToObj)
             throws IOException, IndexingConflictException {
+        if (rule.getSubObjectType().isPresent() && idToObj.isEmpty()) {
+            return; // nothing to index. Only parent objects should get general records (see below)
+        }
         final Map<GUID, ParsedObject> idToObjCopy = new HashMap<>(idToObj);
         String indexName = checkIndex(rule, false);
         for (GUID id : idToObjCopy.keySet()) {
             GUID parentGuid = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
                     id.getAccessGroupObjectId(), id.getVersion(), null, null);
             if (!parentGuid.equals(pguid)) {
+                //TODO CODE make this something that the worker error handling can work with
                 throw new IllegalStateException("Object GUID doesn't match parent GUID");
             }
         }
@@ -1114,7 +1118,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public List<ObjectData> getObjectsByIds(Set<GUID> ids) throws IOException {
         PostProcessing pp = new PostProcessing();
-        pp.objectInfo = true;
         pp.objectData = true;
         pp.objectKeys = true;
         return getObjectsByIds(ids, pp);
@@ -1168,31 +1171,27 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final Map<String, Object> obj,
             final Map<String, List<String>> highlight,
             final PostProcessing pp) {
-        // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
 
         GUID guid = new GUID((String) obj.get("guid"));
-        final ObjectData.Builder b = ObjectData.getBuilder(guid);
-        if (pp.objectInfo) {
-            b.withNullableObjectName((String) obj.get(OBJ_NAME));
-            b.withNullableCreator((String) obj.get(OBJ_CREATOR));
-            b.withNullableCopier((String) obj.get(OBJ_COPIER));
-            b.withNullableModule((String) obj.get(OBJ_PROV_MODULE));
-            b.withNullableMethod((String) obj.get(OBJ_PROV_METHOD));
-            b.withNullableModuleVersion((String) obj.get(OBJ_PROV_MODULE_VERSION));
-            b.withNullableCommitHash((String) obj.get(OBJ_PROV_COMMIT_HASH));
-            b.withNullableMD5((String) obj.get(OBJ_MD5));
-            b.withNullableType(new SearchObjectType(
-                    (String) obj.get(SEARCH_OBJ_TYPE),
-                    (Integer) obj.get(SEARCH_OBJ_TYPE_VER)));
-            // sometimes this is a long, sometimes it's an int
-            b.withNullableTimestamp(Instant.ofEpochMilli(
-                    ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
-            @SuppressWarnings("unchecked")
-            final List<String> sourceTags = (List<String>) obj.get(SOURCE_TAGS);
-            if (sourceTags != null) {
-                for (final String tag: sourceTags) {
-                    b.withSourceTag(tag);
-                }
+        final ObjectData.Builder b = ObjectData.getBuilder(guid, new SearchObjectType(
+                (String) obj.get(SEARCH_OBJ_TYPE),
+                (Integer) obj.get(SEARCH_OBJ_TYPE_VER)));
+        b.withNullableObjectName((String) obj.get(OBJ_NAME));
+        b.withNullableCreator((String) obj.get(OBJ_CREATOR));
+        b.withNullableCopier((String) obj.get(OBJ_COPIER));
+        b.withNullableModule((String) obj.get(OBJ_PROV_MODULE));
+        b.withNullableMethod((String) obj.get(OBJ_PROV_METHOD));
+        b.withNullableModuleVersion((String) obj.get(OBJ_PROV_MODULE_VERSION));
+        b.withNullableCommitHash((String) obj.get(OBJ_PROV_COMMIT_HASH));
+        b.withNullableMD5((String) obj.get(OBJ_MD5));
+        // sometimes this is a long, sometimes it's an int
+        b.withNullableTimestamp(Instant.ofEpochMilli(
+                ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
+        @SuppressWarnings("unchecked")
+        final List<String> sourceTags = (List<String>) obj.get(SOURCE_TAGS);
+        if (sourceTags != null) {
+            for (final String tag: sourceTags) {
+                b.withSourceTag(tag);
             }
         }
         if (pp.objectData) {
@@ -1550,8 +1549,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put("from", pagination.start);
         doc.put("size", pagination.count);
 
-        boolean loadObjects = pp != null &&
-                (pp.objectInfo || pp.objectData || pp.objectKeys || pp.objectHighlight);
+        boolean loadObjects = pp != null && (pp.objectData || pp.objectKeys || pp.objectHighlight);
         if (!loadObjects) {
             doc.put("_source", Arrays.asList("guid"));
         }

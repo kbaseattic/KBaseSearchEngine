@@ -8,12 +8,12 @@ versions:
   primary-key-path: id
   indexing-rules:
   - path: id
-    keyword-type: string
+    keyword-type: keyword
     ui-name: ID
   - path: function
     full-text: true
   - path: orthologs/[*]/0
     transform: values
-    keyword-type: string
+    keyword-type: keyword
     key-name: ortholog_genes
     ui-name: Ortholog Genes

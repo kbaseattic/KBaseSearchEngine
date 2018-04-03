@@ -328,7 +328,6 @@ public class IndexerWorkerIntegrationTest {
                 .build();
         worker.processEvent(ev);
         PostProcessing pp = new PostProcessing();
-        pp.objectInfo = true;
         pp.objectData = true;
         pp.objectKeys = true;
 
@@ -477,7 +476,6 @@ public class IndexerWorkerIntegrationTest {
                 AccessFilter.create().withAccessGroups(accessGroupId), null).guids;
         if (debugOutput) {
             PostProcessing pp = new PostProcessing();
-            pp.objectInfo = true;
             pp.objectData = true;
             pp.objectKeys = true;
             System.out.println("DEBUG: " + storage.getObjectsByIds(ids, pp));

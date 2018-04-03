@@ -57,7 +57,7 @@ module KBaseSearchEngine {
         string object_name;
         MatchValue timestamp;
         boolean exclude_subobjects;
-        mapping<string, MatchValue> lookupInKeys;
+        mapping<string, MatchValue> lookup_in_keys;
         list<string> source_tags;
         boolean source_tags_blacklist;
     } MatchFilter;
@@ -126,25 +126,20 @@ module KBaseSearchEngine {
 
     /*
       Rules for what to return about found objects.
-      skip_info - do not include brief info for object ('guid,
-          'parent_guid', 'object_name' and 'timestamp' fields in
-          ObjectData structure),
       skip_keys - do not include keyword values for object 
           ('key_props' field in ObjectData structure),
       skip_data - do not include raw data for object ('data' and 
           'parent_data' fields in ObjectData structure),
       include_highlight - include highlights of fields that
            matched query,
-      ids_only - shortcut to mark all three skips as true and 
+      ids_only - shortcut to mark both skips as true and 
            include_highlight as false.
     */
     typedef structure {
         boolean ids_only;
-        boolean skip_info;
         boolean skip_keys;
         boolean skip_data;
         boolean include_highlight;
-        list<string> data_includes;
     } PostProcessing;
 
     /*
@@ -168,28 +163,51 @@ module KBaseSearchEngine {
     } SearchObjectsInput;
 
     /*
-      Properties of found object including metadata, raw data and
-          keywords.
+      Properties of an object including metadata, raw data and keywords.
+      GUID guid - the object's guid.
+      GUID parent_guid - the guid of the object's parent if the object is a subobject (e.g.
+          features for genomes).
+      object_name - the object's name.
+      timestamp - the creation date for the object in milliseconds since the epoch.
+      string type - the type of the data in the search index.
+      int type_ver - the version of the search type.
+      string creator - the username of the user that created that data.
+      string copier - if this instance of the data is a copy, the username of the user that
+          copied the data.
+      string mod - the name of the KBase SDK module that was used to create the data.
+      string method - the name of the method in the KBase SDK module that was used to create the
+          data.
+      string module_ver - the version of the KBase SDK module that was used to create the data.
+      string commit - the version control commit hash of the KBase SDK module that was used to
+          create the data. 
+      parent_data - raw data extracted from the subobject's parent object. The data contents will
+          vary from object to object. Null if the object is not a subobject.
+      data - raw data extracted from the object. The data contents will vary from object to object.
+      key_props - keyword properties of the object. These fields have been extracted from the object
+         and possibly transformed based on the search specification for the object.
+         The contents will vary from object to object.
       mapping<string, list<string>> highlight - The keys are the field names and the list 
           contains the sections in each field that matched the search query. Fields with no
           hits will not be available. Short fields that matched are shown in their entirety.
           Longer fields are shown as snippets preceded or followed by "...".     
-      mapping<string, string> object_props - general properties for all objects. This mapping
-          contains the keys 'creator', 'copied', 'module', 'method', 'module_ver', and 'commit' -
-          respectively the user that originally created the object, the user that copied this
-          incarnation of the object, and the module and method used to create the object and
-          their version and version control commit hash. Not all keys may be present; if not
-          their values were not available in the search data.
     */
     typedef structure {
         GUID guid;
         GUID parent_guid;
         string object_name;
         int timestamp;
+        string type;
+        int type_ver;
+        string creator;
+        string copier;
+        string mod;
+        string method;
+        string module_ver;
+        string commit;
+        
         UnspecifiedObject parent_data;
         UnspecifiedObject data;
         mapping<string, string> key_props;
-        mapping<string, string> object_props;
         mapping<string, list<string>> highlight;
     } ObjectData;
 
