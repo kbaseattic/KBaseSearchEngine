@@ -172,7 +172,6 @@ public class SearchAPIIntegrationTest {
         searchCli = new KBaseSearchEngineClient(
                 new URL("http://localhost:" + searchServer.getServerPort()), userToken);
         searchCli.setIsInsecureHttpConnectionAllowed(true);
-        
     }
     
     private static void installSearchTypes(final Path target) throws IOException {
@@ -286,6 +285,8 @@ public class SearchAPIIntegrationTest {
     
     @Test
     public void sourceTags() throws Exception {
+        System.out.println("==================== sourceTags  ==================================");
+
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("sourceTags"));
         
@@ -361,57 +362,64 @@ public class SearchAPIIntegrationTest {
         TestCommon.compare(res2.getObjects().get(0), expected1);
     }
 
-//    @Test
-//    public void narrativeDecoration() throws Exception {
-//        final long wsdate = WorkspaceEventHandler.parseDateToEpochMillis(wsCli1.createWorkspace(
-//                new CreateWorkspaceParams()
-//                        .withWorkspace("decorate")
-//                        .withMeta(ImmutableMap.of(
-//                                "narrative", "6",
-//                                "narrative_nice_name", "Kevin")))
-//                .getE4());
-//
-//        indexStorage.indexObjects(
-//                ObjectTypeParsingRules.getBuilder(
-//                        new SearchObjectType("Deco", 1),
-//                        new StorageObjectType("foo", "bar"))
-//                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
-//                                .build())
-//                        .build(),
-//                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator")
-//                        .build(),
-//                Instant.ofEpochMilli(10000),
-//                null,
-//                new GUID("WS:1/1/1"),
-//                ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
-//                        "{\"whee\": \"imaprettypony1\"}",
-//                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
-//                false);
-//
-//        final ObjectData expected1 = new ObjectData()
-//                .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
-//                .withGuid("WS:1/1/1")
-//                .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
-//                .withObjectProps(ImmutableMap.of(
-//                        "creator", "creator",
-//                        "type", "Deco",
-//                        "type_ver", "1"))
-//                .withObjectName("objname1")
-//                .withTimestamp(10000L);
-//
-//        final SearchObjectsOutput res = searchObjects(new MatchFilter());
-//
-//        assertThat("incorrect object count", res.getObjects().size(), is(1));
-//        TestCommon.compare(res.getObjects().get(0), expected1);
-//
-//        final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
-//                1L, narrInfoTuple("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
-//
-//        NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
-//    }
+    @Test
+    public void narrativeDecoration() throws Exception {
+
+        System.out.println("==================== narrativeDecoration  ==================================");
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("dummyWS1"));
+
+        final long wsdate = WorkspaceEventHandler.parseDateToEpochMillis(wsCli1.createWorkspace(
+                new CreateWorkspaceParams()
+                        .withWorkspace("decorate")
+                        .withMeta(ImmutableMap.of(
+                                "narrative", "6",
+                                "narrative_nice_name", "Kevin")))
+                .getE4());
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Deco", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname11", "creator11")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2/1/1"),
+                ImmutableMap.of(new GUID("WS:2/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
+                false);
+
+        final ObjectData expected1 = new ObjectData()
+                .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
+                .withGuid("WS:2/1/1")
+                .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
+                .withCreator("creator11")
+                .withType("Deco")
+                .withTypeVer(1L)
+                .withObjectName("objname11")
+                .withTimestamp(10000L);
+
+        final SearchObjectsOutput res = searchObjects(new MatchFilter());
+
+        assertThat("incorrect object count", res.getObjects().size(), is(1));
+        TestCommon.compare(res.getObjects().get(0), expected1);
+
+        final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
+                2L, narrInfoTuple("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
+
+        NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
+        System.out.println("======================================================");
+    }
 
     @Test
     public void highlightTest () throws Exception{
+        System.out.println("==================== highlightTest  ==================================");
+
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("highlight"));
 
@@ -583,6 +591,8 @@ public class SearchAPIIntegrationTest {
     
     @Test
     public void pruneNarrative() throws Exception {
+        System.out.println("==================== pruneNarrative  ==================================");
+
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("narprune"));
         
@@ -652,6 +662,8 @@ public class SearchAPIIntegrationTest {
     
     @Test
     public void authClientGetDisplayNames() throws Exception {
+        System.out.println("==================== authClientGetDisplayNames  ==================================");
+
         final TemporaryAuth2Client client = new TemporaryAuth2Client(authURL);
         assertThat("incorrect users", client.getUserDisplayNames(
                 userToken.getToken(), set("user1", "user2")),
@@ -660,6 +672,8 @@ public class SearchAPIIntegrationTest {
     
     @Test
     public void authClientGetDisplayNamesEmptyInput() throws Exception {
+        System.out.println("==================== authClientGetDisplayNamesEmptyInput  ==================================");
+
         final TemporaryAuth2Client client = new TemporaryAuth2Client(authURL);
         assertThat("incorrect users", client.getUserDisplayNames(userToken.getToken(), set()),
                 is(Collections.emptyMap()));
@@ -667,6 +681,8 @@ public class SearchAPIIntegrationTest {
     
     @Test
     public void authClientGetDisplayNamesServerError() throws Exception {
+        System.out.println("==================== authClientGetDisplayNamesServerError  ==================================");
+
         final TemporaryAuth2Client client = new TemporaryAuth2Client(
                 new URL("http://localhost:" + auth.getServerPort()));
         try {
@@ -686,6 +702,8 @@ public class SearchAPIIntegrationTest {
     
     @Test
     public void authClientFailConstruct() throws Exception {
+        System.out.println("==================== authClientFailConstruct  ==================================");
+
         try {
             new TemporaryAuth2Client(null);
             fail("expected exception");
@@ -696,6 +714,8 @@ public class SearchAPIIntegrationTest {
     
     @Test
     public void authClientgetDisplayNamesBadInput() {
+        System.out.println("==================== authClientgetDisplayNamesBadInput  ==================================");
+
         failAuthClientGetDisplayNames(null, set(),
                 new IllegalArgumentException("token cannot be null or whitespace only"));
         failAuthClientGetDisplayNames("   \t   \n ", set(),
