@@ -378,7 +378,6 @@ public class IndexerWorkerIntegrationTest {
         Set<GUID> ret = storage.searchIds(objTypes, MatchFilter.getBuilder().build(),
                 null, af, null).guids;
         PostProcessing pp = new PostProcessing();
-        pp.objectInfo = true;
         pp.objectData = true;
         pp.objectKeys = true;
         storage.getObjectsByIds(ret, pp);

@@ -1508,13 +1508,13 @@ public class ElasticIndexingStorageTest {
                         .toSubObjectRule(
                                 "subtype", new ObjectJsonPath("/foo"), new ObjectJsonPath("/bar"))
                         .build(),
-                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "someguy").build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "someguy").withIsPublic(true).build(),
                 Instant.ofEpochMilli(10000L),
                 "{}",
                 new GUID("WS:1/2/3"),
-                Collections.emptyMap(), // this should not generally happen for subobjects,
+                Collections.emptyMap()  // this should not generally happen for subobjects,
                                         // but can in pathological cases
-                true);
+                );
         
         final FoundHits res = indexStorage.searchObjects(
                 Collections.emptyList(),
