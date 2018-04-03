@@ -180,15 +180,21 @@ public class IndexerWorker implements Stoppable {
             final int retrycount,
             final Optional<StatusEventWithId> event,
             final RetriableIndexingException e) {
+        String prefix = "Retriable";
+        if (e instanceof FatalRetriableIndexingException) {
+            // add isFatal() method or something if the exception hierarchy gets much bigger
+            prefix = "Fatal retriable";
+        }
         final String msg;
         if (event.isPresent()) {
-            msg = String.format("Retriable error in indexer for event %s %s%s, retry %s",
+            msg = String.format("%s error in indexer for event %s %s%s, retry %s",
+                    prefix,
                     event.get().getEvent().getEventType(),
                     event.get().isParentId() ? "with parent ID " : "",
                     event.get().getID().getId(),
                     retrycount);
         } else {
-            msg = String.format("Retriable error in indexer, retry %s", retrycount);
+            msg = String.format("%s error in indexer, retry %s", prefix, retrycount);
         }
         logError(msg, e);
     }
