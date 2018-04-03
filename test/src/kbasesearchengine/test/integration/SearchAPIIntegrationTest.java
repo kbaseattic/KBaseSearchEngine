@@ -285,8 +285,6 @@ public class SearchAPIIntegrationTest {
     
     @Test
     public void sourceTags() throws Exception {
-        System.out.println("==================== sourceTags  ==================================");
-
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("sourceTags"));
         
@@ -364,8 +362,6 @@ public class SearchAPIIntegrationTest {
 
     @Test
     public void narrativeDecoration() throws Exception {
-
-        System.out.println("==================== narrativeDecoration  ==================================");
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("dummyWS1"));
 
@@ -413,13 +409,10 @@ public class SearchAPIIntegrationTest {
                 2L, narrInfoTuple("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
 
         NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
-        System.out.println("======================================================");
     }
 
     @Test
     public void highlightTest () throws Exception{
-        System.out.println("==================== highlightTest  ==================================");
-
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("highlight"));
 
@@ -487,8 +480,6 @@ public class SearchAPIIntegrationTest {
         final ObjectData actual2 = res2.getObjects().get(0);
         TestCommon.compare(actual2, expected);
         assertThat("highlight should return empty map", actual2.getHighlight(), is(Collections.emptyMap()));
-
-
     }
     
     private SearchObjectsOutput searchObjects(final MatchFilter mf) throws Exception {
@@ -591,7 +582,6 @@ public class SearchAPIIntegrationTest {
     
     @Test
     public void pruneNarrative() throws Exception {
-        System.out.println("==================== pruneNarrative  ==================================");
 
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("narprune"));
@@ -662,7 +652,6 @@ public class SearchAPIIntegrationTest {
     
     @Test
     public void authClientGetDisplayNames() throws Exception {
-        System.out.println("==================== authClientGetDisplayNames  ==================================");
 
         final TemporaryAuth2Client client = new TemporaryAuth2Client(authURL);
         assertThat("incorrect users", client.getUserDisplayNames(
@@ -672,7 +661,6 @@ public class SearchAPIIntegrationTest {
     
     @Test
     public void authClientGetDisplayNamesEmptyInput() throws Exception {
-        System.out.println("==================== authClientGetDisplayNamesEmptyInput  ==================================");
 
         final TemporaryAuth2Client client = new TemporaryAuth2Client(authURL);
         assertThat("incorrect users", client.getUserDisplayNames(userToken.getToken(), set()),
@@ -681,7 +669,6 @@ public class SearchAPIIntegrationTest {
     
     @Test
     public void authClientGetDisplayNamesServerError() throws Exception {
-        System.out.println("==================== authClientGetDisplayNamesServerError  ==================================");
 
         final TemporaryAuth2Client client = new TemporaryAuth2Client(
                 new URL("http://localhost:" + auth.getServerPort()));
@@ -702,7 +689,6 @@ public class SearchAPIIntegrationTest {
     
     @Test
     public void authClientFailConstruct() throws Exception {
-        System.out.println("==================== authClientFailConstruct  ==================================");
 
         try {
             new TemporaryAuth2Client(null);
@@ -714,7 +700,6 @@ public class SearchAPIIntegrationTest {
     
     @Test
     public void authClientgetDisplayNamesBadInput() {
-        System.out.println("==================== authClientgetDisplayNamesBadInput  ==================================");
 
         failAuthClientGetDisplayNames(null, set(),
                 new IllegalArgumentException("token cannot be null or whitespace only"));
