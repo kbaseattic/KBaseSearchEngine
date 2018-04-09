@@ -287,7 +287,10 @@ public class SearchAPIIntegrationTest {
     public void sourceTags() throws Exception {
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("sourceTags"));
-        
+        // Create a dummy second workspace so that AccessGroup 1 & 2 get cached for 'user1'
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("DummySecondWorkspace"));
+
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
                         new SearchObjectType("SourceTags", 1),
@@ -360,56 +363,56 @@ public class SearchAPIIntegrationTest {
         TestCommon.compare(res2.getObjects().get(0), expected1);
     }
 
-//    @Test
-//    public void narrativeDecoration() throws Exception {
-//        wsCli1.createWorkspace(new CreateWorkspaceParams()
-//                .withWorkspace("dummyWS1"));
-//
-//        final long wsdate = WorkspaceEventHandler.parseDateToEpochMillis(wsCli1.createWorkspace(
-//                new CreateWorkspaceParams()
-//                        .withWorkspace("decorate")
-//                        .withMeta(ImmutableMap.of(
-//                                "narrative", "6",
-//                                "narrative_nice_name", "Kevin")))
-//                .getE4());
-//
-//        indexStorage.indexObjects(
-//                ObjectTypeParsingRules.getBuilder(
-//                        new SearchObjectType("Deco", 1),
-//                        new StorageObjectType("foo", "bar"))
-//                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
-//                                .build())
-//                        .build(),
-//                SourceData.getBuilder(new UObject(new HashMap<>()), "objname11", "creator11")
-//                        .build(),
-//                Instant.ofEpochMilli(10000),
-//                null,
-//                new GUID("WS:2/1/1"),
-//                ImmutableMap.of(new GUID("WS:2/1/1"), new ParsedObject(
-//                        "{\"whee\": \"imaprettypony1\"}",
-//                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
-//                false);
-//
-//        final ObjectData expected1 = new ObjectData()
-//                .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
-//                .withGuid("WS:2/1/1")
-//                .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
-//                .withCreator("creator11")
-//                .withType("Deco")
-//                .withTypeVer(1L)
-//                .withObjectName("objname11")
-//                .withTimestamp(10000L);
-//
-//        final SearchObjectsOutput res = searchObjects(new MatchFilter());
-//
-//        assertThat("incorrect object count", res.getObjects().size(), is(1));
-//        TestCommon.compare(res.getObjects().get(0), expected1);
-//
-//        final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
-//                2L, narrInfoTuple("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
-//
-//        NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
-//    }
+    @Test
+    public void narrativeDecoration() throws Exception {
+        // create a dummy workspace since this test uses an object in workspace with id 2.
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("dummyWS1"));
+
+        final long wsdate = WorkspaceEventHandler.parseDateToEpochMillis(wsCli1.createWorkspace(
+                new CreateWorkspaceParams()
+                        .withWorkspace("decorate")
+                        .withMeta(ImmutableMap.of(
+                                "narrative", "6",
+                                "narrative_nice_name", "Kevin")))
+                .getE4());
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Deco", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2/1/1"),
+                ImmutableMap.of(new GUID("WS:2/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
+                false);
+
+        final ObjectData expected1 = new ObjectData()
+                .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
+                .withGuid("WS:2/1/1")
+                .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
+                .withCreator("creator")
+                .withType("Deco")
+                .withTypeVer(1L)
+                .withObjectName("objname1")
+                .withTimestamp(10000L);
+
+        final SearchObjectsOutput res = searchObjects(new MatchFilter());
+
+        assertThat("incorrect object count", res.getObjects().size(), is(1));
+        TestCommon.compare(res.getObjects().get(0), expected1);
+        final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
+                2L, narrInfoTuple("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
+        NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
+    }
+
 
     @Test
     public void highlightTest () throws Exception{
@@ -497,6 +500,9 @@ public class SearchAPIIntegrationTest {
     public void sort() throws Exception {
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("sort"));
+        // Create a dummy second workspace so that AccessGroup 1 & 2 get cached for 'user1'
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("DummySecondWorkspace"));
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
