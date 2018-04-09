@@ -418,6 +418,9 @@ public class SearchAPIIntegrationTest {
     public void highlightTest () throws Exception{
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("highlight"));
+        // Create a dummy second workspace so that AccessGroup 1 & 2 get cached for 'user1'
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("DummySecondWorkspace"));
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -591,7 +594,10 @@ public class SearchAPIIntegrationTest {
 
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("narprune"));
-        
+        // Create a dummy second workspace so that AccessGroup 1 & 2 get cached for 'user1'
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("DummySecondWorkspace"));
+
         final Map<String, Object> data = new HashMap<>();
         data.put("source", "a long string");
         data.put("code_output", "another long string");
