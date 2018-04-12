@@ -13,6 +13,7 @@ import java.util.Set;
 
 import com.google.common.collect.ImmutableList;
 import kbasesearchengine.common.FileUtil;
+import kbasesearchengine.search.FoundHits;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.junit.AfterClass;
@@ -205,6 +206,7 @@ public class IndexerWorkerIntegrationTest {
         loadData(wc, wsid, "Genome", "KBaseGenomes.Genome-1.0", "GenomeObject");
         loadData(wc, wsid, "Paired", "KBaseFile.PairedEndLibrary-1.0", "PairedEndLibraryObject");
         loadData(wc, wsid, "reads.2", "KBaseFile.SingleEndLibrary-1.0", "SingleEndLibraryObject");
+        loadData(wc, wsid, "FBAMod", "KBaseFBA.FBAModel", "FBAModel01");
         return wsid;
     }
     
@@ -218,6 +220,8 @@ public class IndexerWorkerIntegrationTest {
         loadType(wc, "KBaseGenomes", "KBaseGenomes_ci_1482357978770", Arrays.asList("Genome"));
         loadType(wc, "KBaseNarrative", "KBaseNarrative_ci_1436483557716",
                 Arrays.asList("Narrative"));
+        loadType(wc, "KBaseFBA", "KBaseFBA",
+                Arrays.asList("FBAModel"));
     }
 
     private static void loadData(
@@ -282,6 +286,7 @@ public class IndexerWorkerIntegrationTest {
     @Before
     public void init() throws Exception {
         TestCommon.destroyDB(db);
+        storage.dropData();
     }
     
     @Test
@@ -299,32 +304,80 @@ public class IndexerWorkerIntegrationTest {
                 StatusEventProcessingState.UNPROC)
                 .build();
         worker.processEvent(ev);
+
         PostProcessing pp = new PostProcessing();
         pp.objectData = true;
         pp.objectKeys = true;
 
-        List<String> objectTypes = ImmutableList.of("Genome");
+        {
+            List<String> objectTypes = ImmutableList.of("Genome");
+            FoundHits hits = storage.searchObjects(objectTypes,
+                    MatchFilter.getBuilder().build(), null,
+                    AccessFilter.create().withAdmin(true), null, pp
+            );
+            // main/parent object is indexed
+            Assert.assertEquals("expected 1 genome", 1, hits.guids.size());
+        }
 
-        System.out.println("Genome: " + storage.getObjectsByIds(
-                storage.searchIds(objectTypes,
-                        MatchFilter.getBuilder().withNullableFullTextInAll("test").build(), null, 
-                        AccessFilter.create().withAdmin(true), null).guids, pp).get(0));
+        {
+            List<String> objectTypes = ImmutableList.of("GenomeFeature");
+            FoundHits hits = storage.searchObjects(objectTypes,
+                    MatchFilter.getBuilder().build(), null,
+                    AccessFilter.create().withAdmin(true), null, pp
+                    );
+            // sub-objects are indexed
+            Assert.assertEquals("expected 30 genome features", 30, hits.guids.size());
+        }
+
+        {
+            List<String> objectTypes = ImmutableList.of("Assembly");
+            String message = null;
+            try {
+                storage.searchObjects(objectTypes,
+                        MatchFilter.getBuilder().build(), null,
+                        AccessFilter.create().withAdmin(true), null, pp
+                );
+            } catch(IOException ex) {
+                message = ex.getMessage();
+            } finally {
+                Assert.assertEquals("not the expected error message",
+                        "No indexes exist for search type Assembly",
+                        message);
+            }
+        }
+
+        {
+            List<String> objectTypes = ImmutableList.of("AssemblyContig");
+            String message = null;
+            try {
+                storage.searchObjects(objectTypes,
+                        MatchFilter.getBuilder().build(), null,
+                        AccessFilter.create().withAdmin(true), null, pp
+                );
+            } catch(IOException ex) {
+                message = ex.getMessage();
+            } finally {
+                Assert.assertEquals("not the expected error message",
+                        "No indexes exist for search type AssemblyContig",
+                        message);
+            }
+        }
+
+        // verify a feature
         String query = "TrkA";
         Map<String, Integer> typeToCount = storage.searchTypes(
                 MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), 
                 AccessFilter.create().withAdmin(true));
-        System.out.println("Counts per type: " + typeToCount);
-        if (typeToCount.size() == 0) {
-            return;
-        }
+        Assert.assertEquals("expected 1 type (GenomeFeature)", 1, typeToCount.size());
+
         List<String> types = ImmutableList.of(typeToCount.keySet().iterator().next());
 
         Set<GUID> guids = storage.searchIds(types,
                 MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), null, 
                 AccessFilter.create().withAdmin(true), null).guids;
-        System.out.println("GUIDs found: " + guids);
+        Assert.assertEquals("expected 1 guid", 1, guids.size());
         ObjectData obj = storage.getObjectsByIds(guids, pp).get(0);
-        System.out.println("Feature: " + obj);
+        Assert.assertEquals("wrong feature id", "PROKKA_00027", obj.getGUID().getSubObjectId());
     }
 
     private void indexFewVersions(final StoredStatusEvent evid) throws Exception {
@@ -345,7 +398,7 @@ public class IndexerWorkerIntegrationTest {
             worker.processEvent(ev2);
         }
     }
-    
+
     private void checkSearch(
             final int expectedCount,
             final List<String> types,
@@ -354,7 +407,7 @@ public class IndexerWorkerIntegrationTest {
             final boolean debugOutput)
             throws Exception {
         Set<GUID> ids = storage.searchIds(types,
-                MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), null, 
+                MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), null,
                 AccessFilter.create().withAccessGroups(accessGroupId), null).guids;
         if (debugOutput) {
             PostProcessing pp = new PostProcessing();
@@ -364,7 +417,7 @@ public class IndexerWorkerIntegrationTest {
         }
         Assert.assertEquals(1, ids.size());
     }
-    
+
     @Test
     public void testNarrativeManually() throws Exception {
         final StatusEvent ev = StatusEvent.getBuilder(
@@ -380,18 +433,18 @@ public class IndexerWorkerIntegrationTest {
                 StatusEventProcessingState.UNPROC).build());
         checkSearch(1, ImmutableList.of("Narrative"), "tree", wsid, false);
         checkSearch(1, ImmutableList.of("Narrative"), "species", wsid, false);
-        /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
-                System.currentTimeMillis(), "KBaseNarrative.Narrative", 
+        /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null,
+                System.currentTimeMillis(), "KBaseNarrative.Narrative",
                 ObjectStatusEventType.CREATED, false));
         checkSearch(1, "Narrative", "Catalog.migrate_module_to_new_git_url", 10455, false);
         checkSearch(1, "Narrative", "Super password!", 10455, false);
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", 480, "1", 254, null, 
-                System.currentTimeMillis(), "KBaseNarrative.Narrative", 
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", 480, "1", 254, null,
+                System.currentTimeMillis(), "KBaseNarrative.Narrative",
                 ObjectStatusEventType.CREATED, false));
         checkSearch(1, "Narrative", "weird text", 480, false);
         checkSearch(1, "Narrative", "functionality", 480, false);*/
     }
-    
+
     @Test
     public void testReadsManually() throws Exception {
         final StatusEvent ev = StatusEvent.getBuilder(
