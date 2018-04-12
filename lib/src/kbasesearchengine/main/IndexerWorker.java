@@ -19,6 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.common.base.Optional;
@@ -748,10 +749,10 @@ public class IndexerWorker implements Stoppable {
                     final GUID guid = rr.getResolvedReference();
                     final boolean indexed = retrier.retryFunc(
                             g -> checkParentGuidExists(g), guid, null);
-                    if (!indexed) {
-                        indexObjectWrapperFn(guid, rr.getType(), rr.getTimestamp(), false,
-                                this, callerRefPath);
-                    }
+//                    if (!indexed) {
+//                        indexObjectWrapperFn(guid, rr.getType(), rr.getTimestamp(), false,
+//                                this, callerRefPath);
+//                    }
                     ret.add(guid);
                     refResolvingCache.get(storageCode)
                             .put(refToRefPath.get(rr.getReference()), guid);
@@ -789,31 +790,31 @@ public class IndexerWorker implements Stoppable {
             return eh.resolveReferences(callerRefPath, refsToResolve);
         }
         
-        private void indexObjectWrapperFn(
-                final GUID guid,
-                final StorageObjectType storageObjectType,
-                final Instant timestamp,
-                final boolean isPublic,
-                final ObjectLookupProvider indexLookup,
-                final List<GUID> objectRefPath) 
-                throws IndexingException, InterruptedException {
-            final List<Object> input = Arrays.asList(guid, storageObjectType, timestamp, isPublic,
-                    indexLookup, objectRefPath);
-            retrier.retryCons(i -> indexObjectWrapperFn(i), input, null);
-        }
+//        private void indexObjectWrapperFn(
+//                final GUID guid,
+//                final StorageObjectType storageObjectType,
+//                final Instant timestamp,
+//                final boolean isPublic,
+//                final ObjectLookupProvider indexLookup,
+//                final List<GUID> objectRefPath)
+//                throws IndexingException, InterruptedException {
+//            final List<Object> input = Arrays.asList(guid, storageObjectType, timestamp, isPublic,
+//                    indexLookup, objectRefPath);
+//            retrier.retryCons(i -> indexObjectWrapperFn(i), input, null);
+//        }
 
-        private void indexObjectWrapperFn(final List<Object> input)
-                throws IndexingException, InterruptedException, RetriableIndexingException {
-            final GUID guid = (GUID) input.get(0);
-            final StorageObjectType storageObjectType = (StorageObjectType) input.get(1);
-            final Instant timestamp = (Instant) input.get(2);
-            final boolean isPublic = (boolean) input.get(3);
-            final ObjectLookupProvider indexLookup = (ObjectLookupProvider) input.get(4);
-            @SuppressWarnings("unchecked")
-            final List<GUID> objectRefPath = (List<GUID>) input.get(5);
-            
-            indexObject(guid, storageObjectType, timestamp, isPublic, indexLookup, objectRefPath);
-        }
+//        private void indexObjectWrapperFn(final List<Object> input)
+//                throws IndexingException, InterruptedException, RetriableIndexingException {
+//            final GUID guid = (GUID) input.get(0);
+//            final StorageObjectType storageObjectType = (StorageObjectType) input.get(1);
+//            final Instant timestamp = (Instant) input.get(2);
+//            final boolean isPublic = (boolean) input.get(3);
+//            final ObjectLookupProvider indexLookup = (ObjectLookupProvider) input.get(4);
+//            @SuppressWarnings("unchecked")
+//            final List<GUID> objectRefPath = (List<GUID>) input.get(5);
+//
+//            indexObject(guid, storageObjectType, timestamp, isPublic, indexLookup, objectRefPath);
+//        }
 
         @Override
         public Map<GUID, ObjectData> lookupObjectsByGuid(final Set<GUID> guids)
@@ -848,11 +849,87 @@ public class IndexerWorker implements Stoppable {
                     new kbasesearchengine.search.PostProcessing();
             pp.objectData = false;
             pp.objectKeys = true;
-            try {
-                return indexingStorage.getObjectsByIds(guids, pp);
-            } catch (IOException e) {
-                throw new RetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
+
+            List<ObjectData> data = new ArrayList<>();
+            for(GUID guid: guids) {
+                File tempFile = null;
+                try {
+                    FileUtil.getOrCreateSubDir(rootTempDir, guid.getStorageCode());
+                    tempFile = File.createTempFile("ws_srv_response_", ".json");
+                } catch (IOException ex) {
+                    throw new RetriableIndexingException(ErrorType.OTHER, ex.getMessage(), ex);
+                }
+
+                try {
+                    // make a copy to avoid mutating the caller's path
+                    final LinkedList<GUID> newRefPath = new LinkedList<>();
+                    newRefPath.add(guid);
+
+                    final EventHandler handler = getEventHandler(guid);
+                    Iterator<ResolvedReference> refs = handler.resolveReferences(null, guids).iterator();
+                    while(refs.hasNext()) {
+                        ResolvedReference ref = refs.next();
+                        final SourceData obj = handler.load(newRefPath, tempFile.toPath());
+                        final List<ObjectTypeParsingRules> parsingRules = new ArrayList<>(
+                                typeStorage.listObjectTypeParsingRules(ref.getType()));
+
+                        // filter by subObject type
+                        final List<ObjectTypeParsingRules> filteredParsingRules = new ArrayList<>();
+                        for (final ObjectTypeParsingRules rule : parsingRules) {
+                            String refSubObjectType = ref.getReference().getSubObjectType();
+                            String ruleSubObjectType = rule.getSubObjectType().orNull();
+                            if(refSubObjectType == null && ruleSubObjectType == null) {
+                                filteredParsingRules.add(rule);
+                            }
+                            else if(refSubObjectType != null &&
+                                    refSubObjectType.equals(ruleSubObjectType)) {
+                                filteredParsingRules.add(rule);
+                            }
+                        }
+                        Collections.sort(filteredParsingRules, new ParsingRulesSubtypeFirstComparator());
+                        //List<ObjectData> data = new ArrayList<>();
+                        for (final ObjectTypeParsingRules rule : filteredParsingRules) {
+                            final ParseObjectsRet parsedRet = parseObjects(guid, this,
+                                    newRefPath, obj, rule);
+                            GUID parsedGUID = parsedRet.guidToObj.keySet().iterator().next();
+                            ObjectData.Builder objDataBuilder = ObjectData.getBuilder(parsedGUID,rule.getGlobalObjectType());
+                            Map<String, List<Object>> keywords = parsedRet.guidToObj.get(parsedGUID).getKeywords();
+                            Iterator<String> keys = keywords.keySet().iterator();
+                            while(keys.hasNext()) {
+                                String key = keys.next();
+                                String textValue;
+                                Object objValue = keywords.get(key);
+                                //////////////////////////////////////////////
+                                if (objValue instanceof List) {
+                                    @SuppressWarnings("unchecked")
+                                    final List<Object> objValue2 = (List<Object>) objValue;
+                                    textValue = objValue2.stream().map(Object::toString)
+                                            .collect(Collectors.joining(", "));
+                                } else {
+                                    textValue = String.valueOf(objValue);
+                                }
+                                //////////////////////////////////////////////
+                                objDataBuilder.withKeyProperty(key, textValue);
+                            }
+                            objDataBuilder.withNullableObjectName(obj.getName());
+                            objDataBuilder.withNullableCreator(obj.getCreator());
+                            objDataBuilder.withNullableMD5(obj.getCommitHash().orNull());
+                            data.add(objDataBuilder.build());
+                        }
+                    }
+                } catch(Exception ex) {
+                    ex.printStackTrace();
+                }
+
             }
+            return data;
+//            try {
+//                List<ObjectData> data2 = indexingStorage.getObjectsByIds(guids, pp);
+//                return data2;
+//            } catch (IOException e) {
+//                throw new RetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
+//            }
+                //////////////////////////////////////////////////////////////////
         }
         
         @Override
