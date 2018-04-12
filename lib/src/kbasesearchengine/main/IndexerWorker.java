@@ -820,7 +820,9 @@ public class IndexerWorker implements Stoppable {
             pp.objectData = false;
             pp.objectKeys = true;
 
-            List<ObjectData> data = new ArrayList<>();
+            final List<ObjectData> data = new ArrayList<>();
+
+            // get object from data source
             for(GUID guid: guids) {
                 File tempFile = null;
                 try {
@@ -831,75 +833,98 @@ public class IndexerWorker implements Stoppable {
                 }
 
                 try {
-                    // make a copy to avoid mutating the caller's path
-                    final LinkedList<GUID> newRefPath = new LinkedList<>();
-                    newRefPath.add(guid);
-
                     final EventHandler handler = getEventHandler(guid);
                     Iterator<ResolvedReference> refs = handler.resolveReferences(null, guids).iterator();
                     while(refs.hasNext()) {
                         ResolvedReference ref = refs.next();
-                        final SourceData obj = handler.load(newRefPath, tempFile.toPath());
-                        final List<ObjectTypeParsingRules> parsingRules = new ArrayList<>(
-                                typeStorage.listObjectTypeParsingRules(ref.getType()));
 
-                        // filter by subObject type
-                        final List<ObjectTypeParsingRules> filteredParsingRules = new ArrayList<>();
-                        for (final ObjectTypeParsingRules rule : parsingRules) {
-                            String refSubObjectType = ref.getReference().getSubObjectType();
-                            String ruleSubObjectType = rule.getSubObjectType().orNull();
-                            if(refSubObjectType == null && ruleSubObjectType == null) {
-                                filteredParsingRules.add(rule);
-                            }
-                            else if(refSubObjectType != null &&
-                                    refSubObjectType.equals(ruleSubObjectType)) {
-                                filteredParsingRules.add(rule);
-                            }
-                        }
-                        Collections.sort(filteredParsingRules, new ParsingRulesSubtypeFirstComparator());
-                        //List<ObjectData> data = new ArrayList<>();
+                        // make a copy to avoid mutating the caller's path
+                        final LinkedList<GUID> newRefPath = new LinkedList<>();
+                        newRefPath.add(guid);
+                        final SourceData obj = handler.load(newRefPath, tempFile.toPath());
+
+                        List<ObjectTypeParsingRules> filteredParsingRules = getFilteredSortedParsingRules(ref);
+
                         for (final ObjectTypeParsingRules rule : filteredParsingRules) {
                             final ParseObjectsRet parsedRet = parseObjects(guid, this,
                                     newRefPath, obj, rule);
+
                             GUID parsedGUID = parsedRet.guidToObj.keySet().iterator().next();
-                            ObjectData.Builder objDataBuilder = ObjectData.getBuilder(parsedGUID,rule.getGlobalObjectType());
-                            Map<String, List<Object>> keywords = parsedRet.guidToObj.get(parsedGUID).getKeywords();
-                            Iterator<String> keys = keywords.keySet().iterator();
-                            while(keys.hasNext()) {
-                                String key = keys.next();
-                                String textValue;
-                                Object objValue = keywords.get(key);
-                                //////////////////////////////////////////////
-                                if (objValue instanceof List) {
-                                    @SuppressWarnings("unchecked")
-                                    final List<Object> objValue2 = (List<Object>) objValue;
-                                    textValue = objValue2.stream().map(Object::toString)
-                                            .collect(Collectors.joining(", "));
-                                } else {
-                                    textValue = String.valueOf(objValue);
-                                }
-                                //////////////////////////////////////////////
-                                objDataBuilder.withKeyProperty(key, textValue);
-                            }
-                            objDataBuilder.withNullableObjectName(obj.getName());
-                            objDataBuilder.withNullableCreator(obj.getCreator());
-                            objDataBuilder.withNullableMD5(obj.getCommitHash().orNull());
-                            data.add(objDataBuilder.build());
+
+                            ObjectData objData = buildObjectDataFrom(
+                                    parsedRet.guidToObj.keySet().iterator().next(),
+                                    rule.getGlobalObjectType(),
+                                    obj.getName(),
+                                    obj.getCreator(),
+                                    obj.getCommitHash(),
+                                    parsedRet.guidToObj.get(parsedGUID).getKeywords());
+
+                            data.add(objData);
                         }
                     }
                 } catch(Exception ex) {
                     ex.printStackTrace();
                 }
-
             }
             return data;
-//            try {
-//                List<ObjectData> data2 = indexingStorage.getObjectsByIds(guids, pp);
-//                return data2;
-//            } catch (IOException e) {
-//                throw new RetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
-//            }
-                //////////////////////////////////////////////////////////////////
+        }
+
+        private List<ObjectTypeParsingRules> getFilteredSortedParsingRules(ResolvedReference ref) {
+
+            final List<ObjectTypeParsingRules> parsingRules = new ArrayList<>(
+                    typeStorage.listObjectTypeParsingRules(ref.getType()));
+
+            // filter by subObject type
+            final List<ObjectTypeParsingRules> filteredParsingRules = new ArrayList<>();
+            for (final ObjectTypeParsingRules rule : parsingRules) {
+                String refSubObjectType = ref.getReference().getSubObjectType();
+                String ruleSubObjectType = rule.getSubObjectType().orNull();
+                if(refSubObjectType == null && ruleSubObjectType == null) {
+                    filteredParsingRules.add(rule);
+                }
+                else if(refSubObjectType != null &&
+                        refSubObjectType.equals(ruleSubObjectType)) {
+                    filteredParsingRules.add(rule);
+                }
+            }
+
+            // sort
+            Collections.sort(filteredParsingRules, new ParsingRulesSubtypeFirstComparator());
+
+            return filteredParsingRules;
+        }
+
+
+
+        private ObjectData buildObjectDataFrom(GUID guid,
+                                               SearchObjectType globalObjectType,
+                                               String objectName,
+                                               String objectCreator,
+                                               Optional<String> md5,
+                                               Map<String, List<Object>> keywords) {
+
+            ObjectData.Builder objDataBuilder = ObjectData.getBuilder(guid,globalObjectType);
+            Iterator<String> keys = keywords.keySet().iterator();
+            while(keys.hasNext()) {
+                String key = keys.next();
+                String textValue;
+                Object objValue = keywords.get(key);
+
+                if (objValue instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    final List<Object> objValue2 = (List<Object>) objValue;
+                    textValue = objValue2.stream().map(Object::toString)
+                            .collect(Collectors.joining(", "));
+                } else {
+                    textValue = String.valueOf(objValue);
+                }
+
+                objDataBuilder.withKeyProperty(key, textValue);
+            }
+            objDataBuilder.withNullableObjectName(objectName);
+            objDataBuilder.withNullableCreator(objectCreator);
+            objDataBuilder.withNullableMD5(md5.orNull());
+            return objDataBuilder.build();
         }
         
         @Override
