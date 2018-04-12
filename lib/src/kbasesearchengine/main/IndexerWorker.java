@@ -749,10 +749,6 @@ public class IndexerWorker implements Stoppable {
                     final GUID guid = rr.getResolvedReference();
                     final boolean indexed = retrier.retryFunc(
                             g -> checkParentGuidExists(g), guid, null);
-//                    if (!indexed) {
-//                        indexObjectWrapperFn(guid, rr.getType(), rr.getTimestamp(), false,
-//                                this, callerRefPath);
-//                    }
                     ret.add(guid);
                     refResolvingCache.get(storageCode)
                             .put(refToRefPath.get(rr.getReference()), guid);
@@ -789,32 +785,6 @@ public class IndexerWorker implements Stoppable {
 
             return eh.resolveReferences(callerRefPath, refsToResolve);
         }
-        
-//        private void indexObjectWrapperFn(
-//                final GUID guid,
-//                final StorageObjectType storageObjectType,
-//                final Instant timestamp,
-//                final boolean isPublic,
-//                final ObjectLookupProvider indexLookup,
-//                final List<GUID> objectRefPath)
-//                throws IndexingException, InterruptedException {
-//            final List<Object> input = Arrays.asList(guid, storageObjectType, timestamp, isPublic,
-//                    indexLookup, objectRefPath);
-//            retrier.retryCons(i -> indexObjectWrapperFn(i), input, null);
-//        }
-
-//        private void indexObjectWrapperFn(final List<Object> input)
-//                throws IndexingException, InterruptedException, RetriableIndexingException {
-//            final GUID guid = (GUID) input.get(0);
-//            final StorageObjectType storageObjectType = (StorageObjectType) input.get(1);
-//            final Instant timestamp = (Instant) input.get(2);
-//            final boolean isPublic = (boolean) input.get(3);
-//            final ObjectLookupProvider indexLookup = (ObjectLookupProvider) input.get(4);
-//            @SuppressWarnings("unchecked")
-//            final List<GUID> objectRefPath = (List<GUID>) input.get(5);
-//
-//            indexObject(guid, storageObjectType, timestamp, isPublic, indexLookup, objectRefPath);
-//        }
 
         @Override
         public Map<GUID, ObjectData> lookupObjectsByGuid(final Set<GUID> guids)
