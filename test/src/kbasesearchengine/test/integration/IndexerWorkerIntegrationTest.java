@@ -380,6 +380,66 @@ public class IndexerWorkerIntegrationTest {
         Assert.assertEquals("wrong feature id", "PROKKA_00027", obj.getGUID().getSubObjectId());
     }
 
+
+    @Test
+    public void testFBAModelManually() throws Exception {
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                new StorageObjectType("WS", "KBaseFBA.FBAModel"),
+                Instant.now(),
+                StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID(wsid)
+                        .withNullableObjectID("6")
+                        .withNullableVersion(1)
+                        .withNullableisPublic(false)
+                        .build(),
+                new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC)
+                .build();
+        worker.processEvent(ev);
+
+        PostProcessing pp = new PostProcessing();
+        pp.objectData = true;
+        pp.objectKeys = true;
+
+        // verify that the referenced genome object was not recursively indexed
+        {
+            List<String> objectTypes = ImmutableList.of("Genome");
+            String message = null;
+            try {
+                storage.searchObjects(objectTypes,
+                        MatchFilter.getBuilder().build(), null,
+                        AccessFilter.create().withAdmin(true), null, pp
+                );
+            } catch(IOException ex) {
+                message = ex.getMessage();
+            } finally {
+                Assert.assertEquals("not the expected error message",
+                        "No indexes exist for search type Genome",
+                        message);
+            }
+        }
+
+        {
+            List<String> objectTypes = ImmutableList.of("FBAModel");
+            FoundHits hits = storage.searchObjects(objectTypes,
+                    MatchFilter.getBuilder().build(), null,
+                    AccessFilter.create().withAdmin(true), null, pp
+            );
+            // main/parent object is indexed
+            Assert.assertEquals("expected 1 FBAModel", 1, hits.guids.size());
+
+            ObjectData data = hits.objects.get(0);
+
+            // verify that lookup transforms recursively obtained genome data from data source
+            Assert.assertEquals("expected scientific_name", "test",
+                    data.getKeyProperties().get("scientific_name"));
+            Assert.assertEquals("expected taxonomy", "",
+                    data.getKeyProperties().get("taxonomy"));
+            Assert.assertEquals("expected genome_name", "Unknown",
+                    data.getKeyProperties().get("genome_name"));
+        }
+    }
+
     private void indexFewVersions(final StoredStatusEvent evid) throws Exception {
         final StatusEvent ev = evid.getEvent();
         for (int i = Math.max(1, ev.getVersion().get() - 5); i <= ev.getVersion().get(); i++) {
