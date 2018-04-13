@@ -682,7 +682,8 @@ public class WorkspaceEventHandler implements EventHandler {
     }
 
     private final StatusEvent updateEventForDeletion(final StatusEvent ev)
-              throws RetriableIndexingException {
+              throws RetriableIndexingException,
+                     IndexingException {
         // wsid and objid of the object that the specified StatusEvent is an event for
         final int wsid = ev.getAccessGroupId().get();
         final long objid = Long.valueOf(ev.getAccessGroupObjectId().get()).longValue();
@@ -691,18 +692,18 @@ public class WorkspaceEventHandler implements EventHandler {
         try {
             getWorkspaceInfo(wsid);
         } catch (IOException ex) {
-            handleException(ex);
+            throw handleException(ex);
         } catch (JsonClientException ex) {
             // hacky: if exception message is changed, this logic will silently fail
             if (ex.getMessage().contains("No workspace with id ")) {
                 return StatusEvent.
-                        getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(),
+                        getBuilder(ev.getStorageCode(), ev.getTimestamp(),
                                 StatusEventType.DELETE_ALL_VERSIONS).
                         withNullableAccessGroupID(wsid).
                         withNullableObjectID(Long.toString(objid)).build();
             }
             else {
-                handleException(ex);
+                throw handleException(ex);
             }
         }
 
@@ -720,15 +721,15 @@ public class WorkspaceEventHandler implements EventHandler {
 
             if (objList.isEmpty()) {
                 return StatusEvent.
-                        getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(),
+                        getBuilder(ev.getStorageCode(), ev.getTimestamp(),
                                 StatusEventType.DELETE_ALL_VERSIONS).
                         withNullableAccessGroupID(wsid).
                         withNullableObjectID(Long.toString(objid)).build();
             }
         } catch (IOException ex) {
-            handleException(ex);
+            throw handleException(ex);
         } catch (JsonClientException ex) {
-            handleException(ex);
+            throw handleException(ex);
         }
 
         return ev;
@@ -764,12 +765,10 @@ public class WorkspaceEventHandler implements EventHandler {
             return (isPublic == "n") ? false: true;
 
         } catch (IOException ex) {
-            handleException(ex);
+            throw handleException(ex);
         } catch (JsonClientException ex) {
-            handleException(ex);
+            throw handleException(ex);
         }
-
-        return null;
     }
 
     @Override
