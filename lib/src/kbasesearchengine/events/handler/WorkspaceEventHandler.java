@@ -715,16 +715,10 @@ public class WorkspaceEventHandler implements EventHandler {
                 withMinObjectID(objid).
                 withMaxObjectID(objid));
         try {
-            boolean objidExists = false;
-
             final List<List> objList = ws.getClient().administer(new UObject(command))
                     .asClassInstance(List.class);
 
-            if(objList != null && objList.size() > 0) {
-                objidExists = true;
-            }
-
-            if (!objidExists) {
+            if (objList.isEmpty()) {
                 return StatusEvent.
                         getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(),
                                 StatusEventType.DELETE_ALL_VERSIONS).
@@ -763,19 +757,19 @@ public class WorkspaceEventHandler implements EventHandler {
     private Boolean getLatestIsPublic(StatusEvent ev)
                             throws IndexingException,
                                    RetriableIndexingException {
-        String isPublic = null;
-
         try {
 
-            isPublic = getWorkspaceInfo(ev.getAccessGroupId().get()).getE6();
+            final String isPublic = getWorkspaceInfo(ev.getAccessGroupId().get()).getE6();
 
-                    } catch (IOException ex) {
+            return (isPublic == "n") ? false: true;
+
+        } catch (IOException ex) {
             handleException(ex);
         } catch (JsonClientException ex) {
             handleException(ex);
         }
 
-        return (isPublic == "n") ? false: true;
+        return null;
     }
 
     @Override
