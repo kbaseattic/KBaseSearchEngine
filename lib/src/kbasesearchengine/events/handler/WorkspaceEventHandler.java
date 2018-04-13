@@ -807,14 +807,25 @@ public class WorkspaceEventHandler implements EventHandler {
         // check if permissions have changed and update state of isPublic
         final Boolean latestIsPublic = getLatestIsPublic(ev);
 
-        StatusEvent updatedEvent = StatusEvent.
-                getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(), ev.getEventType()).
-                withNullableAccessGroupID(ev.getAccessGroupId().get()).
-                withNullableObjectID(ev.getAccessGroupObjectId().get()).
-                withNullableVersion(ev.getVersion().orNull()).
-                withNullableisPublic(latestIsPublic).
-                withNullableNewName(latestName).build();
-
-        return updatedEvent;
+        // storage object type present and required for new version events
+        if(ev.getStorageObjectType().isPresent()) {
+            return StatusEvent.
+                    getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(), ev.getEventType()).
+                    withNullableAccessGroupID(ev.getAccessGroupId().get()).
+                    withNullableObjectID(ev.getAccessGroupObjectId().get()).
+                    withNullableVersion(ev.getVersion().orNull()).
+                    withNullableisPublic(latestIsPublic).
+                    withNullableNewName(latestName).build();
+        }
+        // all other events other than new version events
+        else {
+            return StatusEvent.
+                    getBuilder(ev.getStorageCode(), ev.getTimestamp(), ev.getEventType()).
+                    withNullableAccessGroupID(ev.getAccessGroupId().get()).
+                    withNullableObjectID(ev.getAccessGroupObjectId().get()).
+                    withNullableVersion(ev.getVersion().orNull()).
+                    withNullableisPublic(latestIsPublic).
+                    withNullableNewName(latestName).build();
+        }
     }
 }
