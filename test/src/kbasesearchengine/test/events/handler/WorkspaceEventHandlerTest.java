@@ -25,7 +25,6 @@ import java.util.Map;
 import junit.framework.Assert;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventType;
-import kbasesearchengine.events.exceptions.IndexingException;
 import kbasesearchengine.system.StorageObjectType;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
@@ -727,7 +726,7 @@ public class WorkspaceEventHandlerTest {
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
 
         // update event
-        StatusEvent updatedEvent = weh.updateEvent(event);
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
 
         // access group events are not updated, so we expect to get back the original event
         Assert.assertEquals("expected the same event object", event, updatedEvent);
@@ -757,7 +756,7 @@ public class WorkspaceEventHandlerTest {
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
 
         // update event
-        StatusEvent updatedEvent = weh.updateEvent(event);
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
 
         // since workspace does not exist, we expect to get back an updated event
         Assert.assertNotSame("expected different event object", event, updatedEvent);
@@ -795,7 +794,7 @@ public class WorkspaceEventHandlerTest {
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
 
         // update event
-        StatusEvent updatedEvent = weh.updateEvent(event);
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
 
         // since deleted object check fails (objid 1L is not present), we expect to get back an updated event
         Assert.assertNotSame("expected different event object", event, updatedEvent);
@@ -829,7 +828,7 @@ public class WorkspaceEventHandlerTest {
         // update event
         boolean exceptionCaught = false;
         try {
-            weh.updateEvent(event);
+            weh.updateObjectEvent(event);
         } catch (RetriableIndexingException ex) {
             exceptionCaught = true;
         } finally {
@@ -864,7 +863,7 @@ public class WorkspaceEventHandlerTest {
         // update event
         boolean exceptionCaught = false;
         try {
-            weh.updateEvent(event);
+            weh.updateObjectEvent(event);
         } catch (UnprocessableEventIndexingException ex) {
             exceptionCaught = true;
         } finally {
@@ -902,7 +901,7 @@ public class WorkspaceEventHandlerTest {
         // update event
         boolean exceptionCaught = false;
         try {
-            weh.updateEvent(event);
+            weh.updateObjectEvent(event);
         } catch (RetriableIndexingException ex) {
             exceptionCaught = true;
         } finally {
@@ -941,7 +940,7 @@ public class WorkspaceEventHandlerTest {
         // update event
         boolean exceptionCaught = false;
         try {
-            weh.updateEvent(event);
+            weh.updateObjectEvent(event);
         } catch (UnprocessableEventIndexingException ex) {
             exceptionCaught = true;
         } finally {
@@ -987,7 +986,7 @@ public class WorkspaceEventHandlerTest {
 
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
 
-        StatusEvent updatedEvent = weh.updateEvent(event);
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
 
         // since name and isPublic flag are different in the mocked workspace and object, we expect to get back an updated event
         Assert.assertNotSame("expected different event object", event, updatedEvent);
@@ -1033,7 +1032,7 @@ public class WorkspaceEventHandlerTest {
 
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
 
-        StatusEvent updatedEvent = weh.updateEvent(event);
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
 
         // since name and isPublic flag are different in the mocked workspace and object, we expect to get back an updated event
         Assert.assertNotSame("expected different event object", event, updatedEvent);
@@ -1079,7 +1078,7 @@ public class WorkspaceEventHandlerTest {
         // update event
         boolean exceptionCaught = false;
         try {
-            weh.updateEvent(event);
+            weh.updateObjectEvent(event);
         } catch (RetriableIndexingException ex) {
             exceptionCaught = true;
         } finally {
@@ -1125,7 +1124,7 @@ public class WorkspaceEventHandlerTest {
         // update event
         boolean exceptionCaught = false;
         try {
-            weh.updateEvent(event);
+            weh.updateObjectEvent(event);
         } catch (UnprocessableEventIndexingException ex) {
             exceptionCaught = true;
         } finally {
@@ -1173,7 +1172,7 @@ public class WorkspaceEventHandlerTest {
         // update event
         boolean exceptionCaught = false;
         try {
-            weh.updateEvent(event);
+            weh.updateObjectEvent(event);
         } catch (RetriableIndexingException ex) {
             exceptionCaught = true;
         } finally {
@@ -1221,7 +1220,7 @@ public class WorkspaceEventHandlerTest {
         // update event
         boolean exceptionCaught = false;
         try {
-            weh.updateEvent(event);
+            weh.updateObjectEvent(event);
         } catch (UnprocessableEventIndexingException ex) {
             exceptionCaught = true;
         } finally {
