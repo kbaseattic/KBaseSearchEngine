@@ -62,9 +62,9 @@ import kbasesearchengine.common.FileUtil;
  */
 public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
-    private static final String version = "";
-    private static final String gitUrl = "";
-    private static final String gitCommitHash = "";
+    private static final String version = "0.0.1";
+    private static final String gitUrl = "https://github.com/kbase/KBaseSearchEngine.git";
+    private static final String gitCommitHash = "e279bf06c637b333b8979cd3314e8457725c6b5e";
 
     //BEGIN_CLASS_HEADER
     
@@ -175,11 +175,14 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
      * @param   params   instance of type {@link kbasesearchengine.SearchTypesInput SearchTypesInput}
      * @return   instance of type {@link kbasesearchengine.SearchTypesOutput SearchTypesOutput}
      */
-    @JsonServerMethod(rpc = "KBaseSearchEngine.search_types", async=true)
+    @JsonServerMethod(rpc = "KBaseSearchEngine.search_types", authOptional=true, async=true)
     public SearchTypesOutput searchTypes(SearchTypesInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         SearchTypesOutput returnVal = null;
         //BEGIN search_types
-        returnVal = search.searchTypes(params, authPart.getUserName());
+        if (authPart != null)
+            returnVal = search.searchTypes(params, authPart.getUserName());
+        else
+            returnVal = search.searchTypes(params, null);
         //END search_types
         return returnVal;
     }
@@ -192,11 +195,14 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
      * @param   params   instance of type {@link kbasesearchengine.SearchObjectsInput SearchObjectsInput}
      * @return   instance of type {@link kbasesearchengine.SearchObjectsOutput SearchObjectsOutput}
      */
-    @JsonServerMethod(rpc = "KBaseSearchEngine.search_objects", async=true)
+    @JsonServerMethod(rpc = "KBaseSearchEngine.search_objects", authOptional=true, async=true)
     public SearchObjectsOutput searchObjects(SearchObjectsInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         SearchObjectsOutput returnVal = null;
         //BEGIN search_objects
-        returnVal = search.searchObjects(params, authPart.getUserName());
+        if (authPart != null)
+            returnVal = search.searchObjects(params, authPart.getUserName());
+        else
+            returnVal = search.searchObjects(params, null);
         //END search_objects
         return returnVal;
     }
@@ -209,11 +215,14 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
      * @param   params   instance of type {@link kbasesearchengine.GetObjectsInput GetObjectsInput}
      * @return   instance of type {@link kbasesearchengine.GetObjectsOutput GetObjectsOutput}
      */
-    @JsonServerMethod(rpc = "KBaseSearchEngine.get_objects", async=true)
+    @JsonServerMethod(rpc = "KBaseSearchEngine.get_objects", authOptional=true, async=true)
     public GetObjectsOutput getObjects(GetObjectsInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         GetObjectsOutput returnVal = null;
         //BEGIN get_objects
-        returnVal = search.getObjects(params, authPart.getUserName());
+        if (authPart != null)
+            returnVal = search.getObjects(params, authPart.getUserName());
+        else
+            returnVal = search.getObjects(params, null);
         //END get_objects
         return returnVal;
     }

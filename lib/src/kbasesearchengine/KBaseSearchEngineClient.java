@@ -176,7 +176,7 @@ public class KBaseSearchEngineClient {
         List<Object> args = new ArrayList<Object>();
         args.add(params);
         TypeReference<List<SearchTypesOutput>> retType = new TypeReference<List<SearchTypesOutput>>() {};
-        List<SearchTypesOutput> res = caller.jsonrpcCall("KBaseSearchEngine.search_types", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        List<SearchTypesOutput> res = caller.jsonrpcCall("KBaseSearchEngine.search_types", args, retType, true, false, jsonRpcContext, this.serviceVersion);
         return res.get(0);
     }
 
@@ -194,7 +194,7 @@ public class KBaseSearchEngineClient {
         List<Object> args = new ArrayList<Object>();
         args.add(params);
         TypeReference<List<SearchObjectsOutput>> retType = new TypeReference<List<SearchObjectsOutput>>() {};
-        List<SearchObjectsOutput> res = caller.jsonrpcCall("KBaseSearchEngine.search_objects", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        List<SearchObjectsOutput> res = caller.jsonrpcCall("KBaseSearchEngine.search_objects", args, retType, true, false, jsonRpcContext, this.serviceVersion);
         return res.get(0);
     }
 
@@ -212,7 +212,7 @@ public class KBaseSearchEngineClient {
         List<Object> args = new ArrayList<Object>();
         args.add(params);
         TypeReference<List<GetObjectsOutput>> retType = new TypeReference<List<GetObjectsOutput>>() {};
-        List<GetObjectsOutput> res = caller.jsonrpcCall("KBaseSearchEngine.get_objects", args, retType, true, true, jsonRpcContext, this.serviceVersion);
+        List<GetObjectsOutput> res = caller.jsonrpcCall("KBaseSearchEngine.get_objects", args, retType, true, false, jsonRpcContext, this.serviceVersion);
         return res.get(0);
     }
 

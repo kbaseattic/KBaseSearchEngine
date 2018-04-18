@@ -206,7 +206,7 @@ Search for number of objects of each type matching constraints.
 {
     my($self, @args) = @_;
 
-# Authentication: required
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -440,7 +440,7 @@ Search for objects of particular type matching constraints.
 {
     my($self, @args) = @_;
 
-# Authentication: required
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -600,7 +600,7 @@ Retrieve objects by their GUIDs.
 {
     my($self, @args) = @_;
 
-# Authentication: required
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {

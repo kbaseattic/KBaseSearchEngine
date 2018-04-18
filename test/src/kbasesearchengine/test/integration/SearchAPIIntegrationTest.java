@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import kbasesearchengine.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.ini4j.Ini;
@@ -33,19 +34,10 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
-import kbasesearchengine.AccessFilter;
-import kbasesearchengine.GetObjectsInput;
-import kbasesearchengine.GetObjectsOutput;
-import kbasesearchengine.KBaseSearchEngineClient;
-import kbasesearchengine.KBaseSearchEngineServer;
-import kbasesearchengine.MatchFilter;
-import kbasesearchengine.ObjectData;
-import kbasesearchengine.SearchObjectsInput;
-import kbasesearchengine.SearchObjectsOutput;
-import kbasesearchengine.SortingRule;
 import kbasesearchengine.authorization.TemporaryAuth2Client;
 import kbasesearchengine.authorization.TemporaryAuth2Client.Auth2Exception;
 import kbasesearchengine.common.FileUtil;
@@ -101,6 +93,7 @@ public class SearchAPIIntegrationTest {
     private static WorkspaceClient wsCli1;
     private static KBaseSearchEngineServer searchServer;
     private static KBaseSearchEngineClient searchCli;
+    private static KBaseSearchEngineClient noAuthSearchCli;
     private static URL authURL;
     
     @BeforeClass
@@ -172,6 +165,13 @@ public class SearchAPIIntegrationTest {
         searchCli = new KBaseSearchEngineClient(
                 new URL("http://localhost:" + searchServer.getServerPort()), userToken);
         searchCli.setIsInsecureHttpConnectionAllowed(true);
+
+        // create a search client without authentication to test
+        // optional authentication for search API
+
+        noAuthSearchCli = new KBaseSearchEngineClient(
+                new URL("http://localhost:" + searchServer.getServerPort()));
+        noAuthSearchCli.setIsInsecureHttpConnectionAllowed(true);
         
     }
     
@@ -410,6 +410,100 @@ public class SearchAPIIntegrationTest {
     }
 
     @Test
+    public void optionalAuthForSearch() throws Exception {
+        wsCli1.createWorkspace(
+                new CreateWorkspaceParams()
+                        .withWorkspace("optionalAuth1"));
+        wsCli1.createWorkspace(
+                new CreateWorkspaceParams()
+                        .withWorkspace("optionalAuth2"));
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Deco", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/1/1"),
+                ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
+                false);
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Deco", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname2", "creator")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2/1/1"),
+                ImmutableMap.of(new GUID("WS:2/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
+                true);
+
+        final ObjectData expected1 = new ObjectData()
+                .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
+                .withGuid("WS:1/1/1")
+                .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
+                .withCreator("creator")
+                .withType("Deco")
+                .withTypeVer(1L)
+                .withObjectName("objname1")
+                .withTimestamp(10000L);
+
+        final ObjectData expected2 = new ObjectData()
+                .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
+                .withGuid("WS:2/1/1")
+                .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
+                .withCreator("creator")
+                .withType("Deco")
+                .withTypeVer(1L)
+                .withObjectName("objname2")
+                .withTimestamp(10000L);
+
+        SearchObjectsOutput noAuthsearchObjsOut;
+        SearchTypesOutput noAuthsearchTypesOut;
+        GetObjectsOutput noAuthGetObjsOut;
+
+        try {
+            // use the search client without authentication to get results
+            noAuthsearchObjsOut =  noAuthSearchCli.searchObjects(new SearchObjectsInput()
+                    .withAccessFilter(new AccessFilter())
+                    .withMatchFilter(new MatchFilter()));
+            noAuthsearchTypesOut = noAuthSearchCli.searchTypes(new SearchTypesInput()
+                    .withMatchFilter(new MatchFilter())
+                    .withAccessFilter(new AccessFilter()));
+            noAuthGetObjsOut = noAuthSearchCli.getObjects(new GetObjectsInput()
+                    .withGuids(Arrays.asList("WS:1/1/1", "WS:2/1/1")));
+
+        } catch (ServerException e) {
+            System.out.println("Exception server side trace:\n" + e.getData());
+            throw e;
+        }
+
+        assertThat("incorrect search objects count", noAuthsearchObjsOut.getObjects().size(), is(1));
+        TestCommon.compare(noAuthsearchObjsOut.getObjects().get(0), expected2);
+
+        Map<String, Long> typeToCount = noAuthsearchTypesOut.getTypeToCount();
+        assertThat("incorrect search types map size", typeToCount.size(), is(1));
+        assertThat("Incorrect search types type name", typeToCount.keySet(), is(set("Deco")));
+        assertThat("Incorrect search types type count", typeToCount.get("Deco"), is(Long.valueOf(1)));
+
+        assertThat("incorrect get objects count", noAuthGetObjsOut.getObjects().size(), is(0));
+    }
+
+    @Test
     public void highlightTest () throws Exception{
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("highlight"));
@@ -478,8 +572,6 @@ public class SearchAPIIntegrationTest {
         final ObjectData actual2 = res2.getObjects().get(0);
         TestCommon.compare(actual2, expected);
         assertThat("highlight should return empty map", actual2.getHighlight(), is(Collections.emptyMap()));
-
-
     }
     
     private SearchObjectsOutput searchObjects(final MatchFilter mf) throws Exception {
