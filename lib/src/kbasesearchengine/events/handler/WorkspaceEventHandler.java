@@ -689,23 +689,23 @@ public class WorkspaceEventHandler implements EventHandler {
         final long objid = Long.valueOf(ev.getAccessGroupObjectId().get()).longValue();
 
         // check if workspace is permanently deleted or marked as deleted
-        try {
-            getWorkspaceInfo(wsid);
-        } catch (IOException ex) {
-            throw handleException(ex);
-        } catch (JsonClientException ex) {
-            // hacky: if exception message is changed, this logic will silently fail
-            if (ex.getMessage().contains("No workspace with id ")) {
-                return StatusEvent.
-                        getBuilder(ev.getStorageCode(), ev.getTimestamp(),
-                                StatusEventType.DELETE_ALL_VERSIONS).
-                        withNullableAccessGroupID(wsid).
-                        withNullableObjectID(Long.toString(objid)).build();
-            }
-            else {
-                throw handleException(ex);
-            }
-        }
+//        try {
+//            getWorkspaceInfo(wsid);
+//        } catch (IOException ex) {
+//            throw handleException(ex);
+//        } catch (JsonClientException ex) {
+//            // hacky: if exception message is changed, this logic will silently fail
+//            if (ex.getMessage().contains("No workspace with id ")) {
+//                return StatusEvent.
+//                        getBuilder(ev.getStorageCode(), ev.getTimestamp(),
+//                                StatusEventType.DELETE_ALL_VERSIONS).
+//                        withNullableAccessGroupID(wsid).
+//                        withNullableObjectID(Long.toString(objid)).build();
+//            }
+//            else {
+//                throw handleException(ex);
+//            }
+//        }
 
         // check if object is permanently deleted or marked as deleted
         final Map<String, Object> command;
@@ -729,7 +729,16 @@ public class WorkspaceEventHandler implements EventHandler {
         } catch (IOException ex) {
             throw handleException(ex);
         } catch (JsonClientException ex) {
-            throw handleException(ex);
+            if (ex.getMessage().contains("Workspace "+wsid+" is deleted")) {
+                return StatusEvent.
+                        getBuilder(ev.getStorageCode(), ev.getTimestamp(),
+                                StatusEventType.DELETE_ALL_VERSIONS).
+                        withNullableAccessGroupID(wsid).
+                        withNullableObjectID(Long.toString(objid)).build();
+            }
+            else {
+                throw handleException(ex);
+            }
         }
 
         return ev;

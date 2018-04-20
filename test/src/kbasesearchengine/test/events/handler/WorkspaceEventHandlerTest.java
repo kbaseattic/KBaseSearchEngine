@@ -50,6 +50,7 @@ import us.kbase.common.service.UnauthorizedException;
 import us.kbase.workspace.GetObjectInfo3Results;
 import us.kbase.workspace.GetObjects2Params;
 import us.kbase.workspace.GetObjects2Results;
+import us.kbase.workspace.ListObjectsParams;
 import us.kbase.workspace.ObjectData;
 import us.kbase.workspace.ObjectSpecification;
 import us.kbase.workspace.ProvenanceAction;
@@ -194,6 +195,38 @@ public class WorkspaceEventHandlerTest {
                     cmd.get("params"), WorkspaceIdentity.class);
             matches = matches && wi.getId() == id;
             matches = matches && wi.getWorkspace() == null;
+
+            return matches;
+        }
+    }
+
+    private class AdminListObjectsAnswerMatcher implements ArgumentMatcher<UObject> {
+
+        final long id;
+        final long minObjectId;
+        final long maxObjectId;
+
+        public AdminListObjectsAnswerMatcher(final long id,
+                                             final long minObjectId,
+                                             final long maxObjectId) {
+            this.id = id;
+            this.minObjectId = minObjectId;
+            this.maxObjectId = maxObjectId;
+        }
+
+        @Override
+        public boolean matches(final UObject command) {
+            // the fact that kb-sdk doesn't compile in equals & hashcode is infuriating
+            boolean matches = true;
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> cmd = command.asClassInstance(Map.class);
+            matches = matches && "listObjects".equals(cmd.get("command"));
+
+            final ListObjectsParams li = UObject.transformObjectToObject(
+                    cmd.get("params"), ListObjectsParams.class);
+            matches = matches && li.getIds().get(0) == id;
+            matches = matches && li.getMinObjectID() == minObjectId;
+            matches = matches && li.getMaxObjectID() == maxObjectId;
 
             return matches;
         }
@@ -750,8 +783,8 @@ public class WorkspaceEventHandlerTest {
                 .withNullableVersion(1)
                 .build();
 
-        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(1))))
-                .thenThrow(new JsonClientException("No workspace with id 1 exists!"));
+        when(wscli.administer(argThat(new AdminListObjectsAnswerMatcher(1L, 1L, 1L))))
+                .thenThrow(new JsonClientException("Workspace 1 is deleted"));
 
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
 
@@ -785,9 +818,6 @@ public class WorkspaceEventHandlerTest {
                 Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
 
         when(wscli.administer(any()))
-                // for deleted workspace check
-                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "r", "n",
-                        "unlocked", Collections.emptyMap())))
                 // for deleted objects check
                 .thenReturn(new UObject(objList));
 
@@ -890,9 +920,6 @@ public class WorkspaceEventHandlerTest {
                 .build();
 
         when(wscli.administer(any()))
-                // for deleted workspace check
-                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "r", "n",
-                        "unlocked", Collections.emptyMap())))
                 // for deleted objects check
                 .thenThrow(new IOException("Test exception"));
 
@@ -929,9 +956,6 @@ public class WorkspaceEventHandlerTest {
                 .build();
 
         when(wscli.administer(any()))
-                // for deleted workspace check
-                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "r", "n",
-                        "unlocked", Collections.emptyMap())))
                 // for deleted objects check
                 .thenThrow(new JsonClientException("Test exception"));
 
@@ -973,9 +997,6 @@ public class WorkspaceEventHandlerTest {
                 1L, "wsname", "checksum", 44, Collections.emptyMap()));
 
         when(wscli.administer(any()))
-                // for deleted workspace check
-                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "n", "n",
-                        "unlocked", Collections.emptyMap())))
                 // for deleted objects check
                 .thenReturn(new UObject(objList))
                 // for name check
@@ -1019,9 +1040,6 @@ public class WorkspaceEventHandlerTest {
                 1L, "wsname", "checksum", 44, Collections.emptyMap()));
 
         when(wscli.administer(any()))
-                // for deleted workspace check
-                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "n", "n",
-                        "unlocked", Collections.emptyMap())))
                 // for deleted objects check
                 .thenReturn(new UObject(objList))
                 // for name check
@@ -1065,9 +1083,6 @@ public class WorkspaceEventHandlerTest {
                 1L, "wsname", "checksum", 44, Collections.emptyMap()));
 
         when(wscli.administer(any()))
-                // for deleted workspace check
-                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "n", "n",
-                        "unlocked", Collections.emptyMap())))
                 // for deleted objects check
                 .thenReturn(new UObject(objList))
                 // for name check
@@ -1111,9 +1126,6 @@ public class WorkspaceEventHandlerTest {
                 1L, "wsname", "checksum", 44, Collections.emptyMap()));
 
         when(wscli.administer(any()))
-                // for deleted workspace check
-                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "n", "n",
-                        "unlocked", Collections.emptyMap())))
                 // for deleted objects check
                 .thenReturn(new UObject(objList))
                 // for name check
@@ -1157,9 +1169,6 @@ public class WorkspaceEventHandlerTest {
                 1L, "wsname", "checksum", 44, Collections.emptyMap()));
 
         when(wscli.administer(any()))
-                // for deleted workspace check
-                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "n", "n",
-                        "unlocked", Collections.emptyMap())))
                 // for deleted objects check
                 .thenReturn(new UObject(objList))
                 // for name check
@@ -1205,9 +1214,6 @@ public class WorkspaceEventHandlerTest {
                 1L, "wsname", "checksum", 44, Collections.emptyMap()));
 
         when(wscli.administer(any()))
-                // for deleted workspace check
-                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "n", "n",
-                        "unlocked", Collections.emptyMap())))
                 // for deleted objects check
                 .thenReturn(new UObject(objList))
                 // for name check
