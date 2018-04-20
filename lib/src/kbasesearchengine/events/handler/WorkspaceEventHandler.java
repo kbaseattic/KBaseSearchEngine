@@ -801,24 +801,23 @@ public class WorkspaceEventHandler implements EventHandler {
         final Boolean latestIsPublic = getLatestIsPublic(ev);
 
         // storage object type present and required for new version events
+        final StatusEvent.Builder bb;
         if(ev.getStorageObjectType().isPresent()) {
-            return StatusEvent.
-                    getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(), ev.getEventType()).
-                    withNullableAccessGroupID(ev.getAccessGroupId().get()).
-                    withNullableObjectID(ev.getAccessGroupObjectId().get()).
-                    withNullableVersion(ev.getVersion().orNull()).
-                    withNullableisPublic(latestIsPublic).
-                    withNullableNewName(latestName).build();
+            bb = StatusEvent.getBuilder(ev.getStorageObjectType().get(),
+                                        ev.getTimestamp(),
+                                        ev.getEventType());
         }
         // all other events other than new version events
         else {
-            return StatusEvent.
-                    getBuilder(ev.getStorageCode(), ev.getTimestamp(), ev.getEventType()).
-                    withNullableAccessGroupID(ev.getAccessGroupId().get()).
-                    withNullableObjectID(ev.getAccessGroupObjectId().get()).
-                    withNullableVersion(ev.getVersion().orNull()).
-                    withNullableisPublic(latestIsPublic).
-                    withNullableNewName(latestName).build();
+            bb = StatusEvent.getBuilder(ev.getStorageCode(),
+                                        ev.getTimestamp(),
+                                        ev.getEventType());
         }
+
+        return bb.withNullableAccessGroupID(ev.getAccessGroupId().get()).
+                withNullableObjectID(ev.getAccessGroupObjectId().get()).
+                withNullableVersion(ev.getVersion().orNull()).
+                withNullableisPublic(latestIsPublic).
+                withNullableNewName(latestName).build();
     }
 }
