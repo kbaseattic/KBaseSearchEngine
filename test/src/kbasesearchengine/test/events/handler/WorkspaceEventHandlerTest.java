@@ -791,9 +791,15 @@ public class WorkspaceEventHandlerTest {
         // update event
         StatusEvent updatedEvent = weh.updateObjectEvent(event);
 
-        // since workspace does not exist, we expect to get back an updated event
-        Assert.assertNotSame("expected different event object", event, updatedEvent);
-        Assert.assertEquals(updatedEvent.getEventType(), StatusEventType.DELETE_ALL_VERSIONS);
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.DELETE_ALL_VERSIONS)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .build();
+
+        Assert.assertEquals(expectedEvent, updatedEvent);
     }
 
     @Test
@@ -826,9 +832,17 @@ public class WorkspaceEventHandlerTest {
         // update event
         StatusEvent updatedEvent = weh.updateObjectEvent(event);
 
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.DELETE_ALL_VERSIONS)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .build();
+
         // since deleted object check fails (objid 1L is not present), we expect to get back an updated event
         Assert.assertNotSame("expected different event object", event, updatedEvent);
-        Assert.assertEquals(updatedEvent.getEventType(), StatusEventType.DELETE_ALL_VERSIONS);
+        Assert.assertEquals(expectedEvent, updatedEvent);
     }
 
     @Test
@@ -991,9 +1005,10 @@ public class WorkspaceEventHandlerTest {
                 .withNullableVersion(1)
                 .build();
 
+        final String newName = "newNameInWorkSpace";
         List<Tuple11<Long, String, String, String,
                 Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
-        objList.add(objTuple(1L, "newNameInWorkSpace", "sometype", "date", 1L, "copier",
+        objList.add(objTuple(1L, newName, "sometype", "date", 1L, "copier",
                 1L, "wsname", "checksum", 44, Collections.emptyMap()));
 
         when(wscli.administer(any()))
@@ -1009,10 +1024,21 @@ public class WorkspaceEventHandlerTest {
 
         StatusEvent updatedEvent = weh.updateObjectEvent(event);
 
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName(newName)
+                .withNullableisPublic(Boolean.FALSE)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
         // since name and isPublic flag are different in the mocked workspace and object, we expect to get back an updated event
         Assert.assertNotSame("expected different event object", event, updatedEvent);
         Assert.assertEquals("newNameInWorkSpace", updatedEvent.getNewName().get());
-        Assert.assertEquals(Boolean.FALSE, updatedEvent.isPublic().get());
+        Assert.assertEquals(expectedEvent, updatedEvent);
     }
 
     @Test
@@ -1034,9 +1060,10 @@ public class WorkspaceEventHandlerTest {
                 .withNullableVersion(1)
                 .build();
 
+        final String newName = "newNameInWorkSpace";
         List<Tuple11<Long, String, String, String,
                 Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
-        objList.add(objTuple(1L, "newNameInWorkSpace", "sometype", "date", 1L, "copier",
+        objList.add(objTuple(1L, newName, "sometype", "date", 1L, "copier",
                 1L, "wsname", "checksum", 44, Collections.emptyMap()));
 
         when(wscli.administer(any()))
@@ -1052,10 +1079,18 @@ public class WorkspaceEventHandlerTest {
 
         StatusEvent updatedEvent = weh.updateObjectEvent(event);
 
-        // since name and isPublic flag are different in the mocked workspace and object, we expect to get back an updated event
-        Assert.assertNotSame("expected different event object", event, updatedEvent);
-        Assert.assertEquals("newNameInWorkSpace", updatedEvent.getNewName().get());
-        Assert.assertEquals(Boolean.FALSE, updatedEvent.isPublic().get());
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
+                "WS",
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName(newName)
+                .withNullableisPublic(Boolean.FALSE)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        Assert.assertEquals(expectedEvent, updatedEvent);
     }
 
     @Test

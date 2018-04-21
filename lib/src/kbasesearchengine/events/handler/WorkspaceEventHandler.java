@@ -688,25 +688,6 @@ public class WorkspaceEventHandler implements EventHandler {
         final int wsid = ev.getAccessGroupId().get();
         final long objid = Long.valueOf(ev.getAccessGroupObjectId().get()).longValue();
 
-        // check if workspace is permanently deleted or marked as deleted
-//        try {
-//            getWorkspaceInfo(wsid);
-//        } catch (IOException ex) {
-//            throw handleException(ex);
-//        } catch (JsonClientException ex) {
-//            // hacky: if exception message is changed, this logic will silently fail
-//            if (ex.getMessage().contains("No workspace with id ")) {
-//                return StatusEvent.
-//                        getBuilder(ev.getStorageCode(), ev.getTimestamp(),
-//                                StatusEventType.DELETE_ALL_VERSIONS).
-//                        withNullableAccessGroupID(wsid).
-//                        withNullableObjectID(Long.toString(objid)).build();
-//            }
-//            else {
-//                throw handleException(ex);
-//            }
-//        }
-
         // check if object is permanently deleted or marked as deleted
         final Map<String, Object> command;
         command = new HashMap<>();
@@ -720,21 +701,39 @@ public class WorkspaceEventHandler implements EventHandler {
                     .asClassInstance(List.class);
 
             if (objList.isEmpty()) {
-                return StatusEvent.
-                        getBuilder(ev.getStorageCode(), ev.getTimestamp(),
-                                StatusEventType.DELETE_ALL_VERSIONS).
-                        withNullableAccessGroupID(wsid).
-                        withNullableObjectID(Long.toString(objid)).build();
+                if(ev.getStorageObjectType().isPresent()) {
+                    return StatusEvent.getBuilder(ev.getStorageObjectType().get(),
+                            ev.getTimestamp(),
+                            StatusEventType.DELETE_ALL_VERSIONS).
+                            withNullableAccessGroupID(wsid).
+                            withNullableObjectID(Long.toString(objid)).build();
+                } else {
+                    return StatusEvent.
+                            getBuilder(ev.getStorageCode(),
+                                    ev.getTimestamp(),
+                                    StatusEventType.DELETE_ALL_VERSIONS).
+                            withNullableAccessGroupID(wsid).
+                            withNullableObjectID(Long.toString(objid)).build();
+                }
             }
         } catch (IOException ex) {
             throw handleException(ex);
         } catch (JsonClientException ex) {
             if (ex.getMessage().contains("Workspace "+wsid+" is deleted")) {
-                return StatusEvent.
-                        getBuilder(ev.getStorageCode(), ev.getTimestamp(),
-                                StatusEventType.DELETE_ALL_VERSIONS).
-                        withNullableAccessGroupID(wsid).
-                        withNullableObjectID(Long.toString(objid)).build();
+                if (ev.getStorageObjectType().isPresent()) {
+                    return StatusEvent.getBuilder(ev.getStorageObjectType().get(),
+                            ev.getTimestamp(),
+                            StatusEventType.DELETE_ALL_VERSIONS).
+                            withNullableAccessGroupID(wsid).
+                            withNullableObjectID(Long.toString(objid)).build();
+                } else {
+                    return StatusEvent.
+                            getBuilder(ev.getStorageCode(),
+                                    ev.getTimestamp(),
+                                    StatusEventType.DELETE_ALL_VERSIONS).
+                            withNullableAccessGroupID(wsid).
+                            withNullableObjectID(Long.toString(objid)).build();
+                }
             }
             else {
                 throw handleException(ex);
