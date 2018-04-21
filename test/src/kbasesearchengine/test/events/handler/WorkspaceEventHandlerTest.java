@@ -803,6 +803,43 @@ public class WorkspaceEventHandlerTest {
     }
 
     @Test
+    public void updateEventWorkspacePermanentlyDeletedWithStorageCode() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                "WS",
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newName")
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        when(wscli.administer(argThat(new AdminListObjectsAnswerMatcher(1L, 1L, 1L))))
+                .thenThrow(new JsonClientException("Workspace 1 is deleted"));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        // update event
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
+
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
+                "WS",
+                Instant.ofEpochMilli(20000),
+                StatusEventType.DELETE_ALL_VERSIONS)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .build();
+
+        Assert.assertEquals(expectedEvent, updatedEvent);
+    }
+
+    @Test
     public void updateEventObjectDeleted() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
         final WorkspaceClient cloned = mock(WorkspaceClient.class);
@@ -820,12 +857,10 @@ public class WorkspaceEventHandlerTest {
                 .withNullableVersion(1)
                 .build();
 
-        List<Tuple11<Long, String, String, String,
-                Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
 
         when(wscli.administer(any()))
                 // for deleted objects check
-                .thenReturn(new UObject(objList));
+                .thenReturn(new UObject(Collections.EMPTY_LIST));
 
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
 
@@ -834,6 +869,46 @@ public class WorkspaceEventHandlerTest {
 
         StatusEvent expectedEvent = StatusEvent.getBuilder(
                 StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.DELETE_ALL_VERSIONS)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .build();
+
+        // since deleted object check fails (objid 1L is not present), we expect to get back an updated event
+        Assert.assertNotSame("expected different event object", event, updatedEvent);
+        Assert.assertEquals(expectedEvent, updatedEvent);
+    }
+
+    @Test
+    public void updateEventObjectDeletedWithStorageCode() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                "WS",
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newName")
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        when(wscli.administer(any()))
+                // for deleted objects check
+                .thenReturn(new UObject(Collections.EMPTY_LIST));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        // update event
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
+
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
+                "WS",
                 Instant.ofEpochMilli(20000),
                 StatusEventType.DELETE_ALL_VERSIONS)
                 .withNullableAccessGroupID(1)
