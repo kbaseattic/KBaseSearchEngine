@@ -425,6 +425,43 @@ public class IndexerWorkerIntegrationTest {
         }
     }
 
+    @Test
+    public void testNonExistentWorkspaceCase() throws Exception {
+        // create an event for a workspace that does not exist
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                new StorageObjectType("WS", "KBaseGenomes.Genome"),
+                Instant.now(),
+                StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID(10000)
+                        .withNullableObjectID("1")
+                        .withNullableVersion(1)
+                        .withNullableisPublic(false)
+                        .build(),
+                new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC)
+                .build();
+
+        // process event
+        worker.processEvent(ev);
+
+        List<String> objectTypes = ImmutableList.of("Genome");
+        PostProcessing pp = new PostProcessing();
+        pp.objectData = true;
+        pp.objectKeys = true;
+
+        // object was not indexed
+        try {
+            GUID guid = new GUID("WS", 10000, "1", 1, null, null);
+            List<ObjectData> data = storage.getObjectsByIds(ImmutableSet.of(guid));
+
+            // to compensate for side-effect when testGenomeManually
+            // is executed before this test. This side-effect needs to be fixed.
+            Assert.assertTrue(data.size() == 0);
+        } catch (IOException ex) {
+            Assert.assertTrue("No indexes exist for search type Genome".equals(ex.getMessage()));
+        }
+    }
+
 
     @Test
     public void testRenameObject() throws Exception {
