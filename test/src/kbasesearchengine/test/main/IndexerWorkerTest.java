@@ -1,6 +1,8 @@
 package kbasesearchengine.test.main;
 
 import static kbasesearchengine.test.common.TestCommon.set;
+import static org.junit.Assert.fail;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -165,19 +167,24 @@ public class IndexerWorkerTest {
                         .build())
                 .build();
         when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
-        
-        final StatusEventProcessingState res = worker.processEvent(
-                new ChildStatusEvent(StatusEvent.getBuilder(
-                        storageObjectType,
-                        Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
-                        .withNullableAccessGroupID(1)
-                        .withNullableObjectID("2")
-                        .withNullableVersion(3)
-                        .withNullableisPublic(false)
-                        .build(),
-                        new StatusEventID("parentID")));
+
+        ChildStatusEvent ev = new ChildStatusEvent(StatusEvent.getBuilder(
+                storageObjectType,
+                Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("2")
+                .withNullableVersion(3)
+                .withNullableisPublic(false)
+                .build(),
+                new StatusEventID("parentID"));
+
+        when(ws.updateObjectEvent(ev.getEvent())).thenReturn(ev.getEvent());
+
+        final StatusEventProcessingState res = worker.processEvent(ev);
+
+
         assertThat("incorrect state", res, is(StatusEventProcessingState.INDX));
-        
+
         final ParsedObject po1 = new ParsedObject(
                 new ObjectMapper().writeValueAsString(
                         ImmutableMap.of( "id", "an id", "somedata", "data")),
@@ -296,7 +303,7 @@ public class IndexerWorkerTest {
 
         when(typeStore.listObjectTypeParsingRules(storageObjectType))
                 .thenReturn(set(rules));
-        
+
         final ChildStatusEvent event = new ChildStatusEvent(StatusEvent.getBuilder(
                 storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(1)
@@ -305,7 +312,11 @@ public class IndexerWorkerTest {
                 .withNullableisPublic(false)
                 .build(),
                 new StatusEventID("pid"));
+
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
+
         final StatusEventProcessingState res = worker.processEvent(event);
+
         assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
         
         verify(logger).logError("Error processing event for event NEW_VERSION with parent ID " +
@@ -358,6 +369,7 @@ public class IndexerWorkerTest {
         deleteRecursively(tempDir);
         
         when(ws.getStorageCode()).thenReturn("code");
+        when(ws.updateObjectEvent(any())).then(returnsFirstArg());
         
         final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
                 "myid", tempDir, logger)
@@ -509,8 +521,8 @@ public class IndexerWorkerTest {
                         .build())
                 .build();
         when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
-        
-        final StatusEventProcessingState res = worker.processEvent(
+
+        ChildStatusEvent ev =
                 new ChildStatusEvent(StatusEvent.getBuilder(
                         storageObjectType,
                         Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
@@ -519,7 +531,11 @@ public class IndexerWorkerTest {
                         .withNullableVersion(3)
                         .withNullableisPublic(false)
                         .build(),
-                        new StatusEventID("parentID")));
+                        new StatusEventID("parentID"));
+
+        when(ws.updateObjectEvent(ev.getEvent())).thenReturn(ev.getEvent());
+        
+        final StatusEventProcessingState res = worker.processEvent(ev);
         assertThat("incorrect state", res, is(StatusEventProcessingState.INDX));
         
         final ParsedObject po1 = new ParsedObject(
@@ -619,7 +635,7 @@ public class IndexerWorkerTest {
                         .build())
                 .build();
         when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
-        
+
         final StoredStatusEvent event = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(1)
@@ -630,7 +646,11 @@ public class IndexerWorkerTest {
                 new StatusEventID("myid"),
                 StatusEventProcessingState.PROC)
                 .build();
+
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
+
         final StatusEventProcessingState res = worker.processEvent(event);
+
         assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
         
         verify(logger).logError("Error processing event for event NEW_VERSION myid: " +
@@ -754,7 +774,7 @@ public class IndexerWorkerTest {
                             new GUID(guid, "subfoo", "an id2"), po2,
                             new GUID(guid, "subfoo", "an id"), po1)),
                     eq(false));
-        
+
         final ChildStatusEvent event = new ChildStatusEvent(StatusEvent.getBuilder(
                 storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(1)
@@ -763,7 +783,11 @@ public class IndexerWorkerTest {
                 .withNullableisPublic(false)
                 .build(),
                 new StatusEventID("pid"));
+
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
+
         final StatusEventProcessingState res = worker.processEvent(event);
+
         assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
         
         final String errmsg = "Retriable error in indexer, retry %s: " +
@@ -805,7 +829,7 @@ public class IndexerWorkerTest {
                 .resolve("IndexerWorkerTest");
         deleteRecursively(tempDir);
         
-        when(ws.getStorageCode()).thenReturn("code");
+        when(ws.getStorageCode()).thenReturn("WS");
         
         final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
                 "myid", tempDir, logger)
@@ -818,20 +842,25 @@ public class IndexerWorkerTest {
         
         doThrow(new IndexingConflictException("conflict", new IOException("placeholder")))
                 .when(idxStore).deleteAllVersions(new GUID("WS:3/6"));
-        
+
         final ChildStatusEvent event = new ChildStatusEvent(StatusEvent.getBuilder(
                 "WS",Instant.ofEpochMilli(10000), StatusEventType.DELETE_ALL_VERSIONS)
                 .withNullableAccessGroupID(3)
                 .withNullableObjectID("6")
                 .build(),
                 new StatusEventID("pid"));
+
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
+
         final StatusEventProcessingState res = worker.processEvent(event);
+
         assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
         
         final String errmsg = "Retriable error in indexer for event DELETE_ALL_VERSIONS with " +
                 "parent ID pid, retry %s: " +
                 "kbasesearchengine.events.exceptions.RetriableIndexingException: conflict";
         
+
         verify(logger).logError(String.format(errmsg, 1));
         verify(logger).logError(String.format(errmsg, 2));
         verify(logger).logError(String.format(errmsg, 3));
@@ -919,7 +948,7 @@ public class IndexerWorkerTest {
                 .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("id")) .build())
                 .build();
         when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
-        
+
         final ChildStatusEvent event = new ChildStatusEvent(StatusEvent.getBuilder(
                 storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(1)
@@ -928,7 +957,11 @@ public class IndexerWorkerTest {
                 .withNullableisPublic(false)
                 .build(),
                 new StatusEventID("pid"));
+
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
+
         final StatusEventProcessingState res = worker.processEvent(event);
+
         assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
         
         verify(logger).logError("Error processing event for event NEW_VERSION with parent ID " +
@@ -1028,7 +1061,7 @@ public class IndexerWorkerTest {
         // because it appears that it doesn't because the parent / access document is written
         // before the data documents, so race conditions can cause a problem
         when(idxStore.getObjectsByIds(set(dependencyGUID))).thenReturn(Collections.emptyList());
-        
+
         final ChildStatusEvent event = new ChildStatusEvent(StatusEvent.getBuilder(
                 storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(1)
@@ -1037,7 +1070,11 @@ public class IndexerWorkerTest {
                 .withNullableisPublic(false)
                 .build(),
                 new StatusEventID("pid"));
+
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
+
         final StatusEventProcessingState res = worker.processEvent(event);
+
         assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
         
         verify(logger).logError("Error processing event for event NEW_VERSION with parent ID " +
@@ -1274,6 +1311,9 @@ public class IndexerWorkerTest {
                 .withNullableisPublic(false)
                 .build(),
                 new StatusEventID("parentID"));
+
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
+
         try {
             worker.processEvent(event);
             fail("expected exception");
@@ -1347,6 +1387,8 @@ public class IndexerWorkerTest {
                 .withNullableisPublic(false)
                 .build(),
                 new StatusEventID("parentID"));
+
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
         
         when(storage.store(eq(event), eq("OTHER"), argThat(new ThrowableMatcher(
                 new FatalIndexingException(ErrorType.OTHER, "WS is super broke yo")))))

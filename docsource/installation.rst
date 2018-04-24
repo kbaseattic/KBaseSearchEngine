@@ -27,7 +27,8 @@ Follow these instructions for a local deployment once the :ref:`System Requireme
 
     $ elasticsearch
 
-2. Open a new terminal and start Kibana.
+2. Open a new terminal and start Kibana. Then open http://localhost:5601 in a
+   browser tab to view the initial state of ElasticSearch.
 
 .. code-block:: bash
 

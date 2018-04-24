@@ -540,6 +540,7 @@ public class RetrierTest {
         assertThat("incorrect event", le2.event, is(Optional.absent()));
         TestCommon.assertExceptionCorrect(le2.exception,
                 new FatalRetriableIndexingException(ErrorType.OTHER, "game over man"));
+
         assertCloseMS(start, le2.time, 60, 60);
         assertCloseMS(start, end, 200, 60);
     }
