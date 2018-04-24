@@ -752,10 +752,6 @@ public class WorkspaceEventHandlerTest {
                            .withNullableAccessGroupID(1)
                            .build();
 
-        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(1))))
-                .thenReturn(new UObject(wsTuple(1, "wsname", "username", "date", 7, "r", "n",
-                        "unlocked", Collections.emptyMap())));
-
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
 
         // update event
