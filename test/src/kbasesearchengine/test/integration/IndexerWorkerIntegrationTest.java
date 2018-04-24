@@ -371,6 +371,63 @@ public class IndexerWorkerIntegrationTest {
     }
 
     @Test
+    public void testNarrativeManually() throws Exception {
+        final StatusEvent ev = StatusEvent.getBuilder(
+                new StorageObjectType("WS", "KBaseNarrative.Narrative"),
+                Instant.now(),
+                StatusEventType.NEW_VERSION)
+                .withNullableAccessGroupID(wsid)
+                .withNullableObjectID("1")
+                .withNullableVersion(5)
+                .withNullableisPublic(false)
+                .build();
+        indexFewVersions(StoredStatusEvent.getBuilder(ev, new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC).build());
+        checkSearch(1, ImmutableList.of("Narrative"), "tree", wsid, false);
+        checkSearch(1, ImmutableList.of("Narrative"), "species", wsid, false);
+        /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null,
+                System.currentTimeMillis(), "KBaseNarrative.Narrative",
+                ObjectStatusEventType.CREATED, false));
+        checkSearch(1, "Narrative", "Catalog.migrate_module_to_new_git_url", 10455, false);
+        checkSearch(1, "Narrative", "Super password!", 10455, false);
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", 480, "1", 254, null,
+                System.currentTimeMillis(), "KBaseNarrative.Narrative",
+                ObjectStatusEventType.CREATED, false));
+        checkSearch(1, "Narrative", "weird text", 480, false);
+        checkSearch(1, "Narrative", "functionality", 480, false);*/
+    }
+
+    @Test
+    public void testReadsManually() throws Exception {
+        final StatusEvent ev = StatusEvent.getBuilder(
+                new StorageObjectType("WS", "KBaseFile.PairedEndLibrary"),
+                Instant.now(),
+                StatusEventType.NEW_VERSION)
+                .withNullableAccessGroupID(wsid)
+                .withNullableObjectID("4")
+                .withNullableVersion(1)
+                .withNullableisPublic(false)
+                .build();
+        indexFewVersions(StoredStatusEvent.getBuilder(ev, new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC).build());
+        checkSearch(1, ImmutableList.of("PairedEndLibrary"), "Illumina", wsid, true);
+        checkSearch(1, ImmutableList.of("PairedEndLibrary"), "sample1se.fastq.gz", wsid, false);
+        final StatusEvent ev2 = StatusEvent.getBuilder(
+                new StorageObjectType("WS", "KBaseFile.SingleEndLibrary"),
+                Instant.now(),
+                StatusEventType.NEW_VERSION)
+                .withNullableAccessGroupID(wsid)
+                .withNullableObjectID("5")
+                .withNullableVersion(1)
+                .withNullableisPublic(false)
+                .build();
+        indexFewVersions(StoredStatusEvent.getBuilder(ev2, new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC).build());
+        checkSearch(1, ImmutableList.of("SingleEndLibrary"), "PacBio", wsid, true);
+        checkSearch(1, ImmutableList.of("SingleEndLibrary"), "reads.2", wsid, false);
+    }
+
+    @Test
     public void testWorkspaceDeletion() throws Exception {
         URL wsUrl = new URL("http://localhost:" + ws.getServerPort());
         final AuthToken wsadmintoken = new AuthToken(token1, "user1");
