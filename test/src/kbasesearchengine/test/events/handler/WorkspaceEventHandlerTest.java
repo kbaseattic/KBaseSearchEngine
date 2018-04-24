@@ -799,6 +799,43 @@ public class WorkspaceEventHandlerTest {
     }
 
     @Test
+    public void updateEventWorkspaceNonExistent() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newName")
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        when(wscli.administer(argThat(new AdminListObjectsAnswerMatcher(1L, 1L, 1L))))
+                .thenThrow(new JsonClientException("No workspace with id 1 exists"));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        // update event
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
+
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
+                "WS",
+                Instant.ofEpochMilli(20000),
+                StatusEventType.DELETE_ALL_VERSIONS)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .build();
+
+        Assert.assertEquals(expectedEvent, updatedEvent);
+    }
+
+    @Test
     public void updateEventObjectDeleted() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
         final WorkspaceClient cloned = mock(WorkspaceClient.class);
