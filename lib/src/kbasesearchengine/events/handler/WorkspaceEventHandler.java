@@ -682,29 +682,11 @@ public class WorkspaceEventHandler implements EventHandler {
     }
 
     private final StatusEvent updateEventForDeletion(final StatusEvent ev)
-              throws RetriableIndexingException {
+              throws RetriableIndexingException,
+                     IndexingException {
         // wsid and objid of the object that the specified StatusEvent is an event for
         final int wsid = ev.getAccessGroupId().get();
         final long objid = Long.valueOf(ev.getAccessGroupObjectId().get()).longValue();
-
-        // check if workspace is permanently deleted or marked as deleted
-        try {
-            getWorkspaceInfo(wsid);
-        } catch (IOException ex) {
-            handleException(ex);
-        } catch (JsonClientException ex) {
-            // hacky: if exception message is changed, this logic will silently fail
-            if (ex.getMessage().contains("No workspace with id ")) {
-                return StatusEvent.
-                        getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(),
-                                StatusEventType.DELETE_ALL_VERSIONS).
-                        withNullableAccessGroupID(wsid).
-                        withNullableObjectID(Long.toString(objid)).build();
-            }
-            else {
-                handleException(ex);
-            }
-        }
 
         // check if object is permanently deleted or marked as deleted
         final Map<String, Object> command;
@@ -715,26 +697,33 @@ public class WorkspaceEventHandler implements EventHandler {
                 withMinObjectID(objid).
                 withMaxObjectID(objid));
         try {
-            boolean objidExists = false;
-
             final List<List> objList = ws.getClient().administer(new UObject(command))
                     .asClassInstance(List.class);
 
-            if(objList != null && objList.size() > 0) {
-                objidExists = true;
-            }
-
-            if (!objidExists) {
+            if (objList.isEmpty()) {
                 return StatusEvent.
-                        getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(),
+                        getBuilder(ev.getStorageCode(),
+                                ev.getTimestamp(),
                                 StatusEventType.DELETE_ALL_VERSIONS).
                         withNullableAccessGroupID(wsid).
                         withNullableObjectID(Long.toString(objid)).build();
             }
         } catch (IOException ex) {
-            handleException(ex);
+            throw handleException(ex);
         } catch (JsonClientException ex) {
-            handleException(ex);
+            String msg = ex.getMessage();
+            if (msg.contains("Workspace "+wsid+" is deleted") ||
+                    msg.contains("No workspace with id "+wsid+" exists")) {
+                return StatusEvent.
+                        getBuilder(ev.getStorageCode(),
+                                ev.getTimestamp(),
+                                StatusEventType.DELETE_ALL_VERSIONS).
+                        withNullableAccessGroupID(wsid).
+                        withNullableObjectID(Long.toString(objid)).build();
+            }
+            else {
+                throw handleException(ex);
+            }
         }
 
         return ev;
@@ -763,23 +752,21 @@ public class WorkspaceEventHandler implements EventHandler {
     private Boolean getLatestIsPublic(StatusEvent ev)
                             throws IndexingException,
                                    RetriableIndexingException {
-        String isPublic = null;
-
         try {
 
-            isPublic = getWorkspaceInfo(ev.getAccessGroupId().get()).getE6();
+            final String isPublic = getWorkspaceInfo(ev.getAccessGroupId().get()).getE6();
 
-                    } catch (IOException ex) {
-            handleException(ex);
+            return (isPublic == "n") ? false: true;
+
+        } catch (IOException ex) {
+            throw handleException(ex);
         } catch (JsonClientException ex) {
-            handleException(ex);
+            throw handleException(ex);
         }
-
-        return (isPublic == "n") ? false: true;
     }
 
     @Override
-    public StatusEvent updateEvent(final StatusEvent ev)
+    public StatusEvent updateObjectEvent(final StatusEvent ev)
             throws IndexingException,
                    RetriableIndexingException {
 
@@ -807,14 +794,24 @@ public class WorkspaceEventHandler implements EventHandler {
         // check if permissions have changed and update state of isPublic
         final Boolean latestIsPublic = getLatestIsPublic(ev);
 
-        StatusEvent updatedEvent = StatusEvent.
-                getBuilder(ev.getStorageObjectType().get(), ev.getTimestamp(), ev.getEventType()).
-                withNullableAccessGroupID(ev.getAccessGroupId().get()).
+        // storage object type present and required for new version events
+        final StatusEvent.Builder bb;
+        if(ev.getStorageObjectType().isPresent()) {
+            bb = StatusEvent.getBuilder(ev.getStorageObjectType().get(),
+                                        ev.getTimestamp(),
+                                        ev.getEventType());
+        }
+        // all other events other than new version events
+        else {
+            bb = StatusEvent.getBuilder(ev.getStorageCode(),
+                                        ev.getTimestamp(),
+                                        ev.getEventType());
+        }
+
+        return bb.withNullableAccessGroupID(ev.getAccessGroupId().get()).
                 withNullableObjectID(ev.getAccessGroupObjectId().get()).
                 withNullableVersion(ev.getVersion().orNull()).
                 withNullableisPublic(latestIsPublic).
                 withNullableNewName(latestName).build();
-
-        return updatedEvent;
     }
 }

@@ -50,6 +50,7 @@ import us.kbase.common.service.UnauthorizedException;
 import us.kbase.workspace.GetObjectInfo3Results;
 import us.kbase.workspace.GetObjects2Params;
 import us.kbase.workspace.GetObjects2Results;
+import us.kbase.workspace.ListObjectsParams;
 import us.kbase.workspace.ObjectData;
 import us.kbase.workspace.ObjectSpecification;
 import us.kbase.workspace.ProvenanceAction;
@@ -194,6 +195,38 @@ public class WorkspaceEventHandlerTest {
                     cmd.get("params"), WorkspaceIdentity.class);
             matches = matches && wi.getId() == id;
             matches = matches && wi.getWorkspace() == null;
+
+            return matches;
+        }
+    }
+
+    private class AdminListObjectsAnswerMatcher implements ArgumentMatcher<UObject> {
+
+        final long id;
+        final long minObjectId;
+        final long maxObjectId;
+
+        public AdminListObjectsAnswerMatcher(final long id,
+                                             final long minObjectId,
+                                             final long maxObjectId) {
+            this.id = id;
+            this.minObjectId = minObjectId;
+            this.maxObjectId = maxObjectId;
+        }
+
+        @Override
+        public boolean matches(final UObject command) {
+            // the fact that kb-sdk doesn't compile in equals & hashcode is infuriating
+            boolean matches = true;
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> cmd = command.asClassInstance(Map.class);
+            matches = matches && "listObjects".equals(cmd.get("command"));
+
+            final ListObjectsParams li = UObject.transformObjectToObject(
+                    cmd.get("params"), ListObjectsParams.class);
+            matches = matches && li.getIds().get(0) == id;
+            matches = matches && li.getMinObjectID() == minObjectId;
+            matches = matches && li.getMaxObjectID() == maxObjectId;
 
             return matches;
         }
@@ -719,14 +752,10 @@ public class WorkspaceEventHandlerTest {
                            .withNullableAccessGroupID(1)
                            .build();
 
-        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(1))))
-                .thenReturn(new UObject(wsTuple(1, "wsname", "username", "date", 7, "r", "n",
-                        "unlocked", Collections.emptyMap())));
-
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
 
         // update event
-        StatusEvent updatedEvent = weh.updateEvent(event);
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
 
         // access group events are not updated, so we expect to get back the original event
         Assert.assertEquals("expected the same event object", event, updatedEvent);
@@ -750,17 +779,60 @@ public class WorkspaceEventHandlerTest {
                 .withNullableVersion(1)
                 .build();
 
-        when(wscli.administer(argThat(new AdminGetWSInfoAnswerMatcher(1))))
-                .thenThrow(new JsonClientException("No workspace with id 1 exists!"));
+        when(wscli.administer(argThat(new AdminListObjectsAnswerMatcher(1L, 1L, 1L))))
+                .thenThrow(new JsonClientException("Workspace 1 is deleted"));
 
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
 
         // update event
-        StatusEvent updatedEvent = weh.updateEvent(event);
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
 
-        // since workspace does not exist, we expect to get back an updated event
-        Assert.assertNotSame("expected different event object", event, updatedEvent);
-        Assert.assertEquals(updatedEvent.getEventType(), StatusEventType.DELETE_ALL_VERSIONS);
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
+                "WS",
+                Instant.ofEpochMilli(20000),
+                StatusEventType.DELETE_ALL_VERSIONS)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .build();
+
+        Assert.assertEquals(expectedEvent, updatedEvent);
+    }
+
+    @Test
+    public void updateEventWorkspaceNonExistent() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newName")
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        when(wscli.administer(argThat(new AdminListObjectsAnswerMatcher(1L, 1L, 1L))))
+                .thenThrow(new JsonClientException("No workspace with id 1 exists"));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        // update event
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
+
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
+                "WS",
+                Instant.ofEpochMilli(20000),
+                StatusEventType.DELETE_ALL_VERSIONS)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .build();
+
+        Assert.assertEquals(expectedEvent, updatedEvent);
     }
 
     @Test
@@ -781,28 +853,280 @@ public class WorkspaceEventHandlerTest {
                 .withNullableVersion(1)
                 .build();
 
-        List<Tuple11<Long, String, String, String,
-                Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
 
         when(wscli.administer(any()))
-                // for deleted workspace check
-                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "r", "n",
-                        "unlocked", Collections.emptyMap())))
                 // for deleted objects check
-                .thenReturn(new UObject(objList));
+                .thenReturn(new UObject(Collections.EMPTY_LIST));
 
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
 
         // update event
-        StatusEvent updatedEvent = weh.updateEvent(event);
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
+
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
+                "WS",
+                Instant.ofEpochMilli(20000),
+                StatusEventType.DELETE_ALL_VERSIONS)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .build();
 
         // since deleted object check fails (objid 1L is not present), we expect to get back an updated event
         Assert.assertNotSame("expected different event object", event, updatedEvent);
-        Assert.assertEquals(updatedEvent.getEventType(), StatusEventType.DELETE_ALL_VERSIONS);
+        Assert.assertEquals(expectedEvent, updatedEvent);
+    }
+
+
+    @Test
+    public void updateEventObjectDeletedExceptionCase1() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newName")
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        when(wscli.administer(any()))
+                // for deleted workspace check
+                .thenThrow(new IOException("Test exception"));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        // update event
+        boolean exceptionCaught = false;
+        try {
+            weh.updateObjectEvent(event);
+        } catch (RetriableIndexingException ex) {
+            exceptionCaught = true;
+        } finally {
+            Assert.assertTrue(exceptionCaught);
+        }
+    }
+
+    @Test
+    public void updateEventObjectDeletedExceptionCase2() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newName")
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        when(wscli.administer(any()))
+                // for deleted workspace check
+                .thenThrow(new JsonClientException("Test exception"));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        // update event
+        boolean exceptionCaught = false;
+        try {
+            weh.updateObjectEvent(event);
+        } catch (UnprocessableEventIndexingException ex) {
+            exceptionCaught = true;
+        } finally {
+            Assert.assertTrue(exceptionCaught);
+        }
+    }
+
+    @Test
+    public void updateEventObjectDeletedExceptionCase3() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newName")
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        when(wscli.administer(any()))
+                // for deleted objects check
+                .thenThrow(new IOException("Test exception"));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        // update event
+        boolean exceptionCaught = false;
+        try {
+            weh.updateObjectEvent(event);
+        } catch (RetriableIndexingException ex) {
+            exceptionCaught = true;
+        } finally {
+            Assert.assertTrue(exceptionCaught);
+        }
+    }
+
+
+    @Test
+    public void updateEventObjectDeletedExceptionCase4() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newName")
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        when(wscli.administer(any()))
+                // for deleted objects check
+                .thenThrow(new JsonClientException("Test exception"));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        // update event
+        boolean exceptionCaught = false;
+        try {
+            weh.updateObjectEvent(event);
+        } catch (UnprocessableEventIndexingException ex) {
+            exceptionCaught = true;
+        } finally {
+            Assert.assertTrue(exceptionCaught);
+        }
     }
 
     @Test
     public void updateEventObjectRenamedAndIsPublic() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newNameInEvent")
+                .withNullableisPublic(Boolean.TRUE)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        final String newName = "newNameInWorkSpace";
+        List<Tuple11<Long, String, String, String,
+                Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
+        objList.add(objTuple(1L, newName, "sometype", "date", 1L, "copier",
+                1L, "wsname", "checksum", 44, Collections.emptyMap()));
+
+        when(wscli.administer(any()))
+                // for deleted objects check
+                .thenReturn(new UObject(objList))
+                // for name check
+                .thenReturn(new UObject(new GetObjectInfo3Results().withInfos(objList)))
+                // for isPublic check
+                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "n", "n",
+                        "unlocked", Collections.emptyMap())));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
+
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName(newName)
+                .withNullableisPublic(Boolean.FALSE)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        // since name and isPublic flag are different in the mocked workspace and object, we expect to get back an updated event
+        Assert.assertNotSame("expected different event object", event, updatedEvent);
+        Assert.assertEquals("newNameInWorkSpace", updatedEvent.getNewName().get());
+        Assert.assertEquals(expectedEvent, updatedEvent);
+    }
+
+    @Test
+    public void updateEventObjectRenamedAndIsPublicWithStorageCode() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                "WS",
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newNameInEvent")
+                .withNullableisPublic(Boolean.TRUE)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        final String newName = "newNameInWorkSpace";
+        List<Tuple11<Long, String, String, String,
+                Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
+        objList.add(objTuple(1L, newName, "sometype", "date", 1L, "copier",
+                1L, "wsname", "checksum", 44, Collections.emptyMap()));
+
+        when(wscli.administer(any()))
+                // for deleted objects check
+                .thenReturn(new UObject(objList))
+                // for name check
+                .thenReturn(new UObject(new GetObjectInfo3Results().withInfos(objList)))
+                // for isPublic check
+                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "n", "n",
+                        "unlocked", Collections.emptyMap())));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
+
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
+                "WS",
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName(newName)
+                .withNullableisPublic(Boolean.FALSE)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        Assert.assertEquals(expectedEvent, updatedEvent);
+    }
+
+    @Test
+    public void updateEventObjectRenamedAndIsPublicExceptionCase1() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
         final WorkspaceClient cloned = mock(WorkspaceClient.class);
         final WorkspaceClient wscli = mock(WorkspaceClient.class);
@@ -826,24 +1150,154 @@ public class WorkspaceEventHandlerTest {
                 1L, "wsname", "checksum", 44, Collections.emptyMap()));
 
         when(wscli.administer(any()))
-                // for deleted workspace check
-                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "n", "n",
-                        "unlocked", Collections.emptyMap())))
+                // for deleted objects check
+                .thenReturn(new UObject(objList))
+                // for name check
+                .thenThrow(new IOException("Test exception"));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        // update event
+        boolean exceptionCaught = false;
+        try {
+            weh.updateObjectEvent(event);
+        } catch (RetriableIndexingException ex) {
+            exceptionCaught = true;
+        } finally {
+            Assert.assertTrue(exceptionCaught);
+        }
+    }
+
+    @Test
+    public void updateEventObjectRenamedAndIsPublicExceptionCase2() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newNameInEvent")
+                .withNullableisPublic(Boolean.TRUE)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        List<Tuple11<Long, String, String, String,
+                Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
+        objList.add(objTuple(1L, "newNameInWorkSpace", "sometype", "date", 1L, "copier",
+                1L, "wsname", "checksum", 44, Collections.emptyMap()));
+
+        when(wscli.administer(any()))
+                // for deleted objects check
+                .thenReturn(new UObject(objList))
+                // for name check
+                .thenThrow(new JsonClientException("Test exception"));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        // update event
+        boolean exceptionCaught = false;
+        try {
+            weh.updateObjectEvent(event);
+        } catch (UnprocessableEventIndexingException ex) {
+            exceptionCaught = true;
+        } finally {
+            Assert.assertTrue(exceptionCaught);
+        }
+    }
+
+    @Test
+    public void updateEventObjectRenamedAndIsPublicExceptionCase3() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newNameInEvent")
+                .withNullableisPublic(Boolean.TRUE)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        List<Tuple11<Long, String, String, String,
+                Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
+        objList.add(objTuple(1L, "newNameInWorkSpace", "sometype", "date", 1L, "copier",
+                1L, "wsname", "checksum", 44, Collections.emptyMap()));
+
+        when(wscli.administer(any()))
                 // for deleted objects check
                 .thenReturn(new UObject(objList))
                 // for name check
                 .thenReturn(new UObject(new GetObjectInfo3Results().withInfos(objList)))
                 // for isPublic check
-                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "n", "n",
-                        "unlocked", Collections.emptyMap())));
+                .thenThrow(new IOException("Test exception"));
 
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
 
-        StatusEvent updatedEvent = weh.updateEvent(event);
+        // update event
+        boolean exceptionCaught = false;
+        try {
+            weh.updateObjectEvent(event);
+        } catch (RetriableIndexingException ex) {
+            exceptionCaught = true;
+        } finally {
+            Assert.assertTrue(exceptionCaught);
+        }
+    }
 
-        // since name and isPublic flag are different in the mocked workspace and object, we expect to get back an updated event
-        Assert.assertNotSame("expected different event object", event, updatedEvent);
-        Assert.assertEquals("newNameInWorkSpace", updatedEvent.getNewName().get());
-        Assert.assertEquals(Boolean.FALSE, updatedEvent.isPublic().get());
+    @Test
+    public void updateEventObjectRenamedAndIsPublicExceptionCase4() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.RENAME_ALL_VERSIONS)
+                .withNullableNewName("newNameInEvent")
+                .withNullableisPublic(Boolean.TRUE)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        List<Tuple11<Long, String, String, String,
+                Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
+        objList.add(objTuple(1L, "newNameInWorkSpace", "sometype", "date", 1L, "copier",
+                1L, "wsname", "checksum", 44, Collections.emptyMap()));
+
+        when(wscli.administer(any()))
+                // for deleted objects check
+                .thenReturn(new UObject(objList))
+                // for name check
+                .thenReturn(new UObject(new GetObjectInfo3Results().withInfos(objList)))
+                // for isPublic check
+                .thenThrow(new JsonClientException("Test exception"));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        // update event
+        boolean exceptionCaught = false;
+        try {
+            weh.updateObjectEvent(event);
+        } catch (UnprocessableEventIndexingException ex) {
+            exceptionCaught = true;
+        } finally {
+            Assert.assertTrue(exceptionCaught);
+        }
     }
 }

@@ -95,11 +95,13 @@ public interface EventHandler {
      * that it is an event for if the state of the state of the object has changed. If the
      * state of the object has not changed, the same event object is returned.
      *
+     * The method does nothing if the event is an access group level event.
+     *
      * @param ev event to update
      * @return a new updated event
      * @throws IndexingException
      * @throws RetriableIndexingException
      */
-    StatusEvent updateEvent(StatusEvent ev)
+    StatusEvent updateObjectEvent(StatusEvent ev)
             throws IndexingException, RetriableIndexingException;
 }

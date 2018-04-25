@@ -178,7 +178,7 @@ public class IndexerWorkerTest {
                 .build(),
                 new StatusEventID("parentID"));
 
-        when(ws.updateEvent(ev.getEvent())).thenReturn(ev.getEvent());
+        when(ws.updateObjectEvent(ev.getEvent())).thenReturn(ev.getEvent());
 
         final StatusEventProcessingState res = worker.processEvent(ev);
 
@@ -313,7 +313,7 @@ public class IndexerWorkerTest {
                 .build(),
                 new StatusEventID("pid"));
 
-        when(ws.updateEvent(event.getEvent())).thenReturn(event.getEvent());
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
 
         final StatusEventProcessingState res = worker.processEvent(event);
 
@@ -369,7 +369,7 @@ public class IndexerWorkerTest {
         deleteRecursively(tempDir);
         
         when(ws.getStorageCode()).thenReturn("code");
-        when(ws.updateEvent(any())).then(returnsFirstArg());
+        when(ws.updateObjectEvent(any())).then(returnsFirstArg());
         
         final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
                 "myid", tempDir, logger)
@@ -533,7 +533,7 @@ public class IndexerWorkerTest {
                         .build(),
                         new StatusEventID("parentID"));
 
-        when(ws.updateEvent(ev.getEvent())).thenReturn(ev.getEvent());
+        when(ws.updateObjectEvent(ev.getEvent())).thenReturn(ev.getEvent());
         
         final StatusEventProcessingState res = worker.processEvent(ev);
         assertThat("incorrect state", res, is(StatusEventProcessingState.INDX));
@@ -647,7 +647,7 @@ public class IndexerWorkerTest {
                 StatusEventProcessingState.PROC)
                 .build();
 
-        when(ws.updateEvent(event.getEvent())).thenReturn(event.getEvent());
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
 
         final StatusEventProcessingState res = worker.processEvent(event);
 
@@ -784,7 +784,7 @@ public class IndexerWorkerTest {
                 .build(),
                 new StatusEventID("pid"));
 
-        when(ws.updateEvent(event.getEvent())).thenReturn(event.getEvent());
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
 
         final StatusEventProcessingState res = worker.processEvent(event);
 
@@ -850,7 +850,7 @@ public class IndexerWorkerTest {
                 .build(),
                 new StatusEventID("pid"));
 
-        when(ws.updateEvent(event.getEvent())).thenReturn(event.getEvent());
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
 
         final StatusEventProcessingState res = worker.processEvent(event);
 
@@ -958,7 +958,7 @@ public class IndexerWorkerTest {
                 .build(),
                 new StatusEventID("pid"));
 
-        when(ws.updateEvent(event.getEvent())).thenReturn(event.getEvent());
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
 
         final StatusEventProcessingState res = worker.processEvent(event);
 
@@ -1071,7 +1071,7 @@ public class IndexerWorkerTest {
                 .build(),
                 new StatusEventID("pid"));
 
-        when(ws.updateEvent(event.getEvent())).thenReturn(event.getEvent());
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
 
         final StatusEventProcessingState res = worker.processEvent(event);
 
@@ -1312,7 +1312,7 @@ public class IndexerWorkerTest {
                 .build(),
                 new StatusEventID("parentID"));
 
-        when(ws.updateEvent(event.getEvent())).thenReturn(event.getEvent());
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
 
         try {
             worker.processEvent(event);
@@ -1388,7 +1388,7 @@ public class IndexerWorkerTest {
                 .build(),
                 new StatusEventID("parentID"));
 
-        when(ws.updateEvent(event.getEvent())).thenReturn(event.getEvent());
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
         
         when(storage.store(eq(event), eq("OTHER"), argThat(new ThrowableMatcher(
                 new FatalIndexingException(ErrorType.OTHER, "WS is super broke yo")))))

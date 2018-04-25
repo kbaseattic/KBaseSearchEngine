@@ -7,6 +7,7 @@ module-description:
 service-language:
     java
 
+# For app version, see /lib/src/kbasesearchengine/main/SearchVersion.java
 module-version:
     0.0.1
 

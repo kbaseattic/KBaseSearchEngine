@@ -1411,8 +1411,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     matchFilter.accessGroupId)), withAllHistory));
         }*/
         if (matchFilter.getObjectName().isPresent()) {
-                                                    // this seems like a bug...?
-            matches.add(createFilter("match", OBJ_NAME, matchFilter.getFullTextInAll().get()));
+            matches.add(createFilter("match", OBJ_NAME, matchFilter.getObjectName().get()));
         }
         for (final String keyName : matchFilter.getLookupInKeys().keySet()) {
             final MatchValue value = matchFilter.getLookupInKeys().get(keyName);

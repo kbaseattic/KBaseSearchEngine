@@ -418,7 +418,7 @@ public class IndexerWorker implements Stoppable {
 
         // update event to reflect the latest state of object for which the specified StatusEvent is an event for
         EventHandler handler = getEventHandler(ev.getStorageCode());
-        StatusEvent updatedEvent = handler.updateEvent(ev);
+        StatusEvent updatedEvent = handler.updateObjectEvent(ev);
 
         try {
             switch (updatedEvent.getEventType()) {
