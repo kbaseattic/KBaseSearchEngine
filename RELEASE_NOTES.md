@@ -1,6 +1,10 @@
 Search Service MKII release notes
 =================================
 
+0.2.0
+-----
+1. Removed recursive indexing. 
+
 0.1.1
 -----
 
