@@ -815,16 +815,12 @@ public class IndexerWorker implements Stoppable {
         
         private List<ObjectData> getObjectsByIds(final Set<GUID> guids)
                 throws RetriableIndexingException {
-            kbasesearchengine.search.PostProcessing pp = 
-                    new kbasesearchengine.search.PostProcessing();
-            pp.objectData = false;
-            pp.objectKeys = true;
 
             final List<ObjectData> data = new ArrayList<>();
 
             // get object from data source
             for (GUID guid: guids) {
-                File tempFile = null;
+                final File tempFile;
                 try {
                     FileUtil.getOrCreateSubDir(rootTempDir, guid.getStorageCode());
                     tempFile = File.createTempFile("ws_srv_response_", ".json");
@@ -834,24 +830,24 @@ public class IndexerWorker implements Stoppable {
 
                 try {
                     final EventHandler handler = getEventHandler(guid);
-                    Iterator<ResolvedReference> refs = handler.resolveReferences(null, guids).iterator();
+                    final Iterator<ResolvedReference> refs = handler.resolveReferences(null, guids).iterator();
                     while (refs.hasNext()) {
-                        ResolvedReference ref = refs.next();
+                        final ResolvedReference ref = refs.next();
 
                         // make a copy to avoid mutating the caller's path
                         final LinkedList<GUID> newRefPath = new LinkedList<>();
                         newRefPath.add(guid);
                         final SourceData obj = handler.load(newRefPath, tempFile.toPath());
 
-                        List<ObjectTypeParsingRules> filteredParsingRules = getFilteredSortedParsingRules(ref);
+                        final List<ObjectTypeParsingRules> filteredParsingRules = getFilteredSortedParsingRules(ref);
 
                         for (final ObjectTypeParsingRules rule : filteredParsingRules) {
                             final ParseObjectsRet parsedRet = parseObjects(guid, this,
                                     newRefPath, obj, rule);
 
-                            GUID parsedGUID = parsedRet.guidToObj.keySet().iterator().next();
+                            final GUID parsedGUID = parsedRet.guidToObj.keySet().iterator().next();
 
-                            ObjectData objData = buildObjectDataFrom(
+                            final ObjectData objData = buildObjectDataFrom(
                                     parsedRet.guidToObj.keySet().iterator().next(),
                                     rule.getGlobalObjectType(),
                                     obj.getName(),
@@ -877,8 +873,8 @@ public class IndexerWorker implements Stoppable {
             // filter by subObject type
             final List<ObjectTypeParsingRules> filteredParsingRules = new ArrayList<>();
             for (final ObjectTypeParsingRules rule : parsingRules) {
-                String refSubObjectType = ref.getReference().getSubObjectType();
-                String ruleSubObjectType = rule.getSubObjectType().orNull();
+                final String refSubObjectType = ref.getReference().getSubObjectType();
+                final String ruleSubObjectType = rule.getSubObjectType().orNull();
                 if (refSubObjectType == null && ruleSubObjectType == null) {
                     filteredParsingRules.add(rule);
                 }
@@ -906,9 +902,9 @@ public class IndexerWorker implements Stoppable {
             ObjectData.Builder objDataBuilder = ObjectData.getBuilder(guid,globalObjectType);
             Iterator<String> keys = keywords.keySet().iterator();
             while (keys.hasNext()) {
-                String key = keys.next();
-                String textValue;
-                Object objValue = keywords.get(key);
+                final String key = keys.next();
+                final String textValue;
+                final Object objValue = keywords.get(key);
 
                 if (objValue instanceof List) {
                     @SuppressWarnings("unchecked")

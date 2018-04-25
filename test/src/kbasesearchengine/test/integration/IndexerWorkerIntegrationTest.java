@@ -309,13 +309,13 @@ public class IndexerWorkerIntegrationTest {
                 .build();
         worker.processEvent(ev);
 
-        PostProcessing pp = new PostProcessing();
+        final PostProcessing pp = new PostProcessing();
         pp.objectData = true;
         pp.objectKeys = true;
 
         {
-            List<String> objectTypes = ImmutableList.of("Genome");
-            FoundHits hits = storage.searchObjects(objectTypes,
+            final List<String> objectTypes = ImmutableList.of("Genome");
+            final FoundHits hits = storage.searchObjects(objectTypes,
                     MatchFilter.getBuilder().build(), null,
                     AccessFilter.create().withAdmin(true), null, pp
             );
@@ -324,8 +324,8 @@ public class IndexerWorkerIntegrationTest {
         }
 
         {
-            List<String> objectTypes = ImmutableList.of("GenomeFeature");
-            FoundHits hits = storage.searchObjects(objectTypes,
+            final List<String> objectTypes = ImmutableList.of("GenomeFeature");
+            final FoundHits hits = storage.searchObjects(objectTypes,
                     MatchFilter.getBuilder().build(), null,
                     AccessFilter.create().withAdmin(true), null, pp
                     );
@@ -334,8 +334,8 @@ public class IndexerWorkerIntegrationTest {
         }
 
         {
-            List<String> objectTypes = ImmutableList.of("Assembly");
-            String message = null;
+            final List<String> objectTypes = ImmutableList.of("Assembly");
+            String message = "Exception check failed!";
             try {
                 storage.searchObjects(objectTypes,
                         MatchFilter.getBuilder().build(), null,
@@ -353,7 +353,7 @@ public class IndexerWorkerIntegrationTest {
 
         {
             List<String> objectTypes = ImmutableList.of("AssemblyContig");
-            String message = null;
+            String message = "Exception check failed!";
             try {
                 storage.searchObjects(objectTypes,
                         MatchFilter.getBuilder().build(), null,
@@ -370,19 +370,19 @@ public class IndexerWorkerIntegrationTest {
         }
 
         // verify a feature
-        String query = "TrkA";
-        Map<String, Integer> typeToCount = storage.searchTypes(
+        final String query = "TrkA";
+        final Map<String, Integer> typeToCount = storage.searchTypes(
                 MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), 
                 AccessFilter.create().withAdmin(true));
         Assert.assertEquals("expected 1 type (GenomeFeature)", 1, typeToCount.size());
 
-        List<String> types = ImmutableList.of(typeToCount.keySet().iterator().next());
+        final List<String> types = ImmutableList.of(typeToCount.keySet().iterator().next());
 
-        Set<GUID> guids = storage.searchIds(types,
+        final Set<GUID> guids = storage.searchIds(types,
                 MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), null, 
                 AccessFilter.create().withAdmin(true), null).guids;
         Assert.assertEquals("expected 1 guid", 1, guids.size());
-        ObjectData obj = storage.getObjectsByIds(guids, pp).get(0);
+        final ObjectData obj = storage.getObjectsByIds(guids, pp).get(0);
         Assert.assertEquals("wrong feature id", "PROKKA_00027", obj.getGUID().getSubObjectId());
     }
 
@@ -403,14 +403,14 @@ public class IndexerWorkerIntegrationTest {
                 .build();
         worker.processEvent(ev);
 
-        PostProcessing pp = new PostProcessing();
+        final PostProcessing pp = new PostProcessing();
         pp.objectData = true;
         pp.objectKeys = true;
 
         // verify that the referenced genome object was not recursively indexed
         {
-            List<String> objectTypes = ImmutableList.of("Genome");
-            String message = null;
+            final List<String> objectTypes = ImmutableList.of("Genome");
+            String message = "Exception check failed!";
             try {
                 storage.searchObjects(objectTypes,
                         MatchFilter.getBuilder().build(), null,
@@ -426,15 +426,15 @@ public class IndexerWorkerIntegrationTest {
         }
 
         {
-            List<String> objectTypes = ImmutableList.of("FBAModel");
-            FoundHits hits = storage.searchObjects(objectTypes,
+            final List<String> objectTypes = ImmutableList.of("FBAModel");
+            final FoundHits hits = storage.searchObjects(objectTypes,
                     MatchFilter.getBuilder().build(), null,
                     AccessFilter.create().withAdmin(true), null, pp
             );
             // main/parent object is indexed
             Assert.assertEquals("expected 1 FBAModel", 1, hits.guids.size());
 
-            ObjectData data = hits.objects.get(0);
+            final ObjectData data = hits.objects.get(0);
 
             // verify that lookup transforms recursively obtained genome data from data source
             Assert.assertEquals("expected scientific_name", "test",
@@ -472,11 +472,11 @@ public class IndexerWorkerIntegrationTest {
             final int accessGroupId,
             final boolean debugOutput)
             throws Exception {
-        Set<GUID> ids = storage.searchIds(types,
+        final Set<GUID> ids = storage.searchIds(types,
                 MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), null,
                 AccessFilter.create().withAccessGroups(accessGroupId), null).guids;
         if (debugOutput) {
-            PostProcessing pp = new PostProcessing();
+            final PostProcessing pp = new PostProcessing();
             pp.objectData = true;
             pp.objectKeys = true;
             System.out.println("DEBUG: " + storage.getObjectsByIds(ids, pp));
