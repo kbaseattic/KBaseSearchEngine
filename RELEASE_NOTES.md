@@ -3,7 +3,8 @@ Search Service MKII release notes
 
 0.2.0
 -----
-1. Removed recursive indexing. 
+1. Removed recursive indexing to prevent race conditions during indexing (this change
+   has no impact on existing indexes).
 
 0.1.1
 -----
