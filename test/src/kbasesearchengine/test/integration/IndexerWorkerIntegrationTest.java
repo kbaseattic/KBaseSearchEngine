@@ -340,6 +340,7 @@ public class IndexerWorkerIntegrationTest {
             } catch(IOException ex) {
                 message = ex.getMessage();
             } finally {
+                // referenced objects are not recursively indexed
                 Assert.assertEquals("not the expected error message",
                         "No indexes exist for search type Assembly",
                         message);
@@ -357,6 +358,7 @@ public class IndexerWorkerIntegrationTest {
             } catch(IOException ex) {
                 message = ex.getMessage();
             } finally {
+                // referenced objects are not recursively indexed
                 Assert.assertEquals("not the expected error message",
                         "No indexes exist for search type AssemblyContig",
                         message);
