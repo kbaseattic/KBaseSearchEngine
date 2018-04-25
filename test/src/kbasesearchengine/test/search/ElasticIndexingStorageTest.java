@@ -590,7 +590,7 @@ public class ElasticIndexingStorageTest {
 
         // list exceeding max size
         List<String> objectTypes = new ArrayList<>();
-        for(int ii=0; ii< ElasticIndexingStorage.MAX_OBJECT_TYPES_SIZE+1; ii++) {
+        for (int ii=0; ii< ElasticIndexingStorage.MAX_OBJECT_TYPES_SIZE+1; ii++) {
             objectTypes.add("Narrative");
         }
 
@@ -1502,7 +1502,7 @@ public class ElasticIndexingStorageTest {
         List<ObjectData> objIdsData = indexStorage.getObjectsByIds(guids, pp);
         Map<String, List<String>> result2 = new HashMap<>();
         result2.put("guid", Arrays.asList("<em>WS:11/1/2</em>"));
-        for(ObjectData obj: objIdsData) {
+        for (ObjectData obj: objIdsData) {
             Map<String, List<String>> res = obj.getHighlight();
             assertThat("Incorrect highlighting", res, is(result2));
         }

@@ -823,7 +823,7 @@ public class IndexerWorker implements Stoppable {
             final List<ObjectData> data = new ArrayList<>();
 
             // get object from data source
-            for(GUID guid: guids) {
+            for (GUID guid: guids) {
                 File tempFile = null;
                 try {
                     FileUtil.getOrCreateSubDir(rootTempDir, guid.getStorageCode());
@@ -835,7 +835,7 @@ public class IndexerWorker implements Stoppable {
                 try {
                     final EventHandler handler = getEventHandler(guid);
                     Iterator<ResolvedReference> refs = handler.resolveReferences(null, guids).iterator();
-                    while(refs.hasNext()) {
+                    while (refs.hasNext()) {
                         ResolvedReference ref = refs.next();
 
                         // make a copy to avoid mutating the caller's path
@@ -879,10 +879,10 @@ public class IndexerWorker implements Stoppable {
             for (final ObjectTypeParsingRules rule : parsingRules) {
                 String refSubObjectType = ref.getReference().getSubObjectType();
                 String ruleSubObjectType = rule.getSubObjectType().orNull();
-                if(refSubObjectType == null && ruleSubObjectType == null) {
+                if (refSubObjectType == null && ruleSubObjectType == null) {
                     filteredParsingRules.add(rule);
                 }
-                else if(refSubObjectType != null &&
+                else if (refSubObjectType != null &&
                         refSubObjectType.equals(ruleSubObjectType)) {
                     filteredParsingRules.add(rule);
                 }
@@ -905,7 +905,7 @@ public class IndexerWorker implements Stoppable {
 
             ObjectData.Builder objDataBuilder = ObjectData.getBuilder(guid,globalObjectType);
             Iterator<String> keys = keywords.keySet().iterator();
-            while(keys.hasNext()) {
+            while (keys.hasNext()) {
                 String key = keys.next();
                 String textValue;
                 Object objValue = keywords.get(key);
