@@ -118,6 +118,15 @@ public interface StatusEventStorage {
             StatusEventProcessingState newState)
             throws FatalRetriableIndexingException;
 
+
+    /**
+     * Resets all failed events simply by setting their state from FAIL to
+     * UNPROC.
+     */
+    void resetFailedEvents()
+            throws FatalRetriableIndexingException;
+
+
     /** Mark an event as a {@link StatusEventProcessingState.FAIL} with error information.
      * If the error message or stack trace are long, they will be silently truncated.
      * @param id the id of the event to modify.

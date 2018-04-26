@@ -33,7 +33,8 @@ public class ObjectDataTest {
     
     @Test
     public void buildMinimal() {
-        final ObjectData od = ObjectData.getBuilder(new GUID("Foo:1/2/3")).build();
+        final ObjectData od = ObjectData.getBuilder(
+                new GUID("Foo:1/2/3"), new SearchObjectType("t", 1)).build();
         
         assertThat("incorrect guid", od.getGUID(), is(new GUID("Foo:1/2/3")));
         assertThat("incorrect parent guid", od.getParentGUID(), is(Optional.absent()));
@@ -49,14 +50,15 @@ public class ObjectDataTest {
         assertThat("incorrect obj name", od.getObjectName(), is(Optional.absent()));
         assertThat("incorrect parent data", od.getParentData(), is(Optional.absent()));
         assertThat("incorrect timestamp", od.getTimestamp(), is(Optional.absent()));
-        assertThat("incorrect type", od.getType(), is(Optional.absent()));
+        assertThat("incorrect type", od.getType(), is(new SearchObjectType("t", 1)));
         assertThat("incorrect tags", od.getSourceTags(), is(set()));
         assertThat("incorrect highlight", od.getKeyProperties(), is(Collections.emptyMap()));
     }
     
     @Test
     public void buildNulls() {
-        final ObjectData od = ObjectData.getBuilder(new GUID("Foo:1/2/3"))
+        final ObjectData od = ObjectData.getBuilder(
+                new GUID("Foo:1/2/3"), new SearchObjectType("t", 1))
                 .withNullableCommitHash(null)
                 .withNullableCopier(null)
                 .withNullableCreator(null)
@@ -68,7 +70,6 @@ public class ObjectDataTest {
                 .withNullableObjectName(null)
                 .withNullableParentData(null)
                 .withNullableTimestamp(null)
-                .withNullableType(null)
                 .build();
         
         assertThat("incorrect guid", od.getGUID(), is(new GUID("Foo:1/2/3")));
@@ -85,14 +86,15 @@ public class ObjectDataTest {
         assertThat("incorrect obj name", od.getObjectName(), is(Optional.absent()));
         assertThat("incorrect parent data", od.getParentData(), is(Optional.absent()));
         assertThat("incorrect timestamp", od.getTimestamp(), is(Optional.absent()));
-        assertThat("incorrect type", od.getType(), is(Optional.absent()));
+        assertThat("incorrect type", od.getType(), is(new SearchObjectType("t", 1)));
         assertThat("incorrect tags", od.getSourceTags(), is(set()));
         assertThat("incorrect highlight", od.getKeyProperties(), is(Collections.emptyMap()));
     }
     
     @Test
     public void buildWhitespace() {
-        final ObjectData od = ObjectData.getBuilder(new GUID("Foo:1/2/3"))
+        final ObjectData od = ObjectData.getBuilder(
+                new GUID("Foo:1/2/3"), new SearchObjectType("t", 1))
                 .withNullableCommitHash("   \t  \n  ")
                 .withNullableCopier("   \t  \n  ")
                 .withNullableCreator("   \t  \n  ")
@@ -104,7 +106,6 @@ public class ObjectDataTest {
                 .withNullableObjectName("   \t  \n  ")
                 .withNullableParentData(null)
                 .withNullableTimestamp(null)
-                .withNullableType(null)
                 .build();
         
         assertThat("incorrect guid", od.getGUID(), is(new GUID("Foo:1/2/3")));
@@ -121,14 +122,15 @@ public class ObjectDataTest {
         assertThat("incorrect obj name", od.getObjectName(), is(Optional.absent()));
         assertThat("incorrect parent data", od.getParentData(), is(Optional.absent()));
         assertThat("incorrect timestamp", od.getTimestamp(), is(Optional.absent()));
-        assertThat("incorrect type", od.getType(), is(Optional.absent()));
+        assertThat("incorrect type", od.getType(), is(new SearchObjectType("t", 1)));
         assertThat("incorrect tags", od.getSourceTags(), is(set()));
         assertThat("incorrect highlight", od.getKeyProperties(), is(Collections.emptyMap()));
     }
     
     @Test
     public void buildMaximal() throws Exception {
-        final ObjectData od = ObjectData.getBuilder(new GUID("Foo:1/2/3:sub/thing"))
+        final ObjectData od = ObjectData.getBuilder(
+                new GUID("Foo:1/2/3:sub/thing"), new SearchObjectType("foo", 1))
                 .withNullableCommitHash("hash")
                 .withNullableCopier("copy")
                 .withNullableCreator("create")
@@ -140,7 +142,6 @@ public class ObjectDataTest {
                 .withNullableObjectName("oname")
                 .withNullableParentData(ImmutableMap.of("whee", "whoo"))
                 .withNullableTimestamp(Instant.ofEpochMilli(10000))
-                .withNullableType(new SearchObjectType("foo", 1))
                 .withKeyProperty("baz", "bat")
                 .withKeyProperty("null", null)
                 .withKeyProperty("ws", "   \t   \n   ")
@@ -176,24 +177,32 @@ public class ObjectDataTest {
                 is(Optional.of(ImmutableMap.of("whee", "whoo"))));
         assertThat("incorrect timestamp", od.getTimestamp(),
                 is(Optional.of(Instant.ofEpochMilli(10000))));
-        assertThat("incorrect type", od.getType(),
-                is(Optional.of(new SearchObjectType("foo", 1))));
+        assertThat("incorrect type", od.getType(), is((new SearchObjectType("foo", 1))));
         assertThat("incorrect tags", od.getSourceTags(), is(set("foo", "bar")));
     }
     
     @Test
     public void buildFail() {
+        failBuild(null, new SearchObjectType("t", 1), new NullPointerException("guid"));
+        failBuild(new GUID("WS:1/1/1"), null, new NullPointerException("type"));
+    }
+    
+    private void failBuild(
+            final GUID guid,
+            final SearchObjectType type,
+            final Exception expected) {
         try {
-            ObjectData.getBuilder(null);
+            ObjectData.getBuilder(guid, type);
             fail("expected exception");
         } catch (Exception got) {
-            TestCommon.assertExceptionCorrect(got, new NullPointerException("guid"));
+            TestCommon.assertExceptionCorrect(got, expected);
         }
     }
     
     @Test
     public void withKeyFail() {
-        final ObjectData.Builder b = ObjectData.getBuilder(new GUID("a:1/2/3"));
+        final ObjectData.Builder b = ObjectData.getBuilder(
+                new GUID("a:1/2/3"), new SearchObjectType("foo", 1));
         failWithKey(b, null, new IllegalArgumentException(
                 "key cannot be null or whitespace only"));
         failWithKey(b, "    \t    \n  ", new IllegalArgumentException(
@@ -222,7 +231,8 @@ public class ObjectDataTest {
     
     private void failWithSourceTag(final String sourceTag, final Exception expected) {
         try {
-            ObjectData.getBuilder(new GUID("a:1/2/3")).withSourceTag(sourceTag);
+            ObjectData.getBuilder(new GUID("a:1/2/3"), new SearchObjectType("foo", 1))
+                    .withSourceTag(sourceTag);
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
@@ -231,7 +241,8 @@ public class ObjectDataTest {
     
     @Test
     public void immutableKeyProps() {
-        final ObjectData od = ObjectData.getBuilder(new GUID("a:1/2/3"))
+        final ObjectData od = ObjectData.getBuilder(
+                new GUID("a:1/2/3"), new SearchObjectType("foo", 1))
                 .withKeyProperty("foo", "bar").build();
         
         try {
@@ -244,7 +255,8 @@ public class ObjectDataTest {
     
     @Test
     public void immutableSourceTags() {
-        final ObjectData od = ObjectData.getBuilder(new GUID("a:1/2/3"))
+        final ObjectData od = ObjectData.getBuilder(
+                new GUID("a:1/2/3"), new SearchObjectType("foo", 1))
                 .withSourceTag("foo").build();
         
         try {
@@ -257,7 +269,8 @@ public class ObjectDataTest {
 
     @Test
     public void withHighlightFail() {
-        final ObjectData.Builder b = ObjectData.getBuilder(new GUID("ws:1/2/3"));
+        final ObjectData.Builder b = ObjectData.getBuilder(
+                new GUID("ws:1/2/3"), new SearchObjectType("foo", 1));
         failWithHighlight(b, null, new ArrayList<>(Arrays.asList("highlight")),
                 new IllegalArgumentException("field cannot be null or whitespace"));
         failWithHighlight(b, "   ", new ArrayList<>(Arrays.asList("highlight")),

@@ -30,7 +30,6 @@ import com.google.common.io.CharStreams;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.events.handler.SourceData;
-import kbasesearchengine.events.handler.SourceData.Builder;
 import kbasesearchengine.parse.IdMapper;
 import kbasesearchengine.parse.ObjectParser;
 import kbasesearchengine.parse.SimpleIdConsumer;

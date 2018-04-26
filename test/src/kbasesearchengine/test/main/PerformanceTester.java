@@ -12,7 +12,6 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -38,6 +37,7 @@ import kbasesearchengine.events.StoredStatusEvent;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.IndexerWorker;
+import kbasesearchengine.main.IndexerWorkerConfigurator;
 import kbasesearchengine.search.AccessFilter;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.IndexingStorage;
@@ -176,8 +176,12 @@ public class PerformanceTester {
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
         storage = esStorage;
-        mop = new IndexerWorker("test", Arrays.asList(), mock(StatusEventStorage.class),
-                storage, ss, tempDir, logger, new HashSet<>(), 1000);
+        
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "test", tempDir.toPath(), logger)
+                .withStorage(mock(StatusEventStorage.class), ss, storage);
+        
+        mop = new IndexerWorker(wrkCfg.build());
     }
     
     private static void deleteAllTestElasticIndices(HttpHost esHostPort, String esUser,

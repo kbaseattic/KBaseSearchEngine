@@ -33,5 +33,5 @@ versions:
     transform: values
     key-name: app_input
   - path: cells/[*]/metadata/kbase/outputCell/jobId
-    keyword-type: string
+    keyword-type: keyword
     key-name: job_ids

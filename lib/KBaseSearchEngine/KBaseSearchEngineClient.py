@@ -68,7 +68,7 @@ class KBaseSearchEngine(object):
            parameter "min_date" of Long, parameter "max_date" of Long,
            parameter "min_double" of Double, parameter "max_double" of
            Double, parameter "exclude_subobjects" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "lookupInKeys" of
+           boolean. 0 = false, other = true.), parameter "lookup_in_keys" of
            mapping from String to type "MatchValue" (Optional rules of
            defining constraints for values of particular term (keyword).
            Appropriate field depends on type of keyword. For instance in case
@@ -145,7 +145,7 @@ class KBaseSearchEngine(object):
            parameter "min_date" of Long, parameter "max_date" of Long,
            parameter "min_double" of Double, parameter "max_double" of
            Double, parameter "exclude_subobjects" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "lookupInKeys" of
+           boolean. 0 = false, other = true.), parameter "lookup_in_keys" of
            mapping from String to type "MatchValue" (Optional rules of
            defining constraints for values of particular term (keyword).
            Appropriate field depends on type of keyword. For instance in case
@@ -187,22 +187,17 @@ class KBaseSearchEngine(object):
            count = 50.) -> structure: parameter "start" of Long, parameter
            "count" of Long, parameter "post_processing" of type
            "PostProcessing" (Rules for what to return about found objects.
-           skip_info - do not include brief info for object ('guid,
-           'parent_guid', 'object_name' and 'timestamp' fields in ObjectData
-           structure), skip_keys - do not include keyword values for object
-           ('key_props' field in ObjectData structure), skip_data - do not
-           include raw data for object ('data' and 'parent_data' fields in
-           ObjectData structure), include_highlight - include highlights of
-           fields that matched query, ids_only - shortcut to mark all three
-           skips as true and include_highlight as false.) -> structure:
-           parameter "ids_only" of type "boolean" (A boolean. 0 = false,
-           other = true.), parameter "skip_info" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "skip_keys" of type
-           "boolean" (A boolean. 0 = false, other = true.), parameter
-           "skip_data" of type "boolean" (A boolean. 0 = false, other =
-           true.), parameter "include_highlight" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "data_includes" of
-           list of String
+           skip_keys - do not include keyword values for object ('key_props'
+           field in ObjectData structure), skip_data - do not include raw
+           data for object ('data' and 'parent_data' fields in ObjectData
+           structure), include_highlight - include highlights of fields that
+           matched query, ids_only - shortcut to mark both skips as true and
+           include_highlight as false.) -> structure: parameter "ids_only" of
+           type "boolean" (A boolean. 0 = false, other = true.), parameter
+           "skip_keys" of type "boolean" (A boolean. 0 = false, other =
+           true.), parameter "skip_data" of type "boolean" (A boolean. 0 =
+           false, other = true.), parameter "include_highlight" of type
+           "boolean" (A boolean. 0 = false, other = true.)
         :returns: instance of type "SearchObjectsOutput" (Output results for
            'search_objects' method. 'pagination' and 'sorting_rules' fields
            show actual input for pagination and sorting. total - total number
@@ -225,30 +220,47 @@ class KBaseSearchEngine(object):
            "boolean" (A boolean. 0 = false, other = true.), parameter
            "ascending" of type "boolean" (A boolean. 0 = false, other =
            true.), parameter "objects" of list of type "ObjectData"
-           (Properties of found object including metadata, raw data and
-           keywords. mapping<string, list<string>> highlight - The keys are
-           the field names and the list contains the sections in each field
-           that matched the search query. Fields with no hits will not be
-           available. Short fields that matched are shown in their entirety.
-           Longer fields are shown as snippets preceded or followed by "...".
-           mapping<string, string> object_props - general properties for all
-           objects. This mapping contains the keys 'creator', 'copied',
-           'module', 'method', 'module_ver', and 'commit' - respectively the
-           user that originally created the object, the user that copied this
-           incarnation of the object, and the module and method used to
-           create the object and their version and version control commit
-           hash. Not all keys may be present; if not their values were not
-           available in the search data.) -> structure: parameter "guid" of
-           type "GUID" (Global user identificator. It has structure like
-           this: <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
+           (Properties of an object including metadata, raw data and
+           keywords. GUID guid - the object's guid. GUID parent_guid - the
+           guid of the object's parent if the object is a subobject (e.g.
+           features for genomes). object_name - the object's name. timestamp
+           - the creation date for the object in milliseconds since the
+           epoch. string type - the type of the data in the search index. int
+           type_ver - the version of the search type. string creator - the
+           username of the user that created that data. string copier - if
+           this instance of the data is a copy, the username of the user that
+           copied the data. string mod - the name of the KBase SDK module
+           that was used to create the data. string method - the name of the
+           method in the KBase SDK module that was used to create the data.
+           string module_ver - the version of the KBase SDK module that was
+           used to create the data. string commit - the version control
+           commit hash of the KBase SDK module that was used to create the
+           data. parent_data - raw data extracted from the subobject's parent
+           object. The data contents will vary from object to object. Null if
+           the object is not a subobject. data - raw data extracted from the
+           object. The data contents will vary from object to object.
+           key_props - keyword properties of the object. These fields have
+           been extracted from the object and possibly transformed based on
+           the search specification for the object. The contents will vary
+           from object to object. mapping<string, list<string>> highlight -
+           The keys are the field names and the list contains the sections in
+           each field that matched the search query. Fields with no hits will
+           not be available. Short fields that matched are shown in their
+           entirety. Longer fields are shown as snippets preceded or followed
+           by "...".) -> structure: parameter "guid" of type "GUID" (Global
+           user identificator. It has structure like this:
+           <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            parameter "parent_guid" of type "GUID" (Global user identificator.
            It has structure like this:
            <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            parameter "object_name" of String, parameter "timestamp" of Long,
-           parameter "parent_data" of unspecified object, parameter "data" of
+           parameter "type" of String, parameter "type_ver" of Long,
+           parameter "creator" of String, parameter "copier" of String,
+           parameter "mod" of String, parameter "method" of String, parameter
+           "module_ver" of String, parameter "commit" of String, parameter
+           "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
-           to String, parameter "object_props" of mapping from String to
-           String, parameter "highlight" of mapping from String to list of
+           to String, parameter "highlight" of mapping from String to list of
            String, parameter "total" of Long, parameter "search_time" of
            Long, parameter "access_group_narrative_info" of mapping from type
            "access_group_id" (A data source access group ID (for instance,
@@ -280,52 +292,64 @@ class KBaseSearchEngine(object):
            of type "GUID" (Global user identificator. It has structure like
            this: <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            parameter "post_processing" of type "PostProcessing" (Rules for
-           what to return about found objects. skip_info - do not include
-           brief info for object ('guid, 'parent_guid', 'object_name' and
-           'timestamp' fields in ObjectData structure), skip_keys - do not
-           include keyword values for object ('key_props' field in ObjectData
+           what to return about found objects. skip_keys - do not include
+           keyword values for object ('key_props' field in ObjectData
            structure), skip_data - do not include raw data for object ('data'
            and 'parent_data' fields in ObjectData structure),
            include_highlight - include highlights of fields that matched
-           query, ids_only - shortcut to mark all three skips as true and
+           query, ids_only - shortcut to mark both skips as true and
            include_highlight as false.) -> structure: parameter "ids_only" of
            type "boolean" (A boolean. 0 = false, other = true.), parameter
-           "skip_info" of type "boolean" (A boolean. 0 = false, other =
-           true.), parameter "skip_keys" of type "boolean" (A boolean. 0 =
-           false, other = true.), parameter "skip_data" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "include_highlight"
-           of type "boolean" (A boolean. 0 = false, other = true.), parameter
-           "data_includes" of list of String
+           "skip_keys" of type "boolean" (A boolean. 0 = false, other =
+           true.), parameter "skip_data" of type "boolean" (A boolean. 0 =
+           false, other = true.), parameter "include_highlight" of type
+           "boolean" (A boolean. 0 = false, other = true.)
         :returns: instance of type "GetObjectsOutput" (Output results of
            get_objects method. mapping<access_group_id, narrative_info>
            access_group_narrative_info - information about the workspaces in
            which the objects in the results reside. This data only applies to
            workspace objects.) -> structure: parameter "objects" of list of
-           type "ObjectData" (Properties of found object including metadata,
-           raw data and keywords. mapping<string, list<string>> highlight -
+           type "ObjectData" (Properties of an object including metadata, raw
+           data and keywords. GUID guid - the object's guid. GUID parent_guid
+           - the guid of the object's parent if the object is a subobject
+           (e.g. features for genomes). object_name - the object's name.
+           timestamp - the creation date for the object in milliseconds since
+           the epoch. string type - the type of the data in the search index.
+           int type_ver - the version of the search type. string creator -
+           the username of the user that created that data. string copier -
+           if this instance of the data is a copy, the username of the user
+           that copied the data. string mod - the name of the KBase SDK
+           module that was used to create the data. string method - the name
+           of the method in the KBase SDK module that was used to create the
+           data. string module_ver - the version of the KBase SDK module that
+           was used to create the data. string commit - the version control
+           commit hash of the KBase SDK module that was used to create the
+           data. parent_data - raw data extracted from the subobject's parent
+           object. The data contents will vary from object to object. Null if
+           the object is not a subobject. data - raw data extracted from the
+           object. The data contents will vary from object to object.
+           key_props - keyword properties of the object. These fields have
+           been extracted from the object and possibly transformed based on
+           the search specification for the object. The contents will vary
+           from object to object. mapping<string, list<string>> highlight -
            The keys are the field names and the list contains the sections in
            each field that matched the search query. Fields with no hits will
            not be available. Short fields that matched are shown in their
            entirety. Longer fields are shown as snippets preceded or followed
-           by "...". mapping<string, string> object_props - general
-           properties for all objects. This mapping contains the keys
-           'creator', 'copied', 'module', 'method', 'module_ver', and
-           'commit' - respectively the user that originally created the
-           object, the user that copied this incarnation of the object, and
-           the module and method used to create the object and their version
-           and version control commit hash. Not all keys may be present; if
-           not their values were not available in the search data.) ->
-           structure: parameter "guid" of type "GUID" (Global user
-           identificator. It has structure like this:
+           by "...".) -> structure: parameter "guid" of type "GUID" (Global
+           user identificator. It has structure like this:
            <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            parameter "parent_guid" of type "GUID" (Global user identificator.
            It has structure like this:
            <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
            parameter "object_name" of String, parameter "timestamp" of Long,
-           parameter "parent_data" of unspecified object, parameter "data" of
+           parameter "type" of String, parameter "type_ver" of Long,
+           parameter "creator" of String, parameter "copier" of String,
+           parameter "mod" of String, parameter "method" of String, parameter
+           "module_ver" of String, parameter "commit" of String, parameter
+           "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
-           to String, parameter "object_props" of mapping from String to
-           String, parameter "highlight" of mapping from String to list of
+           to String, parameter "highlight" of mapping from String to list of
            String, parameter "search_time" of Long, parameter
            "access_group_narrative_info" of mapping from type
            "access_group_id" (A data source access group ID (for instance,
