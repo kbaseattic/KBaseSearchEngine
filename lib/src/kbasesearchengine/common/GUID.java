@@ -1,5 +1,6 @@
 package kbasesearchengine.common;
 
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import kbasesearchengine.tools.Utils;
@@ -128,14 +129,19 @@ public class GUID {
             this.subObjectId = subObjectPart.substring(slashPos + 1);
         }
     }
-    
-    //TODO NOW if the version or accessGroupID is missing, how do you know which is which? Need to know storage code -> has access group mapping or have a placeholder (-1) for missing access group
+
+    /**
+     * Returns an RFC 4122 compliant version of this GUID
+     *
+     * @return UUID object
+     */
+    public UUID toUUID() {
+        return UUID.nameUUIDFromBytes(toString().getBytes());
+    }
+
     @Override
     public String toString() {
-        String objRefId = this.version == null ? 
-                ((this.accessGroupId == null ? "" : (this.accessGroupId + "/")) + this.accessGroupObjectId) :
-                    (this.accessGroupId + "/" + this.accessGroupObjectId + "/" + this.version);
-        return (this.storageCode + ":") + objRefId +
+        return (this.storageCode + ":") + toRefString() +
                 (this.subObjectType == null ? "" : (":" + this.getSubObjectType() + "/" + this.getSubObjectId()));
     }
     
