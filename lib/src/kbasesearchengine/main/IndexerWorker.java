@@ -814,7 +814,7 @@ public class IndexerWorker implements Stoppable {
         }
         
         private List<ObjectData> getObjectsByIds(final Set<GUID> guids)
-                throws RetriableIndexingException {
+                throws IndexingException, InterruptedException, RetriableIndexingException {
 
             final List<ObjectData> data = new ArrayList<>();
 
@@ -858,8 +858,8 @@ public class IndexerWorker implements Stoppable {
                             data.add(objData);
                         }
                     }
-                } catch(Exception ex) {
-                    ex.printStackTrace();
+                } finally {
+                    tempFile.delete();
                 }
             }
             return data;
