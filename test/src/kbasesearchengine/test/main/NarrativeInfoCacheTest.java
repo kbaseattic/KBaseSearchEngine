@@ -80,6 +80,27 @@ public class NarrativeInfoCacheTest {
 
     @SuppressWarnings("unchecked")
     @Test
+    public void cacheLookupException() throws Exception {
+        // test the non-test constructor
+
+        final NarrativeInfoProvider wrapped = mock(NarrativeInfoProvider.class);
+        final Ticker ticker = mock(Ticker.class);
+        final NarrativeInfoCache cache = new NarrativeInfoCache(
+                wrapped,
+                10,
+                10000,
+                ticker);
+
+        try {
+            cache.findNarrativeInfo(65L);
+            fail("CacheLoader DID NOT throw an exception for a lookup of non-existing key.");
+        } catch (Exception e) {
+            assertThat(e.getMessage(), is("CacheLoader returned null for key 65."));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     public void cacheAccessOnGet() throws Exception {
         // test that the cache is accessed when available
         final NarrativeInfoProvider wrapped = mock(NarrativeInfoProvider.class);

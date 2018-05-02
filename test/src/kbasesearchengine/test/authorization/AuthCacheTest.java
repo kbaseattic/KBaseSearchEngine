@@ -1,4 +1,4 @@
-package kbasesearchengine.test.main;
+package kbasesearchengine.test.authorization;
 
 import static kbasesearchengine.test.common.TestCommon.set;
 import static org.mockito.Mockito.mock;
@@ -11,7 +11,6 @@ import org.junit.Test;
 
 import com.google.common.base.Ticker;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
 
 import java.util.Set;
 import java.io.IOException;
@@ -130,7 +129,25 @@ public class AuthCacheTest {
                 is(ImmutableMap.of("user1", "display11", "user2", "display22")));
     }
 
-    // TODO: Need to check this test.
+    @SuppressWarnings("unchecked")
+    @Test
+    public void cacheLookupException() throws Exception {
+        // test the non-test constructor
+
+        final AuthInfoProvider wrapped = mock(AuthInfoProvider.class);
+        final AuthCache cache = new AuthCache(
+                wrapped,
+                1,
+                10000);
+
+        try {
+            cache.findUserDisplayName("user2");
+            fail("CacheLoader DID NOT throw an exception for a lookup of non-existing key.");
+        } catch (Exception e) {
+            assertThat(e.getMessage(), is("CacheLoader returned null for key user2."));
+        }
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     public void expiresOnSize() throws Exception {

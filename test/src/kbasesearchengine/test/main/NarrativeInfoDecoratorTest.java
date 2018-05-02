@@ -1,7 +1,6 @@
 package kbasesearchengine.test.main;
 
 import static kbasesearchengine.test.common.TestCommon.set;
-import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.wsTuple;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -9,14 +8,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import kbasesearchengine.authorization.TemporaryAuth2Client;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
@@ -37,7 +34,6 @@ import kbasesearchengine.main.NarrativeInfo;
 import kbasesearchengine.main.WorkspaceNarrativeInfoProvider;
 
 import kbasesearchengine.test.common.TestCommon;
-import kbasesearchengine.test.main.NarrativeInfoCacheTest;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple5;
 

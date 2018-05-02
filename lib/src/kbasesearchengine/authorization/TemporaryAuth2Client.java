@@ -6,7 +6,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -17,6 +16,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.ImmutableSet;
 
 import kbasesearchengine.tools.Utils;
 
@@ -70,7 +70,7 @@ public class TemporaryAuth2Client implements AuthInfoProvider {
     
     /** Get display names for a set of users. Users that do not exist in the auth service
      * will not be shown in the results.
-     * @param token parameter used with the auth service to retrieve informtation.
+     * @param token parameter used with the auth service to retrieve information.
      *              Note that the instance variable 'token' is not used here.
      * @param userNames the set of usernames to process.
      * @return a mapping of username to display name for each user.
@@ -141,8 +141,7 @@ public class TemporaryAuth2Client implements AuthInfoProvider {
     @Override
     public String findUserDisplayName(final String userName)
             throws IOException, Auth2Exception {
-        final Set<String> userIds = new HashSet<>();
-        userIds.add(userName);
+        final Set<String> userIds = ImmutableSet.of(userName);
         return this.getUserDisplayNames(token, userIds).getOrDefault(userName, null);
     }
 

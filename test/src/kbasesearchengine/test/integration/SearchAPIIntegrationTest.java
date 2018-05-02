@@ -27,7 +27,7 @@ import org.apache.http.HttpHost;
 import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
 import org.junit.AfterClass;
-import org.junit.Before;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -90,12 +90,16 @@ public class SearchAPIIntegrationTest {
     //TODO TEST add more tests. Should have reasonable integration tests for basic happy paths and a few unhappy paths.
     
     private static Path tempDirPath;
+    private static Path searchTypesDir;
+    private static Path mappingsDir;
     private static MongoController mongo;
     private static AuthController auth;
     private static AuthToken userToken;
+    private static AuthToken wsadmintoken;
     private static ElasticSearchController es;
     private static ElasticIndexingStorage indexStorage;
     private static WorkspaceController ws;
+    private static String esIndexPrefix;
     private static MongoDatabase wsdb;
     private static MongoClient mc;
     private static WorkspaceClient wsCli1;
@@ -111,9 +115,9 @@ public class SearchAPIIntegrationTest {
         // should refactor to just use NIO at some point
         FileUtils.deleteQuietly(tempDirPath.toFile());
         tempDirPath.toFile().mkdirs();
-        final Path searchTypesDir = Files.createDirectories(tempDirPath.resolve("searchtypes"));
+        searchTypesDir = Files.createDirectories(tempDirPath.resolve("searchtypes"));
         installSearchTypes(searchTypesDir);
-        final Path mappingsDir = Files.createDirectories(tempDirPath.resolve("searchmappings"));
+        mappingsDir = Files.createDirectories(tempDirPath.resolve("searchmappings"));
         installSearchMappings(mappingsDir);
 
         // set up mongo, needed for auth and workspace
@@ -136,7 +140,7 @@ public class SearchAPIIntegrationTest {
         final String token1 = TestCommon.createLoginToken(authURL, "user1");
         final String token2 = TestCommon.createLoginToken(authURL, "user2");
         userToken = new AuthToken(token1, "user1");
-        final AuthToken wsadmintoken = new AuthToken(token2, "user2");
+        wsadmintoken = new AuthToken(token2, "user2");
         
         // set up elastic search
         es = new ElasticSearchController(TestCommon.getElasticSearchExe(), tempDirPath);
@@ -158,7 +162,7 @@ public class SearchAPIIntegrationTest {
         wsCli1 = new WorkspaceClient(wsUrl, userToken);
         wsCli1.setIsInsecureHttpConnectionAllowed(true);
         
-        final String esIndexPrefix = "test_" + System.currentTimeMillis();
+        esIndexPrefix = "test_" + System.currentTimeMillis();
         final HttpHost esHostPort = new HttpHost("localhost", es.getServerPort());
 
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
@@ -251,10 +255,18 @@ public class SearchAPIIntegrationTest {
         return server;
     }
     
-    @Before
+    @After
     public void init() throws Exception {
         TestCommon.destroyDB(wsdb);
         indexStorage.dropData();
+        if (searchServer != null) {
+            searchServer.stopServer();
+        }
+        searchServer = startupSearchServer(esIndexPrefix, tempDirPath.resolve("SearchServiceTemp"),
+                wsadmintoken, searchTypesDir, mappingsDir);
+        searchCli = new KBaseSearchEngineClient(
+                new URL("http://localhost:" + searchServer.getServerPort()), userToken);
+        searchCli.setIsInsecureHttpConnectionAllowed(true);
     }
     
     @AfterClass
@@ -282,14 +294,11 @@ public class SearchAPIIntegrationTest {
             FileUtils.deleteQuietly(tempDirPath.toFile());
         }
     }
-    
+
     @Test
     public void sourceTags() throws Exception {
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("sourceTags"));
-        // Create a dummy second workspace so that AccessGroup 1 & 2 get cached for 'user1'
-        wsCli1.createWorkspace(new CreateWorkspaceParams()
-                .withWorkspace("DummySecondWorkspace"));
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -365,9 +374,6 @@ public class SearchAPIIntegrationTest {
 
     @Test
     public void narrativeDecoration() throws Exception {
-        // create a dummy workspace since this test uses an object in workspace with id 2.
-        wsCli1.createWorkspace(new CreateWorkspaceParams()
-                .withWorkspace("dummyWS1"));
 
         final long wsdate = WorkspaceEventHandler.parseDateToEpochMillis(wsCli1.createWorkspace(
                 new CreateWorkspaceParams()
@@ -388,15 +394,15 @@ public class SearchAPIIntegrationTest {
                         .build(),
                 Instant.ofEpochMilli(10000),
                 null,
-                new GUID("WS:2/1/1"),
-                ImmutableMap.of(new GUID("WS:2/1/1"), new ParsedObject(
+                new GUID("WS:1/1/1"),
+                ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
                         "{\"whee\": \"imaprettypony1\"}",
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
                 false);
 
         final ObjectData expected1 = new ObjectData()
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
-                .withGuid("WS:2/1/1")
+                .withGuid("WS:1/1/1")
                 .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
                 .withCreator("creator")
                 .withType("Deco")
@@ -409,18 +415,14 @@ public class SearchAPIIntegrationTest {
         assertThat("incorrect object count", res.getObjects().size(), is(1));
         TestCommon.compare(res.getObjects().get(0), expected1);
         final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
-                2L, narrInfoTuple("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
+                1L, narrInfoTuple("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
         NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
     }
-
 
     @Test
     public void highlightTest () throws Exception{
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("highlight"));
-        // Create a dummy second workspace so that AccessGroup 1 & 2 get cached for 'user1'
-        wsCli1.createWorkspace(new CreateWorkspaceParams()
-                .withWorkspace("DummySecondWorkspace"));
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -498,14 +500,11 @@ public class SearchAPIIntegrationTest {
             throw e;
         }
     }
-    
+
     @Test
     public void sort() throws Exception {
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("sort"));
-        // Create a dummy second workspace so that AccessGroup 1 & 2 get cached for 'user1'
-        wsCli1.createWorkspace(new CreateWorkspaceParams()
-                .withWorkspace("DummySecondWorkspace"));
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -588,15 +587,12 @@ public class SearchAPIIntegrationTest {
      * these should be removed once the narratives are indexed
      * with custom code
      */
-    
+
     @Test
     public void pruneNarrative() throws Exception {
 
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("narprune"));
-        // Create a dummy second workspace so that AccessGroup 1 & 2 get cached for 'user1'
-        wsCli1.createWorkspace(new CreateWorkspaceParams()
-                .withWorkspace("DummySecondWorkspace"));
 
         final Map<String, Object> data = new HashMap<>();
         data.put("source", "a long string");
@@ -648,7 +644,6 @@ public class SearchAPIIntegrationTest {
      * Will need a mock server to test cases where the client gets a response that would never
      * be returned from auth
      */
-    
     @Test
     public void construct() throws Exception {
         final TemporaryAuth2Client client = new TemporaryAuth2Client(
@@ -661,7 +656,7 @@ public class SearchAPIIntegrationTest {
         
         assertThat("incorrect url", client2.getURL(), is(new URL("http://localhost:1000/whee/")));
     }
-    
+
     @Test
     public void authClientGetDisplayNames() throws Exception {
 
@@ -670,7 +665,7 @@ public class SearchAPIIntegrationTest {
                 userToken.getToken(), set("user1", "user2")),
                 is(ImmutableMap.of("user1", "display1", "user2", "display2")));
     }
-    
+
     @Test
     public void authClientGetDisplayNamesEmptyInput() throws Exception {
 
@@ -678,7 +673,7 @@ public class SearchAPIIntegrationTest {
         assertThat("incorrect users", client.getUserDisplayNames(userToken.getToken(), set()),
                 is(Collections.emptyMap()));
     }
-    
+
     @Test
     public void authClientGetDisplayNamesServerError() throws Exception {
 
@@ -698,7 +693,7 @@ public class SearchAPIIntegrationTest {
             //they really want you to know the user name is illegal
         }
     }
-    
+
     @Test
     public void authClientFailConstruct() throws Exception {
 
@@ -709,7 +704,7 @@ public class SearchAPIIntegrationTest {
             TestCommon.assertExceptionCorrect(got, new NullPointerException("authURL"));
         }
     }
-    
+
     @Test
     public void authClientgetDisplayNamesBadInput() {
 

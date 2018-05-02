@@ -3,6 +3,7 @@ package kbasesearchengine.main;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import kbasesearchengine.tools.Utils;
 
 import com.google.common.base.Ticker;
 import com.google.common.cache.CacheBuilder;
@@ -48,9 +49,8 @@ public class NarrativeInfoCache implements NarrativeInfoProvider {
             final int cacheSizeInNarrativeInfo,
             final Ticker ticker) {
 
-        if (provider == null) {
-            throw new NullPointerException("provider");
-        }
+        Utils.nonNull(provider, "provider");
+
         if (cacheLifeTimeInSec < 1) {
             throw new IllegalArgumentException("cache lifetime must be at least one second");
         }

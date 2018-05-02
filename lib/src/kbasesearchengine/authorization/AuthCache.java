@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import kbasesearchengine.authorization.TemporaryAuth2Client.Auth2Exception;
+import kbasesearchengine.tools.Utils;
 
 import com.google.common.base.Ticker;
 import com.google.common.cache.CacheBuilder;
@@ -51,9 +52,8 @@ public class AuthCache implements AuthInfoProvider {
             final int cacheLifeTimeInSec,
             final int cacheSizeInAuthInfo,
             final Ticker ticker) {
-        if (provider == null) {
-            throw new NullPointerException("provider");
-        }
+
+        Utils.nonNull(provider, "provider");
 
         if (cacheLifeTimeInSec < 1) {
             throw new IllegalArgumentException("cache lifetime must be at least one second");
