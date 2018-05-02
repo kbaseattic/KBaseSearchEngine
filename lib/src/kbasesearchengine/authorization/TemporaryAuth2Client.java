@@ -52,7 +52,7 @@ public class TemporaryAuth2Client implements AuthInfoProvider {
      * will not be shown in the results.
      * @param token an auth token.
      */
-    // TODO: Check this is used to set the token before findUserDisplayName(s)() is used.
+    // Note: this is used to set the token before findUserDisplayName(s)() is used.
     // This is needed as the get() and getAll() methods can only take the cache key as a parameter
     // and not an additional parameter for the token.
     public TemporaryAuth2Client withToken(String token) {
