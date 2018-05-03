@@ -69,7 +69,6 @@ public class AuthCache implements AuthInfoProvider {
 
                     @Override
                     public int weigh(String userName, String displayName) {
-                        // TODO check what needs to be returned
                         return 1;
                     }
                 })

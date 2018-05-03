@@ -163,7 +163,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         // update if we ever update the SDK to use the non-legacy endpoints
         final String auth2URL = authURL.split("api")[0];
 
-        // TODO need to check the parameters
+        // TODO need to check the constant values for the cacheLifeTime and cacheSize parameters
         final WorkspaceEventHandler wsHandler = new WorkspaceEventHandler(
                 new CloneableWorkspaceClientImpl(wsClient));
         final NarrativeInfoProvider narrativeInfoProvider = new NarrativeInfoCache(
@@ -171,7 +171,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
                 30,
                 50000 * 1000);
 
-        // TODO need to check the parameters
+        // TODO need to check the constant values for the cacheLifeTime and cacheSize parameters
         final AuthInfoProvider authInfoProvider = new AuthCache(
                 new TemporaryAuth2Client(new URL(auth2URL)).withToken(kbaseIndexerToken.getToken()),
                 2 * 3600,
