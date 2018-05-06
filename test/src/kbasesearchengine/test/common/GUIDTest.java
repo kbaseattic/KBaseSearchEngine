@@ -6,6 +6,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.net.URI;
+
 /**
  * Created by apasha on 4/30/18.
  */
@@ -57,7 +59,7 @@ public class GUIDTest {
         Assert.assertEquals("incorrect guid", 
                 "ea2ebbef-e878-3593-b137-4aa40c37eb7a", guid2.toUUID().toString());
         Assert.assertEquals("incorrect guid", 
-                "04fa4f7a-abfc-3b04-b505-834593bf097b", guid3.toUUID().toString());
+                "01060998-9412-3168-8512-6581524f9a9c", guid3.toUUID().toString());
         Assert.assertEquals("incorrect guid", 
                 "01060998-9412-3168-8512-6581524f9a9c", guid4.toUUID().toString());
         Assert.assertEquals("incorrect guid", 
@@ -65,7 +67,7 @@ public class GUIDTest {
         Assert.assertEquals("incorrect guid", 
                 "03132c68-ec01-36cc-a3e4-eaea3301d8f4", guid6.toUUID().toString());
         Assert.assertEquals("incorrect guid", 
-                "8d119b9e-91fc-3af7-811a-bf52e8edcdf7", guid7.toUUID().toString());
+                "6c9bbd79-e10a-38f4-9828-eaf1373be71a", guid7.toUUID().toString());
         Assert.assertEquals("incorrect guid", 
                 "6c9bbd79-e10a-38f4-9828-eaf1373be71a", guid8.toUUID().toString());
     }
