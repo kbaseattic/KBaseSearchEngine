@@ -1,5 +1,7 @@
 package kbasesearchengine.common;
 
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import kbasesearchengine.tools.Utils;
@@ -12,6 +14,8 @@ import kbasesearchengine.tools.Utils;
  *
  *  where,
  *  storageCode is the code of the datasource in which the object resides.
+ *
+ *  The GUID has a size limit of 512 bytes on its string representation.
  *
  */
 public class GUID {
@@ -26,6 +30,10 @@ public class GUID {
     private Integer version;
     private String subObjectType;
     private String subObjectId;
+    /**
+     * Maximum number of bytes for the string representation of this GUID.
+     */
+    public static final int MAX_BYTES = 512;
     //
     private static Pattern slashDiv = Pattern.compile(Pattern.quote("/"));
     
@@ -37,6 +45,8 @@ public class GUID {
         this.version = version;
         this.subObjectType = subObjectType;
         this.subObjectId = subObjectId;
+
+        validate();
     }
     
     public GUID(final GUID parentGUID, final String subObjectType, final String subObjectID) {
@@ -46,6 +56,16 @@ public class GUID {
         version = parentGUID.getVersion();
         this.subObjectType = subObjectType;
         this.subObjectId = subObjectID;
+
+        validate();
+    }
+
+    private void validate() {
+        final int guidBytes = toString().getBytes(StandardCharsets.UTF_8).length;
+
+        if( guidBytes > MAX_BYTES )
+            throw new IllegalArgumentException("String representation of GUID " +
+                    "must be no longer than "+ MAX_BYTES+" bytes. Found "+guidBytes+" bytes.");
     }
     
     public String getStorageCode() {
@@ -128,21 +148,28 @@ public class GUID {
             this.subObjectId = subObjectPart.substring(slashPos + 1);
         }
     }
-    
-    //TODO NOW if the version or accessGroupID is missing, how do you know which is which? Need to know storage code -> has access group mapping or have a placeholder (-1) for missing access group
+
+    /**
+     * Returns an RFC 4122 compliant version of this GUID
+     *
+     * @return UUID object
+     */
+    public UUID toUUID() {
+        return UUID.nameUUIDFromBytes(toString().getBytes());
+    }
+
     @Override
     public String toString() {
-        String objRefId = this.version == null ? 
-                ((this.accessGroupId == null ? "" : (this.accessGroupId + "/")) + this.accessGroupObjectId) :
-                    (this.accessGroupId + "/" + this.accessGroupObjectId + "/" + this.version);
-        return (this.storageCode + ":") + objRefId +
+        return (this.storageCode + ":") + toRefString() +
                 (this.subObjectType == null ? "" : (":" + this.getSubObjectType() + "/" + this.getSubObjectId()));
     }
     
     public String toRefString() {
         return this.version == null ? 
-                ((this.accessGroupId == null ? "" : (this.accessGroupId + "/")) + this.accessGroupObjectId) :
-                    (this.accessGroupId + "/" + this.accessGroupObjectId + "/" + this.version);
+             ((this.accessGroupId == null ? "" : (this.accessGroupId + "/")) + this.accessGroupObjectId) :
+                    (
+                            (this.accessGroupId == null ? "" : (this.accessGroupId + "/")) +
+                                     this.accessGroupObjectId + "/" + this.version);
     }
 
     @Override
@@ -204,6 +231,4 @@ public class GUID {
             return false;
         return true;
     }
-    
-    
 }
