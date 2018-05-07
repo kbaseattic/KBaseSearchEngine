@@ -66,7 +66,11 @@ In addition, given that there can be as many as a thousand indices for KBase dat
 
     GET kbase.genome_1/_mapping
 
-5b. Copy-paste the mapping from the current index into the body section of the PUT command below and make the necessary field change (preferably one change per complete reindexing operation). Update the settings section below the mapping. The number of shards and replicas must be decided on based on your capacity planning rules. Make sure not to exceed 600 shards for any node in the system.
+5b. Copy-paste the mapping from the current index into the body section of the PUT command below and make the necessary field change (preferably one change per complete reindexing operation).
+
+It is a good practice to make the mapping strict ("dynamic": "strict"). Strict mappings prevent the mapping from being modified dynamically during ingest time.
+
+Update the settings section below the mapping. The number of shards and replicas must be decided on based on your capacity planning rules. It is costly to change the number of shards, so choose wisely! Make sure not to exceed 600 shards for any node in the system. Increase number of replicas to improve availability.
 
 .. code-block:: bash
 
@@ -74,6 +78,7 @@ In addition, given that there can be as many as a thousand indices for KBase dat
     {
       "mappings": {
         "data": {
+          "dynamic": "strict",
           "_parent": {
             "type": "access"
           },
