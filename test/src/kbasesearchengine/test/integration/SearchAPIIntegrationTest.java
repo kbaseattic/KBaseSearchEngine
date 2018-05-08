@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import junit.framework.Assert;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.ini4j.Ini;
@@ -584,21 +585,18 @@ public class SearchAPIIntegrationTest {
     public void pruneNarrative() throws Exception {
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("narprune"));
-        
+
         final Map<String, Object> data = new HashMap<>();
         data.put("source", "a long string");
-        data.put("code_output", "another long string");
-        data.put("app_output", "yet another long string");
-        data.put("app_info", "yup, another long string here");
-        data.put("app_input", "my god will this reign of long string terror every end");
-        data.put("job_ids", "3");
         data.put("title", "a title");
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
                         new SearchObjectType("Narrative", 1),
                         new StorageObjectType("WS", "Narrative"))
-                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("source"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("title"))
                                 .build())
                         .build(),
                 SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator1")
@@ -629,8 +627,52 @@ public class SearchAPIIntegrationTest {
         assertThat("incorrect keyprops", od.getKeyProps(),
                 is(ImmutableMap.of("title", "a title")));
     }
-    
-    /* ****** Auth client tests - to be moved to their own suite *** 
+
+
+    @Test
+    public void strictMappingFail() throws Exception {
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("narrative"));
+
+        final Map<String, Object> data = new HashMap<>();
+        data.put("source", "a long string");
+        data.put("title", "a title");
+        data.put("newField", "new field value");  // that does not exist in map
+
+        boolean exceptionCaught = false;
+        try {
+            indexStorage.indexObjects(
+                    ObjectTypeParsingRules.getBuilder(
+                            new SearchObjectType("Narrative", 1),
+                            new StorageObjectType("WS", "Narrative"))
+                            .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("source"))
+                                    .build())
+                            .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("title"))
+                                    .build())
+                            .build(),
+                    SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator1")
+                            .build(),
+                    Instant.ofEpochMilli(10000),
+                    null,
+                    new GUID("WS:1/1/1"),
+                    ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
+                            new ObjectMapper().writeValueAsString(data),
+                            data.entrySet().stream().collect(Collectors.toMap(
+                                    e -> e.getKey(), e -> Arrays.asList(e.getValue()))))),
+                    false);
+        } catch (IOException ex) {
+            String message = ex.getMessage();
+            Assert.assertTrue(message.contains("status=400"));
+            Assert.assertTrue(message.contains("type=strict_dynamic_mapping_exception"));
+            Assert.assertTrue(message.contains("reason=mapping set to strict, dynamic introduction of " +
+                    "[newField] within [key] is not allowed"));
+            exceptionCaught = true;
+        } finally {
+            Assert.assertTrue(exceptionCaught);
+        }
+    }
+
+    /* ****** Auth client tests - to be moved to their own suite ***
      *     //TODO TEST move the auth client tests to a separate suite
      * Will need a mock server to test cases where the client gets a response that would never
      * be returned from auth
