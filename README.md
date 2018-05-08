@@ -10,7 +10,7 @@ Powers KBase Search MKII.
 Documentation
 -------------
 
-Formal documentation is available as a work in progress - [PDF](http://htmlpreview.github.io/?https://github.com/arfathpasha/KBaseSearchEngine/blob/dev-html-doc/docsource/KBaseSearchEngine.pdf), [HTML](http://htmlpreview.github.io/?https://github.com/arfathpasha/KBaseSearchEngine/blob/dev-html-doc/docsource/build/html/index.html).
+Formal documentation is available as a work in progress - [PDF](http://htmlpreview.github.io/?https://github.com/arfathpasha/KBaseSearchEngine/blob/dev-html-doc/docsource/KBaseSearchEngine.pdf){:target="_blank"}, [HTML](http://htmlpreview.github.io/?https://github.com/arfathpasha/KBaseSearchEngine/blob/dev-html-doc/docsource/build/html/index.html).
 
 HTML API documention is available [here](http://htmlpreview.github.io/?https://github.com/kbase/KBaseSearchEngine/blob/master/KBaseSearchEngine.html).
 
