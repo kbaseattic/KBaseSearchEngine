@@ -754,15 +754,7 @@ public class IndexerWorker implements Stoppable {
             }
             return ret;
         }
-        
-        private boolean checkParentGuidExists(final GUID guid) throws RetriableIndexingException {
-            try {
-                return indexingStorage.checkParentGuidsExist(new HashSet<>(Arrays.asList(guid)))
-                        .get(guid);
-            } catch (IOException e) {
-                throw new RetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
-            }
-        }
+
         
         private Set<ResolvedReference> resolveReferences(
                 final EventHandler eh,
