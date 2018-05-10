@@ -777,11 +777,11 @@ public class IndexerWorker implements Stoppable {
         }
 
         @Override
-        public Map<GUID, ObjectData> lookupObjectsByGuid(final Set<GUID> guids)
+        public Map<GUID, ObjectData> lookupObjectsByGuid(final List<GUID> objectRefPath, final Set<GUID> unresolvedGUIDs)
                 throws InterruptedException, IndexingException {
             Map<GUID, ObjectData> ret = new LinkedHashMap<>();
             Set<GUID> guidsToLoad = new LinkedHashSet<>();
-            for (GUID guid : guids) {
+            for (GUID guid : unresolvedGUIDs) {
                 if (objLookupCache.containsKey(guid)) {
                     ret.put(guid, objLookupCache.get(guid));
                 } else {
@@ -790,7 +790,7 @@ public class IndexerWorker implements Stoppable {
             }
             if (guidsToLoad.size() > 0) {
                 final List<ObjectData> objList =
-                        retrier.retryFunc(g -> getObjectsByIds(g), guidsToLoad, null);
+                        retrier.retryFunc(g -> getObjectsByIds(objectRefPath, g), guidsToLoad, null);
                 // for some reason I don't understand a stream implementation would throw
                 // duplicate key errors on the ObjectData, which is the value
                 final Map<GUID, ObjectData> loaded = new HashMap<>();
@@ -803,23 +803,22 @@ public class IndexerWorker implements Stoppable {
             return ret;
         }
 
-        /** Note that more than one object can be returned for each input guid.
-         * This may happen if the type mapping specifies more than one set of
-         * indexing rules for a given object type and version
+        /** Note that an object may not be returned for a specified unresolvedGUID is the
+         * object parsing rules for that object are not found.
          *
-         * @param guids
+         * @param objectRefPath
+         * @param unresolvedGUIDs
          * @return
          * @throws IndexingException
          * @throws InterruptedException
          * @throws RetriableIndexingException
          */
-        private List<ObjectData> getObjectsByIds(final Set<GUID> guids)
+        private List<ObjectData> getObjectsByIds(final List<GUID> objectRefPath, final Set<GUID> unresolvedGUIDs)
                 throws IndexingException, InterruptedException, RetriableIndexingException {
-
             final List<ObjectData> data = new ArrayList<>();
 
             // get object from data source
-            for (GUID guid: guids) {
+            for (GUID guid: unresolvedGUIDs) {
                 final File tempFile;
                 try {
                     FileUtil.getOrCreateSubDir(rootTempDir, guid.getStorageCode());
@@ -830,7 +829,7 @@ public class IndexerWorker implements Stoppable {
 
                 try {
                     final EventHandler handler = getEventHandler(guid);
-                    final Iterator<ResolvedReference> refs = handler.resolveReferences(null, guids).iterator();
+                    final Iterator<ResolvedReference> refs = handler.resolveReferences(objectRefPath, unresolvedGUIDs).iterator();
                     while (refs.hasNext()) {
                         final ResolvedReference ref = refs.next();
 
@@ -927,11 +926,11 @@ public class IndexerWorker implements Stoppable {
         }
         
         @Override
-        public Map<GUID, SearchObjectType> getTypesForGuids(Set<GUID> guids)
+        public Map<GUID, SearchObjectType> getTypesForGuids(final List<GUID> objectRefPath, final Set<GUID> unresolvedGUIDs)
                 throws InterruptedException, IndexingException {
             Map<GUID, SearchObjectType> ret = new LinkedHashMap<>();
             Set<GUID> guidsToLoad = new LinkedHashSet<>();
-            for (GUID guid : guids) {
+            for (GUID guid : unresolvedGUIDs) {
                 if (guidToTypeCache.containsKey(guid)) {
                     ret.put(guid, guidToTypeCache.get(guid));
                 } else {
@@ -940,7 +939,7 @@ public class IndexerWorker implements Stoppable {
             }
             if (guidsToLoad.size() > 0) {
                 final List<ObjectData> data =
-                        retrier.retryFunc(g -> getObjectsByIds(g), guidsToLoad, null);
+                        retrier.retryFunc(g -> getObjectsByIds(objectRefPath, g), guidsToLoad, null);
                 // for some reason I don't understand a stream implementation would throw
                 // duplicate key errors on the od.getType(), which is the value
                 final Map<GUID, SearchObjectType> loaded = new HashMap<>();

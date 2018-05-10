@@ -291,7 +291,7 @@ public class KeywordParser {
                             typeDescr.getSubObjectType().get(), subId));
                 }
             }
-            final Map<GUID, SearchObjectType> guidToType = lookup.getTypesForGuids(guids);
+            final Map<GUID, SearchObjectType> guidToType = lookup.getTypesForGuids(objectRefPath, guids);
             for (final GUID guid : guids) {
                 if (!guidToType.containsKey(guid)) {
                     throw new GUIDNotFoundException("GUID " + guid + " not found");
@@ -310,7 +310,7 @@ public class KeywordParser {
             /* TODO CODE or DOCUMENTATION it appears that this only works if sourceKey = true and the sourceKey is a GUID transform. Check and document. */
             final String retProp = transform.getTargetKey().get();
             Set<String> guidText = toStringSet(value);
-            Map<GUID, ObjectData> guidToObj = lookup.lookupObjectsByGuid(
+            Map<GUID, ObjectData> guidToObj = lookup.lookupObjectsByGuid(objectRefPath,
                     guidText.stream().map(GUID::new).collect(Collectors.toSet()));
             List<Object> ret = new ArrayList<>();
             for (ObjectData obj : guidToObj.values()) {
@@ -419,9 +419,9 @@ public class KeywordParser {
     public interface ObjectLookupProvider {
         public Set<GUID> resolveRefs(List<GUID> objectRefPath, Set<GUID> unresolvedGUIDs) 
                 throws IndexingException, InterruptedException;
-        public Map<GUID, SearchObjectType> getTypesForGuids(Set<GUID> guids)
+        public Map<GUID, SearchObjectType> getTypesForGuids(List<GUID> objectRefPath, Set<GUID> unresolvedGUIDs)
                 throws InterruptedException, IndexingException;
-        public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids) 
+        public Map<GUID, ObjectData> lookupObjectsByGuid(List<GUID> objectRefPath, Set<GUID> unresolvedGUIDs )
                 throws InterruptedException, IndexingException;
         public ObjectTypeParsingRules getTypeDescriptor(SearchObjectType type)
                 throws NoSuchTypeException;

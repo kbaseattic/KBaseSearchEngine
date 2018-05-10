@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -173,7 +174,7 @@ public class KeyWordParserTest {
                 Arrays.asList(new GUID("CODE:1/2/3")), set(new GUID("CODE:4/5/6"))))
                 .thenReturn(set(new GUID("CODE:4/5/6")));
         
-        when(lookup.getTypesForGuids(set(new GUID("CODE:4/5/6"))))
+        when(lookup.getTypesForGuids(Arrays.asList(new GUID("CODE:1/2/3")), set(new GUID("CODE:4/5/6"))))
                 .thenReturn(Collections.emptyMap());
 
         try {
@@ -212,7 +213,7 @@ public class KeyWordParserTest {
                 Arrays.asList(new GUID("CODE:1/2/3")), set(new GUID("CODE:4/5/6"))))
                 .thenReturn(set(new GUID("CODE:4/5/6")));
         
-        when(lookup.getTypesForGuids(set(new GUID("CODE:4/5/6"))))
+        when(lookup.getTypesForGuids(Arrays.asList(new GUID("CODE:1/2/3")), set(new GUID("CODE:4/5/6"))))
                 .thenReturn(ImmutableMap.of(
                         new GUID("CODE:4/5/6"), new SearchObjectType("Assembly", 2)));
 
