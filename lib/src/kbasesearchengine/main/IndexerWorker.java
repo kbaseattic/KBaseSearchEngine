@@ -834,7 +834,7 @@ public class IndexerWorker implements Stoppable {
                         final ResolvedReference ref = refs.next();
 
                         // make a copy to avoid mutating the caller's path
-                        final List<GUID> newRefPath = Arrays.asList(guid);
+                        final List<GUID> newRefPath = Arrays.asList(ref.getResolvedReference());
                         final SourceData obj = handler.load(newRefPath, tempFile.toPath());
 
                         final ObjectTypeParsingRules rules = getObjectTypeParsingRules(ref);
