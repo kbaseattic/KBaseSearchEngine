@@ -120,7 +120,7 @@ public class ElasticIndexingStorageTest {
             }
 
             @Override
-            public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids)
+            public Map<GUID, ObjectData> lookupObjectsByGuid(List<GUID> objectRefPath, Set<GUID> guids)
                     throws FatalIndexingException {
                 List<ObjectData> objList;
                 try {
@@ -144,7 +144,7 @@ public class ElasticIndexingStorageTest {
             }
 
             @Override
-            public Map<GUID, SearchObjectType> getTypesForGuids(Set<GUID> guids)
+            public Map<GUID, SearchObjectType> getTypesForGuids(final List<GUID> objectRefPath, Set<GUID> guids)
                     throws FatalIndexingException {
                 PostProcessing pp = new PostProcessing();
                 pp.objectData = false;
