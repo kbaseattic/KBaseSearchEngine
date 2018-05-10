@@ -810,7 +810,17 @@ public class IndexerWorker implements Stoppable {
             }
             return ret;
         }
-        
+
+        /** Note that more than one object can be returned for each input guid.
+         * This may happen if the type mapping specifies more than one set of
+         * indexing rules for a given object type and version
+         *
+         * @param guids
+         * @return
+         * @throws IndexingException
+         * @throws InterruptedException
+         * @throws RetriableIndexingException
+         */
         private List<ObjectData> getObjectsByIds(final Set<GUID> guids)
                 throws IndexingException, InterruptedException, RetriableIndexingException {
 
@@ -836,17 +846,18 @@ public class IndexerWorker implements Stoppable {
                         final List<GUID> newRefPath = Arrays.asList(guid);
                         final SourceData obj = handler.load(newRefPath, tempFile.toPath());
 
-                        final List<ObjectTypeParsingRules> filteredParsingRules = getFilteredSortedParsingRules(ref);
+                        final ObjectTypeParsingRules rules = getObjectTypeParsingRules(ref);
 
-                        for (final ObjectTypeParsingRules rule : filteredParsingRules) {
+                        if(rules != null) {
+
                             final ParseObjectsRet parsedRet = parseObjects(guid, this,
-                                    newRefPath, obj, rule);
+                                    newRefPath, obj, rules);
 
                             final GUID parsedGUID = parsedRet.guidToObj.keySet().iterator().next();
 
                             final ObjectData objData = buildObjectDataFrom(
-                                    parsedRet.guidToObj.keySet().iterator().next(),
-                                    rule.getGlobalObjectType(),
+                                    parsedGUID,
+                                    rules.getGlobalObjectType(),
                                     obj.getName(),
                                     obj.getCreator(),
                                     obj.getCommitHash(),
@@ -854,6 +865,7 @@ public class IndexerWorker implements Stoppable {
 
                             data.add(objData);
                         }
+
                     }
                 } finally {
                     tempFile.delete();
@@ -862,29 +874,25 @@ public class IndexerWorker implements Stoppable {
             return data;
         }
 
-        private List<ObjectTypeParsingRules> getFilteredSortedParsingRules(ResolvedReference ref) {
+        private ObjectTypeParsingRules getObjectTypeParsingRules(ResolvedReference ref) {
 
             final List<ObjectTypeParsingRules> parsingRules = new ArrayList<>(
                     typeStorage.listObjectTypeParsingRules(ref.getType()));
 
             // filter by subObject type
-            final List<ObjectTypeParsingRules> filteredParsingRules = new ArrayList<>();
+            final String refSubObjectType = ref.getReference().getSubObjectType();
             for (final ObjectTypeParsingRules rule : parsingRules) {
-                final String refSubObjectType = ref.getReference().getSubObjectType();
                 final String ruleSubObjectType = rule.getSubObjectType().orNull();
                 if (refSubObjectType == null && ruleSubObjectType == null) {
-                    filteredParsingRules.add(rule);
+                    return rule;
                 }
                 else if (refSubObjectType != null &&
                         refSubObjectType.equals(ruleSubObjectType)) {
-                    filteredParsingRules.add(rule);
+                    return rule;
                 }
             }
 
-            // sort
-            Collections.sort(filteredParsingRules, new ParsingRulesSubtypeFirstComparator());
-
-            return filteredParsingRules;
+            return null;
         }
 
 
