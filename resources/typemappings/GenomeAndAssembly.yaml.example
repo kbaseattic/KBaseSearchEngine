@@ -1,6 +1,6 @@
 # This is an example file that demonstrates how to specify "storage-to-search" type mappings beyond
 # those embedded in the type transformation files (in the storage-type and storage-object-type
-# parameters). Here, "storage" implies the data source storage system (mongodb for example) and "search"
+# parameters). Here, "storage" implies the data source storage system (Workspace for example) and "search"
 # implies the data destination storage system, which happens to be ElasticSearch for this application.
 
 # Type mappings specified in a mappings file override any equivalent mappings in the search type

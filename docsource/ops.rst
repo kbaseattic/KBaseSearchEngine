@@ -5,9 +5,7 @@ Operations
 
 [TODO: A future PR will implement a CLI for trickle updates from a user specified time]
 
-[TODO: A future PR will include strict dynamic mapping as a safety measure]
-
-[TODO: A future PR will include html documentation]
+[TODO: A future PR will include a command to automate step 5b by creating an index based on a search type. This would reduce potential errors. This command will also take care of step 11.]
 
 Reindexing Naming Conventions
 ------------------------------
@@ -25,7 +23,7 @@ When reindexing is necessary, the index is reindexed to a new index with a new s
 
 Reindexing Process
 -------------------
-For the sake of simplicity and for the reasons described below. a single process has been defined for all reindexing cases -
+For the sake of simplicity and for the reasons described below, a single process has been defined for all reindexing cases -
 
 a) change field value
 b) add field type
@@ -70,7 +68,13 @@ In addition, given that there can be as many as a thousand indices for KBase dat
 
 It is a good practice to make the mapping strict ("dynamic": "strict") for each type (data and access) in the index. Strict mappings prevent the mapping from being modified dynamically during ingest time.
 
-Update the settings section below the mapping. The number of shards and replicas must be decided on based on your capacity planning rules. It is costly to change the number of shards, so choose wisely! Make sure not to exceed 600 shards for any node in the system. Increase number of replicas to improve availability.
+Update the settings section below the mapping. The number of shards and replicas must be decided on based on your capacity planning rules. It is costly to change the number of shards, so choose wisely! Make sure not to exceed 600 shards for any node in the system. Increase number of replicas to improve availability. In general,
+
+increase write speed => more shards
+
+increase read speed => more replicas
+
+max shard size = ~50GB
 
 .. code-block:: bash
 
@@ -110,7 +114,7 @@ Update the settings section below the mapping. The number of shards and replicas
       }
     }
 
-5c. If the mapping does not require any change but the document's meta data needs to be changed, use the `Painless <https://www.elastic.co/guide/en/elasticsearch/reference/5.4/modules-scripting-painless-syntax.html>`_ script to modify metadata. Setting version_type to external will cause Elasticsearch to preserve the version from the source, create any documents that are missing, and update any documents that have an older version in the destination index than they do in the source index.
+5c. If the mapping does not require any change but the document's meta data (The field values) needs to be changed, use the `Painless <https://www.elastic.co/guide/en/elasticsearch/reference/5.4/modules-scripting-painless-syntax.html>`_ script to modify metadata. Setting version_type to external will cause Elasticsearch to preserve the version from the source, create any documents that are missing, and update any documents that have an older version in the destination index than they do in the source index.
 
 .. code-block:: bash
 
@@ -221,7 +225,7 @@ Update the settings section below the mapping. The number of shards and replicas
 
     GET /_cat/indices/kbase.genome_*
 
-11. If the change involved in the reindexing operation also requires a corresponding search type spec change (located in resources/types/genome.yml for example), then this change must be applied.
+11. If the change involved in the reindexing operation also requires a corresponding search type spec change (located in resources/types/genome.yml for example), then this change must be applied to the spec as well.
 
 12. Change mapping version from "1" to "_r1" in the resources/types/genome.yml search type spec and add a comment (for future reference) that describes the change that took place in the r1 reindexing operation.
 
