@@ -395,10 +395,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 new TypeReference<Map<String, Object>>() {});
 
         // check for and collect response data from index operations that failed
-        List errorItems = new ArrayList();
-        if(responseMap.get("errors").equals(Boolean.TRUE)) {
-            for(Map item: (List<Map>)responseMap.get("items")) {
-                for(Object itemData: item.values()) {
+        final List errorItems = new ArrayList();
+        if (responseMap.get("errors").equals(Boolean.TRUE)) {
+            for (Map item: (List<Map>)responseMap.get("items")) {
+                for (Object itemData: item.values()) {
                     if (!((Map) itemData).get("status")
                             .toString().startsWith("20")) {  // status code 200, 201 etc
                         errorItems.add(itemData);
@@ -408,7 +408,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
 
         // report response data from failed index operations
-        if(errorItems.size() > 0) {
+        if (errorItems.size() > 0) {
             throw new IOException("Indexing errors: " + errorItems.toString());
         }
     }
@@ -1262,7 +1262,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         //because elastic sometimes returns highlight as null instead of empty map.
         if (pp.objectHighlight && highlight != null) {
-            for(final String key : highlight.keySet()) {
+            for (final String key : highlight.keySet()) {
                 b.withHighlight(getReadableKeyNames(key, guid), highlight.get(key));
             }    
         }
@@ -1274,7 +1274,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             throws IllegalStateException{
         if (key.startsWith("key.")) {
             return stripKeyPrefix(key);
-        } else if(READABLE_NAMES.containsKey(key)) {
+        } else if (READABLE_NAMES.containsKey(key)) {
             return READABLE_NAMES.get(key);
         } else {
             //this should not happen. Untested
