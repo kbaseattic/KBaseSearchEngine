@@ -607,7 +607,7 @@ public class IndexerWorker implements Stoppable {
     private ParseObjectsRet parseObjects(
             final GUID guid,
             final ObjectLookupProvider indexLookup,
-            final LinkedList<GUID> newRefPath,
+            final List<GUID> newRefPath,
             final SourceData obj,
             final ObjectTypeParsingRules rule)
             throws IndexingException, InterruptedException {
@@ -747,8 +747,6 @@ public class IndexerWorker implements Stoppable {
                         resolveReferences(eh, callerRefPath, refsToResolve);
                 for (final ResolvedReference rr: resrefs) {
                     final GUID guid = rr.getResolvedReference();
-                    final boolean indexed = retrier.retryFunc(
-                            g -> checkParentGuidExists(g), guid, null);
                     ret.add(guid);
                     refResolvingCache.get(storageCode)
                             .put(refToRefPath.get(rr.getReference()), guid);
@@ -835,8 +833,7 @@ public class IndexerWorker implements Stoppable {
                         final ResolvedReference ref = refs.next();
 
                         // make a copy to avoid mutating the caller's path
-                        final LinkedList<GUID> newRefPath = new LinkedList<>();
-                        newRefPath.add(guid);
+                        final List<GUID> newRefPath = Arrays.asList(guid);
                         final SourceData obj = handler.load(newRefPath, tempFile.toPath());
 
                         final List<ObjectTypeParsingRules> filteredParsingRules = getFilteredSortedParsingRules(ref);
