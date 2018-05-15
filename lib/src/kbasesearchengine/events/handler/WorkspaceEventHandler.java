@@ -216,6 +216,34 @@ public class WorkspaceEventHandler implements EventHandler {
                 .asClassInstance(WS_INFO_TYPEREF);
     }
 
+    /** Get the workspace information for an object from the workspace service
+     * to which this handler is communicating.
+     * @param list of object refs: workspaceId/objectId/verId.
+     * @return the object info as returned from the workspace.
+     * @throws IOException if an IO exception occurs.
+     * @throws JsonClientException if an error retrieving the data occurs.
+     */
+    public GetObjectInfo3Results getObjectInfo3(
+            final List<String> objectRefs, Long includeMeta, Long ignoreErrors)
+            throws IOException, JsonClientException {
+
+        final List<ObjectSpecification> getObjInfo3Input = new ArrayList<>();
+
+        for (final String objRef: objectRefs) {
+            final ObjectSpecification os = new ObjectSpecification().withRef(objRef);
+            getObjInfo3Input.add(os);
+        }
+
+        final Map<String, Object> command = new HashMap<>();
+        command.put("command", "getObjectInfo");
+        command.put("params", new GetObjectInfo3Params()
+                .withObjects(getObjInfo3Input)
+                .withIncludeMetadata(includeMeta)
+                .withIgnoreErrors(ignoreErrors));
+
+        return ws.getClient().administer(new UObject(command))
+                .asClassInstance(GetObjectInfo3Results.class);
+    }
 
     /** Get the workspace information for an object from the workspace service
      * to which this handler is communicating.
@@ -247,8 +275,7 @@ public class WorkspaceEventHandler implements EventHandler {
         return ws.getClient().administer(new UObject(command))
                 .asClassInstance(GetObjectInfo3Results.class);
     }
-    
-    
+
     private ObjectData getObjectData(final List<GUID> guids, final Path file)
             throws RetriableIndexingException, IndexingException {
         // create a new client since we're setting a file for the next response

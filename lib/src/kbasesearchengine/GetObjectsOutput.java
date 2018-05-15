@@ -10,7 +10,9 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple5;
+import us.kbase.common.service.Tuple9;
 
 
 /**
@@ -28,7 +30,9 @@ import us.kbase.common.service.Tuple5;
 @JsonPropertyOrder({
     "objects",
     "search_time",
-    "access_group_narrative_info"
+    "access_group_narrative_info",
+    "workspaces_info",
+    "objects_info"
 })
 public class GetObjectsOutput {
 
@@ -38,6 +42,10 @@ public class GetObjectsOutput {
     private java.lang.Long searchTime;
     @JsonProperty("access_group_narrative_info")
     private Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrativeInfo;
+    @JsonProperty("workspaces_info")
+    private Map<Long, Tuple9 <Long, String, String, String, Long, String, String, String, Map<String, String>>> workspacesInfo;
+    @JsonProperty("objects_info")
+    private Map<String, Tuple11 <Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> objectsInfo;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("objects")
@@ -85,6 +93,36 @@ public class GetObjectsOutput {
         return this;
     }
 
+    @JsonProperty("workspaces_info")
+    public Map<Long, Tuple9 <Long, String, String, String, Long, String, String, String, Map<String, String>>> getWorkspacesInfo() {
+        return workspacesInfo;
+    }
+
+    @JsonProperty("workspaces_info")
+    public void setWorkspacesInfo(Map<Long, Tuple9 <Long, String, String, String, Long, String, String, String, Map<String, String>>> workspacesInfo) {
+        this.workspacesInfo = workspacesInfo;
+    }
+
+    public GetObjectsOutput withWorkspacesInfo(Map<Long, Tuple9 <Long, String, String, String, Long, String, String, String, Map<String, String>>> workspacesInfo) {
+        this.workspacesInfo = workspacesInfo;
+        return this;
+    }
+
+    @JsonProperty("objects_info")
+    public Map<String, Tuple11 <Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> getObjectsInfo() {
+        return objectsInfo;
+    }
+
+    @JsonProperty("objects_info")
+    public void setObjectsInfo(Map<String, Tuple11 <Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> objectsInfo) {
+        this.objectsInfo = objectsInfo;
+    }
+
+    public GetObjectsOutput withObjectsInfo(Map<String, Tuple11 <Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> objectsInfo) {
+        this.objectsInfo = objectsInfo;
+        return this;
+    }
+
     @JsonAnyGetter
     public Map<java.lang.String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -97,7 +135,7 @@ public class GetObjectsOutput {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((("GetObjectsOutput"+" [objects=")+ objects)+", searchTime=")+ searchTime)+", accessGroupNarrativeInfo=")+ accessGroupNarrativeInfo)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((("GetObjectsOutput"+" [objects=")+ objects)+", searchTime=")+ searchTime)+", accessGroupNarrativeInfo=")+ accessGroupNarrativeInfo)+", workspacesInfo=")+ workspacesInfo)+", objectsInfo=")+ objectsInfo)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

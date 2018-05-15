@@ -41,6 +41,7 @@ import kbasesearchengine.main.SearchMethods;
 import kbasesearchengine.main.SearchVersion;
 import kbasesearchengine.main.TemporaryNarrativePruner;
 import kbasesearchengine.main.NarrativeInfoDecorator;
+import kbasesearchengine.main.WorkspaceInfoDecorator;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.system.FileLister;
 import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
@@ -57,14 +58,13 @@ import kbasesearchengine.common.FileUtil;
 /**
  * <p>Original spec-file module name: KBaseSearchEngine</p>
  * <pre>
- * A KBase module: KBaseSearchEngine
  * </pre>
  */
 public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
-    private static final String version = "";
-    private static final String gitUrl = "";
-    private static final String gitCommitHash = "";
+    private static final String version = "0.0.1";
+    private static final String gitUrl = "https://github.com/kbase/KBaseSearchEngine.git";
+    private static final String gitCommitHash = "f5441593dcc5f0ca49646dea3ea2420c5b8c8ab3";
 
     //BEGIN_CLASS_HEADER
     
@@ -141,7 +141,10 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         
         final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
-        
+
+        final WorkspaceEventHandler workspaceEventHandler =
+                new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient));
+
         // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
         final AccessGroupProvider accessGroupProvider = new AccessGroupCache(
                 new WorkspaceAccessGroupProvider(wsClient), 30, 50000 * 1000);
@@ -157,13 +160,16 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         // this is a dirty hack so we don't have to provide 2 auth urls in the config
         // update if we ever update the SDK to use the non-legacy endpoints
         final String auth2URL = authURL.split("api")[0];
-        
+
         search = new TemporaryNarrativePruner(
-                new NarrativeInfoDecorator(
-                        new SearchMethods(accessGroupProvider, esStorage, ss, admins),
-                        new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient)),
-                        new TemporaryAuth2Client(new URL(auth2URL)),
-                        kbaseIndexerToken.getToken()));
+                new WorkspaceInfoDecorator(
+                        new NarrativeInfoDecorator(
+                                new SearchMethods(accessGroupProvider, esStorage, ss, admins),
+                                workspaceEventHandler,
+                                new TemporaryAuth2Client(new URL(auth2URL)),
+                                kbaseIndexerToken.getToken()),
+                        workspaceEventHandler));
+
         //END_CONSTRUCTOR
     }
 

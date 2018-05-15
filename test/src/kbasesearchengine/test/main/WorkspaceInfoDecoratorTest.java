@@ -2,6 +2,7 @@ package kbasesearchengine.test.main;
 
 import static kbasesearchengine.test.common.TestCommon.set;
 import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.wsTuple;
+import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.compare;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -15,44 +16,42 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import kbasesearchengine.*;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
 
-import kbasesearchengine.authorization.TemporaryAuth2Client;
+import kbasesearchengine.GetObjectsInput;
+import kbasesearchengine.GetObjectsOutput;
+import kbasesearchengine.ObjectData;
+import kbasesearchengine.SearchObjectsInput;
+import kbasesearchengine.SearchObjectsOutput;
+import kbasesearchengine.SearchTypesInput;
+import kbasesearchengine.SearchTypesOutput;
+import kbasesearchengine.TypeDescriptor;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
-import kbasesearchengine.main.NarrativeInfoDecorator;
+import kbasesearchengine.main.WorkspaceInfoDecorator;
 import kbasesearchengine.main.SearchInterface;
 import kbasesearchengine.test.common.TestCommon;
 import us.kbase.common.service.JsonClientException;
-import us.kbase.common.service.Tuple5;
+import us.kbase.common.service.Tuple9;
 
-public class NarrativeInfoDecoratorTest {
+public class WorkspaceInfoDecoratorTest {
     
     @Test
     public void constructFail() {
         final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
         final SearchInterface si = mock(SearchInterface.class);
-        final TemporaryAuth2Client auth = mock(TemporaryAuth2Client.class);
 
-        failConstruct(null, weh, auth, "t", new NullPointerException("searchInterface"));
-        failConstruct(si, null, auth, "t", new NullPointerException("wsHandler"));
-        failConstruct(si, weh, null, "t", new NullPointerException("authClient"));
-        failConstruct(si, weh, auth, null,
-                new IllegalArgumentException("token cannot be null or whitespace only"));
-        failConstruct(si, weh, auth, "  \n  \t",
-                new IllegalArgumentException("token cannot be null or whitespace only"));
+        failConstruct(null, weh, new NullPointerException("searchInterface"));
+        failConstruct(si, null, new NullPointerException("wsHandler"));
     }
     
     private void failConstruct(
             final SearchInterface search,
             final WorkspaceEventHandler weh,
-            final TemporaryAuth2Client cli,
-            final String token,
             final Exception expected) {
         try {
-            new NarrativeInfoDecorator(search, weh, cli, token);
+            new WorkspaceInfoDecorator(search, weh);
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
@@ -70,27 +69,24 @@ public class NarrativeInfoDecoratorTest {
     public void searchObjectsDecorateWithNoData() throws Exception {
         final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
         final SearchInterface search = mock(SearchInterface.class);
-        final TemporaryAuth2Client auth = mock(TemporaryAuth2Client.class);
-        
-        final NarrativeInfoDecorator nid = new NarrativeInfoDecorator(search, weh, auth, "token");
+
+        final WorkspaceInfoDecorator nid = new WorkspaceInfoDecorator(search, weh);
         
         /* since a) the generated input class has no hashcode or equals and
          * b) the argument is just a straight pass through, we just use an identity match
          * for mockito to recognize the argument
          */
-
-        final SearchObjectsInput dummyInput = new SearchObjectsInput().withMatchFilter(new MatchFilter().withAddNarrativeInfo(1L));
+        
+        final SearchObjectsInput dummyInput = new SearchObjectsInput();
         
         when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
                 .withObjects(Collections.emptyList())
-                .withAccessGroupNarrativeInfo(null));
-        
-        when(auth.getUserDisplayNames("token", set())).thenReturn(Collections.emptyMap());
-        
+                .withWorkspacesInfo(null));
+
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
         
         assertThat("incorrect object data", res.getObjects(), is(Collections.emptyList()));
-        assertThat("incorrect narr info", res.getAccessGroupNarrativeInfo(),
+        assertThat("incorrect workspace info", res.getWorkspacesInfo(),
                 is(Collections.emptyMap()));
     }
     
@@ -100,16 +96,15 @@ public class NarrativeInfoDecoratorTest {
         // found in the auth service results
         final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
         final SearchInterface search = mock(SearchInterface.class);
-        final TemporaryAuth2Client auth = mock(TemporaryAuth2Client.class);
-        
-        final NarrativeInfoDecorator nid = new NarrativeInfoDecorator(search, weh, auth, "tok");
+
+        final WorkspaceInfoDecorator nid = new WorkspaceInfoDecorator(search, weh);
         
         /* since a) the generated input class has no hashcode or equals and
          * b) the argument is just a straight pass through, we just use an identity match
          * for mockito to recognize the argument
          */
         
-        final SearchObjectsInput dummyInput = new SearchObjectsInput().withMatchFilter(new MatchFilter().withAddNarrativeInfo(1L));
+        final SearchObjectsInput dummyInput = new SearchObjectsInput();
         
         final List<ObjectData> objectdata = Arrays.asList(
                 new ObjectData().withGuid("WS:65/2/7"),
@@ -119,7 +114,7 @@ public class NarrativeInfoDecoratorTest {
                 new ObjectData().withGuid("WS:2/345/1000"));
         when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
                 .withObjects(objectdata)
-                .withAccessGroupNarrativeInfo(null));
+                .withWorkspacesInfo(null));
         
         // no narrative info at all
         when(weh.getWorkspaceInfo(65)).thenReturn(wsTuple(
@@ -140,50 +135,56 @@ public class NarrativeInfoDecoratorTest {
         when(weh.getWorkspaceInfo(42)).thenReturn(wsTuple(
                 42, "name4", "owner4", "2018-02-08T21:55:50.678Z", 0, "r", "n", "unlocked",
                 ImmutableMap.of("narrative", "3", "narrative_nice_name", "mylovelynarrative")));
-        
-        when(auth.getUserDisplayNames("tok", set("owner1", "owner2", "owner3", "owner4")))
-                .thenReturn(ImmutableMap.of(
-                        "owner1", "disp1",
-                        "owner2", "disp2",
-                        "owner4", "disp4")); // missing 3
-        
+
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
         
-        final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
-                65L, narrInfo(null, null, 1518126945000L, "owner1", "disp1"),
-                1L, narrInfo(null, null, 1518126957000L, "owner2", "disp2"),
-                2L, narrInfo(null, null, 1518126945678L, "owner3", null),
-                42L, narrInfo("mylovelynarrative", 3L, 1518126950678L, "owner4", "disp4"));
+        final Map<Long, Tuple9<Long, String, String, String, Long, String,
+                String, String, Map<String, String>>> expected = ImmutableMap.of(
+                65L, wsTuple(
+                        65, "name1", "owner1", "2018-02-08T21:55:45Z", 0, "r", "n", "unlocked",
+                        Collections.emptyMap()),
+                1L, wsTuple(
+                        1, "name2", "owner2", "2018-02-08T21:55:57Z", 0, "r", "n", "unlocked",
+                        ImmutableMap.of("narrative", "2")),
+                2L, wsTuple(
+                        2, "name3", "owner3", "2018-02-08T21:55:45.678Z", 0, "r", "n", "unlocked",
+                        ImmutableMap.of("narrative_nice_name", "myhorridnarrative")),
+                42L, wsTuple(
+                        42, "name4", "owner4", "2018-02-08T21:55:50.678Z", 0, "r", "n", "unlocked",
+                        ImmutableMap.of("narrative", "3", "narrative_nice_name", "mylovelynarrative")));
         
         assertThat("incorrect object data", res.getObjects(), is(objectdata));
         
-        compare(res.getAccessGroupNarrativeInfo(), expected);
+        compareMap(res.getWorkspacesInfo(), expected);
     }
     
     @Test
     public void searchObjectsDecorateWithPreexistingInfo() throws Exception {
         final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
         final SearchInterface search = mock(SearchInterface.class);
-        final TemporaryAuth2Client auth = mock(TemporaryAuth2Client.class);
-        
-        final NarrativeInfoDecorator nid = new NarrativeInfoDecorator(search, weh, auth, "toke");
+
+        final WorkspaceInfoDecorator nid = new WorkspaceInfoDecorator(search, weh);
         
         /* since a) the generated input class has no hashcode or equals and
          * b) the argument is just a straight pass through, we just use an identity match
          * for mockito to recognize the argument
          */
-
-        final SearchObjectsInput dummyInput = new SearchObjectsInput().withMatchFilter(new MatchFilter().withAddNarrativeInfo(1L));
+        
+        final SearchObjectsInput dummyInput = new SearchObjectsInput();
         
         final List<ObjectData> objectdata = Arrays.asList(
                 new ObjectData().withGuid("WS:65/2/7"),
                 new ObjectData().withGuid("WS:2/345/1000"));
         when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
                 .withObjects(objectdata)
-                .withAccessGroupNarrativeInfo(ImmutableMap.of(
+                .withWorkspacesInfo(ImmutableMap.of(
                         // expect overwrite
-                        65L, narrInfo("narrname", 1L, 10000L, "owner", "Herbert J. Kornfeld"),
-                        32L, narrInfo("narrname6", 2L, 20000L, "owner6", "Herbert K. Kornfeld"))));
+                        65L, wsTuple(
+                                65, "name1", "owner1", "2018-02-08T21:55:45Z", 0, "r", "n", "unlocked",
+                                Collections.emptyMap()),
+                        32L, wsTuple(
+                                32, "name4", "owner4", "2018-02-08T21:55:50.678Z", 0, "r", "n", "unlocked",
+                                ImmutableMap.of("narrative", "3", "narrative_nice_name", "mylovelynarrative")))));
         
         // no narrative info at all
         when(weh.getWorkspaceInfo(65)).thenReturn(wsTuple(
@@ -195,29 +196,34 @@ public class NarrativeInfoDecoratorTest {
                 2, "name3", "owner3", "2018-02-08T21:55:45.678Z", 0, "r", "n", "unlocked",
                 ImmutableMap.of("narrative_nice_name", "myhorridnarrative")));
         
-        when(auth.getUserDisplayNames("toke", set("owner1", "owner3"))).thenReturn(ImmutableMap.of(
-                "owner1", "Gengulphus P. Twistleton", "owner3", "Fred"));
-        
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
         
-        final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
-                65L, narrInfo(null, null, 1518126945000L, "owner1", "Gengulphus P. Twistleton"),
-                2L, narrInfo(null, null, 1518126945678L, "owner3", "Fred"),
-                32L, narrInfo("narrname6", 2L, 20000L, "owner6", "Herbert K. Kornfeld"));
+        final Map<Long, Tuple9<Long, String, String, String, Long, String,
+                String, String, Map<String, String>>> expected = ImmutableMap.of(
+                65L, wsTuple(
+                        65, "name1", "owner1", "2018-02-08T21:55:45Z", 0, "r", "n", "unlocked",
+                        Collections.emptyMap()),
+                2L, wsTuple(
+                        2, "name3", "owner3", "2018-02-08T21:55:45.678Z", 0, "r", "n", "unlocked",
+                        ImmutableMap.of("narrative_nice_name", "myhorridnarrative")),
+                32L, wsTuple(
+                        32, "name4", "owner4", "2018-02-08T21:55:50.678Z", 0, "r", "n", "unlocked",
+                        ImmutableMap.of("narrative", "3", "narrative_nice_name", "mylovelynarrative")));
         
         assertThat("incorrect object data", res.getObjects(), is(objectdata));
         
-        compare(res.getAccessGroupNarrativeInfo(), expected);
+        compareMap(res.getWorkspacesInfo(), expected);
     }
-    
-    @Test
-    public void searchObjectsDecorateFail() throws Exception {
-        failSearchObjects(new IOException("beer on router"),
-                new IOException("Failed retrieving workspace info: beer on router"));
-        failSearchObjects(new JsonClientException("workspace is turned off"),
-                new JsonClientException(
-                        "Failed retrieving workspace info: workspace is turned off"));
-    }
+
+
+//    @Test
+//    public void searchObjectsDecorateFail() throws Exception {
+//        failSearchObjects(new IOException("beer on router"),
+//                new IOException("Failed retrieving workspace info: beer on router"));
+//        failSearchObjects(new JsonClientException("workspace is turned off"),
+//                new JsonClientException(
+//                        "Failed retrieving workspace info: workspace is turned off"));
+//    }
 
     private void failSearchObjects(
             final Exception toThrow,
@@ -225,23 +231,22 @@ public class NarrativeInfoDecoratorTest {
             throws Exception {
         final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
         final SearchInterface search = mock(SearchInterface.class);
-        final TemporaryAuth2Client auth = mock(TemporaryAuth2Client.class);
-        
-        final NarrativeInfoDecorator nid = new NarrativeInfoDecorator(search, weh, auth, "tok");
+
+        final WorkspaceInfoDecorator nid = new WorkspaceInfoDecorator(search, weh);
         
         /* since a) the generated input class has no hashcode or equals and
          * b) the argument is just a straight pass through, we just use an identity match
          * for mockito to recognize the argument
          */
-
-        final SearchObjectsInput dummyInput = new SearchObjectsInput().withMatchFilter(new MatchFilter().withAddNarrativeInfo(1L));
+        
+        final SearchObjectsInput dummyInput = new SearchObjectsInput();
         
         final List<ObjectData> objectdata = Arrays.asList(new ObjectData().withGuid("WS:65/2/7"));
         when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
                 .withObjects(objectdata));
         
         when(weh.getWorkspaceInfo(65)).thenThrow(toThrow);
-        
+
         try {
             nid.searchObjects(dummyInput, "user");
             fail("expected exception");
@@ -254,16 +259,15 @@ public class NarrativeInfoDecoratorTest {
     public void getObjectsSimpleTest() throws Exception {
         final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
         final SearchInterface search = mock(SearchInterface.class);
-        final TemporaryAuth2Client auth = mock(TemporaryAuth2Client.class);
-        
-        final NarrativeInfoDecorator nid = new NarrativeInfoDecorator(search, weh, auth, "token");
+
+        final WorkspaceInfoDecorator nid = new WorkspaceInfoDecorator(search, weh);
         
         /* since a) the generated input class has no hashcode or equals and
          * b) the argument is just a straight pass through, we just use an identity match
          * for mockito to recognize the argument
          */
-
-        final GetObjectsInput dummyInput = new GetObjectsInput().withMatchFilter(new MatchFilter().withAddNarrativeInfo(1L));
+        
+        final GetObjectsInput dummyInput = new GetObjectsInput();
         
         final List<ObjectData> objectdata = Arrays.asList(new ObjectData().withGuid("WS:42/7/21"));
         when(search.getObjects(dummyInput, "user")).thenReturn(new GetObjectsOutput()
@@ -274,18 +278,18 @@ public class NarrativeInfoDecoratorTest {
         when(weh.getWorkspaceInfo(42)).thenReturn(wsTuple(
                 42, "name4", "owner4", "2018-02-08T21:55:50.678Z", 0, "r", "n", "unlocked",
                 ImmutableMap.of("narrative", "3", "narrative_nice_name", "mylovelynarrative")));
-        
-        when(auth.getUserDisplayNames("token", set("owner4"))).thenReturn(ImmutableMap.of(
-                "owner4", "foo"));
-        
+
         final GetObjectsOutput res = nid.getObjects(dummyInput, "user");
         
-        final Map<Long, Tuple5<String, Long, Long, String, String>> expected = new HashMap<>();
-        expected.put(42L, narrInfo("mylovelynarrative", 3L, 1518126950678L, "owner4", "foo"));
+        final Map<Long, Tuple9<Long, String, String, String, Long, String,
+                String, String, Map<String, String>>> expected = new HashMap<>();
+        expected.put(42L, wsTuple(
+                42, "name4", "owner4", "2018-02-08T21:55:50.678Z", 0, "r", "n", "unlocked",
+                ImmutableMap.of("narrative", "3", "narrative_nice_name", "mylovelynarrative")));
         
         assertThat("incorrect object data", res.getObjects(), is(objectdata));
         
-        compare(res.getAccessGroupNarrativeInfo(), expected);
+        compareMap(res.getWorkspacesInfo(), expected);
     }
     
     @Test
@@ -293,9 +297,8 @@ public class NarrativeInfoDecoratorTest {
         // this is just a passthrough
         final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
         final SearchInterface search = mock(SearchInterface.class);
-        final TemporaryAuth2Client auth = mock(TemporaryAuth2Client.class);
-        
-        final NarrativeInfoDecorator nid = new NarrativeInfoDecorator(search, weh, auth, "token");
+
+        final WorkspaceInfoDecorator nid = new WorkspaceInfoDecorator(search, weh);
         
         /* since a) the generated input and output classes have no hashcode or equals and
          * b) the method is just a straight pass through, we just use an identity match
@@ -315,9 +318,8 @@ public class NarrativeInfoDecoratorTest {
         // this is just a passthrough
         final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
         final SearchInterface search = mock(SearchInterface.class);
-        final TemporaryAuth2Client auth = mock(TemporaryAuth2Client.class);
-        
-        final NarrativeInfoDecorator nid = new NarrativeInfoDecorator(search, weh, auth, "tok");
+
+        final WorkspaceInfoDecorator nid = new WorkspaceInfoDecorator(search, weh);
         
         /* since a) the generated output class has no hashcode or equals and
          * b) the method is just a straight pass through, we just use an identity match
@@ -331,38 +333,15 @@ public class NarrativeInfoDecoratorTest {
         assertThat("incorrect output", nid.listTypes("type"), is(ImmutableMap.of(
                 "type", dummyOutput)));
     }
-    
-    public static void compare(
-            final Map<Long, Tuple5<String, Long, Long, String, String>> got,
-            final Map<Long, Tuple5<String, Long, Long, String, String>> expected) {
+
+    private static void compareMap(
+            final Map<Long, Tuple9<Long, String, String, String, Long, String,
+                    String, String, Map<String, String>>> got,
+            final Map<Long, Tuple9<Long, String, String, String, Long, String,
+                    String, String, Map<String, String>>> expected) {
         assertThat("incorrect map keys", got.keySet(), is(expected.keySet()));
         for (final Long key: got.keySet()) {
             compare(got.get(key), expected.get(key));
         }
     }
-
-    public static void compare(
-            final Tuple5<String, Long, Long, String, String> got,
-            final Tuple5<String, Long, Long, String, String> expected) {
-        assertThat("incorrect narrative name", got.getE1(), is(expected.getE1()));
-        assertThat("incorrect narrative id", got.getE2(), is(expected.getE2()));
-        assertThat("incorrect epoch", got.getE3(), is(expected.getE3()));
-        assertThat("incorrect owner", got.getE4(), is(expected.getE4()));
-        assertThat("incorrect display name", got.getE5(), is(expected.getE5()));
-    }
-
-    public static Tuple5<String, Long, Long, String, String> narrInfo(
-            final String narrativeName,
-            final Long narrativeId,
-            final Long epoch,
-            final String owner,
-            final String displayName) {
-        return new Tuple5<String, Long, Long, String, String>()
-                .withE1(narrativeName)
-                .withE2(narrativeId)
-                .withE3(epoch)
-                .withE4(owner)
-                .withE5(displayName);
-    }
-    
 }
