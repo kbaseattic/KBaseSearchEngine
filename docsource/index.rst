@@ -26,7 +26,6 @@ Welcome to KBaseSearchEngine's documentation!
    performanceEvaluation
    ops
    todos
-   releaseNotes
 
 
 
