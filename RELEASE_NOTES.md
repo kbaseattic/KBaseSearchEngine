@@ -1,6 +1,13 @@
 Search Service MKII release notes
 =================================
 
+0.1.2
+-----
+
+* Added a map of narrative info (containing narrative id, narrative name, date created,
+  workspace username, workspace display name), to the search results. The narrative info and
+  auth info (containing workspace user display name) are cached.
+
 0.1.1
 -----
 

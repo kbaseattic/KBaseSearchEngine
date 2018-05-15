@@ -1,7 +1,7 @@
 package kbasesearchengine.test.integration;
 
 import static kbasesearchengine.test.common.TestCommon.set;
-import static kbasesearchengine.test.main.NarrativeInfoDecoratorTest.narrInfo;
+import static kbasesearchengine.test.main.NarrativeInfoDecoratorTest.narrInfoTuple;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -27,7 +27,7 @@ import org.apache.http.HttpHost;
 import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
 import org.junit.AfterClass;
-import org.junit.Before;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -90,12 +90,16 @@ public class SearchAPIIntegrationTest {
     //TODO TEST add more tests. Should have reasonable integration tests for basic happy paths and a few unhappy paths.
     
     private static Path tempDirPath;
+    private static Path searchTypesDir;
+    private static Path mappingsDir;
     private static MongoController mongo;
     private static AuthController auth;
     private static AuthToken userToken;
+    private static AuthToken wsadmintoken;
     private static ElasticSearchController es;
     private static ElasticIndexingStorage indexStorage;
     private static WorkspaceController ws;
+    private static String esIndexPrefix;
     private static MongoDatabase wsdb;
     private static MongoClient mc;
     private static WorkspaceClient wsCli1;
@@ -111,9 +115,9 @@ public class SearchAPIIntegrationTest {
         // should refactor to just use NIO at some point
         FileUtils.deleteQuietly(tempDirPath.toFile());
         tempDirPath.toFile().mkdirs();
-        final Path searchTypesDir = Files.createDirectories(tempDirPath.resolve("searchtypes"));
+        searchTypesDir = Files.createDirectories(tempDirPath.resolve("searchtypes"));
         installSearchTypes(searchTypesDir);
-        final Path mappingsDir = Files.createDirectories(tempDirPath.resolve("searchmappings"));
+        mappingsDir = Files.createDirectories(tempDirPath.resolve("searchmappings"));
         installSearchMappings(mappingsDir);
 
         // set up mongo, needed for auth and workspace
@@ -136,7 +140,7 @@ public class SearchAPIIntegrationTest {
         final String token1 = TestCommon.createLoginToken(authURL, "user1");
         final String token2 = TestCommon.createLoginToken(authURL, "user2");
         userToken = new AuthToken(token1, "user1");
-        final AuthToken wsadmintoken = new AuthToken(token2, "user2");
+        wsadmintoken = new AuthToken(token2, "user2");
         
         // set up elastic search
         es = new ElasticSearchController(TestCommon.getElasticSearchExe(), tempDirPath);
@@ -158,7 +162,7 @@ public class SearchAPIIntegrationTest {
         wsCli1 = new WorkspaceClient(wsUrl, userToken);
         wsCli1.setIsInsecureHttpConnectionAllowed(true);
         
-        final String esIndexPrefix = "test_" + System.currentTimeMillis();
+        esIndexPrefix = "test_" + System.currentTimeMillis();
         final HttpHost esHostPort = new HttpHost("localhost", es.getServerPort());
 
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
@@ -172,7 +176,6 @@ public class SearchAPIIntegrationTest {
         searchCli = new KBaseSearchEngineClient(
                 new URL("http://localhost:" + searchServer.getServerPort()), userToken);
         searchCli.setIsInsecureHttpConnectionAllowed(true);
-        
     }
     
     private static void installSearchTypes(final Path target) throws IOException {
@@ -252,10 +255,18 @@ public class SearchAPIIntegrationTest {
         return server;
     }
     
-    @Before
+    @After
     public void init() throws Exception {
         TestCommon.destroyDB(wsdb);
         indexStorage.dropData();
+        if (searchServer != null) {
+            searchServer.stopServer();
+        }
+        searchServer = startupSearchServer(esIndexPrefix, tempDirPath.resolve("SearchServiceTemp"),
+                wsadmintoken, searchTypesDir, mappingsDir);
+        searchCli = new KBaseSearchEngineClient(
+                new URL("http://localhost:" + searchServer.getServerPort()), userToken);
+        searchCli.setIsInsecureHttpConnectionAllowed(true);
     }
     
     @AfterClass
@@ -283,12 +294,12 @@ public class SearchAPIIntegrationTest {
             FileUtils.deleteQuietly(tempDirPath.toFile());
         }
     }
-    
+
     @Test
     public void sourceTags() throws Exception {
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("sourceTags"));
-        
+
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
                         new SearchObjectType("SourceTags", 1),
@@ -360,9 +371,10 @@ public class SearchAPIIntegrationTest {
         assertThat("incorrect object count", res2.getObjects().size(), is(1));
         TestCommon.compare(res2.getObjects().get(0), expected1);
     }
-    
+
     @Test
     public void narrativeDecoration() throws Exception {
+
         final long wsdate = WorkspaceEventHandler.parseDateToEpochMillis(wsCli1.createWorkspace(
                 new CreateWorkspaceParams()
                         .withWorkspace("decorate")
@@ -370,7 +382,7 @@ public class SearchAPIIntegrationTest {
                                 "narrative", "6",
                                 "narrative_nice_name", "Kevin")))
                 .getE4());
-        
+
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
                         new SearchObjectType("Deco", 1),
@@ -387,7 +399,7 @@ public class SearchAPIIntegrationTest {
                         "{\"whee\": \"imaprettypony1\"}",
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
                 false);
-        
+
         final ObjectData expected1 = new ObjectData()
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")
@@ -397,15 +409,13 @@ public class SearchAPIIntegrationTest {
                 .withTypeVer(1L)
                 .withObjectName("objname1")
                 .withTimestamp(10000L);
-        
+
         final SearchObjectsOutput res = searchObjects(new MatchFilter());
-        
+
         assertThat("incorrect object count", res.getObjects().size(), is(1));
         TestCommon.compare(res.getObjects().get(0), expected1);
-        
         final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
-                1L, narrInfo("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
-        
+                1L, narrInfoTuple("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
         NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
     }
 
@@ -478,8 +488,6 @@ public class SearchAPIIntegrationTest {
         final ObjectData actual2 = res2.getObjects().get(0);
         TestCommon.compare(actual2, expected);
         assertThat("highlight should return empty map", actual2.getHighlight(), is(Collections.emptyMap()));
-
-
     }
     
     private SearchObjectsOutput searchObjects(final MatchFilter mf) throws Exception {
@@ -492,7 +500,7 @@ public class SearchAPIIntegrationTest {
             throw e;
         }
     }
-    
+
     @Test
     public void sort() throws Exception {
         wsCli1.createWorkspace(new CreateWorkspaceParams()
@@ -579,12 +587,13 @@ public class SearchAPIIntegrationTest {
      * these should be removed once the narratives are indexed
      * with custom code
      */
-    
+
     @Test
     public void pruneNarrative() throws Exception {
+
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("narprune"));
-        
+
         final Map<String, Object> data = new HashMap<>();
         data.put("source", "a long string");
         data.put("code_output", "another long string");
@@ -635,7 +644,6 @@ public class SearchAPIIntegrationTest {
      * Will need a mock server to test cases where the client gets a response that would never
      * be returned from auth
      */
-    
     @Test
     public void construct() throws Exception {
         final TemporaryAuth2Client client = new TemporaryAuth2Client(
@@ -648,24 +656,27 @@ public class SearchAPIIntegrationTest {
         
         assertThat("incorrect url", client2.getURL(), is(new URL("http://localhost:1000/whee/")));
     }
-    
+
     @Test
     public void authClientGetDisplayNames() throws Exception {
+
         final TemporaryAuth2Client client = new TemporaryAuth2Client(authURL);
         assertThat("incorrect users", client.getUserDisplayNames(
                 userToken.getToken(), set("user1", "user2")),
                 is(ImmutableMap.of("user1", "display1", "user2", "display2")));
     }
-    
+
     @Test
     public void authClientGetDisplayNamesEmptyInput() throws Exception {
+
         final TemporaryAuth2Client client = new TemporaryAuth2Client(authURL);
         assertThat("incorrect users", client.getUserDisplayNames(userToken.getToken(), set()),
                 is(Collections.emptyMap()));
     }
-    
+
     @Test
     public void authClientGetDisplayNamesServerError() throws Exception {
+
         final TemporaryAuth2Client client = new TemporaryAuth2Client(
                 new URL("http://localhost:" + auth.getServerPort()));
         try {
@@ -682,9 +693,10 @@ public class SearchAPIIntegrationTest {
             //they really want you to know the user name is illegal
         }
     }
-    
+
     @Test
     public void authClientFailConstruct() throws Exception {
+
         try {
             new TemporaryAuth2Client(null);
             fail("expected exception");
@@ -692,9 +704,10 @@ public class SearchAPIIntegrationTest {
             TestCommon.assertExceptionCorrect(got, new NullPointerException("authURL"));
         }
     }
-    
+
     @Test
     public void authClientgetDisplayNamesBadInput() {
+
         failAuthClientGetDisplayNames(null, set(),
                 new IllegalArgumentException("token cannot be null or whitespace only"));
         failAuthClientGetDisplayNames("   \t   \n ", set(),
