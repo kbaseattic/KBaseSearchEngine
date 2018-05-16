@@ -1,5 +1,5 @@
 # This is an example file that demonstrates how to specify "storage-to-search" type mappings beyond
-# those embedded in the type transformation files (in the storage-type and storage-object-type
+# those embedded in the type spec files (in the storage-type and storage-object-type
 # parameters). Here, "storage" implies the data source storage system (Workspace for example) and "search"
 # implies the data destination storage system, which happens to be ElasticSearch for this application.
 
@@ -22,7 +22,8 @@ types:
     # Here, KBaseGenomeAnnotations.Assembly is the storage object type that maps to two
     # search types - Assembly using version 1 of the search type spec's indexing rules and
     # AssemblyContig using version 2 of the search type spec's indexing rules. Note that a type
-    # spec may define many versions of indexing rules.
+    # spec may define many versions of indexing rules. This mapping will result in two indexes
+    # named Assembly_1 and AssemblyContig_2.
     KBaseGenomeAnnotations.Assembly:
         # if types is present any other fields are ignored.
         types:
@@ -38,8 +39,8 @@ types:
         # Specify the default search type(s) to use if a specific version of the storage object
         # type does not match any of the specified versions, or is not provided in the mapping.
         # If a default is not specified, the object will not be indexed. Even with a default type,
-        # objects may fail to index if the new object type version is not backwards compatible with
-        # the default version.
+        # objects may fail to get indexed if the version of the object that is to be indexed is not
+        # backwards compatible with the default version.
         # Here, the search types Genome with version 3 of the type spec's indexing rules, and
         # GenomeFeature with version 2 of the  type spec's indexing rules serve as default mappings
         # to the KBaseGenome.Genome storage object type above.
