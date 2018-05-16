@@ -75,34 +75,37 @@ public class WorkspaceInfoDecorator implements SearchInterface {
     @Override
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
-        final SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
-        if (params.getMatchFilter().getAddWorkspaceInfo() != null) {
-            return searchObjsOutput
-                    .withWorkspacesInfo(addWorkspacesInfo(
-                            searchObjsOutput.getObjects(),
-                            searchObjsOutput.getWorkspacesInfo()))
-                    .withObjectsInfo(addObjectsInfo(
-                            searchObjsOutput.getObjects(),
-                            searchObjsOutput.getObjectsInfo()));
+        SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
+        if (params.getMatchFilter() != null) {
+            if (params.getMatchFilter().getAddWorkspaceInfo() != null) {
+                searchObjsOutput = searchObjsOutput
+                        .withWorkspacesInfo(addWorkspacesInfo(
+                                searchObjsOutput.getObjects(),
+                                searchObjsOutput.getWorkspacesInfo()))
+                        .withObjectsInfo(addObjectsInfo(
+                                searchObjsOutput.getObjects(),
+                                searchObjsOutput.getObjectsInfo()));
+            }
         }
-        else
-            return searchObjsOutput;
+        return searchObjsOutput;
     }
 
     @Override
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
-        final GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
-        if (params.getMatchFilter().getAddWorkspaceInfo() != null)
-                return getObjsOutput
-                    .withWorkspacesInfo(addWorkspacesInfo(
-                            getObjsOutput.getObjects(),
-                            getObjsOutput.getWorkspacesInfo()))
-                    .withObjectsInfo(addObjectsInfo(
-                            getObjsOutput.getObjects(),
-                            getObjsOutput.getObjectsInfo()));
-        else
-            return getObjsOutput;
+        GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
+        if (params.getMatchFilter() != null) {
+            if (params.getMatchFilter().getAddWorkspaceInfo() != null) {
+                getObjsOutput = getObjsOutput
+                        .withWorkspacesInfo(addWorkspacesInfo(
+                                getObjsOutput.getObjects(),
+                                getObjsOutput.getWorkspacesInfo()))
+                        .withObjectsInfo(addObjectsInfo(
+                                getObjsOutput.getObjects(),
+                                getObjsOutput.getObjectsInfo()));
+            }
+        }
+        return getObjsOutput;
     }
 
     private Map<Long, Tuple9<Long, String, String, String, Long, String,
