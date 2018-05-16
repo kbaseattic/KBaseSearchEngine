@@ -1,11 +1,11 @@
 package kbasesearchengine.test.integration;
 
 import static kbasesearchengine.test.common.TestCommon.set;
-import static kbasesearchengine.test.main.NarrativeInfoDecoratorTest.narrInfo;
 import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.wsTuple;
 import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.objTuple;
 import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.compareWsInfo;
 import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.compareObjInfo;
+import static kbasesearchengine.test.main.NarrativeInfoDecoratorTest.narrInfoTuple;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -362,12 +362,12 @@ public class SearchAPIIntegrationTest {
             FileUtils.deleteQuietly(tempDirPath.toFile());
         }
     }
-    
+
     @Test
     public void sourceTags() throws Exception {
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("sourceTags"));
-        
+
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
                         new SearchObjectType("SourceTags", 1),
@@ -485,6 +485,7 @@ public class SearchAPIIntegrationTest {
 
     @Test
     public void narrativeDecoration() throws Exception {
+
         final long wsdate = WorkspaceEventHandler.parseDateToEpochMillis(wsCli1.createWorkspace(
                 new CreateWorkspaceParams()
                         .withWorkspace("decorate")
@@ -492,7 +493,7 @@ public class SearchAPIIntegrationTest {
                                 "narrative", "6",
                                 "narrative_nice_name", "Kevin")))
                 .getE4());
-        
+
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
                         new SearchObjectType("Deco", 1),
@@ -509,7 +510,7 @@ public class SearchAPIIntegrationTest {
                         "{\"whee\": \"imaprettypony1\"}",
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
                 false);
-        
+
         final ObjectData expected1 = new ObjectData()
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")
@@ -519,15 +520,13 @@ public class SearchAPIIntegrationTest {
                 .withTypeVer(1L)
                 .withObjectName("objname1")
                 .withTimestamp(10000L);
-        
+
         final SearchObjectsOutput res = searchObjects(new MatchFilter().withAddNarrativeInfo(1L));
 
         assertThat("incorrect object count", res.getObjects().size(), is(1));
         TestCommon.compare(res.getObjects().get(0), expected1);
-        
         final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
-                1L, narrInfo("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
-        
+                1L, narrInfoTuple("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
         NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
     }
 
@@ -837,7 +836,7 @@ public class SearchAPIIntegrationTest {
             throw e;
         }
     }
-    
+
     @Test
     public void sort() throws Exception {
         wsCli1.createWorkspace(new CreateWorkspaceParams()
@@ -924,12 +923,13 @@ public class SearchAPIIntegrationTest {
      * these should be removed once the narratives are indexed
      * with custom code
      */
-    
+
     @Test
     public void pruneNarrative() throws Exception {
+
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("narprune"));
-        
+
         final Map<String, Object> data = new HashMap<>();
         data.put("source", "a long string");
         data.put("code_output", "another long string");
@@ -980,7 +980,6 @@ public class SearchAPIIntegrationTest {
      * Will need a mock server to test cases where the client gets a response that would never
      * be returned from auth
      */
-    
     @Test
     public void construct() throws Exception {
         final TemporaryAuth2Client client = new TemporaryAuth2Client(
@@ -993,24 +992,27 @@ public class SearchAPIIntegrationTest {
         
         assertThat("incorrect url", client2.getURL(), is(new URL("http://localhost:1000/whee/")));
     }
-    
+
     @Test
     public void authClientGetDisplayNames() throws Exception {
+
         final TemporaryAuth2Client client = new TemporaryAuth2Client(authURL);
         assertThat("incorrect users", client.getUserDisplayNames(
                 userToken.getToken(), set("user1", "user2")),
                 is(ImmutableMap.of("user1", "display1", "user2", "display2")));
     }
-    
+
     @Test
     public void authClientGetDisplayNamesEmptyInput() throws Exception {
+
         final TemporaryAuth2Client client = new TemporaryAuth2Client(authURL);
         assertThat("incorrect users", client.getUserDisplayNames(userToken.getToken(), set()),
                 is(Collections.emptyMap()));
     }
-    
+
     @Test
     public void authClientGetDisplayNamesServerError() throws Exception {
+
         final TemporaryAuth2Client client = new TemporaryAuth2Client(
                 new URL("http://localhost:" + auth.getServerPort()));
         try {
@@ -1027,9 +1029,10 @@ public class SearchAPIIntegrationTest {
             //they really want you to know the user name is illegal
         }
     }
-    
+
     @Test
     public void authClientFailConstruct() throws Exception {
+
         try {
             new TemporaryAuth2Client(null);
             fail("expected exception");
@@ -1037,9 +1040,10 @@ public class SearchAPIIntegrationTest {
             TestCommon.assertExceptionCorrect(got, new NullPointerException("authURL"));
         }
     }
-    
+
     @Test
     public void authClientgetDisplayNamesBadInput() {
+
         failAuthClientGetDisplayNames(null, set(),
                 new IllegalArgumentException("token cannot be null or whitespace only"));
         failAuthClientGetDisplayNames("   \t   \n ", set(),

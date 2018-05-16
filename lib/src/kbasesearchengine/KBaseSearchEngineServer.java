@@ -31,9 +31,14 @@ import kbasesearchengine.authorization.AccessGroupCache;
 import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.authorization.TemporaryAuth2Client;
 import kbasesearchengine.authorization.WorkspaceAccessGroupProvider;
-import kbasesearchengine.common.GUID;
-import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
+import kbasesearchengine.main.NarrativeInfoCache;
+import kbasesearchengine.main.NarrativeInfoProvider;
+import kbasesearchengine.authorization.AuthCache;
+import kbasesearchengine.authorization.AuthInfoProvider;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
+import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
+import kbasesearchengine.main.WorkspaceNarrativeInfoProvider;
+import kbasesearchengine.common.GUID;
 import kbasesearchengine.main.GitInfo;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.SearchInterface;
@@ -161,13 +166,26 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         // update if we ever update the SDK to use the non-legacy endpoints
         final String auth2URL = authURL.split("api")[0];
 
+        // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
+        final WorkspaceEventHandler wsHandler = new WorkspaceEventHandler(
+                new CloneableWorkspaceClientImpl(wsClient));
+        final NarrativeInfoProvider narrativeInfoProvider = new NarrativeInfoCache(
+                new WorkspaceNarrativeInfoProvider(wsHandler),
+                30,
+                50000 * 1000);
+
+        // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
+        final AuthInfoProvider authInfoProvider = new AuthCache(
+                new TemporaryAuth2Client(new URL(auth2URL)).withToken(kbaseIndexerToken.getToken()),
+                2 * 3600,
+                50000 * 1000);
+
         search = new TemporaryNarrativePruner(
                 new WorkspaceInfoDecorator(
                         new NarrativeInfoDecorator(
-                                new SearchMethods(accessGroupProvider, esStorage, ss, admins),
-                                workspaceEventHandler,
-                                new TemporaryAuth2Client(new URL(auth2URL)),
-                                kbaseIndexerToken.getToken()),
+                            new SearchMethods(accessGroupProvider, esStorage, ss, admins),
+                            narrativeInfoProvider,
+                            authInfoProvider),
                         workspaceEventHandler));
 
         //END_CONSTRUCTOR

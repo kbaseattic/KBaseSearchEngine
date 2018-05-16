@@ -1,0 +1,282 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>6. Installation Instructions &#8212; KBaseSearchEngine 0.01 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.01',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="7. API" href="api.html" />
+    <link rel="prev" title="5. Configuration Details" href="configurationDetails.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="installation-instructions">
+<h1>6. Installation Instructions<a class="headerlink" href="#installation-instructions" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="local-deployment">
+<h2>6.1. Local Deployment<a class="headerlink" href="#local-deployment" title="Permalink to this headline">¶</a></h2>
+<p>Follow these instructions for a local deployment once the <a class="reference internal" href="systemRequirements.html#system-requirements"><span class="std std-ref">System Requirements</span></a> have been satisfied. These instructions are known to work on Ubuntu 16.04 LTS. The rest of this playbook assumes that you have all dependency binaries in your system environment path variable. At a high level, the steps are -</p>
+<div class="highlight-text"><div class="highlight"><pre><span></span>1. Start ElasticSearch
+2. Start Kibana
+3. Configure Workspace listeners to write events to Search mongo db
+4. Restart Workspace service
+5. Create a Workspace data type
+6. Configure KBaseSearchEngine
+7. Start worker
+8. Start coordinator
+9. Verify ElasticSearch index
+</pre></div>
+</div>
+<ol class="arabic simple">
+<li>Open a new terminal and start ElasticSearch.</li>
+</ol>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Elastic Search can only be started up by a non-root user</p>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ elasticsearch
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li>Open a new terminal and start Kibana. Then open <a class="reference external" href="http://localhost:5601">http://localhost:5601</a> in a
+browser tab to view the initial state of ElasticSearch.</li>
+</ol>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ kibana
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li>Configure the Workspace listeners to write events to the Search mongodb.</li>
+</ol>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ gedit <span class="o">[</span>PATH_TO_YOUR_WORKSPACE_DIR<span class="o">]</span>/deploy.cfg
+</pre></div>
+</div>
+<p>Add the following lines under the listener configuration section -</p>
+<div class="highlight-cfg"><div class="highlight"><pre><span></span><span class="na">listeners</span> <span class="o">=</span> <span class="s">Search</span>
+<span class="na">listener-Search-class</span> <span class="o">=</span> <span class="s">us.kbase.workspace.modules.SearchPrototypeEventHandlerFactory</span>
+<span class="na">listener-Search-config-mongohost</span> <span class="o">=</span> <span class="s">localhost</span>
+<span class="na">listener-Search-config-mongodatabase</span> <span class="o">=</span> <span class="s">Search_test</span>
+<span class="na">listener-Search-config-mongouser</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+<span class="na">listener-Search-config-mongopwd</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li>Restart the Workspace Service. (See section on <a class="reference external" href="https://github.com/kbase/workspace_deluxe/blob/dev-candidate/docsource/developers.rst">Deploying the Workspace Service locally</a>)</li>
+<li>Open a new terminal and save the following document as Empty.spec. Then load into ipython, register the spec and save an object of this type to the Workspace. Saving a new object will cause the Workspace listener to write a new event to the mongo instance. Note that the ws.administer() command below requires administration privileges on the workspace.</li>
+</ol>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="nx">module</span> <span class="nx">Empty</span> <span class="p">{</span>
+
+    <span class="cm">/* @optional foo */</span>
+    <span class="nx">typedef</span> <span class="nx">structure</span> <span class="p">{</span>
+        <span class="kr">int</span> <span class="nx">foo</span><span class="p">;</span>
+    <span class="p">}</span> <span class="nx">AType</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ ipython
+
+In <span class="o">[</span><span class="m">1</span><span class="o">]</span>: <span class="nv">spec</span> <span class="o">=</span> open<span class="o">(</span><span class="s2">&quot;[PATH_TO_SPEC]/Empty.spec&quot;</span><span class="o">)</span>.read<span class="o">()</span>
+In <span class="o">[</span><span class="m">2</span><span class="o">]</span>: ws.request_module_ownership<span class="o">(</span><span class="s1">&#39;Empty&#39;</span><span class="o">)</span>
+In <span class="o">[</span><span class="m">3</span><span class="o">]</span>: ws.administer<span class="o">({</span><span class="s1">&#39;command&#39;</span>: <span class="s1">&#39;listModRequests&#39;</span><span class="o">})</span>
+Out<span class="o">[</span><span class="m">4</span><span class="o">]</span>:
+<span class="o">[{</span>u<span class="s1">&#39;moduleName&#39;</span>: u<span class="s1">&#39;Empty&#39;</span>, ...<span class="o">}]</span>
+In <span class="o">[</span><span class="m">5</span><span class="o">]</span>: ws.administer<span class="o">({</span><span class="s1">&#39;command&#39;</span>: <span class="s1">&#39;approveModRequest&#39;</span>, <span class="s1">&#39;module&#39;</span>: <span class="s1">&#39;Empty&#39;</span><span class="o">})</span>
+In <span class="o">[</span><span class="m">6</span><span class="o">]</span>: ws.register_typespec<span class="o">({</span><span class="s1">&#39;spec&#39;</span>: spec, <span class="s1">&#39;new_types&#39;</span>: <span class="o">[</span><span class="s1">&#39;AType&#39;</span><span class="o">]</span>, <span class="s1">&#39;dryrun&#39;</span>: <span class="m">0</span><span class="o">})</span>
+Out<span class="o">[</span><span class="m">7</span><span class="o">]</span>: <span class="o">{</span>u<span class="s1">&#39;Empty.Atype-0.1&#39;</span>: ....<span class="o">}</span>
+In <span class="o">[</span><span class="m">8</span><span class="o">]</span>: ws.release_module<span class="o">(</span><span class="s1">&#39;Empty&#39;</span><span class="o">)</span>
+Out<span class="o">[</span><span class="m">9</span><span class="o">]</span>: <span class="o">[</span>u<span class="s1">&#39;Empty.AType-1.0&#39;</span><span class="o">]</span>
+In <span class="o">[</span><span class="m">10</span><span class="o">]</span>: ws.save_objects<span class="o">({</span><span class="s1">&#39;id&#39;</span>: <span class="m">1</span>, <span class="s1">&#39;objects&#39;</span>: <span class="o">[{</span><span class="s1">&#39;type&#39;</span>: <span class="s1">&#39;Empty.AType&#39;</span>, <span class="s1">&#39;data&#39;</span>: <span class="o">{</span><span class="s1">&#39;bar&#39;</span>: <span class="s1">&#39;baz&#39;</span><span class="o">}</span>, <span class="s1">&#39;name&#39;</span>: <span class="s1">&#39;myobj&#39;</span><span class="o">}]})</span>
+Out<span class="o">[</span><span class="m">11</span><span class="o">]</span>:
+<span class="o">[[</span><span class="m">1</span>,
+u<span class="s1">&#39;myobj&#39;</span>,
+...
+<span class="o">]]</span>
+</pre></div>
+</div>
+<p>Create a new terminal and start mongo to check to make sure the event has been written. Note that the status is UNPROC (unprocessed event).</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ mongo
+&gt; show dbs
+Search_test
+admin
+<span class="nb">local</span>
+workspace
+ws_types
+&gt; use Search_test
+switched to db Search_test
+&gt; db.getCollectionNames<span class="o">()</span>
+<span class="o">[</span><span class="s2">&quot;searchEvents&quot;</span><span class="o">]</span>
+&gt; db.searchEvents.findOne<span class="o">()</span>
+<span class="o">{</span>
+      <span class="s2">&quot;_id&quot;</span>: ...,
+      <span class="s2">&quot;strcde&quot;</span>: <span class="s2">&quot;WS&quot;</span>,
+      <span class="s2">&quot;accgrp&quot;</span>: <span class="m">1</span>,
+      ...
+      <span class="s2">&quot;status&quot;</span>: <span class="s2">&quot;UNPROC&quot;</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="6">
+<li>Create a new terminal and edit search_tools.cfg, create a test data type and build the executable script.</li>
+</ol>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ <span class="nb">cd</span> <span class="o">[</span>PATH_TO_YOUR_KBaseSearchEngine_DIR<span class="o">]</span>
+$ git checkout master
+$ git pull
+$ cp search_tools.cfg.example search_tools.cfg
+$ gedit search_tools.cfg
+</pre></div>
+</div>
+<p>Make the following edits. Note: the user for the token used below must have workspace admin privileges.</p>
+<div class="highlight-cfg"><div class="highlight"><pre><span></span><span class="na">search-mongo-host</span><span class="o">=</span><span class="s">localhost</span>
+<span class="na">search-mongo-db</span><span class="o">=</span><span class="s">Search_test</span>
+<span class="na">elastic-host</span><span class="o">=</span><span class="s">localhost</span>
+<span class="na">elastic-port</span><span class="o">=</span><span class="s">9200</span>
+<span class="na">scratch</span><span class="o">=</span><span class="s">[PATH_TO_DIR_WHERE_TEMP_FILES_CAN_BE_STORED_BY_APP]</span>
+<span class="na">workspace-url</span><span class="o">=</span><span class="s">http://localhost:7058</span>
+<span class="na">auth-service-url</span><span class="o">=</span><span class="s">https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login</span>
+<span class="na">indexer-token</span><span class="o">=</span><span class="s">[YOUR_CI_TOKEN]</span>
+<span class="na">types-dir</span><span class="o">=</span><span class="s">[PATH_TO_YOUR_KBaseSearchEngine_DIR]/KBaseSearchEngine/test_types</span>
+<span class="na">type-mappings-dir</span><span class="o">=</span><span class="s">[PATH_TO_YOUR_KBaseSearchEngine_DIR]/KBaseSearchEngine/test_type_mappings</span>
+<span class="na">workspace-mongo-host</span><span class="o">=</span><span class="s">fake</span>
+<span class="na">workspace-mongo-db</span><span class="o">=</span><span class="s">fake</span>
+</pre></div>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ mkdir test_types
+$ <span class="nb">cd</span> test_types
+$ gedit Empty.json
+</pre></div>
+</div>
+<div class="highlight-json"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="nt">&quot;global-object-type&quot;</span><span class="p">:</span> <span class="s2">&quot;EmptyAType2&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;ui-type-name&quot;</span><span class="p">:</span> <span class="s2">&quot;A Type&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;storage-type&quot;</span><span class="p">:</span> <span class="s2">&quot;WS&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;storage-object-type&quot;</span><span class="p">:</span> <span class="s2">&quot;Empty.AType&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;indexing-rules&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;whee&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;keyword-type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;whee2&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;keyword-type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ <span class="nb">cd</span> ..
+$ mkdir test_type_mappings
+$ make build-executable-script <span class="nv">JARS_DIR</span><span class="o">=[</span>ABSOLUTE_PATH_TO_KBASE_JARS_DIR<span class="o">]</span> <span class="nv">KB_RUNTIME</span><span class="o">=[</span>PATH_TO_YOUR_ANT_INSTALL_DIR <span class="o">(</span>example /usr/share<span class="o">)]</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="8">
+<li>Start a worker</li>
+</ol>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ bin/search_tools.sh -c search_tools.cfg -k myworker
+Press <span class="k">return</span> to shut down process
+</pre></div>
+</div>
+<ol class="arabic simple" start="9">
+<li>Start the coordinator. Note that the event is processed and data has been indexed.</li>
+</ol>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ bin/search_tools.sh -c search_tools.cfg -s
+Press <span class="k">return</span> to shut down process
+Moved event xxx NEW_VERSION WS:1/1/1 from UNPROC to READY
+Event xxx NEW_VERSION WS:1/1/1 completed processing with state INDX on myworker
+</pre></div>
+</div>
+<ol class="arabic simple" start="10">
+<li>Open Kibana in browser with url localhost:/5601/app/kibana#/dev_tools/console?_g=()</li>
+</ol>
+<p>On Kibana console, make the following query</p>
+<div class="highlight-rest"><div class="highlight"><pre><span></span>GET _search
+{
+ &quot;query&quot;: {
+    &quot;match_all&quot;: {}
+ }
+}
+
+GET _cat/indices
+
+GET kbase.1.emptytype2/data/_search
+</pre></div>
+</div>
+<p>The results for the query should appear on the right panel.</p>
+</div>
+<div class="section" id="production-deployment">
+<h2>6.2. Production Deployment<a class="headerlink" href="#production-deployment" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="configurationDetails.html" title="previous chapter">5. Configuration Details</a></li>
+      <li>Next: <a href="api.html" title="next chapter">7. API</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;KBase.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/installation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

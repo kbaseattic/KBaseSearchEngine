@@ -1,6 +1,24 @@
 Search Service MKII release notes
 =================================
 
+0.1.3
+-----
+
+* Added a Workspace Info decorator, which adds a map of workspaces info (key: workspace id and
+  value: the Tuple from get_workspace_info()), and a map of objects info (key: object_ref
+  value: the Tuple from get_object_info3) to the search results.
+
+* The narrative info decorator and workspace info decorator can be enabled by setting the flags,
+  addNarrativeInfo, and addWorkspaceInfo respectively in the match filter parameter provided to the
+  search API.
+
+0.1.2
+-----
+
+* Added a Narrative Info decorator, which adds a map of narrative info (containing narrative id,
+  narrative name, date created, workspace username, workspace display name), to the search results.
+  The narrative info and auth info (containing workspace user display name) are cached.
+
 0.1.1
 -----
 
