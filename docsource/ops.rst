@@ -7,6 +7,8 @@ Operations
 
 [TODO: A future PR will include a command to automate step 5b by creating an index based on a search type. This would reduce potential errors. This command will also take care of step 11.]
 
+[TODO: Add CLI command for step 13 & 14 for generating events and running trickle updates once the CLI has been implemented]
+
 Reindexing Naming Conventions
 ------------------------------
 
@@ -229,4 +231,6 @@ max shard size = ~50GB
 
 12. Change mapping version from "1" to "_r1" in the resources/types/genome.yml search type spec and add a comment (for future reference) that describes the change that took place in the r1 reindexing operation.
 
-13. Restart trickle updates from the current time noted in step 1.
+13. Generate new events for the time range for which the change was made to the data source.
+
+14. Restart trickle updates from the current time noted in step 1.
