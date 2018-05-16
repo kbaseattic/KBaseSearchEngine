@@ -114,7 +114,7 @@ max shard size = ~50GB
       }
     }
 
-5c. If the mapping does not require any change but the document's meta data (The field values) needs to be changed, use the `Painless <https://www.elastic.co/guide/en/elasticsearch/reference/5.4/modules-scripting-painless-syntax.html>`_ script to modify metadata. Setting version_type to external will cause Elasticsearch to preserve the version from the source, create any documents that are missing, and update any documents that have an older version in the destination index than they do in the source index.
+5c. If the mapping does not require any change but the documents' field values (not including meta-data fields whose key names start with underscore) need to be changed, use the `Painless <https://www.elastic.co/guide/en/elasticsearch/reference/5.4/modules-scripting-painless-syntax.html>`_ script to modify metadata. Setting version_type to external will cause Elasticsearch to preserve the version from the source index, create any documents that are missing, and update any documents that have an older version in the destination index than they do in the source index.
 
 .. code-block:: bash
 
