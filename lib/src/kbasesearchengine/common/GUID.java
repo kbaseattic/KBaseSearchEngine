@@ -156,6 +156,12 @@ public class GUID {
     /**
      * Returns the URL-encoded version of this GUID.
      *
+     * For the sake of readability the URL-encoded format of the GUID is,
+     *
+     *   {storageCode}___[{AccessGroupID}_]{accessGroupObjectId}[_{version}][___{subObjectType}_{subObjectId}],
+     *
+     *  where special characters in the individual tokens will get URL-encoded.
+     *
      * @return URL-encoded version of this GUID
      */
     public String getURLEncoded() throws IOException {
