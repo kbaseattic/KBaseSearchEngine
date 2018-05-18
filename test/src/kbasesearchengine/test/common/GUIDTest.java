@@ -6,7 +6,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.URI;
+import java.util.Random;
 
 /**
  * Created by apasha on 4/30/18.
@@ -53,22 +55,69 @@ public class GUIDTest {
     }
 
     @Test
-    public void testToUUDI() {
-        Assert.assertEquals("incorrect guid", 
-                "f2912c05-4528-3492-938a-8e8c59525d4c", guid1.toUUID().toString());
-        Assert.assertEquals("incorrect guid", 
-                "ea2ebbef-e878-3593-b137-4aa40c37eb7a", guid2.toUUID().toString());
-        Assert.assertEquals("incorrect guid", 
-                "01060998-9412-3168-8512-6581524f9a9c", guid3.toUUID().toString());
-        Assert.assertEquals("incorrect guid", 
-                "01060998-9412-3168-8512-6581524f9a9c", guid4.toUUID().toString());
-        Assert.assertEquals("incorrect guid", 
-                "d4102da8-3782-3e20-88a5-05f822303b99", guid5.toUUID().toString());
-        Assert.assertEquals("incorrect guid", 
-                "03132c68-ec01-36cc-a3e4-eaea3301d8f4", guid6.toUUID().toString());
-        Assert.assertEquals("incorrect guid", 
-                "6c9bbd79-e10a-38f4-9828-eaf1373be71a", guid7.toUUID().toString());
-        Assert.assertEquals("incorrect guid", 
-                "6c9bbd79-e10a-38f4-9828-eaf1373be71a", guid8.toUUID().toString());
+    public void testGetURLEncoded() {
+
+        try {
+            Assert.assertEquals("incorrect guid",
+                    "WS___1_1_1___contig_NZ_MCBT01000008", guid1.getURLEncoded());
+            Assert.assertEquals("incorrect guid",
+                    "WS___1", guid2.getURLEncoded());
+            Assert.assertEquals("incorrect guid",
+                    "WS___1_1___contig_NZ_MCBT01000008", guid3.getURLEncoded());
+            Assert.assertEquals("incorrect guid",
+                    "WS___1_1___contig_NZ_MCBT01000008", guid4.getURLEncoded());
+            Assert.assertEquals("incorrect guid",
+                    "WS___1_1_1", guid5.getURLEncoded());
+            Assert.assertEquals("incorrect guid",
+                    "WS___1___contig_NZ_MCBT01000008", guid6.getURLEncoded());
+            Assert.assertEquals("incorrect guid",
+                    "WS___1_1", guid7.getURLEncoded());
+            Assert.assertEquals("incorrect guid",
+                    "WS___1_1", guid8.getURLEncoded());
+        } catch (IOException ex) {
+            Assert.fail(ex.getMessage());
+        }
+    }
+
+    @Test
+    public void testToString() {
+
+        Assert.assertEquals("incorrect guid",
+                "WS:1/1/1:contig/NZ_MCBT01000008", guid1.toString());
+        Assert.assertEquals("incorrect guid",
+                "WS:1", guid2.toString());
+        Assert.assertEquals("incorrect guid",
+                "WS:1/1:contig/NZ_MCBT01000008", guid3.toString());
+        Assert.assertEquals("incorrect guid",
+                "WS:1/1:contig/NZ_MCBT01000008", guid4.toString());
+        Assert.assertEquals("incorrect guid",
+                "WS:1/1/1", guid5.toString());
+        Assert.assertEquals("incorrect guid",
+                "WS:1:contig/NZ_MCBT01000008", guid6.toString());
+        Assert.assertEquals("incorrect guid",
+                "WS:1/1", guid7.toString());
+        Assert.assertEquals("incorrect guid",
+                "WS:1/1", guid8.toString());
+    }
+
+    @Test
+    public void testLongGUIDException() {
+        boolean exceptionCaught = false;
+        try {
+            StringBuffer bigSubObjId = new StringBuffer();
+            for( int ii=0; ii<GUID.MAX_BYTES; ii++) {
+                bigSubObjId.append('x');
+            }
+
+            new GUID("WS", 1, "1", null,
+                    "contig", bigSubObjId.toString());
+
+        } catch (IllegalArgumentException ex) {
+            Assert.assertTrue(ex.getMessage().contains("must be no longer than "+
+                    GUID.MAX_BYTES+" bytes"));
+            exceptionCaught = true;
+        } finally {
+          Assert.assertTrue(exceptionCaught);
+        }
     }
 }

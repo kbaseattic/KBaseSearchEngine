@@ -1,5 +1,8 @@
 package kbasesearchengine.common;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -32,8 +35,10 @@ public class GUID {
     private String subObjectId;
     /**
      * Maximum number of bytes for the string representation of this GUID.
+     * 512 bytes minus 12 bytes reserved for additional delimiters in URLEncoded
+     * representation.
      */
-    public static final int MAX_BYTES = 512;
+    public static final int MAX_BYTES = 500;
     //
     private static Pattern slashDiv = Pattern.compile(Pattern.quote("/"));
     
@@ -150,26 +155,46 @@ public class GUID {
     }
 
     /**
-     * Returns an RFC 4122 compliant version of this GUID
+     * Returns the URL-encoded version of this GUID.
      *
-     * @return UUID object
+     * @return URL-encoded version of this GUID
      */
-    public UUID toUUID() {
-        return UUID.nameUUIDFromBytes(toString().getBytes());
+    public String getURLEncoded() throws IOException {
+
+        String encodedGUID = toString("___", "_");
+
+        try {
+
+             encodedGUID =  URLEncoder.encode(encodedGUID, "UTF-8");
+
+        } catch(UnsupportedEncodingException ex ) {
+            // should never occur since the encoding is set to UTF-8 which is supported
+            throw new IOException(ex.getMessage());
+        }
+
+        return encodedGUID;
     }
 
     @Override
     public String toString() {
-        return (this.storageCode + ":") + toRefString() +
-                (this.subObjectType == null ? "" : (":" + this.getSubObjectType() + "/" + this.getSubObjectId()));
+        return toString(":", "/");
     }
     
     public String toRefString() {
-        return this.version == null ? 
-             ((this.accessGroupId == null ? "" : (this.accessGroupId + "/")) + this.accessGroupObjectId) :
-                    (
-                            (this.accessGroupId == null ? "" : (this.accessGroupId + "/")) +
-                                     this.accessGroupObjectId + "/" + this.version);
+        return toRefString("/");
+    }
+
+    private String toString(String delim1, String delim2) {
+        return (this.storageCode + delim1) + toRefString(delim2) +
+                (this.subObjectType == null ? "" : (delim1 + this.getSubObjectType() + delim2 + this.getSubObjectId()));
+    }
+
+    private String toRefString(String delim) {
+        return this.version == null ?
+                ((this.accessGroupId == null ? "" : (this.accessGroupId + delim)) + this.accessGroupObjectId) :
+                (
+                        (this.accessGroupId == null ? "" : (this.accessGroupId + delim)) +
+                                this.accessGroupObjectId + delim + this.version);
     }
 
     @Override

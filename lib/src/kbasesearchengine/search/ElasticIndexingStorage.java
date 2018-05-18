@@ -363,7 +363,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 index.put("_index", indexName);
                 index.put("_type", getDataTableName());
                 index.put("parent", esParentId);
-                index.put("_id", id.toUUID());
+                index.put("_id", id.getURLEncoded());
 
                 final Map<String, Object> header = ImmutableMap.of("index", index);
                 pw.println(UObject.transformObjectToString(header));
