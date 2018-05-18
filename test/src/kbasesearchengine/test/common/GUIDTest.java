@@ -7,8 +7,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.net.URI;
-import java.util.Random;
 
 /**
  * Created by apasha on 4/30/18.
