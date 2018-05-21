@@ -81,7 +81,6 @@ import us.kbase.common.test.controllers.mongo.MongoController;
 import us.kbase.test.auth2.authcontroller.AuthController;
 import us.kbase.workspace.CreateWorkspaceParams;
 import us.kbase.workspace.WorkspaceClient;
-import us.kbase.workspace.GetObjectInfo3Results;
 import us.kbase.workspace.RegisterTypespecParams;
 
 import us.kbase.workspace.SaveObjectsParams;
@@ -528,63 +527,6 @@ public class SearchAPIIntegrationTest {
         final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
                 1L, narrInfoTuple("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
         NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
-    }
-
-    @Test
-    public void getObjectInfo3() throws Exception {
-        // should always use the 2nd version of the spec for any ws type version
-        // since there are no type mappings
-
-        wsCli1.createWorkspace(new CreateWorkspaceParams()
-                .withWorkspace("foo"));
-        wsCli1.saveObjects(new SaveObjectsParams()
-                .withWorkspace("foo")
-                .withObjects(Arrays.asList(
-                        new ObjectSaveData()
-                                .withData(new UObject(ImmutableMap.of(
-                                        "whee", "wugga",
-                                        "whoo", "thingy",
-                                        "req", "one")))
-                                .withName("obj1")
-                                .withType("TwoVersions.Type-1.0"),
-                        new ObjectSaveData()
-                                .withData(new UObject(ImmutableMap.of(
-                                        "whee", "whug",
-                                        "whoo", "gofasterstripes",
-                                        "req", 1)))
-                                .withName("obj2")
-                                .withType("TwoVersions.Type-2.0")
-                ))
-        );
-        final List<String> objRefs = new ArrayList<>();
-        objRefs.add("1/3/4");
-        objRefs.add("1/1/1");
-        objRefs.add("1/2/1");
-        objRefs.add("2/3/4");
-
-        final GetObjectInfo3Results getObjInfo3Results = weh.getObjectInfo3(objRefs, 1L, 1L);
-
-        final Tuple11<Long, String, String, String, Long, String,
-                Long, String, String, Long, Map<String, String>> infoExpected1 =
-                objTuple(1L, "obj1", "TwoVersions.Type-1.0", "2018-05-09T21:41:55+0000",
-                        1L, "user1", 1L, "foo", "checksum", 44, Collections.emptyMap());
-        final Tuple11<Long, String, String, String, Long, String,
-                Long, String, String, Long, Map<String, String>> infoExpected2 =
-                objTuple(2L, "obj2", "TwoVersions.Type-2.0", "2018-05-09T21:41:55+0000",
-                        1L, "user1", 1L, "foo", "checksum", 48, Collections.emptyMap());
-
-        final List<String> pathsGot = new ArrayList<>();
-        for (final List<String> path: getObjInfo3Results.getPaths()) {
-            if (path == null)
-                pathsGot.add(null);
-            else
-                pathsGot.add(path.get(0));
-        }
-        assertThat("incorrect path count", getObjInfo3Results.getPaths().size(), is(4));
-        assertThat("incorrect info count", getObjInfo3Results.getInfos().size(), is(4));
-
-        compareObjInfo(getObjInfo3Results.getInfos().get(1), infoExpected1);
-        compareObjInfo(getObjInfo3Results.getInfos().get(2), infoExpected2);
     }
 
     @Test
