@@ -829,7 +829,8 @@ public class IndexerWorker implements Stoppable {
 
                 try {
                     final EventHandler handler = getEventHandler(guid);
-                    final Iterator<ResolvedReference> refs = handler.resolveReferences(objectRefPath, unresolvedGUIDs).iterator();
+                    final Iterator<ResolvedReference> refs =
+                            handler.resolveReferences(objectRefPath, unresolvedGUIDs).iterator();
                     while (refs.hasNext()) {
                         final ResolvedReference ref = refs.next();
 
@@ -839,23 +840,25 @@ public class IndexerWorker implements Stoppable {
 
                         final ObjectTypeParsingRules rules = getObjectTypeParsingRules(ref);
 
-                        if(rules != null) {
-
-                            final ParseObjectsRet parsedRet = parseObjects(guid, this,
-                                    newRefPath, obj, rules);
-
-                            final GUID parsedGUID = parsedRet.guidToObj.keySet().iterator().next();
-
-                            final ObjectData objData = buildObjectDataFrom(
-                                    parsedGUID,
-                                    rules.getGlobalObjectType(),
-                                    obj.getName(),
-                                    obj.getCreator(),
-                                    obj.getCommitHash(),
-                                    parsedRet.guidToObj.get(parsedGUID).getKeywords());
-
-                            data.add(objData);
+                        if(rules == null) {
+                            throw new FatalIndexingException(ErrorType.OTHER,
+                                    "Unable to find parsing rules for reference "+ref);
                         }
+
+                        final ParseObjectsRet parsedRet = parseObjects(guid, this,
+                                newRefPath, obj, rules);
+
+                        final GUID parsedGUID = parsedRet.guidToObj.keySet().iterator().next();
+
+                        final ObjectData objData = buildObjectDataFrom(
+                                parsedGUID,
+                                rules.getGlobalObjectType(),
+                                obj.getName(),
+                                obj.getCreator(),
+                                obj.getCommitHash(),
+                                parsedRet.guidToObj.get(parsedGUID).getKeywords());
+
+                        data.add(objData);
 
                     }
                 } finally {
