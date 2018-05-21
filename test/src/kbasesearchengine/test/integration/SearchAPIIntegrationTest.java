@@ -1,10 +1,15 @@
 package kbasesearchengine.test.integration;
 
 import static kbasesearchengine.test.common.TestCommon.set;
+import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.wsTuple;
+import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.objTuple;
+import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.compareWsInfo;
+import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.compareObjInfo;
 import static kbasesearchengine.test.main.NarrativeInfoDecoratorTest.narrInfoTuple;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -18,10 +23,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.ini4j.Ini;
@@ -66,12 +73,20 @@ import kbasesearchengine.test.data.TestDataLoader;
 import kbasesearchengine.test.main.NarrativeInfoDecoratorTest;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.ServerException;
+import us.kbase.common.service.Tuple11;
+import us.kbase.common.service.Tuple9;
 import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.UObject;
 import us.kbase.common.test.controllers.mongo.MongoController;
 import us.kbase.test.auth2.authcontroller.AuthController;
 import us.kbase.workspace.CreateWorkspaceParams;
 import us.kbase.workspace.WorkspaceClient;
+import us.kbase.workspace.RegisterTypespecParams;
+
+import us.kbase.workspace.SaveObjectsParams;
+import us.kbase.common.service.JsonClientException;
+import us.kbase.workspace.ObjectSaveData;
+
 
 public class SearchAPIIntegrationTest {
 
@@ -92,6 +107,7 @@ public class SearchAPIIntegrationTest {
     private static Path tempDirPath;
     private static Path searchTypesDir;
     private static Path mappingsDir;
+    private static String esIndexPrefix;
     private static MongoController mongo;
     private static AuthController auth;
     private static AuthToken userToken;
@@ -99,14 +115,15 @@ public class SearchAPIIntegrationTest {
     private static ElasticSearchController es;
     private static ElasticIndexingStorage indexStorage;
     private static WorkspaceController ws;
-    private static String esIndexPrefix;
     private static MongoDatabase wsdb;
     private static MongoClient mc;
     private static WorkspaceClient wsCli1;
     private static KBaseSearchEngineServer searchServer;
     private static KBaseSearchEngineClient searchCli;
     private static URL authURL;
-    
+    private static int wsid;
+    private static WorkspaceEventHandler weh;
+
     @BeforeClass
     public static void prepare() throws Exception {
         TestCommon.stfuLoggers();
@@ -126,7 +143,7 @@ public class SearchAPIIntegrationTest {
                 tempDirPath,
                 TestCommon.useWiredTigerEngine());
         mc = new MongoClient("localhost:" + mongo.getServerPort());
-        
+
         // set up auth
         auth = new AuthController(
                 TestCommon.getJarsDir(),
@@ -141,7 +158,7 @@ public class SearchAPIIntegrationTest {
         final String token2 = TestCommon.createLoginToken(authURL, "user2");
         userToken = new AuthToken(token1, "user1");
         wsadmintoken = new AuthToken(token2, "user2");
-        
+
         // set up elastic search
         es = new ElasticSearchController(TestCommon.getElasticSearchExe(), tempDirPath);
         
@@ -161,7 +178,13 @@ public class SearchAPIIntegrationTest {
         URL wsUrl = new URL("http://localhost:" + ws.getServerPort());
         wsCli1 = new WorkspaceClient(wsUrl, userToken);
         wsCli1.setIsInsecureHttpConnectionAllowed(true);
-        
+
+        final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, wsadmintoken);
+        wsClient.setIsInsecureHttpConnectionAllowed(true);
+
+        weh = new WorkspaceEventHandler(
+                new CloneableWorkspaceClientImpl(wsClient));
+
         esIndexPrefix = "test_" + System.currentTimeMillis();
         final HttpHost esHostPort = new HttpHost("localhost", es.getServerPort());
 
@@ -176,10 +199,12 @@ public class SearchAPIIntegrationTest {
         searchCli = new KBaseSearchEngineClient(
                 new URL("http://localhost:" + searchServer.getServerPort()), userToken);
         searchCli.setIsInsecureHttpConnectionAllowed(true);
+        loadWSTypes(wsUrl, wsadmintoken);
     }
     
     private static void installSearchTypes(final Path target) throws IOException {
         installTestFile("EmptyAType.json", target);
+        installTestFile("OneStringThreeKeyNames.yaml", target);
         installTestFile("TwoVersions.yaml", target);
         installTestFile("NoIndexingRules.yaml", target);
     }
@@ -193,7 +218,49 @@ public class SearchAPIIntegrationTest {
     private static void installSearchMappings(final Path target) throws IOException {
         installTestFile("TwoVersionsMapping.yaml", target);
     }
-    
+
+    private static void loadWSTypes(final URL wsURL, final AuthToken wsadmintoken)
+            throws Exception {
+        final WorkspaceClient wc = new WorkspaceClient(wsURL, wsadmintoken);
+        wc.setIsInsecureHttpConnectionAllowed(true);
+        ownModule(wc, "Empty");
+        ownModule(wc, "OneString");
+        ownModule(wc, "TwoVersions");
+        ownModule(wc, "TwoVersionsMapped");
+        ownModule(wc, "NoIndexingRules");
+        loadType(wc, "Empty", "Empty.spec", Arrays.asList("AType"));
+        loadType(wc, "OneString", "OneString.spec", Arrays.asList("AType"));
+        loadType(wc, "TwoVersions", "TwoVersions1.spec", Arrays.asList("Type"));
+        loadType(wc, "TwoVersions", "TwoVersions2.spec", Collections.emptyList());
+        loadType(wc, "TwoVersionsMapped", "TwoVersionsMapped1.spec", Arrays.asList("Type"));
+        loadType(wc, "TwoVersionsMapped", "TwoVersionsMapped2.spec", Collections.emptyList());
+        loadType(wc, "NoIndexingRules", "NoIndexingRules.spec", Arrays.asList("Type"));
+    }
+
+    private static void ownModule(final WorkspaceClient wc, final String module)
+            throws IOException, JsonClientException {
+        wc.requestModuleOwnership(module);
+        final Map<String, String> cmd = new HashMap<>();
+        cmd.put("command", "approveModRequest");
+        cmd.put("module", module);
+        wc.administer(new UObject(cmd));
+    }
+
+    private static void loadType(
+            final WorkspaceClient wc,
+            final String module,
+            final String fileName,
+            final List<String> types)
+            throws IOException, JsonClientException {
+        final String typespec = TestDataLoader.load(fileName);
+        System.out.println(String.format("Loading type %s to workspace", module));
+        wc.registerTypespec(new RegisterTypespecParams()
+                .withDryrun(0L)
+                .withSpec(typespec)
+                .withNewTypes(types));
+        System.out.println("released: " + wc.releaseModule(module));
+    }
+
     protected static class ServerThread extends Thread {
         private KBaseSearchEngineServer server;
         
@@ -367,9 +434,52 @@ public class SearchAPIIntegrationTest {
         final SearchObjectsOutput res2 = searchObjects(new MatchFilter()
                 .withSourceTags(Arrays.asList("narrative"))
                 .withSourceTagsBlacklist(1L));
-        
+
         assertThat("incorrect object count", res2.getObjects().size(), is(1));
         TestCommon.compare(res2.getObjects().get(0), expected1);
+    }
+
+    @Test
+    public void narrativeDecorationDisabled() throws Exception {
+        final long wsdate = WorkspaceEventHandler.parseDateToEpochMillis(wsCli1.createWorkspace(
+                new CreateWorkspaceParams()
+                        .withWorkspace("decorate")
+                        .withMeta(ImmutableMap.of(
+                                "narrative", "6",
+                                "narrative_nice_name", "Kevin")))
+                .getE4());
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Deco", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/1/1"),
+                ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
+                false);
+
+        final ObjectData expected1 = new ObjectData()
+                .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
+                .withGuid("WS:1/1/1")
+                .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
+                .withCreator("creator")
+                .withType("Deco")
+                .withTypeVer(1L)
+                .withObjectName("objname1")
+                .withTimestamp(10000L);
+
+        final SearchObjectsOutput res = searchObjects(new MatchFilter());
+
+        assertNull(res.getWorkspacesInfo());
+        assertNull(res.getObjectsInfo());
     }
 
     @Test
@@ -410,13 +520,181 @@ public class SearchAPIIntegrationTest {
                 .withObjectName("objname1")
                 .withTimestamp(10000L);
 
-        final SearchObjectsOutput res = searchObjects(new MatchFilter());
+        final SearchObjectsOutput res = searchObjects(new MatchFilter().withAddNarrativeInfo(1L));
 
         assertThat("incorrect object count", res.getObjects().size(), is(1));
         TestCommon.compare(res.getObjects().get(0), expected1);
         final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
                 1L, narrInfoTuple("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
         NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
+    }
+
+    @Test
+    public void workspaceInfoDecorationDisabled() throws Exception {
+
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("foo1")
+                .withMeta(ImmutableMap.of(
+                        "narrative", "6",
+                        "narrative_nice_name", "Kevin")));
+        wsCli1.saveObjects(new SaveObjectsParams()
+                .withWorkspace("foo1")
+                .withObjects(Arrays.asList(
+                        new ObjectSaveData()
+                                .withData(new UObject(ImmutableMap.of(
+                                        "whee", "wugga",
+                                        "whoo", "thingy",
+                                        "req", "one")))
+                                .withName("objname1")
+                                .withType("NoIndexingRules.Type-1.0")
+                ))
+        );
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("foo2"));
+        wsCli1.saveObjects(new SaveObjectsParams()
+                .withWorkspace("foo2")
+                .withObjects(Arrays.asList(
+                        new ObjectSaveData()
+                                .withData(new UObject(ImmutableMap.of(
+                                        "whee", "wugga",
+                                        "whoo", "thingy",
+                                        "req", "two")))
+                                .withName("objname2")
+                                .withType("NoIndexingRules.Type-1.0")
+                ))
+        );
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("wsDeco1", 1),
+                        new StorageObjectType("foo", "bar1"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee1"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator1")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/1/1"),
+                ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
+                        "{\"whee1\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee1", Arrays.asList("imaprettypony1")))),
+                false);
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("wsDeco2", 1),
+                        new StorageObjectType("foo", "bar2"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee2"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname2", "creator2")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2/1/1"),
+                ImmutableMap.of(new GUID("WS:2/1/1"), new ParsedObject(
+                        "{\"whee2\": \"imaprettypony2\"}",
+                        ImmutableMap.of("whee2", Arrays.asList("imaprettypony2")))),
+                false);
+
+        final SearchObjectsOutput res = searchObjects(new MatchFilter());
+        assertNull(res.getWorkspacesInfo());
+        assertNull(res.getObjectsInfo());
+    }
+
+    @Test
+    public void workspaceInfoDecoration() throws Exception {
+
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("foo1")
+                .withMeta(ImmutableMap.of(
+                        "narrative", "6",
+                        "narrative_nice_name", "Kevin")));
+        wsCli1.saveObjects(new SaveObjectsParams()
+                .withWorkspace("foo1")
+                .withObjects(Arrays.asList(
+                        new ObjectSaveData()
+                                .withData(new UObject(ImmutableMap.of(
+                                        "whee", "wugga",
+                                        "whoo", "thingy",
+                                        "req", "one")))
+                                .withName("objname1")
+                                .withType("NoIndexingRules.Type-1.0")
+                ))
+        );
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("foo2"));
+        wsCli1.saveObjects(new SaveObjectsParams()
+                .withWorkspace("foo2")
+                .withObjects(Arrays.asList(
+                        new ObjectSaveData()
+                                .withData(new UObject(ImmutableMap.of(
+                                        "whee", "wugga",
+                                        "whoo", "thingy",
+                                        "req", "two")))
+                                .withName("objname2")
+                                .withType("NoIndexingRules.Type-1.0")
+                ))
+        );
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("wsDeco1", 1),
+                        new StorageObjectType("foo", "bar1"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee1"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator1")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/1/1"),
+                ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
+                        "{\"whee1\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee1", Arrays.asList("imaprettypony1")))),
+                false);
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("wsDeco2", 1),
+                        new StorageObjectType("foo", "bar2"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee2"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname2", "creator2")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2/1/1"),
+                ImmutableMap.of(new GUID("WS:2/1/1"), new ParsedObject(
+                        "{\"whee2\": \"imaprettypony2\"}",
+                        ImmutableMap.of("whee2", Arrays.asList("imaprettypony2")))),
+                false);
+
+        final SearchObjectsOutput searchResults = searchObjects(new MatchFilter().withAddWorkspaceInfo(1L));
+
+        final Tuple9<Long, String, String, String, Long, String, String, String,
+                Map<String, String>> wsInfoExpected1 =
+                wsTuple(1, "foo1", "user1", "date1", 1, "n", "n", "unlocked",
+                        ImmutableMap.of("narrative", "6", "narrative_nice_name", "Kevin"));
+        final Tuple9<Long, String, String, String, Long, String, String, String,
+                Map<String, String>> wsInfoExpected2 =
+                wsTuple(2, "foo2", "user1", "date2", 1, "n", "n", "unlocked", Collections.emptyMap());
+
+        final Tuple11<Long, String, String, String, Long, String,
+                Long, String, String, Long, Map<String, String>> objInfoExpected1 =
+                objTuple(1, "objname1", "NoIndexingRules.Type-1.0", "date1",1,"user1",
+                         1, "foo1", "chksum1", 44, Collections.emptyMap());
+
+        final Tuple11<Long, String, String, String, Long, String,
+                Long, String, String, Long, Map<String, String>> objInfoExpected2 =
+                objTuple(1, "objname2", "NoIndexingRules.Type-1.0", "date2",1,"user1",
+                        2, "foo2", "chksum2", 44, Collections.emptyMap());
+
+        compareWsInfo(searchResults.getWorkspacesInfo().get(1L), wsInfoExpected1);
+        compareWsInfo(searchResults.getWorkspacesInfo().get(2L), wsInfoExpected2);
+
+        compareObjInfo(searchResults.getObjectsInfo().get("1/1/1"), objInfoExpected1);
+        compareObjInfo(searchResults.getObjectsInfo().get("2/1/1"), objInfoExpected2);
     }
 
     @Test
@@ -622,7 +900,7 @@ public class SearchAPIIntegrationTest {
                 false);
         
         final GetObjectsOutput ret = searchCli.getObjects(new GetObjectsInput()
-                .withGuids(Arrays.asList("WS:1/1/1")));
+                .withGuids(Arrays.asList("WS:1/1/1")).withMatchFilter(new MatchFilter().withAddNarrativeInfo(1L)));
         
         assertThat("incorrect data count", ret.getObjects().size(), is(1));
         final ObjectData od2 = ret.getObjects().get(0);

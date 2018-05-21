@@ -80,18 +80,24 @@ public class NarrativeInfoDecorator implements SearchInterface {
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
         final SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
-        return searchObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
-                searchObjsOutput.getObjects(),
-                searchObjsOutput.getAccessGroupNarrativeInfo()));
+        if (params.getMatchFilter().getAddNarrativeInfo() != null)
+            return searchObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
+                    searchObjsOutput.getObjects(),
+                    searchObjsOutput.getAccessGroupNarrativeInfo()));
+        else
+            return searchObjsOutput;
     }
 
     @Override
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
         final GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
-        return getObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
-                getObjsOutput.getObjects(),
-                getObjsOutput.getAccessGroupNarrativeInfo()));
+        if (params.getMatchFilter().getAddNarrativeInfo() != null)
+            return getObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
+                    getObjsOutput.getObjects(),
+                    getObjsOutput.getAccessGroupNarrativeInfo()));
+        else
+            return getObjsOutput;
     }
 
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(

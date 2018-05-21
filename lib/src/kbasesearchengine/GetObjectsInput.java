@@ -23,7 +23,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
     "guids",
-    "post_processing"
+    "post_processing",
+    "match_filter"
 })
 public class GetObjectsInput {
 
@@ -46,6 +47,30 @@ public class GetObjectsInput {
      */
     @JsonProperty("post_processing")
     private PostProcessing postProcessing;
+    /**
+     * <p>Original spec-file type: MatchFilter</p>
+     * <pre>
+     * Optional rules of defining constrains for object properties
+     * including values of keywords or metadata/system properties (like
+     * object name, creation time range) or full-text search in all
+     * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
+     * list<string> source_tags - source tags are arbitrary strings applied to data at the data
+     *     source (for example, the workspace service). The source_tags list may optionally be
+     *     populated with a set of tags that will determine what data is returned in a search.
+     *     By default, the list behaves as a whitelist and only data with at least one of the
+     *     tags will be returned.
+     * source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
+     *     data with at least one of the tags will be excluded from the search results. If missing
+     *     or false, the default behavior is maintained.
+     * addNarrativeInfo - if true, narrative info gets added to the search results. Default is false.
+     * addWorkspaceInfo - if true, workspace and object info get added to the search results. Default is false.
+     * </pre>
+     * 
+     */
+    @JsonProperty("match_filter")
+    private MatchFilter matchFilter;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("guids")
@@ -108,6 +133,65 @@ public class GetObjectsInput {
         return this;
     }
 
+    /**
+     * <p>Original spec-file type: MatchFilter</p>
+     * <pre>
+     * Optional rules of defining constrains for object properties
+     * including values of keywords or metadata/system properties (like
+     * object name, creation time range) or full-text search in all
+     * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
+     * list<string> source_tags - source tags are arbitrary strings applied to data at the data
+     *     source (for example, the workspace service). The source_tags list may optionally be
+     *     populated with a set of tags that will determine what data is returned in a search.
+     *     By default, the list behaves as a whitelist and only data with at least one of the
+     *     tags will be returned.
+     * source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
+     *     data with at least one of the tags will be excluded from the search results. If missing
+     *     or false, the default behavior is maintained.
+     * addNarrativeInfo - if true, narrative info gets added to the search results. Default is false.
+     * addWorkspaceInfo - if true, workspace and object info get added to the search results. Default is false.
+     * </pre>
+     * 
+     */
+    @JsonProperty("match_filter")
+    public MatchFilter getMatchFilter() {
+        return matchFilter;
+    }
+
+    /**
+     * <p>Original spec-file type: MatchFilter</p>
+     * <pre>
+     * Optional rules of defining constrains for object properties
+     * including values of keywords or metadata/system properties (like
+     * object name, creation time range) or full-text search in all
+     * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
+     * list<string> source_tags - source tags are arbitrary strings applied to data at the data
+     *     source (for example, the workspace service). The source_tags list may optionally be
+     *     populated with a set of tags that will determine what data is returned in a search.
+     *     By default, the list behaves as a whitelist and only data with at least one of the
+     *     tags will be returned.
+     * source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
+     *     data with at least one of the tags will be excluded from the search results. If missing
+     *     or false, the default behavior is maintained.
+     * addNarrativeInfo - if true, narrative info gets added to the search results. Default is false.
+     * addWorkspaceInfo - if true, workspace and object info get added to the search results. Default is false.
+     * </pre>
+     * 
+     */
+    @JsonProperty("match_filter")
+    public void setMatchFilter(MatchFilter matchFilter) {
+        this.matchFilter = matchFilter;
+    }
+
+    public GetObjectsInput withMatchFilter(MatchFilter matchFilter) {
+        this.matchFilter = matchFilter;
+        return this;
+    }
+
     @JsonAnyGetter
     public Map<java.lang.String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -120,7 +204,7 @@ public class GetObjectsInput {
 
     @Override
     public java.lang.String toString() {
-        return ((((((("GetObjectsInput"+" [guids=")+ guids)+", postProcessing=")+ postProcessing)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((("GetObjectsInput"+" [guids=")+ guids)+", postProcessing=")+ postProcessing)+", matchFilter=")+ matchFilter)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
