@@ -1,0 +1,32 @@
+global-object-type: OntologyTerm
+ui-type-name: Ontology Term
+storage-type: WS
+storage-object-type: KBaseOntology.OntologyDictionary
+versions:
+- inner-sub-type: OntologyTerm
+  path-to-sub-objects: /term_hash/*/
+  primary-key-path: id
+  indexing-rules:
+  - path: id
+    keyword-type: keyword
+  - path: name
+    full-text: true
+  - path: namespace
+    keyword-type: keyword
+  - path: def
+    transform: values
+    full-text: true
+    key-name: definition
+    ui-link-key: contig_ref
+  - path: synonym
+    transform: values
+    full-text: true
+    key-name: synonyms
+  - from-parent: true
+    path: ontology
+    keyword-type: keyword
+    key-name: ontology_id
+  - from-parent: true
+    path: ontology_namespace
+    keyword-type: keyword
+    key-name: ontology_name
