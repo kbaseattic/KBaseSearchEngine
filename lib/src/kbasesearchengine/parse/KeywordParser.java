@@ -3,6 +3,7 @@ package kbasesearchengine.parse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.common.ObjectJsonPath;
 import kbasesearchengine.events.exceptions.IndexingException;
+import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.LocationTransformType;
@@ -268,7 +270,14 @@ public class KeywordParser {
             } catch (IllegalArgumentException e) {
                 throw new ObjectParseException(e.getMessage(), e);
             }
-            Set<GUID> guids = lookup.resolveRefs(objectRefPath, unresolvedGUIDs);
+            Set<ResolvedReference> resrefs = lookup.resolveRefs(objectRefPath, unresolvedGUIDs);
+            Set<GUID> guids = new HashSet<>();
+
+            for (final ResolvedReference rr: resrefs) {
+                final GUID guid = rr.getResolvedReference();
+                guids.add(guid);
+            }
+
             Set<String> subIds = null;
             if (transform.getSubobjectIdKey().isPresent()) {
                 if (!typeDescr.getSubObjectType().isPresent()) {
@@ -417,7 +426,7 @@ public class KeywordParser {
     }
 
     public interface ObjectLookupProvider {
-        public Set<GUID> resolveRefs(List<GUID> objectRefPath, Set<GUID> unresolvedGUIDs) 
+        public Set<ResolvedReference> resolveRefs(List<GUID> objectRefPath, Set<GUID> unresolvedGUIDs)
                 throws IndexingException, InterruptedException;
         public Map<GUID, SearchObjectType> getTypesForGuids(List<GUID> objectRefPath, Set<GUID> unresolvedGUIDs)
                 throws InterruptedException, IndexingException;

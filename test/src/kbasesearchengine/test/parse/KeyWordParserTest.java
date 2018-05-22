@@ -8,10 +8,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
+import kbasesearchengine.events.handler.ResolvedReference;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -172,7 +174,9 @@ public class KeyWordParserTest {
         
         when(lookup.resolveRefs(
                 Arrays.asList(new GUID("CODE:1/2/3")), set(new GUID("CODE:4/5/6"))))
-                .thenReturn(set(new GUID("CODE:4/5/6")));
+                .thenReturn(set(new ResolvedReference(new GUID("CODE:4/5/6"), new GUID("CODE:4/5/6"), new StorageObjectType("Code", "Assembly"), Instant.now())));
+
+
         
         when(lookup.getTypesForGuids(Arrays.asList(new GUID("CODE:1/2/3")), set(new GUID("CODE:4/5/6"))))
                 .thenReturn(Collections.emptyMap());
@@ -211,7 +215,7 @@ public class KeyWordParserTest {
         
         when(lookup.resolveRefs(
                 Arrays.asList(new GUID("CODE:1/2/3")), set(new GUID("CODE:4/5/6"))))
-                .thenReturn(set(new GUID("CODE:4/5/6")));
+                .thenReturn(set(new ResolvedReference(new GUID("CODE:4/5/6"), new GUID("CODE:4/5/6"), new StorageObjectType("Code", "Assembly"), Instant.now())));
         
         when(lookup.getTypesForGuids(Arrays.asList(new GUID("CODE:1/2/3")), set(new GUID("CODE:4/5/6"))))
                 .thenReturn(ImmutableMap.of(

@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -24,6 +23,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.common.base.Optional;
 
+import com.google.common.collect.ImmutableSet;
 import kbasesearchengine.common.FileUtil;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.ChildStatusEvent;
@@ -711,12 +711,12 @@ public class IndexerWorker implements Stoppable {
      */
     private class MOPLookupProvider implements ObjectLookupProvider {
         // storage code -> full ref path -> resolved guid
-        private Map<String, Map<String, GUID>> refResolvingCache = new LinkedHashMap<>();
+        private Map<String, Map<String, ResolvedReference>> refResolvingCache = new LinkedHashMap<>();
         private Map<GUID, ObjectData> objLookupCache = new LinkedHashMap<>();
         private Map<GUID, SearchObjectType> guidToTypeCache = new LinkedHashMap<>();
         
         @Override
-        public Set<GUID> resolveRefs(List<GUID> callerRefPath, Set<GUID> refs)
+        public Set<ResolvedReference> resolveRefs(List<GUID> callerRefPath, Set<GUID> refs)
                 throws IndexingException, InterruptedException {
             /* the caller ref path 1) ensures that the object refs are valid when checked against
              * the source, and 2) allows getting deleted objects with incoming references 
@@ -732,7 +732,7 @@ public class IndexerWorker implements Stoppable {
                 refResolvingCache.put(storageCode, new HashMap<>());
             }
             final Map<GUID, String> refToRefPath = eh.buildReferencePaths(callerRefPath, refs);
-            Set<GUID> ret = new LinkedHashSet<>();
+            Set<ResolvedReference> ret = new LinkedHashSet<>();
             Set<GUID> refsToResolve = new LinkedHashSet<>();
             for (final GUID ref : refs) {
                 final String refpath = refToRefPath.get(ref);
@@ -746,10 +746,9 @@ public class IndexerWorker implements Stoppable {
                 final Set<ResolvedReference> resrefs =
                         resolveReferences(eh, callerRefPath, refsToResolve);
                 for (final ResolvedReference rr: resrefs) {
-                    final GUID guid = rr.getResolvedReference();
-                    ret.add(guid);
+                    ret.add(rr);
                     refResolvingCache.get(storageCode)
-                            .put(refToRefPath.get(rr.getReference()), guid);
+                            .put(refToRefPath.get(rr.getReference()), rr);
                 }
             }
             return ret;
@@ -817,8 +816,23 @@ public class IndexerWorker implements Stoppable {
                 throws IndexingException, InterruptedException, RetriableIndexingException {
             final List<ObjectData> data = new ArrayList<>();
 
-            // get object from data source
-            for (GUID guid: unresolvedGUIDs) {
+            for(GUID unresolvedGUID: unresolvedGUIDs) {
+                // resolve reference
+                ResolvedReference resRef =
+                        resolveRefs(objectRefPath, ImmutableSet.of(unresolvedGUID)).iterator().next();
+
+                // add subObjType and subObjId from the unresolved guid as it is not contained in
+                // the resolved reference
+                GUID guid = resRef.getResolvedReference();
+                guid = new GUID(guid.getStorageCode(),
+                                guid.getAccessGroupId(),
+                                guid.getAccessGroupObjectId(),
+                                guid.getVersion(),
+                                unresolvedGUID.getSubObjectType(),
+                                unresolvedGUID.getSubObjectId());
+                resRef = new ResolvedReference(resRef.getReference(), guid, resRef.getType(), resRef.getTimestamp());
+
+                // get object from data source
                 final File tempFile;
                 try {
                     FileUtil.getOrCreateSubDir(rootTempDir, guid.getStorageCode());
@@ -828,39 +842,34 @@ public class IndexerWorker implements Stoppable {
                 }
 
                 try {
+                    // make a copy to avoid mutating the caller's path
                     final EventHandler handler = getEventHandler(guid);
-                    final Iterator<ResolvedReference> refs =
-                            handler.resolveReferences(objectRefPath, unresolvedGUIDs).iterator();
-                    while (refs.hasNext()) {
-                        final ResolvedReference ref = refs.next();
+                    final SourceData obj = handler.load(
+                            Arrays.asList(resRef.getResolvedReference()), tempFile.toPath());
 
-                        // make a copy to avoid mutating the caller's path
-                        final List<GUID> newRefPath = Arrays.asList(ref.getResolvedReference());
-                        final SourceData obj = handler.load(newRefPath, tempFile.toPath());
+                    final ObjectTypeParsingRules rules = getObjectTypeParsingRules(resRef);
 
-                        final ObjectTypeParsingRules rules = getObjectTypeParsingRules(ref);
-
-                        if(rules == null) {
-                            throw new FatalIndexingException(ErrorType.OTHER,
-                                    "Unable to find parsing rules for reference "+ref);
-                        }
-
-                        final ParseObjectsRet parsedRet = parseObjects(guid, this,
-                                newRefPath, obj, rules);
-
-                        final GUID parsedGUID = parsedRet.guidToObj.keySet().iterator().next();
-
-                        final ObjectData objData = buildObjectDataFrom(
-                                parsedGUID,
-                                rules.getGlobalObjectType(),
-                                obj.getName(),
-                                obj.getCreator(),
-                                obj.getCommitHash(),
-                                parsedRet.guidToObj.get(parsedGUID).getKeywords());
-
-                        data.add(objData);
-
+                    if(rules == null) {
+                        throw new FatalIndexingException(ErrorType.OTHER,
+                                "Unable to find parsing rules for reference "+resRef);
                     }
+
+                    final ParseObjectsRet parsedRet = parseObjects(guid, this,
+                            Arrays.asList(resRef.getResolvedReference()), obj, rules);
+
+                    final GUID parsedGUID = parsedRet.guidToObj.keySet().iterator().next();
+
+                    final ObjectData objData = buildObjectDataFrom(
+                            guid,
+                            rules.getGlobalObjectType(),
+                            obj.getName(),
+                            obj.getCreator(),
+                            obj.getCommitHash(),
+                            parsedRet.guidToObj.get(parsedGUID).getKeywords());
+
+                    data.add(objData);
+
+
                 } finally {
                     tempFile.delete();
                 }
@@ -874,7 +883,7 @@ public class IndexerWorker implements Stoppable {
                     typeStorage.listObjectTypeParsingRules(ref.getType()));
 
             // filter by subObject type
-            final String refSubObjectType = ref.getReference().getSubObjectType();
+            final String refSubObjectType = ref.getResolvedReference().getSubObjectType();
             for (final ObjectTypeParsingRules rule : parsingRules) {
                 final String ruleSubObjectType = rule.getSubObjectType().orNull();
                 if (refSubObjectType == null && ruleSubObjectType == null) {

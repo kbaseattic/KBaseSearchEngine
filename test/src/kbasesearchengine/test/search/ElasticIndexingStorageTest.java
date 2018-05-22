@@ -24,6 +24,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableList;
+import kbasesearchengine.events.handler.ResolvedReference;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.junit.After;
@@ -101,7 +102,7 @@ public class ElasticIndexingStorageTest {
         objLookup = new ObjectLookupProvider() {
 
             @Override
-            public Set<GUID> resolveRefs(List<GUID> callerRefPath, Set<GUID> refs) {
+            public Set<ResolvedReference> resolveRefs(List<GUID> callerRefPath, Set<GUID> refs) {
                 for (GUID pguid : refs) {
                     try {
                         boolean indexed = indexStorage.checkParentGuidsExist(new LinkedHashSet<>(
@@ -116,7 +117,13 @@ public class ElasticIndexingStorageTest {
                         throw new IllegalStateException(ex);
                     }
                 }
-                return refs;
+
+                Set resrefs = new HashSet();
+                for(GUID ref: refs) {
+                    resrefs.add(new ResolvedReference(ref, ref, new StorageObjectType("WS", "Assembly"), Instant.now()));
+                }
+
+                return resrefs;
             }
 
             @Override
