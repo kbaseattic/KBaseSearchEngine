@@ -2,10 +2,15 @@
 A KBase module: KBaseSearchEngine
 */
 
+#include <workspace.spec>
+
 module KBaseSearchEngine {
 
     /* A boolean. 0 = false, other = true. */
     typedef int boolean;
+
+    /* An X/Y/Z style reference */
+    typedef string obj_ref;
 
     /* 
       Global user identificator. It has structure like this:
@@ -51,6 +56,8 @@ module KBaseSearchEngine {
       source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
           data with at least one of the tags will be excluded from the search results. If missing
           or false, the default behavior is maintained.
+      addNarrativeInfo - if true, narrative info gets added to the search results. Default is false.
+      addWorkspaceInfo - if true, workspaces and objects info get added to the search results. Default is false.
     */
     typedef structure {
         string full_text_in_all;
@@ -60,6 +67,8 @@ module KBaseSearchEngine {
         mapping<string, MatchValue> lookup_in_keys;
         list<string> source_tags;
         boolean source_tags_blacklist;
+        boolean addNarrativeInfo;
+        boolean addWorkspaceInfo;
     } MatchFilter;
 
     /*
@@ -243,6 +252,13 @@ module KBaseSearchEngine {
       mapping<access_group_id, narrative_info> access_group_narrative_info - information about
          the workspaces in which the objects in the results reside. This data only applies to
          workspace objects.
+      mapping<access_group_id, Workspace.workspace_info> workspaces_info - information about
+         the workspaces in which the objects in the results reside. This data only applies to
+         workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
+         in the search results is saved in this mapping.
+      mapping<obj_ref, Workspace.object_info> objects_info - information about each object in the
+         search results. This data only applies to workspace objects. The tuple11 value returned by
+         get_object_info3() for each object in the search results is saved in the mapping.
     */
     typedef structure {
         Pagination pagination;
@@ -251,6 +267,8 @@ module KBaseSearchEngine {
         int total;
         int search_time;
         mapping<access_group_id, narrative_info> access_group_narrative_info;
+        mapping<access_group_id, Workspace.workspace_info> workspaces_info;
+        mapping<obj_ref, Workspace.object_info> objects_info;
     } SearchObjectsOutput;
 
     /*
@@ -261,10 +279,14 @@ module KBaseSearchEngine {
 
     /*
       Input parameters for get_objects method.
+          guids - list of guids
+          post_processing - see PostProcessing (optional).
+          match_filter - see MatchFilter (optional).
     */
     typedef structure {
         list<GUID> guids;
         PostProcessing post_processing;
+        MatchFilter match_filter;
     } GetObjectsInput;
 
     /*
@@ -273,11 +295,20 @@ module KBaseSearchEngine {
       mapping<access_group_id, narrative_info> access_group_narrative_info - information about
          the workspaces in which the objects in the results reside. This data only applies to
          workspace objects.
+      mapping<access_group_id, Workspace.workspace_info> workspaces_info - information about
+         the workspaces in which the objects in the results reside. This data only applies to
+         workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
+         in the search results is saved in this mapping.
+      mapping<obj_ref, Workspace.object_info> objects_info - information about each object in the
+         search results. This data only applies to workspace objects. The tuple11 value returned by
+         get_object_info3() for each object in the search results is saved in the mapping.
     */
     typedef structure {
         list<ObjectData> objects;
         int search_time;
         mapping<access_group_id, narrative_info> access_group_narrative_info;
+        mapping<access_group_id, Workspace.workspace_info> workspaces_info;
+        mapping<obj_ref, Workspace.object_info> objects_info;
     } GetObjectsOutput;
 
     /*

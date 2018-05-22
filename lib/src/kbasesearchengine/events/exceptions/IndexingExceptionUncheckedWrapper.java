@@ -1,5 +1,7 @@
 package kbasesearchengine.events.exceptions;
 
+import kbasesearchengine.tools.Utils;
+
 /** This class wraps a checked indexing exception. It exists solely to allow throwing indexing
  * exceptions within interface implementations where the appropriate exception cannot be thrown.
  * 
@@ -17,9 +19,8 @@ public class IndexingExceptionUncheckedWrapper extends RuntimeException {
     }
 
     private static IndexingException checkNonNull(final IndexingException cause) {
-        if (cause == null) {
-            throw new NullPointerException("cause");
-        }
+        Utils.nonNull(cause, "cause");
+
         return cause;
     }
     
