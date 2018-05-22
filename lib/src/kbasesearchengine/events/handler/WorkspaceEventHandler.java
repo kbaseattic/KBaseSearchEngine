@@ -218,7 +218,12 @@ public class WorkspaceEventHandler implements EventHandler {
 
     /** Get the workspace information for an object from the workspace service
      * to which this handler is communicating.
-     * @param list of object refs: workspaceId/objectId/verId.
+     * @param objectRefs list of object refs: workspaceId/objectId/verId.
+     * @param includeMeta include the object metadata in the returned
+     *information. Default = 0 = false, non-zero value = true
+     * @param ignoreErrors Don't throw an exception if an object cannot
+     * be accessed; return null for that object's information and path instead.
+     * Default = 0 = false, non-zero value = true.
      * @return the object info as returned from the workspace.
      * @throws IOException if an IO exception occurs.
      * @throws JsonClientException if an error retrieving the data occurs.
@@ -334,7 +339,7 @@ public class WorkspaceEventHandler implements EventHandler {
     @Override
     public Map<GUID, String> buildReferencePaths(
             final List<GUID> refpath,
-            final Set<GUID> refs) {
+            final List<GUID> refs) {
         final String refPrefix = buildRefPrefix(refpath);
         return refs.stream().collect(Collectors.toMap(r -> r, r -> refPrefix + r.toRefString()));
     }
