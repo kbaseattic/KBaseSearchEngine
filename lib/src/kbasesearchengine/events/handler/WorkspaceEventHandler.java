@@ -339,7 +339,7 @@ public class WorkspaceEventHandler implements EventHandler {
     @Override
     public Map<GUID, String> buildReferencePaths(
             final List<GUID> refpath,
-            final List<GUID> refs) {
+            final Set<GUID> refs) {
         final String refPrefix = buildRefPrefix(refpath);
         return refs.stream().collect(Collectors.toMap(r -> r, r -> refPrefix + r.toRefString()));
     }
