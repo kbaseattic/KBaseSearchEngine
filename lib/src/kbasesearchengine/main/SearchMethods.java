@@ -235,8 +235,7 @@ public class SearchMethods implements SearchInterface {
     public SearchTypesOutput searchTypes(SearchTypesInput params, String user) throws Exception {
         long t1 = System.currentTimeMillis();
         kbasesearchengine.search.MatchFilter matchFilter = toSearch(params.getMatchFilter());
-        kbasesearchengine.search.AccessFilter accessFilter = toSearch(params.getAccessFilter(),
-                user);
+        kbasesearchengine.search.AccessFilter accessFilter = toSearch(params.getAccessFilter(), user);
         Map<String, Integer> ret = indexingStorage.searchTypes(matchFilter, accessFilter);
         return new SearchTypesOutput().withTypeToCount(ret.keySet().stream().collect(
                 Collectors.toMap(Function.identity(), c -> (long)(int)ret.get(c))))
@@ -260,8 +259,7 @@ public class SearchMethods implements SearchInterface {
             sorting = params.getSortingRules().stream().map(this::toSearch).collect(
                     Collectors.toList());
         }
-        kbasesearchengine.search.AccessFilter accessFilter = toSearch(params.getAccessFilter(),
-                user);
+        kbasesearchengine.search.AccessFilter accessFilter = toSearch(params.getAccessFilter(), user);
         kbasesearchengine.search.Pagination pagination = toSearch(params.getPagination());
         kbasesearchengine.search.PostProcessing postProcessing = 
                 toSearch(params.getPostProcessing());
