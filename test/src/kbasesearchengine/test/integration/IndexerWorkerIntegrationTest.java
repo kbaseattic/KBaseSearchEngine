@@ -355,9 +355,9 @@ public class IndexerWorkerIntegrationTest {
         System.out.println("Feature: " + obj);
     }
 
-    private void setWsPermission(int wsId, String objId, String objType, boolean publicFlag) throws Exception {
+    private void setWsPermission(int wsId, String objId, String objType, boolean isPublic) throws Exception {
         wsClientUser.setGlobalPermission(new SetGlobalPermissionsParams().withId((long)wsId).
-                withNewPermission(publicFlag ? "r":"n"));
+                withNewPermission(isPublic ? "r":"n"));
 
         final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                 new StorageObjectType("WS", objType),
@@ -366,7 +366,7 @@ public class IndexerWorkerIntegrationTest {
                         .withNullableAccessGroupID(wsId)
                         .withNullableObjectID(objId)
                         .withNullableVersion(1)
-                        .withNullableisPublic(publicFlag)
+                        .withNullableisPublic(isPublic)
                         .build(),
                 new StatusEventID("-1"),
                 StatusEventProcessingState.UNPROC)

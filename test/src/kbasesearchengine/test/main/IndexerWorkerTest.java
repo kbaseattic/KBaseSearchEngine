@@ -1060,7 +1060,7 @@ public class IndexerWorkerTest {
 
     @Test
     public void indexDependentGUIDPublic() throws Exception {
-        /* tests the checking if the dependent object is indexed with the right permission. */
+        /* tests if the dependent object is indexed with the right permission. */
         final GUID guid = new GUID("code:1/2/3");
         final GUID dependencyGUID = new GUID("code:4/5/6");
         final SearchObjectType dependentType = new SearchObjectType("Assembly", 1);
@@ -1098,7 +1098,7 @@ public class IndexerWorkerTest {
                         return SourceData.getBuilder(
                                 new UObject(path.toFile()), "myobj", "somedude")
                                 .withNullableMD5("md5")
-                                .withIsPublic(false)
+                                .withIsPublic(false)  // set to false
                                 .build();
                     }
                 });
@@ -1113,7 +1113,7 @@ public class IndexerWorkerTest {
                         return SourceData.getBuilder(
                                 new UObject(path.toFile()), "myobj", "somedude")
                                 .withNullableMD5("md5")
-                                .withIsPublic(true)
+                                .withIsPublic(true)   // set to true
                                 .build();
                     }
                 });
