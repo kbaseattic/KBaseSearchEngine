@@ -812,17 +812,19 @@ public class IndexerWorker implements Stoppable {
          * @throws InterruptedException
          * @throws RetriableIndexingException
          */
-        private List<ObjectData> getObjectsByIds(final List<GUID> objectRefPath, final Set<GUID> unresolvedGUIDs)
+        private List<ObjectData> getObjectsByIds(final List<GUID> objectRefPath,
+                                                 final Set<GUID> unresolvedGUIDs)
                 throws IndexingException, InterruptedException, RetriableIndexingException {
             final List<ObjectData> data = new ArrayList<>();
 
             for(GUID unresolvedGUID: unresolvedGUIDs) {
                 // resolve reference
                 ResolvedReference resRef =
-                        resolveRefs(objectRefPath, ImmutableSet.of(unresolvedGUID)).iterator().next();
+                        resolveRefs(objectRefPath, ImmutableSet.of(unresolvedGUID)).
+                                                                     iterator().next();
 
-                // add subObjType and subObjId from the unresolved guid as it is not contained in
-                // the resolved reference
+                // add subObjType and subObjId from the unresolved guid as it is
+                // not contained in the resolved reference
                 GUID guid = resRef.getResolvedReference();
                 guid = new GUID(guid.getStorageCode(),
                                 guid.getAccessGroupId(),
@@ -830,7 +832,10 @@ public class IndexerWorker implements Stoppable {
                                 guid.getVersion(),
                                 unresolvedGUID.getSubObjectType(),
                                 unresolvedGUID.getSubObjectId());
-                resRef = new ResolvedReference(resRef.getReference(), guid, resRef.getType(), resRef.getTimestamp());
+                resRef = new ResolvedReference(resRef.getReference(),
+                                               guid,
+                                               resRef.getType(),
+                                               resRef.getTimestamp());
 
                 // get object from data source
                 final File tempFile;
