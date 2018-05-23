@@ -15,14 +15,13 @@ import kbasesearchengine.SearchObjectsOutput;
 import kbasesearchengine.SearchTypesInput;
 import kbasesearchengine.SearchTypesOutput;
 import kbasesearchengine.TypeDescriptor;
-import kbasesearchengine.authorization.TemporaryAuth2Client;
+import kbasesearchengine.authorization.AuthInfoProvider;
 import kbasesearchengine.authorization.TemporaryAuth2Client.Auth2Exception;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
-import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple5;
-import us.kbase.common.service.Tuple9;
+import us.kbase.common.service.JsonClientException;
 
 /**
  * Decorates the results from a {@link SearchInterface} with information about workspaces that
@@ -41,34 +40,29 @@ import us.kbase.common.service.Tuple9;
  */
 public class NarrativeInfoDecorator implements SearchInterface {
 
-    private final WorkspaceEventHandler weh;
     private final SearchInterface searchInterface;
-    private final TemporaryAuth2Client authClient;
-    private final String token;
+    private final NarrativeInfoProvider narrInfoProvider;
+    private final AuthInfoProvider authInfoProvider;
 
     /** Create a decorator.
      * @param searchInterface the search interface to decorate. This may be a root interface that
      * produces data from a search storage system or another decorator.
-     * @param wsHandler a workspace event handler pointing at the workspace from which
-     * data should be retrieved. This should be the same workspace as that from which the data
-     * is indexed.
-     * @param authClient a client for the KBase authentication system.
-     * @param token a token to be used with the auth client. The token needs no particular
-     * privileges.
+     * @param narrInfoProvider a cache with workspace info with a mapping of <wsId, NarrativeInfo>
+     * NarrativeInfo obtained with an event handler pointing at the workspace from which data
+     * should be retrieved. This should be the same workspace as that from which the data is indexed.
+     * @param authInfoProvider a cache with data from auth with a mapping of <UserName, DisplayName>
      */
     public NarrativeInfoDecorator(
             final SearchInterface searchInterface,
-            final WorkspaceEventHandler wsHandler,
-            final TemporaryAuth2Client authClient,
-            final String token) {
-        Utils.nonNull(searchInterface, "searchInterface");
-        Utils.nonNull(wsHandler, "wsHandler");
-        Utils.nonNull(authClient, "authClient");
-        Utils.notNullOrEmpty(token, "token cannot be null or whitespace only");
+            final NarrativeInfoProvider narrInfoProvider,
+            final AuthInfoProvider authInfoProvider) {
+
+        Utils.nonNull(searchInterface, "SearchInterface");
+        Utils.nonNull(narrInfoProvider, "NarrativeInfoProvider");
+        Utils.nonNull(authInfoProvider, "AuthInfoProvider");
         this.searchInterface = searchInterface;
-        this.weh = wsHandler;
-        this.authClient = authClient;
-        this.token = token;
+        this.narrInfoProvider = narrInfoProvider;
+        this.authInfoProvider = authInfoProvider;
     }
 
     @Override
@@ -86,18 +80,24 @@ public class NarrativeInfoDecorator implements SearchInterface {
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
         final SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
-        return searchObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
-                searchObjsOutput.getObjects(),
-                searchObjsOutput.getAccessGroupNarrativeInfo()));
+        if (params.getMatchFilter().getAddNarrativeInfo() != null)
+            return searchObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
+                    searchObjsOutput.getObjects(),
+                    searchObjsOutput.getAccessGroupNarrativeInfo()));
+        else
+            return searchObjsOutput;
     }
 
     @Override
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
         final GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
-        return getObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
-                getObjsOutput.getObjects(),
-                getObjsOutput.getAccessGroupNarrativeInfo()));
+        if (params.getMatchFilter().getAddNarrativeInfo() != null)
+            return getObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
+                    getObjsOutput.getObjects(),
+                    getObjsOutput.getAccessGroupNarrativeInfo()));
+        else
+            return getObjsOutput;
     }
 
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(
@@ -120,47 +120,22 @@ public class NarrativeInfoDecorator implements SearchInterface {
         }
         final Set<String> userNames = new HashSet<>();
         for (final long workspaceId: wsIdsSet) {
+            final NarrativeInfo narrInfo = narrInfoProvider.findNarrativeInfo(workspaceId);
             final Tuple5<String, Long, Long, String, String> tempNarrInfo =
-                    getNarrativeInfo(workspaceId);
+                    new Tuple5<String, Long, Long, String, String>()
+                            .withE1(narrInfo.getNarrativeName())
+                            .withE2(narrInfo.getNarrativeId())
+                            .withE3(narrInfo.getTimeLastSaved())
+                            .withE4(narrInfo.getWsOwnerUsername());
             userNames.add(tempNarrInfo.getE4());
             retVal.put(workspaceId, tempNarrInfo);
         }
-        final Map<String, String> displayNames = authClient.getUserDisplayNames(token, userNames);
+
+        final Map<String, String> displayNames = authInfoProvider.findUserDisplayNames(userNames);
         // e5 is the full / display name, e4 is the user name
         // defaults to the existing name so names from previous decorator layers aren't set to null
         retVal.values().stream().forEach(t -> t.withE5(
                 displayNames.getOrDefault(t.getE4(), t.getE5())));
         return retVal;
-    }
-    
-    private Tuple5<String, Long, Long, String, String> getNarrativeInfo(final long wsid)
-            throws IOException, JsonClientException {
-        final Tuple9 <Long, String, String, String, Long, String, String,
-                String, Map<String,String>> wsInfo;
-
-        try {
-            wsInfo = weh.getWorkspaceInfo(wsid);
-        } catch (IOException e) {
-            throw new IOException("Failed retrieving workspace info: " + e.getMessage(), e);
-        } catch (JsonClientException e) {
-            throw new JsonClientException("Failed retrieving workspace info: "
-                    + e.getMessage(), e);
-        }
-        
-        final long timeMilli = WorkspaceEventHandler.parseDateToEpochMillis(wsInfo.getE4());
-        final Tuple5<String, Long, Long, String, String> tempNarrInfo =
-                    new Tuple5<String, Long, Long, String, String>()
-                .withE3(timeMilli)      // modification time
-                .withE4(wsInfo.getE3()); // workspace user name
-                // e5 gets filled in later
-        
-        final Map<String, String> wsInfoMeta = wsInfo.getE9();
-        
-        if (wsInfoMeta.containsKey("narrative") &&
-                wsInfoMeta.containsKey("narrative_nice_name")) {
-            tempNarrInfo.withE1(wsInfoMeta.get("narrative_nice_name"))
-                    .withE2(Long.parseLong(wsInfoMeta.get("narrative")));
-        }
-        return tempNarrInfo;
     }
 }

@@ -1,5 +1,7 @@
 package kbasesearchengine.events.exceptions;
 
+import kbasesearchengine.tools.Utils;
+
 /** This class wraps a checked retriable indexing exception. It exists solely to allow throwing
  * indexing exceptions within interface implementations where the appropriate exception cannot be
  * thrown.
@@ -19,9 +21,8 @@ public class RetriableIndexingExceptionUncheckedWrapper extends RuntimeException
 
     private static RetriableIndexingException checkNonNull(
             final RetriableIndexingException cause) {
-        if (cause == null) {
-            throw new NullPointerException("cause");
-        }
+        Utils.nonNull(cause, "cause");
+
         return cause;
     }
     

@@ -15,6 +15,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import kbasesearchengine.common.FileUtil;
+import kbasesearchengine.search.FoundHits;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.junit.AfterClass;
@@ -66,11 +67,14 @@ import us.kbase.common.service.UObject;
 import us.kbase.common.test.controllers.mongo.MongoController;
 import us.kbase.test.auth2.authcontroller.AuthController;
 import us.kbase.workspace.CreateWorkspaceParams;
+import us.kbase.workspace.ObjectIdentity;
 import us.kbase.workspace.ObjectSaveData;
 import us.kbase.workspace.RegisterTypespecParams;
+import us.kbase.workspace.RenameObjectParams;
 import us.kbase.workspace.SaveObjectsParams;
 import us.kbase.workspace.WorkspaceClient;
 import us.kbase.workspace.SetGlobalPermissionsParams;
+import us.kbase.workspace.WorkspaceIdentity;
 
 public class IndexerWorkerIntegrationTest {
 
@@ -86,7 +90,7 @@ public class IndexerWorkerIntegrationTest {
     private static MongoDatabase db;
     private static ElasticSearchController es;
     private static WorkspaceController ws;
-
+    private static String token1;
     private static int wsid;
     private static int wsid2, wsid3, wsid4, wsid5;
     private static WorkspaceClient wsClientUser;
@@ -121,7 +125,7 @@ public class IndexerWorkerIntegrationTest {
         System.out.println("started auth server at " + authURL);
         TestCommon.createAuthUser(authURL, "user1", "display1");
         TestCommon.createAuthUser(authURL, "user2", "display2");
-        final String token1 = TestCommon.createLoginToken(authURL, "user1");
+        token1 = TestCommon.createLoginToken(authURL, "user1");
         final String token2 = TestCommon.createLoginToken(authURL, "user2");
         final AuthToken userToken = new AuthToken(token1, "user1");
         final AuthToken wsadmintoken = new AuthToken(token2, "user2");
@@ -481,7 +485,7 @@ public class IndexerWorkerIntegrationTest {
         }
         Assert.assertEquals(1, ids.size());
     }
-    
+
     @Test
     public void testNarrativeManually() throws Exception {
         final StatusEvent ev = StatusEvent.getBuilder(
@@ -497,18 +501,18 @@ public class IndexerWorkerIntegrationTest {
                 StatusEventProcessingState.UNPROC).build());
         checkSearch(1, ImmutableList.of("Narrative"), "tree", wsid, false);
         checkSearch(1, ImmutableList.of("Narrative"), "species", wsid, false);
-        /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null, 
-                System.currentTimeMillis(), "KBaseNarrative.Narrative", 
+        /*indexFewVersions(new ObjectStatusEvent("-1", "WS", 10455, "1", 78, null,
+                System.currentTimeMillis(), "KBaseNarrative.Narrative",
                 ObjectStatusEventType.CREATED, false));
         checkSearch(1, "Narrative", "Catalog.migrate_module_to_new_git_url", 10455, false);
         checkSearch(1, "Narrative", "Super password!", 10455, false);
-        indexFewVersions(new ObjectStatusEvent("-1", "WS", 480, "1", 254, null, 
-                System.currentTimeMillis(), "KBaseNarrative.Narrative", 
+        indexFewVersions(new ObjectStatusEvent("-1", "WS", 480, "1", 254, null,
+                System.currentTimeMillis(), "KBaseNarrative.Narrative",
                 ObjectStatusEventType.CREATED, false));
         checkSearch(1, "Narrative", "weird text", 480, false);
         checkSearch(1, "Narrative", "functionality", 480, false);*/
     }
-    
+
     @Test
     public void testReadsManually() throws Exception {
         final StatusEvent ev = StatusEvent.getBuilder(
@@ -537,5 +541,156 @@ public class IndexerWorkerIntegrationTest {
                 StatusEventProcessingState.UNPROC).build());
         checkSearch(1, ImmutableList.of("SingleEndLibrary"), "PacBio", wsid, true);
         checkSearch(1, ImmutableList.of("SingleEndLibrary"), "reads.2", wsid, false);
+    }
+
+    @Test
+    public void testWorkspaceDeletion() throws Exception {
+        URL wsUrl = new URL("http://localhost:" + ws.getServerPort());
+        final AuthToken wsadmintoken = new AuthToken(token1, "user1");
+        final WorkspaceClient wc = new WorkspaceClient(wsUrl, wsadmintoken);
+        wc.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
+        final String objName = "GenomeToDelete";
+
+        // create a workspace with an object
+        final long wsidToDelete = wc.createWorkspace(new CreateWorkspaceParams().withWorkspace("WorkspaceDeleteTest"))
+                .getE1();
+
+        loadData(wc, wsidToDelete, objName, "KBaseGenomes.Genome-1.0", "GenomeObject");
+
+        // create an event for the object
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                new StorageObjectType("WS", "KBaseGenomes.Genome"),
+                Instant.now(),
+                StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID((int)wsidToDelete)
+                        .withNullableObjectID("1")
+                        .withNullableVersion(1)
+                        .withNullableisPublic(false)
+                        .build(),
+                new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC)
+                .build();
+
+        // delete workspace
+        wc.deleteWorkspace(new WorkspaceIdentity().withId(wsidToDelete));
+
+        // process event
+        worker.processEvent(ev);
+
+        List<String> objectTypes = ImmutableList.of("Genome");
+        PostProcessing pp = new PostProcessing();
+        pp.objectData = true;
+        pp.objectKeys = true;
+
+        // object was not indexed
+        try {
+            FoundHits hits = storage.searchIds(objectTypes,
+                    MatchFilter.getBuilder().
+                            withNullableObjectName(objName).build(),
+                    null,
+                    AccessFilter.create().withAdmin(true), null);
+
+            // to compensate for side-effect when testGenomeManually
+            // is executed before this test. This side-effect needs to be fixed.
+            Assert.assertTrue(hits.guids.size() == 0);
+        } catch (IOException ex) {
+            Assert.assertTrue("No indexes exist for search type Genome".equals(ex.getMessage()));
+        }
+    }
+
+    @Test
+    public void testNonExistentWorkspaceCase() throws Exception {
+        // create an event for a workspace that does not exist
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                new StorageObjectType("WS", "KBaseGenomes.Genome"),
+                Instant.now(),
+                StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID(10000)
+                        .withNullableObjectID("1")
+                        .withNullableVersion(1)
+                        .withNullableisPublic(false)
+                        .build(),
+                new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC)
+                .build();
+
+        // process event
+        worker.processEvent(ev);
+
+        List<String> objectTypes = ImmutableList.of("Genome");
+        PostProcessing pp = new PostProcessing();
+        pp.objectData = true;
+        pp.objectKeys = true;
+
+        // object was not indexed
+        try {
+            GUID guid = new GUID("WS", 10000, "1", 1, null, null);
+            List<ObjectData> data = storage.getObjectsByIds(ImmutableSet.of(guid));
+
+            // to compensate for side-effect when testGenomeManually
+            // is executed before this test. This side-effect needs to be fixed.
+            Assert.assertTrue(data.size() == 0);
+        } catch (IOException ex) {
+            Assert.assertTrue("No indexes exist for search type Genome".equals(ex.getMessage()));
+        }
+    }
+
+
+    @Test
+    public void testRenameObject() throws Exception {
+        URL wsUrl = new URL("http://localhost:" + ws.getServerPort());
+        final AuthToken wsadmintoken = new AuthToken(token1, "user1");
+        final WorkspaceClient wc = new WorkspaceClient(wsUrl, wsadmintoken);
+        wc.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
+        final String objName = "GenomeToRename";
+        final String newObjName = "GenomeRenamed";
+
+        // create an object with some name
+        final long wsidForRenameObject = wc.createWorkspace(new CreateWorkspaceParams().withWorkspace("RenameObjectTest"))
+                .getE1();
+        loadData(wc, wsidForRenameObject, objName, "KBaseGenomes.Genome-1.0", "GenomeObject");
+
+        // create event for object
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                new StorageObjectType("WS", "KBaseGenomes.Genome"),
+                Instant.now(),
+                StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID((int)wsidForRenameObject)
+                        .withNullableObjectID("1")
+                        .withNullableVersion(1)
+                        .withNullableisPublic(false)
+                        .build(),
+                new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC)
+                .build();
+
+        // rename the object
+        wc.renameObject(new RenameObjectParams().
+                                withObj(new ObjectIdentity().
+                                               withWsid(wsidForRenameObject).
+                                               withName(objName)).
+                                withNewName(newObjName));
+
+        // then process event
+        worker.processEvent(ev);
+
+        List<String> objectTypes = ImmutableList.of("Genome");
+        PostProcessing pp = new PostProcessing();
+        pp.objectData = true;
+        pp.objectKeys = true;
+
+        FoundHits hits = storage.searchIds(objectTypes,
+                MatchFilter.getBuilder().
+                        withNullableObjectName(newObjName).build(),
+                null,
+                AccessFilter.create().withAdmin(true), null);
+
+        List<ObjectData> data = storage.getObjectsByIds(
+                hits.guids, pp);
+
+        // processed event should reflect new object name
+        Assert.assertEquals("incorrect genome name",
+                newObjName,
+                data.get(0).getObjectName().get());
     }
 }
