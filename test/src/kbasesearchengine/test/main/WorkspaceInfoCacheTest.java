@@ -202,51 +202,6 @@ public class WorkspaceInfoCacheTest {
         compareWsInfo(cache.getWorkspaceInfo(2L),
                 wsTuple(2, "myws22", "owner22", "date22", 32, "a",
                         "r", "unlocked", Collections.emptyMap()));
-
-//        // check cache access
-//        compare(cache.findNarrativeInfo(65L),
-//                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
-//        compare(cache.findNarrativeInfo(2L),
-//                new NarrativeInfo("narrname2", 2L, 20000L, "owner2"));
-//        compare(cache.findNarrativeInfo(3L),
-//                new NarrativeInfo("narrname3", 3L, 30000L, "owner3"));
-//
-//        // force an expiration based on cache size
-//        compare(cache.findNarrativeInfo(42L),
-//                new NarrativeInfo(null, null, 1518126945678L, "user1"));
-//
-//        // check that with every access, the oldest value had expired
-//        // 65 had expired. When this is loaded, 2 would be removed from cache
-//        compare(cache.findNarrativeInfo(65L),
-//                new NarrativeInfo(null, null, 1518126957000L, "owner11"));
-//        // 2 is not in cache. Its next value is cached. So 3 would be removed from cache
-//        compare(cache.findNarrativeInfo(2L),
-//                new NarrativeInfo("narrname22", 22L, 22000L, "owner22"));
-//        // 3 is not in cache. Its next value is cached. So 42 would be removed from cache
-//        compare(cache.findNarrativeInfo(3L),
-//                new NarrativeInfo("narrname33", 33L, 33000L, "owner33"));
-//        // 42 is not in cache. Its next value is cached. So now 65 would be removed from cache
-//        compare(cache.findNarrativeInfo(42L),
-//                new NarrativeInfo("mylovelynarrative", 4L, 1518126950678L, "user2"));
-//
-//        // 65 not in cache. Its next value is cached. But this removes 2 from cache
-//        compare(cache.findNarrativeInfo(65L),
-//                new NarrativeInfo(null, null, 1518126959000L, "owner111"));
-//        // 3 is still in cache with the same value
-//        compare(cache.findNarrativeInfo(3L),
-//                new NarrativeInfo("narrname33", 33L, 33000L, "owner33"));
-//        // 42 is still in cache with the same value
-//        compare(cache.findNarrativeInfo(42L),
-//                new NarrativeInfo("mylovelynarrative", 4L, 1518126950678L, "user2"));
-//        // 2 not in cache. The next value of 2 is cached now. 65 is removed from cache
-//        compare(cache.findNarrativeInfo(2L),
-//                new NarrativeInfo("narrname222", 222L, 222000L, "owner222"));
-//        // 3 is in cache
-//        compare(cache.findNarrativeInfo(3L),
-//                new NarrativeInfo("narrname33", 33L, 33000L, "owner33"));
-//        //42 is in cache
-//        compare(cache.findNarrativeInfo(42L),
-//                new NarrativeInfo("mylovelynarrative", 4L, 1518126950678L, "user2"));
     }
 
     @Test
