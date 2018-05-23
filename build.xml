@@ -182,6 +182,8 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <test name="kbasesearchengine.test.main.IndexerWorkerConfiguratorTest"/>
         <test name="kbasesearchengine.test.main.NarrativeInfoDecoratorTest"/>
         <test name="kbasesearchengine.test.main.NarrativeInfoCacheTest"/>
+        <test name="kbasesearchengine.test.main.WorkspaceInfoCacheTest"/>
+        <test name="kbasesearchengine.test.main.ObjectInfoCacheTest"/>
         <test name="kbasesearchengine.test.authorization.AuthCacheTest"/>
         <test name="kbasesearchengine.test.main.SearchMethodsTest"/>
         <test name="kbasesearchengine.test.main.SignalMonitorTest"/>

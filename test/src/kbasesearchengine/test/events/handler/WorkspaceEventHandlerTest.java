@@ -2,6 +2,7 @@ package kbasesearchengine.test.events.handler;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.argThat;
@@ -30,6 +31,7 @@ import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableList;
 
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.exceptions.ErrorType;
@@ -42,10 +44,10 @@ import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.test.common.TestCommon;
-import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple9;
 import us.kbase.common.service.UObject;
+import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.UnauthorizedException;
 import us.kbase.workspace.GetObjectInfo3Results;
 import us.kbase.workspace.GetObjects2Params;
@@ -109,14 +111,43 @@ public class WorkspaceEventHandlerTest {
                             "r", "unlocked", Collections.emptyMap())));
         
         final Tuple9<Long, String, String, String, Long, String, String, String,
-                Map<String, String>> res = weh.getWorkspaceInfo(34);
+                Map<String, String>> res = weh.getWorkspaceInfo(34L);
         
         compareWsInfo(res, wsTuple(64, "myws", "owner", "date", 32, "a",
                 "r", "unlocked", Collections.emptyMap()));
     }
 
     @Test
-    public void getObjectInfo3() throws Exception {
+    public void getObjectInfo() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        final String objName1 = "ObjectName1";
+
+        List<Tuple11<Long, String, String, String,
+                Long, String, Long, String, String, Long, Map<String, String>>> objList =
+                new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
+        objList.add(objTuple(1L, objName1, "sometype", "date1", 1L, "copier1",
+                1L, "wsname1", "checksum", 44, Collections.emptyMap()));
+
+        List<List<String>> pathList = new ArrayList<>();
+        List<String> path1 = new ArrayList<>();
+        path1.add("1/1/1");
+        pathList.add(path1);
+
+        when(wscli.administer(any()))
+                .thenReturn(new UObject(new GetObjectInfo3Results().withInfos(objList).withPaths(pathList)));
+
+        compareObjInfo(weh.getObjectInfo("1/1/1"),
+                objTuple(1L, objName1, "sometype", "date1", 1L, "copier1",
+                                1L, "wsname1", "checksum", 44, Collections.emptyMap()));
+    }
+
+    @Test
+    public void getObjectsInfo() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
         final WorkspaceClient wscli = mock(WorkspaceClient.class);
         when(clonecli.getClient()).thenReturn(wscli);
@@ -144,32 +175,12 @@ public class WorkspaceEventHandlerTest {
         when(wscli.administer(any()))
                 .thenReturn(new UObject(new GetObjectInfo3Results().withInfos(objList).withPaths(pathList)));
 
-        final List<String> objRefs = new ArrayList<>();
-        objRefs.add("1/1/1");
-        objRefs.add("1/2/1");
-        final GetObjectInfo3Results getObjInfo3Results = weh.getObjectInfo3(objRefs, 1L, 1L);
-
-        final Tuple11<Long, String, String, String, Long, String,
-                Long, String, String, Long, Map<String, String>> infoExpected1 =
-                objTuple(1L, objName1, "sometype", "date1", 1L, "copier1",
-                        1L, "wsname1", "checksum", 44, Collections.emptyMap());
-        final Tuple11<Long, String, String, String, Long, String,
-                Long, String, String, Long, Map<String, String>> infoExpected2 =
-                objTuple(1L, objName2, "sometype", "date2", 1L, "copier2",
-                        2L, "wsname2", "checksum", 44, Collections.emptyMap());
-
-        final List<String> pathsGot = new ArrayList<>();
-        for (final List<String> path: getObjInfo3Results.getPaths()) {
-            if (path == null)
-                pathsGot.add(null);
-            else
-                pathsGot.add(path.get(0));
-        }
-        assertThat("incorrect path count", getObjInfo3Results.getPaths().size(), is(2));
-        assertThat("incorrect info count", getObjInfo3Results.getPaths().size(), is(2));
-
-        compareObjInfo(getObjInfo3Results.getInfos().get(0), infoExpected1);
-        compareObjInfo(getObjInfo3Results.getInfos().get(1), infoExpected2);
+        compareObjInfoMap(weh.getObjectsInfo(ImmutableList.of("1/1/1", "1/2/1")),
+                ImmutableMap.of(
+                        "1/1/1", objTuple(1L, objName1, "sometype", "date1", 1L, "copier1",
+                                1L, "wsname1", "checksum", 44, Collections.emptyMap()),
+                        "1/2/1", objTuple(1L, objName2, "sometype", "date2", 1L, "copier2",
+                                2L, "wsname2", "checksum", 44, Collections.emptyMap())));
     }
 
     public static void compareWsInfo(
@@ -593,7 +604,17 @@ public class WorkspaceEventHandlerTest {
         assertThat("incorrect md5", sd.getMD5(), is(expected.getMD5()));
         assertThat("incorrect tags", sd.getSourceTags(), is(expected.getSourceTags()));
     }
-    
+
+    public static void compareObjInfoMap(Map<String, Tuple11<Long, String, String, String,
+            Long, String, Long, String, String, Long, Map<String, String>>> got,
+                                         Map<String, Tuple11<Long, String, String, String,
+                                                 Long, String, Long, String, String, Long, Map<String, String>>> expected) {
+        assertEquals("Error in map size", got.size(), expected.size());
+        for (final String ref: got.keySet()) {
+            compareObjInfo(got.get(ref), expected.get(ref));
+        }
+    }
+
     public static Tuple9<Long, String, String, String, Long, String, String, String,
         Map<String, String>> wsTuple(
             final long wsid,

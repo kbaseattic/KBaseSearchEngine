@@ -250,22 +250,22 @@ public class NarrativeInfoCacheTest {
         final NarrativeInfoProvider wsnip = new WorkspaceNarrativeInfoProvider(weh);
 
         // no narrative info at all
-        when(weh.getWorkspaceInfo(65)).thenReturn(wsTuple(
+        when(weh.getWorkspaceInfo(65L)).thenReturn(wsTuple(
                 65, "name1", "owner1", "2018-02-08T21:55:45Z", 0, "r", "n", "unlocked",
                 Collections.emptyMap()));
 
         // only narrative id
-        when(weh.getWorkspaceInfo(1)).thenReturn(wsTuple(
+        when(weh.getWorkspaceInfo(1L)).thenReturn(wsTuple(
                 1, "name2", "owner2", "2018-02-08T21:55:57Z", 0, "r", "n", "unlocked",
                 ImmutableMap.of("narrative", "2")));
 
         // only narrative name
-        when(weh.getWorkspaceInfo(2)).thenReturn(wsTuple(
+        when(weh.getWorkspaceInfo(2L)).thenReturn(wsTuple(
                 2, "name3", "owner3", "2018-02-08T21:55:45.678Z", 0, "r", "n", "unlocked",
                 ImmutableMap.of("narrative_nice_name", "myhorridnarrative")));
 
         // full narrative info
-        when(weh.getWorkspaceInfo(42)).thenReturn(wsTuple(
+        when(weh.getWorkspaceInfo(42L)).thenReturn(wsTuple(
                 42, "name4", "owner4", "2018-02-08T21:55:50.678Z", 0, "r", "n", "unlocked",
                 ImmutableMap.of("narrative", "3", "narrative_nice_name", "mylovelynarrative")));
 

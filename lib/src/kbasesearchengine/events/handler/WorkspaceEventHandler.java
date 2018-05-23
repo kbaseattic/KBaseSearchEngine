@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 
 import com.google.common.base.Optional;
 import kbasesearchengine.events.AccessGroupEventQueue;
-import kbasesearchengine.events.ObjectEventQueue;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.DateTimeFormatterBuilder;
@@ -30,6 +29,7 @@ import kbasesearchengine.events.ChildStatusEvent;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StoredStatusEvent;
+import kbasesearchengine.events.ObjectEventQueue;
 import kbasesearchengine.events.exceptions.ErrorType;
 import kbasesearchengine.events.exceptions.FatalIndexingException;
 import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
@@ -40,6 +40,8 @@ import kbasesearchengine.events.exceptions.RetriableIndexingExceptionUncheckedWr
 import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.tools.Utils;
+import kbasesearchengine.main.WorkspaceInfoProvider;
+import kbasesearchengine.main.ObjectInfoProvider;
 import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple9;
@@ -63,7 +65,7 @@ import us.kbase.workspace.WorkspaceIdentity;
  * @author gaprice@lbl.gov
  *
  */
-public class WorkspaceEventHandler implements EventHandler {
+public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvider, ObjectInfoProvider {
     
     private final static DateTimeFormatter DATE_PARSER =
             new DateTimeFormatterBuilder()
@@ -204,9 +206,10 @@ public class WorkspaceEventHandler implements EventHandler {
      * @throws IOException if an IO exception occurs.
      * @throws JsonClientException if an error retrieving the data occurs.
      */
+    @Override
     public Tuple9<Long, String, String, String, Long, String,
                 String, String, Map<String, String>> getWorkspaceInfo(
-            final long workspaceID)
+            final Long workspaceID)
             throws IOException, JsonClientException {
 
         final Map<String, Object> command = new HashMap<>();
@@ -218,13 +221,35 @@ public class WorkspaceEventHandler implements EventHandler {
 
     /** Get the workspace information for an object from the workspace service
      * to which this handler is communicating.
-     * @param list of object refs: workspaceId/objectId/verId.
-     * @return the object info as returned from the workspace.
+     * @param an object ref: workspaceId/objectId/verId.
+     * @return object info (Tuple11<>) as returned from the workspace API.
      * @throws IOException if an IO exception occurs.
      * @throws JsonClientException if an error retrieving the data occurs.
      */
-    public GetObjectInfo3Results getObjectInfo3(
-            final List<String> objectRefs, Long includeMeta, Long ignoreErrors)
+    @Override
+    public final Tuple11<Long, String, String, String, Long,
+            String, Long, String, String, Long, Map<String, String>> getObjectInfo(
+            final  String objectRef)
+            throws IOException, JsonClientException {
+
+        final List<String> objRefs = new ArrayList<>();
+        objRefs.add(objectRef);
+        final Map<String, Tuple11<Long, String, String, String, Long, String, Long, String,
+                String, Long, Map<String, String>>> retVal = getObjectsInfo(objRefs);
+        return retVal.get(objectRef);
+    }
+
+    /** Get the workspace information for an object from the workspace service
+     * to which this handler is communicating.
+     * @param list of object refs: workspaceId/objectId/verId.
+     * @return a map of object ref and object info (Tuple11<>) as returned from the workspace API.
+     * @throws IOException if an IO exception occurs.
+     * @throws JsonClientException if an error retrieving the data occurs.
+     */
+    @Override
+    public final Map<String, Tuple11<Long, String, String, String, Long,
+            String, Long, String, String, Long, Map<String, String>>> getObjectsInfo(
+            final Iterable <? extends String> objectRefs)
             throws IOException, JsonClientException {
 
         final List<ObjectSpecification> getObjInfo3Input = new ArrayList<>();
@@ -238,11 +263,24 @@ public class WorkspaceEventHandler implements EventHandler {
         command.put("command", "getObjectInfo");
         command.put("params", new GetObjectInfo3Params()
                 .withObjects(getObjInfo3Input)
-                .withIncludeMetadata(includeMeta)
-                .withIgnoreErrors(ignoreErrors));
+                .withIncludeMetadata(1L)
+                .withIgnoreErrors(1L));
 
-        return ws.getClient().administer(new UObject(command))
+        GetObjectInfo3Results getObjInfo3Results = ws.getClient().administer(new UObject(command))
                 .asClassInstance(GetObjectInfo3Results.class);
+
+        final Map<String, Tuple11<Long, String, String, String,
+                Long, String, Long, String, String, Long, Map<String, String>>> retVal = new HashMap<>();
+
+        int index = 0;
+        final List<List<String>> resultsPaths = getObjInfo3Results.getPaths();
+        for (final List<String> path: resultsPaths) {
+            if (path != null) {
+                retVal.put(path.get(0), getObjInfo3Results.getInfos().get(index));
+                index = index + 1;
+            }
+        }
+        return retVal;
     }
 
     /** Get the workspace information for an object from the workspace service
@@ -780,8 +818,8 @@ public class WorkspaceEventHandler implements EventHandler {
                             throws IndexingException,
                                    RetriableIndexingException {
         try {
-
-            final String isPublic = getWorkspaceInfo(ev.getAccessGroupId().get()).getE6();
+            final Long wsId = Long.valueOf(ev.getAccessGroupId().get()).longValue();
+            final String isPublic = getWorkspaceInfo(wsId).getE6();
 
             return (isPublic == "n") ? false: true;
 

@@ -38,6 +38,10 @@ import kbasesearchengine.authorization.AuthInfoProvider;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import kbasesearchengine.main.WorkspaceNarrativeInfoProvider;
+import kbasesearchengine.main.WorkspaceInfoProvider;
+import kbasesearchengine.main.ObjectInfoProvider;
+import kbasesearchengine.main.WorkspaceInfoCache;
+import kbasesearchengine.main.ObjectInfoCache;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.main.GitInfo;
 import kbasesearchengine.main.LineLogger;
@@ -171,22 +175,31 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
                 new CloneableWorkspaceClientImpl(wsClient));
         final NarrativeInfoProvider narrativeInfoProvider = new NarrativeInfoCache(
                 new WorkspaceNarrativeInfoProvider(wsHandler),
-                30,
+                3600,
                 50000 * 1000);
-
         // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
         final AuthInfoProvider authInfoProvider = new AuthCache(
                 new TemporaryAuth2Client(new URL(auth2URL)).withToken(kbaseIndexerToken.getToken()),
-                2 * 3600,
+                24 * 3600,
                 50000 * 1000);
-
+        // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
+        final WorkspaceInfoProvider workspaceInfoProvider = new WorkspaceInfoCache(
+                wsHandler,
+                3600,
+                50000 * 1000);
+        // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
+        final ObjectInfoProvider objectInfoProvider = new ObjectInfoCache(
+                wsHandler,
+                3600,
+                50000 * 1000);
         search = new TemporaryNarrativePruner(
                 new WorkspaceInfoDecorator(
                         new NarrativeInfoDecorator(
                             new SearchMethods(accessGroupProvider, esStorage, ss, admins),
                             narrativeInfoProvider,
                             authInfoProvider),
-                        workspaceEventHandler));
+                        workspaceInfoProvider,
+                        objectInfoProvider));
 
         //END_CONSTRUCTOR
     }
