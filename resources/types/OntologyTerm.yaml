@@ -27,6 +27,6 @@ versions:
     keyword-type: keyword
     key-name: ontology_id
   - from-parent: true
-    path: ontology_namespace
+    path: default_namespace
     keyword-type: keyword
     key-name: ontology_name
