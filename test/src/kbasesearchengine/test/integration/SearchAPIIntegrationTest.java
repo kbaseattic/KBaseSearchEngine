@@ -455,14 +455,14 @@ public class SearchAPIIntegrationTest {
                                 .build())
                         .build(),
                 SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator")
+                        .withIsPublic(false)
                         .build(),
                 Instant.ofEpochMilli(10000),
                 null,
                 new GUID("WS:1/1/1"),
                 ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
                         "{\"whee\": \"imaprettypony1\"}",
-                ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
-                false);
+                ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))));
 
         final ObjectData expected1 = new ObjectData()
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
@@ -499,14 +499,14 @@ public class SearchAPIIntegrationTest {
                                 .build())
                         .build(),
                 SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator")
+                        .withIsPublic(false)
                         .build(),
                 Instant.ofEpochMilli(10000),
                 null,
                 new GUID("WS:1/1/1"),
                 ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
                         "{\"whee\": \"imaprettypony1\"}",
-                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
-                false);
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))));
 
         final ObjectData expected1 = new ObjectData()
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
@@ -569,14 +569,14 @@ public class SearchAPIIntegrationTest {
                                 .build())
                         .build(),
                 SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator1")
+                        .withIsPublic(false)
                         .build(),
                 Instant.ofEpochMilli(10000),
                 null,
                 new GUID("WS:1/1/1"),
                 ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
                         "{\"whee1\": \"imaprettypony1\"}",
-                        ImmutableMap.of("whee1", Arrays.asList("imaprettypony1")))),
-                false);
+                        ImmutableMap.of("whee1", Arrays.asList("imaprettypony1")))));
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -586,14 +586,14 @@ public class SearchAPIIntegrationTest {
                                 .build())
                         .build(),
                 SourceData.getBuilder(new UObject(new HashMap<>()), "objname2", "creator2")
+                        .withIsPublic(false)
                         .build(),
                 Instant.ofEpochMilli(10000),
                 null,
                 new GUID("WS:2/1/1"),
                 ImmutableMap.of(new GUID("WS:2/1/1"), new ParsedObject(
                         "{\"whee2\": \"imaprettypony2\"}",
-                        ImmutableMap.of("whee2", Arrays.asList("imaprettypony2")))),
-                false);
+                        ImmutableMap.of("whee2", Arrays.asList("imaprettypony2")))));
 
         final SearchObjectsOutput res = searchObjects(new MatchFilter());
         assertNull(res.getWorkspacesInfo());
@@ -642,14 +642,14 @@ public class SearchAPIIntegrationTest {
                                 .build())
                         .build(),
                 SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator1")
+                        .withIsPublic(false)
                         .build(),
                 Instant.ofEpochMilli(10000),
                 null,
                 new GUID("WS:1/1/1"),
                 ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
                         "{\"whee1\": \"imaprettypony1\"}",
-                        ImmutableMap.of("whee1", Arrays.asList("imaprettypony1")))),
-                false);
+                        ImmutableMap.of("whee1", Arrays.asList("imaprettypony1")))));
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -659,14 +659,14 @@ public class SearchAPIIntegrationTest {
                                 .build())
                         .build(),
                 SourceData.getBuilder(new UObject(new HashMap<>()), "objname2", "creator2")
+                        .withIsPublic(false)
                         .build(),
                 Instant.ofEpochMilli(10000),
                 null,
                 new GUID("WS:2/1/1"),
                 ImmutableMap.of(new GUID("WS:2/1/1"), new ParsedObject(
                         "{\"whee2\": \"imaprettypony2\"}",
-                        ImmutableMap.of("whee2", Arrays.asList("imaprettypony2")))),
-                false);
+                        ImmutableMap.of("whee2", Arrays.asList("imaprettypony2")))));
 
         final SearchObjectsOutput searchResults = searchObjects(new MatchFilter().withAddWorkspaceInfo(1L));
 

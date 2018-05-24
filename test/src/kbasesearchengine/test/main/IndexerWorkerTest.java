@@ -34,6 +34,7 @@ import java.util.Comparator;
 import java.util.Map;
 
 import org.junit.Test;
+import org.junit.Ignore;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 import org.mockito.invocation.InvocationOnMock;
@@ -773,8 +774,7 @@ public class IndexerWorkerTest {
                     eq(guid),
                     eq(ImmutableMap.of(
                             new GUID(guid, "subfoo", "an id2"), po2,
-                            new GUID(guid, "subfoo", "an id"), po1)),
-                    eq(false));
+                            new GUID(guid, "subfoo", "an id"), po1)));
 
         final ChildStatusEvent event = new ChildStatusEvent(StatusEvent.getBuilder(
                 storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
@@ -1210,6 +1210,8 @@ public class IndexerWorkerTest {
                 .withNullableisPublic(false)
                 .build(),
                 new StatusEventID("pid"));
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
+
         final StatusEventProcessingState res = worker.processEvent(event);
         assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
 
@@ -1340,6 +1342,7 @@ public class IndexerWorkerTest {
                 .withNullableisPublic(false)
                 .build(),
                 new StatusEventID("pid"));
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
         final StatusEventProcessingState res = worker.processEvent(event);
         assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
 

@@ -315,7 +315,7 @@ public class IndexerWorkerIntegrationTest {
     public void init() throws Exception {
         TestCommon.destroyDB(db);
     }
-    
+
     @Test
     public void testGenomeManually() throws Exception {
         final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
@@ -398,17 +398,19 @@ public class IndexerWorkerIntegrationTest {
 
         System.out.println("=========================  BEGIN PUBLIC  ======================================");
 
+        setWsPermission(wsid2, "1", "KBaseGenomeAnnotations.Assembly", false);
         setWsPermission(wsid3, "1", "KBaseGenomes.Genome", true);
 
         Set<GUID> guids = lookupIdsByKey(objectTypes, AccessFilter.create().withAccessGroups(10).withPublic(true));
-        System.out.println("GUIDs found: T, T  " + guids);
+        System.out.println("GUIDs found: Genome, 3/1/1 True, Assembly, 2/1/1 False  " + guids);
         Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(genomeId3));
         Assert.assertFalse("Set contains: " + guids.toString(), guids.contains(assemblyId2));
 
+        // Genome 3/1/1 is already set to true
         setWsPermission(wsid2, "1", "KBaseGenomeAnnotations.Assembly", true);
 
         guids = lookupIdsByKey(objectTypes, AccessFilter.create().withAccessGroups(10).withPublic(true));
-        System.out.println("GUIDs found: T, T  " + guids);
+        System.out.println("GUIDs found: Genome, 3/1/1 True, Assembly, 2/1/1 True  " + guids);
 
         Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(genomeId3));
         Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(assemblyId2));
@@ -425,26 +427,22 @@ public class IndexerWorkerIntegrationTest {
 
         System.out.println("=========================  BEGIN  PRIVATE  ======================================");
 
+        setWsPermission(wsid4, "1", "KBaseGenomeAnnotations.Assembly", true);
         setWsPermission(wsid5, "1", "KBaseGenomes.Genome", false);
 
         Set<GUID> guids = lookupIdsByKey(objectTypes, AccessFilter.create().withAccessGroups(10).withPublic(true));
-        System.out.println("GUIDs found: F, T  " + guids);
-        Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(assemblyId4));
+        System.out.println("GUIDs found: Genome, 5/1/1 False, Assembly, 4/1/1 True  " + guids);
         Assert.assertFalse("Set contains: " + guids.toString(), guids.contains(genomeId5));
+        Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(assemblyId4));
 
+        // assembly 4/1/1 already set to true
         setWsPermission(wsid5, "1", "KBaseGenomes.Genome", true);
 
         guids = lookupIdsByKey(objectTypes, AccessFilter.create().withAccessGroups(10).withPublic(true));
-        System.out.println("GUIDs found: F, F  " + guids);
+        System.out.println("GUIDs found: Genome, 5/1/1 True, Assembly, 4/1/1 True  " + guids);
+        Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(genomeId5));
         Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(assemblyId4));
-        Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(genomeId5));
 
-        setWsPermission(wsid4, "1", "KBaseGenomeAnnotations.Assembly", false);
-
-        guids = lookupIdsByKey(objectTypes, AccessFilter.create().withAccessGroups(10).withPublic(true));
-        System.out.println("GUIDs found: F, F  " + guids);
-        Assert.assertFalse("Set contains: " + guids.toString(), guids.contains(assemblyId4));
-        Assert.assertTrue("Set contains: " + guids.toString(), guids.contains(genomeId5));
         System.out.println("=========================  END  ======================================");
     }
 
@@ -634,7 +632,6 @@ public class IndexerWorkerIntegrationTest {
             Assert.assertTrue("No indexes exist for search type Genome".equals(ex.getMessage()));
         }
     }
-
 
     @Test
     public void testRenameObject() throws Exception {
