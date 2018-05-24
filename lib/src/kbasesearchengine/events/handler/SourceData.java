@@ -25,7 +25,8 @@ public class SourceData {
     private final Optional<String> version;
     private final Optional<String> md5;
     private final Set<String> sourceTags;
-    
+    private final boolean isPublic;
+
     private SourceData(
             final UObject data,
             final String name,
@@ -36,7 +37,8 @@ public class SourceData {
             final Optional<String> commitHash,
             final Optional<String> version,
             final Optional<String> md5,
-            final Set<String> sourceTags) {
+            final Set<String> sourceTags,
+            final boolean isPublic) {
         this.data = data;
         this.name = name;
         this.creator = creator;
@@ -47,6 +49,7 @@ public class SourceData {
         this.version = version;
         this.md5 = md5;
         this.sourceTags = Collections.unmodifiableSet(sourceTags);
+        this.isPublic = isPublic;
     }
     
     /** Get the data.
@@ -119,6 +122,13 @@ public class SourceData {
         return sourceTags;
     }
 
+    /** Return the flag if this source data is public or not.
+     * @return the public or private flag from the data source.
+     */
+    public boolean isPublic() {
+        return isPublic;
+     }
+
     /** Get a builder for a SourceData instance.
      * @param data the data.
      * @param name the name of the data.
@@ -128,7 +138,7 @@ public class SourceData {
     public static Builder getBuilder(final UObject data, final String name, final String creator) {
         return new Builder(data, name, creator);
     }
-    
+
     /** A builder for SourceData instances.
      * @author gaprice@lbl.gov
      *
@@ -145,7 +155,8 @@ public class SourceData {
         private Optional<String> version = Optional.absent();
         private Optional<String> md5 = Optional.absent();
         private final Set<String> sourceTags = new HashSet<>();
-        
+        private boolean isPublic;
+
         private Builder(final UObject data, final String name, final String creator) {
             Utils.nonNull(data, "data");
             Utils.notNullOrEmpty(name, "name cannot be null or the empty string");
@@ -153,6 +164,7 @@ public class SourceData {
             this.data = data;
             this.name = name;
             this.creator = creator;
+            this.isPublic = false;
         }
 
         private Optional<String> checkNullOrEmpty(final String s) {
@@ -226,13 +238,22 @@ public class SourceData {
             sourceTags.add(sourceTag);
             return this;
         }
-        
+
+        /** Add a public or private flag for the data.
+         * @param isPublic private or public flag. The default value is false.
+         * @return this builder.
+         */
+        public Builder withIsPublic(final boolean isPublic) {
+            this.isPublic = isPublic;
+            return this;
+        }
+
         /** Build the SourceData instance.
          * @return the SourceData.
          */
         public SourceData build() {
             return new SourceData(data, name, creator, copier, module, method, commitHash,
-                    version, md5, sourceTags);
+                    version, md5, sourceTags, isPublic);
         }
     }
     

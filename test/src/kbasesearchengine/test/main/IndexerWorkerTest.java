@@ -5,11 +5,15 @@ import static org.junit.Assert.fail;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import org.mockito.ArgumentCaptor;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -30,6 +34,7 @@ import java.util.Comparator;
 import java.util.Map;
 
 import org.junit.Test;
+import org.junit.Ignore;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 import org.mockito.invocation.InvocationOnMock;
@@ -63,6 +68,7 @@ import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.search.IndexingConflictException;
 import kbasesearchengine.search.IndexingStorage;
+import kbasesearchengine.search.ObjectData;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.LocationTransformType;
 import kbasesearchengine.system.ObjectTypeParsingRules;
@@ -204,8 +210,7 @@ public class IndexerWorkerTest {
                 eq(guid),
                 eq(ImmutableMap.of(
                         new GUID(guid, "subfoo", "an id2"), po2,
-                        new GUID(guid, "subfoo", "an id"), po1)),
-                eq(false));
+                        new GUID(guid, "subfoo", "an id"), po1)));
     }
     
     @Test
@@ -331,7 +336,7 @@ public class IndexerWorkerTest {
                                 "object code:1/2/3 when applying search specification foo_1"))));
         
         verify(idxStore, never()).indexObjects(
-                any(), any(), any(), any(), any(), any(), anyBoolean());
+                any(), any(), any(), any(), any(), any());
         
         verify(storage).store(eq(event), eq("OTHER"), argThat(new ThrowableMatcher(
                 new UnprocessableEventIndexingException(ErrorType.OTHER,
@@ -443,8 +448,7 @@ public class IndexerWorkerTest {
                 eq(Instant.ofEpochMilli(10000)),
                 eq(null),
                 eq(guid),
-                eq(ImmutableMap.of(new GUID(guid, "subfoo", "an id"), posub)),
-                eq(false));
+                eq(ImmutableMap.of(new GUID(guid, "subfoo", "an id"), posub)));
         
         idxOrder.verify(idxStore).indexObjects(
                 eq(rule),
@@ -452,8 +456,7 @@ public class IndexerWorkerTest {
                 eq(Instant.ofEpochMilli(10000)),
                 eq(null),
                 eq(guid),
-                eq(ImmutableMap.of(guid, po)),
-                eq(false));
+                eq(ImmutableMap.of(guid, po)));
     }
     
     @Test
@@ -563,8 +566,7 @@ public class IndexerWorkerTest {
                 eq(ImmutableMap.of(
                         new GUID(guid, "subfoo", "an id2"), po2,
                         new GUID(guid, "subfoo", "an id3"), po3,
-                        new GUID(guid, "subfoo", "an id"), po1)),
-                eq(false));
+                        new GUID(guid, "subfoo", "an id"), po1)));
     }
     
     @Test
@@ -663,7 +665,7 @@ public class IndexerWorkerTest {
                         "Object code:1/2/3 has 3 subobjects, exceeding the limit of 2"))));
         
         verify(idxStore, never()).indexObjects(
-                any(), any(), any(), any(), any(), any(), anyBoolean());
+                any(), any(), any(), any(), any(), any());
         
         verify(storage).setProcessingState(
                 eq(new StatusEventID("myid")),
@@ -772,8 +774,7 @@ public class IndexerWorkerTest {
                     eq(guid),
                     eq(ImmutableMap.of(
                             new GUID(guid, "subfoo", "an id2"), po2,
-                            new GUID(guid, "subfoo", "an id"), po1)),
-                    eq(false));
+                            new GUID(guid, "subfoo", "an id"), po1)));
 
         final ChildStatusEvent event = new ChildStatusEvent(StatusEvent.getBuilder(
                 storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
@@ -976,7 +977,7 @@ public class IndexerWorkerTest {
                                 "code:1/2/3:subfoo/an id2, got empty array"))));
         
         verify(idxStore, never()).indexObjects(
-                any(), any(), any(), any(), any(), any(), anyBoolean());
+                any(), any(), any(), any(), any(), any());
         
         verify(storage).store(eq(event), eq("LOCATION_ERROR"), argThat(new ThrowableMatcher(
                 new UnprocessableEventIndexingException(ErrorType.LOCATION_ERROR,
@@ -1087,13 +1088,276 @@ public class IndexerWorkerTest {
                         "GUID code:4/5/6 not found"))));
         
         verify(idxStore, never()).indexObjects(
-                any(), any(), any(), any(), any(), any(), anyBoolean());
+                any(), any(), any(), any(), any(), any());
         
         verify(storage).store(eq(event), eq("GUID_NOT_FOUND"), argThat(new ThrowableMatcher(
                 new UnprocessableEventIndexingException(ErrorType.GUID_NOT_FOUND,
                         "GUID code:4/5/6 not found"))));
     }
-    
+
+    @Test
+    public void indexDependentGUIDPublic() throws Exception {
+        /* tests if the dependent object is indexed with the right permission. */
+        final GUID guid = new GUID("code:1/2/3");
+        final GUID dependencyGUID = new GUID("code:4/5/6");
+        final SearchObjectType dependentType = new SearchObjectType("Assembly", 1);
+        final Map<String, Object> data = ImmutableMap.of("assy_ref", dependencyGUID.toString());
+
+        final EventHandler ws = mock(EventHandler.class);
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final IndexingStorage idxStore = mock(IndexingStorage.class);
+        final TypeStorage typeStore = mock(TypeStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        final kbasesearchengine.search.PostProcessing pp = mock(kbasesearchengine.search.PostProcessing.class);
+
+        final Path tempDir = Paths.get(TestCommon.getTempDir()).toAbsolutePath()
+                .resolve("IndexerWorkerTest");
+        deleteRecursively(tempDir);
+
+        when(ws.getStorageCode()).thenReturn("code");
+
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
+
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
+
+        when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
+
+        when(ws.load(eq(Arrays.asList(guid)), any(Path.class)))
+                .thenAnswer(new Answer<SourceData>() {
+
+                    @Override
+                    public SourceData answer(final InvocationOnMock inv) throws Throwable {
+                        final Path path = inv.getArgument(1);
+                        new ObjectMapper().writeValue(path.toFile(), data);
+                        return SourceData.getBuilder(
+                                new UObject(path.toFile()), "myobj", "somedude")
+                                .withNullableMD5("md5")
+                                .withIsPublic(false)  // set to false
+                                .build();
+                    }
+                });
+
+        when(ws.load(eq(Arrays.asList(guid, dependencyGUID)), any(Path.class)))
+                .thenAnswer(new Answer<SourceData>() {
+
+                    @Override
+                    public SourceData answer(final InvocationOnMock inv) throws Throwable {
+                        final Path path = inv.getArgument(1);
+                        new ObjectMapper().writeValue(path.toFile(), data);
+                        return SourceData.getBuilder(
+                                new UObject(path.toFile()), "myobj", "somedude")
+                                .withNullableMD5("md5")
+                                .withIsPublic(true)   // set to true
+                                .build();
+                    }
+                });
+
+        final StorageObjectType storageObjectType = StorageObjectType
+                .fromNullableVersion("code", "KBaseGenome.Genome", 3);
+
+        final StorageObjectType dependentObjectType = new StorageObjectType("code", "Assembly");
+
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1), storageObjectType)
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("assy_ref"))
+                        .withTransform(Transform.guid(dependentType))
+                        .build())
+                .build();
+
+        final ObjectTypeParsingRules depRule = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1), dependentObjectType)
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("assy_ref"))
+                        .withTransform(Transform.guid(dependentType))
+                        .build())
+                .build();
+
+        when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
+
+        when(typeStore.listObjectTypeParsingRules(dependentObjectType)).thenReturn(set(depRule));
+
+        when(typeStore.getObjectTypeParsingRules(dependentType)).thenReturn(
+                ObjectTypeParsingRules.getBuilder(
+                        dependentType,
+                        new StorageObjectType("code", "Assembly"))
+                        .build());
+
+        when(ws.buildReferencePaths(Arrays.asList(guid), set(dependencyGUID)))
+                .thenReturn(ImmutableMap.of(dependencyGUID, "code:1/2/3;code:4/5/6"));
+
+        when(ws.resolveReferences(Arrays.asList(guid), set(dependencyGUID)))
+                .thenReturn(set(new ResolvedReference(dependencyGUID, dependencyGUID,
+                        new StorageObjectType("code", "Assembly"), Instant.ofEpochMilli(10000))));
+
+        when(idxStore.checkParentGuidsExist(set(dependencyGUID)))
+                .thenReturn(ImmutableMap.of(dependencyGUID, false));
+
+        // i.e. checkParentGuidsExist *does not* imply the indexing records exist
+        // because it appears that it doesn't because the parent / access document is written
+        // before the data documents, so race conditions can cause a problem
+
+        when(idxStore.getObjectsByIds(set(dependencyGUID), pp)).
+                thenReturn(Arrays.asList(ObjectData.getBuilder(
+                        dependencyGUID, dependentType).build()));
+
+        final ChildStatusEvent event = new ChildStatusEvent(StatusEvent.getBuilder(
+                storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("2")
+                .withNullableVersion(3)
+                .withNullableisPublic(false)
+                .build(),
+                new StatusEventID("pid"));
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
+
+        final StatusEventProcessingState res = worker.processEvent(event);
+        assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
+
+        ArgumentCaptor<SourceData> srcData = ArgumentCaptor.forClass(SourceData.class);
+        ArgumentCaptor<GUID> testGuid = ArgumentCaptor.forClass(GUID.class);
+
+        verify(idxStore, times(1)).indexObjects(
+                any(), srcData.capture(), any(), any(), testGuid.capture(), any());
+        assertEquals(new Integer(4), testGuid.getValue().getAccessGroupId());
+        assertEquals("5", testGuid.getValue().getAccessGroupObjectId());
+        assertEquals(new Integer(6), testGuid.getValue().getVersion());
+
+        assertTrue(srcData.getValue().isPublic());
+    }
+
+    @Test
+    public void indexDependentGUIDPrivate() throws Exception {
+        /* tests the checking if the dependent object is indexed with the right permission. */
+        final GUID guid = new GUID("code:1/2/3");
+        final GUID dependencyGUID = new GUID("code:4/5/6");
+        final SearchObjectType dependentType = new SearchObjectType("Assembly", 1);
+        final Map<String, Object> data = ImmutableMap.of("assy_ref", dependencyGUID.toString());
+
+        final EventHandler ws = mock(EventHandler.class);
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final IndexingStorage idxStore = mock(IndexingStorage.class);
+        final TypeStorage typeStore = mock(TypeStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+        final kbasesearchengine.search.PostProcessing pp = mock(kbasesearchengine.search.PostProcessing.class);
+
+        final Path tempDir = Paths.get(TestCommon.getTempDir()).toAbsolutePath()
+                .resolve("IndexerWorkerTest");
+        deleteRecursively(tempDir);
+
+        when(ws.getStorageCode()).thenReturn("code");
+
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
+
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
+
+        when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
+
+        when(ws.load(eq(Arrays.asList(guid)), any(Path.class)))
+                .thenAnswer(new Answer<SourceData>() {
+
+                    @Override
+                    public SourceData answer(final InvocationOnMock inv) throws Throwable {
+                        final Path path = inv.getArgument(1);
+                        new ObjectMapper().writeValue(path.toFile(), data);
+                        return SourceData.getBuilder(
+                                new UObject(path.toFile()), "myobj", "somedude")
+                                .withNullableMD5("md5")
+                                .withIsPublic(true)
+                                .build();
+                    }
+                });
+
+        when(ws.load(eq(Arrays.asList(guid, dependencyGUID)), any(Path.class)))
+                .thenAnswer(new Answer<SourceData>() {
+
+                    @Override
+                    public SourceData answer(final InvocationOnMock inv) throws Throwable {
+                        final Path path = inv.getArgument(1);
+                        new ObjectMapper().writeValue(path.toFile(), data);
+                        return SourceData.getBuilder(
+                                new UObject(path.toFile()), "myobj", "somedude")
+                                .withNullableMD5("md5")
+                                .withIsPublic(false)
+                                .build();
+                    }
+                });
+
+        final StorageObjectType storageObjectType = StorageObjectType
+                .fromNullableVersion("code", "KBaseGenome.Genome", 3);
+
+        final StorageObjectType dependentObjectType = new StorageObjectType("code", "Assembly");
+
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1), storageObjectType)
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("assy_ref"))
+                        .withTransform(Transform.guid(dependentType))
+                        .build())
+                .build();
+
+        final ObjectTypeParsingRules depRule = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("foo", 1), dependentObjectType)
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("assy_ref"))
+                        .withTransform(Transform.guid(dependentType))
+                        .build())
+                .build();
+
+        when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
+
+        when(typeStore.listObjectTypeParsingRules(dependentObjectType)).thenReturn(set(depRule));
+
+        when(typeStore.getObjectTypeParsingRules(dependentType)).thenReturn(
+                ObjectTypeParsingRules.getBuilder(
+                        dependentType,
+                        new StorageObjectType("code", "Assembly"))
+                        .build());
+
+        when(ws.buildReferencePaths(Arrays.asList(guid), set(dependencyGUID)))
+                .thenReturn(ImmutableMap.of(dependencyGUID, "code:1/2/3;code:4/5/6"));
+
+        when(ws.resolveReferences(Arrays.asList(guid), set(dependencyGUID)))
+                .thenReturn(set(new ResolvedReference(dependencyGUID, dependencyGUID,
+                        new StorageObjectType("code", "Assembly"), Instant.ofEpochMilli(10000))));
+
+        when(idxStore.checkParentGuidsExist(set(dependencyGUID)))
+                .thenReturn(ImmutableMap.of(dependencyGUID, false));
+
+        // i.e. checkParentGuidsExist *does not* imply the indexing records exist
+        // because it appears that it doesn't because the parent / access document is written
+        // before the data documents, so race conditions can cause a problem
+
+        when(idxStore.getObjectsByIds(set(dependencyGUID), pp)).
+                thenReturn(Arrays.asList(ObjectData.getBuilder(
+                        dependencyGUID, dependentType).build()));
+
+        final ChildStatusEvent event = new ChildStatusEvent(StatusEvent.getBuilder(
+                storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("2")
+                .withNullableVersion(3)
+                .withNullableisPublic(false)
+                .build(),
+                new StatusEventID("pid"));
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
+        final StatusEventProcessingState res = worker.processEvent(event);
+        assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
+
+        ArgumentCaptor<SourceData> srcData = ArgumentCaptor.forClass(SourceData.class);
+        ArgumentCaptor<GUID> testGuid = ArgumentCaptor.forClass(GUID.class);
+
+        verify(idxStore, times(1)).indexObjects(
+                any(), srcData.capture(), any(), any(), testGuid.capture(), any());
+        assertEquals(new Integer(4), testGuid.getValue().getAccessGroupId());
+        assertEquals("5", testGuid.getValue().getAccessGroupObjectId());
+        assertEquals(new Integer(6), testGuid.getValue().getVersion());
+
+        assertFalse(srcData.getValue().isPublic());
+    }
+
     @Test
     public void skipEvent() throws Exception {
         /* tests the handling of events where no search specifications are available. */
@@ -1255,7 +1519,7 @@ public class IndexerWorkerTest {
                         "No event handler for storage code CODE is registered"))));
         
         verify(idxStore, never()).indexObjects(
-                any(), any(), any(), any(), any(), any(), anyBoolean());
+                any(), any(), any(), any(), any(), any());
         
         verify(storage).setProcessingState(
                 eq(new StatusEventID("an id")),
@@ -1331,7 +1595,7 @@ public class IndexerWorkerTest {
                 new FatalIndexingException(ErrorType.OTHER, "WS is super broke yo"))));
         
         verify(idxStore, never()).indexObjects(
-                any(), any(), any(), any(), any(), any(), anyBoolean());
+                any(), any(), any(), any(), any(), any());
         
         verify(storage).store(eq(event), eq("OTHER"), argThat(new ThrowableMatcher(
                 new FatalIndexingException(ErrorType.OTHER, "WS is super broke yo"))));
@@ -1412,6 +1676,6 @@ public class IndexerWorkerTest {
         verify(logger).logError(String.format(errmsg, 2));
         
         verify(idxStore, never()).indexObjects(
-                any(), any(), any(), any(), any(), any(), anyBoolean());
+                any(), any(), any(), any(), any(), any());
     }
 }

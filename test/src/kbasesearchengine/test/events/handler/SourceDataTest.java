@@ -36,6 +36,7 @@ public class SourceDataTest {
         assertThat("incorrect version", sd.getVersion(), is(Optional.absent()));
         assertThat("incorrect md5", sd.getMD5(), is(Optional.absent()));
         assertThat("incorrect tags", sd.getSourceTags(), is(set()));
+        assertThat("incorrect permission", sd.isPublic(), is(false));
     }
     
     @Test
@@ -50,6 +51,7 @@ public class SourceDataTest {
                 .withNullableMD5("md5")
                 .withSourceTag("refdata")
                 .withSourceTag("testworkspace")
+                .withIsPublic(true)
                 .build();
         
         assertThat("incorrect data", sd.getData().asClassInstance(Map.class),
@@ -63,6 +65,7 @@ public class SourceDataTest {
         assertThat("incorrect version", sd.getVersion(), is(Optional.of("ver")));
         assertThat("incorrect md5", sd.getMD5(), is(Optional.of("md5")));
         assertThat("incorrect tags", sd.getSourceTags(), is(set("refdata", "testworkspace")));
+        assertThat("incorrect permission", sd.isPublic(), is(true));
     }
     
     @Test
@@ -88,6 +91,7 @@ public class SourceDataTest {
         assertThat("incorrect version", sd.getVersion(), is(Optional.absent()));
         assertThat("incorrect md5", sd.getMD5(), is(Optional.absent()));
         assertThat("incorrect tags", sd.getSourceTags(), is(set()));
+        assertThat("incorrect permission", sd.isPublic(), is(false));
     }
     
     @Test
@@ -113,6 +117,7 @@ public class SourceDataTest {
         assertThat("incorrect version", sd.getVersion(), is(Optional.absent()));
         assertThat("incorrect md5", sd.getMD5(), is(Optional.absent()));
         assertThat("incorrect tags", sd.getSourceTags(), is(set()));
+        assertThat("incorrect permission", sd.isPublic(), is(false));
     }
     
     @Test

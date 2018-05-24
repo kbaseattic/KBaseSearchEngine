@@ -543,7 +543,7 @@ public class IndexerWorker implements Stoppable {
                         parsedRet.guidToObj.size(), toVerRep(rule.getGlobalObjectType()),
                         parsingTime));
                 long t3 = System.currentTimeMillis();
-                indexObjectInStorage(guid, timestamp, isPublic, obj, rule,
+                indexObjectInStorage(guid, timestamp, obj, rule,
                         parsedRet.guidToObj, parsedRet.parentJson);
                 long indexTime = System.currentTimeMillis() - t3;
                 logger.logInfo("[Indexer]   " + toVerRep(rule.getGlobalObjectType()) +
@@ -562,14 +562,12 @@ public class IndexerWorker implements Stoppable {
     private void indexObjectInStorage(
             final GUID guid,
             final Instant timestamp,
-            final boolean isPublic,
             final SourceData obj,
             final ObjectTypeParsingRules rule,
             final Map<GUID, ParsedObject> guidToObj,
             final String parentJson)
             throws InterruptedException, IndexingException {
-        final List<?> input = Arrays.asList(rule, obj, timestamp, parentJson, guid, guidToObj,
-                isPublic);
+        final List<?> input = Arrays.asList(rule, obj, timestamp, parentJson, guid, guidToObj);
         retrier.retryCons(i -> indexObjectInStorage(i), input, null);
     }
 
@@ -581,11 +579,10 @@ public class IndexerWorker implements Stoppable {
         final GUID guid = (GUID) input.get(4);
         @SuppressWarnings("unchecked")
         final Map<GUID, ParsedObject> guidToObj = (Map<GUID, ParsedObject>) input.get(5);
-        final Boolean isPublic = (Boolean) input.get(6);
-        
+
         try {
             indexingStorage.indexObjects(
-                    rule, obj, timestamp, parentJson, guid, guidToObj, isPublic);
+                    rule, obj, timestamp, parentJson, guid, guidToObj);
         } catch (IndexingConflictException e) {
             throw new RetriableIndexingException(ErrorType.INDEXING_CONFLICT, e.getMessage(), e);
         } catch (IOException e) {

@@ -35,8 +35,7 @@ public interface IndexingStorage {
             Instant timestamp,
             String parentJsonValue,
             GUID guid,
-            ParsedObject obj,
-            boolean isPublic)
+            ParsedObject obj)
             throws IOException, IndexingConflictException;
 
     public void indexObjects(
@@ -45,8 +44,7 @@ public interface IndexingStorage {
             Instant timestamp,
             String parentJsonValue,
             GUID pguid,
-            Map<GUID, ParsedObject> idToObj,
-            boolean isPublic) 
+            Map<GUID, ParsedObject> idToObj)
             throws IOException, IndexingConflictException;
     
     /** Check that the parent objects (e.g. the access information) exists for a set of GUIDS.

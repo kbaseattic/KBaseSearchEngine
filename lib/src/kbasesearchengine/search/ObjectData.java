@@ -376,7 +376,7 @@ public class ObjectData {
     public static Builder getBuilder(final GUID guid, final SearchObjectType type) {
         return new Builder(guid, type);
     }
-    
+
     /** An {@link ObjectData} builder.
      * @author gaprice@lbl.gov
      *
