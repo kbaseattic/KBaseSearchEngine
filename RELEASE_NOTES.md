@@ -1,5 +1,12 @@
 Search Service MKII release notes
 =================================
+0.1.4
+-----
+
+* Fixed a bug where the recursively indexed objects are always indexed as private. e.g. Genome -> Assembly,
+  the Assembly is always indexed as private, irrespective of the status of the workspace in which it resides.
+  Now the public or private status of the workspace in which the recursively indexed objects reside
+  (e.g. Assembly) will be preserved while being indexed.
 
 0.1.3
 -----
