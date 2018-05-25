@@ -35,8 +35,6 @@ public class MatchFilterTest {
         assertThat("incorrect timestamp", mf.getTimestamp(), is(Optional.absent()));
         assertThat("incorrect exclude sub", mf.isExcludeSubObjects(), is(false));
         assertThat("incorrect is blacklist", mf.isSourceTagsBlacklist(), is(false));
-        assertThat("incorrect add narrative info flag", mf.addNarrativeInfo(), is(false));
-        assertThat("incorrect add workspace info flag", mf.addWorkspaceInfo(), is(false));
     }
 
     @Test
@@ -56,8 +54,6 @@ public class MatchFilterTest {
         assertThat("incorrect timestamp", mf.getTimestamp(), is(Optional.absent()));
         assertThat("incorrect exclude sub", mf.isExcludeSubObjects(), is(false));
         assertThat("incorrect is blacklist", mf.isSourceTagsBlacklist(), is(false));
-        assertThat("incorrect add narrative info flag", mf.addNarrativeInfo(), is(false));
-        assertThat("incorrect add workspace info flag", mf.addWorkspaceInfo(), is(false));
     }
     
     @Test
@@ -72,8 +68,6 @@ public class MatchFilterTest {
                 .withNullableTimestamp(new MatchValue(70000, 80000))
                 .withSourceTag("source1")
                 .withSourceTag("source2")
-                .withAddNarrativeInfo(true)
-                .withAddWorkspaceInfo(true)
                 .build();
         
         assertThat("incorrect full text", mf.getFullTextInAll(), is(Optional.of("fulltext")));
@@ -85,8 +79,6 @@ public class MatchFilterTest {
                 is(Optional.of(new MatchValue(70000, 80000))));
         assertThat("incorrect exclude sub", mf.isExcludeSubObjects(), is(true));
         assertThat("incorrect is blacklist", mf.isSourceTagsBlacklist(), is(true));
-        assertThat("incorrect add narrative info flag", mf.addNarrativeInfo(), is(true));
-        assertThat("incorrect add workspace info flag", mf.addWorkspaceInfo(), is(true));
     }
     
     @Test

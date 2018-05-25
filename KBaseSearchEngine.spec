@@ -56,8 +56,6 @@ module KBaseSearchEngine {
       source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
           data with at least one of the tags will be excluded from the search results. If missing
           or false, the default behavior is maintained.
-      addNarrativeInfo - if true, narrative info gets added to the search results. Default is false.
-      addWorkspaceInfo - if true, workspaces and objects info get added to the search results. Default is false.
     */
     typedef structure {
         string full_text_in_all;
@@ -67,8 +65,6 @@ module KBaseSearchEngine {
         mapping<string, MatchValue> lookup_in_keys;
         list<string> source_tags;
         boolean source_tags_blacklist;
-        boolean addNarrativeInfo;
-        boolean addWorkspaceInfo;
     } MatchFilter;
 
     /*
@@ -143,12 +139,18 @@ module KBaseSearchEngine {
            matched query,
       ids_only - shortcut to mark both skips as true and 
            include_highlight as false.
+      add_narrative_info - if true, narrative info gets added to the
+           search results. Default is false.
+      add_workspace_info - if true, workspaces and objects info get added
+           to the search results. Default is false.
     */
     typedef structure {
         boolean ids_only;
         boolean skip_keys;
         boolean skip_data;
         boolean include_highlight;
+        boolean add_narrative_info;
+        boolean add_workspace_info;
     } PostProcessing;
 
     /*
@@ -156,9 +158,9 @@ module KBaseSearchEngine {
       object_types - list of the types of objects to search on (optional). The
                      function will search on all objects if the list is not specified
                      or is empty. The list size must be less than 50.
-      match_filter - see MatchFilter (optional).
+      match_filter - see MatchFilter.
       sorting_rules - see SortingRule (optional).
-      access_filter - see AccessFilter (optional).
+      access_filter - see AccessFilter.
       pagination - see Pagination (optional).
       post_processing - see PostProcessing (optional).
     */

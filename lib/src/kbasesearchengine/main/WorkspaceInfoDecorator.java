@@ -76,8 +76,9 @@ public class WorkspaceInfoDecorator implements SearchInterface {
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
         SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
-        if (params.getMatchFilter() != null) {
-            if (params.getMatchFilter().getAddWorkspaceInfo() != null) {
+        if (params.getPostProcessing() != null) {
+            if (params.getPostProcessing().getAddWorkspaceInfo() != null &&
+                    params.getPostProcessing().getAddWorkspaceInfo() == 1) {
                 searchObjsOutput = searchObjsOutput
                         .withWorkspacesInfo(addWorkspacesInfo(
                                 searchObjsOutput.getObjects(),
@@ -94,8 +95,9 @@ public class WorkspaceInfoDecorator implements SearchInterface {
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
         GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
-        if (params.getMatchFilter() != null) {
-            if (params.getMatchFilter().getAddWorkspaceInfo() != null) {
+        if (params.getPostProcessing() != null) {
+            if (params.getPostProcessing().getAddWorkspaceInfo() != null &&
+                    params.getPostProcessing().getAddWorkspaceInfo() == 1) {
                 getObjsOutput = getObjsOutput
                         .withWorkspacesInfo(addWorkspacesInfo(
                                 getObjsOutput.getObjects(),
@@ -162,15 +164,16 @@ public class WorkspaceInfoDecorator implements SearchInterface {
         for (final GUID guid: guidsSet) {
             objRefs.add(guid.toRefString());
         }
+        if (!objRefs.isEmpty()) {
+            final GetObjectInfo3Results getObjInfo3Results = weh.getObjectInfo3(objRefs, 1L, 1L);
 
-        final GetObjectInfo3Results getObjInfo3Results = weh.getObjectInfo3(objRefs, 1L, 1L);
-
-        int index = 0;
-        final List<List<String>> resultsPaths = getObjInfo3Results.getPaths();
-        for (final List<String> path: resultsPaths) {
-            if (path != null) {
-                retVal.put(path.get(0), getObjInfo3Results.getInfos().get(index));
-                index = index + 1;
+            int index = 0;
+            final List<List<String>> resultsPaths = getObjInfo3Results.getPaths();
+            for (final List<String> path : resultsPaths) {
+                if (path != null) {
+                    retVal.put(path.get(0), getObjInfo3Results.getInfos().get(index));
+                    index = index + 1;
+                }
             }
         }
         return retVal;

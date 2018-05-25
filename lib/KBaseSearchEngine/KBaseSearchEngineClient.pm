@@ -132,8 +132,6 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 	source_tags has a value which is a reference to a list where each element is a string
 	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
-	addNarrativeInfo has a value which is a KBaseSearchEngine.boolean
-	addWorkspaceInfo has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -173,8 +171,6 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 	source_tags has a value which is a reference to a list where each element is a string
 	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
-	addNarrativeInfo has a value which is a KBaseSearchEngine.boolean
-	addWorkspaceInfo has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -282,8 +278,6 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 	source_tags has a value which is a reference to a list where each element is a string
 	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
-	addNarrativeInfo has a value which is a KBaseSearchEngine.boolean
-	addWorkspaceInfo has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -312,6 +306,8 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
+	add_narrative_info has a value which is a KBaseSearchEngine.boolean
+	add_workspace_info has a value which is a KBaseSearchEngine.boolean
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
@@ -403,8 +399,6 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 	source_tags has a value which is a reference to a list where each element is a string
 	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
-	addNarrativeInfo has a value which is a KBaseSearchEngine.boolean
-	addWorkspaceInfo has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -433,6 +427,8 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
+	add_narrative_info has a value which is a KBaseSearchEngine.boolean
+	add_workspace_info has a value which is a KBaseSearchEngine.boolean
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
@@ -583,6 +579,8 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
+	add_narrative_info has a value which is a KBaseSearchEngine.boolean
+	add_workspace_info has a value which is a KBaseSearchEngine.boolean
 boolean is an int
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
@@ -592,8 +590,6 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 	source_tags has a value which is a reference to a list where each element is a string
 	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
-	addNarrativeInfo has a value which is a KBaseSearchEngine.boolean
-	addWorkspaceInfo has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -687,6 +683,8 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
+	add_narrative_info has a value which is a KBaseSearchEngine.boolean
+	add_workspace_info has a value which is a KBaseSearchEngine.boolean
 boolean is an int
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
@@ -696,8 +694,6 @@ MatchFilter is a reference to a hash where the following keys are defined:
 	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 	source_tags has a value which is a reference to a list where each element is a string
 	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
-	addNarrativeInfo has a value which is a KBaseSearchEngine.boolean
-	addWorkspaceInfo has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -1207,8 +1203,6 @@ list<string> source_tags - source tags are arbitrary strings applied to data at 
 source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
     data with at least one of the tags will be excluded from the search results. If missing
     or false, the default behavior is maintained.
-addNarrativeInfo - if true, narrative info gets added to the search results. Default is false.
-addWorkspaceInfo - if true, workspace and object info get added to the search results. Default is false.
 
 
 =item Definition
@@ -1224,8 +1218,6 @@ exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 source_tags has a value which is a reference to a list where each element is a string
 source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
-addNarrativeInfo has a value which is a KBaseSearchEngine.boolean
-addWorkspaceInfo has a value which is a KBaseSearchEngine.boolean
 
 </pre>
 
@@ -1241,8 +1233,6 @@ exclude_subobjects has a value which is a KBaseSearchEngine.boolean
 lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
 source_tags has a value which is a reference to a list where each element is a string
 source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
-addNarrativeInfo has a value which is a KBaseSearchEngine.boolean
-addWorkspaceInfo has a value which is a KBaseSearchEngine.boolean
 
 
 =end text
@@ -1471,6 +1461,10 @@ include_highlight - include highlights of fields that
      matched query,
 ids_only - shortcut to mark both skips as true and 
      include_highlight as false.
+add_narrative_info - if true, narrative info gets added to the
+     search results. Default is false.
+add_workspace_info - if true, workspaces and objects info get added
+     to the search results. Default is false.
 
 
 =item Definition
@@ -1483,6 +1477,8 @@ ids_only has a value which is a KBaseSearchEngine.boolean
 skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
 include_highlight has a value which is a KBaseSearchEngine.boolean
+add_narrative_info has a value which is a KBaseSearchEngine.boolean
+add_workspace_info has a value which is a KBaseSearchEngine.boolean
 
 </pre>
 
@@ -1495,6 +1491,8 @@ ids_only has a value which is a KBaseSearchEngine.boolean
 skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
 include_highlight has a value which is a KBaseSearchEngine.boolean
+add_narrative_info has a value which is a KBaseSearchEngine.boolean
+add_workspace_info has a value which is a KBaseSearchEngine.boolean
 
 
 =end text
@@ -1776,6 +1774,13 @@ search_time - common time in milliseconds spent.
 mapping<access_group_id, narrative_info> access_group_narrative_info - information about
    the workspaces in which the objects in the results reside. This data only applies to
    workspace objects.
+mapping<access_group_id, Workspace.workspace_info> workspaces_info - information about
+   the workspaces in which the objects in the results reside. This data only applies to
+   workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
+   in the search results is saved in this mapping.
+mapping<obj_ref, Workspace.object_info> objects_info - information about each object in the
+   search results. This data only applies to workspace objects. The tuple11 value returned by
+   get_object_info3() for each object in the search results is saved in the mapping.
 
 
 =item Definition
@@ -1825,6 +1830,9 @@ objects_info has a value which is a reference to a hash where the key is a KBase
 =item Description
 
 Input parameters for get_objects method.
+    guids - list of guids
+    post_processing - see PostProcessing (optional).
+    match_filter - see MatchFilter (optional).
 
 
 =item Definition
@@ -1868,6 +1876,13 @@ Output results of get_objects method.
 mapping<access_group_id, narrative_info> access_group_narrative_info - information about
    the workspaces in which the objects in the results reside. This data only applies to
    workspace objects.
+mapping<access_group_id, Workspace.workspace_info> workspaces_info - information about
+   the workspaces in which the objects in the results reside. This data only applies to
+   workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
+   in the search results is saved in this mapping.
+mapping<obj_ref, Workspace.object_info> objects_info - information about each object in the
+   search results. This data only applies to workspace objects. The tuple11 value returned by
+   get_object_info3() for each object in the search results is saved in the mapping.
 
 
 =item Definition

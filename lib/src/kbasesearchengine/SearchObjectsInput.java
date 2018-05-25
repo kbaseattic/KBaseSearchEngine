@@ -58,8 +58,6 @@ public class SearchObjectsInput {
      * source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
      *     data with at least one of the tags will be excluded from the search results. If missing
      *     or false, the default behavior is maintained.
-     * addNarrativeInfo - if true, narrative info gets added to the search results. Default is false.
-     * addWorkspaceInfo - if true, workspace and object info get added to the search results. Default is false.
      * </pre>
      * 
      */
@@ -104,6 +102,10 @@ public class SearchObjectsInput {
      *      matched query,
      * ids_only - shortcut to mark both skips as true and 
      *      include_highlight as false.
+     * add_narrative_info - if true, narrative info gets added to the
+     *      search results. Default is false.
+     * add_workspace_info - if true, workspaces and objects info get added
+     *      to the search results. Default is false.
      * </pre>
      * 
      */
@@ -143,8 +145,6 @@ public class SearchObjectsInput {
      * source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
      *     data with at least one of the tags will be excluded from the search results. If missing
      *     or false, the default behavior is maintained.
-     * addNarrativeInfo - if true, narrative info gets added to the search results. Default is false.
-     * addWorkspaceInfo - if true, workspace and object info get added to the search results. Default is false.
      * </pre>
      * 
      */
@@ -170,8 +170,6 @@ public class SearchObjectsInput {
      * source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
      *     data with at least one of the tags will be excluded from the search results. If missing
      *     or false, the default behavior is maintained.
-     * addNarrativeInfo - if true, narrative info gets added to the search results. Default is false.
-     * addWorkspaceInfo - if true, workspace and object info get added to the search results. Default is false.
      * </pre>
      * 
      */
@@ -284,6 +282,10 @@ public class SearchObjectsInput {
      *      matched query,
      * ids_only - shortcut to mark both skips as true and 
      *      include_highlight as false.
+     * add_narrative_info - if true, narrative info gets added to the
+     *      search results. Default is false.
+     * add_workspace_info - if true, workspaces and objects info get added
+     *      to the search results. Default is false.
      * </pre>
      * 
      */
@@ -304,6 +306,10 @@ public class SearchObjectsInput {
      *      matched query,
      * ids_only - shortcut to mark both skips as true and 
      *      include_highlight as false.
+     * add_narrative_info - if true, narrative info gets added to the
+     *      search results. Default is false.
+     * add_workspace_info - if true, workspaces and objects info get added
+     *      to the search results. Default is false.
      * </pre>
      * 
      */
