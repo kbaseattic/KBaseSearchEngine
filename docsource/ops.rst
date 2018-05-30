@@ -68,11 +68,13 @@ In addition, given that there can be as many as a thousand indices for KBase dat
 
 It is a good practice to make the mapping strict ("dynamic": "strict") for each type (data and access) in the index. Strict mappings prevent the mapping from being modified dynamically during ingest time.
 
-Update the settings section below the mapping. The number of shards and replicas must be decided on based on your capacity planning rules. It is costly to change the number of shards, so choose wisely! Make sure not to exceed 600 shards for any node in the system. Increase number of replicas to improve availability. In general,
+Update the settings section below the mapping. The number of shards and replicas must be decided on based on your capacity planning rules. It is costly to change the number of shards, so choose wisely! In general, follow these rules and limits.
 
 increase write speed => more shards
 
-increase read speed => more replicas
+increase read speed (availability) => more replicas
+
+max shards per node = 600
 
 max shard size = ~50GB
 
