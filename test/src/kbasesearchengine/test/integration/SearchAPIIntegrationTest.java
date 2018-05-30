@@ -6,10 +6,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,9 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import ch.qos.logback.classic.spi.LoggingEvent;
-import ch.qos.logback.core.Appender;
-import ch.qos.logback.classic.Logger;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.ini4j.Ini;
@@ -71,8 +64,6 @@ import kbasesearchengine.test.controllers.elasticsearch.ElasticSearchController;
 import kbasesearchengine.test.controllers.workspace.WorkspaceController;
 import kbasesearchengine.test.data.TestDataLoader;
 import kbasesearchengine.test.main.NarrativeInfoDecoratorTest;
-import org.mockito.ArgumentMatcher;
-import org.slf4j.LoggerFactory;
 import us.kbase.auth.AuthToken;
 import us.kbase.common.service.ServerException;
 import us.kbase.common.service.Tuple5;
@@ -636,53 +627,6 @@ public class SearchAPIIntegrationTest {
                 is(ImmutableMap.of("title", "a title")));
     }
 
-
-    @Test
-    public void strictMappingFail() throws Exception {
-        wsCli1.createWorkspace(new CreateWorkspaceParams()
-                .withWorkspace("narrative"));
-
-        final Map<String, Object> data = new HashMap<>();
-        data.put("source", "a long string");
-        data.put("title", "a title");
-        data.put("newField", "new field value");  // that does not exist in map
-
-        Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        final Appender mockAppender = mock(Appender.class);
-        when(mockAppender.getName()).thenReturn("MOCK");
-        root.addAppender(mockAppender);
-
-        indexStorage.indexObjects(
-                ObjectTypeParsingRules.getBuilder(
-                        new SearchObjectType("Narrative", 1),
-                        new StorageObjectType("WS", "Narrative"))
-                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("source"))
-                                .build())
-                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("title"))
-                                .build())
-                        .build(),
-                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator1")
-                        .build(),
-                Instant.ofEpochMilli(10000),
-                null,
-                new GUID("WS:1/1/1"),
-                ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
-                        new ObjectMapper().writeValueAsString(data),
-                        data.entrySet().stream().collect(Collectors.toMap(
-                                e -> e.getKey(), e -> Arrays.asList(e.getValue()))))),
-                false);
-
-        verify(mockAppender).doAppend(argThat(new ArgumentMatcher() {
-            @Override
-            public boolean matches(final Object argument) {
-                String msg = ((LoggingEvent)argument).getFormattedMessage();
-                return msg.contains("status=400") &&
-                        msg.contains("type=strict_dynamic_mapping_exception") &&
-                        msg.contains("reason=mapping set to strict, dynamic introduction of " +
-                                               "[newField] within [key] is not allowed");
-            }
-        }));
-    }
 
     /* ****** Auth client tests - to be moved to their own suite ***
      *     //TODO TEST move the auth client tests to a separate suite

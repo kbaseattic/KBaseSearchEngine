@@ -407,6 +407,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 }
             }
         }
+        else {
+            logInfo("Indexed {} item(s).", ((List)responseMap.get("items")).size());
+        }
 
         // log response data from failed index operations
         for (Object item: errorItems) {
