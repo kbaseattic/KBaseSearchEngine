@@ -1,0 +1,5 @@
+Configuration Details
+======================
+When mapping storage object type versions to search object type versions, the storage object types must be integers. This means that versions that use the format major#.minor# (as in the case of KBase Workspace types) cannot be mapped. But since Search only cares about backwards incompatible changes it therefore expects only the major# in this case.
+
+search_tools.cfg is for CLI operations (see search_tools.sh), deploy.cfg is for the service. deploy.cfg is the standard name we use for all services. Both cfgs need to be populated with the same key-values where there are duplicates. Note that the two cfgs are for separate applications - deployment and CLI. If they were merged, then there would be config items in the merged set that the service doesn't care about and the same goes for search_tools. In addtions, deploy.cfg contains templated variables that kb-sdk fills in and these templated variables won't get filled in in search_tools.cfg.
