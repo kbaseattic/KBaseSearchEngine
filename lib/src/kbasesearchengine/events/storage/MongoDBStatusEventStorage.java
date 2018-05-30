@@ -40,6 +40,10 @@ import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.tools.Utils;
 
+import javax.swing.event.DocumentEvent;
+
+import static com.mongodb.client.model.Filters.eq;
+
 /** An implementation of {@link StatusEventStorage} with MongoDB as the backend.
  * @author gaprice@lbl.gov
  *
@@ -244,7 +248,6 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         Utils.nonNull(newEvent, "newEvent");
         final Instant now = clock.instant();
         final Document doc = toStorageDocument(
-                // TODO NNOW store exception
                 newEvent.getEvent(), StatusEventProcessingState.FAIL, now)
                 .append(FLD_PARENT_ID, newEvent.getID().getId());
         addError(doc, errorCode, error);
@@ -526,4 +529,19 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
         return Optional.of(toStoredStatusEvent(ret));
     }
 
+    @Override
+    public void resetFailedEvents()
+            throws FatalRetriableIndexingException {
+
+        try {
+            db.getCollection(COL_EVENT).
+                updateMany(eq(FLD_STATUS,StatusEventProcessingState.FAIL.toString()),
+                              new Document("$set",
+                                  new Document("status",
+                                          StatusEventProcessingState.UNPROC.toString())));
+        } catch (MongoException ex) {
+            throw new FatalRetriableIndexingException(ErrorType.OTHER,
+                    "Failed to reset failed events: " + ex.getMessage(), ex);
+        }
+    }
 }

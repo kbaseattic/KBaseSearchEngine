@@ -7,6 +7,7 @@ MAINTAINER KBase Developer
 # installation scripts.
 
 # RUN apt-get update
+RUN echo 1
 
 # update jars
 RUN cd /kb/dev_container/modules/jars \

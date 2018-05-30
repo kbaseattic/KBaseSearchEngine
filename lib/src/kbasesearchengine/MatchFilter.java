@@ -39,7 +39,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "object_name",
     "timestamp",
     "exclude_subobjects",
-    "lookupInKeys",
+    "lookup_in_keys",
     "source_tags",
     "source_tags_blacklist"
 })
@@ -66,7 +66,7 @@ public class MatchFilter {
     private kbasesearchengine.MatchValue timestamp;
     @JsonProperty("exclude_subobjects")
     private Long excludeSubobjects;
-    @JsonProperty("lookupInKeys")
+    @JsonProperty("lookup_in_keys")
     private Map<String, kbasesearchengine.MatchValue> lookupInKeys;
     @JsonProperty("source_tags")
     private List<String> sourceTags;
@@ -160,12 +160,12 @@ public class MatchFilter {
         return this;
     }
 
-    @JsonProperty("lookupInKeys")
+    @JsonProperty("lookup_in_keys")
     public Map<String, kbasesearchengine.MatchValue> getLookupInKeys() {
         return lookupInKeys;
     }
 
-    @JsonProperty("lookupInKeys")
+    @JsonProperty("lookup_in_keys")
     public void setLookupInKeys(Map<String, kbasesearchengine.MatchValue> lookupInKeys) {
         this.lookupInKeys = lookupInKeys;
     }

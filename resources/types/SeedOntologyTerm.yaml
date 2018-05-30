@@ -4,4 +4,4 @@ storage-object-type: fake
 versions:
 - indexing-rules:
   - path: id
-    keyword-type: string
+    keyword-type: keyword
