@@ -1,8 +1,6 @@
 Operations
 ==============
 
-[TODO: A future PR will allow for search type versions to be alpha-numeric so we can have index names like genome_1_r1]
-
 [TODO: A future PR will implement a CLI for trickle updates from a user specified time]
 
 [TODO: A future PR will include a command to automate step 5b by creating an index based on a search type. This would reduce potential errors. This command will also take care of step 11.]
@@ -21,7 +19,7 @@ In order to make it easy for the client to search across all indices of a certai
  alias -> [indices]
  genome -> [genome_1, genome_2 ... genome_n]
 
-When reindexing is necessary, the index is reindexed to a new index with a new search type version. The first reindexing operation performed on genome_1 will result in a new index genome_1_r1 that replaces genome_1 in the genome alias. n reindexing operations performed on genome_1 will result in a new index genome_1_rn that replaces index genome_1_rn-1 in the genome alias.
+When reindexing is necessary, the index is reindexed to a new index with a new search type version. The first reindexing operation performed on genome_1 will result in a new index genome_2 that replaces genome_1 in the genome alias.
 
 Reindexing Process
 -------------------
@@ -32,7 +30,7 @@ b) add field type
 c) change field type
 d) remove field type
 
-The process involves reindexing an existing index into a new index for all of these cases. i.e. in-place reindexing is discouraged because the system may not have a recent snapshot/backup or any snapshot for recovery purposes should anything go wrong with the reindexing process.
+The process involves reindexing an existing index into a new index for all of these cases. i.e. in-place reindexing is discouraged because the system may not have a recent snapshot/backup or any snapshot for recovery purposes should anything go wrong with the reindexing process. It is recommended that all of these steps are performed atomically for one index at a time (avoid reindexing multiple indexes in parallel) since it will be difficult to track through hundreds to indexes to find out which indexes are being reindexed.
 
 In addition, given that there can be as many as a thousand indices for KBase data, maintenance can become a challenge if the process is not simple. Some level of simplicity has been achieved here by defiining a single process that covers all the reindexing cases. If necessary, the process may be further simplified through some level of automation as it matures over time.
 
@@ -46,7 +44,7 @@ In addition, given that there can be as many as a thousand indices for KBase dat
 
 1. Note current time
 
-2. Stop any workers that are performing trickle updates on the index that needs to be reindexed.
+2. Stop any workers that are performing trickle updates on the index that needs to be reindexed. Note that this will stop the trickle updates to all indexes.
 
 3. Refresh the index that needs reindexing to make sure it has been brought to a consistent state.
 
@@ -80,7 +78,7 @@ max shard size = ~50GB
 
 .. code-block:: bash
 
-    PUT kbase.genome_1_r1
+    PUT kbase.genome_2
     {
       "mappings": {
         "data": {
@@ -126,7 +124,7 @@ max shard size = ~50GB
         "index": "kbase.genome_1"
       },
       "dest": {
-        "index": "kbase.genome_1_r1",
+        "index": "kbase.genome_2",
         "version_type": "external"
       },
       "script": {
@@ -145,7 +143,7 @@ max shard size = ~50GB
         "index": "kbase.genome_1"
       },
       "dest": {
-        "index": "kbase.genome_1_r1"
+        "index": "kbase.genome_2"
       }
     }
 
@@ -160,7 +158,7 @@ max shard size = ~50GB
         }
       },
       "dest": {
-        "index": "kbase.genome_1_r1"
+        "index": "kbase.genome_2"
       }
     }
 
@@ -168,17 +166,17 @@ max shard size = ~50GB
 
 .. code-block:: bash
 
-    GET /kbase.genome_1_r1/_stats/docs,store
+    GET /kbase.genome_2/_stats/docs,store
 
 8. Run a query to specifically check the change that was applied.
 
 .. code-block:: bash
 
-    GET kbase.genome_1_r1/_search
+    GET kbase.genome_2/_search
 
    OR
 
-    GET kbase.genome_1_r1/_search
+    GET kbase.genome_2/_search
     {
      "query": {
        "match": {
@@ -204,7 +202,7 @@ max shard size = ~50GB
      "actions": [
      {
        "add": {
-         "index": "kbase.genome_1_r1",
+         "index": "kbase.genome_2",
          "alias": "kbase.genome"
          }
        },
@@ -229,7 +227,7 @@ max shard size = ~50GB
 
 11. If the change involved in the reindexing operation also requires a corresponding search type spec change (located in resources/types/genome.yml for example), then this change must be applied to the spec as well.
 
-12. Change mapping version from "1" to "_r1" in the resources/types/genome.yml search type spec and add a comment (for future reference) that describes the change that took place in the r1 reindexing operation.
+12. Change mapping version from "1" to "2" in the resources/types/genome.yml search type spec and add a comment (for future reference) that describes the change that took place in the reindexing operation.
 
 13. Generate new events for the time range for which the change was made to the data source.
 
