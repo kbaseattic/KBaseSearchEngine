@@ -479,7 +479,7 @@ public class SearchAPIIntegrationTest {
 
         final SearchObjectsOutput res = searchObjects(new MatchFilter());
 
-        assertNull(res.getWorkspacesInfo());
+        assertNull(res.getAccessGroupsInfo());
         assertNull(res.getObjectsInfo());
 
         final SearchObjectsOutput res2 = searchCli.searchObjects(
@@ -491,7 +491,7 @@ public class SearchAPIIntegrationTest {
         // Narrative info set to null, as the addNarrativeInfo flag was set to 0
         assertNull(res2.getAccessGroupNarrativeInfo());
         // workspaces and objects info set to null, by default
-        assertNull(res2.getWorkspacesInfo());
+        assertNull(res2.getAccessGroupsInfo());
         assertNull(res2.getObjectsInfo());
     }
 
@@ -615,7 +615,7 @@ public class SearchAPIIntegrationTest {
                 false);
 
         final SearchObjectsOutput res = searchObjects(new MatchFilter());
-        assertNull(res.getWorkspacesInfo());
+        assertNull(res.getAccessGroupsInfo());
         assertNull(res.getObjectsInfo());
 
         final SearchObjectsOutput searchResults = searchCli.searchObjects(
@@ -627,7 +627,7 @@ public class SearchAPIIntegrationTest {
         // Narrative info not added, set to null by default
         assertNull(res.getAccessGroupNarrativeInfo());
         // set to null, since the addWorkspaceInfo flag was set to 0
-        assertNull(res.getWorkspacesInfo());
+        assertNull(res.getAccessGroupsInfo());
         assertNull(res.getObjectsInfo());
     }
 
@@ -724,8 +724,8 @@ public class SearchAPIIntegrationTest {
                         2, "foo2", "chksum2", 44, Collections.emptyMap());
 
         // verify the values in workspacesInfo map
-        compareWsInfo(searchResults.getWorkspacesInfo().get(1L), wsInfoExpected1);
-        compareWsInfo(searchResults.getWorkspacesInfo().get(2L), wsInfoExpected2);
+        compareWsInfo(searchResults.getAccessGroupsInfo().get(1L), wsInfoExpected1);
+        compareWsInfo(searchResults.getAccessGroupsInfo().get(2L), wsInfoExpected2);
 
         // verify the values in objectsInfo map
         compareObjInfo(searchResults.getObjectsInfo().get("1/1/1"), objInfoExpected1);
@@ -742,7 +742,7 @@ public class SearchAPIIntegrationTest {
                         .withMatchFilter(new MatchFilter())
                         .withAccessFilter(new AccessFilter())
                         .withPostProcessing(new PostProcessing().withAddWorkspaceInfo(1L)));
-        assertEquals(searchResults.getWorkspacesInfo().size(), 0);
+        assertEquals(searchResults.getAccessGroupsInfo().size(), 0);
         assertEquals(searchResults.getObjectsInfo().size(), 0);
     }
 

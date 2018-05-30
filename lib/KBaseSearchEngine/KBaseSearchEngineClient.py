@@ -110,26 +110,26 @@ class KBaseSearchEngine(object):
            parameters for 'search_objects' method. object_types - list of the
            types of objects to search on (optional). The function will search
            on all objects if the list is not specified or is empty. The list
-           size must be less than 50. match_filter - see MatchFilter
-           (optional). sorting_rules - see SortingRule (optional).
-           access_filter - see AccessFilter (optional). pagination - see
-           Pagination (optional). post_processing - see PostProcessing
-           (optional).) -> structure: parameter "object_types" of list of
-           String, parameter "match_filter" of type "MatchFilter" (Optional
-           rules of defining constrains for object properties including
-           values of keywords or metadata/system properties (like object
-           name, creation time range) or full-text search in all properties.
-           boolean exclude_subobjects - don't return any subobjects in the
-           search results if true. Default false. list<string> source_tags -
-           source tags are arbitrary strings applied to data at the data
-           source (for example, the workspace service). The source_tags list
-           may optionally be populated with a set of tags that will determine
-           what data is returned in a search. By default, the list behaves as
-           a whitelist and only data with at least one of the tags will be
-           returned. source_tags_blacklist - if true, the source_tags list
-           behaves as a blacklist and any data with at least one of the tags
-           will be excluded from the search results. If missing or false, the
-           default behavior is maintained.) -> structure: parameter
+           size must be less than 50. match_filter - see MatchFilter.
+           sorting_rules - see SortingRule (optional). access_filter - see
+           AccessFilter. pagination - see Pagination (optional).
+           post_processing - see PostProcessing (optional).) -> structure:
+           parameter "object_types" of list of String, parameter
+           "match_filter" of type "MatchFilter" (Optional rules of defining
+           constrains for object properties including values of keywords or
+           metadata/system properties (like object name, creation time range)
+           or full-text search in all properties. boolean exclude_subobjects
+           - don't return any subobjects in the search results if true.
+           Default false. list<string> source_tags - source tags are
+           arbitrary strings applied to data at the data source (for example,
+           the workspace service). The source_tags list may optionally be
+           populated with a set of tags that will determine what data is
+           returned in a search. By default, the list behaves as a whitelist
+           and only data with at least one of the tags will be returned.
+           source_tags_blacklist - if true, the source_tags list behaves as a
+           blacklist and any data with at least one of the tags will be
+           excluded from the search results. If missing or false, the default
+           behavior is maintained.) -> structure: parameter
            "full_text_in_all" of String, parameter "object_name" of String,
            parameter "timestamp" of type "MatchValue" (Optional rules of
            defining constraints for values of particular term (keyword).
@@ -293,48 +293,55 @@ class KBaseSearchEngine(object):
            parameter "narrative_id" of Long, parameter "time_last_saved" of
            type "timestamp" (A timestamp in milliseconds since the epoch.),
            parameter "ws_owner_username" of String, parameter
-           "ws_owner_displayname" of String, parameter "workspaces_info" of
-           mapping from type "access_group_id" (A data source access group ID
-           (for instance, the integer ID of a workspace).) to type
-           "workspace_info" (Information about a workspace. ws_id id - the
-           numerical ID of the workspace. ws_name workspace - name of the
-           workspace. username owner - name of the user who owns (e.g.
-           created) this workspace. timestamp moddate - date when the
-           workspace was last modified. int max_objid - the maximum object ID
-           appearing in this workspace. Since cloning a workspace preserves
-           object IDs, this number may be greater than the number of objects
-           in a newly cloned workspace. permission user_permission -
-           permissions for the authenticated user of this workspace.
-           permission globalread - whether this workspace is globally
-           readable. lock_status lockstat - the status of the workspace lock.
-           usermeta metadata - arbitrary user-supplied metadata about the
-           workspace.) -> tuple of size 9: parameter "id" of type "ws_id"
-           (The unique, permanent numerical ID of a workspace.), parameter
-           "workspace" of type "ws_name" (A string used as a name for a
-           workspace. Any string consisting of alphanumeric characters and
-           "_", ".", or "-" that is not an integer is acceptable. The name
-           may optionally be prefixed with the workspace owner's user name
-           and a colon, e.g. kbasetest:my_workspace.), parameter "owner" of
-           type "username" (Login name of a KBase user account.), parameter
-           "moddate" of type "timestamp" (A time in the format
-           YYYY-MM-DDThh:mm:ssZ, where Z is either the character Z
-           (representing the UTC timezone) or the difference in time to UTC
-           in the format +/-HHMM, eg: 2012-12-17T23:24:06-0500 (EST time)
-           2013-04-03T08:56:32+0000 (UTC time) 2013-04-03T08:56:32Z (UTC
-           time)), parameter "max_objid" of Long, parameter "user_permission"
-           of type "permission" (Represents the permissions a user or users
-           have to a workspace: 'a' - administrator. All operations allowed.
-           'w' - read/write. 'r' - read. 'n' - no permissions.), parameter
-           "globalread" of type "permission" (Represents the permissions a
-           user or users have to a workspace: 'a' - administrator. All
-           operations allowed. 'w' - read/write. 'r' - read. 'n' - no
-           permissions.), parameter "lockstat" of type "lock_status" (The
-           lock status of a workspace. One of 'unlocked', 'locked', or
-           'published'.), parameter "metadata" of type "usermeta" (User
-           provided metadata about an object. Arbitrary key-value pairs
-           provided by the user.) -> mapping from String to String, parameter
-           "objects_info" of mapping from type "obj_ref" (An X/Y/Z style
-           reference) to type "object_info" (Information about an object,
+           "ws_owner_displayname" of String, parameter "access_groups_info"
+           of mapping from type "access_group_id" (A data source access group
+           ID (for instance, the integer ID of a workspace).) to type
+           "access_group_info" (The access_group_info and object_info are
+           meant to be abstractions for info from multiple data sources.
+           Until other data sources become available, definitions pertaining
+           to Workspace are being used. When other data sources are
+           available, the following variables will be moved from this
+           concrete workspace definitions, to structures with higher level
+           abstractions.) -> type "workspace_info" (Information about a
+           workspace. ws_id id - the numerical ID of the workspace. ws_name
+           workspace - name of the workspace. username owner - name of the
+           user who owns (e.g. created) this workspace. timestamp moddate -
+           date when the workspace was last modified. int max_objid - the
+           maximum object ID appearing in this workspace. Since cloning a
+           workspace preserves object IDs, this number may be greater than
+           the number of objects in a newly cloned workspace. permission
+           user_permission - permissions for the authenticated user of this
+           workspace. permission globalread - whether this workspace is
+           globally readable. lock_status lockstat - the status of the
+           workspace lock. usermeta metadata - arbitrary user-supplied
+           metadata about the workspace.) -> tuple of size 9: parameter "id"
+           of type "ws_id" (The unique, permanent numerical ID of a
+           workspace.), parameter "workspace" of type "ws_name" (A string
+           used as a name for a workspace. Any string consisting of
+           alphanumeric characters and "_", ".", or "-" that is not an
+           integer is acceptable. The name may optionally be prefixed with
+           the workspace owner's user name and a colon, e.g.
+           kbasetest:my_workspace.), parameter "owner" of type "username"
+           (Login name of a KBase user account.), parameter "moddate" of type
+           "timestamp" (A time in the format YYYY-MM-DDThh:mm:ssZ, where Z is
+           either the character Z (representing the UTC timezone) or the
+           difference in time to UTC in the format +/-HHMM, eg:
+           2012-12-17T23:24:06-0500 (EST time) 2013-04-03T08:56:32+0000 (UTC
+           time) 2013-04-03T08:56:32Z (UTC time)), parameter "max_objid" of
+           Long, parameter "user_permission" of type "permission" (Represents
+           the permissions a user or users have to a workspace: 'a' -
+           administrator. All operations allowed. 'w' - read/write. 'r' -
+           read. 'n' - no permissions.), parameter "globalread" of type
+           "permission" (Represents the permissions a user or users have to a
+           workspace: 'a' - administrator. All operations allowed. 'w' -
+           read/write. 'r' - read. 'n' - no permissions.), parameter
+           "lockstat" of type "lock_status" (The lock status of a workspace.
+           One of 'unlocked', 'locked', or 'published'.), parameter
+           "metadata" of type "usermeta" (User provided metadata about an
+           object. Arbitrary key-value pairs provided by the user.) ->
+           mapping from String to String, parameter "objects_info" of mapping
+           from type "obj_ref" (An X/Y/Z style reference) to type
+           "object_info" -> type "object_info" (Information about an object,
            including user provided metadata. obj_id objid - the numerical id
            of the object. obj_name name - the name of the object. type_string
            type - the type of the object. timestamp save_date - the save date

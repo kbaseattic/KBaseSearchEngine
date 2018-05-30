@@ -80,9 +80,9 @@ public class WorkspaceInfoDecorator implements SearchInterface {
             if (params.getPostProcessing().getAddWorkspaceInfo() != null &&
                     params.getPostProcessing().getAddWorkspaceInfo() == 1) {
                 searchObjsOutput = searchObjsOutput
-                        .withWorkspacesInfo(addWorkspacesInfo(
+                        .withAccessGroupsInfo(addWorkspacesInfo(
                                 searchObjsOutput.getObjects(),
-                                searchObjsOutput.getWorkspacesInfo()))
+                                searchObjsOutput.getAccessGroupsInfo()))
                         .withObjectsInfo(addObjectsInfo(
                                 searchObjsOutput.getObjects(),
                                 searchObjsOutput.getObjectsInfo()));

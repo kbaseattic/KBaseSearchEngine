@@ -245,6 +245,17 @@ module KBaseSearchEngine {
                   string ws_owner_displayname
                   > narrative_info;
 
+
+    /*
+    The access_group_info and object_info are meant to be abstractions for info from multiple data sources.
+    Until other data sources become available, definitions pertaining to Workspace are being used.
+    When other data sources are available, the following variables will be moved from
+    this concrete workspace definitions, to structures with higher level abstractions.
+    */
+
+    typedef Workspace.workspace_info  access_group_info;
+    typedef Workspace.object_info     object_info;
+
     /*
       Output results for 'search_objects' method.
       'pagination' and 'sorting_rules' fields show actual input for
@@ -269,8 +280,8 @@ module KBaseSearchEngine {
         int total;
         int search_time;
         mapping<access_group_id, narrative_info> access_group_narrative_info;
-        mapping<access_group_id, Workspace.workspace_info> workspaces_info;
-        mapping<obj_ref, Workspace.object_info> objects_info;
+        mapping<access_group_id, access_group_info> access_groups_info;
+        mapping<obj_ref, object_info> objects_info;
     } SearchObjectsOutput;
 
     /*

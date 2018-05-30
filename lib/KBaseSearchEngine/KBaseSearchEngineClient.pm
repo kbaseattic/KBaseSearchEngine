@@ -315,8 +315,8 @@ SearchObjectsOutput is a reference to a hash where the following keys are define
 	total has a value which is an int
 	search_time has a value which is an int
 	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
-	workspaces_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a Workspace.workspace_info
-	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
+	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
@@ -343,6 +343,7 @@ narrative_info is a reference to a list containing 5 items:
 	3: (ws_owner_username) a string
 	4: (ws_owner_displayname) a string
 timestamp is an int
+access_group_info is a Workspace.workspace_info
 workspace_info is a reference to a list containing 9 items:
 	0: (id) a Workspace.ws_id
 	1: (workspace) a Workspace.ws_name
@@ -360,21 +361,7 @@ permission is a string
 lock_status is a string
 usermeta is a reference to a hash where the key is a string and the value is a string
 obj_ref is a string
-object_info is a reference to a list containing 11 items:
-	0: (objid) a Workspace.obj_id
-	1: (name) a Workspace.obj_name
-	2: (type) a Workspace.type_string
-	3: (save_date) a Workspace.timestamp
-	4: (version) an int
-	5: (saved_by) a Workspace.username
-	6: (wsid) a Workspace.ws_id
-	7: (workspace) a Workspace.ws_name
-	8: (chsum) a string
-	9: (size) an int
-	10: (meta) a Workspace.usermeta
-obj_id is an int
-obj_name is a string
-type_string is a string
+object_info is a Workspace.object_info
 
 </pre>
 
@@ -436,8 +423,8 @@ SearchObjectsOutput is a reference to a hash where the following keys are define
 	total has a value which is an int
 	search_time has a value which is an int
 	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
-	workspaces_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a Workspace.workspace_info
-	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
+	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
@@ -464,6 +451,7 @@ narrative_info is a reference to a list containing 5 items:
 	3: (ws_owner_username) a string
 	4: (ws_owner_displayname) a string
 timestamp is an int
+access_group_info is a Workspace.workspace_info
 workspace_info is a reference to a list containing 9 items:
 	0: (id) a Workspace.ws_id
 	1: (workspace) a Workspace.ws_name
@@ -481,21 +469,7 @@ permission is a string
 lock_status is a string
 usermeta is a reference to a hash where the key is a string and the value is a string
 obj_ref is a string
-object_info is a reference to a list containing 11 items:
-	0: (objid) a Workspace.obj_id
-	1: (name) a Workspace.obj_name
-	2: (type) a Workspace.type_string
-	3: (save_date) a Workspace.timestamp
-	4: (version) an int
-	5: (saved_by) a Workspace.username
-	6: (wsid) a Workspace.ws_id
-	7: (workspace) a Workspace.ws_name
-	8: (chsum) a string
-	9: (size) an int
-	10: (meta) a Workspace.usermeta
-obj_id is an int
-obj_name is a string
-type_string is a string
+object_info is a Workspace.object_info
 
 
 =end text
@@ -1513,9 +1487,9 @@ Input parameters for 'search_objects' method.
 object_types - list of the types of objects to search on (optional). The
                function will search on all objects if the list is not specified
                or is empty. The list size must be less than 50.
-match_filter - see MatchFilter (optional).
+match_filter - see MatchFilter.
 sorting_rules - see SortingRule (optional).
-access_filter - see AccessFilter (optional).
+access_filter - see AccessFilter.
 pagination - see Pagination (optional).
 post_processing - see PostProcessing (optional).
 
@@ -1758,6 +1732,66 @@ a reference to a list containing 5 items:
 
 
 
+=head2 access_group_info
+
+=over 4
+
+
+
+=item Description
+
+The access_group_info and object_info are meant to be abstractions for info from multiple data sources.
+Until other data sources become available, definitions pertaining to Workspace are being used.
+When other data sources are available, the following variables will be moved from
+this concrete workspace definitions, to structures with higher level abstractions.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a Workspace.workspace_info
+</pre>
+
+=end html
+
+=begin text
+
+a Workspace.workspace_info
+
+=end text
+
+=back
+
+
+
+=head2 object_info
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a Workspace.object_info
+</pre>
+
+=end html
+
+=begin text
+
+a Workspace.object_info
+
+=end text
+
+=back
+
+
+
 =head2 SearchObjectsOutput
 
 =over 4
@@ -1795,8 +1829,8 @@ objects has a value which is a reference to a list where each element is a KBase
 total has a value which is an int
 search_time has a value which is an int
 access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
-workspaces_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a Workspace.workspace_info
-objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
+access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
 
 </pre>
 
@@ -1811,8 +1845,8 @@ objects has a value which is a reference to a list where each element is a KBase
 total has a value which is an int
 search_time has a value which is an int
 access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
-workspaces_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a Workspace.workspace_info
-objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
+access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
 
 
 =end text
