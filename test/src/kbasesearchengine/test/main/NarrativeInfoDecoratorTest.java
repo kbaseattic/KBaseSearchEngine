@@ -83,7 +83,8 @@ public class NarrativeInfoDecoratorTest {
          * b) the argument is just a straight pass through, we just use an identity match
          * for mockito to recognize the argument
          */
-        final SearchObjectsInput dummyInput = new SearchObjectsInput().withMatchFilter(new MatchFilter().withAddNarrativeInfo(1L));
+        final SearchObjectsInput dummyInput = new SearchObjectsInput()
+                .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L));
 
         when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
                 .withObjects(Collections.emptyList())
@@ -113,7 +114,8 @@ public class NarrativeInfoDecoratorTest {
          * for mockito to recognize the argument
          */
 
-        final SearchObjectsInput dummyInput = new SearchObjectsInput().withMatchFilter(new MatchFilter().withAddNarrativeInfo(1L));
+        final SearchObjectsInput dummyInput = new SearchObjectsInput()
+                .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L));
 
         final List<ObjectData> objectdata = Arrays.asList(
                 new ObjectData().withGuid("WS:65/2/7"),
@@ -172,7 +174,8 @@ public class NarrativeInfoDecoratorTest {
          * for mockito to recognize the argument
          */
 
-        final SearchObjectsInput dummyInput = new SearchObjectsInput().withMatchFilter(new MatchFilter().withAddNarrativeInfo(1L));
+        final SearchObjectsInput dummyInput = new SearchObjectsInput()
+                .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L));
 
         final List<ObjectData> objectdata = Arrays.asList(
                 new ObjectData().withGuid("WS:65/2/7"),
@@ -233,7 +236,8 @@ public class NarrativeInfoDecoratorTest {
          * for mockito to recognize the argument
          */
 
-        final SearchObjectsInput dummyInput = new SearchObjectsInput().withMatchFilter(new MatchFilter().withAddNarrativeInfo(1L));
+        final SearchObjectsInput dummyInput = new SearchObjectsInput()
+                .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L));
 
         final List<ObjectData> objectdata = Arrays.asList(new ObjectData().withGuid("WS:65/2/7"));
         when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
@@ -262,8 +266,9 @@ public class NarrativeInfoDecoratorTest {
          * for mockito to recognize the argument
          */
 
-        final GetObjectsInput dummyInput = new GetObjectsInput().withMatchFilter(new MatchFilter().withAddNarrativeInfo(1L));
-        
+        final GetObjectsInput dummyInput = new GetObjectsInput()
+                .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L));
+
         final List<ObjectData> objectdata = Arrays.asList(new ObjectData().withGuid("WS:42/7/21"));
         when(search.getObjects(dummyInput, "user")).thenReturn(new GetObjectsOutput()
                 .withObjects(objectdata)
