@@ -3,7 +3,7 @@ Operations
 
 [TODO: A future PR will implement a CLI for trickle updates from a user specified time]
 
-[TODO: A future PR will include a command to automate step 5b by creating an index based on a search type. This would reduce potential errors. This command will also take care of step 11.]
+[TODO: A future PR will include a CLI to automate step 5b by creating an index based on a search type. This would reduce potential errors. This command will also take care of step 11.]
 
 [TODO: Add CLI command for step 13 & 14 for generating events and running trickle updates once the CLI has been implemented]
 
