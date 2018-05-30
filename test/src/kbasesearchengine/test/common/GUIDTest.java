@@ -2,6 +2,7 @@ package kbasesearchengine.test.common;
 
 import junit.framework.Assert;
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.common.GUIDTooLongException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -110,7 +111,7 @@ public class GUIDTest {
             new GUID("WS", 1, "1", null,
                     "contig", bigSubObjId.toString());
 
-        } catch (IllegalArgumentException ex) {
+        } catch (GUIDTooLongException ex) {
             Assert.assertTrue(ex.getMessage().contains("must be no longer than "+
                     GUID.MAX_BYTES+" bytes"));
             exceptionCaught = true;

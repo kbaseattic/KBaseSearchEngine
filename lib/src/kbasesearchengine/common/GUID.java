@@ -68,7 +68,7 @@ public class GUID {
         final int guidBytes = toString().getBytes(StandardCharsets.UTF_8).length;
 
         if( guidBytes > MAX_BYTES )
-            throw new IllegalArgumentException("String representation of GUID " +
+            throw new GUIDTooLongException("String representation of GUID " +
                     "must be no longer than "+ MAX_BYTES+" bytes. Found "+guidBytes+" bytes.");
     }
     
@@ -174,7 +174,7 @@ public class GUID {
 
         } catch(UnsupportedEncodingException ex ) {
             // should never occur since the encoding is set to UTF-8 which is supported
-            throw new IOException(ex.getMessage());
+            throw new RuntimeException(ex.getMessage());
         }
 
         return encodedGUID;
