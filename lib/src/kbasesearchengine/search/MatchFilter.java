@@ -26,8 +26,6 @@ public class MatchFilter {
     private final Map<String, MatchValue> lookupInKeys;
     private final Set<String> sourceTags;
     private final boolean isSourceTagsBlacklist;
-    private final boolean addNarrativeInfo;
-    private final boolean addWorkspaceInfo;
 
     private MatchFilter(
             final boolean excludeSubObjects,
@@ -36,9 +34,7 @@ public class MatchFilter {
             final MatchValue timestamp, //TODO CODE this is gross. Make an actual date range class
             final Map<String, MatchValue> lookupInKeys,
             final Set<String> sourceTags,
-            final boolean isSourceTagsBlacklist,
-            final boolean addNarrativeInfo,
-            final boolean addWorkspaceInfo) {
+            final boolean isSourceTagsBlacklist) {
         this.excludeSubObjects = excludeSubObjects;
         this.fullTextInAll = Optional.fromNullable(fullTextInAll);
         this.objectName = Optional.fromNullable(objectName);
@@ -46,8 +42,6 @@ public class MatchFilter {
         this.lookupInKeys = Collections.unmodifiableMap(lookupInKeys);
         this.sourceTags = Collections.unmodifiableSet(sourceTags);
         this.isSourceTagsBlacklist = isSourceTagsBlacklist;
-        this.addNarrativeInfo = addNarrativeInfo;
-        this.addWorkspaceInfo = addWorkspaceInfo;
     }
 
     /** True if sub objects should be excluded from the search, default false.
@@ -100,16 +94,6 @@ public class MatchFilter {
         return isSourceTagsBlacklist;
     }
 
-    /** True if narrativeInfo should be added to search/get objects results, default false.
-     * @return True if narrativeInfo should be added .
-     */
-    public boolean addNarrativeInfo() { return addNarrativeInfo; }
-
-    /** True if workspaceInfo should be added to search/get objects results, default false.
-     * @return True if workspaceInfo should be added .
-     */
-    public boolean addWorkspaceInfo() { return addWorkspaceInfo; }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -119,8 +103,6 @@ public class MatchFilter {
 
         if (excludeSubObjects != that.excludeSubObjects) return false;
         if (isSourceTagsBlacklist != that.isSourceTagsBlacklist) return false;
-        if (addNarrativeInfo != that.addNarrativeInfo) return false;
-        if (addWorkspaceInfo != that.addWorkspaceInfo) return false;
         if (fullTextInAll != null ? !fullTextInAll.equals(that.fullTextInAll) : that.fullTextInAll != null)
             return false;
         if (objectName != null ? !objectName.equals(that.objectName) : that.objectName != null) return false;
@@ -138,8 +120,6 @@ public class MatchFilter {
         result = 31 * result + (lookupInKeys != null ? lookupInKeys.hashCode() : 0);
         result = 31 * result + (sourceTags != null ? sourceTags.hashCode() : 0);
         result = 31 * result + (isSourceTagsBlacklist ? 1 : 0);
-        result = 31 * result + (addNarrativeInfo ? 1 : 0);
-        result = 31 * result + (addWorkspaceInfo ? 1 : 0);
         return result;
     }
 
@@ -163,8 +143,6 @@ public class MatchFilter {
         private Map<String, MatchValue> lookupInKeys = new HashMap<>();
         private Set<String> sourceTags = new HashSet<>();
         private boolean isSourceTagsBlacklist = false;
-        private boolean addNarrativeInfo = false;
-        private boolean addWorkspaceInfo = false;
 
         private Builder() {}
 
@@ -246,30 +224,12 @@ public class MatchFilter {
             return this;
         }
 
-        /** Add narrativeInfo to search results.
-         * @param addNarrativeInfo when set to true, narrativeInfo is added to search results.
-         * @return this builder.
-         */
-        public Builder withAddNarrativeInfo(final boolean addNarrativeInfo) {
-            this.addNarrativeInfo = addNarrativeInfo;
-            return this;
-        }
-
-        /** Add workspaceInfo to search results.
-         * @param addWorkspaceInfo when set to true, workspaceInfo is added to search results.
-         * @return this builder.
-         */
-        public Builder withAddWorkspaceInfo(final boolean addWorkspaceInfo) {
-            this.addWorkspaceInfo = addWorkspaceInfo;
-            return this;
-        }
-
         /** Build the {@link MatchFilter}.
          * @return this builder. the new {@link MatchFilter}.
          */
         public MatchFilter build() {
             return new MatchFilter(excludeSubObjects, fullTextInAll, objectName, timestamp, lookupInKeys,
-                    sourceTags, isSourceTagsBlacklist, addNarrativeInfo, addWorkspaceInfo);
+                    sourceTags, isSourceTagsBlacklist);
         }
     }
 
