@@ -55,6 +55,7 @@ import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.tools.Utils;
+import org.slf4j.LoggerFactory;
 import us.kbase.common.service.UObject;
 
 //TODO CODE remove 'fake' group IDs (-1 public, -2 admin). use alternate mechanism.
@@ -407,10 +408,18 @@ public class ElasticIndexingStorage implements IndexingStorage {
             }
         }
 
-        // report response data from failed index operations
-        if (errorItems.size() > 0) {
-            throw new IOException("Indexing errors: " + errorItems.toString());
+        // log response data from failed index operations
+        for (Object item: errorItems) {
+            logErr("Indexing error: {} ", item.toString());
         }
+    }
+
+    private void logInfo(final String format, final Object... params) {
+        LoggerFactory.getLogger(getClass()).info(format, params);
+    }
+
+    private void logErr(final String format, final Object... params) {
+        LoggerFactory.getLogger(getClass()).error(format, params);
     }
 
 
