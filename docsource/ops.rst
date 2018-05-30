@@ -26,6 +26,17 @@ curl -d '{"method": "KBaseSearchEngine.status", "version": "1.1", "id": 1, "para
     "version": "1.1"
 }
 
+ElasticSearch Setup:
+
+Unless required, it is recommended to prevent dynamic index creation.
+
+PUT _cluster/settings
+{
+ "persistent": {
+   "action.auto_create_index" : false
+ }
+}
+
 Backup and Restoration of index
 Deploying multiple indexes
 
