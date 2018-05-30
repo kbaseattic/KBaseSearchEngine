@@ -29,6 +29,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
  *     data with at least one of the tags will be excluded from the search results. If missing
  *     or false, the default behavior is maintained.
+ * addNarrativeInfo - if true, narrative info gets added to the search results. Default is false.
+ * addWorkspaceInfo - if true, workspace and object info get added to the search results. Default is false.
  * </pre>
  * 
  */
@@ -41,7 +43,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "exclude_subobjects",
     "lookup_in_keys",
     "source_tags",
-    "source_tags_blacklist"
+    "source_tags_blacklist",
+    "addNarrativeInfo",
+    "addWorkspaceInfo"
 })
 public class MatchFilter {
 
@@ -72,6 +76,10 @@ public class MatchFilter {
     private List<String> sourceTags;
     @JsonProperty("source_tags_blacklist")
     private Long sourceTagsBlacklist;
+    @JsonProperty("addNarrativeInfo")
+    private Long addNarrativeInfo;
+    @JsonProperty("addWorkspaceInfo")
+    private Long addWorkspaceInfo;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("full_text_in_all")
@@ -205,6 +213,36 @@ public class MatchFilter {
         return this;
     }
 
+    @JsonProperty("addNarrativeInfo")
+    public Long getAddNarrativeInfo() {
+        return addNarrativeInfo;
+    }
+
+    @JsonProperty("addNarrativeInfo")
+    public void setAddNarrativeInfo(Long addNarrativeInfo) {
+        this.addNarrativeInfo = addNarrativeInfo;
+    }
+
+    public MatchFilter withAddNarrativeInfo(Long addNarrativeInfo) {
+        this.addNarrativeInfo = addNarrativeInfo;
+        return this;
+    }
+
+    @JsonProperty("addWorkspaceInfo")
+    public Long getAddWorkspaceInfo() {
+        return addWorkspaceInfo;
+    }
+
+    @JsonProperty("addWorkspaceInfo")
+    public void setAddWorkspaceInfo(Long addWorkspaceInfo) {
+        this.addWorkspaceInfo = addWorkspaceInfo;
+    }
+
+    public MatchFilter withAddWorkspaceInfo(Long addWorkspaceInfo) {
+        this.addWorkspaceInfo = addWorkspaceInfo;
+        return this;
+    }
+
     @JsonAnyGetter
     public Map<java.lang.String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -217,7 +255,7 @@ public class MatchFilter {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((("MatchFilter"+" [fullTextInAll=")+ fullTextInAll)+", objectName=")+ objectName)+", timestamp=")+ timestamp)+", excludeSubobjects=")+ excludeSubobjects)+", lookupInKeys=")+ lookupInKeys)+", sourceTags=")+ sourceTags)+", sourceTagsBlacklist=")+ sourceTagsBlacklist)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((((("MatchFilter"+" [fullTextInAll=")+ fullTextInAll)+", objectName=")+ objectName)+", timestamp=")+ timestamp)+", excludeSubobjects=")+ excludeSubobjects)+", lookupInKeys=")+ lookupInKeys)+", sourceTags=")+ sourceTags)+", sourceTagsBlacklist=")+ sourceTagsBlacklist)+", addNarrativeInfo=")+ addNarrativeInfo)+", addWorkspaceInfo=")+ addWorkspaceInfo)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
