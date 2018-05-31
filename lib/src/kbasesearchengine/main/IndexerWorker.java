@@ -914,9 +914,8 @@ public class IndexerWorker implements Stoppable {
                                                Map<String, List<Object>> keywords) {
 
             ObjectData.Builder objDataBuilder = ObjectData.getBuilder(guid,globalObjectType);
-            Iterator<String> keys = keywords.keySet().iterator();
-            while (keys.hasNext()) {
-                final String key = keys.next();
+
+            for (final String key: keywords.keySet()) {
                 final String textValue;
                 final Object objValue = keywords.get(key);
 
