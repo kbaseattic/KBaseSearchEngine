@@ -817,7 +817,7 @@ public class IndexerWorker implements Stoppable {
                 throws IndexingException, InterruptedException, RetriableIndexingException {
             final List<ObjectData> data = new ArrayList<>();
 
-            for(GUID unresolvedGUID: unresolvedGUIDs) {
+            for (final GUID unresolvedGUID: unresolvedGUIDs) {
                 // resolve reference
                 ResolvedReference resRef =
                         resolveRefs(objectRefPath, ImmutableSet.of(unresolvedGUID)).
@@ -847,7 +847,6 @@ public class IndexerWorker implements Stoppable {
                 }
 
                 try {
-                    // make a copy to avoid mutating the caller's path
                     final EventHandler handler = getEventHandler(guid);
                     final SourceData obj = handler.load(
                             Arrays.asList(resRef.getResolvedReference()), tempFile.toPath());
@@ -873,8 +872,6 @@ public class IndexerWorker implements Stoppable {
                             parsedRet.guidToObj.get(parsedGUID).getKeywords());
 
                     data.add(objData);
-
-
                 } finally {
                     tempFile.delete();
                 }
