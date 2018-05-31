@@ -853,11 +853,12 @@ public class IndexerWorker implements Stoppable {
                     final SourceData obj = handler.load(
                             Arrays.asList(resRef.getResolvedReference()), tempFile.toPath());
 
-                    final ObjectTypeParsingRules rules = getObjectTypeParsingRules(resRef);
-
-                    if(rules == null) {
+                    final ObjectTypeParsingRules rules;
+                    try {
+                        rules = getObjectTypeParsingRules(resRef);
+                    } catch (ObjectParseException ex ) {
                         throw new FatalIndexingException(ErrorType.OTHER,
-                                "Unable to find parsing rules for reference "+resRef);
+                                ex.getMessage());
                     }
 
                     final ParseObjectsRet parsedRet = parseObjects(guid, this,
@@ -881,7 +882,8 @@ public class IndexerWorker implements Stoppable {
             return data;
         }
 
-        private ObjectTypeParsingRules getObjectTypeParsingRules(ResolvedReference ref) {
+        private ObjectTypeParsingRules getObjectTypeParsingRules(
+                ResolvedReference ref) throws ObjectParseException {
 
             final List<ObjectTypeParsingRules> parsingRules = new ArrayList<>(
                     typeStorage.listObjectTypeParsingRules(ref.getType()));
@@ -899,7 +901,7 @@ public class IndexerWorker implements Stoppable {
                 }
             }
 
-            return null;
+            throw new ObjectParseException("Unable to get ObjectTypeParsingRules for ref: "+ref.toString());
         }
 
 
