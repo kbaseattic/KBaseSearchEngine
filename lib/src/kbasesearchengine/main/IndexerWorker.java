@@ -513,10 +513,11 @@ public class IndexerWorker implements Stoppable {
          * 
          */
         long t1 = System.currentTimeMillis();
+        final File subDir;
         final File tempFile;
         try {
-            FileUtil.getOrCreateSubDir(rootTempDir, guid.getStorageCode());
-            tempFile = File.createTempFile("ws_srv_response_", ".json");
+            subDir = FileUtil.getOrCreateSubDir(rootTempDir, guid.getStorageCode());
+            tempFile = File.createTempFile("ws_srv_response_", ".json", subDir);
         } catch (IOException e) {
             throw new FatalRetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
         }
@@ -839,9 +840,10 @@ public class IndexerWorker implements Stoppable {
 
                 // get object from data source
                 final File tempFile;
+                final File subDir;
                 try {
-                    FileUtil.getOrCreateSubDir(rootTempDir, guid.getStorageCode());
-                    tempFile = File.createTempFile("ws_srv_response_", ".json");
+                    subDir = FileUtil.getOrCreateSubDir(rootTempDir, guid.getStorageCode());
+                    tempFile = File.createTempFile("ws_srv_response_", ".json", subDir);
                 } catch (IOException ex) {
                     throw new RetriableIndexingException(ErrorType.OTHER, ex.getMessage(), ex);
                 }
