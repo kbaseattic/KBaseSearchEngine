@@ -37,7 +37,7 @@ import kbasesearchengine.authorization.AuthCache;
 import kbasesearchengine.authorization.AuthInfoProvider;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
-import kbasesearchengine.main.WorkspaceNarrativeInfoProvider;
+import kbasesearchengine.main.AccessGroupNarrativeInfoProvider;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.main.GitInfo;
 import kbasesearchengine.main.LineLogger;
@@ -46,7 +46,7 @@ import kbasesearchengine.main.SearchMethods;
 import kbasesearchengine.main.SearchVersion;
 import kbasesearchengine.main.TemporaryNarrativePruner;
 import kbasesearchengine.main.NarrativeInfoDecorator;
-import kbasesearchengine.main.WorkspaceInfoDecorator;
+import kbasesearchengine.main.AccessGroupInfoDecorator;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.system.FileLister;
 import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
@@ -67,9 +67,9 @@ import kbasesearchengine.common.FileUtil;
  */
 public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
-    private static final String version = "0.1.3";
+    private static final String version = "0.2.1";
     private static final String gitUrl = "https://github.com/kbase/KBaseSearchEngine.git";
-    private static final String gitCommitHash = "fac1f4a9e2c01a8710f9ed71b53e2c7e6134aa74";
+    private static final String gitCommitHash = "63ec56187c3733b9c921885ec5aea61dc93af6db";
 
     //BEGIN_CLASS_HEADER
     
@@ -170,7 +170,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         final WorkspaceEventHandler wsHandler = new WorkspaceEventHandler(
                 new CloneableWorkspaceClientImpl(wsClient));
         final NarrativeInfoProvider narrativeInfoProvider = new NarrativeInfoCache(
-                new WorkspaceNarrativeInfoProvider(wsHandler),
+                new AccessGroupNarrativeInfoProvider(wsHandler),
                 30,
                 50000 * 1000);
 
@@ -181,7 +181,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
                 50000 * 1000);
 
         search = new TemporaryNarrativePruner(
-                new WorkspaceInfoDecorator(
+                new AccessGroupInfoDecorator(
                         new NarrativeInfoDecorator(
                             new SearchMethods(accessGroupProvider, esStorage, ss, admins),
                             narrativeInfoProvider,

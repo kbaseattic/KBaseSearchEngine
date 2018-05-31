@@ -1,6 +1,14 @@
 Search Service MKII release notes
 =================================
 
+0.2.1
+-----
+
+* Renamed the usage of workspace_info with access_group_info in variable, method and file names.
+
+* Moved the flags addNarrativeInfo and addAccessGroupInfo from match filter parameter to the
+  preprocessing parameter provided to the search API.
+
 0.1.3
 -----
 

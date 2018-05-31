@@ -194,16 +194,17 @@ class KBaseSearchEngine(object):
            matched query, ids_only - shortcut to mark both skips as true and
            include_highlight as false. add_narrative_info - if true,
            narrative info gets added to the search results. Default is false.
-           add_workspace_info - if true, workspaces and objects info get
-           added to the search results. Default is false.) -> structure:
+           add_access_group_info - if true, access groups and objects info
+           get added to the search results. Default is false.) -> structure:
            parameter "ids_only" of type "boolean" (A boolean. 0 = false,
            other = true.), parameter "skip_keys" of type "boolean" (A
            boolean. 0 = false, other = true.), parameter "skip_data" of type
            "boolean" (A boolean. 0 = false, other = true.), parameter
            "include_highlight" of type "boolean" (A boolean. 0 = false, other
            = true.), parameter "add_narrative_info" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "add_workspace_info"
-           of type "boolean" (A boolean. 0 = false, other = true.)
+           boolean. 0 = false, other = true.), parameter
+           "add_access_group_info" of type "boolean" (A boolean. 0 = false,
+           other = true.)
         :returns: instance of type "SearchObjectsOutput" (Output results for
            'search_objects' method. 'pagination' and 'sorting_rules' fields
            show actual input for pagination and sorting. total - total number
@@ -211,23 +212,25 @@ class KBaseSearchEngine(object):
            mapping<access_group_id, narrative_info>
            access_group_narrative_info - information about the workspaces in
            which the objects in the results reside. This data only applies to
-           workspace objects. mapping<access_group_id,
-           Workspace.workspace_info> workspaces_info - information about the
-           workspaces in which the objects in the results reside. This data
-           only applies to workspace objects. The tuple9 value returned by
+           workspace objects. mapping<access_group_id, access_group_info>
+           access_groups_info - information about the access groups in which
+           the objects in the results reside. Currentlu this data only
+           applies to workspace objects. The tuple9 value returned by
            get_workspace_info() for each workspace in the search results is
-           saved in this mapping. mapping<obj_ref, Workspace.object_info>
-           objects_info - information about each object in the search
-           results. This data only applies to workspace objects. The tuple11
-           value returned by get_object_info3() for each object in the search
-           results is saved in the mapping.) -> structure: parameter
-           "pagination" of type "Pagination" (Pagination rules. Default
-           values are: start = 0, count = 50.) -> structure: parameter
-           "start" of Long, parameter "count" of Long, parameter
-           "sorting_rules" of list of type "SortingRule" (Rule for sorting
-           results. string property - the property to sort on. This may be a
-           an object property - e.g. a field inside the object - or a
-           standard property possessed by all objects, like a timestamp or
+           saved in this mapping. In future the access_group_info will be
+           replaced with higher level abstraction. mapping<obj_ref,
+           object_info> objects_info - information about each object in the
+           search results. Currently this data only applies to workspace
+           objects. The tuple11 value returned by get_object_info3() for each
+           object in the search results is saved in the mapping. In future
+           the object_info will be replaced with higher level abstraction.)
+           -> structure: parameter "pagination" of type "Pagination"
+           (Pagination rules. Default values are: start = 0, count = 50.) ->
+           structure: parameter "start" of Long, parameter "count" of Long,
+           parameter "sorting_rules" of list of type "SortingRule" (Rule for
+           sorting results. string property - the property to sort on. This
+           may be a an object property - e.g. a field inside the object - or
+           a standard property possessed by all objects, like a timestamp or
            creator. boolean is_object_property - true (the default) to
            specify an object property, false to specify a standard property.
            boolean ascending - true (the default) to sort ascending, false to
@@ -408,60 +411,60 @@ class KBaseSearchEngine(object):
            query, ids_only - shortcut to mark both skips as true and
            include_highlight as false. add_narrative_info - if true,
            narrative info gets added to the search results. Default is false.
-           add_workspace_info - if true, workspaces and objects info get
-           added to the search results. Default is false.) -> structure:
+           add_access_group_info - if true, access groups and objects info
+           get added to the search results. Default is false.) -> structure:
            parameter "ids_only" of type "boolean" (A boolean. 0 = false,
            other = true.), parameter "skip_keys" of type "boolean" (A
            boolean. 0 = false, other = true.), parameter "skip_data" of type
            "boolean" (A boolean. 0 = false, other = true.), parameter
            "include_highlight" of type "boolean" (A boolean. 0 = false, other
            = true.), parameter "add_narrative_info" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "add_workspace_info"
-           of type "boolean" (A boolean. 0 = false, other = true.), parameter
-           "match_filter" of type "MatchFilter" (Optional rules of defining
-           constrains for object properties including values of keywords or
-           metadata/system properties (like object name, creation time range)
-           or full-text search in all properties. boolean exclude_subobjects
-           - don't return any subobjects in the search results if true.
-           Default false. list<string> source_tags - source tags are
-           arbitrary strings applied to data at the data source (for example,
-           the workspace service). The source_tags list may optionally be
-           populated with a set of tags that will determine what data is
-           returned in a search. By default, the list behaves as a whitelist
-           and only data with at least one of the tags will be returned.
-           source_tags_blacklist - if true, the source_tags list behaves as a
-           blacklist and any data with at least one of the tags will be
-           excluded from the search results. If missing or false, the default
-           behavior is maintained.) -> structure: parameter
-           "full_text_in_all" of String, parameter "object_name" of String,
-           parameter "timestamp" of type "MatchValue" (Optional rules of
-           defining constraints for values of particular term (keyword).
-           Appropriate field depends on type of keyword. For instance in case
-           of integer type 'int_value' should be used. In case of range
-           constraint rather than single value 'min_*' and 'max_*' fields
-           should be used. You may omit one of ends of range to achieve '<='
-           or '>=' comparison. Ends are always included for range
-           constraints.) -> structure: parameter "value" of String, parameter
-           "int_value" of Long, parameter "double_value" of Double, parameter
-           "bool_value" of type "boolean" (A boolean. 0 = false, other =
-           true.), parameter "min_int" of Long, parameter "max_int" of Long,
-           parameter "min_date" of Long, parameter "max_date" of Long,
-           parameter "min_double" of Double, parameter "max_double" of
-           Double, parameter "exclude_subobjects" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "lookup_in_keys" of
-           mapping from String to type "MatchValue" (Optional rules of
-           defining constraints for values of particular term (keyword).
-           Appropriate field depends on type of keyword. For instance in case
-           of integer type 'int_value' should be used. In case of range
-           constraint rather than single value 'min_*' and 'max_*' fields
-           should be used. You may omit one of ends of range to achieve '<='
-           or '>=' comparison. Ends are always included for range
-           constraints.) -> structure: parameter "value" of String, parameter
-           "int_value" of Long, parameter "double_value" of Double, parameter
-           "bool_value" of type "boolean" (A boolean. 0 = false, other =
-           true.), parameter "min_int" of Long, parameter "max_int" of Long,
-           parameter "min_date" of Long, parameter "max_date" of Long,
-           parameter "min_double" of Double, parameter "max_double" of
+           boolean. 0 = false, other = true.), parameter
+           "add_access_group_info" of type "boolean" (A boolean. 0 = false,
+           other = true.), parameter "match_filter" of type "MatchFilter"
+           (Optional rules of defining constrains for object properties
+           including values of keywords or metadata/system properties (like
+           object name, creation time range) or full-text search in all
+           properties. boolean exclude_subobjects - don't return any
+           subobjects in the search results if true. Default false.
+           list<string> source_tags - source tags are arbitrary strings
+           applied to data at the data source (for example, the workspace
+           service). The source_tags list may optionally be populated with a
+           set of tags that will determine what data is returned in a search.
+           By default, the list behaves as a whitelist and only data with at
+           least one of the tags will be returned. source_tags_blacklist - if
+           true, the source_tags list behaves as a blacklist and any data
+           with at least one of the tags will be excluded from the search
+           results. If missing or false, the default behavior is maintained.)
+           -> structure: parameter "full_text_in_all" of String, parameter
+           "object_name" of String, parameter "timestamp" of type
+           "MatchValue" (Optional rules of defining constraints for values of
+           particular term (keyword). Appropriate field depends on type of
+           keyword. For instance in case of integer type 'int_value' should
+           be used. In case of range constraint rather than single value
+           'min_*' and 'max_*' fields should be used. You may omit one of
+           ends of range to achieve '<=' or '>=' comparison. Ends are always
+           included for range constraints.) -> structure: parameter "value"
+           of String, parameter "int_value" of Long, parameter "double_value"
+           of Double, parameter "bool_value" of type "boolean" (A boolean. 0
+           = false, other = true.), parameter "min_int" of Long, parameter
+           "max_int" of Long, parameter "min_date" of Long, parameter
+           "max_date" of Long, parameter "min_double" of Double, parameter
+           "max_double" of Double, parameter "exclude_subobjects" of type
+           "boolean" (A boolean. 0 = false, other = true.), parameter
+           "lookup_in_keys" of mapping from String to type "MatchValue"
+           (Optional rules of defining constraints for values of particular
+           term (keyword). Appropriate field depends on type of keyword. For
+           instance in case of integer type 'int_value' should be used. In
+           case of range constraint rather than single value 'min_*' and
+           'max_*' fields should be used. You may omit one of ends of range
+           to achieve '<=' or '>=' comparison. Ends are always included for
+           range constraints.) -> structure: parameter "value" of String,
+           parameter "int_value" of Long, parameter "double_value" of Double,
+           parameter "bool_value" of type "boolean" (A boolean. 0 = false,
+           other = true.), parameter "min_int" of Long, parameter "max_int"
+           of Long, parameter "min_date" of Long, parameter "max_date" of
+           Long, parameter "min_double" of Double, parameter "max_double" of
            Double, parameter "source_tags" of list of String, parameter
            "source_tags_blacklist" of type "boolean" (A boolean. 0 = false,
            other = true.)

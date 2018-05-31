@@ -547,7 +547,7 @@ public class SearchAPIIntegrationTest {
     }
 
     @Test
-    public void workspaceInfoDecorationDisabled() throws Exception {
+    public void accessGroupInfoDecorationDisabled() throws Exception {
 
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("foo1")
@@ -622,17 +622,17 @@ public class SearchAPIIntegrationTest {
                 new SearchObjectsInput()
                         .withMatchFilter(new MatchFilter())
                         .withAccessFilter(new AccessFilter())
-                        .withPostProcessing(new PostProcessing().withAddWorkspaceInfo(0L)));
+                        .withPostProcessing(new PostProcessing().withAddAccessGroupInfo(0L)));
 
         // Narrative info not added, set to null by default
         assertNull(res.getAccessGroupNarrativeInfo());
-        // set to null, since the addWorkspaceInfo flag was set to 0
+        // set to null, since the addAccessGroupInfo flag was set to 0
         assertNull(res.getAccessGroupsInfo());
         assertNull(res.getObjectsInfo());
     }
 
     @Test
-    public void workspaceInfoDecoration() throws Exception {
+    public void accessGroupInfoDecoration() throws Exception {
 
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("foo1")
@@ -703,7 +703,7 @@ public class SearchAPIIntegrationTest {
                 new SearchObjectsInput()
                         .withMatchFilter(new MatchFilter())
                         .withAccessFilter(new AccessFilter())
-                        .withPostProcessing(new PostProcessing().withAddWorkspaceInfo(1L)));
+                        .withPostProcessing(new PostProcessing().withAddAccessGroupInfo(1L)));
 
         final Tuple9<Long, String, String, String, Long, String, String, String,
                 Map<String, String>> wsInfoExpected1 =
@@ -733,7 +733,7 @@ public class SearchAPIIntegrationTest {
     }
 
     @Test
-    public void workspaceInfoDecorationNoObjects() throws Exception {
+    public void accessGroupInfoDecorationNoObjects() throws Exception {
 
         // test when search results is empty, getObjectsInfo3 is not called to get objectsInfo
         // and the mappings for workspaces info and objects info are empty
@@ -741,7 +741,7 @@ public class SearchAPIIntegrationTest {
                 new SearchObjectsInput()
                         .withMatchFilter(new MatchFilter())
                         .withAccessFilter(new AccessFilter())
-                        .withPostProcessing(new PostProcessing().withAddWorkspaceInfo(1L)));
+                        .withPostProcessing(new PostProcessing().withAddAccessGroupInfo(1L)));
         assertEquals(searchResults.getAccessGroupsInfo().size(), 0);
         assertEquals(searchResults.getObjectsInfo().size(), 0);
     }

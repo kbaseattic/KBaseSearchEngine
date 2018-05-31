@@ -39,7 +39,7 @@ import us.kbase.common.service.JsonClientException;
  * @author Uma Ganapathy
  *
  */
-public class WorkspaceInfoDecorator implements SearchInterface {
+public class AccessGroupInfoDecorator implements SearchInterface {
 
     private final WorkspaceEventHandler weh;
     private final SearchInterface searchInterface;
@@ -52,7 +52,7 @@ public class WorkspaceInfoDecorator implements SearchInterface {
      * is indexed.
      *
      */
-    public WorkspaceInfoDecorator(
+    public AccessGroupInfoDecorator(
             final SearchInterface searchInterface,
             final WorkspaceEventHandler wsHandler) {
         Utils.nonNull(searchInterface, "searchInterface");
@@ -77,10 +77,10 @@ public class WorkspaceInfoDecorator implements SearchInterface {
             throws Exception {
         SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
         if (params.getPostProcessing() != null) {
-            if (params.getPostProcessing().getAddWorkspaceInfo() != null &&
-                    params.getPostProcessing().getAddWorkspaceInfo() == 1) {
+            if (params.getPostProcessing().getAddAccessGroupInfo() != null &&
+                    params.getPostProcessing().getAddAccessGroupInfo() == 1) {
                 searchObjsOutput = searchObjsOutput
-                        .withAccessGroupsInfo(addWorkspacesInfo(
+                        .withAccessGroupsInfo(addAccessGroupsInfo(
                                 searchObjsOutput.getObjects(),
                                 searchObjsOutput.getAccessGroupsInfo()))
                         .withObjectsInfo(addObjectsInfo(
@@ -96,10 +96,10 @@ public class WorkspaceInfoDecorator implements SearchInterface {
             throws Exception {
         GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
         if (params.getPostProcessing() != null) {
-            if (params.getPostProcessing().getAddWorkspaceInfo() != null &&
-                    params.getPostProcessing().getAddWorkspaceInfo() == 1) {
+            if (params.getPostProcessing().getAddAccessGroupInfo() != null &&
+                    params.getPostProcessing().getAddAccessGroupInfo() == 1) {
                 getObjsOutput = getObjsOutput
-                        .withWorkspacesInfo(addWorkspacesInfo(
+                        .withWorkspacesInfo(addAccessGroupsInfo(
                                 getObjsOutput.getObjects(),
                                 getObjsOutput.getWorkspacesInfo()))
                         .withObjectsInfo(addObjectsInfo(
@@ -111,7 +111,7 @@ public class WorkspaceInfoDecorator implements SearchInterface {
     }
 
     private Map<Long, Tuple9<Long, String, String, String, Long, String,
-            String, String, Map<String, String>>> addWorkspacesInfo(
+            String, String, Map<String, String>>> addAccessGroupsInfo(
             final List<ObjectData> objects,
             final Map<Long, Tuple9<Long, String, String, String, Long, String,
                     String, String, Map<String, String>>> workspaceInfoMap)

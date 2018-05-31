@@ -19,7 +19,7 @@ import com.google.common.base.Ticker;
 import com.google.common.collect.ImmutableMap;
 
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
-import kbasesearchengine.main.WorkspaceNarrativeInfoProvider;
+import kbasesearchengine.main.AccessGroupNarrativeInfoProvider;
 import kbasesearchengine.main.NarrativeInfoCache;
 import kbasesearchengine.main.NarrativeInfoProvider;
 import kbasesearchengine.test.common.TestCommon;
@@ -243,11 +243,11 @@ public class NarrativeInfoCacheTest {
     }
 
     @Test
-    public void testWorkspaceNarrativeInfoProvider() throws Exception {
+    public void accessGroupNarrativeInfoProvider() throws Exception {
 
         final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
 
-        final NarrativeInfoProvider wsnip = new WorkspaceNarrativeInfoProvider(weh);
+        final NarrativeInfoProvider agnip = new AccessGroupNarrativeInfoProvider(weh);
 
         // no narrative info at all
         when(weh.getWorkspaceInfo(65)).thenReturn(wsTuple(
@@ -269,18 +269,18 @@ public class NarrativeInfoCacheTest {
                 42, "name4", "owner4", "2018-02-08T21:55:50.678Z", 0, "r", "n", "unlocked",
                 ImmutableMap.of("narrative", "3", "narrative_nice_name", "mylovelynarrative")));
 
-        compare(wsnip.findNarrativeInfo(65L),
+        compare(agnip.findNarrativeInfo(65L),
                 new NarrativeInfo(null, null, 1518126945000L, "owner1"));
-        compare(wsnip.findNarrativeInfo(1L),
+        compare(agnip.findNarrativeInfo(1L),
                 new NarrativeInfo(null, null, 1518126957000L, "owner2"));
-        compare(wsnip.findNarrativeInfo(2L),
+        compare(agnip.findNarrativeInfo(2L),
                 new NarrativeInfo(null, null, 1518126945678L, "owner3"));
-        compare(wsnip.findNarrativeInfo(42L),
+        compare(agnip.findNarrativeInfo(42L),
                 new NarrativeInfo("mylovelynarrative", 3L, 1518126950678L, "owner4"));
     }
 
     @Test
-    public void wsNarrativeInfoProviderFail() throws Exception {
+    public void agNarrativeInfoProviderFail() throws Exception {
         failFindNarrativeInfo(new IOException("Test IO Exception"),
                 new IOException("Failed retrieving workspace info: Test IO Exception"));
         failFindNarrativeInfo(new JsonClientException("workspace is turned off"),
@@ -293,12 +293,12 @@ public class NarrativeInfoCacheTest {
             final Exception expected)
             throws Exception {
         final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
-        final WorkspaceNarrativeInfoProvider wsnip = new WorkspaceNarrativeInfoProvider(weh);
+        final AccessGroupNarrativeInfoProvider agnip = new AccessGroupNarrativeInfoProvider(weh);
 
         when(weh.getWorkspaceInfo(65L)).thenThrow(toThrow);
 
         try {
-            wsnip.findNarrativeInfo(65L);
+            agnip.findNarrativeInfo(65L);
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);

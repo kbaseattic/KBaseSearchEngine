@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  *      include_highlight as false.
  * add_narrative_info - if true, narrative info gets added to the
  *      search results. Default is false.
- * add_workspace_info - if true, workspaces and objects info get added
+ * add_access_group_info - if true, access groups and objects info get added
  *      to the search results. Default is false.
  * </pre>
  * 
@@ -38,7 +38,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "skip_data",
     "include_highlight",
     "add_narrative_info",
-    "add_workspace_info"
+    "add_access_group_info"
 })
 public class PostProcessing {
 
@@ -52,8 +52,8 @@ public class PostProcessing {
     private Long includeHighlight;
     @JsonProperty("add_narrative_info")
     private Long addNarrativeInfo;
-    @JsonProperty("add_workspace_info")
-    private Long addWorkspaceInfo;
+    @JsonProperty("add_access_group_info")
+    private Long addAccessGroupInfo;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("ids_only")
@@ -131,18 +131,18 @@ public class PostProcessing {
         return this;
     }
 
-    @JsonProperty("add_workspace_info")
-    public Long getAddWorkspaceInfo() {
-        return addWorkspaceInfo;
+    @JsonProperty("add_access_group_info")
+    public Long getAddAccessGroupInfo() {
+        return addAccessGroupInfo;
     }
 
-    @JsonProperty("add_workspace_info")
-    public void setAddWorkspaceInfo(Long addWorkspaceInfo) {
-        this.addWorkspaceInfo = addWorkspaceInfo;
+    @JsonProperty("add_access_group_info")
+    public void setAddAccessGroupInfo(Long addAccessGroupInfo) {
+        this.addAccessGroupInfo = addAccessGroupInfo;
     }
 
-    public PostProcessing withAddWorkspaceInfo(Long addWorkspaceInfo) {
-        this.addWorkspaceInfo = addWorkspaceInfo;
+    public PostProcessing withAddAccessGroupInfo(Long addAccessGroupInfo) {
+        this.addAccessGroupInfo = addAccessGroupInfo;
         return this;
     }
 
@@ -158,7 +158,7 @@ public class PostProcessing {
 
     @Override
     public String toString() {
-        return ((((((((((((((("PostProcessing"+" [idsOnly=")+ idsOnly)+", skipKeys=")+ skipKeys)+", skipData=")+ skipData)+", includeHighlight=")+ includeHighlight)+", addNarrativeInfo=")+ addNarrativeInfo)+", addWorkspaceInfo=")+ addWorkspaceInfo)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((("PostProcessing"+" [idsOnly=")+ idsOnly)+", skipKeys=")+ skipKeys)+", skipData=")+ skipData)+", includeHighlight=")+ includeHighlight)+", addNarrativeInfo=")+ addNarrativeInfo)+", addAccessGroupInfo=")+ addAccessGroupInfo)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

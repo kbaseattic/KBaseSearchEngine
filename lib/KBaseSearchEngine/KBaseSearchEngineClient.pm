@@ -307,7 +307,7 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
 	add_narrative_info has a value which is a KBaseSearchEngine.boolean
-	add_workspace_info has a value which is a KBaseSearchEngine.boolean
+	add_access_group_info has a value which is a KBaseSearchEngine.boolean
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
@@ -415,7 +415,7 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
 	add_narrative_info has a value which is a KBaseSearchEngine.boolean
-	add_workspace_info has a value which is a KBaseSearchEngine.boolean
+	add_access_group_info has a value which is a KBaseSearchEngine.boolean
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
@@ -554,7 +554,7 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
 	add_narrative_info has a value which is a KBaseSearchEngine.boolean
-	add_workspace_info has a value which is a KBaseSearchEngine.boolean
+	add_access_group_info has a value which is a KBaseSearchEngine.boolean
 boolean is an int
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
@@ -658,7 +658,7 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
 	add_narrative_info has a value which is a KBaseSearchEngine.boolean
-	add_workspace_info has a value which is a KBaseSearchEngine.boolean
+	add_access_group_info has a value which is a KBaseSearchEngine.boolean
 boolean is an int
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
@@ -1437,7 +1437,7 @@ ids_only - shortcut to mark both skips as true and
      include_highlight as false.
 add_narrative_info - if true, narrative info gets added to the
      search results. Default is false.
-add_workspace_info - if true, workspaces and objects info get added
+add_access_group_info - if true, access groups and objects info get added
      to the search results. Default is false.
 
 
@@ -1452,7 +1452,7 @@ skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
 include_highlight has a value which is a KBaseSearchEngine.boolean
 add_narrative_info has a value which is a KBaseSearchEngine.boolean
-add_workspace_info has a value which is a KBaseSearchEngine.boolean
+add_access_group_info has a value which is a KBaseSearchEngine.boolean
 
 </pre>
 
@@ -1466,7 +1466,7 @@ skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
 include_highlight has a value which is a KBaseSearchEngine.boolean
 add_narrative_info has a value which is a KBaseSearchEngine.boolean
-add_workspace_info has a value which is a KBaseSearchEngine.boolean
+add_access_group_info has a value which is a KBaseSearchEngine.boolean
 
 
 =end text
@@ -1808,13 +1808,15 @@ search_time - common time in milliseconds spent.
 mapping<access_group_id, narrative_info> access_group_narrative_info - information about
    the workspaces in which the objects in the results reside. This data only applies to
    workspace objects.
-mapping<access_group_id, Workspace.workspace_info> workspaces_info - information about
-   the workspaces in which the objects in the results reside. This data only applies to
+mapping<access_group_id, access_group_info> access_groups_info - information about
+   the access groups in which the objects in the results reside. Currentlu this data only applies to
    workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
-   in the search results is saved in this mapping.
-mapping<obj_ref, Workspace.object_info> objects_info - information about each object in the
-   search results. This data only applies to workspace objects. The tuple11 value returned by
-   get_object_info3() for each object in the search results is saved in the mapping.
+   in the search results is saved in this mapping. In future the access_group_info will be
+   replaced with higher level abstraction.
+mapping<obj_ref, object_info> objects_info - information about each object in the
+   search results. Currently this data only applies to workspace objects. The tuple11 value
+   returned by get_object_info3() for each object in the search results is saved in the mapping.
+   In future the object_info will be replaced with higher level abstraction.
 
 
 =item Definition
