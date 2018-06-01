@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Objects;
 
 import kbasesearchengine.GetObjectsInput;
 import kbasesearchengine.GetObjectsOutput;
@@ -76,8 +77,8 @@ public class AccessGroupInfoDecorator implements SearchInterface {
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
         SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
-        if (params.getPostProcessing() != null) {
-            if (params.getPostProcessing().getAddAccessGroupInfo() != null &&
+        if (Objects.nonNull(params.getPostProcessing())) {
+            if (Objects.nonNull(params.getPostProcessing().getAddAccessGroupInfo()) &&
                     params.getPostProcessing().getAddAccessGroupInfo() == 1) {
                 searchObjsOutput = searchObjsOutput
                         .withAccessGroupsInfo(addAccessGroupsInfo(
@@ -95,8 +96,8 @@ public class AccessGroupInfoDecorator implements SearchInterface {
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
         GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
-        if (params.getPostProcessing() != null) {
-            if (params.getPostProcessing().getAddAccessGroupInfo() != null &&
+        if (Objects.nonNull(params.getPostProcessing())) {
+            if (Objects.nonNull(params.getPostProcessing().getAddAccessGroupInfo()) &&
                     params.getPostProcessing().getAddAccessGroupInfo() == 1) {
                 getObjsOutput = getObjsOutput
                         .withWorkspacesInfo(addAccessGroupsInfo(
@@ -114,14 +115,14 @@ public class AccessGroupInfoDecorator implements SearchInterface {
             String, String, Map<String, String>>> addAccessGroupsInfo(
             final List<ObjectData> objects,
             final Map<Long, Tuple9<Long, String, String, String, Long, String,
-                    String, String, Map<String, String>>> workspaceInfoMap)
+                    String, String, Map<String, String>>> accessGroupInfoMap)
             throws IOException, JsonClientException {
 
         final Map<Long, Tuple9<Long, String, String, String, Long, String,
                 String, String, Map<String, String>>> retVal = new HashMap<>();
 
-        if (workspaceInfoMap != null) {
-            retVal.putAll(workspaceInfoMap);
+        if (Objects.nonNull(accessGroupInfoMap)) {
+            retVal.putAll(accessGroupInfoMap);
         }
         final Set<Long> wsIdsSet = new HashSet<>();
 
@@ -150,7 +151,7 @@ public class AccessGroupInfoDecorator implements SearchInterface {
         final Map<String, Tuple11<Long, String, String, String,
                 Long, String, Long, String, String, Long, Map<String, String>>> retVal = new HashMap<>();
 
-        if (objectInfoMap != null) {
+        if (Objects.nonNull(objectInfoMap)) {
             retVal.putAll(objectInfoMap);
         }
         final Set<GUID> guidsSet = new HashSet<>();
