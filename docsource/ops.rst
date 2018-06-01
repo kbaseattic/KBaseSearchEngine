@@ -32,7 +32,7 @@ d) remove field type
 
 The process involves reindexing an existing index into a new index for all of these cases. i.e. in-place reindexing is discouraged because the system may not have a recent snapshot/backup or any snapshot for recovery purposes should anything go wrong with the reindexing process. It is recommended that all of these steps are performed atomically for one index at a time (avoid reindexing multiple indexes in parallel) since it will be difficult to track through hundreds to indexes to find out which indexes are being reindexed.
 
-In addition, given that there can be as many as a thousand indices for KBase data, maintenance can become a challenge if the process is not simple. Some level of simplicity has been achieved here by defiining a single process that covers all the reindexing cases. If necessary, the process may be further simplified through some level of automation as it matures over time.
+In addition, given that there can be as many as a thousand indices for KBase data, maintenance can become a challenge if the process is not simple. Some level of simplicity has been achieved here by defining a single process that covers all the reindexing cases. If necessary, the process may be further simplified through some level of automation as it matures over time.
 
 .. note::
 
@@ -68,7 +68,7 @@ In addition, given that there can be as many as a thousand indices for KBase dat
 
 It is a good practice to make the mapping strict ("dynamic": "strict") for each type (data and access) in the index. Strict mappings prevent the mapping from being modified dynamically during ingest time.
 
-Update the settings section below the mapping. The number of shards and replicas must be decided on based on your capacity planning rules. It is costly to change the number of shards, so choose wisely! In general, follow these rules and limits.
+Update the settings section below the mapping. The number of shards and replicas must be decided on based on your capacity planning rules. It is costly to change the number of shards, as this will require another reindexing operation. In general, follow these rules and limits.
 
 increase write speed => more shards
 
