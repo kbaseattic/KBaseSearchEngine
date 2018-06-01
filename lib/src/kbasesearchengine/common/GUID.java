@@ -165,33 +165,42 @@ public class GUID {
      * @return URL-encoded version of this GUID
      */
     public String getURLEncoded() throws IOException {
-
-        String encodedGUID = toString("___", "_");
-
-        try {
-
-             encodedGUID =  URLEncoder.encode(encodedGUID, "UTF-8");
-
-        } catch(UnsupportedEncodingException ex ) {
-            // should never occur since the encoding is set to UTF-8 which is supported
-            throw new RuntimeException(ex.getMessage());
-        }
-
-        return encodedGUID;
+        return toString(":", "_", true);
     }
 
     @Override
     public String toString() {
-        return toString(":", "/");
+        return toString(":", "/", false);
     }
     
     public String toRefString() {
         return toRefString("/");
     }
 
-    private String toString(String delim1, String delim2) {
+    private String toString(String delim1, String delim2, boolean isUrlEncoded) {
+        String subObjectType = null;
+        String subObjectId = null;
+
+        try {
+            if (this.getSubObjectType() != null) {
+                subObjectType = isUrlEncoded ?
+                        URLEncoder.encode(this.getSubObjectType(), "UTF-8") :
+                        this.getSubObjectType();
+            }
+
+            if (this.getSubObjectId() != null) {
+                subObjectId = isUrlEncoded ?
+                        URLEncoder.encode(this.getSubObjectId(), "UTF-8") :
+                        this.getSubObjectId();
+            }
+
+        } catch(UnsupportedEncodingException ex ) {
+            // should never occur since the encoding is set to UTF-8 which is supported
+            throw new RuntimeException(ex.getMessage());
+        }
+
         return (this.storageCode + delim1) + toRefString(delim2) +
-                (this.subObjectType == null ? "" : (delim1 + this.getSubObjectType() + delim2 + this.getSubObjectId()));
+                (this.subObjectType == null ? "" : (delim1 + subObjectType + delim2 + subObjectId));
     }
 
     private String toRefString(String delim) {

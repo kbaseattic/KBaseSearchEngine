@@ -58,21 +58,21 @@ public class GUIDTest {
 
         try {
             Assert.assertEquals("incorrect guid",
-                    "WS___1_1_1___contig_NZ_MCBT01000008", guid1.getURLEncoded());
+                    "WS:1_1_1:contig_NZ_MCBT01000008", guid1.getURLEncoded());
             Assert.assertEquals("incorrect guid",
-                    "WS___1", guid2.getURLEncoded());
+                    "WS:1", guid2.getURLEncoded());
             Assert.assertEquals("incorrect guid",
-                    "WS___1_1___contig_NZ_MCBT01000008", guid3.getURLEncoded());
+                    "WS:1_1:contig_NZ_MCBT01000008", guid3.getURLEncoded());
             Assert.assertEquals("incorrect guid",
-                    "WS___1_1___contig_NZ_MCBT01000008", guid4.getURLEncoded());
+                    "WS:1_1:contig_NZ_MCBT01000008", guid4.getURLEncoded());
             Assert.assertEquals("incorrect guid",
-                    "WS___1_1_1", guid5.getURLEncoded());
+                    "WS:1_1_1", guid5.getURLEncoded());
             Assert.assertEquals("incorrect guid",
-                    "WS___1___contig_NZ_MCBT01000008", guid6.getURLEncoded());
+                    "WS:1:contig_NZ_MCBT01000008", guid6.getURLEncoded());
             Assert.assertEquals("incorrect guid",
-                    "WS___1_1", guid7.getURLEncoded());
+                    "WS:1_1", guid7.getURLEncoded());
             Assert.assertEquals("incorrect guid",
-                    "WS___1_1", guid8.getURLEncoded());
+                    "WS:1_1", guid8.getURLEncoded());
         } catch (IOException ex) {
             Assert.fail(ex.getMessage());
         }
