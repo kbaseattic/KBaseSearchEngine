@@ -1,7 +1,5 @@
 package kbasesearchengine.main;
 
-import kbasesearchengine.authorization.AccessGroupProvider;
-import kbasesearchengine.authorization.AuthInfoProvider;
 import kbasesearchengine.tools.Utils;
 
 import java.io.IOException;
@@ -23,8 +21,8 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.cache.Weigher;
 import us.kbase.common.service.Tuple11;
 
-/** A caching layer for auth info. Caches the results from the wrapped
- * {@link AuthInfoProvider} in memory for quick access.
+/** A caching layer for object info. Caches the results from the wrapped
+ * {@link ObjectInfoProvider} in memory for quick access.
  * @author ganapathy@bnl.gov
  *
  */
@@ -34,10 +32,10 @@ public class ObjectInfoCache implements ObjectInfoProvider {
             String, Long, String, String, Long, Map<String, String>>> cache;
 
     /** Create a cache.
-     * @param provider the {@link AuthInfoProvider} whose results will be cached.
-     * @param cacheLifeTimeInSec the number of seconds a set of auth info for a user should
+     * @param provider the {@link ObjectInfoProvider} whose results will be cached.
+     * @param cacheLifeTimeInSec the number of seconds a set of object info should
      * remain in the cache.
-     * @param cacheSizeInObjectInfo the maximum number of auth info (display name), across all users,
+     * @param cacheSizeInObjectInfo the maximum number of object infos
      * to store in the cache.
      */
     public ObjectInfoCache(
@@ -48,10 +46,10 @@ public class ObjectInfoCache implements ObjectInfoProvider {
     }
 
     /** Create a cache for testing purposes.
-     * @param provider the {@link AccessGroupProvider} whose results will be cached.
-     * @param cacheLifeTimeInSec the number of seconds an set of access groups for a user should
+     * @param provider the {@link ObjectInfoProvider} whose results will be cached.
+     * @param cacheLifeTimeInSec the number of seconds a set of object info should
      * remain in the cache.
-     * @param cacheSizeInAuthInfo the maximum number of auth info (display name), across all users,
+     * @param cacheSizeInObjectInfo the maximum number of object infos
      * to store in the cache.
      * @param ticker a ticker implementation that allows controlling cache expiration with the
      * provided ticker rather than waiting for the system clock. This is exposed for testing
@@ -81,7 +79,7 @@ public class ObjectInfoCache implements ObjectInfoProvider {
                     @Override
                     public int weigh(String objRef, Tuple11<Long, String, String, String, Long,
                             String, Long, String, String, Long, Map<String, String>> objInfo) {
-                        return 11 + objInfo.getE11().size();
+                        return 10 + objInfo.getE11().size();
                     }
                 })
                 .build(new CacheLoader<String, Tuple11<Long, String, String, String, Long,

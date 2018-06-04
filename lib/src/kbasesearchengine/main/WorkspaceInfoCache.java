@@ -13,7 +13,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.cache.Weigher;
 import us.kbase.common.service.Tuple9;
 
-/** A caching layer for workspace and narrative info. Caches the results in memory for quick access.
+/** A caching layer for workspace info. Caches the results in memory for quick access.
  * @author gaprice@lbl.gov
  * @author ganapathy@bnl.gov
  */
@@ -24,10 +24,10 @@ public class WorkspaceInfoCache implements WorkspaceInfoProvider {
             String, String, Map<String, String>>> cache;
 
     /** Create a cache.
-     * @param provider the {@link NarrativeInfoProvider} whose results will be cached.
-     * @param cacheLifeTimeInSec the number of seconds a set of narrative info for a user should
+     * @param provider the {@link WorkspaceInfoProvider} whose results will be cached.
+     * @param cacheLifeTimeInSec the number of seconds a set of workspace info for a user should
      * remain in the cache.
-     * @param cacheSizeInNarrativeInfo the maximum number of narrative info, across all users, to
+     * @param cacheSizeInWorkspaceInfo the maximum number of workspace info, across all users, to
      * store in the cache.
      */
     public WorkspaceInfoCache(
@@ -38,9 +38,9 @@ public class WorkspaceInfoCache implements WorkspaceInfoProvider {
     }
 
     /** Create a cache for testing purposes.
-     * @param cacheLifeTimeInSec the number of seconds an set of narrative info for a user should
+     * @param cacheLifeTimeInSec the number of seconds a set of workspace info, across all users should
      * remain in the cache.
-     * @param cacheSizeInNarrativeInfo the maximum number of narrative info, across all users, to
+     * @param cacheSizeInWorkspaceInfo the maximum number of workspace info, across all users, to
      * store in the cache.
      * @param ticker a ticker implementation that allows controlling cache expiration with the
      * provided ticker rather than waiting for the system clock. This is exposed for testing
@@ -71,7 +71,7 @@ public class WorkspaceInfoCache implements WorkspaceInfoProvider {
                     public int weigh(Long wsId, Tuple9<Long, String, String, String, Long, String,
                             String, String, Map<String, String>> workspaceInfo)
                     {
-                        return 9 + workspaceInfo.getE9().size();
+                        return 8 + workspaceInfo.getE9().size();
                     }
                 })
                 .build(new CacheLoader<Long, Tuple9<Long, String, String, String, Long, String,
