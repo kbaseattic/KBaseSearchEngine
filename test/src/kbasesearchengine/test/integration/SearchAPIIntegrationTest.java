@@ -479,6 +479,8 @@ public class SearchAPIIntegrationTest {
 
         final SearchObjectsOutput res = searchObjects(new MatchFilter());
 
+        // Narrative info set to null, as the postprocessing input is not given
+        assertNull(res.getAccessGroupNarrativeInfo());
         assertNull(res.getAccessGroupsInfo());
         assertNull(res.getObjectsInfo());
 
@@ -614,7 +616,9 @@ public class SearchAPIIntegrationTest {
                         ImmutableMap.of("whee2", Arrays.asList("imaprettypony2")))),
                 false);
 
+        // postprocessing input is not given
         final SearchObjectsOutput res = searchObjects(new MatchFilter());
+        assertNull(res.getAccessGroupNarrativeInfo());
         assertNull(res.getAccessGroupsInfo());
         assertNull(res.getObjectsInfo());
 
@@ -625,10 +629,10 @@ public class SearchAPIIntegrationTest {
                         .withPostProcessing(new PostProcessing().withAddAccessGroupInfo(0L)));
 
         // Narrative info not added, set to null by default
-        assertNull(res.getAccessGroupNarrativeInfo());
+        assertNull(searchResults.getAccessGroupNarrativeInfo());
         // set to null, since the addAccessGroupInfo flag was set to 0
-        assertNull(res.getAccessGroupsInfo());
-        assertNull(res.getObjectsInfo());
+        assertNull(searchResults.getAccessGroupsInfo());
+        assertNull(searchResults.getObjectsInfo());
     }
 
     @Test

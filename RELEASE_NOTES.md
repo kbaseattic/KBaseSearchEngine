@@ -3,11 +3,15 @@ Search Service MKII release notes
 
 0.2.1
 -----
+****  Made the following changes that affect the interface.
 
-* Renamed the usage of workspace_info with access_group_info in variable, method and file names.
+* In KBaseSearchEngine.spec, renamed the usage of workspace_info to access_group_info,
+  in the output from searchobjects and getobjects.
+  * Renamed the usage of workspace_info with access_group_info in variable, method and
+    class in the module.
 
-* Moved the flags addNarrativeInfo and addAccessGroupInfo from match filter parameter to the
-  preprocessing parameter provided to the search API.
+* In KBaseSearchEngine.spec, moved the flags addNarrativeInfo and addAccessGroupInfo
+  from match filter parameter to the postprocessing parameter provided to the search API.
 
 0.1.3
 -----

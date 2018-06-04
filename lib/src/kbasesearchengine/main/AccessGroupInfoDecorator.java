@@ -100,9 +100,9 @@ public class AccessGroupInfoDecorator implements SearchInterface {
             if (Objects.nonNull(params.getPostProcessing().getAddAccessGroupInfo()) &&
                     params.getPostProcessing().getAddAccessGroupInfo() == 1) {
                 getObjsOutput = getObjsOutput
-                        .withWorkspacesInfo(addAccessGroupsInfo(
+                        .withAccessGroupsInfo(addAccessGroupsInfo(
                                 getObjsOutput.getObjects(),
-                                getObjsOutput.getWorkspacesInfo()))
+                                getObjsOutput.getAccessGroupsInfo()))
                         .withObjectsInfo(addObjectsInfo(
                                 getObjsOutput.getObjects(),
                                 getObjsOutput.getObjectsInfo()));
