@@ -37,6 +37,7 @@ import org.junit.AfterClass;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -616,7 +617,7 @@ public class SearchAPIIntegrationTest {
                         ImmutableMap.of("whee2", Arrays.asList("imaprettypony2")))),
                 false);
 
-        // postprocessing input is not given
+        // test searchObjects. postprocessing input is not given
         final SearchObjectsOutput res = searchObjects(new MatchFilter());
         assertNull(res.getAccessGroupNarrativeInfo());
         assertNull(res.getAccessGroupsInfo());
@@ -633,6 +634,25 @@ public class SearchAPIIntegrationTest {
         // set to null, since the addAccessGroupInfo flag was set to 0
         assertNull(searchResults.getAccessGroupsInfo());
         assertNull(searchResults.getObjectsInfo());
+
+        // test get objects. postprocessing input is not given
+        GetObjectsOutput getObjResults = searchCli.getObjects(
+                new GetObjectsInput()
+                        .withGuids(Arrays.asList("WS:1/1/1", "WS:2/1/1")));
+        assertNull(getObjResults.getAccessGroupNarrativeInfo());
+        assertNull(getObjResults.getAccessGroupsInfo());
+        assertNull(getObjResults.getObjectsInfo());
+
+        getObjResults = searchCli.getObjects(
+                new GetObjectsInput()
+                        .withGuids(Arrays.asList("WS:1/1/1", "WS:2/1/1"))
+                        .withPostProcessing(new PostProcessing().withAddAccessGroupInfo(0L)));
+
+        // Narrative info not added, set to null by default
+        assertNull(getObjResults.getAccessGroupNarrativeInfo());
+        // set to null, since the addAccessGroupInfo flag was set to 0
+        assertNull(getObjResults.getAccessGroupsInfo());
+        assertNull(getObjResults.getObjectsInfo());
     }
 
     @Test
@@ -734,6 +754,19 @@ public class SearchAPIIntegrationTest {
         // verify the values in objectsInfo map
         compareObjInfo(searchResults.getObjectsInfo().get("1/1/1"), objInfoExpected1);
         compareObjInfo(searchResults.getObjectsInfo().get("2/1/1"), objInfoExpected2);
+
+        final GetObjectsOutput getObjResults = searchCli.getObjects(
+                new GetObjectsInput()
+                        .withGuids(Arrays.asList("WS:1/1/1", "WS:2/1/1"))
+                        .withPostProcessing(new PostProcessing().withAddAccessGroupInfo(1L)));
+
+        // verify the values in workspacesInfo map
+        compareWsInfo(getObjResults.getAccessGroupsInfo().get(1L), wsInfoExpected1);
+        compareWsInfo(getObjResults.getAccessGroupsInfo().get(2L), wsInfoExpected2);
+
+        // verify the values in objectsInfo map
+        compareObjInfo(getObjResults.getObjectsInfo().get("1/1/1"), objInfoExpected1);
+        compareObjInfo(getObjResults.getObjectsInfo().get("2/1/1"), objInfoExpected2);
     }
 
     @Test
