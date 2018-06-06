@@ -3,6 +3,7 @@ package kbasesearchengine.test.events.handler;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.argThat;
@@ -611,6 +612,7 @@ public class WorkspaceEventHandlerTest {
                                                  Long, String, Long, String, String, Long, Map<String, String>>> expected) {
         assertEquals("Error in map size", got.size(), expected.size());
         for (final String ref: got.keySet()) {
+            assertTrue("Set does not contain " + ref, expected.containsKey(ref));
             compareObjInfo(got.get(ref), expected.get(ref));
         }
     }
