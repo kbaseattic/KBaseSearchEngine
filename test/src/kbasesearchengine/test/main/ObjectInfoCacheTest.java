@@ -70,9 +70,9 @@ public class ObjectInfoCacheTest {
                 ImmutableMap.of(
                         "65/1/1", obj_65_1_1_var1,
                         "2/1/1", obj_2_1_1_var2));
-
+        // sleep little more than cacheLifeTimeInSec
         Thread.sleep(2001);
-
+        // check if the cached data had expired
         compareObjInfoMap(cache.getObjectsInfo(set("65/1/1", "2/1/1")),
                 ImmutableMap.of(
                         "65/1/1", obj_65_1_1_var11,
@@ -104,9 +104,9 @@ public class ObjectInfoCacheTest {
 
         compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var1);
         compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var1);
-
+        // sleep little more than cacheLifeTimeInSec
         Thread.sleep(1001);
-
+        // check if the cached data had expired
         compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var11);
         compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var11);
     }
@@ -131,9 +131,9 @@ public class ObjectInfoCacheTest {
                         "65/1/1", obj_65_1_1_var11,
                         "2/1/1", obj_2_1_1_var22),
                 null);
-
+        // ticker returns little more than multiples of cacheLifeTimeInSec
         when(ticker.read()).thenReturn(0L, 10000000001L, 20000000001L);
-
+        // because of ticker values, the data in cache should expire on every get
         compareObjInfoMap(cache.getObjectsInfo(set("65/1/1", "2/1/1")),
                 ImmutableMap.of(
                         "65/1/1", obj_65_1_1_var1,
@@ -185,8 +185,9 @@ public class ObjectInfoCacheTest {
                 obj_65_1_1_var1,
                 obj_65_1_1_var11,
                 null);
+        // ticker values are multiples of half of cacheLifeTimeInSec
         when(ticker.read()).thenReturn(0L, 5000000001L, 10000000001L, 15000000001L, 20000000001L);
-
+        // check to see if cache expires after 2 gets
         compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var1);
         compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var1);
 
@@ -214,10 +215,10 @@ public class ObjectInfoCacheTest {
                         "65/1/1", obj_65_1_1_var11,
                         "2/1/1", obj_2_1_1_var22),
                 null);
-
+        // ticker values are multiples of half of cacheLifeTimeInSec, returned twice
         when(ticker.read()).thenReturn(0L, 0L, 5000000001L, 5000000001L, 10000000001L, 10000000001L,
                 15000000001L, 15000000001L, 20000000001L, 20000000001L);
-
+        // check to see if the cached data expires after 2 gets
         compareObjInfoMap(cache.getObjectsInfo(set("65/1/1", "2/1/1")),
                 ImmutableMap.of(
                         "65/1/1", obj_65_1_1_var1,

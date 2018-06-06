@@ -62,9 +62,9 @@ public class NarrativeInfoCacheTest {
 
         compare(cache.findNarrativeInfo(65L), narrativeInfo1);
         compare(cache.findNarrativeInfo(65L), narrativeInfo1);
-
+        // sleep little more than cacheLifeTimeInSec
         Thread.sleep(1001);
-
+        // check if the cached data had expired
         compare(cache.findNarrativeInfo(65L), narrativeInfo2);
         compare(cache.findNarrativeInfo(65L), narrativeInfo2);
     }
@@ -85,9 +85,9 @@ public class NarrativeInfoCacheTest {
                 narrativeInfo1,
                 narrativeInfo2,
                 null);
-
+        // ticker returns time little more than cacheLifeTimeInSec
         when(ticker.read()).thenReturn(0L, 10000000001L, 20000000001L);
-
+        // because of ticker values, the data in cache should expire on every get
         compare(cache.findNarrativeInfo(65L), narrativeInfo1);
         compare(cache.findNarrativeInfo(65L), narrativeInfo2);
     }
@@ -129,8 +129,9 @@ public class NarrativeInfoCacheTest {
                 narrativeInfo1,
                 narrativeInfo2,
                 null);
+        // ticker returns multiples of half of cacheLifeTimeInSec
         when(ticker.read()).thenReturn(0L, 5000000001L, 10000000001L, 15000000001L, 20000000001L);
-
+        // check to see if cache expires after 2 gets
         compare(cache.findNarrativeInfo(65L), narrativeInfo1);
         compare(cache.findNarrativeInfo(65L), narrativeInfo1);
 

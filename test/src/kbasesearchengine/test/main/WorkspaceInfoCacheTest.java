@@ -92,7 +92,7 @@ public class WorkspaceInfoCacheTest {
 
         when(wrapped.getWorkspaceInfo(65L)).thenReturn(
                 wsTuple_65_v1, wsTuple_65_v2, null);
-        // ticker returns time little more than cacheLifeTimeInSec everytime
+        // ticker returns little more than mutiples of cacheLifeTimeInSec
         when(ticker.read()).thenReturn(0L, 10000000001L, 20000000001L);
 
         // because of ticker values, the data in cache should expire on every get
@@ -133,7 +133,7 @@ public class WorkspaceInfoCacheTest {
                 ticker);
 
         when(wrapped.getWorkspaceInfo(65L)).thenReturn(wsTuple_65_v1, wsTuple_65_v2, null);
-        // ticker values are half of cacheLifeTimeInSec
+        // ticker values are multiples of half of cacheLifeTimeInSec
         when(ticker.read()).thenReturn(0L, 5000000001L, 10000000001L, 15000000001L, 20000000001L);
 
         // check to see if cache expires after 2 gets
