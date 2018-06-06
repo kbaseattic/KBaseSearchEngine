@@ -5,6 +5,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.io.IOException;
+import java.util.Map;
+
 import us.kbase.common.service.JsonClientException;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -22,8 +24,36 @@ import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.main.WorkspaceInfoProvider;
 import kbasesearchengine.main.WorkspaceInfoCache;
 import kbasesearchengine.test.common.TestCommon;
+import us.kbase.common.service.Tuple9;
 
 public class WorkspaceInfoCacheTest {
+
+    private final Tuple9<Long, String, String, String, Long, String, String, String,
+            Map<String, String>> wsTuple_65_v1 = wsTuple(65, "myws1", "owner1", "date1", 32, "a",
+                    "r", "unlocked",Collections.emptyMap());
+    private final Tuple9<Long, String, String, String, Long, String, String, String,
+            Map<String, String>> wsTuple_65_v2 = wsTuple(65, "myws2", "owner2", "date2", 32, "a",
+                    "r", "unlocked", Collections.emptyMap());
+
+    private final Tuple9<Long, String, String, String, Long, String, String, String,
+            Map<String, String>> wsTuple_65_var1 = wsTuple(65, "myws1", "owner1", "date1", 32, "a",
+                    "r", "unlocked", Collections.emptyMap());
+    private final Tuple9<Long, String, String, String, Long, String, String, String,
+            Map<String, String>> wsTuple_65_var11 = wsTuple(65, "myws11", "owner11", "date11", 32, "a",
+                    "r", "unlocked", Collections.emptyMap());
+    private final Tuple9<Long, String, String, String, Long, String, String, String,
+            Map<String, String>> wsTuple_65_var111 = wsTuple(65, "myws111", "owner111", "date111", 32, "a",
+                    "r", "unlocked", Collections.emptyMap());
+
+    private final Tuple9<Long, String, String, String, Long, String, String, String,
+            Map<String, String>> wsTuple_65_var2 = wsTuple(2, "myws2", "owner2", "date2", 32, "a",
+                    "r", "unlocked", ImmutableMap.of("narrative", "3", "narrative_nice_name", "mynarrative"));
+    private final Tuple9<Long, String, String, String, Long, String, String, String,
+            Map<String, String>> wsTuple_65_var22 = wsTuple(2, "myws22", "owner22", "date22", 32, "a",
+                    "r", "unlocked", Collections.emptyMap());
+    private final Tuple9<Long, String, String, String, Long, String, String, String,
+            Map<String, String>> wsTuple_65_var222 = wsTuple(2, "myws222", "owner222", "date222", 32, "a",
+                    "r", "unlocked", Collections.emptyMap());
 
     @SuppressWarnings("unchecked")
     @Test
@@ -36,26 +66,16 @@ public class WorkspaceInfoCacheTest {
                 10000);
 
         when(wrapped.getWorkspaceInfo(65L)).thenReturn(
-                wsTuple(65, "myws1", "owner1", "date1", 32, "a",
-                "r", "unlocked", Collections.emptyMap()),
-                wsTuple(65, "myws2", "owner2", "date2", 32, "a",
-                "r", "unlocked", Collections.emptyMap()),
-                null);
+                wsTuple_65_v1, wsTuple_65_v2, null);
 
-        compareWsInfo(cache.getWorkspaceInfo(65L),
-                wsTuple(65, "myws1", "owner1", "date1", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()));
-        compareWsInfo(cache.getWorkspaceInfo(65L),
-                wsTuple(65, "myws1", "owner1", "date1", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()));
+        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v1);
+        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v1);
+        // sleep little more than cacheLifeTimeInSec
         Thread.sleep(1001);
 
-        compareWsInfo(cache.getWorkspaceInfo(65L),
-                wsTuple(65, "myws2", "owner2", "date2", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()));
-        compareWsInfo(cache.getWorkspaceInfo(65L),
-                wsTuple(65, "myws2", "owner2", "date2", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()));
+        // check if the cache data had expired
+        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v2);
+        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v2);
     }
 
     @SuppressWarnings("unchecked")
@@ -71,20 +91,13 @@ public class WorkspaceInfoCacheTest {
                 ticker);
 
         when(wrapped.getWorkspaceInfo(65L)).thenReturn(
-                wsTuple(65, "myws1", "owner1", "date1", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                wsTuple(65, "myws2", "owner2", "date2", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                null);
+                wsTuple_65_v1, wsTuple_65_v2, null);
+        // ticker returns time little more than cacheLifeTimeInSec everytime
         when(ticker.read()).thenReturn(0L, 10000000001L, 20000000001L);
 
-        compareWsInfo(cache.getWorkspaceInfo(65L),
-                wsTuple(65, "myws1", "owner1", "date1", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()));
-
-        compareWsInfo(cache.getWorkspaceInfo(65L),
-                wsTuple(65, "myws2", "owner2", "date2", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()));
+        // because of ticker values, the data in cache should expire on every get
+        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v1);
+        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v2);
     }
 
     @SuppressWarnings("unchecked")
@@ -99,7 +112,6 @@ public class WorkspaceInfoCacheTest {
                 10,
                 10000,
                 ticker);
-
         try {
             cache.getWorkspaceInfo(65L);
             fail("CacheLoader DID NOT throw an exception for a lookup of non-existing key.");
@@ -120,27 +132,16 @@ public class WorkspaceInfoCacheTest {
                 10000,
                 ticker);
 
-        when(wrapped.getWorkspaceInfo(65L)).thenReturn(
-                wsTuple(65, "myws1", "owner1", "date1", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                wsTuple(65, "myws2", "owner2", "date2", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                null);
+        when(wrapped.getWorkspaceInfo(65L)).thenReturn(wsTuple_65_v1, wsTuple_65_v2, null);
+        // ticker values are half of cacheLifeTimeInSec
         when(ticker.read()).thenReturn(0L, 5000000001L, 10000000001L, 15000000001L, 20000000001L);
 
-        compareWsInfo(cache.getWorkspaceInfo(65L),
-                wsTuple(65, "myws1", "owner1", "date1", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()));
-        compareWsInfo(cache.getWorkspaceInfo(65L),
-                wsTuple(65, "myws1", "owner1", "date1", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()));
+        // check to see if cache expires after 2 gets
+        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v1);
+        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v1);
 
-        compareWsInfo(cache.getWorkspaceInfo(65L),
-                wsTuple(65, "myws2", "owner2", "date2", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()));
-        compareWsInfo(cache.getWorkspaceInfo(65L),
-                wsTuple(65, "myws2", "owner2", "date2", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()));
+        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v2);
+        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v2);
     }
 
     @SuppressWarnings("unchecked")
@@ -151,57 +152,19 @@ public class WorkspaceInfoCacheTest {
         final WorkspaceInfoCache cache = new WorkspaceInfoCache(wrapped, 10000, 16);
 
         when(wrapped.getWorkspaceInfo(65L)).thenReturn(
-                wsTuple(65, "myws1", "owner1", "date1", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                wsTuple(65, "myws11", "owner11", "date11", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                wsTuple(65, "myws111", "owner111", "date111", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                null);
+                wsTuple_65_var1, wsTuple_65_var11, wsTuple_65_var111, null);
         when(wrapped.getWorkspaceInfo(2L)).thenReturn(
-                wsTuple(2, "myws2", "owner2", "date2", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                wsTuple(2, "myws22", "owner22", "date22", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                wsTuple(2, "myws222", "owner222", "date222", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                null);
-        when(wrapped.getWorkspaceInfo(3L)).thenReturn(
-                wsTuple(3, "myws3", "owner3", "date3", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                wsTuple(3, "myws33", "owner33", "date33", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                wsTuple(3, "myws333", "owner333", "date333", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                null);
-        when(wrapped.getWorkspaceInfo(42L)).thenReturn(
-                wsTuple(42, "myws4", "owner4", "date4", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                wsTuple(42, "myws44", "owner44", "date44", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                wsTuple(42, "myws444", "owner444", "date444", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()),
-                null);
+                wsTuple_65_var2, wsTuple_65_var22, wsTuple_65_var222, null);
 
         // load 18 workspace infos into a max 16 cache
-        compareWsInfo(cache.getWorkspaceInfo(65L),
-                wsTuple(65, "myws1", "owner1", "date1", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()));
+        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_var1);
         // check cache access
-        compareWsInfo(cache.getWorkspaceInfo(65L),
-                wsTuple(65, "myws1", "owner1", "date1", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()));
+        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_var1);
         // force an expiration based on cache size
-        compareWsInfo(cache.getWorkspaceInfo(2L),
-                wsTuple(2, "myws2", "owner2", "date2", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()));
+        compareWsInfo(cache.getWorkspaceInfo(2L), wsTuple_65_var2);
         // check that with every access, the oldest value had expired
-        compareWsInfo(cache.getWorkspaceInfo(65L),
-                wsTuple(65, "myws11", "owner11", "date11", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()));
-        compareWsInfo(cache.getWorkspaceInfo(2L),
-                wsTuple(2, "myws22", "owner22", "date22", 32, "a",
-                        "r", "unlocked", Collections.emptyMap()));
+        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_var11);
+        compareWsInfo(cache.getWorkspaceInfo(2L), wsTuple_65_var22);
     }
 
     @Test
