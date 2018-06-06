@@ -30,6 +30,23 @@ import us.kbase.common.service.Tuple11;
 
 public class ObjectInfoCacheTest {
 
+    private final Tuple11<Long, String, String, String, Long, String,
+            Long, String, String, Long, Map<String, String>> obj_65_1_1_var1 =
+            objTuple(1L, "objName1", "sometype", "date1", 1L,"copier1",
+                    65L, "wsname1", "checksum", 44, Collections.emptyMap());
+    private final Tuple11<Long, String, String, String, Long, String,
+            Long, String, String, Long, Map<String, String>> obj_65_1_1_var11 =
+            objTuple(1L, "objName11", "sometype", "date11", 1L, "copier11",
+                    65L, "wsname11", "checksum", 44, Collections.emptyMap());
+    private final Tuple11<Long, String, String, String, Long, String,
+            Long, String, String, Long, Map<String, String>> obj_2_1_1_var2 =
+            objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
+                    2L, "wsname2", "checksum", 44, Collections.emptyMap());
+    private final Tuple11<Long, String, String, String, Long, String,
+            Long, String, String, Long, Map<String, String>> obj_2_1_1_var22 =
+            objTuple(1L, "objName22", "sometype", "date22", 1L, "copier22",
+                    2L, "wsname22", "checksum", 44, Collections.emptyMap());
+
     @SuppressWarnings("unchecked")
     @Test
     public void standardConstructorMultiLookup() throws Exception {
@@ -41,39 +58,29 @@ public class ObjectInfoCacheTest {
                 10000);
 
         when(wrapped.getObjectsInfo(set("65/1/1", "2/1/1"))).thenReturn(
-                ImmutableMap.of("65/1/1", objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                        65L, "wsname1", "checksum", 44, Collections.emptyMap()),
-                        "2/1/1", objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                        2L, "wsname2", "checksum", 44, Collections.emptyMap())),
-                ImmutableMap.of("65/1/1", objTuple(1L, "objName11", "sometype", "date11", 1L, "copier11",
-                        65L, "wsname11", "checksum", 44, Collections.emptyMap()),
-                        "2/1/1", objTuple(1L, "objName22", "sometype", "date22", 1L, "copier22",
-                                2L, "wsname22", "checksum", 44, Collections.emptyMap())),
+                ImmutableMap.of("65/1/1", obj_65_1_1_var1, "2/1/1", obj_2_1_1_var2),
+                ImmutableMap.of("65/1/1", obj_65_1_1_var11, "2/1/1", obj_2_1_1_var22),
                 null);
 
         compareObjInfoMap(cache.getObjectsInfo(set("65/1/1", "2/1/1")),
                 ImmutableMap.of(
-                        "2/1/1", objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                                2L, "wsname2", "checksum", 44, Collections.emptyMap()),
-                        "65/1/1", objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                                65L, "wsname1", "checksum", 44, Collections.emptyMap())));
+                        "2/1/1", obj_2_1_1_var2,
+                        "65/1/1", obj_65_1_1_var1));
         compareObjInfoMap(cache.getObjectsInfo(set("65/1/1", "2/1/1")),
-                ImmutableMap.of("65/1/1", objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                        65L, "wsname1", "checksum", 44, Collections.emptyMap()),
-                        "2/1/1", objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                                2L, "wsname2", "checksum", 44, Collections.emptyMap())));
+                ImmutableMap.of(
+                        "65/1/1", obj_65_1_1_var1,
+                        "2/1/1", obj_2_1_1_var2));
+
         Thread.sleep(2001);
 
         compareObjInfoMap(cache.getObjectsInfo(set("65/1/1", "2/1/1")),
-                ImmutableMap.of("65/1/1", objTuple(1L, "objName11", "sometype", "date11", 1L, "copier11",
-                        65L, "wsname11", "checksum", 44, Collections.emptyMap()),
-                        "2/1/1", objTuple(1L, "objName22", "sometype", "date22", 1L, "copier22",
-                                2L, "wsname22", "checksum", 44, Collections.emptyMap())));
+                ImmutableMap.of(
+                        "65/1/1", obj_65_1_1_var11,
+                        "2/1/1", obj_2_1_1_var22));
         compareObjInfoMap(cache.getObjectsInfo(set("65/1/1", "2/1/1")),
-                ImmutableMap.of("65/1/1", objTuple(1L, "objName11", "sometype", "date11", 1L, "copier11",
-                        65L, "wsname11", "checksum", 44, Collections.emptyMap()),
-                        "2/1/1", objTuple(1L, "objName22", "sometype", "date22", 1L, "copier22",
-                                2L, "wsname22", "checksum", 44, Collections.emptyMap())));
+                ImmutableMap.of(
+                        "65/1/1", obj_65_1_1_var11,
+                        "2/1/1", obj_2_1_1_var22));
     }
 
     @SuppressWarnings("unchecked")
@@ -87,32 +94,21 @@ public class ObjectInfoCacheTest {
                 10000);
 
         when(wrapped.getObjectsInfo(ImmutableList.of("65/1/1"))).thenReturn(
-                ImmutableMap.of("65/1/1", objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                        65L, "wsname1", "checksum", 44, Collections.emptyMap())),
-                ImmutableMap.of("65/1/1", objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                        65L, "wsname2", "checksum", 44, Collections.emptyMap())),
+                ImmutableMap.of("65/1/1", obj_65_1_1_var1),
+                ImmutableMap.of("65/1/1", obj_65_1_1_var11),
                 null);
         when(wrapped.getObjectInfo("65/1/1")).thenReturn(
-                objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                        65L, "wsname1", "checksum", 44, Collections.emptyMap()),
-                objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                        65L, "wsname2", "checksum", 44, Collections.emptyMap()),
+                obj_65_1_1_var1,
+                obj_65_1_1_var11,
                 null);
 
-        compareObjInfo(cache.getObjectInfo("65/1/1"),
-                objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                        65L, "wsname1", "checksum", 44, Collections.emptyMap()));
-        compareObjInfo(cache.getObjectInfo("65/1/1"),
-                objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                        65L, "wsname1", "checksum", 44, Collections.emptyMap()));
+        compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var1);
+        compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var1);
+
         Thread.sleep(1001);
 
-        compareObjInfo(cache.getObjectInfo("65/1/1"),
-                objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                        65L, "wsname2", "checksum", 44, Collections.emptyMap()));
-        compareObjInfo(cache.getObjectInfo("65/1/1"),
-                objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                        65L, "wsname2", "checksum", 44, Collections.emptyMap()));
+        compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var11);
+        compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var11);
     }
 
     @SuppressWarnings("unchecked")
@@ -129,31 +125,23 @@ public class ObjectInfoCacheTest {
 
         when(wrapped.getObjectsInfo(set("65/1/1", "2/1/1"))).thenReturn(
                 ImmutableMap.of(
-                        "65/1/1", objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                        65L, "wsname1", "checksum", 44, Collections.emptyMap()),
-                        "2/1/1", objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                                2L, "wsname2", "checksum", 44, Collections.emptyMap())),
+                        "65/1/1", obj_65_1_1_var1,
+                        "2/1/1", obj_2_1_1_var2),
                 ImmutableMap.of(
-                        "65/1/1", objTuple(1L, "objName11", "sometype", "date11", 1L, "copier11",
-                        65L, "wsname11", "checksum", 44, Collections.emptyMap()),
-                        "2/1/1", objTuple(1L, "objName22", "sometype", "date22", 1L, "copier22",
-                                2L, "wsname22", "checksum", 44, Collections.emptyMap())),
+                        "65/1/1", obj_65_1_1_var11,
+                        "2/1/1", obj_2_1_1_var22),
                 null);
 
         when(ticker.read()).thenReturn(0L, 10000000001L, 20000000001L);
 
         compareObjInfoMap(cache.getObjectsInfo(set("65/1/1", "2/1/1")),
                 ImmutableMap.of(
-                        "65/1/1", objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                                65L, "wsname1", "checksum", 44, Collections.emptyMap()),
-                        "2/1/1", objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                                2L, "wsname2", "checksum", 44, Collections.emptyMap())));
+                        "65/1/1", obj_65_1_1_var1,
+                        "2/1/1", obj_2_1_1_var2));
         compareObjInfoMap(cache.getObjectsInfo(set("65/1/1", "2/1/1")),
                 ImmutableMap.of(
-                        "65/1/1", objTuple(1L, "objName11", "sometype", "date11", 1L, "copier11",
-                        65L, "wsname11", "checksum", 44, Collections.emptyMap()),
-                        "2/1/1", objTuple(1L, "objName22", "sometype", "date22", 1L, "copier22",
-                                2L, "wsname22", "checksum", 44, Collections.emptyMap())));
+                        "65/1/1", obj_65_1_1_var11,
+                        "2/1/1", obj_2_1_1_var22));
     }
 
     @SuppressWarnings("unchecked")
@@ -190,32 +178,20 @@ public class ObjectInfoCacheTest {
                 ticker);
 
         when(wrapped.getObjectsInfo(ImmutableList.of("65/1/1"))).thenReturn(
-                ImmutableMap.of("65/1/1", objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                        65L, "wsname1", "checksum", 44, Collections.emptyMap())),
-                ImmutableMap.of("65/1/1", objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                        65L, "wsname2", "checksum", 44, Collections.emptyMap())),
+                ImmutableMap.of("65/1/1", obj_65_1_1_var1),
+                ImmutableMap.of("65/1/1", obj_65_1_1_var11),
                 null);
         when(wrapped.getObjectInfo("65/1/1")).thenReturn(
-                objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                        65L, "wsname1", "checksum", 44, Collections.emptyMap()),
-                objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                        65L, "wsname2", "checksum", 44, Collections.emptyMap()),
+                obj_65_1_1_var1,
+                obj_65_1_1_var11,
                 null);
         when(ticker.read()).thenReturn(0L, 5000000001L, 10000000001L, 15000000001L, 20000000001L);
 
-        compareObjInfo(cache.getObjectInfo("65/1/1"),
-                objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                        65L, "wsname1", "checksum", 44, Collections.emptyMap()));
-        compareObjInfo(cache.getObjectInfo("65/1/1"),
-                objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                        65L, "wsname1", "checksum", 44, Collections.emptyMap()));
+        compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var1);
+        compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var1);
 
-        compareObjInfo(cache.getObjectInfo("65/1/1"),
-                objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                        65L, "wsname2", "checksum", 44, Collections.emptyMap()));
-        compareObjInfo(cache.getObjectInfo("65/1/1"),
-                objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                        65L, "wsname2", "checksum", 44, Collections.emptyMap()));
+        compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var11);
+        compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var11);
     }
 
     @SuppressWarnings("unchecked")
@@ -231,14 +207,12 @@ public class ObjectInfoCacheTest {
                 ticker);
 
         when(wrapped.getObjectsInfo(set("65/1/1", "2/1/1"))).thenReturn(
-                ImmutableMap.of("65/1/1", objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                        65L, "wsname1", "checksum", 44, Collections.emptyMap()),
-                        "2/1/1", objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                                2L, "wsname2", "checksum", 44, Collections.emptyMap())),
-                ImmutableMap.of("65/1/1", objTuple(1L, "objName11", "sometype", "date11", 1L, "copier11",
-                        65L, "wsname11", "checksum", 44, Collections.emptyMap()),
-                        "2/1/1", objTuple(1L, "objName22", "sometype", "date22", 1L, "copier22",
-                                2L, "wsname22", "checksum", 44, Collections.emptyMap())),
+                ImmutableMap.of(
+                        "65/1/1", obj_65_1_1_var1,
+                        "2/1/1", obj_2_1_1_var2),
+                ImmutableMap.of(
+                        "65/1/1", obj_65_1_1_var11,
+                        "2/1/1", obj_2_1_1_var22),
                 null);
 
         when(ticker.read()).thenReturn(0L, 0L, 5000000001L, 5000000001L, 10000000001L, 10000000001L,
@@ -246,28 +220,20 @@ public class ObjectInfoCacheTest {
 
         compareObjInfoMap(cache.getObjectsInfo(set("65/1/1", "2/1/1")),
                 ImmutableMap.of(
-                        "65/1/1", objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                                65L, "wsname1", "checksum", 44, Collections.emptyMap()),
-                        "2/1/1", objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                                2L, "wsname2", "checksum", 44, Collections.emptyMap())));
+                        "65/1/1", obj_65_1_1_var1,
+                        "2/1/1", obj_2_1_1_var2));
         compareObjInfoMap(cache.getObjectsInfo(set("65/1/1", "2/1/1")),
                 ImmutableMap.of(
-                        "65/1/1", objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                                65L, "wsname1", "checksum", 44, Collections.emptyMap()),
-                        "2/1/1", objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                                2L, "wsname2", "checksum", 44, Collections.emptyMap())));
+                        "65/1/1", obj_65_1_1_var1,
+                        "2/1/1", obj_2_1_1_var2));
         compareObjInfoMap(cache.getObjectsInfo(set("65/1/1", "2/1/1")),
                 ImmutableMap.of(
-                        "65/1/1", objTuple(1L, "objName11", "sometype", "date11", 1L, "copier11",
-                        65L, "wsname11", "checksum", 44, Collections.emptyMap()),
-                        "2/1/1", objTuple(1L, "objName22", "sometype", "date22", 1L, "copier22",
-                                2L, "wsname22", "checksum", 44, Collections.emptyMap())));
+                        "65/1/1", obj_65_1_1_var11,
+                        "2/1/1", obj_2_1_1_var22));
         compareObjInfoMap(cache.getObjectsInfo(set("65/1/1", "2/1/1")),
                 ImmutableMap.of(
-                        "65/1/1", objTuple(1L, "objName11", "sometype", "date11", 1L, "copier11",
-                        65L, "wsname11", "checksum", 44, Collections.emptyMap()),
-                        "2/1/1", objTuple(1L, "objName22", "sometype", "date22", 1L, "copier22",
-                                2L, "wsname22", "checksum", 44, Collections.emptyMap())));
+                        "65/1/1", obj_65_1_1_var11,
+                        "2/1/1", obj_2_1_1_var22));
     }
 
     @SuppressWarnings("unchecked")
@@ -278,49 +244,23 @@ public class ObjectInfoCacheTest {
         final ObjectInfoCache cache = new ObjectInfoCache(wrapped, 10000, 16);
 
         when(wrapped.getObjectInfo("65/1/1")).thenReturn(
-                objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                        65L, "wsname1", "checksum", 44, Collections.emptyMap()),
-                objTuple(1L, "objName11", "sometype", "date11", 1L, "copier11",
-                        65L, "wsname11", "checksum", 44, Collections.emptyMap()),
+                obj_65_1_1_var1,
+                obj_65_1_1_var11,
                 null);
         when(wrapped.getObjectInfo("2/1/1")).thenReturn(
-                objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                        2L, "wsname2", "checksum", 44, Collections.emptyMap()),
-                objTuple(1L, "objName22", "sometype", "date22", 1L, "copier22",
-                        2L, "wsname22", "checksum", 44, Collections.emptyMap()),
-                null);
-        when(wrapped.getObjectInfo("3/1/1")).thenReturn(
-                objTuple(1L, "objName3", "sometype", "date3", 1L, "copier3",
-                        3L, "wsname3", "checksum", 44, Collections.emptyMap()),
-                objTuple(1L, "objName33", "sometype", "date33", 1L, "copier33",
-                        3L, "wsname33", "checksum", 44, Collections.emptyMap()),
-                null);
-        when(wrapped.getObjectInfo("42/1/1")).thenReturn(
-                objTuple(1L, "objName4", "sometype", "date4", 1L, "copier4",
-                        42L, "wsname4", "checksum", 44, Collections.emptyMap()),
-                objTuple(1L, "objName44", "sometype", "date44", 1L, "copier44",
-                        42L, "wsname44", "checksum", 44, Collections.emptyMap()),
+                obj_2_1_1_var2,
+                obj_2_1_1_var22,
                 null);
 
         // load 22 object infos into a max 16 cache
-        compareObjInfo(cache.getObjectInfo("65/1/1"),
-                objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                        65L, "wsname1", "checksum", 44, Collections.emptyMap()));
+        compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var1);
         // check cache access
-        compareObjInfo(cache.getObjectInfo("65/1/1"),
-                objTuple(1L, "objName1", "sometype", "date1", 1L, "copier1",
-                        65L, "wsname1", "checksum", 44, Collections.emptyMap()));
+        compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var1);
         // force an expiration based on cache size
-        compareObjInfo(cache.getObjectInfo("2/1/1"),
-                objTuple(1L, "objName2", "sometype", "date2", 1L, "copier2",
-                        2L, "wsname2", "checksum", 44, Collections.emptyMap()));
+        compareObjInfo(cache.getObjectInfo("2/1/1"), obj_2_1_1_var2);
         // check that with every access, the oldest value had expired
-        compareObjInfo(cache.getObjectInfo("65/1/1"),
-                objTuple(1L, "objName11", "sometype", "date11", 1L, "copier11",
-                        65L, "wsname11", "checksum", 44, Collections.emptyMap()));
-        compareObjInfo(cache.getObjectInfo("2/1/1"),
-                objTuple(1L, "objName22", "sometype", "date22", 1L, "copier22",
-                        2L, "wsname22", "checksum", 44, Collections.emptyMap()));
+        compareObjInfo(cache.getObjectInfo("65/1/1"), obj_65_1_1_var11);
+        compareObjInfo(cache.getObjectInfo("2/1/1"), obj_2_1_1_var22);
     }
 
     @Test
