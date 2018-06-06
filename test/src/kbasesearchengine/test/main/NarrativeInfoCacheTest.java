@@ -26,6 +26,25 @@ import kbasesearchengine.test.common.TestCommon;
 
 public class NarrativeInfoCacheTest {
 
+    private final NarrativeInfo narrativeInfo1 = new NarrativeInfo(null, null, 1518126945000L, "owner1");
+    private final NarrativeInfo narrativeInfo2 = new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2");
+
+    private final NarrativeInfo narrativeInfo_1 = new NarrativeInfo(null, null, 1518126945000L, "owner1");
+    private final NarrativeInfo narrativeInfo_11 = new NarrativeInfo(null, null, 1518126957000L, "owner11");
+    private final NarrativeInfo narrativeInfo_111 = new NarrativeInfo(null, null, 1518126959000L, "owner111");
+
+    private final NarrativeInfo narrativeInfo_2 = new NarrativeInfo("narrname2", 2L, 20000L, "owner2");
+    private final NarrativeInfo narrativeInfo_22 = new NarrativeInfo("narrname22", 22L, 22000L, "owner22");
+    private final NarrativeInfo narrativeInfo_222 = new NarrativeInfo("narrname222", 222L, 222000L, "owner222");
+
+    private final NarrativeInfo narrativeInfo_3 = new NarrativeInfo("narrname3", 3L, 30000L, "owner3");
+    private final NarrativeInfo narrativeInfo_33 = new NarrativeInfo("narrname33", 33L, 33000L, "owner33");
+    private final NarrativeInfo narrativeInfo_333 = new NarrativeInfo("narrname333", 333L, 333000L, "owner333");
+
+    private final NarrativeInfo narrativeInfo_4 = new NarrativeInfo(null, null, 1518126945678L, "owner4");
+    private final NarrativeInfo narrativeInfo_44 = new NarrativeInfo("mylovelynarrative", 4L, 1518126950678L, "owner44");
+    private final NarrativeInfo narrativeInfo_444 = new NarrativeInfo("mytestnarrative", 44L, 1518126950678L, "owner444");
+
     @SuppressWarnings("unchecked")
     @Test
     public void standardConstructor() throws Exception {
@@ -37,20 +56,17 @@ public class NarrativeInfoCacheTest {
                 10000);
 
         when(wrapped.findNarrativeInfo(65L)).thenReturn(
-                new NarrativeInfo(null, null, 1518126945000L, "owner1"),
-                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"),
+                narrativeInfo1,
+                narrativeInfo2,
                 null);
 
-        compare(cache.findNarrativeInfo(65L),
-                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
-        compare(cache.findNarrativeInfo(65L),
-                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
+        compare(cache.findNarrativeInfo(65L), narrativeInfo1);
+        compare(cache.findNarrativeInfo(65L), narrativeInfo1);
+
         Thread.sleep(1001);
 
-        compare(cache.findNarrativeInfo(65L),
-                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"));
-        compare(cache.findNarrativeInfo(65L),
-                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"));
+        compare(cache.findNarrativeInfo(65L), narrativeInfo2);
+        compare(cache.findNarrativeInfo(65L), narrativeInfo2);
     }
 
     @SuppressWarnings("unchecked")
@@ -66,16 +82,14 @@ public class NarrativeInfoCacheTest {
                 ticker);
 
         when(wrapped.findNarrativeInfo(65L)).thenReturn(
-                new NarrativeInfo(null, null, 1518126945000L, "owner1"),
-                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"),
+                narrativeInfo1,
+                narrativeInfo2,
                 null);
+
         when(ticker.read()).thenReturn(0L, 10000000001L, 20000000001L);
 
-        compare(cache.findNarrativeInfo(65L),
-                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
-
-        compare(cache.findNarrativeInfo(65L),
-                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"));
+        compare(cache.findNarrativeInfo(65L), narrativeInfo1);
+        compare(cache.findNarrativeInfo(65L), narrativeInfo2);
     }
 
     @SuppressWarnings("unchecked")
@@ -112,20 +126,16 @@ public class NarrativeInfoCacheTest {
                 ticker);
 
         when(wrapped.findNarrativeInfo(65L)).thenReturn(
-                new NarrativeInfo(null, null, 1518126945000L, "owner1"),
-                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"),
+                narrativeInfo1,
+                narrativeInfo2,
                 null);
         when(ticker.read()).thenReturn(0L, 5000000001L, 10000000001L, 15000000001L, 20000000001L);
 
-        compare(cache.findNarrativeInfo(65L),
-                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
-        compare(cache.findNarrativeInfo(65L),
-                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
+        compare(cache.findNarrativeInfo(65L), narrativeInfo1);
+        compare(cache.findNarrativeInfo(65L), narrativeInfo1);
 
-        compare(cache.findNarrativeInfo(65L),
-                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"));
-        compare(cache.findNarrativeInfo(65L),
-                new NarrativeInfo("MyNarrativeName", 3L, 1518126957000L, "owner2"));
+        compare(cache.findNarrativeInfo(65L), narrativeInfo2);
+        compare(cache.findNarrativeInfo(65L), narrativeInfo2);
     }
 
     @SuppressWarnings("unchecked")
@@ -136,78 +146,61 @@ public class NarrativeInfoCacheTest {
         final NarrativeInfoCache cache = new NarrativeInfoCache(wrapped, 10000, 15);
 
         when(wrapped.findNarrativeInfo(65L)).thenReturn(
-                new NarrativeInfo(null, null, 1518126945000L, "owner1"),
-                new NarrativeInfo(null, null, 1518126957000L, "owner11"),
-                new NarrativeInfo(null, null, 1518126959000L, "owner111"),
+                narrativeInfo_1,
+                narrativeInfo_11,
+                narrativeInfo_111,
                 null);
         when(wrapped.findNarrativeInfo(2L)).thenReturn(
-                new NarrativeInfo("narrname2", 2L, 20000L, "owner2"),
-                new NarrativeInfo("narrname22", 22L, 22000L, "owner22"),
-                new NarrativeInfo("narrname222", 222L, 222000L, "owner222"),
+                narrativeInfo_2,
+                narrativeInfo_22,
+                narrativeInfo_222,
                 null);
         when(wrapped.findNarrativeInfo(3L)).thenReturn(
-                new NarrativeInfo("narrname3", 3L, 30000L, "owner3"),
-                new NarrativeInfo("narrname33", 33L, 33000L, "owner33"),
-                new NarrativeInfo("narrname333", 333L, 333000L, "owner333"),
+                narrativeInfo_3,
+                narrativeInfo_33,
+                narrativeInfo_333,
                 null);
         when(wrapped.findNarrativeInfo(42L)).thenReturn(
-                new NarrativeInfo(null, null, 1518126945678L, "user1"),
-                new NarrativeInfo("mylovelynarrative", 4L, 1518126950678L, "user2"),
-                new NarrativeInfo("mytestnarrative", 44L, 1518126950678L, "user3"),
+                narrativeInfo_4,
+                narrativeInfo_44,
+                narrativeInfo_444,
                 null);
 
         // load 12 narrative infos into a max 15 cache
-        compare(cache.findNarrativeInfo(65L),
-                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
-        compare(cache.findNarrativeInfo(2L),
-                new NarrativeInfo("narrname2", 2L, 20000L, "owner2"));
-        compare(cache.findNarrativeInfo(3L),
-                new NarrativeInfo("narrname3", 3L, 30000L, "owner3"));
+        compare(cache.findNarrativeInfo(65L), narrativeInfo_1);
+        compare(cache.findNarrativeInfo(2L), narrativeInfo_2);
+        compare(cache.findNarrativeInfo(3L), narrativeInfo_3);
 
         // check cache access
-        compare(cache.findNarrativeInfo(65L),
-                new NarrativeInfo(null, null, 1518126945000L, "owner1"));
-        compare(cache.findNarrativeInfo(2L),
-                new NarrativeInfo("narrname2", 2L, 20000L, "owner2"));
-        compare(cache.findNarrativeInfo(3L),
-                new NarrativeInfo("narrname3", 3L, 30000L, "owner3"));
+        compare(cache.findNarrativeInfo(65L), narrativeInfo_1);
+        compare(cache.findNarrativeInfo(2L), narrativeInfo_2);
+        compare(cache.findNarrativeInfo(3L), narrativeInfo_3);
 
         // force an expiration based on cache size
-        compare(cache.findNarrativeInfo(42L),
-                new NarrativeInfo(null, null, 1518126945678L, "user1"));
+        compare(cache.findNarrativeInfo(42L), narrativeInfo_4);
 
         // check that with every access, the oldest value had expired
         // 65 had expired. When this is loaded, 2 would be removed from cache
-        compare(cache.findNarrativeInfo(65L),
-                new NarrativeInfo(null, null, 1518126957000L, "owner11"));
+        compare(cache.findNarrativeInfo(65L), narrativeInfo_11);
         // 2 is not in cache. Its next value is cached. So 3 would be removed from cache
-        compare(cache.findNarrativeInfo(2L),
-                new NarrativeInfo("narrname22", 22L, 22000L, "owner22"));
+        compare(cache.findNarrativeInfo(2L), narrativeInfo_22);
         // 3 is not in cache. Its next value is cached. So 42 would be removed from cache
-        compare(cache.findNarrativeInfo(3L),
-                new NarrativeInfo("narrname33", 33L, 33000L, "owner33"));
+        compare(cache.findNarrativeInfo(3L), narrativeInfo_33);
         // 42 is not in cache. Its next value is cached. So now 65 would be removed from cache
-        compare(cache.findNarrativeInfo(42L),
-                new NarrativeInfo("mylovelynarrative", 4L, 1518126950678L, "user2"));
+        compare(cache.findNarrativeInfo(42L), narrativeInfo_44);
 
         // 65 not in cache. Its next value is cached. But this removes 2 from cache
-        compare(cache.findNarrativeInfo(65L),
-                new NarrativeInfo(null, null, 1518126959000L, "owner111"));
+        compare(cache.findNarrativeInfo(65L), narrativeInfo_111);
         // 3 is still in cache with the same value
-        compare(cache.findNarrativeInfo(3L),
-                new NarrativeInfo("narrname33", 33L, 33000L, "owner33"));
+        compare(cache.findNarrativeInfo(3L), narrativeInfo_33);
         // 42 is still in cache with the same value
-        compare(cache.findNarrativeInfo(42L),
-                new NarrativeInfo("mylovelynarrative", 4L, 1518126950678L, "user2"));
+        compare(cache.findNarrativeInfo(42L), narrativeInfo_44);
         // 2 not in cache. The next value of 2 is cached now. 65 is removed from cache
-        compare(cache.findNarrativeInfo(2L),
-                new NarrativeInfo("narrname222", 222L, 222000L, "owner222"));
+        compare(cache.findNarrativeInfo(2L), narrativeInfo_222);
         // 3 is in cache
-        compare(cache.findNarrativeInfo(3L),
-                new NarrativeInfo("narrname33", 33L, 33000L, "owner33"));
+        compare(cache.findNarrativeInfo(3L), narrativeInfo_33);
         //42 is in cache
-        compare(cache.findNarrativeInfo(42L),
-                new NarrativeInfo("mylovelynarrative", 4L, 1518126950678L, "user2"));
+        compare(cache.findNarrativeInfo(42L), narrativeInfo_44);
     }
 
     @Test
