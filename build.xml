@@ -159,6 +159,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <test name="kbasesearchengine.test.authorization.AccessGroupCacheTest"/>
         <test name="kbasesearchengine.test.authorization.AuthCacheTest"/>
         <test name="kbasesearchengine.test.common.FileUtilTest"/>
+        <test name="kbasesearchengine.test.common.GUIDTest"/>
         <test name="kbasesearchengine.test.events.AccessGroupEventQueueTest"/>
         <test name="kbasesearchengine.test.events.ChildStatusEventTest"/>
         <test name="kbasesearchengine.test.events.EventQueueTest"/>
