@@ -915,7 +915,6 @@ public class SearchAPIIntegrationTest {
      * these should be removed once the narratives are indexed
      * with custom code
      */
-
     @Test
     public void pruneNarrative() throws Exception {
 
