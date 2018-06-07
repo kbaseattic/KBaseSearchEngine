@@ -18,7 +18,7 @@ import kbasesearchengine.tools.Utils;
  *
  */
 public class MatchFilter {
-    
+
     private final boolean excludeSubObjects;
     private final Optional<String> fullTextInAll;
     private final Optional<String> objectName;
@@ -95,78 +95,32 @@ public class MatchFilter {
     }
 
     @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (excludeSubObjects ? 1231 : 1237);
-        result = prime * result
-                + ((fullTextInAll == null) ? 0 : fullTextInAll.hashCode());
-        result = prime * result + (isSourceTagsBlacklist ? 1231 : 1237);
-        result = prime * result
-                + ((lookupInKeys == null) ? 0 : lookupInKeys.hashCode());
-        result = prime * result
-                + ((objectName == null) ? 0 : objectName.hashCode());
-        result = prime * result
-                + ((sourceTags == null) ? 0 : sourceTags.hashCode());
-        result = prime * result
-                + ((timestamp == null) ? 0 : timestamp.hashCode());
-        return result;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MatchFilter that = (MatchFilter) o;
+
+        if (excludeSubObjects != that.excludeSubObjects) return false;
+        if (isSourceTagsBlacklist != that.isSourceTagsBlacklist) return false;
+        if (fullTextInAll != null ? !fullTextInAll.equals(that.fullTextInAll) : that.fullTextInAll != null)
+            return false;
+        if (objectName != null ? !objectName.equals(that.objectName) : that.objectName != null) return false;
+        if (timestamp != null ? !timestamp.equals(that.timestamp) : that.timestamp != null) return false;
+        if (lookupInKeys != null ? !lookupInKeys.equals(that.lookupInKeys) : that.lookupInKeys != null) return false;
+        return sourceTags != null ? sourceTags.equals(that.sourceTags) : that.sourceTags == null;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        MatchFilter other = (MatchFilter) obj;
-        if (excludeSubObjects != other.excludeSubObjects) {
-            return false;
-        }
-        if (fullTextInAll == null) {
-            if (other.fullTextInAll != null) {
-                return false;
-            }
-        } else if (!fullTextInAll.equals(other.fullTextInAll)) {
-            return false;
-        }
-        if (isSourceTagsBlacklist != other.isSourceTagsBlacklist) {
-            return false;
-        }
-        if (lookupInKeys == null) {
-            if (other.lookupInKeys != null) {
-                return false;
-            }
-        } else if (!lookupInKeys.equals(other.lookupInKeys)) {
-            return false;
-        }
-        if (objectName == null) {
-            if (other.objectName != null) {
-                return false;
-            }
-        } else if (!objectName.equals(other.objectName)) {
-            return false;
-        }
-        if (sourceTags == null) {
-            if (other.sourceTags != null) {
-                return false;
-            }
-        } else if (!sourceTags.equals(other.sourceTags)) {
-            return false;
-        }
-        if (timestamp == null) {
-            if (other.timestamp != null) {
-                return false;
-            }
-        } else if (!timestamp.equals(other.timestamp)) {
-            return false;
-        }
-        return true;
+    public int hashCode() {
+        int result = (excludeSubObjects ? 1 : 0);
+        result = 31 * result + (fullTextInAll != null ? fullTextInAll.hashCode() : 0);
+        result = 31 * result + (objectName != null ? objectName.hashCode() : 0);
+        result = 31 * result + (timestamp != null ? timestamp.hashCode() : 0);
+        result = 31 * result + (lookupInKeys != null ? lookupInKeys.hashCode() : 0);
+        result = 31 * result + (sourceTags != null ? sourceTags.hashCode() : 0);
+        result = 31 * result + (isSourceTagsBlacklist ? 1 : 0);
+        return result;
     }
 
     /** Get a builder for a {@link MatchFilter}.
@@ -189,7 +143,7 @@ public class MatchFilter {
         private Map<String, MatchValue> lookupInKeys = new HashMap<>();
         private Set<String> sourceTags = new HashSet<>();
         private boolean isSourceTagsBlacklist = false;
-        
+
         private Builder() {}
 
         /** Set whether subobjects should be returned in the search results, default false.
@@ -269,13 +223,13 @@ public class MatchFilter {
             isSourceTagsBlacklist = isBlacklist;
             return this;
         }
-        
+
         /** Build the {@link MatchFilter}.
          * @return this builder. the new {@link MatchFilter}.
          */
         public MatchFilter build() {
-            return new MatchFilter(excludeSubObjects, fullTextInAll, objectName, timestamp,
-                    lookupInKeys, sourceTags, isSourceTagsBlacklist);
+            return new MatchFilter(excludeSubObjects, fullTextInAll, objectName, timestamp, lookupInKeys,
+                    sourceTags, isSourceTagsBlacklist);
         }
     }
 

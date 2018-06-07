@@ -358,7 +358,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 // the general object information
                 idToObjCopy.put(pguid, null);
             }
-            Map<GUID, String> esIds = lookupDocIds(indexName, idToObjCopy.keySet());
+
             for (GUID id : idToObjCopy.keySet()) {
                 final ParsedObject obj = idToObjCopy.get(id);
                 final Map<String, Object> doc = convertObject(id, rule.getGlobalObjectType(), obj,
@@ -367,9 +367,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 index.put("_index", indexName);
                 index.put("_type", getDataTableName());
                 index.put("parent", esParentId);
-                if (esIds.containsKey(id)) {
-                    index.put("_id", esIds.get(id));
-                }
+                index.put("_id", id.getURLEncoded());
+
                 final Map<String, Object> header = ImmutableMap.of("index", index);
                 pw.println(UObject.transformObjectToString(header));
                 pw.println(UObject.transformObjectToString(doc));
@@ -475,37 +474,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public void flushIndexing(final ObjectTypeParsingRules rule) throws IOException {
         refreshIndex(checkIndex(rule, true));
-    }
-    
-    private Map<GUID, String> lookupDocIds(String indexName, Set<GUID> guids) throws IOException {
-
-        // doc = {"query": {"bool": {"filter": [{"terms": {"guid": [guids]}}]}}}
-        Map<String, Object> doc = ImmutableMap.of(
-                "query", ImmutableMap.of(
-                        "bool", ImmutableMap.of(
-                                "filter", Arrays.asList(ImmutableMap.of(
-                                        "terms", ImmutableMap.of(
-                                                "guid", guids.stream().map(u -> u.toString())
-                                                        .collect(Collectors.toList())))))));
-
-        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
-        Response resp = makeRequestNoConflict("GET", urlPath, doc);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = UObject.getMapper().readValue(
-                resp.getEntity().getContent(), Map.class);
-        Map<GUID, String> ret = new LinkedHashMap<>();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
-        for (Map<String, Object> hit : hitList) {
-            String id = (String)hit.get("_id");
-            @SuppressWarnings("unchecked")
-            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
-            GUID guid = new GUID((String) obj.get("guid"));
-            ret.put(guid, id);
-        }
-        return ImmutableMap.copyOf(ret);
     }
 
     private Map<GUID, String> lookupParentDocIds(String indexName, Set<GUID> guids) throws IOException {

@@ -19,9 +19,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * object_types - list of the types of objects to search on (optional). The
  *                function will search on all objects if the list is not specified
  *                or is empty. The list size must be less than 50.
- * match_filter - see MatchFilter (optional).
+ * match_filter - see MatchFilter.
  * sorting_rules - see SortingRule (optional).
- * access_filter - see AccessFilter (optional).
+ * access_filter - see AccessFilter.
  * pagination - see Pagination (optional).
  * post_processing - see PostProcessing (optional).
  * </pre>
@@ -102,6 +102,10 @@ public class SearchObjectsInput {
      *      matched query,
      * ids_only - shortcut to mark both skips as true and 
      *      include_highlight as false.
+     * add_narrative_info - if true, narrative info gets added to the
+     *      search results. Default is false.
+     * add_workspace_info - if true, workspaces and objects info get added
+     *      to the search results. Default is false.
      * </pre>
      * 
      */
@@ -278,6 +282,10 @@ public class SearchObjectsInput {
      *      matched query,
      * ids_only - shortcut to mark both skips as true and 
      *      include_highlight as false.
+     * add_narrative_info - if true, narrative info gets added to the
+     *      search results. Default is false.
+     * add_workspace_info - if true, workspaces and objects info get added
+     *      to the search results. Default is false.
      * </pre>
      * 
      */
@@ -298,6 +306,10 @@ public class SearchObjectsInput {
      *      matched query,
      * ids_only - shortcut to mark both skips as true and 
      *      include_highlight as false.
+     * add_narrative_info - if true, narrative info gets added to the
+     *      search results. Default is false.
+     * add_workspace_info - if true, workspaces and objects info get added
+     *      to the search results. Default is false.
      * </pre>
      * 
      */

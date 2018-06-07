@@ -1,0 +1,111 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>10. Architecture - High Level Design &#8212; KBaseSearchEngine 0.01 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.01',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="11. Architecture - Low Level Design" href="architectureLowLevelDesign.html" />
+    <link rel="prev" title="9. NonFunctional Requirements" href="nonFunctionalRequirements.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="architecture-high-level-design">
+<h1>10. Architecture - High Level Design<a class="headerlink" href="#architecture-high-level-design" title="Permalink to this headline">¶</a></h1>
+<div class="figure" id="id1">
+<span id="fig-main"></span><img alt="_images/kbaseSearchEngineDesignHighLevel.png" src="_images/kbaseSearchEngineDesignHighLevel.png" />
+<p class="caption"><span class="caption-text">Figure 1: KBaseSearchEngine component diagram.</span></p>
+</div>
+<div class="figure" id="id2">
+<a class="reference internal image-reference" href="_images/eventStateTransition.png"><img alt="_images/eventStateTransition.png" src="_images/eventStateTransition.png" style="width: 293.0px; height: 218.0px;" /></a>
+<p class="caption"><span class="caption-text">Figure 2: Event state transition diagram.</span></p>
+</div>
+<div class="section" id="data-flow">
+<h2>10.1. Data Flow<a class="headerlink" href="#data-flow" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li>The workspace pushes workspace level, object level and version level events into the KBaseSearchEngine Mongodb instance. The initial state of the events is UNPROC (or unprocessed).</li>
+<li>The EventQueue periodically fetches events from the database and sets those that can be processed into a READY state. The EventQueue is a three-level blocking queue that blocks events that may cause an out-of-order update on the index. For example, an object level event like “rename” must block another object level event like “delete”. i.e. these two events cannot be executed in parallel by the workers. Also, importantly, the queue prevents simultaneous updates on the same document in ElasticSearch, which can cause update conflicts.</li>
+<li>The workers pull events that are READY for processing, set their state to PROCESSING in the database instance and begin processing the event.</li>
+<li>When necessary (like for new version events for example) the workers make requests to the workspace to get object data for processing.</li>
+<li>If the processing of an event fails due to network connectivity or other such recoverable issues, the event is reprocessed using a Retrier. The Retrier retries an event a finite number of times before setting the event processing state as FAILED in the mongo instance. A log is written out when processing of an event fails.</li>
+<li>Once the event has been processed successfully, the corresponding object is (re-)indexed into the ElasticSearch index and the event state in the mongo instance is set to INDX (or indexed).</li>
+</ol>
+<p>7&amp;8. Queries from the narrative UI are serviced by the search API which in turn makes queries to the ElasticSearch index.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="nonFunctionalRequirements.html" title="previous chapter">9. NonFunctional Requirements</a></li>
+      <li>Next: <a href="architectureLowLevelDesign.html" title="next chapter">11. Architecture - Low Level Design</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;KBase.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/architectureHighLevelDesign.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

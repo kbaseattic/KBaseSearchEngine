@@ -2,10 +2,15 @@
 A KBase module: KBaseSearchEngine
 */
 
+#include <workspace.spec>
+
 module KBaseSearchEngine {
 
     /* A boolean. 0 = false, other = true. */
     typedef int boolean;
+
+    /* An X/Y/Z style reference */
+    typedef string obj_ref;
 
     /* 
       Global user identificator. It has structure like this:
@@ -134,12 +139,18 @@ module KBaseSearchEngine {
            matched query,
       ids_only - shortcut to mark both skips as true and 
            include_highlight as false.
+      add_narrative_info - if true, narrative info gets added to the
+           search results. Default is false.
+      add_workspace_info - if true, workspaces and objects info get added
+           to the search results. Default is false.
     */
     typedef structure {
         boolean ids_only;
         boolean skip_keys;
         boolean skip_data;
         boolean include_highlight;
+        boolean add_narrative_info;
+        boolean add_workspace_info;
     } PostProcessing;
 
     /*
@@ -147,9 +158,9 @@ module KBaseSearchEngine {
       object_types - list of the types of objects to search on (optional). The
                      function will search on all objects if the list is not specified
                      or is empty. The list size must be less than 50.
-      match_filter - see MatchFilter (optional).
+      match_filter - see MatchFilter.
       sorting_rules - see SortingRule (optional).
-      access_filter - see AccessFilter (optional).
+      access_filter - see AccessFilter.
       pagination - see Pagination (optional).
       post_processing - see PostProcessing (optional).
     */
@@ -234,6 +245,17 @@ module KBaseSearchEngine {
                   string ws_owner_displayname
                   > narrative_info;
 
+
+    /*
+    The access_group_info and object_info are meant to be abstractions for info from multiple data sources.
+    Until other data sources become available, definitions pertaining to Workspace are being used.
+    When other data sources are available, the following variables will be moved from
+    this concrete workspace definitions, to structures with higher level abstractions.
+    */
+
+    typedef Workspace.workspace_info  access_group_info;
+    typedef Workspace.object_info     object_info;
+
     /*
       Output results for 'search_objects' method.
       'pagination' and 'sorting_rules' fields show actual input for
@@ -243,6 +265,13 @@ module KBaseSearchEngine {
       mapping<access_group_id, narrative_info> access_group_narrative_info - information about
          the workspaces in which the objects in the results reside. This data only applies to
          workspace objects.
+      mapping<access_group_id, Workspace.workspace_info> workspaces_info - information about
+         the workspaces in which the objects in the results reside. This data only applies to
+         workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
+         in the search results is saved in this mapping.
+      mapping<obj_ref, Workspace.object_info> objects_info - information about each object in the
+         search results. This data only applies to workspace objects. The tuple11 value returned by
+         get_object_info3() for each object in the search results is saved in the mapping.
     */
     typedef structure {
         Pagination pagination;
@@ -251,6 +280,8 @@ module KBaseSearchEngine {
         int total;
         int search_time;
         mapping<access_group_id, narrative_info> access_group_narrative_info;
+        mapping<access_group_id, access_group_info> access_groups_info;
+        mapping<obj_ref, object_info> objects_info;
     } SearchObjectsOutput;
 
     /*
@@ -261,10 +292,14 @@ module KBaseSearchEngine {
 
     /*
       Input parameters for get_objects method.
+          guids - list of guids
+          post_processing - see PostProcessing (optional).
+          match_filter - see MatchFilter (optional).
     */
     typedef structure {
         list<GUID> guids;
         PostProcessing post_processing;
+        MatchFilter match_filter;
     } GetObjectsInput;
 
     /*
@@ -273,11 +308,20 @@ module KBaseSearchEngine {
       mapping<access_group_id, narrative_info> access_group_narrative_info - information about
          the workspaces in which the objects in the results reside. This data only applies to
          workspace objects.
+      mapping<access_group_id, Workspace.workspace_info> workspaces_info - information about
+         the workspaces in which the objects in the results reside. This data only applies to
+         workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
+         in the search results is saved in this mapping.
+      mapping<obj_ref, Workspace.object_info> objects_info - information about each object in the
+         search results. This data only applies to workspace objects. The tuple11 value returned by
+         get_object_info3() for each object in the search results is saved in the mapping.
     */
     typedef structure {
         list<ObjectData> objects;
         int search_time;
         mapping<access_group_id, narrative_info> access_group_narrative_info;
+        mapping<access_group_id, Workspace.workspace_info> workspaces_info;
+        mapping<obj_ref, Workspace.object_info> objects_info;
     } GetObjectsOutput;
 
     /*
