@@ -924,6 +924,11 @@ public class SearchAPIIntegrationTest {
 
         final Map<String, Object> parsedData = new HashMap<>();
         parsedData.put("source", "a long string");
+        parsedData.put("code_output", "another long string");
+        parsedData.put("app_output", "yet another long string");
+        parsedData.put("app_info", "yup, another long string here");
+        parsedData.put("app_input", "my god will this reign of long string terror every end");
+        parsedData.put("job_ids", "3");
         parsedData.put("title", "a title");
 
         indexStorage.indexObjects(
@@ -931,6 +936,16 @@ public class SearchAPIIntegrationTest {
                         new SearchObjectType("Narrative", 1),
                         new StorageObjectType("WS", "Narrative"))
                         .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("source"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("code_output"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("app_output"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("app_info"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("app_input"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("job_ids"))
                                 .build())
                         .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("title"))
                                 .build())
