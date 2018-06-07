@@ -26,6 +26,13 @@ import us.kbase.common.service.Tuple9;
  * mapping<access_group_id, narrative_info> access_group_narrative_info - information about
  *    the workspaces in which the objects in the results reside. This data only applies to
  *    workspace objects.
+ * mapping<access_group_id, Workspace.workspace_info> workspaces_info - information about
+ *    the workspaces in which the objects in the results reside. This data only applies to
+ *    workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
+ *    in the search results is saved in this mapping.
+ * mapping<obj_ref, Workspace.object_info> objects_info - information about each object in the
+ *    search results. This data only applies to workspace objects. The tuple11 value returned by
+ *    get_object_info3() for each object in the search results is saved in the mapping.
  * </pre>
  * 
  */
@@ -38,7 +45,7 @@ import us.kbase.common.service.Tuple9;
     "total",
     "search_time",
     "access_group_narrative_info",
-    "workspaces_info",
+    "access_groups_info",
     "objects_info"
 })
 public class SearchObjectsOutput {
@@ -62,8 +69,8 @@ public class SearchObjectsOutput {
     private java.lang.Long searchTime;
     @JsonProperty("access_group_narrative_info")
     private Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrativeInfo;
-    @JsonProperty("workspaces_info")
-    private Map<Long, Tuple9 <Long, String, String, String, Long, String, String, String, Map<String, String>>> workspacesInfo;
+    @JsonProperty("access_groups_info")
+    private Map<Long, Tuple9 <Long, String, String, String, Long, String, String, String, Map<String, String>>> accessGroupsInfo;
     @JsonProperty("objects_info")
     private Map<String, Tuple11 <Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> objectsInfo;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
@@ -172,18 +179,18 @@ public class SearchObjectsOutput {
         return this;
     }
 
-    @JsonProperty("workspaces_info")
-    public Map<Long, Tuple9 <Long, String, String, String, Long, String, String, String, Map<String, String>>> getWorkspacesInfo() {
-        return workspacesInfo;
+    @JsonProperty("access_groups_info")
+    public Map<Long, Tuple9 <Long, String, String, String, Long, String, String, String, Map<String, String>>> getAccessGroupsInfo() {
+        return accessGroupsInfo;
     }
 
-    @JsonProperty("workspaces_info")
-    public void setWorkspacesInfo(Map<Long, Tuple9 <Long, String, String, String, Long, String, String, String, Map<String, String>>> workspacesInfo) {
-        this.workspacesInfo = workspacesInfo;
+    @JsonProperty("access_groups_info")
+    public void setAccessGroupsInfo(Map<Long, Tuple9 <Long, String, String, String, Long, String, String, String, Map<String, String>>> accessGroupsInfo) {
+        this.accessGroupsInfo = accessGroupsInfo;
     }
 
-    public SearchObjectsOutput withWorkspacesInfo(Map<Long, Tuple9 <Long, String, String, String, Long, String, String, String, Map<String, String>>> workspacesInfo) {
-        this.workspacesInfo = workspacesInfo;
+    public SearchObjectsOutput withAccessGroupsInfo(Map<Long, Tuple9 <Long, String, String, String, Long, String, String, String, Map<String, String>>> accessGroupsInfo) {
+        this.accessGroupsInfo = accessGroupsInfo;
         return this;
     }
 
@@ -214,7 +221,7 @@ public class SearchObjectsOutput {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((((("SearchObjectsOutput"+" [pagination=")+ pagination)+", sortingRules=")+ sortingRules)+", objects=")+ objects)+", total=")+ total)+", searchTime=")+ searchTime)+", accessGroupNarrativeInfo=")+ accessGroupNarrativeInfo)+", workspacesInfo=")+ workspacesInfo)+", objectsInfo=")+ objectsInfo)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((("SearchObjectsOutput"+" [pagination=")+ pagination)+", sortingRules=")+ sortingRules)+", objects=")+ objects)+", total=")+ total)+", searchTime=")+ searchTime)+", accessGroupNarrativeInfo=")+ accessGroupNarrativeInfo)+", accessGroupsInfo=")+ accessGroupsInfo)+", objectsInfo=")+ objectsInfo)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

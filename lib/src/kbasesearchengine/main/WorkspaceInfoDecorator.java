@@ -82,12 +82,13 @@ public class WorkspaceInfoDecorator implements SearchInterface {
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
         SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
-        if (params.getMatchFilter() != null) {
-            if (params.getMatchFilter().getAddWorkspaceInfo() != null) {
+        if (params.getPostProcessing() != null) {
+            if (params.getPostProcessing().getAddWorkspaceInfo() != null &&
+                    params.getPostProcessing().getAddWorkspaceInfo() == 1) {
                 searchObjsOutput = searchObjsOutput
-                        .withWorkspacesInfo(addWorkspacesInfo(
+                        .withAccessGroupsInfo(addWorkspacesInfo(
                                 searchObjsOutput.getObjects(),
-                                searchObjsOutput.getWorkspacesInfo()))
+                                searchObjsOutput.getAccessGroupsInfo()))
                         .withObjectsInfo(addObjectsInfo(
                                 searchObjsOutput.getObjects(),
                                 searchObjsOutput.getObjectsInfo()));
@@ -100,8 +101,9 @@ public class WorkspaceInfoDecorator implements SearchInterface {
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
         GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
-        if (params.getMatchFilter() != null) {
-            if (params.getMatchFilter().getAddWorkspaceInfo() != null) {
+        if (params.getPostProcessing() != null) {
+            if (params.getPostProcessing().getAddWorkspaceInfo() != null &&
+                    params.getPostProcessing().getAddWorkspaceInfo() == 1) {
                 getObjsOutput = getObjsOutput
                         .withWorkspacesInfo(addWorkspacesInfo(
                                 getObjsOutput.getObjects(),
