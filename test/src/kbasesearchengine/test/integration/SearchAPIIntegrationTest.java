@@ -27,6 +27,7 @@ import org.apache.http.HttpHost;
 import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -585,9 +586,9 @@ public class SearchAPIIntegrationTest {
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("narprune"));
 
-        final Map<String, Object> data = new HashMap<>();
-        data.put("source", "a long string");
-        data.put("title", "a title");
+        final Map<String, Object> parsedData = new HashMap<>();
+        parsedData.put("source", "a long string");
+        parsedData.put("title", "a title");
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -604,8 +605,8 @@ public class SearchAPIIntegrationTest {
                 null,
                 new GUID("WS:1/1/1"),
                 ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
-                        new ObjectMapper().writeValueAsString(data),
-                        data.entrySet().stream().collect(Collectors.toMap(
+                        new ObjectMapper().writeValueAsString(parsedData),
+                        parsedData.entrySet().stream().collect(Collectors.toMap(
                                 e -> e.getKey(), e -> Arrays.asList(e.getValue()))))),
                 false);
         
@@ -619,7 +620,7 @@ public class SearchAPIIntegrationTest {
                 is(ImmutableMap.of("title", "a title")));
 
         final SearchObjectsOutput res = searchObjects(new MatchFilter());
-        
+
         assertThat("incorrect data count", res.getObjects().size(), is(1));
         final ObjectData od = res.getObjects().get(0);
         assertThat("incorrect data", od.getData(), is((UObject) null));
