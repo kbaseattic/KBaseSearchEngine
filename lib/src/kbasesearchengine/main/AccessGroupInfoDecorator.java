@@ -42,24 +42,30 @@ import us.kbase.common.service.JsonClientException;
  */
 public class AccessGroupInfoDecorator implements SearchInterface {
 
-    private final WorkspaceEventHandler weh;
+    private final WorkspaceInfoProvider wsInfoProvider;
+    private final ObjectInfoProvider objInfoProvider;
     private final SearchInterface searchInterface;
 
     /** Create a decorator.
      * @param searchInterface the search interface to decorate. This may be a root interface that
      * produces data from a search storage system or another decorator.
-     * @param wsHandler a workspace event handler pointing at the workspace from which
-     * data should be retrieved. This should be the same workspace as that from which the data
-     * is indexed.
-     *
+     * @param wsInfoProvider a workspace info provider using which the workspace info is retrieved
+     *                       from workspace info cache, or from the workspace if not cached.
+     *                       The workspace should be the same as that from which the data is indexed.
+     * @param objInfoProvider an object info provider using which the objects info is retrieved
+     *                       from object info cache, or from the workspace if not cached.
+     *                       The workspace should be the same as that from which the data is indexed.
      */
     public AccessGroupInfoDecorator(
             final SearchInterface searchInterface,
-            final WorkspaceEventHandler wsHandler) {
+            final WorkspaceInfoProvider wsInfoProvider,
+            final ObjectInfoProvider objInfoProvider) {
         Utils.nonNull(searchInterface, "searchInterface");
-        Utils.nonNull(wsHandler, "wsHandler");
+        Utils.nonNull(wsInfoProvider, "wsInfoProvider");
+        Utils.nonNull(objInfoProvider, "objInfoProvider");
         this.searchInterface = searchInterface;
-        this.weh = wsHandler;
+        this.wsInfoProvider = wsInfoProvider;
+        this.objInfoProvider = objInfoProvider;
     }
 
     @Override
@@ -135,7 +141,7 @@ public class AccessGroupInfoDecorator implements SearchInterface {
         for (final long workspaceId: wsIdsSet) {
             final Tuple9<Long, String, String, String, Long, String,
                     String, String, Map<String, String>> tempWorkspaceInfo =
-                    weh.getWorkspaceInfo(workspaceId);
+                    wsInfoProvider.getWorkspaceInfo(workspaceId);
             retVal.put(workspaceId, tempWorkspaceInfo);
         }
         return retVal;
@@ -165,18 +171,13 @@ public class AccessGroupInfoDecorator implements SearchInterface {
         for (final GUID guid: guidsSet) {
             objRefs.add(guid.toRefString());
         }
-        if (!objRefs.isEmpty()) {
-            final GetObjectInfo3Results getObjInfo3Results = weh.getObjectInfo3(objRefs, 1L, 1L);
 
-            int index = 0;
-            final List<List<String>> resultsPaths = getObjInfo3Results.getPaths();
-            for (final List<String> path : resultsPaths) {
-                if (path != null) {
-                    retVal.put(path.get(0), getObjInfo3Results.getInfos().get(index));
-                    index = index + 1;
-                }
-            }
-        }
+        final Map<String, Tuple11<Long, String, String, String, Long,
+                String, Long, String, String, Long, Map<String, String>>> objsInfo =
+                objInfoProvider.getObjectsInfo(objRefs);
+
+        if (objsInfo != null)
+            retVal.putAll(objsInfo);
         return retVal;
     }
 }

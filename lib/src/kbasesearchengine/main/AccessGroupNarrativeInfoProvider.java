@@ -6,7 +6,6 @@ import java.util.Map;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.JsonClientException;
-import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.Tuple9;
 import us.kbase.common.service.UObject;
 import us.kbase.workspace.ListWorkspaceIDsParams;
