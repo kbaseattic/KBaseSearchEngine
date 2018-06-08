@@ -2,10 +2,15 @@
 A KBase module: KBaseSearchEngine
 */
 
+#include <workspace.spec>
+
 module KBaseSearchEngine {
 
     /* A boolean. 0 = false, other = true. */
     typedef int boolean;
+
+    /* An X/Y/Z style reference */
+    typedef string obj_ref;
 
     /* 
       Global user identificator. It has structure like this:
@@ -57,7 +62,7 @@ module KBaseSearchEngine {
         string object_name;
         MatchValue timestamp;
         boolean exclude_subobjects;
-        mapping<string, MatchValue> lookupInKeys;
+        mapping<string, MatchValue> lookup_in_keys;
         list<string> source_tags;
         boolean source_tags_blacklist;
     } MatchFilter;
@@ -126,25 +131,26 @@ module KBaseSearchEngine {
 
     /*
       Rules for what to return about found objects.
-      skip_info - do not include brief info for object ('guid,
-          'parent_guid', 'object_name' and 'timestamp' fields in
-          ObjectData structure),
       skip_keys - do not include keyword values for object 
           ('key_props' field in ObjectData structure),
       skip_data - do not include raw data for object ('data' and 
           'parent_data' fields in ObjectData structure),
       include_highlight - include highlights of fields that
            matched query,
-      ids_only - shortcut to mark all three skips as true and 
+      ids_only - shortcut to mark both skips as true and 
            include_highlight as false.
+      add_narrative_info - if true, narrative info gets added to the
+           search results. Default is false.
+      add_access_group_info - if true, access groups and objects info get added
+           to the search results. Default is false.
     */
     typedef structure {
         boolean ids_only;
-        boolean skip_info;
         boolean skip_keys;
         boolean skip_data;
         boolean include_highlight;
-        list<string> data_includes;
+        boolean add_narrative_info;
+        boolean add_access_group_info;
     } PostProcessing;
 
     /*
@@ -152,9 +158,9 @@ module KBaseSearchEngine {
       object_types - list of the types of objects to search on (optional). The
                      function will search on all objects if the list is not specified
                      or is empty. The list size must be less than 50.
-      match_filter - see MatchFilter (optional).
+      match_filter - see MatchFilter.
       sorting_rules - see SortingRule (optional).
-      access_filter - see AccessFilter (optional).
+      access_filter - see AccessFilter.
       pagination - see Pagination (optional).
       post_processing - see PostProcessing (optional).
     */
@@ -168,28 +174,51 @@ module KBaseSearchEngine {
     } SearchObjectsInput;
 
     /*
-      Properties of found object including metadata, raw data and
-          keywords.
+      Properties of an object including metadata, raw data and keywords.
+      GUID guid - the object's guid.
+      GUID parent_guid - the guid of the object's parent if the object is a subobject (e.g.
+          features for genomes).
+      object_name - the object's name.
+      timestamp - the creation date for the object in milliseconds since the epoch.
+      string type - the type of the data in the search index.
+      int type_ver - the version of the search type.
+      string creator - the username of the user that created that data.
+      string copier - if this instance of the data is a copy, the username of the user that
+          copied the data.
+      string mod - the name of the KBase SDK module that was used to create the data.
+      string method - the name of the method in the KBase SDK module that was used to create the
+          data.
+      string module_ver - the version of the KBase SDK module that was used to create the data.
+      string commit - the version control commit hash of the KBase SDK module that was used to
+          create the data. 
+      parent_data - raw data extracted from the subobject's parent object. The data contents will
+          vary from object to object. Null if the object is not a subobject.
+      data - raw data extracted from the object. The data contents will vary from object to object.
+      key_props - keyword properties of the object. These fields have been extracted from the object
+         and possibly transformed based on the search specification for the object.
+         The contents will vary from object to object.
       mapping<string, list<string>> highlight - The keys are the field names and the list 
           contains the sections in each field that matched the search query. Fields with no
           hits will not be available. Short fields that matched are shown in their entirety.
           Longer fields are shown as snippets preceded or followed by "...".     
-      mapping<string, string> object_props - general properties for all objects. This mapping
-          contains the keys 'creator', 'copied', 'module', 'method', 'module_ver', and 'commit' -
-          respectively the user that originally created the object, the user that copied this
-          incarnation of the object, and the module and method used to create the object and
-          their version and version control commit hash. Not all keys may be present; if not
-          their values were not available in the search data.
     */
     typedef structure {
         GUID guid;
         GUID parent_guid;
         string object_name;
         int timestamp;
+        string type;
+        int type_ver;
+        string creator;
+        string copier;
+        string mod;
+        string method;
+        string module_ver;
+        string commit;
+        
         UnspecifiedObject parent_data;
         UnspecifiedObject data;
         mapping<string, string> key_props;
-        mapping<string, string> object_props;
         mapping<string, list<string>> highlight;
     } ObjectData;
 
@@ -217,6 +246,16 @@ module KBaseSearchEngine {
                   > narrative_info;
 
     /*
+    The access_group_info and object_info are meant to be abstractions for info from multiple data sources.
+    Until other data sources become available, definitions pertaining to Workspace are being used.
+    When other data sources are available, the following variables will be moved from
+    this concrete workspace definitions, to structures with higher level abstractions.
+    */
+
+    typedef Workspace.workspace_info  access_group_info;
+    typedef Workspace.object_info     object_info;
+
+    /*
       Output results for 'search_objects' method.
       'pagination' and 'sorting_rules' fields show actual input for
           pagination and sorting.
@@ -225,6 +264,15 @@ module KBaseSearchEngine {
       mapping<access_group_id, narrative_info> access_group_narrative_info - information about
          the workspaces in which the objects in the results reside. This data only applies to
          workspace objects.
+      mapping<access_group_id, access_group_info> access_groups_info - information about
+         the access groups in which the objects in the results reside. Currently this data only applies to
+         workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
+         in the search results is saved in this mapping. In future the access_group_info will be
+         replaced with a higher level abstraction.
+      mapping<obj_ref, object_info> objects_info - information about each object in the
+         search results. Currently this data only applies to workspace objects. The tuple11 value
+         returned by get_object_info3() for each object in the search results is saved in the mapping.
+         In future the object_info will be replaced with a higher level abstraction.
     */
     typedef structure {
         Pagination pagination;
@@ -233,6 +281,8 @@ module KBaseSearchEngine {
         int total;
         int search_time;
         mapping<access_group_id, narrative_info> access_group_narrative_info;
+        mapping<access_group_id, access_group_info> access_groups_info;
+        mapping<obj_ref, object_info> objects_info;
     } SearchObjectsOutput;
 
     /*
@@ -243,10 +293,14 @@ module KBaseSearchEngine {
 
     /*
       Input parameters for get_objects method.
+          guids - list of guids
+          post_processing - see PostProcessing (optional).
+          match_filter - see MatchFilter (optional).
     */
     typedef structure {
         list<GUID> guids;
         PostProcessing post_processing;
+        MatchFilter match_filter;
     } GetObjectsInput;
 
     /*
@@ -255,11 +309,22 @@ module KBaseSearchEngine {
       mapping<access_group_id, narrative_info> access_group_narrative_info - information about
          the workspaces in which the objects in the results reside. This data only applies to
          workspace objects.
+      mapping<access_group_id, access_group_info> access_groups_info - information about
+         the access groups in which the objects in the results reside. Currently this data only applies to
+         workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
+         in the search results is saved in this mapping. In future the access_group_info will be
+         replaced with a higher level abstraction.
+      mapping<obj_ref, object_info> objects_info - information about each object in the
+         search results. Currently this data only applies to workspace objects. The tuple11 value
+         returned by get_object_info3() for each object in the search results is saved in the mapping.
+         In future the object_info will be replaced with a higher level abstraction.
     */
     typedef structure {
         list<ObjectData> objects;
         int search_time;
         mapping<access_group_id, narrative_info> access_group_narrative_info;
+        mapping<access_group_id, access_group_info> access_groups_info;
+        mapping<obj_ref, Workspace.object_info> objects_info;
     } GetObjectsOutput;
 
     /*

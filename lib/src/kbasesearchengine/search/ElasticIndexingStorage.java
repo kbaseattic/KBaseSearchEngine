@@ -329,12 +329,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final Map<GUID, ParsedObject> idToObj,
             final boolean isPublic)
             throws IOException, IndexingConflictException {
+        if (rule.getSubObjectType().isPresent() && idToObj.isEmpty()) {
+            return; // nothing to index. Only parent objects should get general records (see below)
+        }
         final Map<GUID, ParsedObject> idToObjCopy = new HashMap<>(idToObj);
         String indexName = checkIndex(rule, false);
         for (GUID id : idToObjCopy.keySet()) {
             GUID parentGuid = new GUID(id.getStorageCode(), id.getAccessGroupId(), 
                     id.getAccessGroupObjectId(), id.getVersion(), null, null);
             if (!parentGuid.equals(pguid)) {
+                //TODO CODE make this something that the worker error handling can work with
                 throw new IllegalStateException("Object GUID doesn't match parent GUID");
             }
         }
@@ -350,7 +354,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 // the general object information
                 idToObjCopy.put(pguid, null);
             }
-            Map<GUID, String> esIds = lookupDocIds(indexName, idToObjCopy.keySet());
+
             for (GUID id : idToObjCopy.keySet()) {
                 final ParsedObject obj = idToObjCopy.get(id);
                 final Map<String, Object> doc = convertObject(id, rule.getGlobalObjectType(), obj,
@@ -359,9 +363,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 index.put("_index", indexName);
                 index.put("_type", getDataTableName());
                 index.put("parent", esParentId);
-                if (esIds.containsKey(id)) {
-                    index.put("_id", esIds.get(id));
-                }
+                index.put("_id", id.getURLEncoded());
+
                 final Map<String, Object> header = ImmutableMap.of("index", index);
                 pw.println(UObject.transformObjectToString(header));
                 pw.println(UObject.transformObjectToString(doc));
@@ -424,37 +427,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public void flushIndexing(final ObjectTypeParsingRules rule) throws IOException {
         refreshIndex(checkIndex(rule, true));
-    }
-    
-    private Map<GUID, String> lookupDocIds(String indexName, Set<GUID> guids) throws IOException {
-
-        // doc = {"query": {"bool": {"filter": [{"terms": {"guid": [guids]}}]}}}
-        Map<String, Object> doc = ImmutableMap.of(
-                "query", ImmutableMap.of(
-                        "bool", ImmutableMap.of(
-                                "filter", Arrays.asList(ImmutableMap.of(
-                                        "terms", ImmutableMap.of(
-                                                "guid", guids.stream().map(u -> u.toString())
-                                                        .collect(Collectors.toList())))))));
-
-        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
-        Response resp = makeRequestNoConflict("GET", urlPath, doc);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = UObject.getMapper().readValue(
-                resp.getEntity().getContent(), Map.class);
-        Map<GUID, String> ret = new LinkedHashMap<>();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
-        for (Map<String, Object> hit : hitList) {
-            String id = (String)hit.get("_id");
-            @SuppressWarnings("unchecked")
-            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
-            GUID guid = new GUID((String) obj.get("guid"));
-            ret.put(guid, id);
-        }
-        return ImmutableMap.copyOf(ret);
     }
 
     private Map<GUID, String> lookupParentDocIds(String indexName, Set<GUID> guids) throws IOException {
@@ -1116,7 +1088,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public List<ObjectData> getObjectsByIds(Set<GUID> ids) throws IOException {
         PostProcessing pp = new PostProcessing();
-        pp.objectInfo = true;
         pp.objectData = true;
         pp.objectKeys = true;
         return getObjectsByIds(ids, pp);
@@ -1170,31 +1141,27 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final Map<String, Object> obj,
             final Map<String, List<String>> highlight,
             final PostProcessing pp) {
-        // TODO: support sub-data selection based on objectDataIncludes (acts on parent json or sub object json)
 
         GUID guid = new GUID((String) obj.get("guid"));
-        final ObjectData.Builder b = ObjectData.getBuilder(guid);
-        if (pp.objectInfo) {
-            b.withNullableObjectName((String) obj.get(OBJ_NAME));
-            b.withNullableCreator((String) obj.get(OBJ_CREATOR));
-            b.withNullableCopier((String) obj.get(OBJ_COPIER));
-            b.withNullableModule((String) obj.get(OBJ_PROV_MODULE));
-            b.withNullableMethod((String) obj.get(OBJ_PROV_METHOD));
-            b.withNullableModuleVersion((String) obj.get(OBJ_PROV_MODULE_VERSION));
-            b.withNullableCommitHash((String) obj.get(OBJ_PROV_COMMIT_HASH));
-            b.withNullableMD5((String) obj.get(OBJ_MD5));
-            b.withNullableType(new SearchObjectType(
-                    (String) obj.get(SEARCH_OBJ_TYPE),
-                    (Integer) obj.get(SEARCH_OBJ_TYPE_VER)));
-            // sometimes this is a long, sometimes it's an int
-            b.withNullableTimestamp(Instant.ofEpochMilli(
-                    ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
-            @SuppressWarnings("unchecked")
-            final List<String> sourceTags = (List<String>) obj.get(SOURCE_TAGS);
-            if (sourceTags != null) {
-                for (final String tag: sourceTags) {
-                    b.withSourceTag(tag);
-                }
+        final ObjectData.Builder b = ObjectData.getBuilder(guid, new SearchObjectType(
+                (String) obj.get(SEARCH_OBJ_TYPE),
+                (Integer) obj.get(SEARCH_OBJ_TYPE_VER)));
+        b.withNullableObjectName((String) obj.get(OBJ_NAME));
+        b.withNullableCreator((String) obj.get(OBJ_CREATOR));
+        b.withNullableCopier((String) obj.get(OBJ_COPIER));
+        b.withNullableModule((String) obj.get(OBJ_PROV_MODULE));
+        b.withNullableMethod((String) obj.get(OBJ_PROV_METHOD));
+        b.withNullableModuleVersion((String) obj.get(OBJ_PROV_MODULE_VERSION));
+        b.withNullableCommitHash((String) obj.get(OBJ_PROV_COMMIT_HASH));
+        b.withNullableMD5((String) obj.get(OBJ_MD5));
+        // sometimes this is a long, sometimes it's an int
+        b.withNullableTimestamp(Instant.ofEpochMilli(
+                ((Number) obj.get(OBJ_TIMESTAMP)).longValue()));
+        @SuppressWarnings("unchecked")
+        final List<String> sourceTags = (List<String>) obj.get(SOURCE_TAGS);
+        if (sourceTags != null) {
+            for (final String tag: sourceTags) {
+                b.withSourceTag(tag);
             }
         }
         if (pp.objectData) {
@@ -1412,8 +1379,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                     matchFilter.accessGroupId)), withAllHistory));
         }*/
         if (matchFilter.getObjectName().isPresent()) {
-                                                    // this seems like a bug...?
-            matches.add(createFilter("match", OBJ_NAME, matchFilter.getFullTextInAll().get()));
+            matches.add(createFilter("match", OBJ_NAME, matchFilter.getObjectName().get()));
         }
         for (final String keyName : matchFilter.getLookupInKeys().keySet()) {
             final MatchValue value = matchFilter.getLookupInKeys().get(keyName);
@@ -1552,8 +1518,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         doc.put("from", pagination.start);
         doc.put("size", pagination.count);
 
-        boolean loadObjects = pp != null &&
-                (pp.objectInfo || pp.objectData || pp.objectKeys || pp.objectHighlight);
+        boolean loadObjects = pp != null && (pp.objectData || pp.objectKeys || pp.objectHighlight);
         if (!loadObjects) {
             doc.put("_source", Arrays.asList("guid"));
         }

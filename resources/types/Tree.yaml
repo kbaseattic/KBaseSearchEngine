@@ -9,6 +9,6 @@ versions:
     key-name: labels
     ui-name: Labels
   - path: type
-    keyword-type: string
+    keyword-type: keyword
     ui-name: Tree Type
   

@@ -6,8 +6,8 @@ versions:
   - path: sampleset_desc
     full-text: true
   - path: num_samples
-    key-type: integer
+    keyword-type: integer
   - path: num_replicates
-    key-type: integer
+    keyword-type: integer
   - path: source
-    key-type: string
+    keyword-type: keyword

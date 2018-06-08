@@ -19,9 +19,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * object_types - list of the types of objects to search on (optional). The
  *                function will search on all objects if the list is not specified
  *                or is empty. The list size must be less than 50.
- * match_filter - see MatchFilter (optional).
+ * match_filter - see MatchFilter.
  * sorting_rules - see SortingRule (optional).
- * access_filter - see AccessFilter (optional).
+ * access_filter - see AccessFilter.
  * pagination - see Pagination (optional).
  * post_processing - see PostProcessing (optional).
  * </pre>
@@ -94,17 +94,18 @@ public class SearchObjectsInput {
      * <p>Original spec-file type: PostProcessing</p>
      * <pre>
      * Rules for what to return about found objects.
-     * skip_info - do not include brief info for object ('guid,
-     *     'parent_guid', 'object_name' and 'timestamp' fields in
-     *     ObjectData structure),
      * skip_keys - do not include keyword values for object 
      *     ('key_props' field in ObjectData structure),
      * skip_data - do not include raw data for object ('data' and 
      *     'parent_data' fields in ObjectData structure),
      * include_highlight - include highlights of fields that
      *      matched query,
-     * ids_only - shortcut to mark all three skips as true and 
+     * ids_only - shortcut to mark both skips as true and 
      *      include_highlight as false.
+     * add_narrative_info - if true, narrative info gets added to the
+     *      search results. Default is false.
+     * add_access_group_info - if true, access groups and objects info get added
+     *      to the search results. Default is false.
      * </pre>
      * 
      */
@@ -273,17 +274,18 @@ public class SearchObjectsInput {
      * <p>Original spec-file type: PostProcessing</p>
      * <pre>
      * Rules for what to return about found objects.
-     * skip_info - do not include brief info for object ('guid,
-     *     'parent_guid', 'object_name' and 'timestamp' fields in
-     *     ObjectData structure),
      * skip_keys - do not include keyword values for object 
      *     ('key_props' field in ObjectData structure),
      * skip_data - do not include raw data for object ('data' and 
      *     'parent_data' fields in ObjectData structure),
      * include_highlight - include highlights of fields that
      *      matched query,
-     * ids_only - shortcut to mark all three skips as true and 
+     * ids_only - shortcut to mark both skips as true and 
      *      include_highlight as false.
+     * add_narrative_info - if true, narrative info gets added to the
+     *      search results. Default is false.
+     * add_access_group_info - if true, access groups and objects info get added
+     *      to the search results. Default is false.
      * </pre>
      * 
      */
@@ -296,17 +298,18 @@ public class SearchObjectsInput {
      * <p>Original spec-file type: PostProcessing</p>
      * <pre>
      * Rules for what to return about found objects.
-     * skip_info - do not include brief info for object ('guid,
-     *     'parent_guid', 'object_name' and 'timestamp' fields in
-     *     ObjectData structure),
      * skip_keys - do not include keyword values for object 
      *     ('key_props' field in ObjectData structure),
      * skip_data - do not include raw data for object ('data' and 
      *     'parent_data' fields in ObjectData structure),
      * include_highlight - include highlights of fields that
      *      matched query,
-     * ids_only - shortcut to mark all three skips as true and 
+     * ids_only - shortcut to mark both skips as true and 
      *      include_highlight as false.
+     * add_narrative_info - if true, narrative info gets added to the
+     *      search results. Default is false.
+     * add_access_group_info - if true, access groups and objects info get added
+     *      to the search results. Default is false.
      * </pre>
      * 
      */
