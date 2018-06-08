@@ -37,7 +37,7 @@ import kbasesearchengine.authorization.AuthCache;
 import kbasesearchengine.authorization.AuthInfoProvider;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
-import kbasesearchengine.main.WorkspaceNarrativeInfoProvider;
+import kbasesearchengine.main.AccessGroupNarrativeInfoProvider;
 import kbasesearchengine.main.WorkspaceInfoProvider;
 import kbasesearchengine.main.ObjectInfoProvider;
 import kbasesearchengine.main.WorkspaceInfoCache;
@@ -50,7 +50,7 @@ import kbasesearchengine.main.SearchMethods;
 import kbasesearchengine.main.SearchVersion;
 import kbasesearchengine.main.TemporaryNarrativePruner;
 import kbasesearchengine.main.NarrativeInfoDecorator;
-import kbasesearchengine.main.WorkspaceInfoDecorator;
+import kbasesearchengine.main.AccessGroupInfoDecorator;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.system.FileLister;
 import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
@@ -71,9 +71,9 @@ import kbasesearchengine.common.FileUtil;
  */
 public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
-    private static final String version = "0.1.3";
+    private static final String version = "0.2.1";
     private static final String gitUrl = "https://github.com/kbase/KBaseSearchEngine.git";
-    private static final String gitCommitHash = "fac1f4a9e2c01a8710f9ed71b53e2c7e6134aa74";
+    private static final String gitCommitHash = "9e706260f5e4a5e438ab77c3284a66d48c7a0ec3";
 
     //BEGIN_CLASS_HEADER
     
@@ -174,7 +174,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         final WorkspaceEventHandler wsHandler = new WorkspaceEventHandler(
                 new CloneableWorkspaceClientImpl(wsClient));
         final NarrativeInfoProvider narrativeInfoProvider = new NarrativeInfoCache(
-                new WorkspaceNarrativeInfoProvider(wsHandler),
+                new AccessGroupNarrativeInfoProvider(wsHandler),
                 3600,
                 50000 * 1000);
         // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
@@ -193,7 +193,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
                 3600,
                 50000 * 1000);
         search = new TemporaryNarrativePruner(
-                new WorkspaceInfoDecorator(
+                new AccessGroupInfoDecorator(
                         new NarrativeInfoDecorator(
                             new SearchMethods(accessGroupProvider, esStorage, ss, admins),
                             narrativeInfoProvider,

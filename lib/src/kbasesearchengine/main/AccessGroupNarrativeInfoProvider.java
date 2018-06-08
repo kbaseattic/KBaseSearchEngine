@@ -16,7 +16,7 @@ import us.kbase.workspace.WorkspaceClient;
  * @author gaprice@lbl.gov
  *
  */
-public class WorkspaceNarrativeInfoProvider implements NarrativeInfoProvider {
+public class AccessGroupNarrativeInfoProvider implements NarrativeInfoProvider {
 
     //TODO TEST
 
@@ -29,7 +29,7 @@ public class WorkspaceNarrativeInfoProvider implements NarrativeInfoProvider {
     /** Create the provider.
      * @param wsClient a workspace client initialized with administrator credentials.
      */
-    public WorkspaceNarrativeInfoProvider(final WorkspaceEventHandler wsHandler) {
+    public AccessGroupNarrativeInfoProvider(final WorkspaceEventHandler wsHandler) {
         Utils.nonNull(wsHandler, "WorkspaceHandler");
         this.wsHandler = wsHandler;
     }
