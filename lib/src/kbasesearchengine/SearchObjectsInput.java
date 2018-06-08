@@ -104,7 +104,7 @@ public class SearchObjectsInput {
      *      include_highlight as false.
      * add_narrative_info - if true, narrative info gets added to the
      *      search results. Default is false.
-     * add_workspace_info - if true, workspaces and objects info get added
+     * add_access_group_info - if true, access groups and objects info get added
      *      to the search results. Default is false.
      * </pre>
      * 
@@ -284,7 +284,7 @@ public class SearchObjectsInput {
      *      include_highlight as false.
      * add_narrative_info - if true, narrative info gets added to the
      *      search results. Default is false.
-     * add_workspace_info - if true, workspaces and objects info get added
+     * add_access_group_info - if true, access groups and objects info get added
      *      to the search results. Default is false.
      * </pre>
      * 
@@ -308,7 +308,7 @@ public class SearchObjectsInput {
      *      include_highlight as false.
      * add_narrative_info - if true, narrative info gets added to the
      *      search results. Default is false.
-     * add_workspace_info - if true, workspaces and objects info get added
+     * add_access_group_info - if true, access groups and objects info get added
      *      to the search results. Default is false.
      * </pre>
      * 
