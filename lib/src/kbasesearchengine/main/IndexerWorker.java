@@ -27,6 +27,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import kbasesearchengine.common.FileUtil;
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.common.GUIDTooLongException;
 import kbasesearchengine.events.ChildStatusEvent;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventProcessingState;
@@ -652,6 +653,8 @@ public class IndexerWorker implements Stoppable {
              * File IO problems are generally going to mean something is very wrong
              * (like bad disk), since the file should already exist at this point.
              */
+        } catch (GUIDTooLongException ex) {
+            throw new UnprocessableEventIndexingException(ErrorType.OTHER, ex.getMessage());
         } catch (GUIDNotFoundException e) {
             throw new UnprocessableEventIndexingException(
                     ErrorType.GUID_NOT_FOUND, e.getMessage(), e);

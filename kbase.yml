@@ -9,7 +9,7 @@ service-language:
 
 # For app version, see /lib/src/kbasesearchengine/main/SearchVersion.java
 module-version:
-    0.1.3
+    0.2.1
 
 owners:
     [rsutormin]

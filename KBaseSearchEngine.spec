@@ -141,7 +141,7 @@ module KBaseSearchEngine {
            include_highlight as false.
       add_narrative_info - if true, narrative info gets added to the
            search results. Default is false.
-      add_workspace_info - if true, workspaces and objects info get added
+      add_access_group_info - if true, access groups and objects info get added
            to the search results. Default is false.
     */
     typedef structure {
@@ -150,7 +150,7 @@ module KBaseSearchEngine {
         boolean skip_data;
         boolean include_highlight;
         boolean add_narrative_info;
-        boolean add_workspace_info;
+        boolean add_access_group_info;
     } PostProcessing;
 
     /*
@@ -245,7 +245,6 @@ module KBaseSearchEngine {
                   string ws_owner_displayname
                   > narrative_info;
 
-
     /*
     The access_group_info and object_info are meant to be abstractions for info from multiple data sources.
     Until other data sources become available, definitions pertaining to Workspace are being used.
@@ -265,13 +264,15 @@ module KBaseSearchEngine {
       mapping<access_group_id, narrative_info> access_group_narrative_info - information about
          the workspaces in which the objects in the results reside. This data only applies to
          workspace objects.
-      mapping<access_group_id, Workspace.workspace_info> workspaces_info - information about
-         the workspaces in which the objects in the results reside. This data only applies to
+      mapping<access_group_id, access_group_info> access_groups_info - information about
+         the access groups in which the objects in the results reside. Currently this data only applies to
          workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
-         in the search results is saved in this mapping.
-      mapping<obj_ref, Workspace.object_info> objects_info - information about each object in the
-         search results. This data only applies to workspace objects. The tuple11 value returned by
-         get_object_info3() for each object in the search results is saved in the mapping.
+         in the search results is saved in this mapping. In future the access_group_info will be
+         replaced with a higher level abstraction.
+      mapping<obj_ref, object_info> objects_info - information about each object in the
+         search results. Currently this data only applies to workspace objects. The tuple11 value
+         returned by get_object_info3() for each object in the search results is saved in the mapping.
+         In future the object_info will be replaced with a higher level abstraction.
     */
     typedef structure {
         Pagination pagination;
@@ -308,19 +309,21 @@ module KBaseSearchEngine {
       mapping<access_group_id, narrative_info> access_group_narrative_info - information about
          the workspaces in which the objects in the results reside. This data only applies to
          workspace objects.
-      mapping<access_group_id, Workspace.workspace_info> workspaces_info - information about
-         the workspaces in which the objects in the results reside. This data only applies to
+      mapping<access_group_id, access_group_info> access_groups_info - information about
+         the access groups in which the objects in the results reside. Currently this data only applies to
          workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
-         in the search results is saved in this mapping.
-      mapping<obj_ref, Workspace.object_info> objects_info - information about each object in the
-         search results. This data only applies to workspace objects. The tuple11 value returned by
-         get_object_info3() for each object in the search results is saved in the mapping.
+         in the search results is saved in this mapping. In future the access_group_info will be
+         replaced with a higher level abstraction.
+      mapping<obj_ref, object_info> objects_info - information about each object in the
+         search results. Currently this data only applies to workspace objects. The tuple11 value
+         returned by get_object_info3() for each object in the search results is saved in the mapping.
+         In future the object_info will be replaced with a higher level abstraction.
     */
     typedef structure {
         list<ObjectData> objects;
         int search_time;
         mapping<access_group_id, narrative_info> access_group_narrative_info;
-        mapping<access_group_id, Workspace.workspace_info> workspaces_info;
+        mapping<access_group_id, access_group_info> access_groups_info;
         mapping<obj_ref, Workspace.object_info> objects_info;
     } GetObjectsOutput;
 
