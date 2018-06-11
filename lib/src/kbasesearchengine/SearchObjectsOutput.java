@@ -26,13 +26,15 @@ import us.kbase.common.service.Tuple9;
  * mapping<access_group_id, narrative_info> access_group_narrative_info - information about
  *    the workspaces in which the objects in the results reside. This data only applies to
  *    workspace objects.
- * mapping<access_group_id, Workspace.workspace_info> workspaces_info - information about
- *    the workspaces in which the objects in the results reside. This data only applies to
+ * mapping<access_group_id, access_group_info> access_groups_info - information about
+ *    the access groups in which the objects in the results reside. Currently this data only applies to
  *    workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
- *    in the search results is saved in this mapping.
- * mapping<obj_ref, Workspace.object_info> objects_info - information about each object in the
- *    search results. This data only applies to workspace objects. The tuple11 value returned by
- *    get_object_info3() for each object in the search results is saved in the mapping.
+ *    in the search results is saved in this mapping. In future the access_group_info will be
+ *    replaced with a higher level abstraction.
+ * mapping<obj_ref, object_info> objects_info - information about each object in the
+ *    search results. Currently this data only applies to workspace objects. The tuple11 value
+ *    returned by get_object_info3() for each object in the search results is saved in the mapping.
+ *    In future the object_info will be replaced with a higher level abstraction.
  * </pre>
  * 
  */

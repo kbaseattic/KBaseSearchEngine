@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Objects;
 
 import kbasesearchengine.GetObjectsInput;
 import kbasesearchengine.GetObjectsOutput;
@@ -39,26 +40,32 @@ import us.kbase.common.service.JsonClientException;
  * @author Uma Ganapathy
  *
  */
-public class WorkspaceInfoDecorator implements SearchInterface {
+public class AccessGroupInfoDecorator implements SearchInterface {
 
-    private final WorkspaceEventHandler weh;
+    private final WorkspaceInfoProvider wsInfoProvider;
+    private final ObjectInfoProvider objInfoProvider;
     private final SearchInterface searchInterface;
 
     /** Create a decorator.
      * @param searchInterface the search interface to decorate. This may be a root interface that
      * produces data from a search storage system or another decorator.
-     * @param wsHandler a workspace event handler pointing at the workspace from which
-     * data should be retrieved. This should be the same workspace as that from which the data
-     * is indexed.
-     *
+     * @param wsInfoProvider a workspace info provider using which the workspace info is retrieved
+     *                       from workspace info cache, or from the workspace if not cached.
+     *                       The workspace should be the same as that from which the data is indexed.
+     * @param objInfoProvider an object info provider using which the objects info is retrieved
+     *                       from object info cache, or from the workspace if not cached.
+     *                       The workspace should be the same as that from which the data is indexed.
      */
-    public WorkspaceInfoDecorator(
+    public AccessGroupInfoDecorator(
             final SearchInterface searchInterface,
-            final WorkspaceEventHandler wsHandler) {
+            final WorkspaceInfoProvider wsInfoProvider,
+            final ObjectInfoProvider objInfoProvider) {
         Utils.nonNull(searchInterface, "searchInterface");
-        Utils.nonNull(wsHandler, "wsHandler");
+        Utils.nonNull(wsInfoProvider, "wsInfoProvider");
+        Utils.nonNull(objInfoProvider, "objInfoProvider");
         this.searchInterface = searchInterface;
-        this.weh = wsHandler;
+        this.wsInfoProvider = wsInfoProvider;
+        this.objInfoProvider = objInfoProvider;
     }
 
     @Override
@@ -76,11 +83,11 @@ public class WorkspaceInfoDecorator implements SearchInterface {
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
         SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
-        if (params.getPostProcessing() != null) {
-            if (params.getPostProcessing().getAddWorkspaceInfo() != null &&
-                    params.getPostProcessing().getAddWorkspaceInfo() == 1) {
+        if (Objects.nonNull(params.getPostProcessing())) {
+            if (Objects.nonNull(params.getPostProcessing().getAddAccessGroupInfo()) &&
+                    params.getPostProcessing().getAddAccessGroupInfo() == 1) {
                 searchObjsOutput = searchObjsOutput
-                        .withAccessGroupsInfo(addWorkspacesInfo(
+                        .withAccessGroupsInfo(addAccessGroupsInfo(
                                 searchObjsOutput.getObjects(),
                                 searchObjsOutput.getAccessGroupsInfo()))
                         .withObjectsInfo(addObjectsInfo(
@@ -95,13 +102,13 @@ public class WorkspaceInfoDecorator implements SearchInterface {
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
         GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
-        if (params.getPostProcessing() != null) {
-            if (params.getPostProcessing().getAddWorkspaceInfo() != null &&
-                    params.getPostProcessing().getAddWorkspaceInfo() == 1) {
+        if (Objects.nonNull(params.getPostProcessing())) {
+            if (Objects.nonNull(params.getPostProcessing().getAddAccessGroupInfo()) &&
+                    params.getPostProcessing().getAddAccessGroupInfo() == 1) {
                 getObjsOutput = getObjsOutput
-                        .withWorkspacesInfo(addWorkspacesInfo(
+                        .withAccessGroupsInfo(addAccessGroupsInfo(
                                 getObjsOutput.getObjects(),
-                                getObjsOutput.getWorkspacesInfo()))
+                                getObjsOutput.getAccessGroupsInfo()))
                         .withObjectsInfo(addObjectsInfo(
                                 getObjsOutput.getObjects(),
                                 getObjsOutput.getObjectsInfo()));
@@ -111,17 +118,17 @@ public class WorkspaceInfoDecorator implements SearchInterface {
     }
 
     private Map<Long, Tuple9<Long, String, String, String, Long, String,
-            String, String, Map<String, String>>> addWorkspacesInfo(
+            String, String, Map<String, String>>> addAccessGroupsInfo(
             final List<ObjectData> objects,
             final Map<Long, Tuple9<Long, String, String, String, Long, String,
-                    String, String, Map<String, String>>> workspaceInfoMap)
+                    String, String, Map<String, String>>> accessGroupInfoMap)
             throws IOException, JsonClientException {
 
         final Map<Long, Tuple9<Long, String, String, String, Long, String,
                 String, String, Map<String, String>>> retVal = new HashMap<>();
 
-        if (workspaceInfoMap != null) {
-            retVal.putAll(workspaceInfoMap);
+        if (Objects.nonNull(accessGroupInfoMap)) {
+            retVal.putAll(accessGroupInfoMap);
         }
         final Set<Long> wsIdsSet = new HashSet<>();
 
@@ -134,7 +141,7 @@ public class WorkspaceInfoDecorator implements SearchInterface {
         for (final long workspaceId: wsIdsSet) {
             final Tuple9<Long, String, String, String, Long, String,
                     String, String, Map<String, String>> tempWorkspaceInfo =
-                    weh.getWorkspaceInfo(workspaceId);
+                    wsInfoProvider.getWorkspaceInfo(workspaceId);
             retVal.put(workspaceId, tempWorkspaceInfo);
         }
         return retVal;
@@ -150,7 +157,7 @@ public class WorkspaceInfoDecorator implements SearchInterface {
         final Map<String, Tuple11<Long, String, String, String,
                 Long, String, Long, String, String, Long, Map<String, String>>> retVal = new HashMap<>();
 
-        if (objectInfoMap != null) {
+        if (Objects.nonNull(objectInfoMap)) {
             retVal.putAll(objectInfoMap);
         }
         final Set<GUID> guidsSet = new HashSet<>();
@@ -164,18 +171,13 @@ public class WorkspaceInfoDecorator implements SearchInterface {
         for (final GUID guid: guidsSet) {
             objRefs.add(guid.toRefString());
         }
-        if (!objRefs.isEmpty()) {
-            final GetObjectInfo3Results getObjInfo3Results = weh.getObjectInfo3(objRefs, 1L, 1L);
 
-            int index = 0;
-            final List<List<String>> resultsPaths = getObjInfo3Results.getPaths();
-            for (final List<String> path : resultsPaths) {
-                if (path != null) {
-                    retVal.put(path.get(0), getObjInfo3Results.getInfos().get(index));
-                    index = index + 1;
-                }
-            }
-        }
+        final Map<String, Tuple11<Long, String, String, String, Long,
+                String, Long, String, String, Long, Map<String, String>>> objsInfo =
+                objInfoProvider.getObjectsInfo(objRefs);
+
+        if (objsInfo != null)
+            retVal.putAll(objsInfo);
         return retVal;
     }
 }
