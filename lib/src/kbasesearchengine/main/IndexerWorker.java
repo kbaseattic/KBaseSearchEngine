@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -43,6 +44,7 @@ import kbasesearchengine.events.exceptions.UnprocessableEventIndexingException;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.ResolvedReference;
 import kbasesearchengine.events.handler.SourceData;
+import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.parse.ContigLocationException;
 import kbasesearchengine.parse.GUIDNotFoundException;
@@ -61,6 +63,7 @@ import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import org.apache.commons.io.FileUtils;
+import us.kbase.workspace.GetObjectInfo3Results;
 
 public class IndexerWorker implements Stoppable {
     
@@ -803,7 +806,7 @@ public class IndexerWorker implements Stoppable {
             return ret;
         }
 
-        /** Note that an object may not be returned for a specified unresolvedGUID is the
+        /** Note that an object may not be returned for a specified unresolvedGUID if the
          * object parsing rules for that object are not found.
          *
          * @param objectRefPath
@@ -913,7 +916,7 @@ public class IndexerWorker implements Stoppable {
                                                Optional<String> md5,
                                                Map<String, List<Object>> keywords) {
 
-            ObjectData.Builder objDataBuilder = ObjectData.getBuilder(guid,globalObjectType);
+            final ObjectData.Builder objDataBuilder = ObjectData.getBuilder(guid,globalObjectType);
 
             for (final String key: keywords.keySet()) {
                 final String textValue;
@@ -946,25 +949,42 @@ public class IndexerWorker implements Stoppable {
         public Map<GUID, SearchObjectType> getTypesForGuids(final List<GUID> objectRefPath, final Set<GUID> unresolvedGUIDs)
                 throws InterruptedException, IndexingException {
             Map<GUID, SearchObjectType> ret = new LinkedHashMap<>();
-            Set<GUID> guidsToLoad = new LinkedHashSet<>();
-            for (GUID guid : unresolvedGUIDs) {
+            Set<ResolvedReference> guidsToLoad = new LinkedHashSet<>();
+            for (GUID unresolvedGUID : unresolvedGUIDs) {
+                ResolvedReference resRef =
+                        resolveRefs(objectRefPath, ImmutableSet.of(unresolvedGUID)).
+                                iterator().next();
+                GUID guid = resRef.getResolvedReference();
+                guid = new GUID(guid.getStorageCode(),
+                        guid.getAccessGroupId(),
+                        guid.getAccessGroupObjectId(),
+                        guid.getVersion(),
+                        unresolvedGUID.getSubObjectType(),
+                        unresolvedGUID.getSubObjectId());
+                resRef = new ResolvedReference(resRef.getReference(),
+                        guid,
+                        resRef.getType(),
+                        resRef.getTimestamp());
                 if (guidToTypeCache.containsKey(guid)) {
                     ret.put(guid, guidToTypeCache.get(guid));
                 } else {
-                    guidsToLoad.add(guid);
+                    guidsToLoad.add(resRef);
                 }
             }
             if (guidsToLoad.size() > 0) {
-                final List<ObjectData> data =
-                        retrier.retryFunc(g -> getObjectsByIds(objectRefPath, g), guidsToLoad, null);
-                // for some reason I don't understand a stream implementation would throw
-                // duplicate key errors on the od.getType(), which is the value
-                final Map<GUID, SearchObjectType> loaded = new HashMap<>();
-                for (final ObjectData od: data) {
-                    loaded.put(od.getGUID(), od.getType());
+                for(ResolvedReference resRef: guidsToLoad) {
+                    final ObjectTypeParsingRules rules;
+                    try {
+                        rules = getObjectTypeParsingRules(resRef);
+                    } catch (ObjectParseException ex ) {
+                        throw new FatalIndexingException(ErrorType.OTHER,
+                                ex.getMessage());
+                    }
+
+                    SearchObjectType type = rules.getGlobalObjectType();
+                    guidToTypeCache.put(resRef.getResolvedReference(), type);
+                    ret.put(resRef.getResolvedReference(), type);
                 }
-                guidToTypeCache.putAll(loaded);
-                ret.putAll(loaded);
             }
             return ret;
         }
