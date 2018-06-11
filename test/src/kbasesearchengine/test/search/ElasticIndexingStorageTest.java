@@ -533,6 +533,32 @@ public class ElasticIndexingStorageTest {
         System.out.println("*** end testTaxon***");
     }
 
+    @Test
+    public void testOntologyTerm() throws Exception {
+        indexObject("OntologyTerm", 0, "ontology01", new GUID("WS:1/1/1"), "Ontology.1");
+        GUID expectedGUID = new GUID("WS:1/1/1:OntologyTerm/PO:0000027");
+        Set<GUID> ids = indexStorage.searchIds(ImmutableList.of("OntologyTerm"), ft("lateral"), null,
+                AccessFilter.create().withAdmin(true));
+        Assert.assertEquals(1, ids.size());
+        GUID id = ids.iterator().next();
+        Assert.assertEquals(expectedGUID, id);
+        Set<Integer> accessGroupIds = new LinkedHashSet<>(Arrays.asList(1, 2, 3));
+        List<ObjectData> objList = indexStorage.getObjectsByIds(
+                new HashSet<>(Arrays.asList(id)));
+        ObjectData index = objList.get(0);
+        System.out.println("Ontology Indexed: " + index.getKeyProperties());
+        final String def = "\"A root tip (PO:0000025) of a lateral root (PO:0020121).\" [PO:austin_meier, TAIR:Katica_Ilic]";
+        final String syn = "\"punta de la ra&#237z lateral (Spanish)\" EXACT Spanish [POC:Maria_Alejandra_Gandolfo], \"(Japanese)\" EXACT Japanese [NIG:Yukiko_Yamazaki]";
+        Assert.assertEquals("PO:0000027", "" + index.getKeyProperties().get("id"));
+        Assert.assertEquals("lateral root tip", "" + index.getKeyProperties().get("name"));
+        Assert.assertEquals("plant_anatomy", "" + index.getKeyProperties().get("namespace"));
+        Assert.assertEquals(def, "" + index.getKeyProperties().get("definition"));
+        Assert.assertEquals(syn, "" + index.getKeyProperties().get("synonyms"));
+        Assert.assertEquals("go", "" + index.getKeyProperties().get("ontology_id"));
+        Assert.assertEquals("plant_ontology", "" + index.getKeyProperties().get("ontology_name"));
+
+    }
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 

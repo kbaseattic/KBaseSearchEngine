@@ -67,9 +67,9 @@ import kbasesearchengine.common.FileUtil;
  */
 public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
-    private static final String version = "0.0.1";
+    private static final String version = "0.1.3";
     private static final String gitUrl = "https://github.com/kbase/KBaseSearchEngine.git";
-    private static final String gitCommitHash = "f5441593dcc5f0ca49646dea3ea2420c5b8c8ab3";
+    private static final String gitCommitHash = "fac1f4a9e2c01a8710f9ed71b53e2c7e6134aa74";
 
     //BEGIN_CLASS_HEADER
     
@@ -187,7 +187,6 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
                             narrativeInfoProvider,
                             authInfoProvider),
                         workspaceEventHandler));
-
         //END_CONSTRUCTOR
     }
 

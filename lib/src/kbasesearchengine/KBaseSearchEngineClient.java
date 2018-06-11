@@ -16,7 +16,6 @@ import us.kbase.common.service.UnauthorizedException;
 /**
  * <p>Original spec-file module name: KBaseSearchEngine</p>
  * <pre>
- * A KBase module: KBaseSearchEngine
  * </pre>
  */
 public class KBaseSearchEngineClient {
