@@ -853,8 +853,9 @@ public class IndexerWorker implements Stoppable {
 
                 try {
                     final EventHandler handler = getEventHandler(guid);
-                    final SourceData obj = handler.load(
-                            Arrays.asList(resRef.getResolvedReference()), tempFile.toPath());
+                    List<GUID> refPath = new ArrayList<>(objectRefPath);
+                    refPath.add(resRef.getReference());
+                    final SourceData obj = handler.load(refPath, tempFile.toPath());
 
                     final ObjectTypeParsingRules rules;
                     try {
