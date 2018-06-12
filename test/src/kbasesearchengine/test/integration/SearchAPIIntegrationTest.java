@@ -34,6 +34,8 @@ import org.apache.http.HttpHost;
 import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
 import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -950,27 +952,38 @@ public class SearchAPIIntegrationTest {
      * these should be removed once the narratives are indexed
      * with custom code
      */
-
     @Test
     public void pruneNarrative() throws Exception {
 
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("narprune"));
 
-        final Map<String, Object> data = new HashMap<>();
-        data.put("source", "a long string");
-        data.put("code_output", "another long string");
-        data.put("app_output", "yet another long string");
-        data.put("app_info", "yup, another long string here");
-        data.put("app_input", "my god will this reign of long string terror every end");
-        data.put("job_ids", "3");
-        data.put("title", "a title");
+        final Map<String, Object> parsedData = new HashMap<>();
+        parsedData.put("source", "a long string");
+        parsedData.put("code_output", "another long string");
+        parsedData.put("app_output", "yet another long string");
+        parsedData.put("app_info", "yup, another long string here");
+        parsedData.put("app_input", "my god will this reign of long string terror every end");
+        parsedData.put("job_ids", "3");
+        parsedData.put("title", "a title");
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
                         new SearchObjectType("Narrative", 1),
                         new StorageObjectType("WS", "Narrative"))
-                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("source"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("code_output"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("app_output"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("app_info"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("app_input"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("job_ids"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("title"))
                                 .build())
                         .build(),
                 SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator1")
@@ -979,8 +992,8 @@ public class SearchAPIIntegrationTest {
                 null,
                 new GUID("WS:1/1/1"),
                 ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
-                        new ObjectMapper().writeValueAsString(data),
-                        data.entrySet().stream().collect(Collectors.toMap(
+                        new ObjectMapper().writeValueAsString(parsedData),
+                        parsedData.entrySet().stream().collect(Collectors.toMap(
                                 e -> e.getKey(), e -> Arrays.asList(e.getValue()))))),
                 false);
 
@@ -995,15 +1008,16 @@ public class SearchAPIIntegrationTest {
                 is(ImmutableMap.of("title", "a title")));
 
         final SearchObjectsOutput res = searchObjects(new MatchFilter());
-        
+
         assertThat("incorrect data count", res.getObjects().size(), is(1));
         final ObjectData od = res.getObjects().get(0);
         assertThat("incorrect data", od.getData(), is((UObject) null));
         assertThat("incorrect keyprops", od.getKeyProps(),
                 is(ImmutableMap.of("title", "a title")));
     }
-    
-    /* ****** Auth client tests - to be moved to their own suite *** 
+
+
+    /* ****** Auth client tests - to be moved to their own suite ***
      *     //TODO TEST move the auth client tests to a separate suite
      * Will need a mock server to test cases where the client gets a response that would never
      * be returned from auth
