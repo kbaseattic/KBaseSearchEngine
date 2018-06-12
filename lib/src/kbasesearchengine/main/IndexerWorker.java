@@ -860,7 +860,7 @@ public class IndexerWorker implements Stoppable {
                     try {
                         rules = getObjectTypeParsingRules(resRef);
                     } catch (ObjectParseException ex ) {
-                        throw new FatalIndexingException(ErrorType.OTHER,
+                        throw new UnprocessableEventIndexingException(ErrorType.OTHER,
                                 ex.getMessage());
                     }
 
