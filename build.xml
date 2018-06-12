@@ -159,6 +159,7 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <test name="kbasesearchengine.test.authorization.AccessGroupCacheTest"/>
         <test name="kbasesearchengine.test.authorization.AuthCacheTest"/>
         <test name="kbasesearchengine.test.common.FileUtilTest"/>
+        <test name="kbasesearchengine.test.common.GUIDTest"/>
         <test name="kbasesearchengine.test.events.AccessGroupEventQueueTest"/>
         <test name="kbasesearchengine.test.events.ChildStatusEventTest"/>
         <test name="kbasesearchengine.test.events.EventQueueTest"/>
@@ -183,8 +184,10 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
         <test name="kbasesearchengine.test.main.IndexerWorkerConfiguratorTest"/>
         <test name="kbasesearchengine.test.main.NarrativeInfoDecoratorTest"/>
         <test name="kbasesearchengine.test.main.NarrativeInfoCacheTest"/>
+        <test name="kbasesearchengine.test.main.ObjectInfoCacheTest"/>
         <test name="kbasesearchengine.test.main.SearchMethodsTest"/>
         <test name="kbasesearchengine.test.main.SignalMonitorTest"/>
+        <test name="kbasesearchengine.test.main.WorkspaceInfoCacheTest"/>
         <test name="kbasesearchengine.test.parse.IdMapperTest"/>
         <test name="kbasesearchengine.test.parse.KeyWordParserTest"/>
         <test name="kbasesearchengine.test.parse.ObjectParserTest"/>

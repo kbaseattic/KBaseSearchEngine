@@ -47,7 +47,7 @@ public class IndexerWorkerConfiguratorTest {
         assertThat("incorrect index store", cfg.getIndexingStorage(), is(is));
         assertThat("incorrect event handlers", cfg.getEventHandlers(), is(Collections.emptyMap()));
         assertThat("incorrect wrk codes", cfg.getWorkerCodes(), is(Collections.emptySet()));
-        assertThat("incorrect max objects", cfg.getMaxObjectsPerLoad(), is(100_000));
+        assertThat("incorrect max objects", cfg.getMaxObjectsPerLoad(), is(200_000));
         assertThat("incorrect retry count", cfg.getRetryCount(), is(5));
         assertThat("incorrect retry sleep", cfg.getRetrySleepMS(), is(1000));
         assertThat("incorrect retry fatal", cfg.getRetryFatalBackoffMS(), is(Arrays.asList(

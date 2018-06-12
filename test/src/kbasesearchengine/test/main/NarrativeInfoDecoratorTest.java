@@ -32,7 +32,7 @@ import kbasesearchengine.main.NarrativeInfoDecorator;
 import kbasesearchengine.main.NarrativeInfoProvider;
 import kbasesearchengine.authorization.AuthInfoProvider;
 import kbasesearchengine.main.NarrativeInfo;
-import kbasesearchengine.main.WorkspaceNarrativeInfoProvider;
+import kbasesearchengine.main.AccessGroupNarrativeInfoProvider;
 
 import kbasesearchengine.test.common.TestCommon;
 import us.kbase.common.service.JsonClientException;
@@ -104,7 +104,7 @@ public class NarrativeInfoDecoratorTest {
         // also tests the case where a username in the workspace is, for some reason, not
         // found in the auth service results
         final SearchInterface search = mock(SearchInterface.class);
-        final NarrativeInfoProvider nip = mock(WorkspaceNarrativeInfoProvider.class);
+        final NarrativeInfoProvider nip = mock(AccessGroupNarrativeInfoProvider.class);
         final AuthInfoProvider aip = mock(AuthInfoProvider.class);
 
         final NarrativeInfoDecorator nid = new NarrativeInfoDecorator(search, nip, aip);

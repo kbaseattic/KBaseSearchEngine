@@ -184,7 +184,7 @@ public class IndexerWorkerConfigurator {
         private IndexingStorage indexingStorage = null;
         private final Map<String, EventHandler> eventHandlers = new HashMap<>();
         private final Set<String> workerCodes = new HashSet<>();
-        private int maxObjectsPerLoad = 100_000;
+        private int maxObjectsPerLoad = 200_000;
         private int retryCount = 5;
         private int retrySleepMS = 1000;
         private List<Integer> retryFatalBackOffMS = Arrays.asList(1000, 2000, 4000, 8000, 16000);

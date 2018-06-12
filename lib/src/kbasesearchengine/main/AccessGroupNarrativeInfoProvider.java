@@ -6,7 +6,6 @@ import java.util.Map;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.JsonClientException;
-import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.Tuple9;
 import us.kbase.common.service.UObject;
 import us.kbase.workspace.ListWorkspaceIDsParams;
@@ -17,7 +16,7 @@ import us.kbase.workspace.WorkspaceClient;
  * @author gaprice@lbl.gov
  *
  */
-public class WorkspaceNarrativeInfoProvider implements NarrativeInfoProvider {
+public class AccessGroupNarrativeInfoProvider implements NarrativeInfoProvider {
 
     //TODO TEST
 
@@ -30,7 +29,7 @@ public class WorkspaceNarrativeInfoProvider implements NarrativeInfoProvider {
     /** Create the provider.
      * @param wsClient a workspace client initialized with administrator credentials.
      */
-    public WorkspaceNarrativeInfoProvider(final WorkspaceEventHandler wsHandler) {
+    public AccessGroupNarrativeInfoProvider(final WorkspaceEventHandler wsHandler) {
         Utils.nonNull(wsHandler, "WorkspaceHandler");
         this.wsHandler = wsHandler;
     }
