@@ -13,7 +13,7 @@ versions:
   - path: phred_type
     keyword-type: keyword
   - path: read_count
-    keywork-type: integer
+    keyword-type: integer
     ui-name: Number of reads
   - path: read_length_mean
     keyword-type: integer

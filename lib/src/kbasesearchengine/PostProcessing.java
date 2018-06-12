@@ -23,6 +23,10 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  *      matched query,
  * ids_only - shortcut to mark both skips as true and 
  *      include_highlight as false.
+ * add_narrative_info - if true, narrative info gets added to the
+ *      search results. Default is false.
+ * add_access_group_info - if true, access groups and objects info get added
+ *      to the search results. Default is false.
  * </pre>
  * 
  */
@@ -32,7 +36,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "ids_only",
     "skip_keys",
     "skip_data",
-    "include_highlight"
+    "include_highlight",
+    "add_narrative_info",
+    "add_access_group_info"
 })
 public class PostProcessing {
 
@@ -44,6 +50,10 @@ public class PostProcessing {
     private Long skipData;
     @JsonProperty("include_highlight")
     private Long includeHighlight;
+    @JsonProperty("add_narrative_info")
+    private Long addNarrativeInfo;
+    @JsonProperty("add_access_group_info")
+    private Long addAccessGroupInfo;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("ids_only")
@@ -106,6 +116,36 @@ public class PostProcessing {
         return this;
     }
 
+    @JsonProperty("add_narrative_info")
+    public Long getAddNarrativeInfo() {
+        return addNarrativeInfo;
+    }
+
+    @JsonProperty("add_narrative_info")
+    public void setAddNarrativeInfo(Long addNarrativeInfo) {
+        this.addNarrativeInfo = addNarrativeInfo;
+    }
+
+    public PostProcessing withAddNarrativeInfo(Long addNarrativeInfo) {
+        this.addNarrativeInfo = addNarrativeInfo;
+        return this;
+    }
+
+    @JsonProperty("add_access_group_info")
+    public Long getAddAccessGroupInfo() {
+        return addAccessGroupInfo;
+    }
+
+    @JsonProperty("add_access_group_info")
+    public void setAddAccessGroupInfo(Long addAccessGroupInfo) {
+        this.addAccessGroupInfo = addAccessGroupInfo;
+    }
+
+    public PostProcessing withAddAccessGroupInfo(Long addAccessGroupInfo) {
+        this.addAccessGroupInfo = addAccessGroupInfo;
+        return this;
+    }
+
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -118,7 +158,7 @@ public class PostProcessing {
 
     @Override
     public String toString() {
-        return ((((((((((("PostProcessing"+" [idsOnly=")+ idsOnly)+", skipKeys=")+ skipKeys)+", skipData=")+ skipData)+", includeHighlight=")+ includeHighlight)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((("PostProcessing"+" [idsOnly=")+ idsOnly)+", skipKeys=")+ skipKeys)+", skipData=")+ skipData)+", includeHighlight=")+ includeHighlight)+", addNarrativeInfo=")+ addNarrativeInfo)+", addAccessGroupInfo=")+ addAccessGroupInfo)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

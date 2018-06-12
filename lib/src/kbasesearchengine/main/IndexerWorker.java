@@ -25,6 +25,7 @@ import com.google.common.base.Optional;
 
 import kbasesearchengine.common.FileUtil;
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.common.GUIDTooLongException;
 import kbasesearchengine.events.ChildStatusEvent;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventProcessingState;
@@ -414,24 +415,29 @@ public class IndexerWorker implements Stoppable {
 
     private void processEvent(final StatusEvent ev)
             throws IndexingException, InterruptedException, RetriableIndexingException {
+
+        // update event to reflect the latest state of object for which the specified StatusEvent is an event for
+        EventHandler handler = getEventHandler(ev.getStorageCode());
+        StatusEvent updatedEvent = handler.updateObjectEvent(ev);
+
         try {
-            switch (ev.getEventType()) {
+            switch (updatedEvent.getEventType()) {
             case NEW_VERSION:
-                GUID pguid = ev.toGUID();
+                GUID pguid = updatedEvent.toGUID();
                 boolean indexed = indexingStorage.checkParentGuidsExist(new LinkedHashSet<>(
                         Arrays.asList(pguid))).get(pguid);
                 if (indexed) {
                     logger.logInfo("[Indexer]   skipping " + pguid +
                             " creation (already indexed)");
                     // TODO: we should fix public access for all sub-objects too (maybe already works. Anyway, ensure all subobjects are set correctly as well as the parent)
-                    if (ev.isPublic().get()) {
+                    if (updatedEvent.isPublic().get()) {
                         publish(pguid);
                     } else {
                         unpublish(pguid);
                     }
                 } else {
-                    indexObject(pguid, ev.getStorageObjectType().get(), ev.getTimestamp(),
-                            ev.isPublic().get(), null, new LinkedList<>());
+                    indexObject(pguid, updatedEvent.getStorageObjectType().get(), updatedEvent.getTimestamp(),
+                            updatedEvent.isPublic().get(), null, new LinkedList<>());
                 }
                 break;
             // currently unused
@@ -439,10 +445,10 @@ public class IndexerWorker implements Stoppable {
 //                unshare(ev.toGUID(), ev.getAccessGroupId().get());
 //                break;
             case DELETE_ALL_VERSIONS:
-                deleteAllVersions(ev.toGUID());
+                deleteAllVersions(updatedEvent.toGUID());
                 break;
             case UNDELETE_ALL_VERSIONS:
-                undeleteAllVersions(ev.toGUID());
+                undeleteAllVersions(updatedEvent.toGUID());
                 break;
                 //TODO DP reenable if we support DPs
 //            case SHARED:
@@ -453,13 +459,13 @@ public class IndexerWorker implements Stoppable {
 //                unshare(ev.toGUID(), ev.getTargetAccessGroupId());
 //                break;
             case RENAME_ALL_VERSIONS:
-                renameAllVersions(ev.toGUID(), ev.getNewName().get());
+                renameAllVersions(updatedEvent.toGUID(), updatedEvent.getNewName().get());
                 break;
             case PUBLISH_ALL_VERSIONS:
-                publishAllVersions(ev.toGUID());
+                publishAllVersions(updatedEvent.toGUID());
                 break;
             case UNPUBLISH_ALL_VERSIONS:
-                unpublishAllVersions(ev.toGUID());
+                unpublishAllVersions(updatedEvent.toGUID());
                 break;
             default:
                 throw new UnprocessableEventIndexingException(
@@ -642,6 +648,8 @@ public class IndexerWorker implements Stoppable {
              * File IO problems are generally going to mean something is very wrong
              * (like bad disk), since the file should already exist at this point.
              */
+        } catch (GUIDTooLongException ex) {
+            throw new UnprocessableEventIndexingException(ErrorType.OTHER, ex.getMessage());
         } catch (GUIDNotFoundException e) {
             throw new UnprocessableEventIndexingException(
                     ErrorType.GUID_NOT_FOUND, e.getMessage(), e);

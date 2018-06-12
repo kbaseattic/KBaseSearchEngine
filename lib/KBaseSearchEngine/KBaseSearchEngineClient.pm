@@ -26,7 +26,7 @@ KBaseSearchEngine::KBaseSearchEngineClient
 =head1 DESCRIPTION
 
 
-A KBase module: KBaseSearchEngine
+
 
 
 =cut
@@ -306,6 +306,8 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
+	add_narrative_info has a value which is a KBaseSearchEngine.boolean
+	add_access_group_info has a value which is a KBaseSearchEngine.boolean
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
@@ -313,6 +315,8 @@ SearchObjectsOutput is a reference to a hash where the following keys are define
 	total has a value which is an int
 	search_time has a value which is an int
 	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
@@ -339,6 +343,25 @@ narrative_info is a reference to a list containing 5 items:
 	3: (ws_owner_username) a string
 	4: (ws_owner_displayname) a string
 timestamp is an int
+access_group_info is a Workspace.workspace_info
+workspace_info is a reference to a list containing 9 items:
+	0: (id) a Workspace.ws_id
+	1: (workspace) a Workspace.ws_name
+	2: (owner) a Workspace.username
+	3: (moddate) a Workspace.timestamp
+	4: (max_objid) an int
+	5: (user_permission) a Workspace.permission
+	6: (globalread) a Workspace.permission
+	7: (lockstat) a Workspace.lock_status
+	8: (metadata) a Workspace.usermeta
+ws_id is an int
+ws_name is a string
+username is a string
+permission is a string
+lock_status is a string
+usermeta is a reference to a hash where the key is a string and the value is a string
+obj_ref is a string
+object_info is a Workspace.object_info
 
 </pre>
 
@@ -391,6 +414,8 @@ PostProcessing is a reference to a hash where the following keys are defined:
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
+	add_narrative_info has a value which is a KBaseSearchEngine.boolean
+	add_access_group_info has a value which is a KBaseSearchEngine.boolean
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
@@ -398,6 +423,8 @@ SearchObjectsOutput is a reference to a hash where the following keys are define
 	total has a value which is an int
 	search_time has a value which is an int
 	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
@@ -424,6 +451,25 @@ narrative_info is a reference to a list containing 5 items:
 	3: (ws_owner_username) a string
 	4: (ws_owner_displayname) a string
 timestamp is an int
+access_group_info is a Workspace.workspace_info
+workspace_info is a reference to a list containing 9 items:
+	0: (id) a Workspace.ws_id
+	1: (workspace) a Workspace.ws_name
+	2: (owner) a Workspace.username
+	3: (moddate) a Workspace.timestamp
+	4: (max_objid) an int
+	5: (user_permission) a Workspace.permission
+	6: (globalread) a Workspace.permission
+	7: (lockstat) a Workspace.lock_status
+	8: (metadata) a Workspace.usermeta
+ws_id is an int
+ws_name is a string
+username is a string
+permission is a string
+lock_status is a string
+usermeta is a reference to a hash where the key is a string and the value is a string
+obj_ref is a string
+object_info is a Workspace.object_info
 
 
 =end text
@@ -500,17 +546,41 @@ $return is a KBaseSearchEngine.GetObjectsOutput
 GetObjectsInput is a reference to a hash where the following keys are defined:
 	guids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 	post_processing has a value which is a KBaseSearchEngine.PostProcessing
+	match_filter has a value which is a KBaseSearchEngine.MatchFilter
 GUID is a string
 PostProcessing is a reference to a hash where the following keys are defined:
 	ids_only has a value which is a KBaseSearchEngine.boolean
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
+	add_narrative_info has a value which is a KBaseSearchEngine.boolean
+	add_access_group_info has a value which is a KBaseSearchEngine.boolean
 boolean is an int
+MatchFilter is a reference to a hash where the following keys are defined:
+	full_text_in_all has a value which is a string
+	object_name has a value which is a string
+	timestamp has a value which is a KBaseSearchEngine.MatchValue
+	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	source_tags has a value which is a reference to a list where each element is a string
+	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
+MatchValue is a reference to a hash where the following keys are defined:
+	value has a value which is a string
+	int_value has a value which is an int
+	double_value has a value which is a float
+	bool_value has a value which is a KBaseSearchEngine.boolean
+	min_int has a value which is an int
+	max_int has a value which is an int
+	min_date has a value which is an int
+	max_date has a value which is an int
+	min_double has a value which is a float
+	max_double has a value which is a float
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	search_time has a value which is an int
 	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
@@ -536,6 +606,39 @@ narrative_info is a reference to a list containing 5 items:
 	3: (ws_owner_username) a string
 	4: (ws_owner_displayname) a string
 timestamp is an int
+access_group_info is a Workspace.workspace_info
+workspace_info is a reference to a list containing 9 items:
+	0: (id) a Workspace.ws_id
+	1: (workspace) a Workspace.ws_name
+	2: (owner) a Workspace.username
+	3: (moddate) a Workspace.timestamp
+	4: (max_objid) an int
+	5: (user_permission) a Workspace.permission
+	6: (globalread) a Workspace.permission
+	7: (lockstat) a Workspace.lock_status
+	8: (metadata) a Workspace.usermeta
+ws_id is an int
+ws_name is a string
+username is a string
+permission is a string
+lock_status is a string
+usermeta is a reference to a hash where the key is a string and the value is a string
+obj_ref is a string
+object_info is a reference to a list containing 11 items:
+	0: (objid) a Workspace.obj_id
+	1: (name) a Workspace.obj_name
+	2: (type) a Workspace.type_string
+	3: (save_date) a Workspace.timestamp
+	4: (version) an int
+	5: (saved_by) a Workspace.username
+	6: (wsid) a Workspace.ws_id
+	7: (workspace) a Workspace.ws_name
+	8: (chsum) a string
+	9: (size) an int
+	10: (meta) a Workspace.usermeta
+obj_id is an int
+obj_name is a string
+type_string is a string
 
 </pre>
 
@@ -548,17 +651,41 @@ $return is a KBaseSearchEngine.GetObjectsOutput
 GetObjectsInput is a reference to a hash where the following keys are defined:
 	guids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 	post_processing has a value which is a KBaseSearchEngine.PostProcessing
+	match_filter has a value which is a KBaseSearchEngine.MatchFilter
 GUID is a string
 PostProcessing is a reference to a hash where the following keys are defined:
 	ids_only has a value which is a KBaseSearchEngine.boolean
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
 	include_highlight has a value which is a KBaseSearchEngine.boolean
+	add_narrative_info has a value which is a KBaseSearchEngine.boolean
+	add_access_group_info has a value which is a KBaseSearchEngine.boolean
 boolean is an int
+MatchFilter is a reference to a hash where the following keys are defined:
+	full_text_in_all has a value which is a string
+	object_name has a value which is a string
+	timestamp has a value which is a KBaseSearchEngine.MatchValue
+	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	source_tags has a value which is a reference to a list where each element is a string
+	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
+MatchValue is a reference to a hash where the following keys are defined:
+	value has a value which is a string
+	int_value has a value which is an int
+	double_value has a value which is a float
+	bool_value has a value which is a KBaseSearchEngine.boolean
+	min_int has a value which is an int
+	max_int has a value which is an int
+	min_date has a value which is an int
+	max_date has a value which is an int
+	min_double has a value which is a float
+	max_double has a value which is a float
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	search_time has a value which is an int
 	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
@@ -584,6 +711,39 @@ narrative_info is a reference to a list containing 5 items:
 	3: (ws_owner_username) a string
 	4: (ws_owner_displayname) a string
 timestamp is an int
+access_group_info is a Workspace.workspace_info
+workspace_info is a reference to a list containing 9 items:
+	0: (id) a Workspace.ws_id
+	1: (workspace) a Workspace.ws_name
+	2: (owner) a Workspace.username
+	3: (moddate) a Workspace.timestamp
+	4: (max_objid) an int
+	5: (user_permission) a Workspace.permission
+	6: (globalread) a Workspace.permission
+	7: (lockstat) a Workspace.lock_status
+	8: (metadata) a Workspace.usermeta
+ws_id is an int
+ws_name is a string
+username is a string
+permission is a string
+lock_status is a string
+usermeta is a reference to a hash where the key is a string and the value is a string
+obj_ref is a string
+object_info is a reference to a list containing 11 items:
+	0: (objid) a Workspace.obj_id
+	1: (name) a Workspace.obj_name
+	2: (type) a Workspace.type_string
+	3: (save_date) a Workspace.timestamp
+	4: (version) an int
+	5: (saved_by) a Workspace.username
+	6: (wsid) a Workspace.ws_id
+	7: (workspace) a Workspace.ws_name
+	8: (chsum) a string
+	9: (size) an int
+	10: (meta) a Workspace.usermeta
+obj_id is an int
+obj_name is a string
+type_string is a string
 
 
 =end text
@@ -867,6 +1027,37 @@ an int
 =begin text
 
 an int
+
+=end text
+
+=back
+
+
+
+=head2 obj_ref
+
+=over 4
+
+
+
+=item Description
+
+An X/Y/Z style reference
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
 
 =end text
 
@@ -1246,6 +1437,10 @@ include_highlight - include highlights of fields that
      matched query,
 ids_only - shortcut to mark both skips as true and 
      include_highlight as false.
+add_narrative_info - if true, narrative info gets added to the
+     search results. Default is false.
+add_access_group_info - if true, access groups and objects info get added
+     to the search results. Default is false.
 
 
 =item Definition
@@ -1258,6 +1453,8 @@ ids_only has a value which is a KBaseSearchEngine.boolean
 skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
 include_highlight has a value which is a KBaseSearchEngine.boolean
+add_narrative_info has a value which is a KBaseSearchEngine.boolean
+add_access_group_info has a value which is a KBaseSearchEngine.boolean
 
 </pre>
 
@@ -1270,6 +1467,8 @@ ids_only has a value which is a KBaseSearchEngine.boolean
 skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
 include_highlight has a value which is a KBaseSearchEngine.boolean
+add_narrative_info has a value which is a KBaseSearchEngine.boolean
+add_access_group_info has a value which is a KBaseSearchEngine.boolean
 
 
 =end text
@@ -1290,9 +1489,9 @@ Input parameters for 'search_objects' method.
 object_types - list of the types of objects to search on (optional). The
                function will search on all objects if the list is not specified
                or is empty. The list size must be less than 50.
-match_filter - see MatchFilter (optional).
+match_filter - see MatchFilter.
 sorting_rules - see SortingRule (optional).
-access_filter - see AccessFilter (optional).
+access_filter - see AccessFilter.
 pagination - see Pagination (optional).
 post_processing - see PostProcessing (optional).
 
@@ -1535,6 +1734,66 @@ a reference to a list containing 5 items:
 
 
 
+=head2 access_group_info
+
+=over 4
+
+
+
+=item Description
+
+The access_group_info and object_info are meant to be abstractions for info from multiple data sources.
+Until other data sources become available, definitions pertaining to Workspace are being used.
+When other data sources are available, the following variables will be moved from
+this concrete workspace definitions, to structures with higher level abstractions.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a Workspace.workspace_info
+</pre>
+
+=end html
+
+=begin text
+
+a Workspace.workspace_info
+
+=end text
+
+=back
+
+
+
+=head2 object_info
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a Workspace.object_info
+</pre>
+
+=end html
+
+=begin text
+
+a Workspace.object_info
+
+=end text
+
+=back
+
+
+
 =head2 SearchObjectsOutput
 
 =over 4
@@ -1551,6 +1810,15 @@ search_time - common time in milliseconds spent.
 mapping<access_group_id, narrative_info> access_group_narrative_info - information about
    the workspaces in which the objects in the results reside. This data only applies to
    workspace objects.
+mapping<access_group_id, access_group_info> access_groups_info - information about
+   the access groups in which the objects in the results reside. Currently this data only applies to
+   workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
+   in the search results is saved in this mapping. In future the access_group_info will be
+   replaced with a higher level abstraction.
+mapping<obj_ref, object_info> objects_info - information about each object in the
+   search results. Currently this data only applies to workspace objects. The tuple11 value
+   returned by get_object_info3() for each object in the search results is saved in the mapping.
+   In future the object_info will be replaced with a higher level abstraction.
 
 
 =item Definition
@@ -1565,6 +1833,8 @@ objects has a value which is a reference to a list where each element is a KBase
 total has a value which is an int
 search_time has a value which is an int
 access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
 
 </pre>
 
@@ -1579,6 +1849,8 @@ objects has a value which is a reference to a list where each element is a KBase
 total has a value which is an int
 search_time has a value which is an int
 access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
 
 
 =end text
@@ -1596,6 +1868,9 @@ access_group_narrative_info has a value which is a reference to a hash where the
 =item Description
 
 Input parameters for get_objects method.
+    guids - list of guids
+    post_processing - see PostProcessing (optional).
+    match_filter - see MatchFilter (optional).
 
 
 =item Definition
@@ -1606,6 +1881,7 @@ Input parameters for get_objects method.
 a reference to a hash where the following keys are defined:
 guids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 post_processing has a value which is a KBaseSearchEngine.PostProcessing
+match_filter has a value which is a KBaseSearchEngine.MatchFilter
 
 </pre>
 
@@ -1616,6 +1892,7 @@ post_processing has a value which is a KBaseSearchEngine.PostProcessing
 a reference to a hash where the following keys are defined:
 guids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 post_processing has a value which is a KBaseSearchEngine.PostProcessing
+match_filter has a value which is a KBaseSearchEngine.MatchFilter
 
 
 =end text
@@ -1637,6 +1914,15 @@ Output results of get_objects method.
 mapping<access_group_id, narrative_info> access_group_narrative_info - information about
    the workspaces in which the objects in the results reside. This data only applies to
    workspace objects.
+mapping<access_group_id, access_group_info> access_groups_info - information about
+   the access groups in which the objects in the results reside. Currently this data only applies to
+   workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
+   in the search results is saved in this mapping. In future the access_group_info will be
+   replaced with a higher level abstraction.
+mapping<obj_ref, object_info> objects_info - information about each object in the
+   search results. Currently this data only applies to workspace objects. The tuple11 value
+   returned by get_object_info3() for each object in the search results is saved in the mapping.
+   In future the object_info will be replaced with a higher level abstraction.
 
 
 =item Definition
@@ -1648,6 +1934,8 @@ a reference to a hash where the following keys are defined:
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 search_time has a value which is an int
 access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
 
 </pre>
 
@@ -1659,6 +1947,8 @@ a reference to a hash where the following keys are defined:
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 search_time has a value which is an int
 access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
 
 
 =end text
