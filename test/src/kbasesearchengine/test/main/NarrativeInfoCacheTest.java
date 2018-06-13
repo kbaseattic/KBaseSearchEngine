@@ -291,11 +291,6 @@ public class NarrativeInfoCacheTest {
 
         when(weh.getWorkspaceInfo(65L)).thenThrow(toThrow);
 
-        try {
-            agnip.findNarrativeInfo(65L);
-            fail("expected exception");
-        } catch (Exception got) {
-            TestCommon.assertExceptionCorrect(got, expected);
-        }
+        assertNull(agnip.findNarrativeInfo(65L));
     }
 }

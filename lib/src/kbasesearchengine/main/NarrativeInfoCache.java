@@ -79,12 +79,13 @@ public class NarrativeInfoCache implements NarrativeInfoProvider {
     }
 
     @Override
-    public NarrativeInfo findNarrativeInfo(final Long wsId) throws IOException {
+    public NarrativeInfo findNarrativeInfo(final Long wsId) {
         try {
             return cache.get(wsId);
         } catch (ExecutionException e) {
-            throw (IOException) e.getCause(); // IOE is the only checked exception
+            System.out.println("ERROR: Failed retrieving narrative info: " + e.getMessage());
             // unchecked exceptions are wrapped in UncheckedExcecutionException
+            return null;
         }
     }
 }

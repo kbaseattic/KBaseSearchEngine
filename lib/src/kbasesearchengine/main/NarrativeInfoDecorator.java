@@ -108,8 +108,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
 
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(
             final List<ObjectData> objects,
-            final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo)
-            throws IOException, JsonClientException, Auth2Exception {
+            final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo) {
 
         final Map<Long, Tuple5 <String, Long, Long, String, String>> retVal = new HashMap<>();
 
@@ -127,21 +126,34 @@ public class NarrativeInfoDecorator implements SearchInterface {
         final Set<String> userNames = new HashSet<>();
         for (final long workspaceId: wsIdsSet) {
             final NarrativeInfo narrInfo = narrInfoProvider.findNarrativeInfo(workspaceId);
-            final Tuple5<String, Long, Long, String, String> tempNarrInfo =
-                    new Tuple5<String, Long, Long, String, String>()
-                            .withE1(narrInfo.getNarrativeName())
-                            .withE2(narrInfo.getNarrativeId())
-                            .withE3(narrInfo.getTimeLastSaved())
-                            .withE4(narrInfo.getWsOwnerUsername());
-            userNames.add(tempNarrInfo.getE4());
-            retVal.put(workspaceId, tempNarrInfo);
+            if (narrInfo != null) {
+                final Tuple5<String, Long, Long, String, String> tempNarrInfo =
+                        new Tuple5<String, Long, Long, String, String>()
+                                .withE1(narrInfo.getNarrativeName())
+                                .withE2(narrInfo.getNarrativeId())
+                                .withE3(narrInfo.getTimeLastSaved())
+                                .withE4(narrInfo.getWsOwnerUsername());
+                userNames.add(tempNarrInfo.getE4());
+                retVal.put(workspaceId, tempNarrInfo);
+            }
+            else {
+                retVal.put(workspaceId, null);
+            }
         }
-
-        final Map<String, String> displayNames = authInfoProvider.findUserDisplayNames(userNames);
-        // e5 is the full / display name, e4 is the user name
-        // defaults to the existing name so names from previous decorator layers aren't set to null
-        retVal.values().stream().forEach(t -> t.withE5(
-                displayNames.getOrDefault(t.getE4(), t.getE5())));
+        try {
+            final Map<String, String> displayNames = authInfoProvider.findUserDisplayNames(userNames);
+            // e5 is the full / display name, e4 is the user name
+            // defaults to the existing name so names from previous decorator layers aren't set to null
+            for (Map.Entry<Long, Tuple5<String, Long, Long, String, String>> entry : retVal.entrySet()) {
+                Tuple5<String, Long, Long, String, String> value = entry.getValue();
+                if (value != null) {
+                    value.withE5(displayNames.getOrDefault(value.getE4(), value.getE5()));
+                }
+            }
+        }
+        catch (IOException | Auth2Exception e) {
+            System.out.println("ERROR: Failed retrieving workspace owner realname(s):  " + e.getMessage());
+        }
         return retVal;
     }
 }

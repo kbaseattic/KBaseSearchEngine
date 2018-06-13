@@ -38,19 +38,18 @@ public class AccessGroupNarrativeInfoProvider implements NarrativeInfoProvider {
      * @param wsid workspace id.
      */
     @Override
-    public NarrativeInfo findNarrativeInfo(final Long wsid)
-            throws IOException, JsonClientException {
-        final Tuple9 <Long, String, String, String, Long, String, String,
+    public NarrativeInfo findNarrativeInfo(final Long wsid) {
+        Tuple9 <Long, String, String, String, Long, String, String,
                 String, Map<String,String>> wsInfo;
 
         try {
             wsInfo = wsHandler.getWorkspaceInfo(wsid);
-        } catch (IOException e) {
-            throw new IOException("Failed retrieving workspace info: " + e.getMessage(), e);
-        } catch (JsonClientException e) {
-            throw new JsonClientException("Failed retrieving workspace info: "
-                    + e.getMessage(), e);
+        } catch (IOException | JsonClientException e) {
+            System.out.println("ERROR: Failed retrieving workspace info: " + e.getMessage());
+            wsInfo = null;
         }
+
+        if (wsInfo == null) return null;
 
         final long timeMilli = WorkspaceEventHandler.parseDateToEpochMillis(wsInfo.getE4());
 
