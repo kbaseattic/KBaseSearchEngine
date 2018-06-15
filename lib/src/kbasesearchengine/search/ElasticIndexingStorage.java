@@ -637,6 +637,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
+        else if (indexName.endsWith(SUBTYPE_INDEX_SUFFIX)) {
+            indexName = indexName.replaceAll("_\\d+_sub$", "_*");
+        } else {
+            indexName = indexName.replaceAll("_\\d+$", "_*");
+        }
 
         // query = {"bool": {"filter": [{"term": {"prefix": prefix}}]}}
         Map<String, Object> query = ImmutableMap.of("bool",

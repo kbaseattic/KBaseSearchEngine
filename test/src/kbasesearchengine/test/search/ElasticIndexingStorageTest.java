@@ -242,6 +242,37 @@ public class ElasticIndexingStorageTest {
         return indexStorage.getObjectsByIds(new LinkedHashSet<>(Arrays.asList(guid))).get(0);
     }
 
+    /** Verifies that the is_last flag in the index records is set for the record with the latest
+     * version across all indexes for the same type. For example, if genome_1 and genome_2 are the
+     * two indexes that exist for the type genome, where genome_1 contains records for some genome
+     * type version set x and genome_2 contains records for some genome type version set y, and the
+     * latest genome object version resides in, say genome_1, then only this record's islast field
+     * must be set among all records contained in genome_1 and genome_2. i.e. all records in genome_2
+     * must have their islast field set to false in this case.
+     *
+     */
+    @Test
+    public void testLastVersion() throws Exception {
+
+        indexObject("Genome", 0, "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
+        Thread.sleep(1000);
+        indexObject("Genome", 0, "genome01", new GUID("WS:1/1/2"), "MyGenome.1");
+        Thread.sleep(1000);
+
+        indexObject("Genome", 1, "genome01", new GUID("WS:1/1/3"), "MyGenome.1");
+        Thread.sleep(1000);
+        indexObject("Genome", 1, "genome01", new GUID("WS:1/1/4"), "MyGenome.1");
+        Thread.sleep(1000);
+
+        MatchFilter filter = MatchFilter.getBuilder().build();
+        AccessFilter accessFilter = AccessFilter.create().withAllHistory(false).withAdmin(true);
+
+        FoundHits hits = indexStorage.searchObjects(Arrays.asList("Genome"), filter,null, accessFilter
+                , null, null);
+        Assert.assertEquals("expected 1 guid", 1, hits.guids.size());
+        Assert.assertEquals("expected WS:1/1/4", new GUID("WS:1/1/4"), hits.guids.iterator().next());
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     public void testFeatures() throws Exception {
