@@ -29,11 +29,14 @@ public class ObjectEventQueue {
     /* may want to initialize with an access group & object ID and ensure that all incoming
      * events match
      */
-    
+
     private static final Set<StatusEventType> OBJ_LVL_EVENTS = new HashSet<>(Arrays.asList(
-            StatusEventType.DELETE_ALL_VERSIONS, StatusEventType.NEW_ALL_VERSIONS,
-            StatusEventType.PUBLISH_ALL_VERSIONS, StatusEventType.RENAME_ALL_VERSIONS,
-            StatusEventType.UNDELETE_ALL_VERSIONS, StatusEventType.UNPUBLISH_ALL_VERSIONS,
+            StatusEventType.DELETE_ALL_VERSIONS,
+            StatusEventType.NEW_ALL_VERSIONS,
+            StatusEventType.PUBLISH_ALL_VERSIONS,
+            StatusEventType.RENAME_ALL_VERSIONS,
+            StatusEventType.UNDELETE_ALL_VERSIONS,
+            StatusEventType.UNPUBLISH_ALL_VERSIONS,
             StatusEventType.NEW_VERSION));
     
     private final PriorityQueue<StoredStatusEvent> queue = new PriorityQueue<StoredStatusEvent>(
@@ -74,11 +77,21 @@ public class ObjectEventQueue {
         } else {
             throw new IllegalArgumentException("Illegal initial event state: " + state);
         }
-        containedEvents.add(initialEvent.getId());
+        containedEvents.add(initialEvent.getID());
     }
     
     private boolean isObjectLevelEvent(final StoredStatusEvent event) {
-        return OBJ_LVL_EVENTS.contains(event.getEvent().getEventType());
+        return isObjectLevelEvent(event.getEvent());
+    }
+
+
+    /**
+     *
+     * @param event A status event.
+     * @return True if the specified event has an object level event type. Else return false.
+     */
+    public static boolean isObjectLevelEvent(final StatusEvent event) {
+        return OBJ_LVL_EVENTS.contains(event.getEventType());
     }
 
     /** Add a new {@link StatusEventProcessingState#UNPROC} event to the queue.
@@ -99,9 +112,9 @@ public class ObjectEventQueue {
             throw new IllegalArgumentException("Illegal type for loading event: " +
                     event.getEvent().getEventType());
         }
-        if (!containedEvents.contains(event.getId())) {
+        if (!containedEvents.contains(event.getID())) {
             queue.add(event);
-            containedEvents.add(event.getId());
+            containedEvents.add(event.getID());
             return true;
         }
         return false;
@@ -146,8 +159,8 @@ public class ObjectEventQueue {
      */
     public void setProcessingComplete(final StoredStatusEvent event) {
         Utils.nonNull(event, "event");
-        if (processing != null && event.getId().equals(processing.getId())) {
-            containedEvents.remove(processing.getId());
+        if (processing != null && event.getID().equals(processing.getID())) {
+            containedEvents.remove(processing.getID());
             processing = null;
             moveToReady();
         } else {

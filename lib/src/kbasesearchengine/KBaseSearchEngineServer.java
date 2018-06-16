@@ -31,9 +31,18 @@ import kbasesearchengine.authorization.AccessGroupCache;
 import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.authorization.TemporaryAuth2Client;
 import kbasesearchengine.authorization.WorkspaceAccessGroupProvider;
-import kbasesearchengine.common.GUID;
-import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
+import kbasesearchengine.main.NarrativeInfoCache;
+import kbasesearchengine.main.NarrativeInfoProvider;
+import kbasesearchengine.authorization.AuthCache;
+import kbasesearchengine.authorization.AuthInfoProvider;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
+import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
+import kbasesearchengine.main.AccessGroupNarrativeInfoProvider;
+import kbasesearchengine.main.WorkspaceInfoProvider;
+import kbasesearchengine.main.ObjectInfoProvider;
+import kbasesearchengine.main.WorkspaceInfoCache;
+import kbasesearchengine.main.ObjectInfoCache;
+import kbasesearchengine.common.GUID;
 import kbasesearchengine.main.GitInfo;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.SearchInterface;
@@ -41,6 +50,7 @@ import kbasesearchengine.main.SearchMethods;
 import kbasesearchengine.main.SearchVersion;
 import kbasesearchengine.main.TemporaryNarrativePruner;
 import kbasesearchengine.main.NarrativeInfoDecorator;
+import kbasesearchengine.main.AccessGroupInfoDecorator;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.system.FileLister;
 import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
@@ -57,14 +67,13 @@ import kbasesearchengine.common.FileUtil;
 /**
  * <p>Original spec-file module name: KBaseSearchEngine</p>
  * <pre>
- * A KBase module: KBaseSearchEngine
  * </pre>
  */
 public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
-    private static final String version = "";
-    private static final String gitUrl = "";
-    private static final String gitCommitHash = "";
+    private static final String version = "0.2.1";
+    private static final String gitUrl = "https://github.com/kbase/KBaseSearchEngine.git";
+    private static final String gitCommitHash = "9e706260f5e4a5e438ab77c3284a66d48c7a0ec3";
 
     //BEGIN_CLASS_HEADER
     
@@ -141,7 +150,10 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         
         final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
-        
+
+        final WorkspaceEventHandler workspaceEventHandler =
+                new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient));
+
         // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
         final AccessGroupProvider accessGroupProvider = new AccessGroupCache(
                 new WorkspaceAccessGroupProvider(wsClient), 30, 50000 * 1000);
@@ -157,13 +169,38 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         // this is a dirty hack so we don't have to provide 2 auth urls in the config
         // update if we ever update the SDK to use the non-legacy endpoints
         final String auth2URL = authURL.split("api")[0];
-        
+
+        // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
+        final WorkspaceEventHandler wsHandler = new WorkspaceEventHandler(
+                new CloneableWorkspaceClientImpl(wsClient));
+        final NarrativeInfoProvider narrativeInfoProvider = new NarrativeInfoCache(
+                new AccessGroupNarrativeInfoProvider(wsHandler),
+                3600,
+                50000 * 1000);
+        // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
+        final AuthInfoProvider authInfoProvider = new AuthCache(
+                new TemporaryAuth2Client(new URL(auth2URL)).withToken(kbaseIndexerToken.getToken()),
+                24 * 3600,
+                50000 * 1000);
+        // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
+        final WorkspaceInfoProvider workspaceInfoProvider = new WorkspaceInfoCache(
+                wsHandler,
+                3600,
+                50000 * 1000);
+        // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
+        final ObjectInfoProvider objectInfoProvider = new ObjectInfoCache(
+                wsHandler,
+                3600,
+                50000 * 1000);
         search = new TemporaryNarrativePruner(
-                new NarrativeInfoDecorator(
-                        new SearchMethods(accessGroupProvider, esStorage, ss, admins),
-                        new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient)),
-                        new TemporaryAuth2Client(new URL(auth2URL)),
-                        kbaseIndexerToken.getToken()));
+                new AccessGroupInfoDecorator(
+                        new NarrativeInfoDecorator(
+                            new SearchMethods(accessGroupProvider, esStorage, ss, admins),
+                            narrativeInfoProvider,
+                            authInfoProvider),
+                        workspaceInfoProvider,
+                        objectInfoProvider));
+
         //END_CONSTRUCTOR
     }
 

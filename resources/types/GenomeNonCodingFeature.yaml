@@ -1,5 +1,5 @@
 global-object-type: GenomeNonCodingFeature
-ui-type-name: Genome Feature
+ui-type-name: Genome Non-codeing Feature
 storage-type: WS
 storage-object-type: KBaseGenomes.Genome
 versions:
@@ -8,11 +8,11 @@ versions:
   primary-key-path: id
   indexing-rules:
   - path: id
-    keyword-type: string
+    keyword-type: keyword
   - path: functions
     transform: values
     full-text: true
-  - path: aliases/[*]/[1]
+  - path: aliases/[*]
     full-text: true
     key-name: aliases
   - path: location
@@ -35,24 +35,20 @@ versions:
     key-name: start
   - path: location
     transform: location.strand
-    keyword-type: string
+    keyword-type: keyword
     key-name: strand
   - path: location
     transform: location.stop
     keyword-type: integer
     key-name: stop
-  - path: protein_translation
-    not-indexed: true
+  - path: note
+    full-text: true
   - path: type
-    keyword-type: string
+    keyword-type: keyword
     key-name: feature_type
-  - path: ontology_terms/*/
-    transform: values
-    keyword-type: string
-    key-name: ontology_terms
   - from-parent: true
     path: domain
-    keyword-type: string
+    keyword-type: keyword
     key-name: genome_domain
   - from-parent: true
     path: taxonomy
@@ -60,7 +56,7 @@ versions:
     key-name: genome_taxonomy
   - from-parent: true
     path: scientific_name
-    full-text: true
+    keyword-type: keyword
     key-name: genome_scientific_name
   - from-parent: true
     path: assembly_ref
@@ -68,7 +64,7 @@ versions:
     target-object-type: Assembly
     target-object-type-version: 1
     optional-default-value: []
-    keyword-type: string
+    keyword-type: keyword
     key-name: assembly_guid
     ui-hidden: true
     not-indexed: true

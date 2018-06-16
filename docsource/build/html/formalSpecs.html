@@ -1,0 +1,107 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>12. Formal Specs &#8212; KBaseSearchEngine 0.01 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.01',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="13. Performance Evaluation" href="performanceEvaluation.html" />
+    <link rel="prev" title="11. Architecture - Low Level Design" href="architectureLowLevelDesign.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="formal-specs">
+<h1>12. Formal Specs<a class="headerlink" href="#formal-specs" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="type-mapping">
+<h2>12.1. Type Mapping<a class="headerlink" href="#type-mapping" title="Permalink to this headline">¶</a></h2>
+<p>### Type transformation specifications</p>
+<p>Example type transformation <cite>json</cite> files are in <cite>resources/types</cite>.</p>
+<p>TODO documentation of the transformation spec.</p>
+<p>### Type mapping specifications</p>
+<p>Type mappings are optional <cite>yaml</cite> files that specify how to map data source types to search types.
+If provided for a source type, they override the mapping provided in the type transformation
+file(s) (in the <cite>source-type</cite> and <cite>source-object-type</cite> fields). In particular, the mapping
+files are aware of the source type version while the transformation files are not.</p>
+<p>Mapping files also allow using the same set of transformation files for multiple environments
+where the source types may not have equivalent identifiers by providing environment-specific mapping
+files.</p>
+<p>There is an example mapping file in <cite>resources/typemappings</cite> that explains the structure and
+how the mappings work.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="architectureLowLevelDesign.html" title="previous chapter">11. Architecture - Low Level Design</a></li>
+      <li>Next: <a href="performanceEvaluation.html" title="next chapter">13. Performance Evaluation</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;KBase.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/formalSpecs.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

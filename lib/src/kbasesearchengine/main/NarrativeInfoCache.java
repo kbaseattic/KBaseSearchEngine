@@ -3,8 +3,7 @@ package kbasesearchengine.main;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.lang.instrument.Instrumentation;
-import us.kbase.common.service.Tuple5;
+import kbasesearchengine.tools.Utils;
 
 import com.google.common.base.Ticker;
 import com.google.common.cache.CacheBuilder;
@@ -19,7 +18,7 @@ import com.google.common.cache.Weigher;
 
 public class NarrativeInfoCache implements NarrativeInfoProvider {
 
-    private final LoadingCache<Long, Tuple5<String, Long, Long, String, String>> cache;
+    private final LoadingCache<Long, NarrativeInfo> cache;
 
     /** Create a cache.
      * @param provider the {@link NarrativeInfoProvider} whose results will be cached.
@@ -50,9 +49,8 @@ public class NarrativeInfoCache implements NarrativeInfoProvider {
             final int cacheSizeInNarrativeInfo,
             final Ticker ticker) {
 
-        if (provider == null) {
-            throw new NullPointerException("provider");
-        }
+        Utils.nonNull(provider, "provider");
+
         if (cacheLifeTimeInSec < 1) {
             throw new IllegalArgumentException("cache lifetime must be at least one second");
         }
@@ -63,27 +61,25 @@ public class NarrativeInfoCache implements NarrativeInfoProvider {
                 .ticker(ticker)
                 .expireAfterWrite(cacheLifeTimeInSec, TimeUnit.SECONDS)
                 .maximumWeight(cacheSizeInNarrativeInfo)
-                .weigher(new Weigher<Long, Tuple5<String, Long, Long, String, String>>() {
+                .weigher(new Weigher<Long, NarrativeInfo>() {
 
                     @Override
-                    public int weigh(Long wsId, Tuple5<String, Long, Long, String, String> narrativeInfo)
+                    public int weigh(Long wsId, NarrativeInfo narrativeInfo)
                     {
-                        // TODO this is supposed to return the size of the narrativeInfo
-                        // TODO Need to verify if this is right
-                        return 5;
+                        return narrativeInfo.getNumElements();
                     }
                 })
-                .build(new CacheLoader<Long, Tuple5<String, Long, Long, String, String>>() {
+                .build(new CacheLoader<Long, NarrativeInfo>() {
 
                     @Override
-                    public Tuple5<String, Long, Long, String, String> load(Long wsId) throws Exception {
+                    public NarrativeInfo load(Long wsId) throws Exception {
                         return provider.findNarrativeInfo(wsId);
                     }
                 });
     }
 
     @Override
-    public Tuple5<String, Long, Long, String, String> findNarrativeInfo(final Long wsId) throws IOException {
+    public NarrativeInfo findNarrativeInfo(final Long wsId) throws IOException {
         try {
             return cache.get(wsId);
         } catch (ExecutionException e) {
@@ -91,5 +87,4 @@ public class NarrativeInfoCache implements NarrativeInfoProvider {
             // unchecked exceptions are wrapped in UncheckedExcecutionException
         }
     }
-
 }

@@ -24,7 +24,7 @@ public class ObjectData {
     private final GUID guid;
     private final Optional<GUID> parentGuid;
     private final Optional<String> objectName;
-    private final Optional<SearchObjectType> type;
+    private final SearchObjectType type;
     private final Optional<String> creator;
     private final Optional<String> copier;
     private final Optional<String> module;
@@ -86,7 +86,7 @@ public class ObjectData {
             this.parentGuid = Optional.absent();
         }
         this.objectName = Optional.fromNullable(objectName);
-        this.type = Optional.fromNullable(type);
+        this.type = type;
         this.creator = Optional.fromNullable(creator);
         this.copier = Optional.fromNullable(copier);
         this.module = Optional.fromNullable(module);
@@ -125,10 +125,10 @@ public class ObjectData {
         return objectName;
     }
 
-    /** Get the type of the object, if present. 
+    /** Get the type of the object. 
      * @return the object type.
      */
-    public Optional<SearchObjectType> getType() {
+    public SearchObjectType getType() {
         return type;
     }
 
@@ -392,11 +392,12 @@ public class ObjectData {
     }
     
     /** Get a builder for an {@link ObjectData} instance.
-     * @param guid the GUID fro the object.
+     * @param guid the GUID for the object.
+     * @param type the type of the object.
      * @return a new builder.
      */
-    public static Builder getBuilder(final GUID guid) {
-        return new Builder(guid);
+    public static Builder getBuilder(final GUID guid, final SearchObjectType type) {
+        return new Builder(guid, type);
     }
     
     /** An {@link ObjectData} builder.
@@ -406,8 +407,8 @@ public class ObjectData {
     public static class Builder {
         
         private final GUID guid;
+        private final SearchObjectType type;
         private String objectName;
-        private SearchObjectType type;
         private String creator;
         private String copier;
         private String module;
@@ -422,9 +423,11 @@ public class ObjectData {
         private Set<String> sourceTags = new HashSet<>();
         private Map<String, List<String>> highlight = new HashMap<>();
         
-        private Builder(final GUID guid) {
+        private Builder(final GUID guid, final SearchObjectType type) {
             Utils.nonNull(guid, "guid");
+            Utils.nonNull(type, "type");
             this.guid = guid;
+            this.type = type;
         }
         
         /** Build the new ObjectData.
@@ -444,17 +447,6 @@ public class ObjectData {
         public Builder withNullableObjectName(final String objectName) {
             if (!Utils.isNullOrEmpty(objectName)) {
                 this.objectName = objectName;
-            }
-            return this;
-        }
-        
-        /** Set the object type in the builder. Replaces any previous type. Null is ignored.
-         * @param type the object type.
-         * @return this builder.
-         */
-        public Builder withNullableType(final SearchObjectType type) {
-            if (type != null) {
-                this.type = type;
             }
             return this;
         }

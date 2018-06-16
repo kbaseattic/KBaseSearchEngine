@@ -71,7 +71,7 @@ public class TemporaryNarrativePruner implements SearchInterface {
     // this method modifies the input in place
     private List<ObjectData> clean(final List<ObjectData> objectData) {
         for (final ObjectData od: objectData) {
-            if (od.getObjectProps().get("type").equals("Narrative")) {
+            if (od.getType().equals("Narrative")) {
                 od.setData(null); // nuke the raw data
                 final Map<String, String> keyprops = new HashMap<>(od.getKeyProps());
                 for (final String field: FIELDS_TO_NUKE) {

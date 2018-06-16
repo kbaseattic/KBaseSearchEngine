@@ -16,4 +16,4 @@ versions:
     ui-name: External Source
   - path: contigs/{size}
     keyword-type: integer
-    key-name: contigs
+    key-name: contig_count

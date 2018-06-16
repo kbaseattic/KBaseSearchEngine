@@ -173,7 +173,7 @@ public class KeyWordParserTest {
                 Arrays.asList(new GUID("CODE:1/2/3")), set(new GUID("CODE:4/5/6"))))
                 .thenReturn(set(new GUID("CODE:4/5/6")));
         
-        when(lookup.lookupObjectsByGuid(set(new GUID("CODE:4/5/6"))))
+        when(lookup.getTypesForGuids(set(new GUID("CODE:4/5/6"))))
                 .thenReturn(Collections.emptyMap());
 
         try {
@@ -191,6 +191,48 @@ public class KeyWordParserTest {
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(
                     got, new GUIDNotFoundException("GUID CODE:4/5/6 not found"));
+        }
+    }
+    
+    @Test
+    public void unexpectedType() throws Exception {
+        final ObjectLookupProvider lookup = mock(ObjectLookupProvider.class);
+        
+        final GUID parent = new GUID("CODE:1/2/3");
+        final String json = new ObjectMapper().writeValueAsString(ImmutableMap.of(
+                "assy_ref", "4/5/6"));
+        
+        when(lookup.getTypeDescriptor(new SearchObjectType("Assembly", 1)))
+                .thenReturn(ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Assembly", 1),
+                        new StorageObjectType("CODE", "KBaseAssembly.Assembly"))
+                        .build());
+        
+        when(lookup.resolveRefs(
+                Arrays.asList(new GUID("CODE:1/2/3")), set(new GUID("CODE:4/5/6"))))
+                .thenReturn(set(new GUID("CODE:4/5/6")));
+        
+        when(lookup.getTypesForGuids(set(new GUID("CODE:4/5/6"))))
+                .thenReturn(ImmutableMap.of(
+                        new GUID("CODE:4/5/6"), new SearchObjectType("Assembly", 2)));
+
+        try {
+            KeywordParser.extractKeywords(
+                parent,
+                new SearchObjectType("Genome", 1),
+                json,
+                null, // parent json
+                Arrays.asList(IndexingRules.fromPath(new ObjectJsonPath("assy_ref"))
+                    .withTransform(Transform.guid(new SearchObjectType("Assembly", 1)))
+                    .build()),
+                lookup,
+                Arrays.asList(parent));
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(
+                    got, new ObjectParseException(
+                            "During recursive processing of CODE:1/2/3, found GUID CODE:4/5/6 " +
+                            "has type Assembly v2, expected Assembly v1"));
         }
     }
 }

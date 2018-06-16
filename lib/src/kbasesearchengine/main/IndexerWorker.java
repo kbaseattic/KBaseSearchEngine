@@ -25,6 +25,7 @@ import com.google.common.base.Optional;
 
 import kbasesearchengine.common.FileUtil;
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.common.GUIDTooLongException;
 import kbasesearchengine.events.ChildStatusEvent;
 import kbasesearchengine.events.StatusEvent;
 import kbasesearchengine.events.StatusEventProcessingState;
@@ -59,7 +60,6 @@ import kbasesearchengine.system.ParsingRulesSubtypeFirstComparator;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
-import kbasesearchengine.tools.Utils;
 import org.apache.commons.io.FileUtils;
 
 public class IndexerWorker implements Stoppable {
@@ -67,11 +67,6 @@ public class IndexerWorker implements Stoppable {
     //TODO JAVADOC
     //TODO TESTS
     
-    private static final int RETRY_COUNT = 5;
-    private static final int RETRY_SLEEP_MS = 1000;
-    private static final List<Integer> RETRY_FATAL_BACKOFF_MS = Arrays.asList(
-            1000, 2000, 4000, 8000, 16000);
-
     private final String id;
     private final File rootTempDir;
     private final StatusEventStorage storage;
@@ -79,45 +74,31 @@ public class IndexerWorker implements Stoppable {
     private final IndexingStorage indexingStorage;
     private final Set<String> workerCodes;
     private final LineLogger logger;
-    private final Map<String, EventHandler> eventHandlers = new HashMap<>();
+    private final Map<String, EventHandler> eventHandlers;
     private ScheduledExecutorService executor = null;
     private final SignalMonitor signalMonitor = new SignalMonitor();
     private boolean stopRunner = false;
     private final int maxObjectsPerLoad;
-    
-    private final Retrier retrier = new Retrier(RETRY_COUNT, RETRY_SLEEP_MS,
-            RETRY_FATAL_BACKOFF_MS,
-            (retrycount, event, except) -> logError(retrycount, event, except));
+    private final Retrier retrier;
 
-    public IndexerWorker(
-            // this is screaming for a configuration builder, esp if we configure the retry info
-            final String id,
-            final List<EventHandler> eventHandlers,
-            final StatusEventStorage storage,
-            final IndexingStorage indexingStorage,
-            final TypeStorage typeStorage,
-            final File tempDir,
-            final LineLogger logger,
-            final Set<String> workerCodes,
-            final int maxObjectsPerLoad)
-            throws IOException {
-        Utils.notNullOrEmpty("id", "id cannot be null or the empty string");
-        Utils.nonNull(logger, "logger");
-        Utils.nonNull(indexingStorage, "indexingStorage");
-        this.maxObjectsPerLoad = maxObjectsPerLoad;
-        this.workerCodes = workerCodes;
-        logger.logInfo("Worker codes: " + workerCodes);
-        this.id = id;
-        this.logger = logger;
-        this.rootTempDir = FileUtil.getOrCreateCleanSubDir(tempDir,
+    public IndexerWorker(final IndexerWorkerConfigurator config) throws IOException {
+        this.maxObjectsPerLoad = config.getMaxObjectsPerLoad();
+        this.workerCodes = config.getWorkerCodes();
+        this.logger = config.getLogger();
+        this.logger.logInfo("Worker codes: " + workerCodes);
+        this.id = config.getWorkerID();
+        this.rootTempDir = FileUtil.getOrCreateCleanSubDir(config.getRootTempDir().toFile(),
                 id + "_" + UUID.randomUUID().toString().substring(0,5));
-        logger.logInfo("Created temp dir " + rootTempDir.getAbsolutePath() +
+        this.logger.logInfo("Created temp dir " + rootTempDir.getAbsolutePath() +
                                                      " for indexer worker " + id);
         
-        eventHandlers.stream().forEach(eh -> this.eventHandlers.put(eh.getStorageCode(), eh));
-        this.storage = storage;
-        this.typeStorage = typeStorage;
-        this.indexingStorage = indexingStorage;
+        this.eventHandlers = config.getEventHandlers();
+        this.storage = config.getEventStorage();
+        this.typeStorage = config.getTypeStorage();
+        this.indexingStorage = config.getIndexingStorage();
+        this.retrier = new Retrier(config.getRetryCount(), config.getRetrySleepMS(),
+                config.getRetryFatalBackoffMS(),
+                (retrycount, event, except) -> logError(retrycount, event, except));
     }
     
     @Override
@@ -142,7 +123,7 @@ public class IndexerWorker implements Stoppable {
                 processedEvent = false;
                 try {
                     // keep processing events until there are none left
-                    processedEvent = performOneTick();
+                    processedEvent = runCycle();
                 } catch (InterruptedException | FatalIndexingException e) {
                     logError(LogPrefix.FATAL, e);
                     executor.shutdown();
@@ -200,24 +181,43 @@ public class IndexerWorker implements Stoppable {
             final int retrycount,
             final Optional<StatusEventWithId> event,
             final RetriableIndexingException e) {
+        String prefix = "Retriable";
+        if (e instanceof FatalRetriableIndexingException) {
+            // add isFatal() method or something if the exception hierarchy gets much bigger
+            prefix = "Fatal retriable";
+        }
         final String msg;
         if (event.isPresent()) {
-            msg = String.format("Retriable error in indexer for event %s %s%s, retry %s",
+            msg = String.format("%s error in indexer for event %s %s%s, retry %s",
+                    prefix,
                     event.get().getEvent().getEventType(),
                     event.get().isParentId() ? "with parent ID " : "",
-                    event.get().getId().getId(),
+                    event.get().getID().getId(),
                     retrycount);
         } else {
-            msg = String.format("Retriable error in indexer, retry %s", retrycount);
+            msg = String.format("%s error in indexer, retry %s", prefix, retrycount);
         }
         logError(msg, e);
     }
     
-    private boolean performOneTick() throws InterruptedException, IndexingException {
-        final Optional<StoredStatusEvent> optEvent = retrier.retryFunc(
-                s -> s.setAndGetProcessingState(StatusEventProcessingState.READY, workerCodes,
-                        StatusEventProcessingState.PROC, id),
-                storage, null);
+    /** Runs one cycle of the event processing loop, processing up to one event.
+     * @return true if an event was processed, false if not.
+     * @throws InterruptedException if the thread was interrupted.
+     * @throws FatalIndexingException if an indexing exception occurred that should cause the
+     * shutdown of the worker. In normal use, no more events will be processed.
+     */
+    public boolean runCycle() throws InterruptedException, FatalIndexingException {
+        final Optional<StoredStatusEvent> optEvent;
+        try {
+            optEvent = retrier.retryFunc(
+                    s -> s.setAndGetProcessingState(StatusEventProcessingState.READY, workerCodes,
+                            StatusEventProcessingState.PROC, id),
+                    storage, null);
+        } catch (FatalIndexingException e) {
+            throw e;
+        } catch (IndexingException e) { // untestable
+            throw new RuntimeException("non-fatal exceptions should not be thrown here");
+        }
         boolean processedEvent = false;
         if (optEvent.isPresent()) {
             final StoredStatusEvent parentEvent = optEvent.get();
@@ -225,13 +225,16 @@ public class IndexerWorker implements Stoppable {
             try {
                 handler = getEventHandler(parentEvent);
             } catch (UnprocessableEventIndexingException e) {
-                logError(LogPrefix.STD, e);
-                markEventProcessed(parentEvent, StatusEventProcessingState.FAIL);
+                handleException("Error getting event handler", parentEvent, e);
                 return true;
             }
             if (handler.isExpandable(parentEvent)) {
                 expandAndProcess(parentEvent);
             } else {
+                // this means failed events get marked twice, since processEvent marks failed
+                // events
+                // *shrug*
+                // maybe rethink this whole process later, but now would require interface changes
                 markEventProcessed(parentEvent, processEvent(parentEvent));
             }
             processedEvent = true;
@@ -245,35 +248,27 @@ public class IndexerWorker implements Stoppable {
             throws InterruptedException, FatalIndexingException {
         try {
             // should only throw fatal
-            retrier.retryCons(s -> s.setProcessingState(parentEvent.getId(),
+            retrier.retryCons(s -> s.setProcessingState(parentEvent.getID(),
                     StatusEventProcessingState.PROC, result), storage, parentEvent);
         } catch (FatalIndexingException | InterruptedException e) {
             throw e;
-        } catch (Exception e) {
-            // don't know how to respond to anything else, so mark event failed and keep going
-            logError(LogPrefix.UNEXPECTED, e);
-            markAsVisitedFailedPostError(parentEvent);
+        } catch (IndexingException e) { // untestable
+            throw new RuntimeException("non-fatal exceptions should not be thrown here", e);
         }
     }
 
     private void expandAndProcess(final StoredStatusEvent parentEvent)
             throws FatalIndexingException, InterruptedException {
         logger.logInfo(String.format("[Indexer] Expanding event %s %s",
-                parentEvent.getEvent().getEventType(), parentEvent.getId().getId()));
+                parentEvent.getEvent().getEventType(), parentEvent.getID().getId()));
         final Iterator<ChildStatusEvent> childIter;
         try {
             childIter = retrier.retryFunc(e -> getSubEventIterator(e), parentEvent, parentEvent);
         } catch (IndexingException e) {
-            markAsVisitedFailedPostError(parentEvent);
             handleException("Error expanding parent event", parentEvent, e);
             return;
         } catch (InterruptedException e) {
             throw e;
-        } catch (Exception e) {
-            // don't know how to respond to anything else, so mark event failed and keep going
-            logError(LogPrefix.UNEXPECTED, e);
-            markAsVisitedFailedPostError(parentEvent);
-            return;
         }
         StatusEventProcessingState parentResult = StatusEventProcessingState.INDX;
         while (childIter.hasNext()) {
@@ -300,19 +295,6 @@ public class IndexerWorker implements Stoppable {
             throw e.getIndexingException();
         } catch (RetriableIndexingExceptionUncheckedWrapper e) {
             throw e.getIndexingException();
-        }
-    }
-
-    // assumes something has already failed, so if this fails as well something is really 
-    // wrong and we bail.
-    private void markAsVisitedFailedPostError(final StoredStatusEvent parentEvent)
-            throws FatalIndexingException {
-        try {
-            storage.setProcessingState(parentEvent.getId(), null, StatusEventProcessingState.FAIL);
-        } catch (Exception e) {
-            //ok then we're screwed
-            throw new FatalIndexingException(ErrorType.OTHER, "Can't mark events as failed: " +
-                    e.getMessage(), e);
         }
     }
 
@@ -366,15 +348,33 @@ public class IndexerWorker implements Stoppable {
             final String error,
             final StatusEventWithId event,
             final IndexingException exception)
-            throws FatalIndexingException {
+            throws FatalIndexingException, InterruptedException {
+        try {
+            if (event.isParentId()) { // child event
+                retrier.retryCons(s -> s.store((ChildStatusEvent) event,
+                                exception.getErrorType().toString(), exception),
+                        storage, event);
+            } else {
+                retrier.retryCons(s -> s.setProcessingState(
+                                event.getID(),
+                                StatusEventProcessingState.PROC,
+                                exception.getErrorType().toString(),
+                                exception),
+                        storage, event);
+            }
+        } catch (FatalIndexingException e) {
+            throw e;
+        } catch (IndexingException e) { // untestable
+            throw new RuntimeException(
+                    "non-fatal indexing exceptions should not be thrown here", e);
+        }
+        final String msg = error + String.format(" for event %s %s%s",
+                event.getEvent().getEventType(),
+                event.isParentId() ? "with parent ID " : "",
+                        event.getID().getId());
+        logError(msg, exception);
         if (exception instanceof FatalIndexingException) {
             throw (FatalIndexingException) exception;
-        } else {
-            final String msg = error + String.format(" for event %s %s%s",
-                    event.getEvent().getEventType(),
-                    event.isParentId() ? "with parent ID " : "",
-                    event.getId().getId());
-            logError(msg, exception);
         }
     }
 
@@ -415,24 +415,29 @@ public class IndexerWorker implements Stoppable {
 
     private void processEvent(final StatusEvent ev)
             throws IndexingException, InterruptedException, RetriableIndexingException {
+
+        // update event to reflect the latest state of object for which the specified StatusEvent is an event for
+        EventHandler handler = getEventHandler(ev.getStorageCode());
+        StatusEvent updatedEvent = handler.updateObjectEvent(ev);
+
         try {
-            switch (ev.getEventType()) {
+            switch (updatedEvent.getEventType()) {
             case NEW_VERSION:
-                GUID pguid = ev.toGUID();
+                GUID pguid = updatedEvent.toGUID();
                 boolean indexed = indexingStorage.checkParentGuidsExist(new LinkedHashSet<>(
                         Arrays.asList(pguid))).get(pguid);
                 if (indexed) {
                     logger.logInfo("[Indexer]   skipping " + pguid +
                             " creation (already indexed)");
                     // TODO: we should fix public access for all sub-objects too (maybe already works. Anyway, ensure all subobjects are set correctly as well as the parent)
-                    if (ev.isPublic().get()) {
+                    if (updatedEvent.isPublic().get()) {
                         publish(pguid);
                     } else {
                         unpublish(pguid);
                     }
                 } else {
-                    indexObject(pguid, ev.getStorageObjectType().get(), ev.getTimestamp(),
-                            ev.isPublic().get(), null, new LinkedList<>());
+                    indexObject(pguid, updatedEvent.getStorageObjectType().get(), updatedEvent.getTimestamp(),
+                            updatedEvent.isPublic().get(), null, new LinkedList<>());
                 }
                 break;
             // currently unused
@@ -440,10 +445,10 @@ public class IndexerWorker implements Stoppable {
 //                unshare(ev.toGUID(), ev.getAccessGroupId().get());
 //                break;
             case DELETE_ALL_VERSIONS:
-                deleteAllVersions(ev.toGUID());
+                deleteAllVersions(updatedEvent.toGUID());
                 break;
             case UNDELETE_ALL_VERSIONS:
-                undeleteAllVersions(ev.toGUID());
+                undeleteAllVersions(updatedEvent.toGUID());
                 break;
                 //TODO DP reenable if we support DPs
 //            case SHARED:
@@ -454,13 +459,13 @@ public class IndexerWorker implements Stoppable {
 //                unshare(ev.toGUID(), ev.getTargetAccessGroupId());
 //                break;
             case RENAME_ALL_VERSIONS:
-                renameAllVersions(ev.toGUID(), ev.getNewName().get());
+                renameAllVersions(updatedEvent.toGUID(), updatedEvent.getNewName().get());
                 break;
             case PUBLISH_ALL_VERSIONS:
-                publishAllVersions(ev.toGUID());
+                publishAllVersions(updatedEvent.toGUID());
                 break;
             case UNPUBLISH_ALL_VERSIONS:
-                unpublishAllVersions(ev.toGUID());
+                unpublishAllVersions(updatedEvent.toGUID());
                 break;
             default:
                 throw new UnprocessableEventIndexingException(
@@ -535,8 +540,9 @@ public class IndexerWorker implements Stoppable {
                 final ParseObjectsRet parsedRet = parseObjects(guid, indexLookup,
                         newRefPath, obj, rule);
                 long parsingTime = System.currentTimeMillis() - t2;
-                logger.logInfo("[Indexer]   " + toVerRep(rule.getGlobalObjectType()) +
-                        ", parsing time: " + parsingTime + " ms.");
+                logger.logInfo(String.format("[Indexer]   Parsed %s %s in %s ms.",
+                        parsedRet.guidToObj.size(), toVerRep(rule.getGlobalObjectType()),
+                        parsingTime));
                 long t3 = System.currentTimeMillis();
                 indexObjectInStorage(guid, timestamp, obj.isPublic(), obj, rule,
                         parsedRet.guidToObj, parsedRet.parentJson);
@@ -625,8 +631,7 @@ public class IndexerWorker implements Stoppable {
             try (JsonParser jts = obj.getData().getPlacedStream()) {
                 parentJson = ObjectParser.extractParentFragment(rule, jts);
             }
-            final Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(
-                    obj, guid, rule);
+            final Map<GUID, String> guidToJson = ObjectParser.parseSubObjects(obj, guid, rule);
             if (guidToJson.size() > maxObjectsPerLoad) {
                 throw new UnprocessableEventIndexingException(ErrorType.SUBOBJECT_COUNT,
                         String.format("Object %s has %s subobjects, exceeding the limit of %s",
@@ -643,6 +648,8 @@ public class IndexerWorker implements Stoppable {
              * File IO problems are generally going to mean something is very wrong
              * (like bad disk), since the file should already exist at this point.
              */
+        } catch (GUIDTooLongException ex) {
+            throw new UnprocessableEventIndexingException(ErrorType.OTHER, ex.getMessage());
         } catch (GUIDNotFoundException e) {
             throw new UnprocessableEventIndexingException(
                     ErrorType.GUID_NOT_FOUND, e.getMessage(), e);
@@ -844,7 +851,6 @@ public class IndexerWorker implements Stoppable {
                     new kbasesearchengine.search.PostProcessing();
             pp.objectData = false;
             pp.objectKeys = true;
-            pp.objectInfo = true;
             try {
                 return indexingStorage.getObjectsByIds(guids, pp);
             } catch (IOException e) {
@@ -854,7 +860,7 @@ public class IndexerWorker implements Stoppable {
         
         @Override
         public ObjectTypeParsingRules getTypeDescriptor(final SearchObjectType type)
-                throws IndexingException, NoSuchTypeException {
+                throws NoSuchTypeException {
             return typeStorage.getObjectTypeParsingRules(type);
         }
         
@@ -877,7 +883,7 @@ public class IndexerWorker implements Stoppable {
                 // duplicate key errors on the od.getType(), which is the value
                 final Map<GUID, SearchObjectType> loaded = new HashMap<>();
                 for (final ObjectData od: data) {
-                    loaded.put(od.getGUID(), od.getType().get());
+                    loaded.put(od.getGUID(), od.getType());
                 }
                 guidToTypeCache.putAll(loaded);
                 ret.putAll(loaded);

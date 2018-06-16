@@ -9,6 +9,14 @@ import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.tools.Utils;
 
 /** An event representing a change in status to which the indexer should respond.
+ *
+ * Note: Only StatusEvents of type NEW_VERSION will have a StorageObjectType.
+ * All the other events will just have a storage code. This is because all the
+ * other events affect objects rather than object versions. Since versions of
+ * the same object do not need to have the same type, the event cannot have a
+ * StorageObjectType. NEW_VERSION events, in contrast, always have a
+ * StorageObjectType.
+ *
  * @author gaprice@lbl.gov
  *
  */

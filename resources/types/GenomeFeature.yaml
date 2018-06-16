@@ -8,7 +8,7 @@ versions:
   primary-key-path: id
   indexing-rules:
   - path: id
-    keyword-type: string
+    keyword-type: keyword
   - path: function
     full-text: true
   - path: aliases/[*]
@@ -34,7 +34,7 @@ versions:
     key-name: start
   - path: location
     transform: location.strand
-    keyword-type: string
+    keyword-type: keyword
     key-name: strand
   - path: location
     transform: location.stop
@@ -43,14 +43,14 @@ versions:
   - path: protein_translation
     not-indexed: true
   - path: type
-    keyword-type: string
+    keyword-type: keyword
     key-name: feature_type
   - path: ontology_terms/*/*/id
-    keyword-type: string
+    keyword-type: keyword
     key-name: ontology_terms
   - from-parent: true
     path: domain
-    keyword-type: string
+    keyword-type: keyword
     key-name: genome_domain
   - from-parent: true
     path: taxonomy
@@ -58,7 +58,7 @@ versions:
     key-name: genome_taxonomy
   - from-parent: true
     path: scientific_name
-    full-text: true
+    keyword-type: keyword
     key-name: genome_scientific_name
   - from-parent: true
     path: assembly_ref
@@ -66,7 +66,7 @@ versions:
     target-object-type: Assembly
     target-object-type-version: 1
     optional-default-value: []
-    keyword-type: string
+    keyword-type: keyword
     key-name: assembly_guid
     ui-hidden: true
     not-indexed: true
@@ -75,12 +75,11 @@ versions:
   primary-key-path: id
   indexing-rules:
   - path: id
-    keyword-type: string
+    keyword-type: keyword
   - path: functions
     transform: values
     full-text: true
-  - path: aliases/[*]/
-    full-text: true
+  - path: aliases/[*]
     key-name: aliases
   - path: location
     transform: location.contig_id
@@ -102,7 +101,7 @@ versions:
     key-name: start
   - path: location
     transform: location.strand
-    keyword-type: string
+    keyword-type: keyword
     key-name: strand
   - path: location
     transform: location.stop
@@ -111,15 +110,11 @@ versions:
   - path: protein_translation
     not-indexed: true
   - path: type
-    keyword-type: string
+    keyword-type: keyword
     key-name: feature_type
-  - path: ontology_terms/*/
-    transform: values
-    keyword-type: string
-    key-name: ontology_terms
   - from-parent: true
     path: domain
-    keyword-type: string
+    keyword-type: keyword
     key-name: genome_domain
   - from-parent: true
     path: taxonomy
@@ -135,7 +130,7 @@ versions:
     target-object-type: Assembly
     target-object-type-version: 1
     optional-default-value: []
-    keyword-type: string
+    keyword-type: keyword
     key-name: assembly_guid
     ui-hidden: true
     not-indexed: true
