@@ -286,26 +286,4 @@ public class ObjectInfoCacheTest {
             TestCommon.assertExceptionCorrect(got, exception);
         }
     }
-
-    @Test
-    public void getFailIOE() throws Exception {
-        final ObjectInfoProvider wrapped = mock(ObjectInfoProvider.class);
-        final ObjectInfoCache cache = new ObjectInfoCache(wrapped, 10000, 10);
-
-        when(wrapped.getObjectsInfo(set("65/1/1"))).thenThrow(new IOException("Test Exception Message"));
-
-        failFindObjectInfo(cache, ImmutableList.of("65/1/1"), new IOException("Test Exception Message"));
-    }
-
-    private void failFindObjectInfo(
-            final ObjectInfoCache cache,
-            final ImmutableList<String> objRefs,
-            final Exception expected) {
-        try {
-            cache.getObjectsInfo(objRefs);
-            fail("expected exception");
-        } catch (Exception got) {
-            TestCommon.assertExceptionCorrect(got, expected);
-        }
-    }
 }
