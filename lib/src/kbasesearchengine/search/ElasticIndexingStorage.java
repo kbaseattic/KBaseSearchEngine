@@ -637,6 +637,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
+        // update across all index versions of a particular type (genome_1, genome_2 etc)
         else if (indexName.endsWith(SUBTYPE_INDEX_SUFFIX)) {
             indexName = indexName.replaceAll("_\\d+_sub$", "_*");
         } else {
