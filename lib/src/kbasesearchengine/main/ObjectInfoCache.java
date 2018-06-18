@@ -2,17 +2,9 @@ package kbasesearchengine.main;
 
 import kbasesearchengine.tools.Utils;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import us.kbase.common.service.JsonClientException;
-import kbasesearchengine.tools.Utils;
 
 import com.google.common.base.Ticker;
 import com.google.common.cache.CacheBuilder;
@@ -101,25 +93,25 @@ public class ObjectInfoCache implements ObjectInfoProvider {
 
     @Override
     public Tuple11<Long, String, String, String, Long,
-            String, Long, String, String, Long, Map<String, String>> getObjectInfo(final String objRef)
-            throws IOException, JsonClientException {
+            String, Long, String, String, Long, Map<String, String>> getObjectInfo(final String objRef) {
         try {
             return cache.get(objRef);
         } catch (ExecutionException e) {
-            throw (IOException) e.getCause(); // IOE is the only checked exception
+            System.out.println("ERROR: Failed retrieving object info: " + e.getMessage());
             // unchecked exceptions are wrapped in UncheckedExcecutionException
+            return null;
         }
     }
 
     @Override
     public Map<String, Tuple11<Long, String, String, String, Long, String, Long, String, String, Long,
-            Map<String, String>>> getObjectsInfo(final Iterable <? extends String> objRefs)
-            throws IOException, JsonClientException {
+            Map<String, String>>> getObjectsInfo(final Iterable <? extends String> objRefs) {
         try {
             return cache.getAll(objRefs);
         } catch (ExecutionException e) {
-            throw (IOException) e.getCause(); // IOE is the only checked exception
+            System.out.println("ERROR: Failed retrieving objects info: " + e.getMessage());
             // unchecked exceptions are wrapped in UncheckedExcecutionException
+            return null;
         }
     }
 }

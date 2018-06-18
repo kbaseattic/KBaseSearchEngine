@@ -38,9 +38,9 @@ import kbasesearchengine.authorization.AuthInfoProvider;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import kbasesearchengine.main.AccessGroupNarrativeInfoProvider;
-import kbasesearchengine.main.WorkspaceInfoProvider;
+import kbasesearchengine.main.AccessGroupInfoProvider;
 import kbasesearchengine.main.ObjectInfoProvider;
-import kbasesearchengine.main.WorkspaceInfoCache;
+import kbasesearchengine.main.AccessGroupInfoCache;
 import kbasesearchengine.main.ObjectInfoCache;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.main.GitInfo;
@@ -183,13 +183,13 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
                 24 * 3600,
                 50000 * 1000);
         // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
-        final WorkspaceInfoProvider workspaceInfoProvider = new WorkspaceInfoCache(
-                wsHandler,
+        final AccessGroupInfoProvider accessGroupInfoProvider = new AccessGroupInfoCache(
+                new AccessGroupNarrativeInfoProvider(wsHandler),
                 3600,
                 50000 * 1000);
         // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
         final ObjectInfoProvider objectInfoProvider = new ObjectInfoCache(
-                wsHandler,
+                new AccessGroupNarrativeInfoProvider(wsHandler),
                 3600,
                 50000 * 1000);
         search = new TemporaryNarrativePruner(
@@ -198,7 +198,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
                             new SearchMethods(accessGroupProvider, esStorage, ss, admins),
                             narrativeInfoProvider,
                             authInfoProvider),
-                        workspaceInfoProvider,
+                        accessGroupInfoProvider,
                         objectInfoProvider));
 
         //END_CONSTRUCTOR
