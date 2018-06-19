@@ -1,8 +1,10 @@
 package kbasesearchengine.test.main;
 
 import static kbasesearchengine.test.common.TestCommon.set;
+import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.wsTuple;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import kbasesearchengine.*;
+import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
@@ -36,6 +39,7 @@ import kbasesearchengine.main.AccessGroupNarrativeInfoProvider;
 
 import kbasesearchengine.test.common.TestCommon;
 import us.kbase.common.service.JsonClientException;
+import kbasesearchengine.authorization.TemporaryAuth2Client.Auth2Exception;
 import us.kbase.common.service.Tuple5;
 
 public class NarrativeInfoDecoratorTest {
@@ -210,25 +214,12 @@ public class NarrativeInfoDecoratorTest {
     }
 
     @Test
-    public void searchObjectsDecorateFail() throws Exception {
-        failSearchObjects(new IOException("beer on router"),
-                new IOException("beer on router"));
-                //new IOException("Failed retrieving workspace info: beer on router"));
-        failSearchObjects(new JsonClientException("workspace is turned off"),
-                new JsonClientException(
-                        "workspace is turned off"));
-                        //"Failed retrieving workspace info: workspace is turned off"));
-
-    }
-
-    private void failSearchObjects(
-            final Exception toThrow,
-            final Exception expected)
-            throws Exception {
+    public void failAddNarrativeInfo() throws Exception {
         final SearchInterface search = mock(SearchInterface.class);
-        final NarrativeInfoProvider nip = mock(NarrativeInfoProvider.class);
+        final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
         final AuthInfoProvider aip = mock(AuthInfoProvider.class);
 
+        final NarrativeInfoProvider nip = new AccessGroupNarrativeInfoProvider(weh);
         final NarrativeInfoDecorator nid = new NarrativeInfoDecorator(search, nip, aip);
 
         /* since a) the generated input class has no hashcode or equals and
@@ -239,18 +230,64 @@ public class NarrativeInfoDecoratorTest {
         final SearchObjectsInput dummyInput = new SearchObjectsInput()
                 .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L));
 
-        final List<ObjectData> objectdata = Arrays.asList(new ObjectData().withGuid("WS:65/2/7"));
+        when(weh.getWorkspaceInfo(65L)).thenThrow(new JsonClientException(
+                "Failed retrieving workspace info: workspace is turned off"));
+        when(weh.getWorkspaceInfo(42L)).thenReturn(wsTuple(
+                42, "name4", "owner4", "2018-02-08T21:55:50.678Z", 0, "r", "n", "unlocked",
+                ImmutableMap.of("narrative", "3", "narrative_nice_name", "mylovelynarrative")));
+        when(aip.findUserDisplayNames(set("owner4"))).thenReturn(ImmutableMap.of(
+                "owner4", "Fred"));
+
+        final List<ObjectData> objectdata = Arrays.asList(
+                new ObjectData().withGuid("WS:65/2/7"),
+                new ObjectData().withGuid("WS:42/1/1"));
         when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
                 .withObjects(objectdata));
 
-        when(nip.findNarrativeInfo(65L)).thenThrow(toThrow);
+        final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
+        assertThat("Incorrect size", res.getAccessGroupNarrativeInfo().size(), is(2));
+        assertNull("Null expected", res.getAccessGroupNarrativeInfo().get(65L));
+        compare(res.getAccessGroupNarrativeInfo().get(42L),
+                narrInfoTuple("mylovelynarrative", 3L, 1518126950678L, "owner4", "Fred"));
+    }
 
-        try {
-            nid.searchObjects(dummyInput, "user");
-            fail("expected exception");
-        } catch (Exception got) {
-            TestCommon.assertExceptionCorrect(got, expected);
-        }
+    @Test
+    public void failAddAuthInfo() throws Exception {
+        final SearchInterface search = mock(SearchInterface.class);
+        final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
+        final AuthInfoProvider aip = mock(AuthInfoProvider.class);
+
+        final NarrativeInfoProvider nip = new AccessGroupNarrativeInfoProvider(weh);
+        final NarrativeInfoDecorator nid = new NarrativeInfoDecorator(search, nip, aip);
+
+        /* since a) the generated input class has no hashcode or equals and
+         * b) the argument is just a straight pass through, we just use an identity match
+         * for mockito to recognize the argument
+         */
+
+        final SearchObjectsInput dummyInput = new SearchObjectsInput()
+                .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L));
+
+        when(weh.getWorkspaceInfo(35L)).thenThrow(new JsonClientException(
+                "Failed retrieving workspace info: workspace is turned off"));
+        when(weh.getWorkspaceInfo(12L)).thenReturn(wsTuple(
+                12, "name4", "owner4", "2018-02-08T21:55:50.678Z", 0, "r", "n", "unlocked",
+                ImmutableMap.of("narrative", "3", "narrative_nice_name", "mylovelynarrative")));
+        when(aip.findUserDisplayNames(set("owner4"))).thenThrow(new Auth2Exception(
+                "Failed retrieving auth info"));
+
+        final List<ObjectData> objectdata = Arrays.asList(
+                new ObjectData().withGuid("WS:35/2/7"),
+                new ObjectData().withGuid("WS:12/2/7"));
+
+        when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
+                .withObjects(objectdata));
+
+        final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
+        assertThat("Incorrect size", res.getAccessGroupNarrativeInfo().size(), is(2));
+        assertNull("Null expected", res.getAccessGroupNarrativeInfo().get(35L));
+        compare(res.getAccessGroupNarrativeInfo().get(12L),
+                narrInfoTuple("mylovelynarrative", 3L, 1518126950678L, "owner4", null));
     }
 
     @Test
