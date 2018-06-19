@@ -22,6 +22,7 @@ import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.JsonClientException;
+import org.slf4j.LoggerFactory;
 
 /**
  * Decorates the results from a {@link SearchInterface} with information about workspaces that
@@ -152,7 +153,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
             }
         }
         catch (IOException | Auth2Exception e) {
-            System.out.println("ERROR: Failed retrieving workspace owner realname(s):  " + e.getMessage());
+            LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving workspace owner realname(s): " +
+                            "setting to null: {}", e.getMessage());
         }
         return retVal;
     }

@@ -11,6 +11,7 @@ import us.kbase.common.service.UObject;
 import us.kbase.workspace.ListWorkspaceIDsParams;
 import us.kbase.workspace.ListWorkspaceIDsResults;
 import us.kbase.workspace.WorkspaceClient;
+import org.slf4j.LoggerFactory;
 
 /** A provider for KBase workspace and narrative info.
  * @author gaprice@lbl.gov
@@ -34,18 +35,20 @@ public class AccessGroupNarrativeInfoProvider implements NarrativeInfoProvider {
         this.wsHandler = wsHandler;
     }
 
-    /** For the given workspace ID, returns workspace info related to the narrative.
+    /** For the given access group ID, returns workspace info related to the narrative
+     * or null if no workspace info could be retrieved or found.
      * @param wsid workspace id.
      */
     @Override
-    public NarrativeInfo findNarrativeInfo(final Long wsid) {
+    public NarrativeInfo findNarrativeInfo(final Long accessGroupID) {
         Tuple9 <Long, String, String, String, Long, String, String,
                 String, Map<String,String>> wsInfo;
 
         try {
-            wsInfo = wsHandler.getWorkspaceInfo(wsid);
+            wsInfo = wsHandler.getWorkspaceInfo(accessGroupID);
         } catch (IOException | JsonClientException e) {
-            System.out.println("ERROR: Failed retrieving workspace info: " + e.getMessage());
+            LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving workspace info: Returning null: {}",
+                    e.getMessage());
             wsInfo = null;
         }
 
