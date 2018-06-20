@@ -127,6 +127,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build(),
@@ -142,6 +143,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build()));
@@ -165,6 +167,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build()));
@@ -374,6 +377,7 @@ public class MongoDBStatusEventStorageTest {
                     .withNullableAccessGroupID(6)
                     .withNullableisPublic(true)
                     .withNullableNewName("foo")
+                    .withOverwriteExistingData(true)
                     .withNullableObjectID("bar")
                     .withNullableVersion(7)
                     .build(),
@@ -388,6 +392,7 @@ public class MongoDBStatusEventStorageTest {
                         .withNullableAccessGroupID(6)
                         .withNullableisPublic(true)
                         .withNullableNewName("foo")
+                        .withOverwriteExistingData(true)
                         .withNullableObjectID("bar")
                         .withNullableVersion(7)
                         .build(),
@@ -409,6 +414,7 @@ public class MongoDBStatusEventStorageTest {
                         .withNullableAccessGroupID(6)
                         .withNullableisPublic(true)
                         .withNullableNewName("foo")
+                        .withOverwriteExistingData(true)
                         .withNullableObjectID("bar")
                         .withNullableVersion(7)
                         .build(),
@@ -825,6 +831,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build(),
@@ -848,6 +855,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build()));
@@ -867,6 +875,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build()));
@@ -890,6 +899,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build(),
@@ -911,6 +921,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build()));
@@ -930,6 +941,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build()));
@@ -949,6 +961,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build(),

@@ -36,6 +36,7 @@ public class StatusEventTest {
         assertThat("incorrect event type", se.getEventType(),
                 is(StatusEventType.NEW_ALL_VERSIONS));
         assertThat("incorrect new name", se.getNewName(), is(Optional.absent()));
+        assertThat("incorrect overwrite flag", se.isOverwriteExistingData(), is(Optional.absent()));
         assertThat("incorrect storage code", se.getStorageCode(), is("WS"));
         assertThat("incorrect storage object type", se.getStorageObjectType(),
                 is(Optional.absent()));
@@ -50,7 +51,7 @@ public class StatusEventTest {
                         "storageCode=WS, storageObjectType=Optional.absent(), " +
                         "accessGroupID=Optional.absent(), objectID=Optional.absent(), " +
                         "version=Optional.absent(), isPublic=Optional.absent(), " +
-                        "newName=Optional.absent()]"));
+                        "newName=Optional.absent(), isOverwriteExistingData=Optional.absent()]"));
     }
     
     @Test
@@ -61,6 +62,7 @@ public class StatusEventTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("nn")
+                .withOverwriteExistingData(true)
                 .withNullableObjectID("2")
                 .withNullableVersion(8)
                 .build();
@@ -71,6 +73,7 @@ public class StatusEventTest {
         assertThat("incorrect event type", se.getEventType(),
                 is(StatusEventType.RENAME_ALL_VERSIONS));
         assertThat("incorrect new name", se.getNewName(), is(Optional.of("nn")));
+        assertThat("incorrect overwrite flag", se.isOverwriteExistingData(), is(Optional.of(true)));
         assertThat("incorrect storage code", se.getStorageCode(), is("RK"));
         assertThat("incorrect storage object type", se.getStorageObjectType(),
                 is(Optional.of(StorageObjectType.fromNullableVersion("RK", "foo", 3))));
@@ -85,7 +88,7 @@ public class StatusEventTest {
                         "[storageCode=RK, type=foo, version=Optional.of(3)]), " +
                         "accessGroupID=Optional.of(6), objectID=Optional.of(2), " +
                         "version=Optional.of(8), isPublic=Optional.of(true), " +
-                        "newName=Optional.of(nn)]"));
+                        "newName=Optional.of(nn), isOverwriteExistingData=Optional.of(true)]"));
     }
     
     @Test
@@ -95,6 +98,7 @@ public class StatusEventTest {
                 .withNullableAccessGroupID(null)
                 .withNullableisPublic(null)
                 .withNullableNewName(null)
+                .withOverwriteExistingData(null)
                 .withNullableObjectID(null)
                 .withNullableVersion(null)
                 .build();
@@ -105,6 +109,7 @@ public class StatusEventTest {
         assertThat("incorrect event type", se.getEventType(),
                 is(StatusEventType.NEW_VERSION));
         assertThat("incorrect new name", se.getNewName(), is(Optional.absent()));
+        assertThat("incorrect overwrite flag", se.isOverwriteExistingData(), is(Optional.absent()));
         assertThat("incorrect storage code", se.getStorageCode(), is("PP"));
         assertThat("incorrect storage object type", se.getStorageObjectType(),
                 is(Optional.absent()));
@@ -118,7 +123,7 @@ public class StatusEventTest {
                         "storageCode=PP, storageObjectType=Optional.absent(), " +
                         "accessGroupID=Optional.absent(), objectID=Optional.absent(), " +
                         "version=Optional.absent(), isPublic=Optional.absent(), " +
-                        "newName=Optional.absent()]"));
+                        "newName=Optional.absent(), isOverwriteExistingData=Optional.absent()]"));
     }
     
     @Test
@@ -135,6 +140,7 @@ public class StatusEventTest {
         assertThat("incorrect event type", se.getEventType(),
                 is(StatusEventType.NEW_VERSION));
         assertThat("incorrect new name", se.getNewName(), is(Optional.absent()));
+        assertThat("incorrect overwrite flag", se.isOverwriteExistingData(), is(Optional.absent()));
         assertThat("incorrect storage code", se.getStorageCode(), is("PP"));
         assertThat("incorrect storage object type", se.getStorageObjectType(),
                 is(Optional.absent()));
@@ -148,7 +154,7 @@ public class StatusEventTest {
                         "storageCode=PP, storageObjectType=Optional.absent(), " +
                         "accessGroupID=Optional.absent(), objectID=Optional.absent(), " +
                         "version=Optional.absent(), isPublic=Optional.absent(), " +
-                        "newName=Optional.absent()]"));
+                        "newName=Optional.absent(), isOverwriteExistingData=Optional.absent()]"));
     }
     
     @Test
