@@ -3,7 +3,6 @@ package kbasesearchengine.main;
 import kbasesearchengine.tools.Utils;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Ticker;
@@ -12,6 +11,8 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.Weigher;
 import us.kbase.common.service.Tuple11;
+
+import org.slf4j.LoggerFactory;
 
 /** A caching layer for object info. Caches the results from the wrapped
  * {@link ObjectInfoProvider} in memory for quick access.
@@ -96,8 +97,9 @@ public class ObjectInfoCache implements ObjectInfoProvider {
             String, Long, String, String, Long, Map<String, String>> getObjectInfo(final String objRef) {
         try {
             return cache.get(objRef);
-        } catch (ExecutionException e) {
-            System.out.println("ERROR: Failed retrieving object info: " + e.getMessage());
+        } catch (Exception e) {
+            LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving object info: Returning null:  {}",
+                    e.getMessage());
             // unchecked exceptions are wrapped in UncheckedExcecutionException
             return null;
         }
@@ -107,9 +109,12 @@ public class ObjectInfoCache implements ObjectInfoProvider {
     public Map<String, Tuple11<Long, String, String, String, Long, String, Long, String, String, Long,
             Map<String, String>>> getObjectsInfo(final Iterable <? extends String> objRefs) {
         try {
-            return cache.getAll(objRefs);
-        } catch (ExecutionException e) {
-            System.out.println("ERROR: Failed retrieving objects info: " + e.getMessage());
+            Map<String, Tuple11<Long, String, String, String, Long, String, Long, String, String, Long,
+                    Map<String, String>>> retVal = cache.getAll(objRefs);
+            return retVal;
+        } catch (Exception e) {
+            LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving objects info: Returning null:  {}",
+                    e.getMessage());
             // unchecked exceptions are wrapped in UncheckedExcecutionException
             return null;
         }

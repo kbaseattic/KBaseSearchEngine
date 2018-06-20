@@ -24,6 +24,7 @@ import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.ws
 import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.compareWsInfo;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.main.AccessGroupInfoProvider;
+import kbasesearchengine.main.AccessGroupNarrativeInfoProvider;
 import kbasesearchengine.main.AccessGroupInfoCache;
 import kbasesearchengine.test.common.TestCommon;
 
@@ -113,12 +114,7 @@ public class AccessGroupInfoCacheTest {
                 10,
                 10000,
                 ticker);
-        try {
-            cache.getAccessGroupInfo(65L);
-            fail("CacheLoader DID NOT throw an exception for a lookup of non-existing key.");
-        } catch (Exception e) {
-            assertThat(e.getMessage(), is("CacheLoader returned null for key 65."));
-        }
+        assertNull(cache.getAccessGroupInfo(65L));
     }
 
     @SuppressWarnings("unchecked")
@@ -214,5 +210,25 @@ public class AccessGroupInfoCacheTest {
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
         }
+    }
+
+    @Test
+    public void failAccessGroupInfoProvider() throws Exception {
+        failGetAccessGroupsInfo(new IOException("Test IO Exception"));
+        failGetAccessGroupsInfo(new JsonClientException("workspace is turned off"));
+    }
+
+    private void failGetAccessGroupsInfo(
+            final Exception toThrow)
+            throws Exception {
+        final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
+        final AccessGroupInfoProvider agip = new AccessGroupNarrativeInfoProvider(weh);
+        final AccessGroupInfoCache cache = new AccessGroupInfoCache(agip, 10000, 15);
+
+        when(weh.getWorkspaceInfo(65L)).thenThrow(toThrow);
+
+        assertNull(agip.getAccessGroupInfo(65L));
+
+        assertNull(cache.getAccessGroupInfo(65L));
     }
 }

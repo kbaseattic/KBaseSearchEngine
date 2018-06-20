@@ -1,8 +1,12 @@
 package kbasesearchengine.test.main;
 
 import static kbasesearchengine.test.common.TestCommon.set;
-import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.*;
+import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.objTuple;
+import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.wsTuple;
 import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.compareObjInfo;
+import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.compareWsInfo;
+import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.compareObjInfoMap;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertNull;

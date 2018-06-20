@@ -99,25 +99,28 @@ public class AccessGroupNarrativeInfoProvider implements NarrativeInfoProvider,
             getObjInfo3Results = wsHandler.getObjectsInfo(objectRefs);
         }
         catch (IOException | JsonClientException e) {
-            System.out.println("ERROR: Failed retrieving objects info: " + e.getMessage());
+            LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving objects info:  {}",
+                    e.getMessage());
             return retVal;
         }
 
         int index = 0;
         final List<List<String>> resultsPaths = getObjInfo3Results.getPaths();
         for (final List<String> path: resultsPaths) {
+            // when object info is not available, for a given object ref,
+            // both the path[] (object ref) and info[] of the results contain a null entry
             if (path != null) {
                 retVal.put(path.get(0), getObjInfo3Results.getInfos().get(index));
             }
             index = index + 1;
         }
-
         // if the objInfo for an input ref is not returned, assign a null value for that ref key
         for (final String objectRef: objectRefs) {
             if (!retVal.containsKey(objectRef)) {
-               retVal.put(objectRef, null);
+                retVal.put(objectRef, null);
             }
         }
+
         return retVal;
     }
 
@@ -148,7 +151,8 @@ public class AccessGroupNarrativeInfoProvider implements NarrativeInfoProvider,
             return wsHandler.getWorkspaceInfo(accessGroupId);
         }
         catch (IOException | JsonClientException e) {
-            System.out.println("ERROR: Failed retrieving workspace info: " + e.getMessage());
+            LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving workspace info: Returning null:  {}",
+                    e.getMessage());
             return null;
         }
     }

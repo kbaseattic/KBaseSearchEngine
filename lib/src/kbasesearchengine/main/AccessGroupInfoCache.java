@@ -1,9 +1,10 @@
 package kbasesearchengine.main;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import kbasesearchengine.tools.Utils;
+
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Ticker;
 import com.google.common.cache.CacheBuilder;
@@ -89,8 +90,9 @@ public class AccessGroupInfoCache implements AccessGroupInfoProvider {
             String, String, Map<String, String>> getAccessGroupInfo(final Long accessGroupId) {
         try {
             return cache.get(accessGroupId);
-        } catch (ExecutionException e) {
-            System.out.println("ERROR: Failed retrieving access group info: " + e.getMessage());
+        } catch (Exception e) {
+            LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving access group info: Returning null:  {}",
+                    e.getMessage());
             // unchecked exceptions are wrapped in UncheckedExcecutionException
             return null;
         }
