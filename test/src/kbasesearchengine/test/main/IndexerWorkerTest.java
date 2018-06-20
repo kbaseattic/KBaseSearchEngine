@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 
+import com.beust.jcommander.internal.Sets;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
@@ -1136,6 +1137,92 @@ public class IndexerWorkerTest {
         
         verify(logger).logInfo(
                 "[Indexer] skipping NEW_VERSION, code:KBaseGenome.Genome-3, code:1/2/3");
+    }
+
+    @Test
+    public void overwriteExistingData() throws Exception {
+        /* tests the overwriting of existing data when overwriteExistingData flag is set. */
+
+        final EventHandler ws = mock(EventHandler.class);
+        final StatusEventStorage storage = mock(StatusEventStorage.class);
+        final IndexingStorage idxStore = mock(IndexingStorage.class);
+        final TypeStorage typeStore = mock(TypeStorage.class);
+        final LineLogger logger = mock(LineLogger.class);
+
+        final GUID guid = new GUID("code:1/2/3");
+        final GUID dependencyGUID = new GUID("code:4/5/6");
+        final SearchObjectType dependentType = new SearchObjectType("Assembly", 1);
+
+        final Path tempDir = Paths.get(TestCommon.getTempDir()).toAbsolutePath()
+                .resolve("IndexerWorkerTest");
+        deleteRecursively(tempDir);
+
+        when(ws.getStorageCode()).thenReturn("code");
+
+        final StorageObjectType storageObjectType = StorageObjectType
+                .fromNullableVersion("code", "KBaseGenome.Genome", 1);
+
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "myid", tempDir, logger)
+                .withStorage(storage, typeStore, idxStore)
+                .withEventHandler(ws);
+
+        final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
+
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("Genome", 1), storageObjectType)
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("assy_ref"))
+                        .build())
+                .build();
+
+        when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
+
+        final Map<String, Object> data = ImmutableMap.of(
+                "thingy", 1,
+                "thingy2", "foo",
+                "subobjs", Arrays.asList(
+                        ImmutableMap.of("id", "an id", "somedata", "data"),
+                        ImmutableMap.of("id", "an id2", "somedata", "data2")
+                )
+        );
+
+        when(ws.load(eq(Arrays.asList(guid)), any(Path.class)))
+                .thenAnswer(new Answer<SourceData>() {
+
+                    @Override
+                    public SourceData answer(final InvocationOnMock inv) throws Throwable {
+                        final Path path = inv.getArgument(1);
+                        new ObjectMapper().writeValue(path.toFile(), data);
+                        return SourceData.getBuilder(
+                                new UObject(path.toFile()), "myobj", "somedude")
+                                .withNullableMD5("md5")
+                                .build();
+                    }
+                });
+
+        ChildStatusEvent event = new ChildStatusEvent(StatusEvent.getBuilder(
+                storageObjectType, Instant.ofEpochMilli(10000),
+                StatusEventType.NEW_VERSION)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("2")
+                .withNullableVersion(3)
+                .withNullableisPublic(false)
+                .withOverwriteExistingData(true)  // overwrite existing data
+                .build(),
+                new StatusEventID("pid"));
+
+        when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
+
+        // simulate to show that index record for corresponding event already exists
+        when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, true));
+
+        final StatusEventProcessingState res = worker.processEvent(event);
+        assertThat("incorrect state", res, is(StatusEventProcessingState.INDX));
+
+        // event was not skipped even though corresponding index record was found to already exist
+        verify(logger, never()).logInfo(
+                "[Indexer]   skipping code:1/2/3 creation (already indexed and " +
+                        "overwriteExistingData flag is set to false)");
     }
 
     @Test
