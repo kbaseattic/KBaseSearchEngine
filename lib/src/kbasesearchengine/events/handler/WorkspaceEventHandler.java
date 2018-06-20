@@ -221,7 +221,7 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
 
     /** Get the workspace information for an object from the workspace service
      * to which this handler is communicating.
-     * @param an object ref: workspaceId/objectId/verId.
+     * @param objectRef an object ref: workspaceId/objectId/verId.
      * @return object info (Tuple11<>) as returned from the workspace API.
      * @throws IOException if an IO exception occurs.
      * @throws JsonClientException if an error retrieving the data occurs.
@@ -241,7 +241,7 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
 
     /** Get the workspace information for an object from the workspace service
      * to which this handler is communicating.
-     * @param list of object refs: workspaceId/objectId/verId.
+     * @param objectRefs list of object refs: workspaceId/objectId/verId.
      * @return a map of object ref and object info (Tuple11<>) as returned from the workspace API.
      * @throws IOException if an IO exception occurs.
      * @throws JsonClientException if an error retrieving the data occurs.
@@ -729,6 +729,7 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
                 .withNullableObjectID(obj.getE1() + "")
                 .withNullableVersion(Math.toIntExact(obj.getE5()))
                 .withNullableisPublic(origEvent.getEvent().isPublic().get())
+                .withOverwriteExistingData(origEvent.getEvent().isOverwriteExistingData().orNull())
                 .build(),
                 origEvent.getID());
     }
@@ -877,6 +878,7 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
                 withNullableObjectID(ev.getAccessGroupObjectId().get()).
                 withNullableVersion(ev.getVersion().orNull()).
                 withNullableisPublic(latestIsPublic).
+                withOverwriteExistingData(ev.isOverwriteExistingData().orNull()).
                 withNullableNewName(latestName).build();
     }
 }

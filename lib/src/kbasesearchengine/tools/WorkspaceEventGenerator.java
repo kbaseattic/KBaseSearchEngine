@@ -90,6 +90,7 @@ public class WorkspaceEventGenerator {
     private final List<Pattern> wsTypes;
     private final Set<String> workerCodes;
     private final boolean lastVersionOnly;
+    private final boolean overwriteExistingData;
     
     private WorkspaceEventGenerator(
             final StatusEventStorage storage,
@@ -101,7 +102,8 @@ public class WorkspaceEventGenerator {
             final Collection<WorkspaceIdentifier> wsBlackList,
             final Collection<String> wsTypes,
             final Collection<String> workerCodes,
-            final boolean lastVersionOnly)
+            final boolean lastVersionOnly,
+            final boolean overwriteExistingData)
             throws EventGeneratorException {
         this.ws = ws;
         this.obj = obj;
@@ -113,6 +115,7 @@ public class WorkspaceEventGenerator {
         this.wsTypes = processTypes(wsTypes);
         this.workerCodes = Collections.unmodifiableSet(new HashSet<>(workerCodes));
         this.lastVersionOnly = lastVersionOnly;
+        this.overwriteExistingData = overwriteExistingData;
         checkWorkspaceSchema();
     }
     
@@ -283,6 +286,7 @@ public class WorkspaceEventGenerator {
                     .withNullableObjectID(objid + "")
                     .withNullableVersion(vernum)
                     .withNullableisPublic(pub)
+                    .withOverwriteExistingData(overwriteExistingData)
                     .build(),
                     StatusEventProcessingState.UNPROC,
                     workerCodes,
@@ -404,6 +408,7 @@ public class WorkspaceEventGenerator {
         private Collection<String> wsTypes = new LinkedList<>();
         private Collection<String> workerCodes = new HashSet<>();
         private boolean lastVersionOnly = false;
+        private boolean overwriteExistingData = false;
         
         public Builder(
                 final StatusEventStorage storage,
@@ -476,10 +481,15 @@ public class WorkspaceEventGenerator {
             return this;
         }
 
+        public Builder withOverwriteExistingData(final boolean overwriteExistingData) {
+            this.overwriteExistingData = overwriteExistingData;
+            return this;
+        }
+
         public WorkspaceEventGenerator build() throws EventGeneratorException {
             return new WorkspaceEventGenerator(
                     storage, workspaceDatabase, ws, obj, ver, logtarget, wsBlackList, wsTypes,
-                    workerCodes, ver > 0 ? false : lastVersionOnly);
+                    workerCodes, ver > 0 ? false : lastVersionOnly, overwriteExistingData);
         }
 
     }
