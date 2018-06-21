@@ -694,7 +694,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             doc.put("lastin", lastinGroupIds);
             doc.put("groups", accessGroupIds);
             doc.put("extpub", new ArrayList<Integer>());
-            Response resp = makeRequest("POST", "/" + indexName + "/" + getAccessTableName() + "/",
+            Response resp = makeRequest("PUT", "/" + indexName + "/" + getAccessTableName() + "/" + parentGUID.getURLEncoded(),
                     doc);
             @SuppressWarnings("unchecked")
             Map<String, Object> data = UObject.getMapper().readValue(
