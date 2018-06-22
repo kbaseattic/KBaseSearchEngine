@@ -304,26 +304,6 @@ public class ObjectInfoCacheTest {
     }
 
     @Test
-    public void objectInfoProviderFail() throws Exception {
-        failGetObjectsInfo(new IOException("Test IO Exception"));
-        failGetObjectsInfo(new JsonClientException("workspace is turned off"));
-    }
-
-    private void failGetObjectsInfo(
-            final Exception toThrow)
-            throws Exception {
-        final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
-        final ObjectInfoProvider oip = new AccessGroupNarrativeInfoProvider(weh);
-        final ObjectInfoCache cache = new ObjectInfoCache(oip, 10000, 15);
-
-        when(weh.getObjectsInfo(set("65/1/1"))).thenThrow(toThrow);
-
-        assertNull(oip.getObjectsInfo(set("65/1/1")));
-
-        assertNull(cache.getObjectsInfo(set("65/1/1")));
-    }
-
-    @Test
     public void failGetObjectsInfo() throws Exception {
         final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
         final WorkspaceClient wscli = mock(WorkspaceClient.class);
