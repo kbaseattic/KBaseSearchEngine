@@ -29,35 +29,57 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import kbasesearchengine.authorization.AccessGroupCache;
 import kbasesearchengine.authorization.AccessGroupProvider;
+import kbasesearchengine.authorization.TemporaryAuth2Client;
 import kbasesearchengine.authorization.WorkspaceAccessGroupProvider;
+import kbasesearchengine.main.NarrativeInfoCache;
+import kbasesearchengine.main.NarrativeInfoProvider;
+import kbasesearchengine.authorization.AuthCache;
+import kbasesearchengine.authorization.AuthInfoProvider;
+import kbasesearchengine.events.handler.WorkspaceEventHandler;
+import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
+import kbasesearchengine.main.AccessGroupNarrativeInfoProvider;
+import kbasesearchengine.main.WorkspaceInfoProvider;
+import kbasesearchengine.main.ObjectInfoProvider;
+import kbasesearchengine.main.WorkspaceInfoCache;
+import kbasesearchengine.main.ObjectInfoCache;
 import kbasesearchengine.common.GUID;
+import kbasesearchengine.main.GitInfo;
 import kbasesearchengine.main.LineLogger;
-import kbasesearchengine.main.IndexerWorker;
+import kbasesearchengine.main.SearchInterface;
 import kbasesearchengine.main.SearchMethods;
+import kbasesearchengine.main.SearchVersion;
+import kbasesearchengine.main.TemporaryNarrativePruner;
+import kbasesearchengine.main.NarrativeInfoDecorator;
+import kbasesearchengine.main.AccessGroupInfoDecorator;
 import kbasesearchengine.search.ElasticIndexingStorage;
+import kbasesearchengine.system.FileLister;
+import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
 import kbasesearchengine.system.TypeFileStorage;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.system.TypeMappingParser;
 import kbasesearchengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.ConfigurableAuthService;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceClient;
+import kbasesearchengine.common.FileUtil;
 //END_HEADER
 
 /**
  * <p>Original spec-file module name: KBaseSearchEngine</p>
  * <pre>
- * A KBase module: KBaseRelationEngine
  * </pre>
  */
 public class KBaseSearchEngineServer extends JsonServerServlet {
     private static final long serialVersionUID = 1L;
-    private static final String version = "";
-    private static final String gitUrl = "";
-    private static final String gitCommitHash = "";
+    private static final String version = "0.2.1";
+    private static final String gitUrl = "https://github.com/kbase/KBaseSearchEngine.git";
+    private static final String gitCommitHash = "9e706260f5e4a5e438ab77c3284a66d48c7a0ec3";
 
     //BEGIN_CLASS_HEADER
-    private final SearchMethods search;
+    
+    private static final GitInfo GIT = new GitInfo();
+    
+    private final SearchInterface search;
     
     private void quietLoggers() {
         ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME))
@@ -122,32 +144,70 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         
         final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
                 "yaml", new YAMLTypeMappingParser());
-        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
+        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir,
+                new ObjectTypeParsingRulesFileParser(), parsers, new FileLister(), logger);
         
         
         final WorkspaceClient wsClient = new WorkspaceClient(wsUrl, kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
-        
+
+        final WorkspaceEventHandler workspaceEventHandler =
+                new WorkspaceEventHandler(new CloneableWorkspaceClientImpl(wsClient));
+
         // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
         final AccessGroupProvider accessGroupProvider = new AccessGroupCache(
                 new WorkspaceAccessGroupProvider(wsClient), 30, 50000 * 1000);
         
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
-                IndexerWorker.getTempSubDir(tempDir, "esbulk"));
+                FileUtil.getOrCreateSubDir(tempDir, "esbulk"));
         if (esUser != null) {
             esStorage.setEsUser(esUser);
             esStorage.setEsPassword(esPassword);
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
         
-        search = new SearchMethods(accessGroupProvider, esStorage, ss, admins);
+        // this is a dirty hack so we don't have to provide 2 auth urls in the config
+        // update if we ever update the SDK to use the non-legacy endpoints
+        final String auth2URL = authURL.split("api")[0];
+
+        // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
+        final WorkspaceEventHandler wsHandler = new WorkspaceEventHandler(
+                new CloneableWorkspaceClientImpl(wsClient));
+        final NarrativeInfoProvider narrativeInfoProvider = new NarrativeInfoCache(
+                new AccessGroupNarrativeInfoProvider(wsHandler),
+                3600,
+                50000 * 1000);
+        // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
+        final AuthInfoProvider authInfoProvider = new AuthCache(
+                new TemporaryAuth2Client(new URL(auth2URL)).withToken(kbaseIndexerToken.getToken()),
+                24 * 3600,
+                50000 * 1000);
+        // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
+        final WorkspaceInfoProvider workspaceInfoProvider = new WorkspaceInfoCache(
+                wsHandler,
+                3600,
+                50000 * 1000);
+        // TODO modify the constant values for the cacheLifeTime and cacheSize parameters, if needed
+        final ObjectInfoProvider objectInfoProvider = new ObjectInfoCache(
+                wsHandler,
+                3600,
+                50000 * 1000);
+        search = new TemporaryNarrativePruner(
+                new AccessGroupInfoDecorator(
+                        new NarrativeInfoDecorator(
+                            new SearchMethods(accessGroupProvider, esStorage, ss, admins),
+                            narrativeInfoProvider,
+                            authInfoProvider),
+                        workspaceInfoProvider,
+                        objectInfoProvider));
+
         //END_CONSTRUCTOR
     }
 
     /**
      * <p>Original spec-file function name: search_types</p>
      * <pre>
-     * Search for number of objects of each type matching constrains.
+     * Search for number of objects of each type matching constraints.
      * </pre>
      * @param   params   instance of type {@link kbasesearchengine.SearchTypesInput SearchTypesInput}
      * @return   instance of type {@link kbasesearchengine.SearchTypesOutput SearchTypesOutput}
@@ -164,7 +224,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     /**
      * <p>Original spec-file function name: search_objects</p>
      * <pre>
-     * Search for objects of particular type matching constrains.
+     * Search for objects of particular type matching constraints.
      * </pre>
      * @param   params   instance of type {@link kbasesearchengine.SearchObjectsInput SearchObjectsInput}
      * @return   instance of type {@link kbasesearchengine.SearchObjectsOutput SearchObjectsOutput}
@@ -218,9 +278,16 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         returnVal = new LinkedHashMap<String, Object>();
         returnVal.put("state", "OK");
         returnVal.put("message", "");
-        returnVal.put("version", version);
-        returnVal.put("git_url", gitUrl);
-        returnVal.put("git_commit_hash", gitCommitHash);
+        returnVal.put("version", SearchVersion.VERSION);
+        returnVal.put("git_url", GIT.getGitUrl());
+        returnVal.put("git_commit_hash", GIT.getGitCommit());
+        // get eclipse to shut up about the unused constants
+        @SuppressWarnings("unused")
+        final String v = version;
+        @SuppressWarnings("unused")
+        final String u = gitUrl;
+        @SuppressWarnings("unused")
+        final String c = gitCommitHash;
         //END_STATUS
         return returnVal;
     }

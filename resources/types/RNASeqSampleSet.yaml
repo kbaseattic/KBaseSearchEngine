@@ -1,0 +1,13 @@
+global-object-type: RNASeqSampleSet
+storage-type: WS
+storage-object-type: KBaseRNASeq.RNASeqSampleSet
+versions:
+- indexing-rules:
+  - path: sampleset_desc
+    full-text: true
+  - path: num_samples
+    keyword-type: integer
+  - path: num_replicates
+    keyword-type: integer
+  - path: source
+    keyword-type: keyword

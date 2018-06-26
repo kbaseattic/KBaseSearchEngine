@@ -1,5 +1,7 @@
 package kbasesearchengine.test.main;
 
+import static org.mockito.Mockito.mock;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -15,6 +17,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.ImmutableList;
+import kbasesearchengine.common.FileUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.ini4j.Ini;
@@ -30,13 +34,18 @@ import kbasesearchengine.events.StatusEventID;
 import kbasesearchengine.events.StatusEventProcessingState;
 import kbasesearchengine.events.StatusEventType;
 import kbasesearchengine.events.StoredStatusEvent;
+import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.main.IndexerWorker;
+import kbasesearchengine.main.IndexerWorkerConfigurator;
 import kbasesearchengine.search.AccessFilter;
 import kbasesearchengine.search.ElasticIndexingStorage;
+import kbasesearchengine.search.IndexingStorage;
 import kbasesearchengine.search.MatchFilter;
 import kbasesearchengine.search.MatchValue;
 import kbasesearchengine.system.TypeFileStorage;
+import kbasesearchengine.system.FileLister;
+import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.system.TypeMappingParser;
@@ -44,9 +53,9 @@ import kbasesearchengine.system.YAMLTypeMappingParser;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
-import workspace.ListObjectsParams;
-import workspace.WorkspaceClient;
-import workspace.WorkspaceIdentity;
+import us.kbase.workspace.ListObjectsParams;
+import us.kbase.workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceIdentity;
 
 /** NOTE: extremely large refactors have occurred since this code was written and it has not been
  * updated. It should be considered to be obsolete until someone takes the time to review and
@@ -66,6 +75,7 @@ public class PerformanceTester {
     private static File tempDir = null;
     private static URL wsUrl = null;
     private static IndexerWorker mop = null;
+    private static IndexingStorage storage = null;
     private static List<long[]> timeStats = new ArrayList<>();
     
     @BeforeClass
@@ -155,17 +165,23 @@ public class PerformanceTester {
         };
         final Map<String, TypeMappingParser> parsers = ImmutableMap.of(
                 "yaml", new YAMLTypeMappingParser());
-        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
+        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir,
+                new ObjectTypeParsingRulesFileParser(), parsers, new FileLister(), logger);
         
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(esHostPort,
-                IndexerWorker.getTempSubDir(tempDir, "esbulk"));
+                FileUtil.getOrCreateSubDir(tempDir, "esbulk"));
         if (esUser != null) {
             esStorage.setEsUser(esUser);
             esStorage.setEsPassword(esPassword);
         }
         esStorage.setIndexNamePrefix(esIndexPrefix);
+        storage = esStorage;
         
-        mop = new IndexerWorker("test", esStorage, ss, tempDir, logger);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                "test", tempDir.toPath(), logger)
+                .withStorage(mock(StatusEventStorage.class), ss, storage);
+        
+        mop = new IndexerWorker(wrkCfg.build());
     }
     
     private static void deleteAllTestElasticIndices(HttpHost esHostPort, String esUser,
@@ -218,7 +234,7 @@ public class PerformanceTester {
                 String[] parts = ref.split("/");
                 int wsId = Integer.parseInt(parts[0]);
                 int version = Integer.parseInt(parts[2]);
-                final StoredStatusEvent ev = new StoredStatusEvent(StatusEvent.getBuilder(
+                final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
                         new StorageObjectType("WS", "KBaseGenomes.Genome"),
                         Instant.now(),
                         StatusEventType.NEW_VERSION)
@@ -228,12 +244,11 @@ public class PerformanceTester {
                         .withNullableisPublic(true)
                         .build(),
                         new StatusEventID("-1"),
-                        StatusEventProcessingState.UNPROC,
-                        null,
-                        null);
+                        StatusEventProcessingState.UNPROC)
+                        .build();
                 long t2 = System.currentTimeMillis();
                 try {
-                    mop.processOneEvent(ev);
+                    mop.processEvent(ev);
                     processTime += System.currentTimeMillis() - t2;
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -258,8 +273,10 @@ public class PerformanceTester {
     }
     
     private int countGenomes() throws Exception {
-        return mop.getIndexingStorage("*").searchIds("Genome", 
-                MatchFilter.create().withLookupInKey("features", new MatchValue(1, null)), null,
+        return storage.searchIds(ImmutableList.of("Genome"),
+                MatchFilter.getBuilder().withLookupInKey("features", new MatchValue(1, null))
+                        .build(),
+                null,
                 AccessFilter.create().withPublic(true).withAdmin(true), null).total;
     }
     
@@ -268,16 +285,16 @@ public class PerformanceTester {
     public void testCommonStats() throws Exception {
         String query = "Bacteria";
         int genomes = countGenomes();
-        Map<String, Integer> typeAggr = mop.getIndexingStorage("*").searchTypes(
-                MatchFilter.create(), AccessFilter.create().withPublic(true)
+        Map<String, Integer> typeAggr = storage.searchTypes(
+                MatchFilter.getBuilder().build(), AccessFilter.create().withPublic(true)
                 .withAccessGroups(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         Integer features = typeAggr.get("GenomeFeature");
         Integer contigs = typeAggr.get("AssemblyContig");
         System.out.println("Total genomes/contigs/features processed: " + genomes + "/" + 
                 contigs + "/" + features);
         long t1 = System.currentTimeMillis();
-        Map<String, Integer> typeToCount = mop.getIndexingStorage("*").searchTypes(
-                MatchFilter.create().withFullTextInAll(query), 
+        Map<String, Integer> typeToCount = storage.searchTypes(
+                MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), 
                 AccessFilter.create().withPublic(true)
                 .withAccessGroups(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         t1 = System.currentTimeMillis() - t1;

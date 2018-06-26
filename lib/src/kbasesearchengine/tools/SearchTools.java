@@ -4,26 +4,35 @@ import static kbasesearchengine.tools.Utils.nonNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Scanner;
+import java.util.Set;
 import java.util.UUID;
 
+import kbasesearchengine.common.FileUtil;
+import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import org.apache.http.HttpHost;
 import org.slf4j.LoggerFactory;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.github.mustachejava.DefaultMustacheFactory;
+import com.github.mustachejava.MustacheFactory;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.mongodb.MongoClient;
@@ -36,30 +45,38 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.exceptions.IndexingException;
+import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import kbasesearchengine.events.handler.EventHandler;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.events.storage.MongoDBStatusEventStorage;
 import kbasesearchengine.events.storage.StatusEventStorage;
 import kbasesearchengine.events.storage.StorageInitException;
 import kbasesearchengine.main.LineLogger;
+import kbasesearchengine.main.SearchVersion;
+import kbasesearchengine.main.Stoppable;
+import kbasesearchengine.main.GitInfo;
 import kbasesearchengine.main.IndexerCoordinator;
 import kbasesearchengine.main.IndexerWorker;
+import kbasesearchengine.main.IndexerWorkerConfigurator;
 import kbasesearchengine.parse.ObjectParseException;
 import kbasesearchengine.search.ElasticIndexingStorage;
 import kbasesearchengine.search.IndexingStorage;
+import kbasesearchengine.system.FileLister;
+import kbasesearchengine.system.ObjectTypeParsingRulesFileParser;
 import kbasesearchengine.system.TypeFileStorage;
 import kbasesearchengine.system.TypeMappingParser;
 import kbasesearchengine.system.TypeParseException;
 import kbasesearchengine.system.TypeStorage;
 import kbasesearchengine.system.YAMLTypeMappingParser;
 import kbasesearchengine.tools.SearchToolsConfig.SearchToolsConfigException;
+import kbasesearchengine.tools.WorkspaceEventGenerator.Builder;
 import kbasesearchengine.tools.WorkspaceEventGenerator.EventGeneratorException;
 import us.kbase.auth.AuthConfig;
 import us.kbase.auth.AuthException;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.ConfigurableAuthService;
 import us.kbase.common.service.UnauthorizedException;
-import workspace.WorkspaceClient;
+import us.kbase.workspace.WorkspaceClient;
 
 /** Tools for working with Search. Note that this CLI is designed against the search prototype
  * event listener in the workspace service, and may need changes if the event listener is changed
@@ -69,7 +86,21 @@ import workspace.WorkspaceClient;
  */
 public class SearchTools {
     
+    //TODO TEST
+    
     private static final String NAME = "search_tools";
+    private static final int MAX_Q_SIZE = 10000;
+    private static final GitInfo GIT = new GitInfo();
+    
+    /* The maximum number of objects to index in the search system at once. With the 18/2/23
+     * implementation of ElasticSearch with a 10m load timeout, more than ~100K subobjects causes
+     * a timeout (note this number and the timeout might require a bit of tweaking to completely
+     * eliminate timeout errors).
+     * 
+     * Exceeding this number of object in a load will cause a failure after the parse step, so
+     * the ElasticSearch load isn't even attempted.
+     */
+    private static final int MAX_OBJECTS_PER_LOAD = 100_000;
 
     /** Runs the CLI.
      * @param args the program arguments.
@@ -114,90 +145,129 @@ public class SearchTools {
      * @return the exit code.
      */
     public int execute() {
-        final Args a = new Args();
-        JCommander jc = new JCommander(a);
+        final Args args = new Args();
+        JCommander jc = new JCommander(args);
         jc.setProgramName(NAME);
 
         try {
-            jc.parse(args);
+            jc.parse(this.args);
         } catch (ParameterException e) {
-            printError(e, a.verbose);
+            printError(e, args.verbose);
             return 1;
         }
-        if (a.help) {
+        if (args.version) {
+            printVer();
+            return 0;
+        }
+        if (args.help) {
             usage(jc);
             return 0;
         }
         // can't be empty string since it's a command line param
-        final boolean startWorker = a.startWorker != null;
-        if ((a.startCoordinator ? 1 : 0) + 
-                (a.genWSEvents ? 1 : 0) +
+        final boolean startWorker = args.startWorker != null;
+        if ((args.startCoordinator ? 1 : 0) +
+                (args.genWSEvents ? 1 : 0) +
                 (startWorker ? 1 : 0) > 1) {
             printError("Can only run one of the coordinator, event generator, or a worker.");
             return 1;
         }
         final SearchToolsConfig cfg;
         try {
-            cfg = getConfig(a.configPath);
+            cfg = getConfig(args.configPath);
         } catch (NoSuchFileException e) {
-            printError("No such file", e, a.verbose);
+            printError("No such file", e, args.verbose);
             return 1;
         } catch (AccessDeniedException e) {
-            printError("Access denied", e, a.verbose);
+            printError("Access denied", e, args.verbose);
             return 1;
         } catch (IOException e) {
-            printError(e, a.verbose);
+            printError(e, args.verbose);
             return 1;
         } catch (SearchToolsConfigException e) {
-            printError("For config file " + a.configPath, e, a.verbose);
-            return 1;
-        }
-        try {
-            setUpMongoDBs(cfg, a.genWSEvents, a.dropDB || a.startCoordinator || startWorker);
-            setUpElasticSearch(cfg, a.dropDB || startWorker);
-        } catch (MongoException | IOException e) {
-            printError(e, a.verbose);
+            printError("For config file " + args.configPath, e, args.verbose);
             return 1;
         }
         boolean noCommand = true; // this seems dumb...
-        if (a.dropDB) {
+        if (args.specPath != null) {
+            try {
+                printVer();
+                new MinimalSpecGenerator().generateMinimalSearchSpec(
+                        Paths.get(args.specPath), args.storageType, args.searchType, args.storageObjectType);
+                noCommand = false;
+            } catch (IllegalArgumentException | IOException e) {
+                printError(e, args.verbose);
+                return 1;
+            }
+        }
+        try {
+            setUpMongoDBs(cfg, args.genWSEvents, args.dropDB || args.startCoordinator || startWorker);
+            setUpElasticSearch(cfg, args.dropDB || startWorker);
+        } catch (MongoException | IOException e) {
+            printError(e, args.verbose);
+            return 1;
+        }
+        if (args.dropDB) {
             try {
                 deleteMongoDB();
                 out.println("Deleting ElasticSearch indexes");
                 indexStore.dropData();
                 noCommand = false;
             } catch (MongoException | IOException e) {
-                printError(e, a.verbose);
+                printError(e, args.verbose);
                 return 1;
             }
         }
-        if (a.startCoordinator) {
+        if (args.resetFailedEvents) {
+
             try {
-                runCoordinator(cfg, out, err);
+
+                final StatusEventStorage storage = new MongoDBStatusEventStorage(searchDB);
+                storage.resetFailedEvents();
+
+            } catch (StorageInitException | FatalRetriableIndexingException ex) {
+                printError(ex, args.verbose);
+                return 1;
+            }
+        }
+        if (args.startCoordinator) {
+            try {
+                printVer();
+                final IndexerCoordinator coord = runCoordinator(cfg, out, err);
                 noCommand = false; 
+                waitForReturn(coord);
             } catch (StorageInitException | IndexingException | InterruptedException e) {
-                printError(e, a.verbose);
+                printError(e, args.verbose);
                 return 1;
             }
         }
         if (startWorker) {
             try {
-                runWorker(cfg, a.startWorker, out, err);
+
+                printVer();
+                final IndexerWorker work = runWorker(cfg, args.startWorker, out, err);
+
                 noCommand = false;
+                waitForReturn(work);
             } catch (IOException | AuthException | ObjectParseException | TypeParseException |
-                    UnauthorizedException | StorageInitException | IllegalArgumentException e) {
-                printError(e, a.verbose);
+                    UnauthorizedException | StorageInitException | IllegalArgumentException |
+                    InterruptedException e) {
+                printError(e, args.verbose);
                 return 1;
             }
         }
-        if (a.genWSEvents) {
+        if (args.genWSEvents) {
             try {
-                runEventGenerator(out, a.ref,
-                        getWsBlackList(a.wsBlacklist, cfg.getWorkspaceBlackList()),
-                        getWsTypes(a.wsTypes, cfg.getWorkspaceTypes()));
+                printVer();
+                runEventGenerator(
+                        out,
+                        args.ref,
+                        args.lastVersionOnly,
+                        getWsBlackList(args.wsBlacklist, cfg.getWorkspaceBlackList()),
+                        getWsTypes(args.wsTypes, cfg.getWorkspaceTypes()),
+                        cfg.getWorkerCodes());
                 noCommand = false;
             } catch (EventGeneratorException | StorageInitException e) {
-                printError(e, a.verbose);
+                printError(e, args.verbose);
                 return 1;
             }
         }
@@ -205,10 +275,73 @@ public class SearchTools {
             usage(jc);
         }
         return 0;
-        
     }
     
-    private void runCoordinator(
+    public static class MinimalSpecGenerator {
+        
+        private static final String SPEC_TEMPLATE_FILE = "search_spec.yaml.template";
+        private final MustacheFactory mf = new DefaultMustacheFactory();
+        
+        private final String template;
+        
+        public MinimalSpecGenerator() throws IOException {
+            template = loadTemplate();
+        }
+        
+        private String loadTemplate() throws IOException {
+            final InputStream is = getClass().getResourceAsStream(SPEC_TEMPLATE_FILE);
+            final Scanner s = new Scanner(is);
+            s.useDelimiter("\\A");
+            final String template = s.next();
+            s.close();
+            return template;
+        }
+    
+        public void generateMinimalSearchSpec(
+                final Path specPath,
+                final String storageType,
+                final String searchType,
+                final String storageObjectType)
+                throws IOException {
+            if (specPath == null) {
+                throw new IllegalArgumentException("spec path is missing");
+            }
+            if (Utils.isNullOrEmpty(storageType)) {
+                throw new IllegalArgumentException("storage type must be provided in arguments");
+            }
+            if (Utils.isNullOrEmpty(searchType)) {
+                throw new IllegalArgumentException("search type must be provided in arguments");
+            }
+            if (Utils.isNullOrEmpty(storageObjectType)) {
+                throw new IllegalArgumentException(
+                        "storage object type must be provided in arguments");
+            }
+            final StringWriter sw = new StringWriter();
+            mf.compile(new StringReader(template), "template").execute(sw, ImmutableMap.of(
+                    "search_type", searchType,
+                    "storage_type", storageType,
+                    "storage_object_type", storageObjectType));
+            Files.write(specPath, sw.toString().getBytes());
+        }
+    }
+    
+    private void waitForReturn(final Stoppable stoppable) throws InterruptedException {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            
+            @Override
+            public void run() {
+                System.out.println("Waiting for task to stop");
+                try {
+                    stoppable.stop(10 * 60 * 1000); // 10 mins
+                } catch (InterruptedException e) {
+                    // do nothing, things are going down anyway
+                }
+            }
+        });
+        stoppable.awaitShutdown();
+    }
+    
+    private IndexerCoordinator runCoordinator(
             final SearchToolsConfig cfg,
             final PrintStream logTarget,
             final PrintStream errTarget)
@@ -217,11 +350,12 @@ public class SearchTools {
         
         final StatusEventStorage storage = new MongoDBStatusEventStorage(searchDB);
         
-        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger);
+        final IndexerCoordinator coord = new IndexerCoordinator(storage, logger, MAX_Q_SIZE);
         coord.startIndexer();
+        return coord;
     }
     
-    private void runWorker(
+    private IndexerWorker runWorker(
             final SearchToolsConfig cfg,
             final String id,
             final PrintStream logTarget,
@@ -239,18 +373,27 @@ public class SearchTools {
                 "yaml", new YAMLTypeMappingParser());
         final Path typesDir = Paths.get(cfg.getTypesDirectory());
         final Path mappingsDir = Paths.get(cfg.getTypeMappingsDirectory());
-        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir, parsers, logger);
+        final TypeStorage ss = new TypeFileStorage(typesDir, mappingsDir,
+                new ObjectTypeParsingRulesFileParser(), parsers, new FileLister(), logger);
         
         final StatusEventStorage storage = new MongoDBStatusEventStorage(searchDB);
         
         final WorkspaceClient wsClient = new WorkspaceClient(
                 cfg.getWorkspaceURL(), kbaseIndexerToken);
         wsClient.setIsInsecureHttpConnectionAllowed(true); //TODO SEC only do if http
-        final EventHandler weh = new WorkspaceEventHandler(wsClient);
+        final EventHandler weh = new WorkspaceEventHandler(
+                new CloneableWorkspaceClientImpl(wsClient));
         
-        final IndexerWorker wrk = new IndexerWorker(
-                getID(id), Arrays.asList(weh), storage, indexStore, ss, tempDir, logger);
+        final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
+                getID(id), tempDir.toPath(), logger)
+                .withStorage(storage, ss, indexStore)
+                .withEventHandler(weh)
+                .withMaxObjectsPerIndexingLoad(MAX_OBJECTS_PER_LOAD);
+        cfg.getWorkerCodes().stream().forEach(wc -> wrkCfg.withWorkerCode(wc));
+        
+        final IndexerWorker wrk = new IndexerWorker(wrkCfg.build());
         wrk.startIndexer();
+        return wrk;
     }
 
     private String getID(String id) {
@@ -258,26 +401,31 @@ public class SearchTools {
         id = id.trim();
         if ("-".equals(id)) {
             return UUID.randomUUID().toString();
-//        } else if (IndexerCoordinator.INDEXER_NAME.equals(id)) {
-//            throw new IllegalArgumentException("Reserved id: " + id);
         } else {
             return id;
         }
     }
 
-    private LineLogger buildLogger(final PrintStream logTarget,
-            final PrintStream errTarget) {
+    private LineLogger buildLogger(final PrintStream logTarget, final PrintStream errTarget) {
+        
         final LineLogger logger = new LineLogger() {
+            
+            private String decorate(final String log) {
+                final Instant now = Instant.now();
+                return now.toEpochMilli() + " " + now + " " + log;
+            }
+            
             @Override
             public void logInfo(final String line) {
-                logTarget.println(line);
+                logTarget.println(decorate(line));
             }
             @Override
             public void logError(final String line) {
-                errTarget.println(line);
+                errTarget.println(decorate(line));
             }
             @Override
             public void logError(final Throwable error) {
+                errTarget.print(decorate("Error: \n"));
                 error.printStackTrace(errTarget);
             }
             @Override
@@ -309,7 +457,7 @@ public class SearchTools {
             return;
         }
         final HttpHost esHostPort = new HttpHost(cfg.getElasticHost(), cfg.getElasticPort());
-        final File tempSubDir = IndexerWorker.getTempSubDir(
+        final File tempSubDir = FileUtil.getOrCreateSubDir(
                 new File(cfg.getTempDir()), "esbulk");
         final ElasticIndexingStorage esStorage = new ElasticIndexingStorage(
                 esHostPort, tempSubDir);
@@ -425,15 +573,19 @@ public class SearchTools {
     private void runEventGenerator(
             final PrintStream logtarget,
             final String ref,
+            final boolean lastVersionOnly,
             final List<WorkspaceIdentifier> wsBlackList,
-            final List<String> wsTypes)
+            final List<String> wsTypes,
+            final Set<String> workerCodes)
             throws EventGeneratorException, StorageInitException {
-        final WorkspaceEventGenerator gen = new WorkspaceEventGenerator.Builder(
+        final Builder gen = new WorkspaceEventGenerator.Builder(
                 new MongoDBStatusEventStorage(searchDB), workspaceDB, logtarget)
                 .withNullableRef(ref)
                 .withWorkspaceBlacklist(wsBlackList)
-                .withWorkspaceTypes(wsTypes).build();
-        gen.generateEvents();
+                .withWorkerCodes(workerCodes)
+                .withLastVersionOnly(lastVersionOnly)
+                .withWorkspaceTypes(wsTypes);
+        gen.build().generateEvents();
     }
 
     private SearchToolsConfig getConfig(final String configPath)
@@ -454,6 +606,11 @@ public class SearchTools {
         final StringBuilder sb = new StringBuilder();
         jc.usage(sb);
         out.println(sb.toString());
+    }
+    
+    private void printVer() {
+        out.println(String.format("Software version %s (commit %s)", SearchVersion.VERSION,
+                GIT.getGitCommit()));
     }
     
     private void printError(final Throwable e, final boolean verbose) {
@@ -519,14 +676,50 @@ public class SearchTools {
         private boolean startCoordinator;
         
         @Parameter(names = {"-k", "--start-worker"}, description =
-                "Start an indexer worker with the provided id. Set the id to '-' to " +
-//                "generate a random id. " + IndexerCoordinator.INDEXER_NAME + " is a reserved ID.")
-                "generate a random id.")
+                "Start an indexer worker with the provided id. At any given time, all workers " +
+                "MUST have unique ids. Set the id to '-' to generate a random id.")
         private String startWorker;
+
+        // TODO SCT-398 It's pretty clear that many of the errors we're seeing (too many features/contigs, location missing) are pointless to re-run, so we're going to want to be able to select failed events with more precision.
+        @Parameter(names = {"-f", "--reset-failed-events"}, description =
+                "Reset events with the FAIL processing state to the UNPROC (not processed) " +
+                " processing state so these events can be rerun by the indexer coordinator and" +
+                " indexer workers")
+        private boolean resetFailedEvents;
         
         @Parameter(names = {"-w", "--generate-workspace-events"}, description =
                 "Generate events for all objects in the workspace service database. " +
                 "Can be used with -r to specify particular workspaces, objects, or versions.")
         private boolean genWSEvents;
+        
+        @Parameter(names = {"--spec"}, description =
+                "Generate a minimal search transformation specification at the provided file " +
+                "location. The --storage-type, --search-type, and --storage-obj-type arguments " +
+                "are required.")
+        private String specPath;
+        
+        @Parameter(names = {"--search-type"}, description =
+                "The search type with which to initialize a new search transformation spec. See " +
+                "--spec.")
+        private String searchType;
+        
+        @Parameter(names = {"--storage-type"}, description =
+                "The storage type (e.g. 'WS') with which to initialize a new search " +
+                "transformation spec. See --spec.")
+        private String storageType;
+        
+        @Parameter(names = {"--storage-object-type"}, description =
+                "The type of the object in a storage system (e.g. 'KBaseGenomes.Genome') with " +
+                "which to initialize a new search transformation spec. See --spec.")
+        private String storageObjectType;
+        
+        @Parameter(names = {"--last-version-only"}, description = 
+                "When generating events, only generate events for the last version of each " +
+                "object. This parameter is ignored if a full ref including a version is " +
+                "provided in the ref argument.")
+        private boolean lastVersionOnly;
+                        
+        @Parameter(names = {"--version"}, description = "Print the software version and exit")
+        private boolean version;
     }
 }

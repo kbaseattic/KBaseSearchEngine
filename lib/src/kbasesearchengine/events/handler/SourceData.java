@@ -1,5 +1,9 @@
 package kbasesearchengine.events.handler;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import com.google.common.base.Optional;
 
 import kbasesearchengine.tools.Utils;
@@ -20,6 +24,7 @@ public class SourceData {
     private final Optional<String> commitHash;
     private final Optional<String> version;
     private final Optional<String> md5;
+    private final Set<String> sourceTags;
     
     private SourceData(
             final UObject data,
@@ -30,7 +35,8 @@ public class SourceData {
             final Optional<String> method,
             final Optional<String> commitHash,
             final Optional<String> version,
-            final Optional<String> md5) {
+            final Optional<String> md5,
+            final Set<String> sourceTags) {
         this.data = data;
         this.name = name;
         this.creator = creator;
@@ -40,6 +46,7 @@ public class SourceData {
         this.commitHash = commitHash;
         this.version = version;
         this.md5 = md5;
+        this.sourceTags = Collections.unmodifiableSet(sourceTags);
     }
     
     /** Get the data.
@@ -104,6 +111,13 @@ public class SourceData {
     public Optional<String> getMD5() {
         return md5;
     }
+    
+    /** Return any search tags the data source has applied to the data.
+     * @return the search tags from the data source.
+     */
+    public Set<String> getSourceTags() {
+        return sourceTags;
+    }
 
     /** Get a builder for a SourceData instance.
      * @param data the data.
@@ -130,6 +144,7 @@ public class SourceData {
         private Optional<String> commitHash = Optional.absent();
         private Optional<String> version = Optional.absent();
         private Optional<String> md5 = Optional.absent();
+        private final Set<String> sourceTags = new HashSet<>();
         
         private Builder(final UObject data, final String name, final String creator) {
             Utils.nonNull(data, "data");
@@ -202,12 +217,22 @@ public class SourceData {
             return this;
         }
         
+        /** Add a search tag applied to the data at the external data source.
+         * @param sourceTag the tag.
+         * @return this builder.
+         */
+        public Builder withSourceTag(final String sourceTag) {
+            Utils.notNullOrEmpty(sourceTag, "sourceTag cannot be null or whitespace only");
+            sourceTags.add(sourceTag);
+            return this;
+        }
+        
         /** Build the SourceData instance.
          * @return the SourceData.
          */
         public SourceData build() {
             return new SourceData(data, name, creator, copier, module, method, commitHash,
-                    version, md5);
+                    version, md5, sourceTags);
         }
     }
     

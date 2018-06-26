@@ -16,13 +16,21 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * <p>Original spec-file type: SearchObjectsInput</p>
  * <pre>
  * Input parameters for 'search_objects' method.
+ * object_types - list of the types of objects to search on (optional). The
+ *                function will search on all objects if the list is not specified
+ *                or is empty. The list size must be less than 50.
+ * match_filter - see MatchFilter.
+ * sorting_rules - see SortingRule (optional).
+ * access_filter - see AccessFilter.
+ * pagination - see Pagination (optional).
+ * post_processing - see PostProcessing (optional).
  * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "object_type",
+    "object_types",
     "match_filter",
     "sorting_rules",
     "access_filter",
@@ -31,8 +39,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 })
 public class SearchObjectsInput {
 
-    @JsonProperty("object_type")
-    private String objectType;
+    @JsonProperty("object_types")
+    private List<String> objectTypes;
     /**
      * <p>Original spec-file type: MatchFilter</p>
      * <pre>
@@ -40,6 +48,16 @@ public class SearchObjectsInput {
      * including values of keywords or metadata/system properties (like
      * object name, creation time range) or full-text search in all
      * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
+     * list<string> source_tags - source tags are arbitrary strings applied to data at the data
+     *     source (for example, the workspace service). The source_tags list may optionally be
+     *     populated with a set of tags that will determine what data is returned in a search.
+     *     By default, the list behaves as a whitelist and only data with at least one of the
+     *     tags will be returned.
+     * source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
+     *     data with at least one of the tags will be excluded from the search results. If missing
+     *     or false, the default behavior is maintained.
      * </pre>
      * 
      */
@@ -50,7 +68,7 @@ public class SearchObjectsInput {
     /**
      * <p>Original spec-file type: AccessFilter</p>
      * <pre>
-     * Optional rules of access constrains.
+     * Optional rules of access constraints.
      *   - with_private - include data found in workspaces not marked 
      *       as public, default value is true,
      *   - with_public - include data found in public workspaces,
@@ -76,33 +94,37 @@ public class SearchObjectsInput {
      * <p>Original spec-file type: PostProcessing</p>
      * <pre>
      * Rules for what to return about found objects.
-     * skip_info - do not include brief info for object ('guid,
-     *     'parent_guid', 'object_name' and 'timestamp' fields in
-     *     ObjectData structure),
      * skip_keys - do not include keyword values for object 
      *     ('key_props' field in ObjectData structure),
      * skip_data - do not include raw data for object ('data' and 
      *     'parent_data' fields in ObjectData structure),
-     * ids_only - shortcut to mark all three skips as true.
+     * include_highlight - include highlights of fields that
+     *      matched query,
+     * ids_only - shortcut to mark both skips as true and 
+     *      include_highlight as false.
+     * add_narrative_info - if true, narrative info gets added to the
+     *      search results. Default is false.
+     * add_access_group_info - if true, access groups and objects info get added
+     *      to the search results. Default is false.
      * </pre>
      * 
      */
     @JsonProperty("post_processing")
     private PostProcessing postProcessing;
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+    private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
-    @JsonProperty("object_type")
-    public String getObjectType() {
-        return objectType;
+    @JsonProperty("object_types")
+    public List<String> getObjectTypes() {
+        return objectTypes;
     }
 
-    @JsonProperty("object_type")
-    public void setObjectType(String objectType) {
-        this.objectType = objectType;
+    @JsonProperty("object_types")
+    public void setObjectTypes(List<String> objectTypes) {
+        this.objectTypes = objectTypes;
     }
 
-    public SearchObjectsInput withObjectType(String objectType) {
-        this.objectType = objectType;
+    public SearchObjectsInput withObjectTypes(List<String> objectTypes) {
+        this.objectTypes = objectTypes;
         return this;
     }
 
@@ -113,6 +135,16 @@ public class SearchObjectsInput {
      * including values of keywords or metadata/system properties (like
      * object name, creation time range) or full-text search in all
      * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
+     * list<string> source_tags - source tags are arbitrary strings applied to data at the data
+     *     source (for example, the workspace service). The source_tags list may optionally be
+     *     populated with a set of tags that will determine what data is returned in a search.
+     *     By default, the list behaves as a whitelist and only data with at least one of the
+     *     tags will be returned.
+     * source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
+     *     data with at least one of the tags will be excluded from the search results. If missing
+     *     or false, the default behavior is maintained.
      * </pre>
      * 
      */
@@ -128,6 +160,16 @@ public class SearchObjectsInput {
      * including values of keywords or metadata/system properties (like
      * object name, creation time range) or full-text search in all
      * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
+     * list<string> source_tags - source tags are arbitrary strings applied to data at the data
+     *     source (for example, the workspace service). The source_tags list may optionally be
+     *     populated with a set of tags that will determine what data is returned in a search.
+     *     By default, the list behaves as a whitelist and only data with at least one of the
+     *     tags will be returned.
+     * source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
+     *     data with at least one of the tags will be excluded from the search results. If missing
+     *     or false, the default behavior is maintained.
      * </pre>
      * 
      */
@@ -159,7 +201,7 @@ public class SearchObjectsInput {
     /**
      * <p>Original spec-file type: AccessFilter</p>
      * <pre>
-     * Optional rules of access constrains.
+     * Optional rules of access constraints.
      *   - with_private - include data found in workspaces not marked 
      *       as public, default value is true,
      *   - with_public - include data found in public workspaces,
@@ -178,7 +220,7 @@ public class SearchObjectsInput {
     /**
      * <p>Original spec-file type: AccessFilter</p>
      * <pre>
-     * Optional rules of access constrains.
+     * Optional rules of access constraints.
      *   - with_private - include data found in workspaces not marked 
      *       as public, default value is true,
      *   - with_public - include data found in public workspaces,
@@ -232,14 +274,18 @@ public class SearchObjectsInput {
      * <p>Original spec-file type: PostProcessing</p>
      * <pre>
      * Rules for what to return about found objects.
-     * skip_info - do not include brief info for object ('guid,
-     *     'parent_guid', 'object_name' and 'timestamp' fields in
-     *     ObjectData structure),
      * skip_keys - do not include keyword values for object 
      *     ('key_props' field in ObjectData structure),
      * skip_data - do not include raw data for object ('data' and 
      *     'parent_data' fields in ObjectData structure),
-     * ids_only - shortcut to mark all three skips as true.
+     * include_highlight - include highlights of fields that
+     *      matched query,
+     * ids_only - shortcut to mark both skips as true and 
+     *      include_highlight as false.
+     * add_narrative_info - if true, narrative info gets added to the
+     *      search results. Default is false.
+     * add_access_group_info - if true, access groups and objects info get added
+     *      to the search results. Default is false.
      * </pre>
      * 
      */
@@ -252,14 +298,18 @@ public class SearchObjectsInput {
      * <p>Original spec-file type: PostProcessing</p>
      * <pre>
      * Rules for what to return about found objects.
-     * skip_info - do not include brief info for object ('guid,
-     *     'parent_guid', 'object_name' and 'timestamp' fields in
-     *     ObjectData structure),
      * skip_keys - do not include keyword values for object 
      *     ('key_props' field in ObjectData structure),
      * skip_data - do not include raw data for object ('data' and 
      *     'parent_data' fields in ObjectData structure),
-     * ids_only - shortcut to mark all three skips as true.
+     * include_highlight - include highlights of fields that
+     *      matched query,
+     * ids_only - shortcut to mark both skips as true and 
+     *      include_highlight as false.
+     * add_narrative_info - if true, narrative info gets added to the
+     *      search results. Default is false.
+     * add_access_group_info - if true, access groups and objects info get added
+     *      to the search results. Default is false.
      * </pre>
      * 
      */
@@ -274,18 +324,18 @@ public class SearchObjectsInput {
     }
 
     @JsonAnyGetter
-    public Map<String, Object> getAdditionalProperties() {
+    public Map<java.lang.String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
     @JsonAnySetter
-    public void setAdditionalProperties(String name, Object value) {
+    public void setAdditionalProperties(java.lang.String name, Object value) {
         this.additionalProperties.put(name, value);
     }
 
     @Override
-    public String toString() {
-        return ((((((((((((((("SearchObjectsInput"+" [objectType=")+ objectType)+", matchFilter=")+ matchFilter)+", sortingRules=")+ sortingRules)+", accessFilter=")+ accessFilter)+", pagination=")+ pagination)+", postProcessing=")+ postProcessing)+", additionalProperties=")+ additionalProperties)+"]");
+    public java.lang.String toString() {
+        return ((((((((((((((("SearchObjectsInput"+" [objectTypes=")+ objectTypes)+", matchFilter=")+ matchFilter)+", sortingRules=")+ sortingRules)+", accessFilter=")+ accessFilter)+", pagination=")+ pagination)+", postProcessing=")+ postProcessing)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

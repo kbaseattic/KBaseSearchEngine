@@ -1,10 +1,8 @@
 package kbasesearchengine.main;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -14,13 +12,13 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.ImmutableList;
 import kbasesearchengine.AccessFilter;
 import kbasesearchengine.GetObjectsInput;
 import kbasesearchengine.GetObjectsOutput;
 import kbasesearchengine.KeyDescription;
 import kbasesearchengine.MatchFilter;
 import kbasesearchengine.MatchValue;
-import kbasesearchengine.ObjectData;
 import kbasesearchengine.Pagination;
 import kbasesearchengine.PostProcessing;
 import kbasesearchengine.SearchObjectsInput;
@@ -31,15 +29,15 @@ import kbasesearchengine.SortingRule;
 import kbasesearchengine.TypeDescriptor;
 import kbasesearchengine.authorization.AccessGroupProvider;
 import kbasesearchengine.common.GUID;
-import kbasesearchengine.parse.KeywordParser;
 import kbasesearchengine.search.FoundHits;
 import kbasesearchengine.search.IndexingStorage;
+import kbasesearchengine.search.MatchFilter.Builder;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.TypeStorage;
 import us.kbase.common.service.UObject;
 
-public class SearchMethods {
+public class SearchMethods implements SearchInterface {
     
     private final AccessGroupProvider accessGroupProvider;
     private final TypeStorage typeStorage;
@@ -52,36 +50,9 @@ public class SearchMethods {
             final TypeStorage typeStorage,
             final Set<String> admins) {
         this.admins = admins == null ? Collections.emptySet() : admins;
-        
-        // 50k simultaneous users * 1000 group ids each seems like plenty = 50M ints in memory
         this.accessGroupProvider = accessGroupProvider;
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
-    }
-    
-    /**
-     * For tests only !!!
-     */
-    public SearchMethods(
-            final IndexingStorage indexingStorage,
-            final TypeStorage typeStorage) {
-        this.accessGroupProvider = null;
-        this.admins = Collections.emptySet();
-        this.typeStorage = typeStorage;
-        this.indexingStorage = indexingStorage;
-    }
-    
-    public static File getTempSubDir(final File rootTempDir, String subName) {
-        File ret = new File(rootTempDir, subName);
-        if (!ret.exists()) {
-            ret.mkdirs();
-        }
-        return ret;
-    }
-    
-
-    public IndexingStorage getIndexingStorage(String objectType) {
-        return indexingStorage;
     }
     
     private static boolean toBool(Long value) {
@@ -97,10 +68,6 @@ public class SearchMethods {
 
     private static Integer toInteger(Long value) {
         return value == null ? null : (int)(long)value;
-    }
-
-    private static GUID toGUID(String value) {
-        return value == null ? null : new GUID(value);
     }
 
     private kbasesearchengine.search.MatchValue toSearch(MatchValue mv, String source) {
@@ -133,22 +100,25 @@ public class SearchMethods {
     }
     
     private kbasesearchengine.search.MatchFilter toSearch(MatchFilter mf) {
-        kbasesearchengine.search.MatchFilter ret = 
-                new kbasesearchengine.search.MatchFilter()
-                .withFullTextInAll(mf.getFullTextInAll())
-                .withAccessGroupId(toInteger(mf.getAccessGroupId()))
-                .withObjectName(mf.getObjectName())
-                .withParentGuid(toGUID(mf.getParentGuid()))
-                .withTimestamp(toSearch(mf.getTimestamp(), "timestamp"));
-        if (mf.getLookupInKeys() != null) {
-            Map<String, kbasesearchengine.search.MatchValue> keys =
-                    new LinkedHashMap<String, kbasesearchengine.search.MatchValue>();
-            for (String key : mf.getLookupInKeys().keySet()) {
-                keys.put(key, toSearch(mf.getLookupInKeys().get(key), key));
+        final Builder ret = 
+                kbasesearchengine.search.MatchFilter.getBuilder()
+                .withNullableFullTextInAll(mf.getFullTextInAll())
+                .withNullableObjectName(mf.getObjectName())
+                .withNullableTimestamp(toSearch(mf.getTimestamp(), "timestamp"))
+                .withExcludeSubObjects(toBool(mf.getExcludeSubobjects()))
+                .withIsSourceTagsBlackList(toBool(mf.getSourceTagsBlacklist()));
+        if (mf.getSourceTags() != null) {
+            for (final String tag: mf.getSourceTags()) {
+                ret.withSourceTag(tag);
             }
-            ret.withLookupInKeys(keys);
         }
-        return ret;
+        if (mf.getLookupInKeys() != null) {
+            for (final String key : mf.getLookupInKeys().keySet()) {
+                //TODO CODE proper error for null value
+                ret.withLookupInKey(key, toSearch(mf.getLookupInKeys().get(key), key));
+            }
+        }
+        return ret.build();
     }
 
     private kbasesearchengine.search.AccessFilter toSearch(AccessFilter af, String user)
@@ -166,31 +136,33 @@ public class SearchMethods {
                 .withAdmin(admins.contains(user));
     }
     
-    private kbasesearchengine.search.SortingRule toSearch(SortingRule sr) {
+    private kbasesearchengine.search.SortingRule toSearch(final SortingRule sr) {
         if (sr == null) {
             return null;
         }
-        kbasesearchengine.search.SortingRule ret = new kbasesearchengine.search.SortingRule();
-        ret.isTimestamp = toBool(sr.getIsTimestamp());
-        ret.isObjectName = toBool(sr.getIsObjectName());
-        ret.keyName = sr.getKeyName();
-        ret.ascending = !toBool(sr.getDescending());
-        return ret;
+        final kbasesearchengine.search.SortingRule.Builder b;
+        //TODO CODE make an enum of valid standard property field names and check against input
+        if (toBool(sr.getIsObjectProperty(), true)) {
+            b = kbasesearchengine.search.SortingRule.getKeyPropertyBuilder(sr.getProperty());
+        } else {
+            b = kbasesearchengine.search.SortingRule.getStandardPropertyBuilder(sr.getProperty());
+        }
+        return b.withNullableIsAscending(toBool(sr.getAscending(), true)).build();
     }
 
-    private SortingRule fromSearch(kbasesearchengine.search.SortingRule sr) {
+    private SortingRule fromSearch(final kbasesearchengine.search.SortingRule sr) {
         if (sr == null) {
             return null;
         }
-        SortingRule ret = new SortingRule();
-        if (sr.isTimestamp) {
-            ret.withIsTimestamp(1L);
-        } else if (sr.isObjectName) {
-            ret.withIsObjectName(1L);
+        final SortingRule ret = new SortingRule();
+        if (sr.isKeyProperty()) {
+            ret.withProperty(sr.getKeyProperty().get());
+            ret.withIsObjectProperty(1L);
         } else {
-            ret.withKeyName(sr.keyName);
+            ret.withProperty(sr.getStandardProperty().get());
+            ret.withIsObjectProperty(0L);
         }
-        ret.withDescending(sr.ascending ? 0L : 1L);
+        ret.withAscending(sr.isAscending() ? 1L : 0L);
         return ret;
     }
 
@@ -208,14 +180,15 @@ public class SearchMethods {
         kbasesearchengine.search.PostProcessing ret = 
                 new kbasesearchengine.search.PostProcessing();
         if (pp == null) {
-            ret.objectInfo = true;
             ret.objectData = true;
             ret.objectKeys = true;
+            ret.objectHighlight = false;
         } else {
             boolean idsOnly = toBool(pp.getIdsOnly());
-            ret.objectInfo = !(toBool(pp.getSkipInfo()) || idsOnly);
             ret.objectData = !(toBool(pp.getSkipData()) || idsOnly);
             ret.objectKeys = !(toBool(pp.getSkipKeys()) || idsOnly);
+            //default to false currently b/c of search tags. TODO: add search tags to black list?
+            ret.objectHighlight = toBool(pp.getIncludeHighlight()) && !idsOnly;
         }
         return ret;
     }
@@ -223,37 +196,38 @@ public class SearchMethods {
     private kbasesearchengine.ObjectData fromSearch(
             final kbasesearchengine.search.ObjectData od) {
         final kbasesearchengine.ObjectData ret = new kbasesearchengine.ObjectData();
-        ret.withGuid(od.guid.toString());
-        ret.withObjectProps(new HashMap<>());
-        if (od.parentGuid != null) {
-            ret.withParentGuid(od.parentGuid.toString());
+        ret.withGuid(od.getGUID().toString());
+        if (od.getParentGUID().isPresent()) {
+            ret.withParentGuid(od.getParentGUID().get().toString());
         }
-        if (od.timestamp > 0) {
-            ret.withTimestamp(od.timestamp);
+        if (od.getTimestamp().isPresent()) {
+            ret.withTimestamp(od.getTimestamp().get().toEpochMilli());
         }
-        if (od.data != null) {
-            ret.withData(new UObject(od.data));
+        if (od.getData().isPresent()) {
+            ret.withData(new UObject(od.getData().get()));
         }
-        if (od.parentData != null) {
-            ret.withParentData(new UObject(od.parentData));
+        if (od.getParentData().isPresent()) {
+            ret.withParentData(new UObject(od.getParentData().get()));
         }
-        ret.withObjectName(od.objectName);
-        ret.withKeyProps(od.keyProps);
-        addObjectProp(ret, od.creator, "creator");
-        addObjectProp(ret, od.copier, "copied");
-        addObjectProp(ret, od.module, "module");
-        addObjectProp(ret, od.method, "method");
-        addObjectProp(ret, od.moduleVersion, "module_ver");
-        addObjectProp(ret, od.commitHash, "commmit");
+
+        ret.withObjectName(od.getObjectName().orNull());
+        ret.withKeyProps(od.getKeyProperties());
+        ret.withHighlight(od.getHighlight());
+        
+        ret.withType(od.getType().getType());
+        ret.withTypeVer((long) od.getType().getVersion());
+
+        ret.withCreator(od.getCreator().orNull());
+        ret.withCopier(od.getCopier().orNull());
+        ret.withMod(od.getModule().orNull());
+        ret.withMethod(od.getMethod().orNull());
+        ret.withModuleVer(od.getModuleVersion().orNull());
+        ret.withCommit(od.getCommitHash().orNull());
+        
         return ret;
     }
     
-    private void addObjectProp(final ObjectData ret, final String prop, final String propkey) {
-        if (prop != null) {
-            ret.getObjectProps().put(propkey, prop);
-        }
-    }
-
+    @Override
     public SearchTypesOutput searchTypes(SearchTypesInput params, String user) throws Exception {
         long t1 = System.currentTimeMillis();
         kbasesearchengine.search.MatchFilter matchFilter = toSearch(params.getMatchFilter());
@@ -265,9 +239,17 @@ public class SearchMethods {
                 .withSearchTime(System.currentTimeMillis() - t1);
     }
     
-    public SearchObjectsOutput searchObjects(SearchObjectsInput params, String user) 
+    @Override
+    public SearchObjectsOutput searchObjects(SearchObjectsInput params, String user)
             throws Exception {
+
         long t1 = System.currentTimeMillis();
+
+        // validate input
+        if (params.getObjectTypes() == null) {
+            params.setObjectTypes(ImmutableList.of());
+        }
+
         kbasesearchengine.search.MatchFilter matchFilter = toSearch(params.getMatchFilter());
         List<kbasesearchengine.search.SortingRule> sorting = null;
         if (params.getSortingRules() != null) {
@@ -279,8 +261,8 @@ public class SearchMethods {
         kbasesearchengine.search.Pagination pagination = toSearch(params.getPagination());
         kbasesearchengine.search.PostProcessing postProcessing = 
                 toSearch(params.getPostProcessing());
-        FoundHits hits = indexingStorage.searchObjects(params.getObjectType(), matchFilter, 
-                sorting, accessFilter, pagination, postProcessing);
+        FoundHits hits = indexingStorage.searchObjects(params.getObjectTypes(),
+                matchFilter, sorting, accessFilter, pagination, postProcessing);
         SearchObjectsOutput ret = new SearchObjectsOutput();
         ret.withPagination(fromSearch(hits.pagination));
         ret.withSortingRules(hits.sortingRules.stream().map(this::fromSearch).collect(
@@ -297,21 +279,25 @@ public class SearchMethods {
         return ret;
     }
 
+    @Override
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
+
         final long t1 = System.currentTimeMillis();
         final Set<Integer> accessGroupIDs =
                 new HashSet<>(accessGroupProvider.findAccessGroupIds(user));
         final Set<GUID> guids = new LinkedHashSet<>();
         for (final String guid : params.getGuids()) {
             final GUID g = new GUID(guid);
+
             //TODO DP this is a quick fix for now, doesn't take data palettes into account
             if (accessGroupIDs.contains(g.getAccessGroupId())) {
                 // don't throw an error, just don't return data
                 guids.add(g);
             }
         }
-        final kbasesearchengine.search.PostProcessing postProcessing = 
+
+        final kbasesearchengine.search.PostProcessing postProcessing =
                 toSearch(params.getPostProcessing());
         final List<kbasesearchengine.search.ObjectData> objs = indexingStorage.getObjectsByIds(
                 guids, postProcessing);
@@ -320,11 +306,13 @@ public class SearchMethods {
         ret.withSearchTime(System.currentTimeMillis() - t1);
         return ret;
     }
-    
+
+    @Override
     public Map<String, TypeDescriptor> listTypes(String uniqueType) throws Exception {
+        //TODO VERS remove keys from TypeDescriptor, document that listObjectTypes only returns the most recent version of each type
         Map<String, TypeDescriptor> ret = new LinkedHashMap<>();
-        for (ObjectTypeParsingRules otpr : typeStorage.listObjectTypes()) {
-            String typeName = otpr.getGlobalObjectType();
+        for (ObjectTypeParsingRules otpr : typeStorage.listObjectTypeParsingRules()) {
+            String typeName = otpr.getGlobalObjectType().getType();
             if (uniqueType != null && !uniqueType.equals(typeName)) {
                 continue;
             }
@@ -337,20 +325,17 @@ public class SearchMethods {
                 if (ir.isNotIndexed()) {
                     continue;
                 }
-                String keyName = KeywordParser.getKeyName(ir);
+                String keyName = ir.getKeyName();
                 String uiKeyName = ir.getUiName();
-                if (uiKeyName == null) {
-                    uiKeyName = guessUIName(keyName);
-                }
-                String keyValueType = ir.getKeywordType();
+                String keyValueType = ir.getKeywordType().orNull();
                 if (keyValueType == null) {
-                    keyValueType = "string";
+                    keyValueType = "string"; //TODO CODE this seems wrong for fulltext, which is the only case where keyWordtype is null
                 }
                 long hidden = ir.isUiHidden() ? 1L : 0L;
                 KeyDescription kd = new KeyDescription().withKeyName(keyName)
                         .withKeyUiTitle(uiKeyName).withKeyValueType(keyValueType)
                         .withKeyValueType(keyValueType).withHidden(hidden)
-                        .withLinkKey(ir.getUiLinkKey());
+                        .withLinkKey(ir.getUiLinkKey().orNull());
                 keys.add(kd);
             }
             TypeDescriptor td = new TypeDescriptor().withTypeName(typeName)
@@ -363,5 +348,4 @@ public class SearchMethods {
     private static String guessUIName(String id) {
         return id.substring(0, 1).toUpperCase() + id.substring(1);
     }
-    
 }

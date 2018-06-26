@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 
 import org.bson.Document;
 
+import com.mongodb.DBObject;
 import com.mongodb.MongoException;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
@@ -42,6 +43,11 @@ import kbasesearchengine.system.StorageObjectType;
  */
 public class WorkspaceEventGenerator {
     
+    private static final String META_KEY = "k";
+    private static final String META_VALUE = "v";
+    private static final String TRUE = "true";
+    private static final String IS_TEMP_NARRATIVE = "is_temporary";
+    private static final String NARRATIVE_TYPE = "KBaseNarrative.Narrative";
     private static final int WS_COMPATIBLE_SCHEMA = 1;
     private static final String WS_COL_CONFIG = "config";
     private static final String WS_COL_WORKSPACES = "workspaces";
@@ -54,6 +60,7 @@ public class WorkspaceEventGenerator {
     private static final String WS_KEY_WS_NAME = "name";
     private static final String WS_KEY_OBJ_ID = "id";
     private static final String WS_KEY_VER = "ver";
+    private static final String WS_KEY_META = "meta";
     private static final String WS_KEY_TYPE = "type";
     private static final String WS_KEY_SAVEDATE = "savedate";
     private static final String WS_KEY_WS_ACL_ID = "id";
@@ -64,10 +71,13 @@ public class WorkspaceEventGenerator {
     private static final String WS_KEY_SCHEMAVER = "schemaver";
     private static final String WS_KEY_IN_UPDATE = "inupdate";
     
+    private static final String WS_EVENT_GEN = "WSEG";
+    
     //TODO EVENTGEN optimize by not pulling unneeded fields from db
 
     //TODO EVENTGEN handle data palettes: 1) remove all sharing for ws 2) pull DP 3) add share events for all DP objects. RC still possible.
     //TODO TEST
+    //TODO JAVADOC
     
     private final int ws;
     private final int obj;
@@ -77,7 +87,9 @@ public class WorkspaceEventGenerator {
     private final MongoDatabase wsDB;
     private final PrintStream logtarget;
     private final Set<WorkspaceIdentifier> wsBlackList;
-    private List<Pattern> wsTypes;
+    private final List<Pattern> wsTypes;
+    private final Set<String> workerCodes;
+    private final boolean lastVersionOnly;
     
     private WorkspaceEventGenerator(
             final StatusEventStorage storage,
@@ -87,7 +99,9 @@ public class WorkspaceEventGenerator {
             final int ver,
             final PrintStream logtarget,
             final Collection<WorkspaceIdentifier> wsBlackList,
-            final Collection<String> wsTypes)
+            final Collection<String> wsTypes,
+            final Collection<String> workerCodes,
+            final boolean lastVersionOnly)
             throws EventGeneratorException {
         this.ws = ws;
         this.obj = obj;
@@ -97,6 +111,8 @@ public class WorkspaceEventGenerator {
         this.logtarget = logtarget;
         this.wsBlackList = Collections.unmodifiableSet(new HashSet<>(wsBlackList));
         this.wsTypes = processTypes(wsTypes);
+        this.workerCodes = Collections.unmodifiableSet(new HashSet<>(workerCodes));
+        this.lastVersionOnly = lastVersionOnly;
         checkWorkspaceSchema();
     }
     
@@ -136,7 +152,18 @@ public class WorkspaceEventGenerator {
 
     public void generateEvents() throws EventGeneratorException {
         if (ws > 0) {
-            processWorkspace(ws);
+            final boolean tempNarr;
+            try {
+                final Document wsdoc = wsDB.getCollection(WS_COL_WORKSPACES).find(
+                        new Document(WS_KEY_WS_ID, ws)).first();
+                if (wsdoc == null) {
+                    return;
+                }
+                tempNarr = isTemporaryNarrative(wsdoc);
+            } catch (MongoException e) {
+                throw convert(e, "workspace");
+            }
+            processWorkspace(ws, tempNarr);
         } else {
             try {
                 // don't pull all workspaces at once to try and avoid race conditions
@@ -145,6 +172,7 @@ public class WorkspaceEventGenerator {
                 for (final Document ws: cur) {
                     final int id = Math.toIntExact(ws.getLong(WS_KEY_WS_ID));
                     final String wsname = ws.getString(WS_KEY_WS_NAME);
+                    final boolean tempNarr = isTemporaryNarrative(ws);
                     if (wsBlackList.contains(new WorkspaceIdentifier(id)) ||
                             wsBlackList.contains(new WorkspaceIdentifier(wsname))) {
                         log(String.format("Skipping blacklisted workspace %s (%s)",
@@ -152,7 +180,7 @@ public class WorkspaceEventGenerator {
                     } else if (ws.getBoolean(WS_KEY_WS_DEL)) {
                         log(String.format("Skipping deleted workspace %s (%s)", id, wsname));
                     } else {
-                        processWorkspace(id);
+                        processWorkspace(id, tempNarr);
                     }
                 }
             } catch (MongoException e) {
@@ -161,8 +189,15 @@ public class WorkspaceEventGenerator {
         }
         log("Finished processing.");
     }
+
+    private boolean isTemporaryNarrative(final Document doc) {
+        @SuppressWarnings("unchecked")
+        final Map<String, String> meta = metaMongoArrayToHash((List<Object>) doc.get(WS_KEY_META));
+        return TRUE.equals(meta.get(IS_TEMP_NARRATIVE));
+    }
     
-    private void processWorkspace(final int wsid) throws EventGeneratorException {
+    private void processWorkspace(final int wsid, final boolean tempNarr)
+            throws EventGeneratorException {
         final boolean pub = isPub(wsid);
         final Document query = new Document(WS_KEY_WS_ID, wsid);
         if (obj > 0) {
@@ -180,28 +215,58 @@ public class WorkspaceEventGenerator {
                         .append(WS_KEY_OBJ_ID, 1)
                         .append(WS_KEY_VER, -1)).iterator();
 
-        Versions vers = new Versions(vercur, 10000);
+        Versions vers = new Versions(vercur, 10000, null);
         while (!vers.isEmpty()) {
-            processVers(wsid, vers, pub);
-            vers = new Versions(vercur, 10000);
+            processVers(wsid, vers, pub, tempNarr);
+            vers = new Versions(vercur, 10000, vers.lastObjVer);
         }
     }
 
-    private void processVers(final int wsid, final Versions vers, final boolean pub)
+    private void processVers(
+            final int wsid,
+            final Versions vers,
+            final boolean pub,
+            final boolean tempNarr)
             throws EventGeneratorException {
-        final Map<Integer, Document> objects = getObjects(wsid, vers.minObjId, vers.maxObjId);
+        final Map<Integer, Document> objects = getObjects(
+                wsid, vers.minObjId, vers.lastObjVer.objid);
         for (final Document ver: vers.versions) {
             final int objid = Math.toIntExact(ver.getLong(WS_KEY_OBJ_ID));
             final Document obj = objects.get(objid);
+            final int version = ver.getInteger(WS_KEY_VER);
             if (obj.getBoolean(WS_KEY_OBJ_DEL)) {
-                final int version = ver.getInteger(WS_KEY_VER);
                 log(String.format("Skipping deleted object %s/%s/%s", wsid, objid, version));
+            } else if (ver.getString(WS_KEY_TYPE).startsWith(NARRATIVE_TYPE) &&
+                    // isTemporaryNarrative uses the new key in the object metadata
+                    // tempNarr is the key from the workspace metadata for older objects
+                    (isTemporaryNarrative(ver) || tempNarr)) {
+                log(String.format("Skipping temporary narrative %s/%s/%s", wsid, objid, version));
             } else {
                 generateEvent(wsid, pub, ver);
             }
         }
     }
 
+    private static Map<String, String> metaMongoArrayToHash(final List<? extends Object> meta) {
+        final Map<String, String> ret = new HashMap<String, String>();
+        if (meta != null) {
+            for (final Object o: meta) {
+                //frigging mongo
+                if (o instanceof DBObject) {
+                    final DBObject dbo = (DBObject) o;
+                    ret.put((String) dbo.get(META_KEY),
+                            (String) dbo.get(META_VALUE));
+                } else {
+                    @SuppressWarnings("unchecked")
+                    final Map<String, String> m = (Map<String, String>) o;
+                    ret.put(m.get(META_KEY),
+                            m.get(META_VALUE));
+                }
+            }
+        }
+        return ret;
+    }
+    
     private void generateEvent(final int wsid, final boolean pub, final Document ver)
             throws EventGeneratorException {
         final int objid = Math.toIntExact(ver.getLong(WS_KEY_OBJ_ID));
@@ -219,7 +284,9 @@ public class WorkspaceEventGenerator {
                     .withNullableVersion(vernum)
                     .withNullableisPublic(pub)
                     .build(),
-                    StatusEventProcessingState.UNPROC);
+                    StatusEventProcessingState.UNPROC,
+                    workerCodes,
+                    WS_EVENT_GEN);
         } catch (RetriableIndexingException e) {
             throw new EventGeneratorException(e.getMessage(), e); //TODO CODE retries
         }
@@ -247,33 +314,53 @@ public class WorkspaceEventGenerator {
         return ret;
     }
 
+    private class ObjVer {
+        
+        public final int objid;
+        public final int ver;
+        
+        private ObjVer(final int objid, final int ver) {
+            this.objid = objid;
+            this.ver = ver;
+        }
+    }
+    
     private class Versions {
         
         public final int minObjId;
-        public final int maxObjId;
+        // the last version of the maximum object id
+        public final ObjVer lastObjVer;
         public final List<Document> versions = new LinkedList<>();
         
-        /* It is expected that the cursor is sorted by object id */
-        public Versions(final MongoCursor<Document> vercur, final int count)
+        /* It is expected that the cursor is sorted by object id asc and then by version desc */
+        public Versions(
+                final MongoCursor<Document> vercur,
+                final int count,
+                ObjVer lastObjVer)
                 throws EventGeneratorException {
             int minId = Integer.MAX_VALUE;
-            int maxId = -1;
             try {
                 int i = 0;
                 while (vercur.hasNext() && i < count) {
                     final Document ver = vercur.next();
                     final int id = Math.toIntExact(ver.getLong(WS_KEY_OBJ_ID));
-                    if (id < minId) {
-                        minId = id;
+                    final int version = Math.toIntExact(ver.getInteger(WS_KEY_VER));
+                    if (lastObjVer == null) {
+                        lastObjVer = new ObjVer(id, version);
                     }
-                    if (id > maxId) {
-                        maxId = id;
+                    if (lastObjVer.objid != id) {
+                        lastObjVer = new ObjVer(id, version);
                     }
-                    versions.add(ver);
-                    i++;
+                    if (!lastVersionOnly || version == lastObjVer.ver) {
+                        if (id < minId) {
+                            minId = id;
+                        }
+                        versions.add(ver);
+                        i++;
+                    }
                 }
                 minObjId = minId;
-                maxObjId = maxId;
+                this.lastObjVer = lastObjVer;
             } catch (MongoException e) {
                 throw convert(e, "workspace");
             }
@@ -315,6 +402,8 @@ public class WorkspaceEventGenerator {
         private PrintStream logtarget;
         private Collection<WorkspaceIdentifier> wsBlackList = new LinkedList<>();
         private Collection<String> wsTypes = new LinkedList<>();
+        private Collection<String> workerCodes = new HashSet<>();
+        private boolean lastVersionOnly = false;
         
         public Builder(
                 final StatusEventStorage storage,
@@ -357,6 +446,8 @@ public class WorkspaceEventGenerator {
             return -1;
         }
 
+        //TODO CODE switch the next 3 methods to taking one item at a time vs. a list
+        
         public Builder withWorkspaceBlacklist(final Collection<WorkspaceIdentifier> wsBlackList) {
             nonNull(wsBlackList, "wsBlackList");
             noNulls(wsBlackList, "null item in wsBlackList");
@@ -367,14 +458,28 @@ public class WorkspaceEventGenerator {
         public Builder withWorkspaceTypes(final Collection<String> wsTypes) {
             nonNull(wsTypes, "wsTypes");
             noNulls(wsTypes, "null item in wsTypes");
-            // todo check no whitespace only chars
+            // TODO CODE check no whitespace only types
             this.wsTypes  = wsTypes;
+            return this;
+        }
+        
+        public Builder withWorkerCodes(final Collection<String> workerCodes) {
+            nonNull(workerCodes, "workerCodes");
+            noNulls(workerCodes, "null item in workerCodes");
+            // TODO CODE check no whitespace only codes
+            this.workerCodes = workerCodes;
+            return this;
+        }
+        
+        public Builder withLastVersionOnly(final boolean lastVersionOnly) {
+            this.lastVersionOnly = lastVersionOnly;
             return this;
         }
 
         public WorkspaceEventGenerator build() throws EventGeneratorException {
             return new WorkspaceEventGenerator(
-                    storage, workspaceDatabase, ws, obj, ver, logtarget, wsBlackList, wsTypes);
+                    storage, workspaceDatabase, ws, obj, ver, logtarget, wsBlackList, wsTypes,
+                    workerCodes, ver > 0 ? false : lastVersionOnly);
         }
 
     }

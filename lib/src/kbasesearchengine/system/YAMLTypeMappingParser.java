@@ -1,10 +1,10 @@
 package kbasesearchengine.system;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,14 +28,18 @@ import kbasesearchengine.tools.Utils;
 public class YAMLTypeMappingParser implements TypeMappingParser {
     
     //TODO TEST
-    // there's got to be some code to validate the structure of arbitrary java objects, have a look around
+    //TODO CODE there's got to be some code to validate the structure of arbitrary java objects, have a look around. Try jsonschema 
+    //TODO CODE error checking sucks
     
     private static final String TYPES_PATH = "/types";
     
     @Override
-    public Set<TypeMapping> parse(final InputStream input, String sourceInfo)
+    public Set<TypeMapping> parse(InputStream input, String sourceInfo)
             throws TypeParseException {
         Utils.nonNull(input, "input");
+        if (!(input instanceof BufferedInputStream)) {
+            input = new BufferedInputStream(input);
+        }
         if (Utils.isNullOrEmpty(sourceInfo)) {
             sourceInfo = null;
         }
@@ -69,17 +73,14 @@ public class YAMLTypeMappingParser implements TypeMappingParser {
         final TypeMapping.Builder b = TypeMapping.getBuilder(storageCode, type)
                 .withNullableSourceInfo(sourceInfo);
         String pathPrefix = TYPES_PATH + "/" + type + "/";
-        final List<String> searchTypes = getStringList(
-                typeinfo, "types", pathPrefix + "type", sourceInfo, false);
+        final List<SearchObjectType> searchTypes = getSearchTypes(
+                typeinfo, "types", pathPrefix + "types", sourceInfo, false);
         if (!searchTypes.isEmpty()) {
-            for (final String s: searchTypes) {
-                b.withNullableDefaultSearchType(s);
-            }
+            searchTypes.stream().forEach(t -> b.withDefaultSearchType(t));
             return b.build();
         }
-        final List<String> default_ = getStringList(
-                typeinfo, "default", pathPrefix + "default", sourceInfo, false);
-        default_.stream().forEach(i -> b.withNullableDefaultSearchType(i));
+        getSearchTypes(typeinfo, "default", pathPrefix + "default", sourceInfo, false).stream()
+                .forEach(t -> b.withDefaultSearchType(t));
         final String verPathPrefix = pathPrefix + "versions";
         final Map<Integer, Object> versions = getIntMap(
                 typeinfo, "versions", verPathPrefix, sourceInfo);
@@ -89,9 +90,8 @@ public class YAMLTypeMappingParser implements TypeMappingParser {
                 throw new TypeParseException(String.format(
                         "Version less than 0 at %s.%s", verpath, fmt(sourceInfo)));
             }
-            final List<String> searchVerType = getStringList(
-                    versions, v, verpath, sourceInfo, true);
-            searchVerType.stream().forEach(i -> b.withVersion(v, i));
+            getSearchTypes(versions, v, verpath, sourceInfo, true).stream()
+                    .forEach(t -> b.withVersion(v, t));
         }
         if (!b.isBuildReady()) {
             throw new TypeParseException(String.format(
@@ -100,12 +100,13 @@ public class YAMLTypeMappingParser implements TypeMappingParser {
         return b.build();
     }
 
-    private List<String> getStringList(
+    private List<SearchObjectType> getSearchTypes(
             final Map<?, Object> map,
             final Object key,
             final String path,
             final String sourceInfo,
-            final boolean required) throws TypeParseException {
+            final boolean required)
+            throws TypeParseException {
         final Object value = map.get(key);
         if (value == null) {
             if (required) {
@@ -114,36 +115,36 @@ public class YAMLTypeMappingParser implements TypeMappingParser {
                 return Collections.emptyList();
             }
         }
-        if (value instanceof String) {
-            if (Utils.isNullOrEmpty((String) value)) {
-                if (required) {
-                    throw new TypeParseException(
-                            "Missing value at " + path + "." + fmt(sourceInfo));
-                }
-                return Collections.emptyList();
-            }
-            return Arrays.asList((String) value);
+        if (!(value instanceof List)) {
+            throw new TypeParseException("Expected list at " + path + "." + fmt(sourceInfo));
         }
-        if (value instanceof List) {
+        @SuppressWarnings("unchecked")
+        final List<Object> otypes = (List<Object>) value;
+        final List<SearchObjectType> ret = new LinkedList<>();
+        for (int i = 0; i < otypes.size(); i++) {
+            final Object putativeType = otypes.get(i);
+            if (!(putativeType instanceof Map)) {
+                throw new TypeParseException(String.format(
+                        "Expected mapping at %s position %s.%s", path, i, fmt(sourceInfo)));
+            }
             @SuppressWarnings("unchecked")
-            final List<Object> value2 = (List<Object>) value;
-            final List<String> ret = new LinkedList<>();
-            int count = 0;
-            for (final Object o: value2) {
-                if (o == null || !(o instanceof String) || Utils.isNullOrEmpty((String) o)) {
-                    throw new TypeParseException(String.format(
-                            "Expected non-whitespace string, got [%s] at %s.%s",
-                            o, path + "/" + count, fmt(sourceInfo)));
-                }
-                ret.add((String) o);
-                count++;
+            final Map<Object, Object> putativeType2 = (Map<Object, Object>) putativeType;
+            final Object typeName = putativeType2.get("type");
+            final Object typeVer = putativeType2.get("version");
+            if (typeName == null || !(typeName instanceof String) ||
+                    Utils.isNullOrEmpty((String) typeName)) {
+                throw new TypeParseException(String.format(
+                        "Expected type name at %s/%s/type.%s", path, i, fmt(sourceInfo)));
             }
-            return ret;
+            if (typeVer == null || !(typeVer instanceof Integer)) {
+                throw new TypeParseException(String.format(
+                        "Expected type version at %s/%s/version.%s", path, i, fmt(sourceInfo)));
+            }
+            ret.add(new SearchObjectType((String) typeName, (int) typeVer));
         }
-        throw new TypeParseException(String.format(
-                "Expected list or string, got %s at %s.%s", value, path, fmt(sourceInfo)));
+        return ret;
     }
-
+    
     private String fmt(final String sourceInfo) {
         return sourceInfo == null ? "" : 
             sourceInfo.trim().isEmpty() ? "" : " Source: " + sourceInfo;

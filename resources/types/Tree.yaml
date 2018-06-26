@@ -1,0 +1,14 @@
+global-object-type: Tree
+storage-type: WS
+storage-object-type: KBaseTrees.Tree
+versions:
+- indexing-rules:
+  - path: default_node_labels
+    transform: values
+    full-text: true
+    key-name: labels
+    ui-name: Labels
+  - path: type
+    keyword-type: keyword
+    ui-name: Tree Type
+  

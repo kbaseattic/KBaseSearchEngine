@@ -1,18 +1,23 @@
-<project name="KBaseRelationEngine" default="compile" basedir="."
+<project name="KBaseSearchEngine" default="compile" basedir="."
          xmlns:jacoco="antlib:org.jacoco.ant">
 
   <description>
-      Build JAR and WAR files for KBaseRelationEngine 
+      Build JAR and WAR files for KBaseSearchEngine 
   </description>
 
   <!-- set global properties for this build -->
+  <property environment="env"/>
   <property name="src" location="lib/src"/>
   <property name="test.src" location="test/src"/>
   <property name="dist" location="dist"/>
   <property name="classes" location="classes"/>
   <property name="bin" location="bin"/>
+  <property name="test.cfg" location="/kb/module/work/test.cfg"/>
   <property name="jar.file" value="KBaseSearchEngine.jar"/>
-  <property name="jars.dir" value="/kb/deployment/lib/jars"/>
+  <condition property="jars.dir" value="${env.JARS_DIR}" else="/kb/deployment/lib/jars">
+    <isset property="env.JARS_DIR" />
+  </condition>
+  <!-- <property name="jars.dir" value="/kb/deployment/lib/jars"/> -->
   <property name="war.file" value="KBaseSearchEngine.war"/>
   <property name="scripts" location="scripts"/>
   <property name="web.xml" location="${scripts}/web.xml"/>
@@ -33,11 +38,13 @@
     <include name="junit/junit-4.9.jar"/>
     <include name="kbase/auth/kbase-auth-0.4.4.jar"/>
     <include name="kbase/common/kbase-common-0.0.23.jar"/>
+    <include name="kbase/workspace/WorkspaceService-0.8.0.jar"/>
     <include name="logback/logback-core-1.1.2.jar"/>
     <include name="logback/logback-classic-1.1.2.jar"/>
     <include name="servlet/servlet-api-2.5.jar"/>
     <include name="slf4j/slf4j-api-1.7.7.jar"/>
     <include name="syslog4j/syslog4j-0.9.46.jar"/>
+    <include name="mustache/compiler-0.9.3.jar"/>
     <include name="kbase/workspace/WorkspaceClient-0.6.0.jar"/>
     <include name="apache_commons/commons-logging-1.1.1.jar"/>
     <include name="apache_commons/commons-io-2.4.jar"/>
@@ -52,6 +59,7 @@
     <include name="jcommander/jcommander-1.48.jar"/>
     <include name="snakeyaml/snakeyaml-1.18.jar"/>
     <include name="equalsverifier/equalsverifier-2.2.2.jar"/>
+    <include name="kbase/auth2/kbase-auth2test-0.2.3.jar"/>
     <!-- mockito and dependencies -->
     <include name="mockito/mockito-core-2.7.10.jar"/>
     <include name="bytebuddy/byte-buddy-1.6.8.jar"/>
@@ -61,6 +69,11 @@
 
   <path id="compile.classpath">
     <fileset refid="lib"/>
+  </path>
+	
+  <path id="test.classpath">
+    <path refid="compile.classpath"/>
+    <fileset file="${dist}/${jar.file}"/>
   </path>
 
   <path id="src.path">
@@ -140,33 +153,58 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
     <jacoco:coverage destfile="${test.reports.dir}/jacoco.exec"
                      excludes="org/*:junit/*">
       <junit printsummary="yes" haltonfailure="yes" fork="true">
-        <classpath>
-          <pathelement location="${dist}/${jar.file}"/>
-          <path refid="compile.classpath"/>
-        </classpath>
+        <classpath refid="test.classpath"/>
         <formatter type="plain" usefile="false" />
-        <batchtest>
-          <fileset dir="${test.src}">
-            <include name="kbasesearchengine/test/parse/**Test.java"/>
-            <include name="kbasesearchengine/test/authorization/AccessGroupCacheTest.java"/>
-            <include name="kbasesearchengine/test/events/AccessGroupEventQueueTest.java"/>
-            <include name="kbasesearchengine/test/events/EventQueueTest.java"/>
-            <include name="kbasesearchengine/test/events/ObjectEventQueueTest.java"/>
-            <include name="kbasesearchengine/test/events/StatusEventIDTest.java"/>
-            <include name="kbasesearchengine/test/events/StatusEventTest.java"/>
-            <include name="kbasesearchengine/test/events/StoredStatusEventTest.java"/>
-            <include name="kbasesearchengine/test/events/exceptions/RetrierTest.java"/>
-            <include name="kbasesearchengine/test/events/exceptions/ExceptionTest.java"/>
-            <include name="kbasesearchengine/test/events/handler/ResolvedReferenceTest.java"/>
-            <include name="kbasesearchengine/test/events/handler/SourceDataTest.java"/>
-            <include name="kbasesearchengine/test/events/storage/MongoDBStatusEventStorageTest.java"/>
-            <include name="kbasesearchengine/test/integration/IndexerIntegrationTest.java"/>
-            <include name="kbasesearchengine/test/search/ElasticIndexingStorageTest.java"/>
-            <include name="kbasesearchengine/test/system/StorageObjectTypeTest.java"/>
-            <include name="kbasesearchengine/test/system/TypeMappingTest.java"/>
-            <include name="kbasesearchengine/test/main/IndexerCoordinatorTest.java"/>
-          </fileset>
-        </batchtest>
+        <sysproperty key="test.cfg" value="${test.cfg}"/>
+        <test name="kbasesearchengine.test.authorization.AccessGroupCacheTest"/>
+        <test name="kbasesearchengine.test.authorization.AuthCacheTest"/>
+        <test name="kbasesearchengine.test.common.FileUtilTest"/>
+        <test name="kbasesearchengine.test.common.GUIDTest"/>
+        <test name="kbasesearchengine.test.events.AccessGroupEventQueueTest"/>
+        <test name="kbasesearchengine.test.events.ChildStatusEventTest"/>
+        <test name="kbasesearchengine.test.events.EventQueueTest"/>
+        <test name="kbasesearchengine.test.events.ObjectEventQueueTest"/>
+        <test name="kbasesearchengine.test.events.StatusEventIDTest"/>
+        <test name="kbasesearchengine.test.events.StatusEventTest"/>
+        <test name="kbasesearchengine.test.events.StoredChildStatusEventTest"/>
+        <test name="kbasesearchengine.test.events.StoredStatusEventTest"/>
+        <test name="kbasesearchengine.test.events.exceptions.RetrierTest"/>
+        <test name="kbasesearchengine.test.events.exceptions.ExceptionTest"/>
+        <test name="kbasesearchengine.test.events.handler.CloneableWorkspaceClientImplTest"/>
+        <test name="kbasesearchengine.test.events.handler.ResolvedReferenceTest"/>
+        <test name="kbasesearchengine.test.events.handler.SourceDataTest"/>
+        <test name="kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest"/>
+        <test name="kbasesearchengine.test.events.storage.MongoDBStatusEventStorageTest"/>
+        <test name="kbasesearchengine.test.integration.IndexerIntegrationTest"/>
+        <test name="kbasesearchengine.test.integration.IndexerWorkerIntegrationTest"/>
+        <test name="kbasesearchengine.test.integration.SearchAPIIntegrationTest"/>
+        <test name="kbasesearchengine.test.main.GitInfoTest"/>
+        <test name="kbasesearchengine.test.main.IndexerCoordinatorTest"/>
+        <test name="kbasesearchengine.test.main.IndexerWorkerTest"/>
+        <test name="kbasesearchengine.test.main.IndexerWorkerConfiguratorTest"/>
+        <test name="kbasesearchengine.test.main.NarrativeInfoDecoratorTest"/>
+        <test name="kbasesearchengine.test.main.NarrativeInfoCacheTest"/>
+        <test name="kbasesearchengine.test.main.ObjectInfoCacheTest"/>
+        <test name="kbasesearchengine.test.main.SearchMethodsTest"/>
+        <test name="kbasesearchengine.test.main.SignalMonitorTest"/>
+        <test name="kbasesearchengine.test.main.WorkspaceInfoCacheTest"/>
+        <test name="kbasesearchengine.test.parse.IdMapperTest"/>
+        <test name="kbasesearchengine.test.parse.KeyWordParserTest"/>
+        <test name="kbasesearchengine.test.parse.ObjectParserTest"/>
+        <test name="kbasesearchengine.test.parse.SubObjectExtractorTest"/>
+        <test name="kbasesearchengine.test.search.ElasticIndexingStorageTest"/>
+        <test name="kbasesearchengine.test.search.MatchFilterTest"/>
+        <test name="kbasesearchengine.test.search.ObjectDataTest"/>
+        <test name="kbasesearchengine.test.search.SortingRuleTest"/>
+        <test name="kbasesearchengine.test.system.IndexingRulesTest"/>
+        <test name="kbasesearchengine.test.system.ObjectTypeParsingRulesTest"/>
+        <test name="kbasesearchengine.test.system.ParsingRulesSubtypeFirstComparatorTest"/>
+        <test name="kbasesearchengine.test.system.SearchObjectTypeTest"/>
+        <test name="kbasesearchengine.test.system.StorageObjectTypeTest"/>
+        <test name="kbasesearchengine.test.system.TypeFileStorageTest"/>
+        <test name="kbasesearchengine.test.system.TypeMappingTest"/>
+        <test name="kbasesearchengine.test.system.TransformTest"/>
+        <test name="kbasesearchengine.test.tools.SearchToolsTest"/>
       </junit>
     </jacoco:coverage>
     <fail message="Test failure detected, check test results." if="test.failed" />
@@ -181,6 +219,30 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
   <taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml"
            classpathref="jacoco.classpath"/>
 
+  <patternset id="exclude-from-coverage">
+    <!-- there must be a better way to ignore the generated code-->
+    <exclude name="kbasesearchengine/AccessFilter.*"/>
+    <exclude name="kbasesearchengine/GetObjectsInput.*"/>
+    <exclude name="kbasesearchengine/GetObjectsOutput.*"/>
+    <exclude name="kbasesearchengine/KBaseSearchEngineClient.*"/>
+    <exclude name="kbasesearchengine/KeyDescription.*"/>
+    <exclude name="kbasesearchengine/ListTypesInput.*"/>
+    <exclude name="kbasesearchengine/ListTypesOutput.*"/>
+    <exclude name="kbasesearchengine/MatchFilter.*"/>
+    <exclude name="kbasesearchengine/MatchValue.*"/>
+    <exclude name="kbasesearchengine/ObjectData.*"/>
+    <exclude name="kbasesearchengine/Pagination.*"/>
+    <exclude name="kbasesearchengine/PostProcessing.*"/>
+    <exclude name="kbasesearchengine/SearchObjectsInput.*"/>
+    <exclude name="kbasesearchengine/SearchObjectsOutput.*"/>
+    <exclude name="kbasesearchengine/SearchTypesInput.*"/>
+    <exclude name="kbasesearchengine/SearchTypesOutput.*"/>
+    <exclude name="kbasesearchengine/SortingRule.*"/>
+    <exclude name="kbasesearchengine/TypeDescriptor.*"/>
+    <exclude name="us/kbase/**"/>
+    <exclude name="**/test/**"/>
+  </patternset>
+	
   <target name="test-report"
           depends="test"
           description="run all tests and generate test report">
@@ -191,12 +253,12 @@ java -cp ${jar.absolute.path}:${lib.classpath} kbasesearchengine.tools.SearchToo
       <structure name="KBaseSearchEngine Unit Tests">
         <classfiles>
           <fileset dir="${classes}">
-            <exclude name="**/test/**" />
+            <patternset refid="exclude-from-coverage"/>
           </fileset>
         </classfiles>
         <sourcefiles encoding="UTF-8">
           <fileset dir="${src}">
-            <exclude name="**/test/**" />
+            <patternset refid="exclude-from-coverage"/>
           </fileset>
         </sourcefiles>
       </structure>

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import kbasesearchengine.tools.Utils;
 
 import com.google.common.base.Ticker;
 import com.google.common.cache.CacheBuilder;
@@ -19,7 +20,7 @@ import com.google.common.cache.Weigher;
 public class AccessGroupCache implements AccessGroupProvider {
     
     private final LoadingCache<String, List<Integer>> cache;
-    
+
     /** Create a cache.
      * @param provider the {@link AccessGroupProvider} whose results will be cached.
      * @param cacheLifeTimeInSec the number of seconds a set of access groups for a user should
@@ -49,9 +50,8 @@ public class AccessGroupCache implements AccessGroupProvider {
             final int cacheLifeTimeInSec,
             final int cacheSizeInAccessGroups,
             final Ticker ticker) {
-        if (provider == null) {
-            throw new NullPointerException("provider");
-        }
+        Utils.nonNull(provider, "provider");
+
         if (cacheLifeTimeInSec < 1) {
             throw new IllegalArgumentException("cache lifetime must be at least one second");
         }

@@ -91,7 +91,7 @@ public class SubObjectExtractorTest {
     }
     
     private static InputStream getJsonResource(String name) throws Exception {
-        return SubObjectExtractorTest.class.getResourceAsStream(name + ".json.properties");
+        return SubObjectExtractorTest.class.getResourceAsStream("data/"+ name + ".json.properties");
     }
     
     public static JsonParser getParsedJsonResource(String name) throws Exception {

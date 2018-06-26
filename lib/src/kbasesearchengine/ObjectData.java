@@ -2,6 +2,7 @@
 package kbasesearchengine;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Generated;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
@@ -15,15 +16,33 @@ import us.kbase.common.service.UObject;
 /**
  * <p>Original spec-file type: ObjectData</p>
  * <pre>
- * Properties of found object including metadata, raw data and
- *     keywords.
- *     
- * mapping<string, string> object_props - general properties for all objects. This mapping
- *     contains the keys 'creator', 'copied', 'module', 'method', 'module_ver', and 'commit' -
- *     respectively the user that originally created the object, the user that copied this
- *     incarnation of the object, and the module and method used to create the object and
- *     their version and version control commit hash. Not all keys may be present; if not
- *     their values were not available in the search data.
+ * Properties of an object including metadata, raw data and keywords.
+ * GUID guid - the object's guid.
+ * GUID parent_guid - the guid of the object's parent if the object is a subobject (e.g.
+ *     features for genomes).
+ * object_name - the object's name.
+ * timestamp - the creation date for the object in milliseconds since the epoch.
+ * string type - the type of the data in the search index.
+ * int type_ver - the version of the search type.
+ * string creator - the username of the user that created that data.
+ * string copier - if this instance of the data is a copy, the username of the user that
+ *     copied the data.
+ * string mod - the name of the KBase SDK module that was used to create the data.
+ * string method - the name of the method in the KBase SDK module that was used to create the
+ *     data.
+ * string module_ver - the version of the KBase SDK module that was used to create the data.
+ * string commit - the version control commit hash of the KBase SDK module that was used to
+ *     create the data. 
+ * parent_data - raw data extracted from the subobject's parent object. The data contents will
+ *     vary from object to object. Null if the object is not a subobject.
+ * data - raw data extracted from the object. The data contents will vary from object to object.
+ * key_props - keyword properties of the object. These fields have been extracted from the object
+ *    and possibly transformed based on the search specification for the object.
+ *    The contents will vary from object to object.
+ * mapping<string, list<string>> highlight - The keys are the field names and the list 
+ *     contains the sections in each field that matched the search query. Fields with no
+ *     hits will not be available. Short fields that matched are shown in their entirety.
+ *     Longer fields are shown as snippets preceded or followed by "...".
  * </pre>
  * 
  */
@@ -34,10 +53,18 @@ import us.kbase.common.service.UObject;
     "parent_guid",
     "object_name",
     "timestamp",
+    "type",
+    "type_ver",
+    "creator",
+    "copier",
+    "mod",
+    "method",
+    "module_ver",
+    "commit",
     "parent_data",
     "data",
     "key_props",
-    "object_props"
+    "highlight"
 })
 public class ObjectData {
 
@@ -49,14 +76,30 @@ public class ObjectData {
     private java.lang.String objectName;
     @JsonProperty("timestamp")
     private Long timestamp;
+    @JsonProperty("type")
+    private java.lang.String type;
+    @JsonProperty("type_ver")
+    private Long typeVer;
+    @JsonProperty("creator")
+    private java.lang.String creator;
+    @JsonProperty("copier")
+    private java.lang.String copier;
+    @JsonProperty("mod")
+    private java.lang.String mod;
+    @JsonProperty("method")
+    private java.lang.String method;
+    @JsonProperty("module_ver")
+    private java.lang.String moduleVer;
+    @JsonProperty("commit")
+    private java.lang.String commit;
     @JsonProperty("parent_data")
     private UObject parentData;
     @JsonProperty("data")
     private UObject data;
     @JsonProperty("key_props")
     private Map<String, String> keyProps;
-    @JsonProperty("object_props")
-    private Map<String, String> objectProps;
+    @JsonProperty("highlight")
+    private Map<String, List<String>> highlight;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("guid")
@@ -119,6 +162,126 @@ public class ObjectData {
         return this;
     }
 
+    @JsonProperty("type")
+    public java.lang.String getType() {
+        return type;
+    }
+
+    @JsonProperty("type")
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+
+    public ObjectData withType(java.lang.String type) {
+        this.type = type;
+        return this;
+    }
+
+    @JsonProperty("type_ver")
+    public Long getTypeVer() {
+        return typeVer;
+    }
+
+    @JsonProperty("type_ver")
+    public void setTypeVer(Long typeVer) {
+        this.typeVer = typeVer;
+    }
+
+    public ObjectData withTypeVer(Long typeVer) {
+        this.typeVer = typeVer;
+        return this;
+    }
+
+    @JsonProperty("creator")
+    public java.lang.String getCreator() {
+        return creator;
+    }
+
+    @JsonProperty("creator")
+    public void setCreator(java.lang.String creator) {
+        this.creator = creator;
+    }
+
+    public ObjectData withCreator(java.lang.String creator) {
+        this.creator = creator;
+        return this;
+    }
+
+    @JsonProperty("copier")
+    public java.lang.String getCopier() {
+        return copier;
+    }
+
+    @JsonProperty("copier")
+    public void setCopier(java.lang.String copier) {
+        this.copier = copier;
+    }
+
+    public ObjectData withCopier(java.lang.String copier) {
+        this.copier = copier;
+        return this;
+    }
+
+    @JsonProperty("mod")
+    public java.lang.String getMod() {
+        return mod;
+    }
+
+    @JsonProperty("mod")
+    public void setMod(java.lang.String mod) {
+        this.mod = mod;
+    }
+
+    public ObjectData withMod(java.lang.String mod) {
+        this.mod = mod;
+        return this;
+    }
+
+    @JsonProperty("method")
+    public java.lang.String getMethod() {
+        return method;
+    }
+
+    @JsonProperty("method")
+    public void setMethod(java.lang.String method) {
+        this.method = method;
+    }
+
+    public ObjectData withMethod(java.lang.String method) {
+        this.method = method;
+        return this;
+    }
+
+    @JsonProperty("module_ver")
+    public java.lang.String getModuleVer() {
+        return moduleVer;
+    }
+
+    @JsonProperty("module_ver")
+    public void setModuleVer(java.lang.String moduleVer) {
+        this.moduleVer = moduleVer;
+    }
+
+    public ObjectData withModuleVer(java.lang.String moduleVer) {
+        this.moduleVer = moduleVer;
+        return this;
+    }
+
+    @JsonProperty("commit")
+    public java.lang.String getCommit() {
+        return commit;
+    }
+
+    @JsonProperty("commit")
+    public void setCommit(java.lang.String commit) {
+        this.commit = commit;
+    }
+
+    public ObjectData withCommit(java.lang.String commit) {
+        this.commit = commit;
+        return this;
+    }
+
     @JsonProperty("parent_data")
     public UObject getParentData() {
         return parentData;
@@ -164,18 +327,18 @@ public class ObjectData {
         return this;
     }
 
-    @JsonProperty("object_props")
-    public Map<String, String> getObjectProps() {
-        return objectProps;
+    @JsonProperty("highlight")
+    public Map<String, List<String>> getHighlight() {
+        return highlight;
     }
 
-    @JsonProperty("object_props")
-    public void setObjectProps(Map<String, String> objectProps) {
-        this.objectProps = objectProps;
+    @JsonProperty("highlight")
+    public void setHighlight(Map<String, List<String>> highlight) {
+        this.highlight = highlight;
     }
 
-    public ObjectData withObjectProps(Map<String, String> objectProps) {
-        this.objectProps = objectProps;
+    public ObjectData withHighlight(Map<String, List<String>> highlight) {
+        this.highlight = highlight;
         return this;
     }
 
@@ -191,7 +354,7 @@ public class ObjectData {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((((("ObjectData"+" [guid=")+ guid)+", parentGuid=")+ parentGuid)+", objectName=")+ objectName)+", timestamp=")+ timestamp)+", parentData=")+ parentData)+", data=")+ data)+", keyProps=")+ keyProps)+", objectProps=")+ objectProps)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((((((((((((((((((("ObjectData"+" [guid=")+ guid)+", parentGuid=")+ parentGuid)+", objectName=")+ objectName)+", timestamp=")+ timestamp)+", type=")+ type)+", typeVer=")+ typeVer)+", creator=")+ creator)+", copier=")+ copier)+", mod=")+ mod)+", method=")+ method)+", moduleVer=")+ moduleVer)+", commit=")+ commit)+", parentData=")+ parentData)+", data=")+ data)+", keyProps=")+ keyProps)+", highlight=")+ highlight)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

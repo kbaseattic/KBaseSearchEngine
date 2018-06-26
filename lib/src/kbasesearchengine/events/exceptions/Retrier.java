@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Optional;
 
-import kbasesearchengine.events.StoredStatusEvent;
+import kbasesearchengine.events.StatusEventWithId;
 import kbasesearchengine.tools.Utils;
 
 /** Generic code for retrying functions. Expects the code to throw
@@ -94,7 +94,7 @@ public class Retrier {
     public <T> void retryCons(
             final RetryConsumer<T> consumer,
             final T input,
-            final StoredStatusEvent event)
+            final StatusEventWithId event)
             throws InterruptedException, IndexingException {
         Utils.nonNull(consumer, "consumer");
         int retries = 1;
@@ -125,7 +125,7 @@ public class Retrier {
     public <T, R> R retryFunc(
             final RetryFunction<T, R> function,
             final T input,
-            final StoredStatusEvent event)
+            final StatusEventWithId event)
             throws InterruptedException, IndexingException {
         Utils.nonNull(function, "function");
         int retries = 1;
@@ -145,14 +145,14 @@ public class Retrier {
     }
     
     private boolean handleException(
-            final StoredStatusEvent event,
+            final StatusEventWithId event,
             final RetriableIndexingException e,
             final int retries,
             final int fatalRetries)
             throws InterruptedException, IndexingException {
         if (e instanceof FatalRetriableIndexingException) {
             if (fatalRetries - 1 >= fatalRetryBackoffsMS.size()) {
-                throw new FatalIndexingException(e.getMessage(), e);
+                throw new FatalIndexingException(e.getErrorType(), e.getMessage(), e);
             } else {
                 logger.log(fatalRetries, Optional.fromNullable(event), e);
                 TimeUnit.MILLISECONDS.sleep(fatalRetryBackoffsMS.get(fatalRetries - 1));
@@ -160,7 +160,7 @@ public class Retrier {
             }
         } else {
             if (retries > retryCount) {
-                throw new RetriesExceededIndexingException(e.getMessage(), e);
+                throw new RetriesExceededIndexingException(e.getErrorType(), e.getMessage(), e);
             } else {
                 logger.log(retries, Optional.fromNullable(event), e);
                 TimeUnit.MILLISECONDS.sleep(delayMS);

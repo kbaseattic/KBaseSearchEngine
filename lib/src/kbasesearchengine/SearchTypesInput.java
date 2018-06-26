@@ -33,6 +33,16 @@ public class SearchTypesInput {
      * including values of keywords or metadata/system properties (like
      * object name, creation time range) or full-text search in all
      * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
+     * list<string> source_tags - source tags are arbitrary strings applied to data at the data
+     *     source (for example, the workspace service). The source_tags list may optionally be
+     *     populated with a set of tags that will determine what data is returned in a search.
+     *     By default, the list behaves as a whitelist and only data with at least one of the
+     *     tags will be returned.
+     * source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
+     *     data with at least one of the tags will be excluded from the search results. If missing
+     *     or false, the default behavior is maintained.
      * </pre>
      * 
      */
@@ -41,7 +51,7 @@ public class SearchTypesInput {
     /**
      * <p>Original spec-file type: AccessFilter</p>
      * <pre>
-     * Optional rules of access constrains.
+     * Optional rules of access constraints.
      *   - with_private - include data found in workspaces not marked 
      *       as public, default value is true,
      *   - with_public - include data found in public workspaces,
@@ -63,6 +73,16 @@ public class SearchTypesInput {
      * including values of keywords or metadata/system properties (like
      * object name, creation time range) or full-text search in all
      * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
+     * list<string> source_tags - source tags are arbitrary strings applied to data at the data
+     *     source (for example, the workspace service). The source_tags list may optionally be
+     *     populated with a set of tags that will determine what data is returned in a search.
+     *     By default, the list behaves as a whitelist and only data with at least one of the
+     *     tags will be returned.
+     * source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
+     *     data with at least one of the tags will be excluded from the search results. If missing
+     *     or false, the default behavior is maintained.
      * </pre>
      * 
      */
@@ -78,6 +98,16 @@ public class SearchTypesInput {
      * including values of keywords or metadata/system properties (like
      * object name, creation time range) or full-text search in all
      * properties.
+     * boolean exclude_subobjects - don't return any subobjects in the search results if true.
+     *     Default false.
+     * list<string> source_tags - source tags are arbitrary strings applied to data at the data
+     *     source (for example, the workspace service). The source_tags list may optionally be
+     *     populated with a set of tags that will determine what data is returned in a search.
+     *     By default, the list behaves as a whitelist and only data with at least one of the
+     *     tags will be returned.
+     * source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
+     *     data with at least one of the tags will be excluded from the search results. If missing
+     *     or false, the default behavior is maintained.
      * </pre>
      * 
      */
@@ -94,7 +124,7 @@ public class SearchTypesInput {
     /**
      * <p>Original spec-file type: AccessFilter</p>
      * <pre>
-     * Optional rules of access constrains.
+     * Optional rules of access constraints.
      *   - with_private - include data found in workspaces not marked 
      *       as public, default value is true,
      *   - with_public - include data found in public workspaces,
@@ -113,7 +143,7 @@ public class SearchTypesInput {
     /**
      * <p>Original spec-file type: AccessFilter</p>
      * <pre>
-     * Optional rules of access constrains.
+     * Optional rules of access constraints.
      *   - with_private - include data found in workspaces not marked 
      *       as public, default value is true,
      *   - with_public - include data found in public workspaces,

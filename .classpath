@@ -26,14 +26,17 @@
 	<classpathentry kind="lib" path="../jars/lib/jars/bytebuddy/byte-buddy-agent-1.6.8.jar"/>
 	<classpathentry kind="lib" path="../jars/lib/jars/objenesis/objenesis-2.5.1.jar"/>
 	<classpathentry kind="lib" path="../jars/lib/jars/jcommander/jcommander-1.48.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/snakeyaml/snakeyaml-1.18.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/apache_commons/http/httpasyncclient-4.1.2.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/apache_commons/http/httpclient-4.5.2.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/apache_commons/http/httpcore-4.4.5.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/apache_commons/http/httpcore-nio-4.4.5.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/apache_commons/commons-codec-1.10.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/elasticsearch/rest-5.3.0.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/mongo/mongo-java-driver-3.4.2.jar"/>
-	<classpathentry kind="lib" path="/jars/lib/jars/equalsverifier/equalsverifier-2.2.2.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/snakeyaml/snakeyaml-1.18.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/apache_commons/http/httpasyncclient-4.1.2.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/apache_commons/http/httpclient-4.5.2.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/apache_commons/http/httpcore-4.4.5.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/apache_commons/http/httpcore-nio-4.4.5.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/apache_commons/commons-codec-1.10.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/elasticsearch/rest-5.3.0.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/mongo/mongo-java-driver-3.4.2.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/equalsverifier/equalsverifier-2.2.2.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/mustache/compiler-0.9.3.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/kbase/workspace/WorkspaceClient-0.8.0.jar"/>
+	<classpathentry kind="lib" path="../jars/lib/jars/kbase/auth2/kbase-auth2test-0.2.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

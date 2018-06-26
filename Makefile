@@ -8,13 +8,11 @@ SCRIPTS_DIR = scripts
 TEST_DIR = test
 LBIN_DIR = bin
 TARGET ?= /kb/deployment
-JARS_DIR = $(TARGET)/lib/jars
+JARS_DIR ?= $(TARGET)/lib/jars
 EXECUTABLE_SCRIPT_NAME = run_$(SERVICE_CAPS)_async_job.sh
 STARTUP_SCRIPT_NAME = start_server.sh
 TEST_SCRIPT_NAME = run_tests.sh
-KB_RUNTIME ?= /kb/runtime
-ANT_HOME ?= $(KB_RUNTIME)/ant
-ANT = $(ANT_HOME)/bin/ant
+ANT ?= ant
 
 .PHONY: test
 
@@ -51,6 +49,17 @@ build-startup-script:
 	echo 'java -Xmx1g -cp $(JARS_DIR)/jetty/jetty-start-7.0.0.jar:$(JARS_DIR)/jetty/jetty-all-7.0.0.jar:$(JARS_DIR)/servlet/servlet-api-2.5.jar \
 		-DKB_DEPLOYMENT_CONFIG=$$script_dir/../deploy.cfg -Djetty.port=5000 org.eclipse.jetty.start.Main jetty.xml' >> $(SCRIPTS_DIR)/$(STARTUP_SCRIPT_NAME)
 	chmod +x $(SCRIPTS_DIR)/$(STARTUP_SCRIPT_NAME)
+
+docker_image: build build-executable-script
+	ant war
+	-mkdir deployment/lib
+	-mkdir -p deployment/jettybase/webapps
+	-mkdir -p deployment/jettybase/logs
+	-mkdir -p deployment/jettybase/start.d
+	cp dist/KBaseSearchEngine.war deployment/jettybase/webapps/root.war 
+	-mkdir -p deployment/services/search/lib
+	cp dist/* deployment/services/search/lib
+	build/build_docker_image.sh
 
 build-test-script:
 	echo '#!/bin/bash' > $(TEST_DIR)/$(TEST_SCRIPT_NAME)

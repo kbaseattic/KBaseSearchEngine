@@ -7,3 +7,11 @@ bin
 /temp_test/
 /dist/
 /search_tools.cfg
+/classes/
+/search_tools.cfg.bak
+*.jar
+*.war
+/work/
+.idea/
+KBaseSearchEngine.iml
+/deployment/jettybase/logs/

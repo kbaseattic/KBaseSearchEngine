@@ -1,9 +1,25 @@
 package kbasesearchengine.common;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 
 import kbasesearchengine.tools.Utils;
 
+/**
+ * A GUID that uniquely identifies an object or an element within an object
+ * (a sub-object). The format is,
+ *
+ *  {storageCode}:[{AccessGroupID}/]{accessGroupObjectId}[/{version}][:{subObjectType}/{subObjectId}]
+ *
+ *  where,
+ *  storageCode is the code of the datasource in which the object resides.
+ *
+ *  The GUID has a size limit of 512 bytes on its string representation.
+ *
+ */
 public class GUID {
     
     //TODO JAVADOC
@@ -16,6 +32,12 @@ public class GUID {
     private Integer version;
     private String subObjectType;
     private String subObjectId;
+    /**
+     * Maximum number of bytes for the string representation of this GUID.
+     * 512 bytes minus 12 bytes reserved for additional delimiters in URLEncoded
+     * representation.
+     */
+    public static final int MAX_BYTES = 500;
     //
     private static Pattern slashDiv = Pattern.compile(Pattern.quote("/"));
     
@@ -27,6 +49,8 @@ public class GUID {
         this.version = version;
         this.subObjectType = subObjectType;
         this.subObjectId = subObjectId;
+
+        validate();
     }
     
     public GUID(final GUID parentGUID, final String subObjectType, final String subObjectID) {
@@ -36,6 +60,16 @@ public class GUID {
         version = parentGUID.getVersion();
         this.subObjectType = subObjectType;
         this.subObjectId = subObjectID;
+
+        validate();
+    }
+
+    private void validate() {
+        final int guidBytes = toString().getBytes(StandardCharsets.UTF_8).length;
+
+        if( guidBytes > MAX_BYTES )
+            throw new GUIDTooLongException("String representation of GUID " +
+                    "must be no longer than "+ MAX_BYTES+" bytes. Found "+guidBytes+" bytes.");
     }
     
     public String getStorageCode() {
@@ -118,21 +152,63 @@ public class GUID {
             this.subObjectId = subObjectPart.substring(slashPos + 1);
         }
     }
-    
-    //TODO NOW if the version or accessGroupID is missing, how do you know which is which? Need to know storage code -> has access group mapping or have a placeholder (-1) for missing access group
+
+    /**
+     * Returns the URL-encoded version of this GUID.
+     *
+     * For the sake of readability the URL-encoded format of the GUID is,
+     *
+     *   {storageCode}___[{AccessGroupID}_]{accessGroupObjectId}[_{version}][___{subObjectType}_{subObjectId}],
+     *
+     *  where special characters in the individual tokens will get URL-encoded.
+     *
+     * @return URL-encoded version of this GUID
+     */
+    public String getURLEncoded() throws IOException {
+        return toString(":", "_", true);
+    }
+
     @Override
     public String toString() {
-        String objRefId = this.version == null ? 
-                ((this.accessGroupId == null ? "" : (this.accessGroupId + "/")) + this.accessGroupObjectId) :
-                    (this.accessGroupId + "/" + this.accessGroupObjectId + "/" + this.version);
-        return (this.storageCode + ":") + objRefId +
-                (this.subObjectType == null ? "" : (":" + this.getSubObjectType() + "/" + this.getSubObjectId()));
+        return toString(":", "/", false);
     }
     
     public String toRefString() {
-        return this.version == null ? 
-                ((this.accessGroupId == null ? "" : (this.accessGroupId + "/")) + this.accessGroupObjectId) :
-                    (this.accessGroupId + "/" + this.accessGroupObjectId + "/" + this.version);
+        return toRefString("/");
+    }
+
+    private String toString(String delim1, String delim2, boolean isUrlEncoded) {
+        String subObjectType = null;
+        String subObjectId = null;
+
+        try {
+            if (this.getSubObjectType() != null) {
+                subObjectType = isUrlEncoded ?
+                        URLEncoder.encode(this.getSubObjectType(), "UTF-8") :
+                        this.getSubObjectType();
+            }
+
+            if (this.getSubObjectId() != null) {
+                subObjectId = isUrlEncoded ?
+                        URLEncoder.encode(this.getSubObjectId(), "UTF-8") :
+                        this.getSubObjectId();
+            }
+
+        } catch(UnsupportedEncodingException ex ) {
+            // should never occur since the encoding is set to UTF-8 which is supported
+            throw new RuntimeException(ex.getMessage());
+        }
+
+        return (this.storageCode + delim1) + toRefString(delim2) +
+                (this.subObjectType == null ? "" : (delim1 + subObjectType + delim2 + subObjectId));
+    }
+
+    private String toRefString(String delim) {
+        return this.version == null ?
+                ((this.accessGroupId == null ? "" : (this.accessGroupId + delim)) + this.accessGroupObjectId) :
+                (
+                        (this.accessGroupId == null ? "" : (this.accessGroupId + delim)) +
+                                this.accessGroupObjectId + delim + this.version);
     }
 
     @Override
@@ -194,6 +270,4 @@ public class GUID {
             return false;
         return true;
     }
-    
-    
 }

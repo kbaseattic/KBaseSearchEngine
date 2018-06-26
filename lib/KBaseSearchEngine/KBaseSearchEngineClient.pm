@@ -26,7 +26,7 @@ KBaseSearchEngine::KBaseSearchEngineClient
 =head1 DESCRIPTION
 
 
-A KBase module: KBaseRelationEngine
+
 
 
 =cut
@@ -126,12 +126,12 @@ SearchTypesInput is a reference to a hash where the following keys are defined:
 	access_filter has a value which is a KBaseSearchEngine.AccessFilter
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
-	access_group_id has a value which is an int
 	object_name has a value which is a string
-	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
-	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
-GUID is a string
+	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	source_tags has a value which is a reference to a list where each element is a string
+	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -165,12 +165,12 @@ SearchTypesInput is a reference to a hash where the following keys are defined:
 	access_filter has a value which is a KBaseSearchEngine.AccessFilter
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
-	access_group_id has a value which is an int
 	object_name has a value which is a string
-	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
-	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
-GUID is a string
+	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	source_tags has a value which is a reference to a list where each element is a string
+	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -196,7 +196,7 @@ SearchTypesOutput is a reference to a hash where the following keys are defined:
 
 =item Description
 
-Search for number of objects of each type matching constrains.
+Search for number of objects of each type matching constraints.
 
 =back
 
@@ -264,7 +264,7 @@ Search for number of objects of each type matching constrains.
 $params is a KBaseSearchEngine.SearchObjectsInput
 $return is a KBaseSearchEngine.SearchObjectsOutput
 SearchObjectsInput is a reference to a hash where the following keys are defined:
-	object_type has a value which is a string
+	object_types has a value which is a reference to a list where each element is a string
 	match_filter has a value which is a KBaseSearchEngine.MatchFilter
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 	access_filter has a value which is a KBaseSearchEngine.AccessFilter
@@ -272,12 +272,12 @@ SearchObjectsInput is a reference to a hash where the following keys are defined
 	post_processing has a value which is a KBaseSearchEngine.PostProcessing
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
-	access_group_id has a value which is an int
 	object_name has a value which is a string
-	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
-	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
-GUID is a string
+	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	source_tags has a value which is a reference to a list where each element is a string
+	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -291,10 +291,9 @@ MatchValue is a reference to a hash where the following keys are defined:
 	max_double has a value which is a float
 boolean is an int
 SortingRule is a reference to a hash where the following keys are defined:
-	is_timestamp has a value which is a KBaseSearchEngine.boolean
-	is_object_name has a value which is a KBaseSearchEngine.boolean
-	key_name has a value which is a string
-	descending has a value which is a KBaseSearchEngine.boolean
+	property has a value which is a string
+	is_object_property has a value which is a KBaseSearchEngine.boolean
+	ascending has a value which is a KBaseSearchEngine.boolean
 AccessFilter is a reference to a hash where the following keys are defined:
 	with_private has a value which is a KBaseSearchEngine.boolean
 	with_public has a value which is a KBaseSearchEngine.boolean
@@ -304,25 +303,65 @@ Pagination is a reference to a hash where the following keys are defined:
 	count has a value which is an int
 PostProcessing is a reference to a hash where the following keys are defined:
 	ids_only has a value which is a KBaseSearchEngine.boolean
-	skip_info has a value which is a KBaseSearchEngine.boolean
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
+	include_highlight has a value which is a KBaseSearchEngine.boolean
+	add_narrative_info has a value which is a KBaseSearchEngine.boolean
+	add_access_group_info has a value which is a KBaseSearchEngine.boolean
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	total has a value which is an int
 	search_time has a value which is an int
+	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
 	object_name has a value which is a string
 	timestamp has a value which is an int
+	type has a value which is a string
+	type_ver has a value which is an int
+	creator has a value which is a string
+	copier has a value which is a string
+	mod has a value which is a string
+	method has a value which is a string
+	module_ver has a value which is a string
+	commit has a value which is a string
 	parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
-	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+	highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
+GUID is a string
+access_group_id is an int
+narrative_info is a reference to a list containing 5 items:
+	0: (narrative_name) a string
+	1: (narrative_id) an int
+	2: (time_last_saved) a KBaseSearchEngine.timestamp
+	3: (ws_owner_username) a string
+	4: (ws_owner_displayname) a string
+timestamp is an int
+access_group_info is a Workspace.workspace_info
+workspace_info is a reference to a list containing 9 items:
+	0: (id) a Workspace.ws_id
+	1: (workspace) a Workspace.ws_name
+	2: (owner) a Workspace.username
+	3: (moddate) a Workspace.timestamp
+	4: (max_objid) an int
+	5: (user_permission) a Workspace.permission
+	6: (globalread) a Workspace.permission
+	7: (lockstat) a Workspace.lock_status
+	8: (metadata) a Workspace.usermeta
+ws_id is an int
+ws_name is a string
+username is a string
+permission is a string
+lock_status is a string
+usermeta is a reference to a hash where the key is a string and the value is a string
+obj_ref is a string
+object_info is a Workspace.object_info
 
 </pre>
 
@@ -333,7 +372,7 @@ ObjectData is a reference to a hash where the following keys are defined:
 $params is a KBaseSearchEngine.SearchObjectsInput
 $return is a KBaseSearchEngine.SearchObjectsOutput
 SearchObjectsInput is a reference to a hash where the following keys are defined:
-	object_type has a value which is a string
+	object_types has a value which is a reference to a list where each element is a string
 	match_filter has a value which is a KBaseSearchEngine.MatchFilter
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 	access_filter has a value which is a KBaseSearchEngine.AccessFilter
@@ -341,12 +380,12 @@ SearchObjectsInput is a reference to a hash where the following keys are defined
 	post_processing has a value which is a KBaseSearchEngine.PostProcessing
 MatchFilter is a reference to a hash where the following keys are defined:
 	full_text_in_all has a value which is a string
-	access_group_id has a value which is an int
 	object_name has a value which is a string
-	parent_guid has a value which is a KBaseSearchEngine.GUID
 	timestamp has a value which is a KBaseSearchEngine.MatchValue
-	lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
-GUID is a string
+	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	source_tags has a value which is a reference to a list where each element is a string
+	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 MatchValue is a reference to a hash where the following keys are defined:
 	value has a value which is a string
 	int_value has a value which is an int
@@ -360,10 +399,9 @@ MatchValue is a reference to a hash where the following keys are defined:
 	max_double has a value which is a float
 boolean is an int
 SortingRule is a reference to a hash where the following keys are defined:
-	is_timestamp has a value which is a KBaseSearchEngine.boolean
-	is_object_name has a value which is a KBaseSearchEngine.boolean
-	key_name has a value which is a string
-	descending has a value which is a KBaseSearchEngine.boolean
+	property has a value which is a string
+	is_object_property has a value which is a KBaseSearchEngine.boolean
+	ascending has a value which is a KBaseSearchEngine.boolean
 AccessFilter is a reference to a hash where the following keys are defined:
 	with_private has a value which is a KBaseSearchEngine.boolean
 	with_public has a value which is a KBaseSearchEngine.boolean
@@ -373,32 +411,72 @@ Pagination is a reference to a hash where the following keys are defined:
 	count has a value which is an int
 PostProcessing is a reference to a hash where the following keys are defined:
 	ids_only has a value which is a KBaseSearchEngine.boolean
-	skip_info has a value which is a KBaseSearchEngine.boolean
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
+	include_highlight has a value which is a KBaseSearchEngine.boolean
+	add_narrative_info has a value which is a KBaseSearchEngine.boolean
+	add_access_group_info has a value which is a KBaseSearchEngine.boolean
 SearchObjectsOutput is a reference to a hash where the following keys are defined:
 	pagination has a value which is a KBaseSearchEngine.Pagination
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	total has a value which is an int
 	search_time has a value which is an int
+	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
 	object_name has a value which is a string
 	timestamp has a value which is an int
+	type has a value which is a string
+	type_ver has a value which is an int
+	creator has a value which is a string
+	copier has a value which is a string
+	mod has a value which is a string
+	method has a value which is a string
+	module_ver has a value which is a string
+	commit has a value which is a string
 	parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
-	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+	highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
+GUID is a string
+access_group_id is an int
+narrative_info is a reference to a list containing 5 items:
+	0: (narrative_name) a string
+	1: (narrative_id) an int
+	2: (time_last_saved) a KBaseSearchEngine.timestamp
+	3: (ws_owner_username) a string
+	4: (ws_owner_displayname) a string
+timestamp is an int
+access_group_info is a Workspace.workspace_info
+workspace_info is a reference to a list containing 9 items:
+	0: (id) a Workspace.ws_id
+	1: (workspace) a Workspace.ws_name
+	2: (owner) a Workspace.username
+	3: (moddate) a Workspace.timestamp
+	4: (max_objid) an int
+	5: (user_permission) a Workspace.permission
+	6: (globalread) a Workspace.permission
+	7: (lockstat) a Workspace.lock_status
+	8: (metadata) a Workspace.usermeta
+ws_id is an int
+ws_name is a string
+username is a string
+permission is a string
+lock_status is a string
+usermeta is a reference to a hash where the key is a string and the value is a string
+obj_ref is a string
+object_info is a Workspace.object_info
 
 
 =end text
 
 =item Description
 
-Search for objects of particular type matching constrains.
+Search for objects of particular type matching constraints.
 
 =back
 
@@ -468,26 +546,99 @@ $return is a KBaseSearchEngine.GetObjectsOutput
 GetObjectsInput is a reference to a hash where the following keys are defined:
 	guids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 	post_processing has a value which is a KBaseSearchEngine.PostProcessing
+	match_filter has a value which is a KBaseSearchEngine.MatchFilter
 GUID is a string
 PostProcessing is a reference to a hash where the following keys are defined:
 	ids_only has a value which is a KBaseSearchEngine.boolean
-	skip_info has a value which is a KBaseSearchEngine.boolean
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
+	include_highlight has a value which is a KBaseSearchEngine.boolean
+	add_narrative_info has a value which is a KBaseSearchEngine.boolean
+	add_access_group_info has a value which is a KBaseSearchEngine.boolean
 boolean is an int
+MatchFilter is a reference to a hash where the following keys are defined:
+	full_text_in_all has a value which is a string
+	object_name has a value which is a string
+	timestamp has a value which is a KBaseSearchEngine.MatchValue
+	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	source_tags has a value which is a reference to a list where each element is a string
+	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
+MatchValue is a reference to a hash where the following keys are defined:
+	value has a value which is a string
+	int_value has a value which is an int
+	double_value has a value which is a float
+	bool_value has a value which is a KBaseSearchEngine.boolean
+	min_int has a value which is an int
+	max_int has a value which is an int
+	min_date has a value which is an int
+	max_date has a value which is an int
+	min_double has a value which is a float
+	max_double has a value which is a float
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	search_time has a value which is an int
+	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
 	object_name has a value which is a string
 	timestamp has a value which is an int
+	type has a value which is a string
+	type_ver has a value which is an int
+	creator has a value which is a string
+	copier has a value which is a string
+	mod has a value which is a string
+	method has a value which is a string
+	module_ver has a value which is a string
+	commit has a value which is a string
 	parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
-	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+	highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
+access_group_id is an int
+narrative_info is a reference to a list containing 5 items:
+	0: (narrative_name) a string
+	1: (narrative_id) an int
+	2: (time_last_saved) a KBaseSearchEngine.timestamp
+	3: (ws_owner_username) a string
+	4: (ws_owner_displayname) a string
+timestamp is an int
+access_group_info is a Workspace.workspace_info
+workspace_info is a reference to a list containing 9 items:
+	0: (id) a Workspace.ws_id
+	1: (workspace) a Workspace.ws_name
+	2: (owner) a Workspace.username
+	3: (moddate) a Workspace.timestamp
+	4: (max_objid) an int
+	5: (user_permission) a Workspace.permission
+	6: (globalread) a Workspace.permission
+	7: (lockstat) a Workspace.lock_status
+	8: (metadata) a Workspace.usermeta
+ws_id is an int
+ws_name is a string
+username is a string
+permission is a string
+lock_status is a string
+usermeta is a reference to a hash where the key is a string and the value is a string
+obj_ref is a string
+object_info is a reference to a list containing 11 items:
+	0: (objid) a Workspace.obj_id
+	1: (name) a Workspace.obj_name
+	2: (type) a Workspace.type_string
+	3: (save_date) a Workspace.timestamp
+	4: (version) an int
+	5: (saved_by) a Workspace.username
+	6: (wsid) a Workspace.ws_id
+	7: (workspace) a Workspace.ws_name
+	8: (chsum) a string
+	9: (size) an int
+	10: (meta) a Workspace.usermeta
+obj_id is an int
+obj_name is a string
+type_string is a string
 
 </pre>
 
@@ -500,26 +651,99 @@ $return is a KBaseSearchEngine.GetObjectsOutput
 GetObjectsInput is a reference to a hash where the following keys are defined:
 	guids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 	post_processing has a value which is a KBaseSearchEngine.PostProcessing
+	match_filter has a value which is a KBaseSearchEngine.MatchFilter
 GUID is a string
 PostProcessing is a reference to a hash where the following keys are defined:
 	ids_only has a value which is a KBaseSearchEngine.boolean
-	skip_info has a value which is a KBaseSearchEngine.boolean
 	skip_keys has a value which is a KBaseSearchEngine.boolean
 	skip_data has a value which is a KBaseSearchEngine.boolean
-	data_includes has a value which is a reference to a list where each element is a string
+	include_highlight has a value which is a KBaseSearchEngine.boolean
+	add_narrative_info has a value which is a KBaseSearchEngine.boolean
+	add_access_group_info has a value which is a KBaseSearchEngine.boolean
 boolean is an int
+MatchFilter is a reference to a hash where the following keys are defined:
+	full_text_in_all has a value which is a string
+	object_name has a value which is a string
+	timestamp has a value which is a KBaseSearchEngine.MatchValue
+	exclude_subobjects has a value which is a KBaseSearchEngine.boolean
+	lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+	source_tags has a value which is a reference to a list where each element is a string
+	source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
+MatchValue is a reference to a hash where the following keys are defined:
+	value has a value which is a string
+	int_value has a value which is an int
+	double_value has a value which is a float
+	bool_value has a value which is a KBaseSearchEngine.boolean
+	min_int has a value which is an int
+	max_int has a value which is an int
+	min_date has a value which is an int
+	max_date has a value which is an int
+	min_double has a value which is a float
+	max_double has a value which is a float
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	search_time has a value which is an int
+	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
 ObjectData is a reference to a hash where the following keys are defined:
 	guid has a value which is a KBaseSearchEngine.GUID
 	parent_guid has a value which is a KBaseSearchEngine.GUID
 	object_name has a value which is a string
 	timestamp has a value which is an int
+	type has a value which is a string
+	type_ver has a value which is an int
+	creator has a value which is a string
+	copier has a value which is a string
+	mod has a value which is a string
+	method has a value which is a string
+	module_ver has a value which is a string
+	commit has a value which is a string
 	parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 	data has a value which is an UnspecifiedObject, which can hold any non-null object
 	key_props has a value which is a reference to a hash where the key is a string and the value is a string
-	object_props has a value which is a reference to a hash where the key is a string and the value is a string
+	highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
+access_group_id is an int
+narrative_info is a reference to a list containing 5 items:
+	0: (narrative_name) a string
+	1: (narrative_id) an int
+	2: (time_last_saved) a KBaseSearchEngine.timestamp
+	3: (ws_owner_username) a string
+	4: (ws_owner_displayname) a string
+timestamp is an int
+access_group_info is a Workspace.workspace_info
+workspace_info is a reference to a list containing 9 items:
+	0: (id) a Workspace.ws_id
+	1: (workspace) a Workspace.ws_name
+	2: (owner) a Workspace.username
+	3: (moddate) a Workspace.timestamp
+	4: (max_objid) an int
+	5: (user_permission) a Workspace.permission
+	6: (globalread) a Workspace.permission
+	7: (lockstat) a Workspace.lock_status
+	8: (metadata) a Workspace.usermeta
+ws_id is an int
+ws_name is a string
+username is a string
+permission is a string
+lock_status is a string
+usermeta is a reference to a hash where the key is a string and the value is a string
+obj_ref is a string
+object_info is a reference to a list containing 11 items:
+	0: (objid) a Workspace.obj_id
+	1: (name) a Workspace.obj_name
+	2: (type) a Workspace.type_string
+	3: (save_date) a Workspace.timestamp
+	4: (version) an int
+	5: (saved_by) a Workspace.username
+	6: (wsid) a Workspace.ws_id
+	7: (workspace) a Workspace.ws_name
+	8: (chsum) a string
+	9: (size) an int
+	10: (meta) a Workspace.usermeta
+obj_id is an int
+obj_name is a string
+type_string is a string
 
 
 =end text
@@ -810,6 +1034,37 @@ an int
 
 
 
+=head2 obj_ref
+
+=over 4
+
+
+
+=item Description
+
+An X/Y/Z style reference
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
 =head2 GUID
 
 =over 4
@@ -914,6 +1169,17 @@ including values of keywords or metadata/system properties (like
 object name, creation time range) or full-text search in all
 properties.
 
+boolean exclude_subobjects - don't return any subobjects in the search results if true.
+    Default false.
+list<string> source_tags - source tags are arbitrary strings applied to data at the data
+    source (for example, the workspace service). The source_tags list may optionally be
+    populated with a set of tags that will determine what data is returned in a search.
+    By default, the list behaves as a whitelist and only data with at least one of the
+    tags will be returned.
+source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
+    data with at least one of the tags will be excluded from the search results. If missing
+    or false, the default behavior is maintained.
+
 
 =item Definition
 
@@ -922,11 +1188,12 @@ properties.
 <pre>
 a reference to a hash where the following keys are defined:
 full_text_in_all has a value which is a string
-access_group_id has a value which is an int
 object_name has a value which is a string
-parent_guid has a value which is a KBaseSearchEngine.GUID
 timestamp has a value which is a KBaseSearchEngine.MatchValue
-lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+exclude_subobjects has a value which is a KBaseSearchEngine.boolean
+lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+source_tags has a value which is a reference to a list where each element is a string
+source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 
 </pre>
 
@@ -936,11 +1203,12 @@ lookupInKeys has a value which is a reference to a hash where the key is a strin
 
 a reference to a hash where the following keys are defined:
 full_text_in_all has a value which is a string
-access_group_id has a value which is an int
 object_name has a value which is a string
-parent_guid has a value which is a KBaseSearchEngine.GUID
 timestamp has a value which is a KBaseSearchEngine.MatchValue
-lookupInKeys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+exclude_subobjects has a value which is a KBaseSearchEngine.boolean
+lookup_in_keys has a value which is a reference to a hash where the key is a string and the value is a KBaseSearchEngine.MatchValue
+source_tags has a value which is a reference to a list where each element is a string
+source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 
 
 =end text
@@ -957,7 +1225,7 @@ lookupInKeys has a value which is a reference to a hash where the key is a strin
 
 =item Description
 
-Optional rules of access constrains.
+Optional rules of access constraints.
   - with_private - include data found in workspaces not marked 
       as public, default value is true,
   - with_public - include data found in public workspaces,
@@ -1077,10 +1345,14 @@ search_time has a value which is an int
 
 =item Description
 
-Rule for sorting found results. 'key_name', 'is_timestamp' and
-'is_object_name' are alternative way of defining what property
-if used for sorting. Default order is ascending (if 
-'descending' field is not set).
+Rule for sorting results. 
+
+string property - the property to sort on. This may be a an object property - e.g. a 
+    field inside the object - or a standard property possessed by all objects, like a
+    timestamp or creator.
+boolean is_object_property - true (the default) to specify an object property, false to
+    specify a standard property.
+boolean ascending - true (the default) to sort ascending, false to sort descending.
 
 
 =item Definition
@@ -1089,10 +1361,9 @@ if used for sorting. Default order is ascending (if
 
 <pre>
 a reference to a hash where the following keys are defined:
-is_timestamp has a value which is a KBaseSearchEngine.boolean
-is_object_name has a value which is a KBaseSearchEngine.boolean
-key_name has a value which is a string
-descending has a value which is a KBaseSearchEngine.boolean
+property has a value which is a string
+is_object_property has a value which is a KBaseSearchEngine.boolean
+ascending has a value which is a KBaseSearchEngine.boolean
 
 </pre>
 
@@ -1101,10 +1372,9 @@ descending has a value which is a KBaseSearchEngine.boolean
 =begin text
 
 a reference to a hash where the following keys are defined:
-is_timestamp has a value which is a KBaseSearchEngine.boolean
-is_object_name has a value which is a KBaseSearchEngine.boolean
-key_name has a value which is a string
-descending has a value which is a KBaseSearchEngine.boolean
+property has a value which is a string
+is_object_property has a value which is a KBaseSearchEngine.boolean
+ascending has a value which is a KBaseSearchEngine.boolean
 
 
 =end text
@@ -1159,14 +1429,18 @@ count has a value which is an int
 =item Description
 
 Rules for what to return about found objects.
-skip_info - do not include brief info for object ('guid,
-    'parent_guid', 'object_name' and 'timestamp' fields in
-    ObjectData structure),
 skip_keys - do not include keyword values for object 
     ('key_props' field in ObjectData structure),
 skip_data - do not include raw data for object ('data' and 
     'parent_data' fields in ObjectData structure),
-ids_only - shortcut to mark all three skips as true.
+include_highlight - include highlights of fields that
+     matched query,
+ids_only - shortcut to mark both skips as true and 
+     include_highlight as false.
+add_narrative_info - if true, narrative info gets added to the
+     search results. Default is false.
+add_access_group_info - if true, access groups and objects info get added
+     to the search results. Default is false.
 
 
 =item Definition
@@ -1176,10 +1450,11 @@ ids_only - shortcut to mark all three skips as true.
 <pre>
 a reference to a hash where the following keys are defined:
 ids_only has a value which is a KBaseSearchEngine.boolean
-skip_info has a value which is a KBaseSearchEngine.boolean
 skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
-data_includes has a value which is a reference to a list where each element is a string
+include_highlight has a value which is a KBaseSearchEngine.boolean
+add_narrative_info has a value which is a KBaseSearchEngine.boolean
+add_access_group_info has a value which is a KBaseSearchEngine.boolean
 
 </pre>
 
@@ -1189,10 +1464,11 @@ data_includes has a value which is a reference to a list where each element is a
 
 a reference to a hash where the following keys are defined:
 ids_only has a value which is a KBaseSearchEngine.boolean
-skip_info has a value which is a KBaseSearchEngine.boolean
 skip_keys has a value which is a KBaseSearchEngine.boolean
 skip_data has a value which is a KBaseSearchEngine.boolean
-data_includes has a value which is a reference to a list where each element is a string
+include_highlight has a value which is a KBaseSearchEngine.boolean
+add_narrative_info has a value which is a KBaseSearchEngine.boolean
+add_access_group_info has a value which is a KBaseSearchEngine.boolean
 
 
 =end text
@@ -1210,6 +1486,14 @@ data_includes has a value which is a reference to a list where each element is a
 =item Description
 
 Input parameters for 'search_objects' method.
+object_types - list of the types of objects to search on (optional). The
+               function will search on all objects if the list is not specified
+               or is empty. The list size must be less than 50.
+match_filter - see MatchFilter.
+sorting_rules - see SortingRule (optional).
+access_filter - see AccessFilter.
+pagination - see Pagination (optional).
+post_processing - see PostProcessing (optional).
 
 
 =item Definition
@@ -1218,7 +1502,7 @@ Input parameters for 'search_objects' method.
 
 <pre>
 a reference to a hash where the following keys are defined:
-object_type has a value which is a string
+object_types has a value which is a reference to a list where each element is a string
 match_filter has a value which is a KBaseSearchEngine.MatchFilter
 sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 access_filter has a value which is a KBaseSearchEngine.AccessFilter
@@ -1232,7 +1516,7 @@ post_processing has a value which is a KBaseSearchEngine.PostProcessing
 =begin text
 
 a reference to a hash where the following keys are defined:
-object_type has a value which is a string
+object_types has a value which is a reference to a list where each element is a string
 match_filter has a value which is a KBaseSearchEngine.MatchFilter
 sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 access_filter has a value which is a KBaseSearchEngine.AccessFilter
@@ -1254,15 +1538,33 @@ post_processing has a value which is a KBaseSearchEngine.PostProcessing
 
 =item Description
 
-Properties of found object including metadata, raw data and
-    keywords.
-    
-mapping<string, string> object_props - general properties for all objects. This mapping
-    contains the keys 'creator', 'copied', 'module', 'method', 'module_ver', and 'commit' -
-    respectively the user that originally created the object, the user that copied this
-    incarnation of the object, and the module and method used to create the object and
-    their version and version control commit hash. Not all keys may be present; if not
-    their values were not available in the search data.
+Properties of an object including metadata, raw data and keywords.
+GUID guid - the object's guid.
+GUID parent_guid - the guid of the object's parent if the object is a subobject (e.g.
+    features for genomes).
+object_name - the object's name.
+timestamp - the creation date for the object in milliseconds since the epoch.
+string type - the type of the data in the search index.
+int type_ver - the version of the search type.
+string creator - the username of the user that created that data.
+string copier - if this instance of the data is a copy, the username of the user that
+    copied the data.
+string mod - the name of the KBase SDK module that was used to create the data.
+string method - the name of the method in the KBase SDK module that was used to create the
+    data.
+string module_ver - the version of the KBase SDK module that was used to create the data.
+string commit - the version control commit hash of the KBase SDK module that was used to
+    create the data. 
+parent_data - raw data extracted from the subobject's parent object. The data contents will
+    vary from object to object. Null if the object is not a subobject.
+data - raw data extracted from the object. The data contents will vary from object to object.
+key_props - keyword properties of the object. These fields have been extracted from the object
+   and possibly transformed based on the search specification for the object.
+   The contents will vary from object to object.
+mapping<string, list<string>> highlight - The keys are the field names and the list 
+    contains the sections in each field that matched the search query. Fields with no
+    hits will not be available. Short fields that matched are shown in their entirety.
+    Longer fields are shown as snippets preceded or followed by "...".
 
 
 =item Definition
@@ -1275,10 +1577,18 @@ guid has a value which is a KBaseSearchEngine.GUID
 parent_guid has a value which is a KBaseSearchEngine.GUID
 object_name has a value which is a string
 timestamp has a value which is an int
+type has a value which is a string
+type_ver has a value which is an int
+creator has a value which is a string
+copier has a value which is a string
+mod has a value which is a string
+method has a value which is a string
+module_ver has a value which is a string
+commit has a value which is a string
 parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 data has a value which is an UnspecifiedObject, which can hold any non-null object
 key_props has a value which is a reference to a hash where the key is a string and the value is a string
-object_props has a value which is a reference to a hash where the key is a string and the value is a string
+highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
 
 </pre>
 
@@ -1291,11 +1601,192 @@ guid has a value which is a KBaseSearchEngine.GUID
 parent_guid has a value which is a KBaseSearchEngine.GUID
 object_name has a value which is a string
 timestamp has a value which is an int
+type has a value which is a string
+type_ver has a value which is an int
+creator has a value which is a string
+copier has a value which is a string
+mod has a value which is a string
+method has a value which is a string
+module_ver has a value which is a string
+commit has a value which is a string
 parent_data has a value which is an UnspecifiedObject, which can hold any non-null object
 data has a value which is an UnspecifiedObject, which can hold any non-null object
 key_props has a value which is a reference to a hash where the key is a string and the value is a string
-object_props has a value which is a reference to a hash where the key is a string and the value is a string
+highlight has a value which is a reference to a hash where the key is a string and the value is a reference to a list where each element is a string
 
+
+=end text
+
+=back
+
+
+
+=head2 access_group_id
+
+=over 4
+
+
+
+=item Description
+
+A data source access group ID (for instance, the integer ID of a workspace).
+
+
+=item Definition
+
+=begin html
+
+<pre>
+an int
+</pre>
+
+=end html
+
+=begin text
+
+an int
+
+=end text
+
+=back
+
+
+
+=head2 timestamp
+
+=over 4
+
+
+
+=item Description
+
+A timestamp in milliseconds since the epoch.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+an int
+</pre>
+
+=end html
+
+=begin text
+
+an int
+
+=end text
+
+=back
+
+
+
+=head2 narrative_info
+
+=over 4
+
+
+
+=item Description
+
+Information about a workspace, which may or may not contain a KBase Narrative.
+This data is specific for data from the Workspace Service.
+
+string narrative_name - the name of the narrative contained in the workspace, or null if
+    the workspace does not contain a narrative.
+int narrative_id - the id of the narrative contained in the workspace, or null.
+timestamp time_last_saved - the modification date of the workspace.
+string ws_owner_username - the unique user name of the workspace's owner.
+string ws_owner_displayname - the display name of the workspace's owner.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 5 items:
+0: (narrative_name) a string
+1: (narrative_id) an int
+2: (time_last_saved) a KBaseSearchEngine.timestamp
+3: (ws_owner_username) a string
+4: (ws_owner_displayname) a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 5 items:
+0: (narrative_name) a string
+1: (narrative_id) an int
+2: (time_last_saved) a KBaseSearchEngine.timestamp
+3: (ws_owner_username) a string
+4: (ws_owner_displayname) a string
+
+
+=end text
+
+=back
+
+
+
+=head2 access_group_info
+
+=over 4
+
+
+
+=item Description
+
+The access_group_info and object_info are meant to be abstractions for info from multiple data sources.
+Until other data sources become available, definitions pertaining to Workspace are being used.
+When other data sources are available, the following variables will be moved from
+this concrete workspace definitions, to structures with higher level abstractions.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a Workspace.workspace_info
+</pre>
+
+=end html
+
+=begin text
+
+a Workspace.workspace_info
+
+=end text
+
+=back
+
+
+
+=head2 object_info
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a Workspace.object_info
+</pre>
+
+=end html
+
+=begin text
+
+a Workspace.object_info
 
 =end text
 
@@ -1316,6 +1807,18 @@ Output results for 'search_objects' method.
     pagination and sorting.
 total - total number of found objects.
 search_time - common time in milliseconds spent.
+mapping<access_group_id, narrative_info> access_group_narrative_info - information about
+   the workspaces in which the objects in the results reside. This data only applies to
+   workspace objects.
+mapping<access_group_id, access_group_info> access_groups_info - information about
+   the access groups in which the objects in the results reside. Currently this data only applies to
+   workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
+   in the search results is saved in this mapping. In future the access_group_info will be
+   replaced with a higher level abstraction.
+mapping<obj_ref, object_info> objects_info - information about each object in the
+   search results. Currently this data only applies to workspace objects. The tuple11 value
+   returned by get_object_info3() for each object in the search results is saved in the mapping.
+   In future the object_info will be replaced with a higher level abstraction.
 
 
 =item Definition
@@ -1329,6 +1832,9 @@ sorting_rules has a value which is a reference to a list where each element is a
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 total has a value which is an int
 search_time has a value which is an int
+access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
 
 </pre>
 
@@ -1342,6 +1848,9 @@ sorting_rules has a value which is a reference to a list where each element is a
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 total has a value which is an int
 search_time has a value which is an int
+access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
 
 
 =end text
@@ -1359,6 +1868,9 @@ search_time has a value which is an int
 =item Description
 
 Input parameters for get_objects method.
+    guids - list of guids
+    post_processing - see PostProcessing (optional).
+    match_filter - see MatchFilter (optional).
 
 
 =item Definition
@@ -1369,6 +1881,7 @@ Input parameters for get_objects method.
 a reference to a hash where the following keys are defined:
 guids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 post_processing has a value which is a KBaseSearchEngine.PostProcessing
+match_filter has a value which is a KBaseSearchEngine.MatchFilter
 
 </pre>
 
@@ -1379,6 +1892,7 @@ post_processing has a value which is a KBaseSearchEngine.PostProcessing
 a reference to a hash where the following keys are defined:
 guids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 post_processing has a value which is a KBaseSearchEngine.PostProcessing
+match_filter has a value which is a KBaseSearchEngine.MatchFilter
 
 
 =end text
@@ -1397,6 +1911,19 @@ post_processing has a value which is a KBaseSearchEngine.PostProcessing
 
 Output results of get_objects method.
 
+mapping<access_group_id, narrative_info> access_group_narrative_info - information about
+   the workspaces in which the objects in the results reside. This data only applies to
+   workspace objects.
+mapping<access_group_id, access_group_info> access_groups_info - information about
+   the access groups in which the objects in the results reside. Currently this data only applies to
+   workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
+   in the search results is saved in this mapping. In future the access_group_info will be
+   replaced with a higher level abstraction.
+mapping<obj_ref, object_info> objects_info - information about each object in the
+   search results. Currently this data only applies to workspace objects. The tuple11 value
+   returned by get_object_info3() for each object in the search results is saved in the mapping.
+   In future the object_info will be replaced with a higher level abstraction.
+
 
 =item Definition
 
@@ -1406,6 +1933,9 @@ Output results of get_objects method.
 a reference to a hash where the following keys are defined:
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 search_time has a value which is an int
+access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
 
 </pre>
 
@@ -1416,6 +1946,9 @@ search_time has a value which is an int
 a reference to a hash where the following keys are defined:
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 search_time has a value which is an int
+access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
+access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
+objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
 
 
 =end text
@@ -1518,7 +2051,7 @@ link_key has a value which is a string
 =item Description
 
 Description of searchable object type including details about keywords.
-TODO: add more details like parent type, relations, primary key, ...
+TODO: add more details like parent type, primary key, ...
 
 
 =item Definition

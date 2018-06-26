@@ -17,29 +17,31 @@ import kbasesearchengine.events.exceptions.IndexingException;
 import us.kbase.common.service.UObject;
 
 /**
- * Extraction of primary/foreign key values based on JSON token stream.
+ * Extraction of key values based on JSON token stream.
  * @author rsutormin
  */
 public class ValueCollector <T> {
 
-	public void mapKeys(ValueCollectingNode<T> tree, JsonParser jts, 
-	        ValueConsumer<T> consumer)
-	        throws IOException, ObjectParseException, IndexingException, InterruptedException {
-		JsonToken t = jts.nextToken();
-		mapKeysWithOpenToken(jts, t, tree, consumer, new ArrayList<String>(), 
-		        false, false);
-	}
-	
-	/*
-	 * This is main recursive method for tracking current token place in subset schema tree
-	 * and making decisions whether or not we need to process this token or block of tokens or
-	 * just skip it.
-	 */
-	public void mapKeysWithOpenToken(JsonParser jts, JsonToken current, 
-	        ValueCollectingNode<T> selection, ValueConsumer<T> consumer, List<String> path, 
-	        boolean strictMaps, boolean strictArrays)
-	        throws IOException, ObjectParseException, IndexingException, InterruptedException {
-		JsonToken t = current;
+    public void mapKeys(ValueCollectingNode<T> tree, JsonParser jts, 
+            ValueConsumer<T> consumer)
+            throws IOException, ObjectParseException, IndexingException, InterruptedException {
+        JsonToken t = jts.nextToken();
+        mapKeysWithOpenToken(jts, t, tree, consumer, new ArrayList<String>());
+    }
+    
+    /*
+     * This is main recursive method for tracking current token place in subset schema tree
+     * and making decisions whether or not we need to process this token or block of tokens or
+     * just skip it.
+     */
+    private void mapKeysWithOpenToken(
+            final JsonParser jts,
+            final JsonToken current, 
+            final ValueCollectingNode<T> selection,
+            final ValueConsumer<T> consumer,
+            final List<String> path)
+            throws IOException, ObjectParseException, IndexingException, InterruptedException {
+        JsonToken t = current;
         if (selection.getRules() != null && (t == JsonToken.START_OBJECT || t == JsonToken.START_ARRAY)) {
             StringWriter outChars = new StringWriter();
             JsonGenerator jsonGen = UObject.getMapper().getFactory().createGenerator(outChars);
@@ -91,8 +93,7 @@ public class ValueCollector <T> {
 						path.add(fieldName);
 						// process value corresponding to this field recursively
 						mapKeysWithOpenToken(jts, t, all ? allChild : 
-							selection.getChildren().get(fieldName), consumer, path, 
-							strictMaps, strictArrays);
+							selection.getChildren().get(fieldName), consumer, path);
 						// remove field from tail of path branch
 						path.remove(path.size() - 1);
 					} else {
@@ -100,14 +101,6 @@ public class ValueCollector <T> {
 						t = jts.nextToken();
 						JsonTokenUtil.skipChildren(jts, t);
 					}
-				}
-				// let's check have we visited all selected fields in this map
-				// we will not visit them in real data and hence will not delete them from selection
-				if (strictMaps && !selectedFields.isEmpty()) {
-					String notFound = selectedFields.iterator().next();
-					throw new ObjectParseException("Invalid selection: data does not contain " +
-							"a field or key named '" + notFound + "', at: " + 
-					        getPathText(path, notFound));
 				}
 			} else {
 			    JsonTokenUtil.skipChildren(jts, t);
@@ -165,17 +158,10 @@ public class ValueCollector <T> {
 						// add element position to the tail of path branch
 						path.add("" + pos);
 						// process value of this element recursively
-						mapKeysWithOpenToken(jts, t, child, consumer, path, strictMaps, 
-						        strictArrays);
+						mapKeysWithOpenToken(jts, t, child, consumer, path);
 						// remove field from tail of path branch
 						path.remove(path.size() - 1);
 					}
-				}
-				// let's check have we visited all selected items in this array
-				if (strictArrays && !selectedFields.isEmpty()) {
-					String notFound = selectedFields.iterator().next();
-					throw new ObjectParseException("Invalid selection: no array element exists " +
-							"at position '" + notFound + "', at: " + getPathText(path, notFound));
 				}
 			} else {
 			    JsonTokenUtil.skipChildren(jts, t);
@@ -201,12 +187,4 @@ public class ValueCollector <T> {
 			}
 		}
 	}
-
-	public static String getPathText(List<String> path, String add) {
-		path.add(add);
-		String ret = ObjectJsonPath.getPathText(path);
-		path.remove(path.size() - 1);
-		return ret;
-	}
-	
 }
