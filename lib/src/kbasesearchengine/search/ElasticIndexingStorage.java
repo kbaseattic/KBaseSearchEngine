@@ -1094,7 +1094,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         final Map<Integer, Map<String, Object>> lastVersionMap = loadLastVersion(null, guid);
 
         if (lastVersionMap.isEmpty()) {
-            logErr("Unable to delete object with GUID: " + guid +
+            logErr("Unable to undelete object with GUID: " + guid +
                     " as it does not exist. ");
             return;
         }
