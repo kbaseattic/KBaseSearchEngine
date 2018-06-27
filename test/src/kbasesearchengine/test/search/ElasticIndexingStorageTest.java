@@ -242,6 +242,49 @@ public class ElasticIndexingStorageTest {
         return indexStorage.getObjectsByIds(new LinkedHashSet<>(Arrays.asList(guid))).get(0);
     }
 
+    @Test
+    public void testGenome() throws Exception {
+        System.out.println("*** start testGenome***");
+        indexObject("Genome", 0, "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
+        Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Genome"),
+                MatchFilter.getBuilder().withLookupInKey(
+                        "feature_count", new MatchValue(1, null)).build(),
+                null, AccessFilter.create().withAdmin(true));
+        Assert.assertEquals(1, guids.size());
+        ObjectData genomeIndex = indexStorage.getObjectsByIds(guids).get(0);
+        //System.out.println("Genome index: " + genomeIndex);
+        Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("feature_count"));
+        Assert.assertEquals("KBase", "" + genomeIndex.getKeyProperties().get("source"));
+        Assert.assertEquals("NewGenome", "" + genomeIndex.getKeyProperties().get("source_id"));
+        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name"));
+        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name_keyword"));
+        Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("feature_count"));
+        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("cds_count"));
+        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contig_count"));
+        String assemblyGuidText = genomeIndex.getKeyProperties().get("assembly_guid");
+        Assert.assertNotNull(assemblyGuidText);
+        ObjectData assemblyIndex = getIndexedObject(new GUID(assemblyGuidText));
+        //System.out.println("Assembly index: " + genomeIndex);
+        Assert.assertEquals("1", "" + assemblyIndex.getKeyProperties().get("contig_count"));
+        System.out.println("*** end testGenome***");
+    }
+
+    @Test
+    public void testPangenome() throws Exception {
+        System.out.println("*** start testPangenome***");
+        indexObject("Pangenome", 0, "pangenome01", new GUID("WS:1/1/1"), "Pangenome.1");
+        Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Pangenome"),
+                ft("Pangenome"), null, AccessFilter.create().withAdmin(true));
+        Assert.assertEquals(1, guids.size());
+        ObjectData pangenome = indexStorage.getObjectsByIds(guids).get(0);
+        System.out.println("Genome index: " + pangenome.getKeyProperties());
+        Assert.assertEquals("kmer", pangenome.getKeyProperties().get("type"));
+        Assert.assertEquals("3", "" + pangenome.getKeyProperties().get("orthologs"));
+        Assert.assertEquals("2", "" + pangenome.getKeyProperties().get("genomes"));
+        Assert.assertNotNull(pangenome.getKeyProperties().get("name"));
+        System.out.println("*** end testPangenome***");
+    }
+
 
 
 
@@ -406,7 +449,7 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals("3", "" + index.getKeyProperties().get("num_replicates"));
         System.out.println("*** end testRNASeqSampleSet***");
     }
-////===========================================================================================================
+
     @Test
     public void testGenomeV2() throws Exception {
         System.out.println("*** start testGenomeV2***");
