@@ -6,11 +6,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -304,7 +306,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 (rule.getSubObjectType().isPresent() ? SUBTYPE_INDEX_SUFFIX : ""))
                 .toLowerCase();
     }
-    
+
     @Override
     public void indexObject(
             final ObjectTypeParsingRules rule,
@@ -350,9 +352,28 @@ public class ElasticIndexingStorage implements IndexingStorage {
         File tempFile = File.createTempFile("es_bulk_", ".json", tempDir);
         try {
             PrintWriter pw = new PrintWriter(tempFile);
-            int lastVersion = loadLastVersion(indexName, pguid, pguid.getVersion());
+            final Map<Integer, Map<String, Object>> lastVersionMap = loadLastVersion(null, pguid);
+
+            final Iterator<Integer> lastVersionIterator1 = lastVersionMap.keySet().iterator();
+
+            // get last version for the specified indexName
+            Integer lastVersion1 = null;
+
+            while (lastVersionIterator1.hasNext()) {
+                final Integer key = lastVersionIterator1.next();
+
+                if (lastVersionMap.get(key).get("_index").equals(indexName)) {
+                    lastVersion1 = key;
+                    break;
+                }
+            }
+
+            if (pguid.getVersion() != null && (lastVersion1 == null || lastVersion1 < pguid.getVersion())) {
+                lastVersion1 = pguid.getVersion();
+            }
+
             final String esParentId = checkParentDoc(indexName, new LinkedHashSet<>(
-                    Arrays.asList(pguid)), isPublic, lastVersion).get(pguid);
+                    Arrays.asList(pguid)), isPublic, lastVersion1).get(pguid);
             if (idToObjCopy.isEmpty()) {
                 // there were no search objects parsed from the source object, so just index
                 // the general object information
@@ -362,12 +383,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
             for (GUID id : idToObjCopy.keySet()) {
                 final ParsedObject obj = idToObjCopy.get(id);
                 final Map<String, Object> doc = convertObject(id, rule.getGlobalObjectType(), obj,
-                        data, timestamp, parentJsonValue, isPublic, lastVersion);
+                        data, timestamp, parentJsonValue, isPublic, lastVersion1);
                 final Map<String, Object> index = new HashMap<>();
                 index.put("_index", indexName);
                 index.put("_type", getDataTableName());
                 index.put("parent", esParentId);
-                index.put("_id", id.getURLEncoded());
+                index.put("_id", id.toString());  // don't url_encode since it is going through the message body
 
                 final Map<String, Object> header = ImmutableMap.of("index", index);
                 pw.println(UObject.transformObjectToString(header));
@@ -378,11 +399,25 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
             verify(response);
 
-            updateLastVersionsInData(indexName, pguid, lastVersion);
+            // update all last version tags in all indexes that contain objects with the
+            // specified parent guid
+            final Iterator<Integer> lastVersionIterator2 = lastVersionMap.keySet().iterator();
+            while (lastVersionIterator2.hasNext()) {
+
+                Integer lastVersion2 = lastVersionIterator2.next();
+                final String idxName = (String) lastVersionMap.get(lastVersion2).get("_index");
+
+                if (pguid.getVersion() != null && (lastVersion2 == null || lastVersion2 < pguid.getVersion())) {
+                    lastVersion2 = pguid.getVersion();
+                }
+
+                updateLastVersionsInData(idxName, pguid, lastVersion2);
+            }
         } finally {
             tempFile.delete();
         }
-        refreshIndex(indexName);
+        // refresh all indexes since many may have gotten updated
+        refreshIndex(null);
     }
 
 
@@ -593,10 +628,27 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 Collectors.toMap(Function.identity(), guid -> map.containsKey(guid))));
     }
 
-    private Integer loadLastVersion(String reqIndexName, GUID parentGUID, 
-            Integer processedVersion) throws IOException {
-        if (reqIndexName == null) {
-            reqIndexName = getAnyIndexPattern();
+    /** Looks up ElasticSearch for the last version of the object with the specified
+     * guid. If indexName is null, the method searches for the object with the specified
+     * guid across all indexes and may return multiple last versions of
+     * objects if the object is found to exist in more than one index (Note that there
+     * can be multiple indexes for a given type based on the number of search type versions
+     * specified in the spec mapping file for the type).
+     *
+     * @param indexName Index name in which to find the object, or null to search across
+     *                     all indexes
+     * @param parentGUID parent GUID of object whose last version is required
+     * @return A Map with zero or more entries. The key represents the last version number
+     * and the value contains the Hit map from the ElasticSearch response. This map is a nested
+     * map of String key-value pairs.
+     *
+     * @throws IOException
+     */
+    private Map<Integer, Map<String, Object>> loadLastVersion(String indexName,
+                                                              GUID parentGUID)
+                                                                     throws IOException {
+        if (indexName == null) {
+            indexName = getAnyIndexPattern();
         }
         String prefix = toGUIDPrefix(parentGUID);
 
@@ -608,64 +660,106 @@ public class ElasticIndexingStorage implements IndexingStorage {
                                               "term",
                                                   ImmutableMap.of("prefix", prefix))))));
 
-        String urlPath = "/" + reqIndexName + "/" + getAccessTableName() + "/_search";
-        Response resp = makeRequestNoConflict("GET", urlPath, doc);
+        final String urlPath = "/" + indexName + "/" + getAccessTableName() + "/_search";
+        final Response resp = makeRequestNoConflict("GET", urlPath, doc);
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         @SuppressWarnings("unchecked")
         Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
-        Integer ret = null;
+        Integer lastVersion = null;
+        // maps version to source map from hits
+        final Map<Integer, Map<String, Object>> lastVersionMap = new HashMap<>();
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
+        final List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
         for (Map<String, Object> hit : hitList) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
-            int version = (Integer)obj.get("version");
-            if (ret == null || ret < version) {
-                ret = version;
+            final Map<String, Object> source = (Map<String, Object>) hit.get("_source");
+            final int version = (Integer)source.get("version");
+            String _index = (String)hit.get("_index");
+            if (lastVersion == null || lastVersion < version) {
+                lastVersion = version;
+
+                // get all indexes from lastVersionHitMap
+                Iterator<Integer> lastVersionKeyIter = lastVersionMap.keySet().iterator();
+
+                boolean found = false;
+                while (lastVersionKeyIter.hasNext()) {
+                    final Integer key = lastVersionKeyIter.next();
+                    final Map entry = lastVersionMap.get(key);
+
+                    // if lastVersion index already exists in lastVersionHitMap, replace it
+                    if( entry.get("_index").equals(_index)) {
+                        lastVersionMap.remove(key);
+                        lastVersionMap.put(version, hit);
+                        found = true;
+                    }
+                }
+                // if last version index does not exist in lastVersionHitMap, add it
+                if (!found) {
+                    lastVersionMap.put(version, hit);
+                }
             }
         }
-        if (processedVersion != null && (ret == null || ret < processedVersion)) {
-            ret = processedVersion;
-        }
-        return ret;
+
+        return lastVersionMap;
     }
     
-    private int updateLastVersionsInData(String indexName, GUID parentGUID,
+    private void updateLastVersionsInData(String indexName, GUID parentGUID,
             int lastVersion) throws IOException, IndexingConflictException {
         if (indexName == null) {
-            indexName = getAnyIndexPattern();
+            throw new IllegalArgumentException("indexName must not be null");
+        }
+
+        // update across all index versions of a particular type (genome_1, genome_2 etc)
+        else if (indexName.endsWith(SUBTYPE_INDEX_SUFFIX)) {
+            indexName = indexName.replaceAll("_\\d+_sub$", "_*");
+        } else {
+            indexName = indexName.replaceAll("_\\d+$", "_*");
         }
 
         // query = {"bool": {"filter": [{"term": {"prefix": prefix}}]}}
-        Map<String, Object> query = ImmutableMap.of("bool",
+        final Map<String, Object> query = ImmutableMap.of("bool",
                                        ImmutableMap.of("filter",
                                                Arrays.asList(ImmutableMap.of("term",
                                                        ImmutableMap.of("prefix",
                                                                toGUIDPrefix(parentGUID))))));
 
-        // params = {"lastver": lastVersion}
-        final Map<String, Object> params = ImmutableMap.of("lastver", lastVersion);
+        final Map<String, Object> queryDoc = ImmutableMap.of("query", query,
+                "version", true);
 
-        // script = {"inline": "ctx._source.islast = (ctx._source.version == params.lastver)",
-        //           "params": {"lastver": lastVersion}}
-        Map<String, Object> script = ImmutableMap.of(
-                "inline", "ctx._source.islast = (ctx._source.version == params.lastver);",
-                "params", params);
+        {
+            final String queryURLPath = "/" + indexName + "/" + getDataTableName() + "/_search";
+            final Response queryResp = makeRequest("GET", queryURLPath, queryDoc);
+            final Map<String, Object> queryResult = UObject.getMapper().readValue(
+                    queryResp.getEntity().getContent(), Map.class);
 
-        // doc = {"query": {"bool": {"filter": [{"term": {"prefix": prefix}}]}},
-        //        "script": {"inline": "ctx._source.islast = (ctx._source.version == params.lastver)",
-        //                   "params": {"lastver": lastVersion}}}
-        Map<String, Object> doc = ImmutableMap.of("query", query,
-                                                  "script", script);
+            // params = {"lastver": lastVersion}
+            final Map<String, Object> params = ImmutableMap.of("lastver", lastVersion);
 
-        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_update_by_query";
-        Response resp = makeRequest("POST", urlPath, doc);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = UObject.getMapper().readValue(
-                resp.getEntity().getContent(), Map.class);
-        return (Integer)data.get("updated");
+            // script = {"inline": "ctx._source.islast = (ctx._source.version == params.lastver)",
+            //           "params": {"lastver": lastVersion}}
+            final Map<String, Object> script = ImmutableMap.of(
+                    "inline", "ctx._source.islast = (ctx._source.version == params.lastver);",
+                    "lang", "painless",
+                    "params", params);
+
+            for (Map<String,Object> record: (List<Map>)((Map)queryResult.get("hits")).get("hits")) {
+                final String _id = (String)record.get("_id");
+                final String _index = (String)record.get("_index");
+                final int _version = (int)record.get("_version");
+                final String _routing = ((String)record.get("_routing"));
+
+                final String updateURLPath = "/" + _index + "/" + getDataTableName() +
+                        "/" + URLEncoder.encode(_id, "UTF-8") + "/_update?routing="+_routing+"&version="+_version+"&refresh";
+
+                final Map<String, Object> updateDoc = ImmutableMap.of("script",script);
+
+                final Response updateByQueryResp = makeRequest("POST", updateURLPath, updateDoc);
+//                final Map<String, Object> updateResult = UObject.getMapper().readValue(
+//                        updateByQueryResp.getEntity().getContent(), Map.class);
+            }
+        }
     }
 
     private Map<GUID, String> checkParentDoc(String indexName, Set<GUID> parentGUIDs, 
@@ -964,39 +1058,59 @@ public class ElasticIndexingStorage implements IndexingStorage {
     //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
     public void deleteAllVersions(final GUID guid) throws IOException, IndexingConflictException {
-        // could optimize later by making LLV return the index name
-        final Integer ver = loadLastVersion(null, guid, null);
-        if (ver == null) {
-            //TODO NOW throw exception? means a delete event occurred when there were no objects
+
+        final Map<Integer, Map<String, Object>> lastVersionMap = loadLastVersion(null, guid);
+
+        if (lastVersionMap.isEmpty()) {
+            logErr("Unable to delete object with GUID: " + guid +
+                    " as it does not exist. ");
             return;
         }
-        final String indexName = getAnyIndexPattern();
-        setFieldOnObject(withVersion(guid, ver), "islast", false, false);
-        // -3 is a hack to always remove access groups
-        updateAccessGroupForVersions(indexName, guid, -3, guid.getAccessGroupId(), false, false);
+
+        Iterator<Integer> iter = lastVersionMap.keySet().iterator();
+
+        while(iter.hasNext()) {
+
+            Integer lastVersion = iter.next();
+
+            final String indexName = (String) lastVersionMap.get(lastVersion).get("_index");
+            setFieldOnObject(withVersion(guid, lastVersion), "islast", false, false);
+            // -3 is a hack to always remove access groups
+            updateAccessGroupForVersions(indexName, guid, -3, guid.getAccessGroupId(), false, false);
         /* changing the public field doesn't make a ton of sense - the object is still in a public
          * workspace. 
          * TODO NOW add a deleted flag, use that instead.
          */
 //        setFieldOnObjectForAllVersions(guid, "public", false);
-        //TODO NOW this doesn't handle removing public (-1) from the access doc because it can't know that's the right thing to do
-        //TODO NOW admin access group id has same problem as public access group id
+            //TODO NOW this doesn't handle removing public (-1) from the access doc because it can't know that's the right thing to do
+            //TODO NOW admin access group id has same problem as public access group id
+        }
     }
-    
+
     //IO exception thrown for deserialization & elasticsearch contact errors
     @Override
     public void undeleteAllVersions(final GUID guid)
             throws IOException, IndexingConflictException {
-        // could optimize later by making LLV return the index name
-        final Integer ver = loadLastVersion(null, guid, null);
-        if (ver == null) {
-            //TODO NOW throw exception? means an undelete event occurred when there were no objects
+        final Map<Integer, Map<String, Object>> lastVersionMap = loadLastVersion(null, guid);
+
+        if (lastVersionMap.isEmpty()) {
+            logErr("Unable to undelete object with GUID: " + guid +
+                    " as it does not exist. ");
             return;
         }
-        updateLastVersionsInData(null, guid, ver);
-        updateAccessGroupForVersions(null, guid, ver, guid.getAccessGroupId(), false, true);
-        // TODO NOW remove deleted flag from delete all versions
-        
+
+        final Iterator<Integer> iter = lastVersionMap.keySet().iterator();
+
+        while (iter.hasNext()) {
+
+            final Integer lastVersion = iter.next();
+
+            final String indexName = (String) lastVersionMap.get(lastVersion).get("_index");
+
+            updateLastVersionsInData(indexName, guid, lastVersion);
+            updateAccessGroupForVersions(indexName, guid, lastVersion, guid.getAccessGroupId(), false, true);
+            // TODO NOW remove deleted flag from delete all versions
+        }
     }
     
     private GUID withVersion(final GUID guid, int ver) {
@@ -1661,9 +1775,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
     }
     
     public Response refreshIndex(String indexName) throws IOException {
-        return makeRequestNoConflict("POST", "/" + indexName + "/_refresh", null);
+        if (indexName == null) {
+            return makeRequestNoConflict("POST", "/" + getAnyIndexPattern() + "/_refresh", null);
+        }
+        else {
+            return makeRequestNoConflict("POST", "/" + indexName + "/_refresh", null);
+        }
     }
-    
+
     /** Refresh the elasticsearch index, where the index prefix is set by
      * {@link #setIndexNamePrefix(String)}. Primarily used for testing.
      * @param rule the parsing rules that describes the index.
