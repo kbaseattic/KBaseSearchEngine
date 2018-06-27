@@ -242,36 +242,8 @@ public class ElasticIndexingStorageTest {
         return indexStorage.getObjectsByIds(new LinkedHashSet<>(Arrays.asList(guid))).get(0);
     }
 
-    /** Verifies that the is_last flag in the index records is set for the record with the latest
-     * version across all indexes for the same type. For example, if genome_1 and genome_2 are the
-     * two indexes that exist for the type genome, where genome_1 contains records for some genome
-     * type version set x and genome_2 contains records for some genome type version set y, and the
-     * latest genome object version resides in, say genome_1, then only this record's islast field
-     * must be set among all records contained in genome_1 and genome_2. i.e. all records in genome_2
-     * must have their islast field set to false in this case.
-     *
-     */
-    @Test
-    public void testLastVersion() throws Exception {
 
-        indexObject("Genome", 0, "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
-        Thread.sleep(1000);
-        indexObject("Genome", 0, "genome01", new GUID("WS:1/1/2"), "MyGenome.1");
-        Thread.sleep(1000);
 
-        indexObject("Genome", 1, "genome01", new GUID("WS:1/1/3"), "MyGenome.1");
-        Thread.sleep(1000);
-        indexObject("Genome", 1, "genome01", new GUID("WS:1/1/4"), "MyGenome.1");
-        Thread.sleep(1000);
-
-        MatchFilter filter = MatchFilter.getBuilder().build();
-        AccessFilter accessFilter = AccessFilter.create().withAllHistory(false).withAdmin(true);
-
-        FoundHits hits = indexStorage.searchObjects(Arrays.asList("Genome"), filter,null, accessFilter
-                , null, null);
-        Assert.assertEquals("expected 1 guid", 1, hits.guids.size());
-        Assert.assertEquals("expected WS:1/1/4", new GUID("WS:1/1/4"), hits.guids.iterator().next());
-    }
 
     @SuppressWarnings("unchecked")
     @Test
@@ -326,47 +298,49 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals(expectedGUID, id);
     }
 
+
+    /** Verifies that the is_last flag in the index records is set for the record with the latest
+     * version across all indexes for the same type. For example, if genome_1 and genome_2 are the
+     * two indexes that exist for the type genome, where genome_1 contains records for some genome
+     * type version set x and genome_2 contains records for some genome type version set y, and the
+     * latest genome object version resides in, say genome_1, then only this record's islast field
+     * must be set among all records contained in genome_1 and genome_2. i.e. all records in genome_2
+     * must have their islast field set to false in this case.
+     *
+     */
     @Test
-    public void testGenome() throws Exception {
-        System.out.println("*** start testGenome***");
+    public void testLastVersionForParentObjects() throws Exception {
         indexObject("Genome", 0, "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
-        Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Genome"),
-                MatchFilter.getBuilder().withLookupInKey(
-                        "feature_count", new MatchValue(1, null)).build(),
-                null, AccessFilter.create().withAdmin(true));
-        Assert.assertEquals(1, guids.size());
-        ObjectData genomeIndex = indexStorage.getObjectsByIds(guids).get(0);
-        //System.out.println("Genome index: " + genomeIndex);
-        Assert.assertTrue(genomeIndex.getKeyProperties().containsKey("feature_count"));
-        Assert.assertEquals("KBase", "" + genomeIndex.getKeyProperties().get("source"));
-        Assert.assertEquals("NewGenome", "" + genomeIndex.getKeyProperties().get("source_id"));
-        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name"));
-        Assert.assertEquals("Shewanella", "" + genomeIndex.getKeyProperties().get("scientific_name_keyword"));
-        Assert.assertEquals("3", "" + genomeIndex.getKeyProperties().get("feature_count"));
-        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("cds_count"));
-        Assert.assertEquals("1", "" + genomeIndex.getKeyProperties().get("contig_count"));
-        String assemblyGuidText = genomeIndex.getKeyProperties().get("assembly_guid");
-        Assert.assertNotNull(assemblyGuidText);
-        ObjectData assemblyIndex = getIndexedObject(new GUID(assemblyGuidText));
-        //System.out.println("Assembly index: " + genomeIndex);
-        Assert.assertEquals("1", "" + assemblyIndex.getKeyProperties().get("contig_count"));
-        System.out.println("*** end testGenome***");
+        indexObject("Genome", 0, "genome01", new GUID("WS:1/1/2"), "MyGenome.1");
+
+        indexObject("Genome", 1, "genome01", new GUID("WS:1/1/3"), "MyGenome.1");
+        indexObject("Genome", 1, "genome01", new GUID("WS:1/1/4"), "MyGenome.1");
+
+        MatchFilter filter = MatchFilter.getBuilder().build();
+        AccessFilter accessFilter = AccessFilter.create().withAllHistory(false).withAdmin(true);
+
+        FoundHits hits = indexStorage.searchObjects(Arrays.asList("Genome"), filter, null, accessFilter, null, null);
+        Assert.assertEquals("expected 1 guid", 1, hits.guids.size());
+        Assert.assertEquals("expected WS:1/1/4", new GUID("WS:1/1/4"), hits.guids.iterator().next());
     }
 
     @Test
-    public void testPangenome() throws Exception {
-        System.out.println("*** start testPangenome***");
-        indexObject("Pangenome", 0, "pangenome01", new GUID("WS:1/1/1"), "Pangenome.1");
-        Set<GUID> guids = indexStorage.searchIds(ImmutableList.of("Pangenome"),
-                        ft("Pangenome"), null, AccessFilter.create().withAdmin(true));
-        Assert.assertEquals(1, guids.size());
-        ObjectData pangenome = indexStorage.getObjectsByIds(guids).get(0);
-        System.out.println("Genome index: " + pangenome.getKeyProperties());
-        Assert.assertEquals("kmer", pangenome.getKeyProperties().get("type"));
-        Assert.assertEquals("3", "" + pangenome.getKeyProperties().get("orthologs"));
-        Assert.assertEquals("2", "" + pangenome.getKeyProperties().get("genomes"));
-        Assert.assertNotNull(pangenome.getKeyProperties().get("name"));
-        System.out.println("*** end testPangenome***");
+    public void testLastVersionForSubObjects() throws Exception {
+        indexObject("GenomeFeature", 0, "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
+        indexStorage.refreshIndex(null);
+        indexObject("GenomeFeature", 0, "genome01", new GUID("WS:1/1/2"), "MyGenome.1");
+        indexStorage.refreshIndex(null);
+        indexObject("GenomeFeature", 1, "genome01", new GUID("WS:1/1/3"), "MyGenome.1");
+        indexStorage.refreshIndex(null);
+        indexObject("GenomeFeature", 1, "genome01", new GUID("WS:1/1/4"), "MyGenome.1");
+        indexStorage.refreshIndex(null);
+
+        MatchFilter filter = MatchFilter.getBuilder().build();
+        AccessFilter accessFilter = AccessFilter.create().withAllHistory(false).withAdmin(true);
+
+        FoundHits hits = indexStorage.searchObjects(Arrays.asList("GenomeFeature"), filter, null, accessFilter, null, null);
+        Assert.assertEquals("expected 3 guid", 3, hits.guids.size());
+        Assert.assertTrue("expected WS:1/1/4:Feature/NewGenome.CDS", hits.guids.iterator().next().toString().startsWith("WS:1/1/4:Feature/NewGenome.CDS"));
     }
 
     @Test
@@ -432,7 +406,7 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals("3", "" + index.getKeyProperties().get("num_replicates"));
         System.out.println("*** end testRNASeqSampleSet***");
     }
-
+////===========================================================================================================
     @Test
     public void testGenomeV2() throws Exception {
         System.out.println("*** start testGenomeV2***");
@@ -719,16 +693,19 @@ public class ElasticIndexingStorageTest {
         final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
                 objType, new StorageObjectType("foo", "bar"))
                 .withIndexingRule(ir).build();
+
         GUID id11 = new GUID("WS:2/1/1");
         indexObject(id11, rule, "{\"prop1\":\"abc 123\"}", "obj.1", Instant.now(), null, false);
-        checkIdInSet(indexStorage.searchIds(type, ft("abc"), null, 
+        checkIdInSet(indexStorage.searchIds(type, ft("abc"), null,
                 AccessFilter.create().withAccessGroups(2)), 1, id11);
+
         GUID id2 = new GUID("WS:2/2/1");
         indexObject(id2, rule, "{\"prop1\":\"abd\"}", "obj.2", Instant.now(), null, false);
         GUID id3 = new GUID("WS:3/1/1");
         indexObject(id3, rule, "{\"prop1\":\"abc\"}", "obj.3", Instant.now(), null, false);
-        checkIdInSet(indexStorage.searchIds(type, ft("abc"), null, 
+        checkIdInSet(indexStorage.searchIds(type, ft("abc"), null,
                 AccessFilter.create().withAccessGroups(2)), 1, id11);
+
         GUID id12 = new GUID("WS:2/1/2");
         indexObject(id12, rule, "{\"prop1\":\"abc 124\"}", "obj.1", Instant.now(), null, false);
         checkIdInSet(indexStorage.searchIds(type, ft("abc"), null,
@@ -859,6 +836,7 @@ public class ElasticIndexingStorageTest {
                 AccessFilter.create().withAccessGroups(21).withPublic(true)).size());
     }
 
+
     private static Set<GUID> asSet(GUID... guids) {
         return new LinkedHashSet<>(Arrays.asList(guids));
     }
@@ -867,6 +845,7 @@ public class ElasticIndexingStorageTest {
         Assert.assertEquals("Set contains: " + ids, size, ids.size());
         Assert.assertTrue("Set contains: " + ids, ids.contains(id));
     }
+
 
     @Test
     public void testPublicDataPalettes() throws Exception {
@@ -907,6 +886,7 @@ public class ElasticIndexingStorageTest {
 
     @Test
     public void testDeleteUndelete() throws Exception {
+
         SearchObjectType objType = new SearchObjectType("DelUndel", 1);
         List<String> type = ImmutableList.of(objType.getType());
         IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("myprop"))
@@ -920,7 +900,7 @@ public class ElasticIndexingStorageTest {
                 false);
         indexObject(id2, rule, "{\"myprop\": \"some other stuff\"}", "myobj", Instant.now(), null,
                 false);
-        
+
         final AccessFilter filter = AccessFilter.create().withAccessGroups(100);
         final AccessFilter filterAllVers = AccessFilter.create().withAccessGroups(100)
                 .withAllHistory(true);
@@ -953,6 +933,7 @@ public class ElasticIndexingStorageTest {
          */
     }
 
+
     @Test
     public void testPublishAllVersions() throws Exception {
         // tests the all versions method for setting objects public / non-public.
@@ -969,7 +950,7 @@ public class ElasticIndexingStorageTest {
                 false);
         indexObject(id2, rule, "{\"myprop\": \"some other stuff\"}", "myobj", Instant.now(),
                 null, false);
-        
+
         final AccessFilter filter = AccessFilter.create()
                 .withAllHistory(true).withPublic(false);
         final AccessFilter filterPublic = AccessFilter.create()
@@ -998,7 +979,7 @@ public class ElasticIndexingStorageTest {
         assertThat("incorrect ids returned", lookupIdsByKey(type, "myprop", "some",
                 filterPublic), is(set()));
     }
-    
+
     @Test
     public void testTypeVersions() throws Exception {
         /* test that types with incompatible fields but different versions index successfully. */
@@ -1016,15 +997,15 @@ public class ElasticIndexingStorageTest {
         final ObjectTypeParsingRules rule2 = ObjectTypeParsingRules.getBuilder(
                 type2, new StorageObjectType("foo", "bar"))
                 .withIndexingRule(idxRules2).build();
-        
+
         indexObject(new GUID("WS:1/2/3"), rule1, "{\"bar\": 1}", "o1", now,
                 null, false);
         indexObject(new GUID("WS:4/5/6"), rule2, "{\"bar\": \"whee\"}", "o2", now,
                 null, false);
-        
+
         final ObjectData indexedObj1 =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/2/3"))).get(0);
-        
+
         final ObjectData expected1 = ObjectData.getBuilder(new GUID("WS:1/2/3"), type1)
                 .withNullableObjectName("o1")
                 .withNullableCreator("creator")
@@ -1032,12 +1013,12 @@ public class ElasticIndexingStorageTest {
                 .withNullableData(ImmutableMap.of("bar", 1))
                 .withKeyProperty("bar", "1")
                 .build();
-        
+
         //due to potential truncation of timestamp on mac
         TestCommon.assertCloseMS(indexedObj1.getTimestamp().get(), now, 0, 10);
 
         assertThat("incorrect indexed object", indexedObj1, is(expected1));
-        
+
         final ObjectData indexedObj2 =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:4/5/6"))).get(0);
 
@@ -1052,9 +1033,9 @@ public class ElasticIndexingStorageTest {
         TestCommon.assertCloseMS(indexedObj2.getTimestamp().get(), now, 0, 10);
 
         assertThat("incorrect indexed object", indexedObj2, is(expected2));
-        
+
     }
-    
+
     @Test
     public void noIndexingRules() throws Exception {
         indexStorage.indexObjects(
@@ -1075,10 +1056,10 @@ public class ElasticIndexingStorageTest {
                 new GUID("WS:1000/1/1"),
                 Collections.emptyMap(),
                 false);
-        
+
         final ObjectData indexedObj =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1000/1/1"))).get(0);
-        
+
         final ObjectData expected = ObjectData.getBuilder(
                 new GUID("WS:1000/1/1"), new SearchObjectType("NoIndexingRules", 1))
                 .withNullableObjectName("objname")
@@ -1091,10 +1072,10 @@ public class ElasticIndexingStorageTest {
                 .withNullableModuleVersion("ver")
                 .withNullableTimestamp(Instant.ofEpochMilli(10000))
                 .build();
-        
+
         assertThat("incorrect indexed object", indexedObj, is(expected));
     }
-    
+
     @Test
     public void excludeSubObjects() throws Exception {
         // regular object
@@ -1113,7 +1094,7 @@ public class ElasticIndexingStorageTest {
                         "{\"whee\": \"imaprettypony\"}",
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
                 false);
-        
+
         // sub object
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -1132,7 +1113,7 @@ public class ElasticIndexingStorageTest {
                         "{\"whee\": \"imaprettypony\"}",
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
                 false);
-        
+
         final Set<GUID> res = indexStorage.searchIds(
                 Collections.emptyList(),
                 MatchFilter.getBuilder().withNullableFullTextInAll("imaprettypony").build(),
@@ -1140,7 +1121,7 @@ public class ElasticIndexingStorageTest {
                 AccessFilter.create().withAccessGroups(2000));
         assertThat("incorrect objects found", res,
                 is(set(new GUID("WS:2000/1/1"), new GUID("WS:2000/2/1:sub/yay"))));
-        
+
         final Set<GUID> res2 = indexStorage.searchIds(
                 Collections.emptyList(),
                 MatchFilter.getBuilder().withNullableFullTextInAll("imaprettypony")
@@ -1148,24 +1129,24 @@ public class ElasticIndexingStorageTest {
                 null,
                 AccessFilter.create().withAccessGroups(2000));
         assertThat("incorrect objects found", res2, is(set(new GUID("WS:2000/1/1"))));
-        
+
         final Map<String, Integer> count = indexStorage.searchTypes(
                 MatchFilter.getBuilder().withNullableFullTextInAll("imaprettypony").build(),
                 AccessFilter.create().withAccessGroups(2000));
-        
+
         assertThat("incorrect type count", count, is(ImmutableMap.of(
                 "ExcludeSubObjectsSub", 1,
                 "ExcludeSubObjectsNorm", 1)));
-        
+
         final Map<String, Integer> count2 = indexStorage.searchTypes(
                 MatchFilter.getBuilder().withNullableFullTextInAll("imaprettypony")
                         .withExcludeSubObjects(true).build(),
                 AccessFilter.create().withAccessGroups(2000));
-        
+
         assertThat("incorrect type count", count2, is(ImmutableMap.of(
                 "ExcludeSubObjectsNorm", 1)));
     }
-    
+
     @Test
     public void sourceTags() throws Exception {
         /* tests that objects are excluded that don't share at least one tag with the requested
@@ -1189,7 +1170,7 @@ public class ElasticIndexingStorageTest {
                         "{\"whee\": \"imaprettypony\"}",
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
                 false);
-        
+
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
                         new SearchObjectType("SourceTags", 1),
@@ -1208,11 +1189,11 @@ public class ElasticIndexingStorageTest {
                         "{\"whee\": \"imaprettypony\"}",
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
                 false);
-        
+
         // check tags are in returned data
         final ObjectData indexedObj =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:2000/1/1"))).get(0);
-        
+
         final ObjectData expected = ObjectData.getBuilder(
                 new GUID("WS:2000/1/1"), new SearchObjectType("SourceTags", 1))
                 .withNullableObjectName("objname")
@@ -1223,25 +1204,25 @@ public class ElasticIndexingStorageTest {
                 .withKeyProperty("whee", "imaprettypony")
                 .withNullableData(ImmutableMap.of("whee", "imaprettypony"))
                 .build();
-        
+
         assertThat("incorrect indexed object", indexedObj, is(expected));
-        
+
         // whitelisted tags
         checkWithTags(set(), set(new GUID("WS:2000/1/1"), new GUID("WS:2000/2/1")));
-        
+
         checkWithTags(set("refdata", "foo"),
                 set(new GUID("WS:2000/1/1"), new GUID("WS:2000/2/1")));
-        
+
         checkWithTags(set("narrative", "foo"), set(new GUID("WS:2000/2/1")));
-        
+
         checkWithTags(set("bar", "foo"), set());
-        
-        
+
+
         //blacklisted tags
         checkWithTags(set(), set(new GUID("WS:2000/1/1"), new GUID("WS:2000/2/1")), true);
-        
+
         checkWithTags(set("refdata", "foo"), set(), true);
-        
+
         checkWithTags(set("narrative", "foo"), set(new GUID("WS:2000/1/1")), true);
 
         checkWithTags(set("bar", "foo"), set(new GUID("WS:2000/1/1"), new GUID("WS:2000/2/1")),
@@ -1252,7 +1233,7 @@ public class ElasticIndexingStorageTest {
             throws Exception {
         checkWithTags(tags, guids, false);
     }
-    
+
     private void checkWithTags(
             final Set<String> tags,
             final Set<GUID> guids,
@@ -1409,7 +1390,7 @@ public class ElasticIndexingStorageTest {
         final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
                 objectType, new StorageObjectType("foo", "bar"))
                 .withIndexingRule(ir).build();
-        
+
         indexObject(guid1, rule,
                 "{\"prop1\":\"multiWordInSearchMethod1 multiWordInSearchMethod2\"}",
                 "multiword.1", Instant.now(), null, true);
@@ -1535,7 +1516,7 @@ public class ElasticIndexingStorageTest {
 
         PostProcessing pp = new PostProcessing();
         List<String> empty = new ArrayList<>();
-        
+
 
         List<kbasesearchengine.search.SortingRule> sorting = null;
         AccessFilter accessFilter = AccessFilter.create().withAdmin(true);
@@ -1575,7 +1556,7 @@ public class ElasticIndexingStorageTest {
             assertThat("Incorrect highlighting", res, is(result2));
         }
     }
-    
+
     @Test
     public void noSubObjects() throws Exception {
         indexStorage.indexObjects(
@@ -1592,7 +1573,7 @@ public class ElasticIndexingStorageTest {
                 Collections.emptyMap(), // this should not generally happen for subobjects,
                                         // but can in pathological cases
                 true);
-        
+
         final FoundHits res = indexStorage.searchObjects(
                 Collections.emptyList(),
                 MatchFilter.getBuilder().build(),
@@ -1600,7 +1581,7 @@ public class ElasticIndexingStorageTest {
                 AccessFilter.create().withPublic(true),
                 null, // pagination
                 null); // post processing
-        
+
         assertThat("no data stored", res.guids.isEmpty(), is(true));
         assertThat("no data stored", res.objects, is((Set<ObjectData>) null));
         assertThat("no data stored", res.total, is(0));
