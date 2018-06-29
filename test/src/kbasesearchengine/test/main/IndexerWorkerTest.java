@@ -1314,6 +1314,16 @@ public class IndexerWorkerTest {
         final StatusEventProcessingState res = worker.processEvent(event);
         assertThat("incorrect state", res, is(StatusEventProcessingState.INDX));
 
+        verify(idxStore).indexObjects(
+                eq(rule),
+                any(SourceData.class),
+                eq(Instant.ofEpochMilli(10000)),
+                eq(null),
+                eq(guid),
+                any(),
+                eq(false));
+
+
         // event was not skipped even though corresponding index record was found to already exist
         verify(logger, never()).logInfo(
                 "[Indexer]   skipping code:1/2/3 creation (already indexed and " +
