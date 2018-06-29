@@ -1228,6 +1228,9 @@ public class IndexerWorkerTest {
         verify(logger).logInfo(
                 "[Indexer]   skipping code:1/2/3 creation (already indexed and " +
                         "overwriteExistingData flag is set to false)");
+
+        verify(idxStore, never()).indexObjects(
+                any(), any(), any(), any(), any(), any(), anyBoolean());
     }
 
     /**
