@@ -2,7 +2,7 @@ Operations
 ===========
 System Requirements:
 
-The following cache values have been hard-coded in kbasesearchengine/KBaseSearchEngineServer.java and memory for these caches need to me allocated.
+The following cache values have been hard-coded in kbasesearchengine/KBaseSearchEngineServer.java and memory for these caches need to be allocated.
 
  AccessGroupCache => 200mb (50k simultaneous users * 1000 group integer ids)
 
