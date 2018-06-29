@@ -637,6 +637,11 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (indexName == null) {
             indexName = getAnyIndexPattern();
         }
+        else if (indexName.endsWith(SUBTYPE_INDEX_SUFFIX)) {
+            indexName = indexName.replaceAll("_\\d+_sub$", "_*");
+        } else {
+            indexName = indexName.replaceAll("_\\d+$", "_*");
+        }
 
         // query = {"bool": {"filter": [{"term": {"prefix": prefix}}]}}
         Map<String, Object> query = ImmutableMap.of("bool",
@@ -660,7 +665,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> doc = ImmutableMap.of("query", query,
                                                   "script", script);
 
-        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_update_by_query";
+        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_update_by_query?refresh";
         Response resp = makeRequest("POST", urlPath, doc);
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
@@ -1733,7 +1738,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final File jsonData) 
             throws IOException, IndexingConflictException {
         try (InputStream is = new FileInputStream(jsonData)) {
-            return makeRequest(reqType, "/" + indexName + "/_bulk", Collections.emptyMap(),
+            return makeRequest(reqType, "/" + indexName + "/_bulk?refresh", Collections.emptyMap(),
                     new InputStreamEntity(is));
         }
     }
