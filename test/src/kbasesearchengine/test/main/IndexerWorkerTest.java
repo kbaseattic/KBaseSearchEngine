@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 
-import com.beust.jcommander.internal.Sets;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
@@ -1303,7 +1302,7 @@ public class IndexerWorkerTest {
                 .withNullableObjectID("2")
                 .withNullableVersion(3)
                 .withNullableisPublic(false)
-                .withOverwriteExistingData(true)  // overwrite existing data
+                .withNullableOverwriteExistingData(true)  // overwrite existing data
                 .build(),
                 new StatusEventID("pid"));
 

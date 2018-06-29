@@ -1411,7 +1411,7 @@ public class WorkspaceEventHandlerTest {
                 StorageObjectType.fromNullableVersion("WS", "foo", 1),
                 Instant.ofEpochMilli(20000),
                 StatusEventType.NEW_VERSION)
-                .withOverwriteExistingData(true)  // overwrite existing data
+                .withNullableOverwriteExistingData(true)  // overwrite existing data
                 .withNullableisPublic(Boolean.TRUE)
                 .withNullableAccessGroupID(1)
                 .withNullableObjectID("1")
@@ -1441,7 +1441,7 @@ public class WorkspaceEventHandlerTest {
                 StorageObjectType.fromNullableVersion("WS", "foo", 1),
                 Instant.ofEpochMilli(20000),
                 StatusEventType.NEW_VERSION)
-                .withOverwriteExistingData(true)  // overwrite existing data
+                .withNullableOverwriteExistingData(true)  // overwrite existing data
                 .withNullableisPublic(Boolean.FALSE)
                 .withNullableAccessGroupID(1)
                 .withNullableObjectID("1")

@@ -17,7 +17,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Optional;
-import kbasesearchengine.events.AccessGroupEventQueue;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.DateTimeFormatterBuilder;
@@ -729,7 +728,7 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
                 .withNullableObjectID(obj.getE1() + "")
                 .withNullableVersion(Math.toIntExact(obj.getE5()))
                 .withNullableisPublic(origEvent.getEvent().isPublic().get())
-                .withOverwriteExistingData(origEvent.getEvent().isOverwriteExistingData().orNull())
+                .withNullableOverwriteExistingData(origEvent.getEvent().isOverwriteExistingData().orNull())
                 .build(),
                 origEvent.getID());
     }
@@ -878,7 +877,7 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
                 withNullableObjectID(ev.getAccessGroupObjectId().get()).
                 withNullableVersion(ev.getVersion().orNull()).
                 withNullableisPublic(latestIsPublic).
-                withOverwriteExistingData(ev.isOverwriteExistingData().orNull()).
+                withNullableOverwriteExistingData(ev.isOverwriteExistingData().orNull()).
                 withNullableNewName(latestName).build();
     }
 }

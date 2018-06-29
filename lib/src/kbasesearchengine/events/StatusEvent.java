@@ -406,7 +406,7 @@ public class StatusEvent {
          * @param overwriteExistingData true if the existing record should be overwritten, else false.
          * @return this builder.
          */
-        public Builder withOverwriteExistingData(final Boolean overwriteExistingData) {
+        public Builder withNullableOverwriteExistingData(final Boolean overwriteExistingData) {
             if (overwriteExistingData == null) {
                 this.overwriteExistingData = Optional.absent();
             } else {

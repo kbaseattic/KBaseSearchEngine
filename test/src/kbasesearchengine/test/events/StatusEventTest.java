@@ -62,7 +62,7 @@ public class StatusEventTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("nn")
-                .withOverwriteExistingData(true)
+                .withNullableOverwriteExistingData(true)
                 .withNullableObjectID("2")
                 .withNullableVersion(8)
                 .build();
@@ -98,7 +98,7 @@ public class StatusEventTest {
                 .withNullableAccessGroupID(null)
                 .withNullableisPublic(null)
                 .withNullableNewName(null)
-                .withOverwriteExistingData(null)
+                .withNullableOverwriteExistingData(null)
                 .withNullableObjectID(null)
                 .withNullableVersion(null)
                 .build();

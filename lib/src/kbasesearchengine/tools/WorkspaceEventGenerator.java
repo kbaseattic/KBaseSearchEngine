@@ -286,7 +286,7 @@ public class WorkspaceEventGenerator {
                     .withNullableObjectID(objid + "")
                     .withNullableVersion(vernum)
                     .withNullableisPublic(pub)
-                    .withOverwriteExistingData(overwriteExistingData)
+                    .withNullableOverwriteExistingData(overwriteExistingData)
                     .build(),
                     StatusEventProcessingState.UNPROC,
                     workerCodes,

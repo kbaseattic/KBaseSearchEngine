@@ -40,8 +40,6 @@ import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.tools.Utils;
 
-import javax.swing.event.DocumentEvent;
-
 import static com.mongodb.client.model.Filters.eq;
 
 /** An implementation of {@link StatusEventStorage} with MongoDB as the backend.
@@ -408,7 +406,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 .withNullableObjectID(event.getString(FLD_OBJECT_ID))
                 .withNullableVersion(event.getInteger(FLD_VERSION))
                 .withNullableNewName(event.getString(FLD_NEW_NAME))
-                .withOverwriteExistingData(event.getBoolean(FLD_OVERWRITE_EXISTING_DATA))
+                .withNullableOverwriteExistingData(event.getBoolean(FLD_OVERWRITE_EXISTING_DATA))
                 .withNullableisPublic(event.getBoolean(FLD_PUBLIC))
                 .build();
     }
