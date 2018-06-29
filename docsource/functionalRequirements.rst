@@ -3,7 +3,7 @@ Functional Requirements
 
 1. Support the indexing of many data types (Genome, Assembly, Narrative etc). It is expected that there will be about 1000 types
 
-2. Support the indexing of versions of object types. It is expected that each object can have at most about 100 versions.
+2. Support the indexing of versions of object types. It is expected that each type can have at most about 100 versions.
 
 3. Support the indexing of multiple versions of an object. A specific version of a specific object may have mutable data that may require index updates.
 
