@@ -5,7 +5,7 @@ Functional Requirements
 
 2. Support the indexing of versions of types. It is expected that each object can have on average about 100 versions.
 
-3. Support the indexing of instance versions. A specific version of a specific object may have mutable data that me require index updates.
+3. Support the indexing of multiple versions of an object. A specific version of a specific object may have mutable data that may require index updates.
 
 4. In general flatten or denormalize data to improve search performance. But, where applicable, use the parent-child relationship to minimize load on indexing when parent data changes and this change can affect upwards of thousands of children.
 
