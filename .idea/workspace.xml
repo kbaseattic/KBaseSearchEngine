@@ -1,18 +1,644 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="e3f29570-1144-4e4f-97fb-c21a97e49b16" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Dockerfile" afterPath="$PROJECT_DIR$/Dockerfile" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/build.xml" afterPath="$PROJECT_DIR$/build.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/src/workspace/WorkspaceClient.java" afterPath="$PROJECT_DIR$/lib/src/workspace/WorkspaceClient.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/entrypoint.sh" afterPath="$PROJECT_DIR$/scripts/entrypoint.sh" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scripts/prepare_deploy_cfg.py" afterPath="$PROJECT_DIR$/scripts/prepare_deploy_cfg.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/src/kbasesearchengine/test/controllers/elasticsearch/ElasticSearchController.java" afterPath="$PROJECT_DIR$/test/src/kbasesearchengine/test/controllers/elasticsearch/ElasticSearchController.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/src/kbasesearchengine/test/integration/IndexerIntegrationTest.java" afterPath="$PROJECT_DIR$/test/src/kbasesearchengine/test/integration/IndexerIntegrationTest.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/src/kbasesearchengine/test/search/ElasticIndexingStorageTest.java" afterPath="$PROJECT_DIR$/test/src/kbasesearchengine/test/search/ElasticIndexingStorageTest.java" />
+    <list default="true" id="e311d872-84fd-4ff7-9004-17e71610af6a" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/ant.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KBaseSearchEngine.iml" beforeDir="false" afterPath="$PROJECT_DIR$/KBaseSearchEngine.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/git.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/AccessFilter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/GetObjectsInput.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/GetObjectsInput.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/GetObjectsOutput.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/GetObjectsOutput.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/KBaseSearchEngineClient$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/KBaseSearchEngineClient$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/KBaseSearchEngineClient$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/KBaseSearchEngineClient$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/KBaseSearchEngineClient$5.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/KBaseSearchEngineClient.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/KBaseSearchEngineClient.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/KBaseSearchEngineServer$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/KBaseSearchEngineServer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/KBaseSearchEngineServer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/KeyDescription.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/KeyDescription.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/ListTypesInput.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/ListTypesInput.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/ListTypesOutput.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/ListTypesOutput.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/MatchFilter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/MatchFilter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/MatchValue.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/MatchValue.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/ObjectData.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/ObjectData.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/Pagination.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/Pagination.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/PostProcessing.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/PostProcessing.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/SearchObjectsInput.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/SearchObjectsInput.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/SearchObjectsOutput.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/SearchObjectsOutput.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/SearchTypesInput.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/SearchTypesInput.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/SearchTypesOutput.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/SearchTypesOutput.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/SortingRule.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/SortingRule.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/TypeDescriptor.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/TypeDescriptor.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/authorization/AccessGroupCache$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/authorization/AccessGroupCache$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/authorization/AccessGroupCache.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/authorization/AccessGroupCache.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/authorization/AccessGroupProvider.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/authorization/AccessGroupProvider.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/authorization/WorkspaceAccessGroupProvider.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/authorization/WorkspaceAccessGroupProvider.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/authorization/package-info.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/authorization/package-info.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/common/GUID.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/common/GUID.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/common/JsonTokenUtil.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/common/JsonTokenUtil.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/common/ObjectJsonPath.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/common/ObjectJsonPath.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/AccessGroupEventQueue$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/AccessGroupEventQueue.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/AccessGroupEventQueue.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/EventQueue.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/EventQueue.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/ObjectEventQueue$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/ObjectEventQueue.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/ObjectEventQueue.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/StatusEvent$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/StatusEvent$Builder.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/StatusEvent.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/StatusEvent.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/StatusEventID.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/StatusEventID.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/StatusEventProcessingState.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/StatusEventProcessingState.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/StatusEventType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/StatusEventType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/StoredStatusEvent.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/StoredStatusEvent.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/FatalIndexingException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/FatalIndexingException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/FatalRetriableIndexingException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/FatalRetriableIndexingException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/IndexingException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/IndexingException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/IndexingExceptionUncheckedWrapper.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/IndexingExceptionUncheckedWrapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/NoSuchEventException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/NoSuchEventException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/RetriableIndexingException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/RetriableIndexingException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/RetriableIndexingExceptionUncheckedWrapper.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/RetriableIndexingExceptionUncheckedWrapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/Retrier.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/Retrier.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/RetriesExceededIndexingException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/RetriesExceededIndexingException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/RetryConsumer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/RetryConsumer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/RetryFunction.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/RetryFunction.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/RetryLogger.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/RetryLogger.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/UnprocessableEventIndexingException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/UnprocessableEventIndexingException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/package-info.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/exceptions/package-info.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/EventHandler.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/EventHandler.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/ResolvedReference.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/ResolvedReference.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/SourceData$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/SourceData$Builder.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/SourceData.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/SourceData.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/WorkspaceEventHandler$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/WorkspaceEventHandler$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/WorkspaceEventHandler$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/WorkspaceEventHandler$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/WorkspaceEventHandler$5.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/WorkspaceEventHandler$StupidWorkspaceObjectIterator.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/WorkspaceEventHandler$WorkspaceIterator.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/WorkspaceEventHandler.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/WorkspaceEventHandler.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/package-info.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/handler/package-info.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/storage/MongoDBStatusEventStorage$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/storage/MongoDBStatusEventStorage$IndexSpecification.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/storage/MongoDBStatusEventStorage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/storage/MongoDBStatusEventStorage.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/storage/StatusEventStorage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/storage/StatusEventStorage.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/storage/StorageInitException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/events/storage/StorageInitException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/main/IndexerCoordinator$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/main/IndexerCoordinator$ErrorType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/main/IndexerCoordinator$IndexerRunner.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/main/IndexerCoordinator.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/main/IndexerCoordinator.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/main/IndexerWorker$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/main/IndexerWorker$ErrorType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/main/IndexerWorker$IndexerRunner.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/main/IndexerWorker$MOPLookupProvider.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/main/IndexerWorker.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/main/IndexerWorker.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/main/LineLogger.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/main/LineLogger.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/main/SearchMethods.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/main/SearchMethods.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/IdConsumer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/IdConsumer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/IdMapper.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/IdMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/IdMappingRules.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/IdMappingRules.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/KeywordParser$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/KeywordParser$InnerKeyValue.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/KeywordParser$ObjectLookupProvider.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/KeywordParser.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/KeywordParser.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/ObjectParseException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/ObjectParseException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/ObjectParser.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/ObjectParser.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/ParsedObject.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/ParsedObject.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/SimpleIdConsumer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/SimpleIdConsumer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/SimpleSubObjectConsumer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/SimpleSubObjectConsumer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/SubObjectConsumer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/SubObjectConsumer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/SubObjectExtractionNode.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/SubObjectExtractionNode.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/SubObjectExtractor.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/SubObjectExtractor.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/ValueCollectingNode.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/ValueCollectingNode.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/ValueCollector.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/ValueCollector.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/ValueConsumer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/parse/ValueConsumer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/relations/DefaultRelationStorage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/relations/DefaultRelationStorage.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/relations/Relation.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/relations/Relation.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/relations/RelationStorage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/relations/RelationStorage.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/AccessFilter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/AccessFilter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/AccessInfo$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/AccessInfo.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/AccessInfo.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$10.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$100.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$101.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$102.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$103.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$104.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$105.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$106.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$107.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$11.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$12.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$13.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$14.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$15.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$16.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$17.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$18.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$19.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$20.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$21.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$22.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$23.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$24.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$25.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$26.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$27.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$28.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$29.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$30.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$31.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$32.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$33.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$34.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$35.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$36.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$37.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$38.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$39.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$40.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$41.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$42.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$43.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$44.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$45.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$46.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$47.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$48.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$49.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$5.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$50.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$51.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$52.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$53.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$54.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$55.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$56.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$57.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$58.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$59.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$6.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$60.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$61.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$62.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$63.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$64.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$65.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$66.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$67.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$68.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$69.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$7.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$70.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$71.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$72.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$73.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$74.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$75.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$76.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$77.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$78.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$79.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$8.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$80.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$81.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$82.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$83.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$84.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$85.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$86.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$87.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$88.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$89.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$9.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$90.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$91.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$92.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$93.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$94.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$95.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$96.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$97.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$98.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage$99.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ElasticIndexingStorage.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/FoundHits.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/FoundHits.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/IndexingStorage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/IndexingStorage.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/MatchFilter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/MatchFilter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/MatchValue.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/MatchValue.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ObjectData.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/ObjectData.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/Pagination.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/Pagination.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/PostProcessing.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/PostProcessing.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/SortingRule.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/search/SortingRule.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/IndexingRules.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/IndexingRules.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/ObjectTypeParsingRules.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/ObjectTypeParsingRules.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/RelationRules.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/RelationRules.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/StorageObjectType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/StorageObjectType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/TypeFileStorage$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/TypeFileStorage$CodeAndType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/TypeFileStorage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/TypeFileStorage.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/TypeMapping$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/TypeMapping$Builder.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/TypeMapping.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/TypeMapping.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/TypeMappingParser.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/TypeMappingParser.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/TypeParseException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/TypeParseException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/TypeStorage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/TypeStorage.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/ValidationException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/ValidationException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/YAMLTypeMappingParser.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/system/YAMLTypeMappingParser.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$10.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$11.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$12.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$13.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$14.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$15.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$16.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$17.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$18.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$5.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$6.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$7.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$8.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester$9.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/ElasticPayloadAnanlyzerTester.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/KBaseRelationEngineServerTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/KBaseRelationEngineServerTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/authorization/AccessGroupCacheTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/authorization/AccessGroupCacheTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/common/TestCommon.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/common/TestCommon.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/controllers/elasticsearch/ElasticSearchController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/controllers/elasticsearch/ElasticSearchController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/controllers/workspace/WorkspaceController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/controllers/workspace/WorkspaceController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/controllers/workspace/version_0.7.2-dev1" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/controllers/workspace/version_0.8.0-dev3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/AccessGroupEventQueueTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/AccessGroupEventQueueTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/EventQueueTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/EventQueueTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/ObjectEventQueueTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/ObjectEventQueueTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/StatusEventIDTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/StatusEventIDTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/StatusEventTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/StatusEventTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/StoredStatusEventTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/StoredStatusEventTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/exceptions/ExceptionTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/exceptions/ExceptionTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/exceptions/RetrierTest$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/exceptions/RetrierTest$CollectingLogger.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/exceptions/RetrierTest$LogEvent.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/exceptions/RetrierTest$TestConsumer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/exceptions/RetrierTest$TestFunction.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/exceptions/RetrierTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/exceptions/RetrierTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/handler/ResolvedReferenceTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/handler/ResolvedReferenceTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/handler/SourceDataTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/handler/SourceDataTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/storage/MongoDBStatusEventStorageTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/events/storage/MongoDBStatusEventStorageTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/integration/IndexerIntegrationTest$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/integration/IndexerIntegrationTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/integration/IndexerIntegrationTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/main/IndexerWorkerTest$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/main/IndexerWorkerTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/main/IndexerWorkerTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/main/PerformanceTester$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/main/PerformanceTester.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/main/PerformanceTester.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/main/WsUtil.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/main/WsUtil.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/parse/IdMapperTest$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/parse/IdMapperTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/parse/IdMapperTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/parse/SubObjectExtractorTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/parse/SubObjectExtractorTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/parse/assembly01.json.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/parse/genome01.json.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/search/ElasticIndexingStorageTest$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/search/ElasticIndexingStorageTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/search/ElasticIndexingStorageTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/system/StorageObjectTypeTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/system/StorageObjectTypeTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/system/TypeMappingTest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/test/system/TypeMappingTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/SearchTools$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/SearchTools$Args.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/SearchTools.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/SearchTools.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/SearchToolsConfig$SearchToolsConfigException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/SearchToolsConfig.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/SearchToolsConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/Utils.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/Utils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/WorkspaceEventGenerator$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/WorkspaceEventGenerator$Builder.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/WorkspaceEventGenerator$EventGeneratorException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/WorkspaceEventGenerator$Versions.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/WorkspaceEventGenerator.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/WorkspaceEventGenerator.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/WorkspaceIdentifier.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/WorkspaceIdentifier.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/package-info.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/kbasesearchengine/tools/package-info.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/us/kbase/common/service/Tuple11.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/us/kbase/common/service/Tuple11.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/us/kbase/common/service/Tuple12.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/us/kbase/common/service/Tuple12.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/us/kbase/common/service/Tuple2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/us/kbase/common/service/Tuple2.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/us/kbase/common/service/Tuple7.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/us/kbase/common/service/Tuple7.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/us/kbase/common/service/Tuple9.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/us/kbase/common/service/Tuple9.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/AlterWorkspaceMetadataParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/AlterWorkspaceMetadataParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/CloneWorkspaceParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/CloneWorkspaceParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/CopyObjectParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/CopyObjectParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/CreateWorkspaceParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/CreateWorkspaceParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ExternalDataUnit.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ExternalDataUnit.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/FuncInfo.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/FuncInfo.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetModuleInfoParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetModuleInfoParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetNamesByPrefixParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetNamesByPrefixParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetNamesByPrefixResults.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetNamesByPrefixResults.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjectInfo3Params.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjectInfo3Params.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjectInfo3Results.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjectInfo3Results.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjectInfoNewParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjectInfoNewParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjectOutput.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjectOutput.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjectParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjectParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjectmetaParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjectmetaParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjects2Params.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjects2Params.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjects2Results.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetObjects2Results.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetPermissionsMassParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetPermissionsMassParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetWorkspacemetaParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GetWorkspacemetaParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GrantModuleOwnershipParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/GrantModuleOwnershipParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListAllTypesParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListAllTypesParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListModuleVersionsParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListModuleVersionsParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListModulesParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListModulesParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListObjectsParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListObjectsParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListWorkspaceIDsParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListWorkspaceIDsParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListWorkspaceIDsResults.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListWorkspaceIDsResults.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListWorkspaceInfoParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListWorkspaceInfoParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListWorkspaceObjectsParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListWorkspaceObjectsParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListWorkspacesParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ListWorkspacesParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ModuleInfo.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ModuleInfo.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ModuleVersions.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ModuleVersions.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ObjectData.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ObjectData.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ObjectIdentity.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ObjectIdentity.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ObjectProvenanceInfo.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ObjectProvenanceInfo.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ObjectSaveData.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ObjectSaveData.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ObjectSpecification.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ObjectSpecification.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ProvenanceAction.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/ProvenanceAction.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/RegisterTypespecCopyParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/RegisterTypespecCopyParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/RegisterTypespecParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/RegisterTypespecParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/RemoveModuleOwnershipParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/RemoveModuleOwnershipParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/RenameObjectParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/RenameObjectParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/RenameWorkspaceParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/RenameWorkspaceParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/SaveObjectParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/SaveObjectParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/SaveObjectsParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/SaveObjectsParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/SetGlobalPermissionsParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/SetGlobalPermissionsParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/SetPermissionsParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/SetPermissionsParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/SetWorkspaceDescriptionParams.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/SetWorkspaceDescriptionParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/SubAction.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/SubAction.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/SubObjectIdentity.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/SubObjectIdentity.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/TypeInfo.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/TypeInfo.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$10.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$11.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$12.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$13.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$14.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$15.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$16.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$17.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$18.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$19.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$20.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$21.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$22.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$23.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$24.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$25.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$26.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$27.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$28.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$29.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$30.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$31.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$32.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$33.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$34.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$35.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$36.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$37.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$38.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$39.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$40.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$41.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$42.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$43.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$44.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$45.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$46.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$47.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$48.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$49.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$5.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$50.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$51.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$52.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$53.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$54.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$55.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$56.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$57.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$58.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$59.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$6.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$60.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$61.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$62.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$63.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$7.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$8.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient$9.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceClient.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceIdentity.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspaceIdentity.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspacePermissions.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/workspace/WorkspacePermissions.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/deploy.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/deploy.cfg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/git.properties" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/git.properties" afterDir="false" />
     </list>
-    <ignored path="$PROJECT_DIR$/classes/" />
-    <ignored path="$PROJECT_DIR$/bin/" />
+    <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -22,42 +648,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="TestCommon.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/common/TestCommon.java">
+      <file leaf-file-name="AccessGroupCacheTest.java" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/authorization/AccessGroupCacheTest.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="345">
-              <caret line="23" column="0" lean-forward="false" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="KIDLspec.css" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/KIDLspec.css">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="kbasesearchengine_Wed_Nov_29_21-43-07_PST_2017.properties" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/kbasesearchengine_Wed_Nov_29_21-43-07_PST_2017.properties">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="kbasesearchengine.xml" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/kbasesearchengine.xml">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2505">
-              <caret line="167" column="48" lean-forward="false" selection-start-line="167" selection-start-column="48" selection-end-line="167" selection-end-column="48" />
-              <folding />
+            <state relative-caret-position="270">
+              <caret line="18" column="32" selection-start-line="18" selection-start-column="32" selection-end-line="18" selection-end-column="32" />
             </state>
           </provider>
         </entry>
@@ -65,29 +660,43 @@
       <file leaf-file-name="build.xml" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/build.xml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="179">
-              <caret line="44" column="29" lean-forward="true" selection-start-line="44" selection-start-column="29" selection-end-line="44" selection-end-column="29" />
-              <folding />
+            <state relative-caret-position="-1320">
+              <caret line="22" column="35" selection-start-line="22" selection-start-column="35" selection-end-line="22" selection-end-column="35" />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="IndexerIntegrationTest.java" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/integration/IndexerIntegrationTest.java">
+      <file leaf-file-name="TwoVersions1.spec" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/data/TwoVersions1.spec">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file leaf-file-name="KBaseSearchEngineServer.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/lib/src/kbasesearchengine/KBaseSearchEngineServer.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="360">
-              <caret line="24" column="13" lean-forward="false" selection-start-line="24" selection-start-column="13" selection-end-line="24" selection-end-column="13" />
-              <folding />
+            <state relative-caret-position="180">
+              <caret line="12" selection-start-line="12" selection-end-line="12" />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Dockerfile" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Dockerfile">
+      <file leaf-file-name="ElasticPayloadAnanlyzerTester.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/ElasticPayloadAnanlyzerTester.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="225">
-              <caret line="15" column="32" lean-forward="false" selection-start-line="15" selection-start-column="32" selection-end-line="15" selection-end-column="32" />
-              <folding />
+            <state relative-caret-position="300">
+              <caret line="20" column="19" selection-start-line="20" selection-start-column="19" selection-end-line="20" selection-end-column="19" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="AuthCacheTest.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/authorization/AuthCacheTest.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="195">
+              <caret line="30" column="16" selection-start-line="30" selection-start-column="16" selection-end-line="30" selection-end-column="16" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -96,60 +705,37 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>/Library/Java/JavaVirtualMachines/jdk1.8.0_152.jdk</find>
-      <find>ant.file.module_kbasesearchengine</find>
-      <find>apache.comm</find>
-      <find>commons</find>
-      <find>logger.</find>
-      <find>mongo</find>
+      <find>mockito</find>
+      <find>.junit</find>
+      <find>junit</find>
+      <find>httpclient</find>
+      <find>apache.c</find>
+      <find>apache.commons.http.</find>
+      <find>apache.ht</find>
+      <find>http</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GradleLocalSettings">
-    <option name="externalProjectsViewState">
-      <projects_view />
-    </option>
-  </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/test/src/kbasesearchengine/test/integration/IndexerIntegrationTest.java" />
-        <option value="$PROJECT_DIR$/build.xml" />
+        <option value="$USER_HOME$/.bash_profile" />
       </list>
     </option>
   </component>
-  <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
-  <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
-  <component name="JsGulpfileManager">
-    <detection-done>true</detection-done>
-    <sorting>DEFINITION_ORDER</sorting>
-  </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="140" />
-    <option name="y" value="43" />
+    <option name="x" value="-1601" />
+    <option name="y" value="-153" />
     <option name="width" value="1400" />
-    <option name="height" value="908" />
+    <option name="height" value="1417" />
   </component>
   <component name="ProjectView">
-    <navigator currentView="ProjectPane" proportions="" version="1">
-      <flattenPackages />
-      <showMembers />
-      <showModules />
-      <showLibraryContents />
-      <hideEmptyPackages />
-      <abbreviatePackageNames />
-      <autoscrollToSource />
-      <autoscrollFromSource />
-      <sortByType />
-      <manualOrder />
+    <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
-      <pane id="PackagesPane" />
-      <pane id="Scratches" />
       <pane id="AndroidView" />
       <pane id="ProjectPane">
         <subPane>
@@ -158,25 +744,75 @@
               <item name="KBaseSearchEngine" type="b2602c69:ProjectViewProjectNode" />
               <item name="KBaseSearchEngine" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="KBaseSearchEngine" type="b2602c69:ProjectViewProjectNode" />
+              <item name="KBaseSearchEngine" type="462c0819:PsiDirectoryNode" />
+              <item name="classes" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="KBaseSearchEngine" type="b2602c69:ProjectViewProjectNode" />
+              <item name="KBaseSearchEngine" type="462c0819:PsiDirectoryNode" />
+              <item name="classes" type="462c0819:PsiDirectoryNode" />
+              <item name="kbasesearchengine" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="KBaseSearchEngine" type="b2602c69:ProjectViewProjectNode" />
+              <item name="KBaseSearchEngine" type="462c0819:PsiDirectoryNode" />
+              <item name="lib" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="KBaseSearchEngine" type="b2602c69:ProjectViewProjectNode" />
+              <item name="KBaseSearchEngine" type="462c0819:PsiDirectoryNode" />
+              <item name="lib" type="462c0819:PsiDirectoryNode" />
+              <item name="KBaseSearchEngine" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="KBaseSearchEngine" type="b2602c69:ProjectViewProjectNode" />
+              <item name="KBaseSearchEngine" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="KBaseSearchEngine" type="b2602c69:ProjectViewProjectNode" />
+              <item name="KBaseSearchEngine" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="KBaseSearchEngine" type="b2602c69:ProjectViewProjectNode" />
+              <item name="KBaseSearchEngine" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="KBaseSearchEngine" type="b2602c69:ProjectViewProjectNode" />
+              <item name="KBaseSearchEngine" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+              <item name="authorization" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="KBaseSearchEngine" type="b2602c69:ProjectViewProjectNode" />
+              <item name="KBaseSearchEngine" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+              <item name="data" type="462c0819:PsiDirectoryNode" />
+            </path>
           </expand>
           <select />
         </subPane>
       </pane>
+      <pane id="PackagesPane" />
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="project.structure.last.edited" value="SDKs" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
-    <property name="GenerateAntBuildDialog.enableUiFormCompile" value="true" />
-    <property name="GenerateAntBuildDialog.forceTargetJdk" value="true" />
-    <property name="GenerateAntBuildDialog.backupFiles" value="true" />
-    <property name="GenerateAntBuildDialog.outputFileNameProperty" value="kbasesearchengine" />
-    <property name="settings.editor.selected.configurable" value="configurable.group.build.tools" />
-    <property name="GenerateAntBuildDialog.generateSingleFile" value="true" />
+    <property name="settings.editor.selected.configurable" value="preferences.fileTypes" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -191,30 +827,33 @@
     </option>
   </component>
   <component name="RunManager">
-    <configuration default="true" type="Applet" factoryName="Applet">
-      <option name="HTML_USED" value="false" />
-      <option name="WIDTH" value="400" />
-      <option name="HEIGHT" value="300" />
-      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
-      <module />
-    </configuration>
     <configuration default="true" type="Application" factoryName="Application">
-      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
-      <option name="MAIN_CLASS_NAME" />
-      <option name="VM_PARAMETERS" />
-      <option name="PROGRAM_PARAMETERS" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    </configuration>
+    <configuration name="AccessGroupCacheTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="test" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="kbasesearchengine.test.authorization.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" />
-      <option name="ENABLE_SWING_INSPECTOR" value="false" />
-      <option name="ENV_VARIABLES" />
+      <option name="PACKAGE_NAME" value="kbasesearchengine.test.authorization" />
+      <option name="MAIN_CLASS_NAME" value="kbasesearchengine.test.authorization.AccessGroupCacheTest" />
+      <option name="METHOD_NAME" />
+      <option name="TEST_OBJECT" value="class" />
+      <option name="VM_PARAMETERS" value="-ea" />
+      <option name="PARAMETERS" />
+      <option name="WORKING_DIRECTORY" value="%MODULE_WORKING_DIR%" />
       <option name="PASS_PARENT_ENVS" value="true" />
-      <module name="" />
-      <envs />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="singleModule" />
+      </option>
+      <patterns />
     </configuration>
     <configuration default="true" type="JUnit" factoryName="JUnit">
-      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
-      <module name="" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" />
       <option name="PACKAGE_NAME" />
@@ -223,31 +862,14 @@
       <option name="TEST_OBJECT" value="class" />
       <option name="VM_PARAMETERS" value="-ea" />
       <option name="PARAMETERS" />
-      <option name="WORKING_DIRECTORY" value="$MODULE_DIR$" />
-      <option name="ENV_VARIABLES" />
+      <option name="WORKING_DIRECTORY" value="%MODULE_WORKING_DIR%" />
       <option name="PASS_PARENT_ENVS" value="true" />
       <option name="TEST_SEARCH_SCOPE">
         <value defaultName="singleModule" />
       </option>
-      <envs />
       <patterns />
     </configuration>
-    <configuration default="true" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType" factoryName="Plugin">
-      <module name="" />
-      <option name="VM_PARAMETERS" value="-Xmx512m -Xms256m -XX:MaxPermSize=250m -ea" />
-      <option name="PROGRAM_PARAMETERS" />
-      <predefined_log_file id="idea.log" enabled="true" />
-    </configuration>
-    <configuration default="true" type="Remote" factoryName="Remote">
-      <option name="USE_SOCKET_TRANSPORT" value="true" />
-      <option name="SERVER_MODE" value="false" />
-      <option name="SHMEM_ADDRESS" value="javadebug" />
-      <option name="HOST" value="localhost" />
-      <option name="PORT" value="5005" />
-    </configuration>
     <configuration default="true" type="TestNG" factoryName="TestNG">
-      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
-      <module name="" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" />
       <option name="SUITE_NAME" />
@@ -258,300 +880,272 @@
       <option name="TEST_OBJECT" value="CLASS" />
       <option name="VM_PARAMETERS" value="-ea" />
       <option name="PARAMETERS" />
-      <option name="WORKING_DIRECTORY" value="$MODULE_DIR$" />
+      <option name="WORKING_DIRECTORY" value="%MODULE_WORKING_DIR%" />
       <option name="OUTPUT_DIRECTORY" />
-      <option name="ANNOTATION_TYPE" />
-      <option name="ENV_VARIABLES" />
       <option name="PASS_PARENT_ENVS" value="true" />
       <option name="TEST_SEARCH_SCOPE">
         <value defaultName="singleModule" />
       </option>
       <option name="USE_DEFAULT_REPORTERS" value="false" />
       <option name="PROPERTIES_FILE" />
-      <envs />
       <properties />
       <listeners />
     </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="JUnit.AccessGroupCacheTest" />
+      </list>
+    </recent_temporary>
   </component>
-  <component name="ShelveChangesManager" show_recycled="false">
-    <option name="remove_strategy" value="false" />
+  <component name="SvnConfiguration">
+    <configuration />
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="e3f29570-1144-4e4f-97fb-c21a97e49b16" name="Default" comment="" />
-      <created>1512018573299</created>
+      <changelist id="e311d872-84fd-4ff7-9004-17e71610af6a" name="Default" comment="" />
+      <created>1530298927407</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1512018573299</updated>
-      <workItem from="1512018576590" duration="880000" />
-      <workItem from="1512019778843" duration="1638000" />
-      <workItem from="1512021672366" duration="146000" />
-      <workItem from="1512021840012" duration="326000" />
+      <updated>1530298927407</updated>
     </task>
     <servers />
   </component>
-  <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="2990000" />
-  </component>
   <component name="ToolWindowManager">
-    <frame x="140" y="43" width="1400" height="908" extended-state="0" />
+    <frame x="71" y="63" width="1400" height="921" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32894737" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Palette&#9;" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Image Layers" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Capture Analysis" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="UI Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Theme Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info anchor="right" id="Palette" order="3" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="right" id="Palette&#9;" order="3" />
+      <window_info id="Image Layers" order="2" />
+      <window_info anchor="right" id="Capture Analysis" order="3" />
+      <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
+      <window_info anchor="right" id="Maven Projects" order="3" />
+      <window_info anchor="bottom" id="Run" order="2" />
+      <window_info anchor="bottom" id="Version Control" order="7" weight="0.3293979" />
+      <window_info anchor="bottom" id="Terminal" order="7" />
+      <window_info id="Capture Tool" order="2" />
+      <window_info id="Designer" order="2" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.25" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info id="UI Designer" order="2" />
+      <window_info anchor="right" id="Theme Preview" order="3" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Find" order="1" />
     </layout>
   </component>
-  <component name="TypeScriptGeneratedFilesManager">
-    <option name="version" value="1" />
+  <component name="Vcs.Log.History.Properties">
+    <option name="COLUMN_ORDER">
+      <list>
+        <option value="0" />
+        <option value="2" />
+        <option value="3" />
+        <option value="1" />
+      </list>
+    </option>
   </component>
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
   </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager />
-    <watches-manager />
-  </component>
-  <component name="antWorkspaceConfiguration">
-    <option name="IS_AUTOSCROLL_TO_SOURCE" value="false" />
-    <option name="FILTER_TARGETS" value="true" />
-    <buildFile url="file://$PROJECT_DIR$/build.xml">
-      <targetFilters>
-        <filter targetName="compile" isVisible="true" />
-        <filter targetName="war" isVisible="true" />
-        <filter targetName="build-executable-script" isVisible="true" />
-        <filter targetName="test" isVisible="true" />
-        <filter targetName="test-report" isVisible="true" />
-      </targetFilters>
-      <expanded value="true" />
-    </buildFile>
-  </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/common/TestCommon.java">
+    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/authorization/AccessGroupCacheTest.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="345">
-          <caret line="23" column="0" lean-forward="false" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
-          <folding />
+          <caret line="39" column="34" selection-start-line="39" selection-start-column="34" selection-end-line="39" selection-end-column="34" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/KIDLspec.css">
+    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/data/TwoVersions1.spec">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/src/kbasesearchengine/KBaseSearchEngineServer.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+        <state relative-caret-position="180">
+          <caret line="12" lean-forward="true" selection-start-line="12" selection-end-line="12" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/kbasesearchengine_Wed_Nov_29_21-43-07_PST_2017.properties">
+    <entry file="jar://$PROJECT_DIR$/../all_jars/httpcore-4.4.5.jar!/org/apache/http/HttpHost.class">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+        <state relative-caret-position="135">
+          <caret line="18" column="19" selection-start-line="18" selection-start-column="19" selection-end-line="18" selection-end-column="19" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/kbasesearchengine.xml">
+    <entry file="jar://$PROJECT_DIR$/../all_jars/httpcore-4.2.4.jar!/org/apache/http/HttpHost.class">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2505">
-          <caret line="167" column="48" lean-forward="false" selection-start-line="167" selection-start-column="48" selection-end-line="167" selection-end-column="48" />
-          <folding />
+        <state relative-caret-position="105">
+          <caret line="13" column="19" selection-start-line="13" selection-start-column="19" selection-end-line="13" selection-end-column="19" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/ElasticPayloadAnanlyzerTester.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="300">
+          <caret line="20" column="19" lean-forward="true" selection-start-line="20" selection-start-column="19" selection-end-line="20" selection-end-column="19" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/../all_jars/junit-4.12.jar!/org/junit/Test.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="7" column="7" lean-forward="true" selection-start-line="7" selection-start-column="7" selection-end-line="7" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/../all_jars/junit-4.9.jar!/org/junit/Test.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="120">
+          <caret line="14" column="18" selection-start-line="14" selection-start-column="18" selection-end-line="14" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/authorization/AuthCacheTest.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="195">
+          <caret line="30" column="16" lean-forward="true" selection-start-line="30" selection-start-column="16" selection-end-line="30" selection-end-column="16" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/build.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="960">
-          <caret line="64" column="0" lean-forward="true" selection-start-line="64" selection-start-column="0" selection-end-line="64" selection-end-column="0" />
-          <folding />
+        <state relative-caret-position="825">
+          <caret line="55" column="1" lean-forward="true" selection-start-line="55" selection-start-column="1" selection-end-line="55" selection-end-column="1" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Dockerfile">
+    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/authorization/AccessGroupCacheTest.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="225">
-          <caret line="15" column="32" lean-forward="false" selection-start-line="15" selection-start-column="32" selection-end-line="15" selection-end-column="32" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/integration/IndexerIntegrationTest.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="375">
-          <caret line="25" column="17" lean-forward="true" selection-start-line="25" selection-start-column="17" selection-end-line="25" selection-end-column="17" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/common/TestCommon.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="345">
-          <caret line="23" column="0" lean-forward="false" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/KIDLspec.css">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/kbasesearchengine_Wed_Nov_29_21-43-07_PST_2017.properties">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/kbasesearchengine.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2505">
-          <caret line="167" column="48" lean-forward="false" selection-start-line="167" selection-start-column="48" selection-end-line="167" selection-end-column="48" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/integration/IndexerIntegrationTest.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="17" column="22" lean-forward="false" selection-start-line="17" selection-start-column="22" selection-end-line="17" selection-end-column="22" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Dockerfile">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="225">
-          <caret line="15" column="32" lean-forward="true" selection-start-line="15" selection-start-column="32" selection-end-line="15" selection-end-column="32" />
-          <folding />
+        <state relative-caret-position="105">
+          <caret line="23" column="9" selection-start-line="23" selection-start-column="9" selection-end-line="23" selection-end-column="9" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/build.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="375">
-          <caret line="25" column="26" lean-forward="false" selection-start-line="25" selection-start-column="26" selection-end-line="25" selection-end-column="26" />
-          <folding />
+        <state relative-caret-position="1200">
+          <caret line="80" column="42" selection-start-line="80" selection-start-column="42" selection-end-line="80" selection-end-column="42" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/KBaseSearchEngine.iml">
+    <entry file="file://$USER_HOME$/.bash_profile">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="540">
-          <caret line="36" column="78" lean-forward="true" selection-start-line="36" selection-start-column="78" selection-end-line="36" selection-end-column="78" />
+        <state relative-caret-position="615">
+          <caret line="41" column="25" lean-forward="true" selection-start-line="41" selection-start-column="25" selection-end-line="41" selection-end-column="25" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/common/TestCommon.java">
+    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/authorization/AccessGroupCacheTest.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="345">
-          <caret line="23" column="0" lean-forward="true" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
-          <folding />
+        <state relative-caret-position="330">
+          <caret line="22" column="34" lean-forward="true" selection-start-line="22" selection-start-column="34" selection-end-line="22" selection-end-column="34" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/kbasesearchengine.xml">
+    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/authorization/AccessGroupCacheTest.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1560">
-          <caret line="104" column="11" lean-forward="true" selection-start-line="104" selection-start-column="11" selection-end-line="104" selection-end-column="11" />
-          <folding />
+        <state relative-caret-position="30">
+          <caret line="2" selection-start-line="2" selection-end-line="2" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/module_kbasesearchengine.xml" />
-    <entry file="file://$PROJECT_DIR$/KBaseSearchEngine.iml">
+    <entry file="file://$USER_HOME$/.bash_profile">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="540">
-          <caret line="36" column="78" lean-forward="false" selection-start-line="36" selection-start-column="78" selection-end-line="36" selection-end-column="78" />
+        <state relative-caret-position="717">
+          <caret line="61" column="18" selection-start-line="61" selection-start-column="18" selection-end-line="61" selection-end-column="18" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/common/TestCommon.java">
+    <entry file="jar://$PROJECT_DIR$/../all_jars/hamcrest-core-1.3.jar!/org/hamcrest/CoreMatchers.class">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="345">
-          <caret line="23" column="0" lean-forward="false" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
-          <folding />
+        <state relative-caret-position="390">
+          <caret line="26" column="13" selection-start-line="26" selection-start-column="13" selection-end-line="26" selection-end-column="13" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/kbasesearchengine_Wed_Nov_29_21-19-55_PST_2017.xml" />
-    <entry file="file://$PROJECT_DIR$/module_kbasesearchengine_Wed_Nov_29_21-19-55_PST_2017.xml" />
-    <entry file="file://$PROJECT_DIR$/module_kbasesearchengine.xml" />
-    <entry file="file://$PROJECT_DIR$/kbasesearchengine_Wed_Nov_29_21-33-58_PST_2017.properties" />
-    <entry file="file://$PROJECT_DIR$/KIDLspec.css">
+    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/authorization/AuthCacheTest.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+        <state relative-caret-position="195">
+          <caret line="30" column="16" selection-start-line="30" selection-start-column="16" selection-end-line="30" selection-end-column="16" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/kbasesearchengine_Wed_Nov_29_21-33-58_PST_2017.xml" />
-    <entry file="file://$PROJECT_DIR$/kbasesearchengine_Wed_Nov_29_21-43-07_PST_2017.properties">
+    <entry file="jar://$PROJECT_DIR$/../all_jars/junit-4.12.jar!/org/junit/Test.class">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+        <state relative-caret-position="60">
+          <caret line="7" column="7" selection-start-line="7" selection-start-column="7" selection-end-line="7" selection-end-column="7" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/kbasesearchengine.xml">
+    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/ElasticPayloadAnanlyzerTester.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2505">
-          <caret line="167" column="48" lean-forward="false" selection-start-line="167" selection-start-column="48" selection-end-line="167" selection-end-column="48" />
-          <folding />
+        <state relative-caret-position="300">
+          <caret line="20" column="19" selection-start-line="20" selection-start-column="19" selection-end-line="20" selection-end-column="19" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Dockerfile">
+    <entry file="jar://$PROJECT_DIR$/../all_jars/junit-4.9.jar!/org/junit/Test.class">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="225">
-          <caret line="15" column="32" lean-forward="false" selection-start-line="15" selection-start-column="32" selection-end-line="15" selection-end-column="32" />
-          <folding />
+        <state relative-caret-position="120">
+          <caret line="14" column="18" selection-start-line="14" selection-start-column="18" selection-end-line="14" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/../all_jars/httpclient-4.5.2.jar!/org/apache/http/conn/HttpHostConnectException.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="105">
+          <caret line="15" column="13" selection-start-line="15" selection-start-column="13" selection-end-line="15" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/../all_jars/httpcore-4.4.5.jar!/org/apache/http/HttpHost.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="135">
+          <caret line="18" column="19" selection-start-line="18" selection-start-column="19" selection-end-line="18" selection-end-column="19" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/../all_jars/httpcore-4.2.4.jar!/org/apache/http/HttpHost.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="105">
+          <caret line="13" column="19" selection-start-line="13" selection-start-column="19" selection-end-line="13" selection-end-column="19" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/data/TwoVersions1.spec">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/src/kbasesearchengine/KBaseSearchEngineServer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="12" selection-start-line="12" selection-end-line="12" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/build.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="179">
-          <caret line="44" column="29" lean-forward="true" selection-start-line="44" selection-start-column="29" selection-end-line="44" selection-end-column="29" />
-          <folding />
+        <state relative-caret-position="-1320">
+          <caret line="22" column="35" selection-start-line="22" selection-start-column="35" selection-end-line="22" selection-end-column="35" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/integration/IndexerIntegrationTest.java">
+    <entry file="file://$PROJECT_DIR$/test/src/kbasesearchengine/test/authorization/AccessGroupCacheTest.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="360">
-          <caret line="24" column="13" lean-forward="false" selection-start-line="24" selection-start-column="13" selection-end-line="24" selection-end-column="13" />
-          <folding />
+        <state relative-caret-position="270">
+          <caret line="18" column="32" selection-start-line="18" selection-start-column="32" selection-end-line="18" selection-end-column="32" />
         </state>
       </provider>
     </entry>
@@ -584,6 +1178,7 @@
       </state>
       <state key="GlobalLibrariesConfigurable.UI">
         <settings>
+          <last-edited>Python 2.7 (tools) interpreter library</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
@@ -612,13 +1207,36 @@
             <option name="proportions">
               <list>
                 <option value="0.2" />
-                <option value="0.6" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="ProjectJDKs.UI">
+        <settings>
+          <last-edited>1.8</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
               </list>
             </option>
           </splitter-proportions>
         </settings>
       </state>
       <state key="ProjectLibrariesConfigurable.UI">
+        <settings>
+          <last-edited>KBaseSearchEngine</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="ScopeChooserConfigurable.UI">
         <settings>
           <splitter-proportions>
             <option name="proportions">
