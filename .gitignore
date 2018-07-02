@@ -16,6 +16,7 @@ bin
 /work/
 .idea/
 .metadata/
+
 KBaseSearchEngine.iml
 /deployment/jettybase/logs/
 /test_types

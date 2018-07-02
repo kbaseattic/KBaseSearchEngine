@@ -70,9 +70,9 @@ module KBaseSearchEngine {
     /*
       Optional rules of access constraints.
         - with_private - include data found in workspaces not marked 
-            as public, default value is true,
+                    as public, default value is true for authenticated users and false for unauthenticated users.
         - with_public - include data found in public workspaces,
-            default value is false,
+                    default value is false for authenticated users and true for unauthenticated users.
         - with_all_history - include all versions (last one and all
             old versions) of objects matching constrains, default
             value is false.
@@ -103,7 +103,7 @@ module KBaseSearchEngine {
       Search for number of objects of each type matching constraints.
     */
     funcdef search_types(SearchTypesInput params) 
-        returns (SearchTypesOutput) authentication required;
+        returns (SearchTypesOutput) authentication optional;
 
     /*
       Rule for sorting results. 
@@ -289,7 +289,7 @@ module KBaseSearchEngine {
       Search for objects of particular type matching constraints.
     */
     funcdef search_objects(SearchObjectsInput params)
-        returns (SearchObjectsOutput) authentication required;
+        returns (SearchObjectsOutput) authentication optional;
 
     /*
       Input parameters for get_objects method.
@@ -331,7 +331,7 @@ module KBaseSearchEngine {
       Retrieve objects by their GUIDs.
     */
     funcdef get_objects(GetObjectsInput params)
-        returns (GetObjectsOutput) authentication required;
+        returns (GetObjectsOutput) authentication optional;
 
     /*
       Input parameters for list_types method.
