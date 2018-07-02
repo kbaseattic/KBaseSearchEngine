@@ -10,5 +10,10 @@ bin
 *.war
 /work/
 .idea/
+.metadata/
+out/
+test_types/
+lib/lib.iml
+test/test.iml
 KBaseSearchEngine.iml
 /deployment/jettybase/logs/
