@@ -20,12 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
@@ -34,12 +29,9 @@ import org.apache.http.HttpHost;
 import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
 import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.Ignore;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -349,6 +341,11 @@ public class SearchAPIIntegrationTest {
         searchCli = new KBaseSearchEngineClient(
                 new URL("http://localhost:" + searchServer.getServerPort()), userToken);
         searchCli.setIsInsecureHttpConnectionAllowed(true);
+
+        noAuthSearchCli = new KBaseSearchEngineClient(
+                new URL("http://localhost:" + searchServer.getServerPort()));
+        noAuthSearchCli.setIsInsecureHttpConnectionAllowed(true);
+
     }
     
     @AfterClass
@@ -562,6 +559,7 @@ public class SearchAPIIntegrationTest {
         NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
     }
 
+    @Test
     public void optionalAuthForSearch() throws Exception {
         wsCli1.createWorkspace(
                 new CreateWorkspaceParams()
@@ -670,8 +668,12 @@ public class SearchAPIIntegrationTest {
 
         // verify the results with authentication
         assertThat("incorrect search objects count", authSearchObjsOut.getObjects().size(), is(2));
-        TestCommon.compare(authSearchObjsOut.getObjects().get(0), expected1);
-        TestCommon.compare(authSearchObjsOut.getObjects().get(1), expected2);
+        Set<String> res = new HashSet<>();
+        res.add(expected1.getGuid());
+        res.add(expected2.getGuid());
+
+        assertThat("incorrect results", res.contains(authSearchObjsOut.getObjects().get(0).getGuid()), is(true));
+        assertThat("incorrect results", res.contains(authSearchObjsOut.getObjects().get(1).getGuid()), is(true));
 
         typeToCount = authSearchTypesOut.getTypeToCount();
         assertThat("incorrect search types map size", typeToCount.size(), is(1));

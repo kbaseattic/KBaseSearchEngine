@@ -124,14 +124,13 @@ public class SearchMethods implements SearchInterface {
     private kbasesearchengine.search.AccessFilter toSearch(AccessFilter af, String user)
             throws IOException {
         List<Integer> accessGroupIds;
-        boolean withPublic;
+        final boolean withPublic = (user == null) ? true : toBool(af.getWithPublic());
 
         if ((user != null)  && toBool(af.getWithPrivate(), true)) {
             accessGroupIds = accessGroupProvider.findAccessGroupIds(user);
         } else {
             accessGroupIds = Collections.emptyList();
         }
-        withPublic = (user == null) ? true : toBool(af.getWithPublic());
 
         return new kbasesearchengine.search.AccessFilter()
                 .withPublic(withPublic)
@@ -286,11 +285,11 @@ public class SearchMethods implements SearchInterface {
             throws Exception {
         Set<Integer> accessGroupIDs;
         final long t1 = System.currentTimeMillis();
-        if (user != null)
+        if (user != null) {
             accessGroupIDs = new HashSet<>(accessGroupProvider.findAccessGroupIds(user));
-        else
+        } else {
             accessGroupIDs = Collections.emptySet();
-
+        }
         final Set<GUID> guids = new LinkedHashSet<>();
         for (final String guid : params.getGuids()) {
             final GUID g = new GUID(guid);
