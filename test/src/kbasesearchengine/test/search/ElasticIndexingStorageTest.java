@@ -179,11 +179,7 @@ public class ElasticIndexingStorageTest {
     @AfterClass
     public static void teardown() throws Exception {
         if (es != null) {
-             try {
                 es.destroy(TestCommon.getDeleteTempFiles());
-             } catch (FileNotFoundException e) {
-                // File already deleted
-             }
         }
         if (tempDir != null && tempDir.exists() && TestCommon.getDeleteTempFiles()) {
             FileUtils.deleteQuietly(tempDir);
