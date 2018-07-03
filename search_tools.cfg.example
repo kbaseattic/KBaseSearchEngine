@@ -18,7 +18,7 @@ worker-codes=
 
 # INDEXER
 
-# ElasticSearch information. This is used when starting the indexer coordinator or workers.
+# ElasticSearch information. This is used when starting the indexer workers.
 elastic-host=
 elastic-port=
 elastic-user=
@@ -27,7 +27,7 @@ elastic-namespace=kbase.1
 scratch=
 
 # Workspace and auth urls and token information. This is used when starting the indexer
-# coordinator or workers.
+# workers.
 workspace-url=
 auth-service-url=https://kbase.us/services/auth/api/legacy/KBase/Sessions/Login
 auth-service-url-allow-insecure=false
@@ -40,13 +40,13 @@ type-mappings-dir=
 ### EVENT GENERATION
 
 # workspace MongoDB information. This is used when running the workspace event generator.
-workspace-mongo-host=localhost
+workspace-mongo-host=
 workspace-mongo-db=
 workspace-mongo-user=
 workspace-mongo-pwd=
 
 # a comma delimited list of workspace ids or names to ignore when generating workspace events.
-workspace-blacklist=wspub
+workspace-blacklist=
 
 # a comma delimited list of workspace types to process. A prefix of the type name of any length
 # greater than 1 may be provided.
