@@ -1,6 +1,4 @@
 test_local
-elasticsearch-6.0.0
-kibana-6.0.0-darwin-x86_64
 data
 sdk.cfg
 bin
@@ -15,8 +13,9 @@ bin
 *.iml
 /work/
 .idea/
-.metadata/
 
+.metadata/
+.DS_Store
 KBaseSearchEngine.iml
 /deployment/jettybase/logs/
 /test_types
