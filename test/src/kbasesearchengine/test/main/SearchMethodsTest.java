@@ -695,7 +695,7 @@ public class SearchMethodsTest {
         final SearchTypesOutput res3 = sm.searchTypes(new SearchTypesInput()
                 .withAccessFilter(new AccessFilter().withWithPrivate(0L))
                 .withMatchFilter(new MatchFilter()),
-                null);
+                "auser");
         assertThat("incorrect counts", res3.getTypeToCount(), is(Collections.emptyMap()));
 
     }
