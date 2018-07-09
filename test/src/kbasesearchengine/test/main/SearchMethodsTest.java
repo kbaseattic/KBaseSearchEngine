@@ -693,7 +693,7 @@ public class SearchMethodsTest {
         assertThat("incorrect counts", res2.getTypeToCount(), is(Collections.emptyMap()));
 
         final SearchTypesOutput res3 = sm.searchTypes(new SearchTypesInput()
-                .withAccessFilter(new AccessFilter())
+                .withAccessFilter(new AccessFilter().withWithPrivate(0L))
                 .withMatchFilter(new MatchFilter()),
                 null);
         assertThat("incorrect counts", res3.getTypeToCount(), is(Collections.emptyMap()));
