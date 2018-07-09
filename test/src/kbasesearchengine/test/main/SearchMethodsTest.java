@@ -669,4 +669,32 @@ public class SearchMethodsTest {
                 is(expected.getIsObjectProperty() == null ? 1L : expected.getIsObjectProperty()));
     }
 
+    @Test
+    public void testAccessFilter() throws Exception{
+        final AccessGroupProvider agp = mock(AccessGroupProvider.class);
+        final IndexingStorage is = mock(IndexingStorage.class);
+        final TypeStorage ts = mock(TypeStorage.class);
+
+        final Set<String> admins = new HashSet<>(Arrays.asList("auser"));
+        final SearchInterface sm = new SearchMethods(agp, is, ts, admins);
+
+        final SearchTypesInput input1 = new SearchTypesInput()
+                .withAccessFilter(new AccessFilter().withWithPrivate(1L))
+                .withMatchFilter(new MatchFilter());
+
+        final SearchTypesOutput res = sm.searchTypes(input1,
+                "auser");
+        assertThat("incorrect counts", res.getTypeToCount(), is(Collections.emptyMap()));
+
+        final SearchTypesOutput res2 = sm.searchTypes(input1,
+                null);
+        assertThat("incorrect counts", res2.getTypeToCount(), is(Collections.emptyMap()));
+
+        final SearchTypesOutput res3 = sm.searchTypes(new SearchTypesInput()
+                .withAccessFilter(new AccessFilter())
+                .withMatchFilter(new MatchFilter()),
+                null);
+        assertThat("incorrect counts", res3.getTypeToCount(), is(Collections.emptyMap()));
+
+    }
 }
