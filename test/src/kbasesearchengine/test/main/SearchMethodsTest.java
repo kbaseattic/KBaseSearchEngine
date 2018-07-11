@@ -28,12 +28,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 
 import static kbasesearchengine.test.common.TestCommon.set;
+import static org.hamcrest.CoreMatchers.any;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -680,18 +682,44 @@ public class SearchMethodsTest {
         final Set<String> admins = new HashSet<>(Arrays.asList("auser"));
         final SearchInterface sm = new SearchMethods(agp, is, ts, admins);
 
+        final List<Integer> adminList = new ArrayList<>();
+        adminList.add(2);
+        final Map<String, Integer> exMap = new HashMap<>();
+        exMap.put("test", 1);
+
+        when(agp.findAccessGroupIds("auser"))
+                .thenReturn(adminList);
+        kbasesearchengine.search.AccessFilter test  = new kbasesearchengine.search.AccessFilter()
+                .withAccessGroups(new LinkedHashSet(adminList));
+
+        //return data is user right access group id
+        when(is.searchTypes( kbasesearchengine.search.MatchFilter.getBuilder().build(),
+                new kbasesearchengine.search.AccessFilter()
+                        .withAccessGroups(new LinkedHashSet(adminList))
+                        .withAdmin(true)))
+        .thenReturn(exMap);
+
+
+        //expected private results: SearchMethods changes integer results to longs
+        final Map<String, Long> expectedRes = new HashMap<>();
+        expectedRes.put("test", 1L);
+
         final SearchTypesInput input1 = new SearchTypesInput()
                 .withAccessFilter(new AccessFilter().withWithPrivate(1L))
                 .withMatchFilter(new MatchFilter());
 
+        //authorized and showing private data
         final SearchTypesOutput res = sm.searchTypes(input1,
                 "auser");
-        assertThat("incorrect counts", res.getTypeToCount(), is(Collections.emptyMap()));
 
+        assertThat("incorrect res", res.getTypeToCount(), is(expectedRes));
+
+        //unauthorized user
         final SearchTypesOutput res2 = sm.searchTypes(input1,
                 null);
         assertThat("incorrect counts", res2.getTypeToCount(), is(Collections.emptyMap()));
 
+        //authorized user with private data set to false
         final SearchTypesOutput res3 = sm.searchTypes(new SearchTypesInput()
                 .withAccessFilter(new AccessFilter().withWithPrivate(0L))
                 .withMatchFilter(new MatchFilter()),

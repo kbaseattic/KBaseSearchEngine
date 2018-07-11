@@ -283,7 +283,7 @@ public class SearchMethods implements SearchInterface {
     @Override
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
-        Set<Integer> accessGroupIDs;
+        final Set<Integer> accessGroupIDs;
         final long t1 = System.currentTimeMillis();
         if (user != null) {
             accessGroupIDs = new HashSet<>(accessGroupProvider.findAccessGroupIds(user));

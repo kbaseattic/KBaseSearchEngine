@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -179,7 +178,7 @@ public class ElasticIndexingStorageTest {
     @AfterClass
     public static void teardown() throws Exception {
         if (es != null) {
-                es.destroy(TestCommon.getDeleteTempFiles());
+            es.destroy(TestCommon.getDeleteTempFiles());
         }
         if (tempDir != null && tempDir.exists() && TestCommon.getDeleteTempFiles()) {
             FileUtils.deleteQuietly(tempDir);
