@@ -147,7 +147,7 @@ public class ElasticIndexingStorageTest {
             @Override
             public ObjectTypeParsingRules getTypeDescriptor(SearchObjectType type) {
                 try {
-                    final File rulesFile = new File("resources/types/" + type.getType() + ".yaml");
+                    final File rulesFile = new File("/Users/dianezheng/work/KBaseSearchEngine/resources/types/" + type.getType() + ".yaml");
                     return ObjectTypeParsingRulesFileParser.fromFile(rulesFile)
                             .get(type.getVersion() - 1);
                 } catch (Exception ex) {
@@ -214,7 +214,7 @@ public class ElasticIndexingStorageTest {
             final GUID ref,
             final String objName)
             throws Exception {
-        final File file = new File("resources/types/" + type + ".yaml");
+        final File file = new File("/Users/dianezheng/work/KBaseSearchEngine/resources/types/" + type + ".yaml");
         ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesFileParser.fromFile(file).get(version);
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
@@ -1671,5 +1671,68 @@ public class ElasticIndexingStorageTest {
                 return msg.contains("Indexed 1 item(s).");
             }
         }));
+    }
+
+    @Test
+    public void testDeleteObjectWithSubobject() throws Exception {
+        //index regular object with its sub object
+        // regular object
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("ExcludeSubObjectsNorm", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "creator").build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2000/1/1"),
+                ImmutableMap.of(new GUID("WS:2000/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
+                false);
+
+        // sub object
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("ExcludeSubObjectsSub", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .toSubObjectRule(
+                                "sub", new ObjectJsonPath("subpath"), new ObjectJsonPath("id"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "creator").build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2000/1/1"),
+                ImmutableMap.of(new GUID("WS:2000/1/1:sub/yay"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
+                false);
+
+        //check that both objects are found
+        final Set<GUID> res = indexStorage.searchIds(
+                Collections.emptyList(),
+                MatchFilter.getBuilder().withNullableFullTextInAll("imaprettypony").build(),
+                null,
+                AccessFilter.create().withAccessGroups(2000));
+        assertThat("incorrect objects found", res,
+                is(set(new GUID("WS:2000/1/1"), new GUID("WS:2000/1/1:sub/yay"))));
+
+        //delete the object
+        indexStorage.deleteAllVersions(new GUID("WS:2000/1/1"));
+
+        final Set<GUID> res2 = indexStorage.searchIds(
+                Collections.emptyList(),
+                MatchFilter.getBuilder().withNullableFullTextInAll("imaprettypony").build(),
+                null,
+                AccessFilter.create().withAccessGroups(2000));
+        System.out.println(res2);
+        assertThat("incorrect objects found", res2, is(set()));
+
+
+
     }
 }
