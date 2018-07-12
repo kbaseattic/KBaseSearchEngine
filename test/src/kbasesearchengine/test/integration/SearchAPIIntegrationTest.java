@@ -566,14 +566,9 @@ public class SearchAPIIntegrationTest {
         NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
     }
 
-    @Test
-    public void optionalAuthForSearch() throws Exception {
-        wsCli1.createWorkspace(
-                new CreateWorkspaceParams()
-                        .withWorkspace("optionalAuth1"));
-        wsCli1.createWorkspace(
-                new CreateWorkspaceParams()
-                        .withWorkspace("optionalAuth2"));
+    private void setUpOptionalAuthForSearch() throws Exception{
+        wsCli1.createWorkspace(new CreateWorkspaceParams().withWorkspace("optionalAuth1"));
+        wsCli1.createWorkspace(new CreateWorkspaceParams().withWorkspace("optionalAuth2"));
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -608,7 +603,114 @@ public class SearchAPIIntegrationTest {
                         "{\"whee\": \"imaprettypony1\"}",
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
                 true);  // isPublic set to true
+    }
 
+    private ObjectData setUpOptionalAuthForSearchGetRes(String guid, String objName) throws Exception{
+        return new ObjectData()
+                .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
+                .withGuid(guid)
+                .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
+                .withCreator("creator")
+                .withType("Deco")
+                .withTypeVer(1L)
+                .withObjectName(objName)
+                .withTimestamp(10000L)
+                .withHighlight(new HashMap<>());
+    }
+    @Test
+    public void optionalAuthSearchObjects() throws Exception{
+        setUpOptionalAuthForSearch();
+
+        final ObjectData expected1 = setUpOptionalAuthForSearchGetRes("WS:1/1/1","objname1");
+        final ObjectData expected2 = setUpOptionalAuthForSearchGetRes("WS:2/1/1","objname2");
+
+        SearchObjectsOutput authSearchObjsOut;
+        SearchObjectsOutput noAuthSearchObjsOut;
+
+
+        try {
+            noAuthSearchObjsOut =  noAuthSearchCli.searchObjects(new SearchObjectsInput()
+                    .withAccessFilter(new AccessFilter())
+                    .withMatchFilter(new MatchFilter()));
+
+            authSearchObjsOut =  searchCli.searchObjects(new SearchObjectsInput()
+                    .withAccessFilter(new AccessFilter())
+                    .withMatchFilter(new MatchFilter()));
+        } catch (ServerException e) {
+            System.out.println("Exception server side trace:\n" + e.getData());
+            throw e;
+        }
+
+        assertThat("incorrect search objects count", noAuthSearchObjsOut.getObjects().size(), is(1));
+        TestCommon.compare(noAuthSearchObjsOut.getObjects().get(0), expected2);
+
+        assertThat("incorrect search objects count", authSearchObjsOut.getObjects().size(), is(2));
+
+        Set<String> res = new HashSet<>();
+        res.add(expected1.getGuid());
+        res.add(expected2.getGuid());
+        assertThat("incorrect results", res.contains(authSearchObjsOut.getObjects().get(0).getGuid()), is(true));
+        assertThat("incorrect results", res.contains(authSearchObjsOut.getObjects().get(1).getGuid()), is(true));
+
+    }
+    @Test
+    public void optionalAuthForSearchTypes() throws Exception {
+        setUpOptionalAuthForSearch();
+
+        SearchTypesOutput authSearchTypesOut;
+        SearchTypesOutput noAuthSearchTypesOut;
+
+        try {
+            noAuthSearchTypesOut = noAuthSearchCli.searchTypes(new SearchTypesInput()
+                    .withMatchFilter(new MatchFilter())
+                    .withAccessFilter(new AccessFilter()));
+
+            authSearchTypesOut = searchCli.searchTypes(new SearchTypesInput()
+                    .withMatchFilter(new MatchFilter())
+                    .withAccessFilter(new AccessFilter()));
+
+        } catch (ServerException e) {
+            System.out.println("Exception server side trace:\n" + e.getData());
+            throw e;
+        }
+
+        Map<String, Long> typeToCount = noAuthSearchTypesOut.getTypeToCount();
+        assertThat("incorrect search types map size", typeToCount.size(), is(1));
+        assertThat("Incorrect search types type name", typeToCount.keySet(), is(set("Deco")));
+        assertThat("Incorrect search types type count", typeToCount.get("Deco"), is(Long.valueOf(1)));
+
+        typeToCount = authSearchTypesOut.getTypeToCount();
+        assertThat("incorrect search types map size", typeToCount.size(), is(1));
+        assertThat("Incorrect search types type name", typeToCount.keySet(), is(set("Deco")));
+        assertThat("Incorrect search types type count", typeToCount.get("Deco"), is(Long.valueOf(2)));
+    }
+
+    @Test
+    public void optionalAuthForGetObjects() throws Exception {
+        setUpOptionalAuthForSearch();
+
+        GetObjectsOutput authGetObjsOut;
+        GetObjectsOutput noAuthGetObjsOut;
+
+        try {
+            noAuthGetObjsOut = noAuthSearchCli.getObjects(new GetObjectsInput()
+                    .withGuids(Arrays.asList("WS:1/1/1", "WS:2/1/1")));
+
+            authGetObjsOut = searchCli.getObjects(new GetObjectsInput()
+                    .withGuids(Arrays.asList("WS:1/1/1", "WS:2/1/1")));
+
+        } catch (ServerException e) {
+            System.out.println("Exception server side trace:\n" + e.getData());
+            throw e;
+        }
+
+        assertThat("incorrect get objects count", noAuthGetObjsOut.getObjects().size(), is(0));
+        assertThat("incorrect get objects count", authGetObjsOut.getObjects().size(), is(2));
+
+    }
+    @Test
+    public void optionalAuthForSearch() throws Exception {
+        setUpOptionalAuthForSearch();
         final ObjectData expected1 = new ObjectData()
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid("WS:1/1/1")
