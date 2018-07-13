@@ -331,7 +331,7 @@ module KBaseSearchEngine {
       Retrieve objects by their GUIDs.
     */
     funcdef get_objects(GetObjectsInput params)
-        returns (GetObjectsOutput) authentication optional;
+        returns (GetObjectsOutput) authentication required;
 
     /*
       Input parameters for list_types method.

@@ -211,7 +211,7 @@ public class KBaseSearchEngineClient {
         List<Object> args = new ArrayList<Object>();
         args.add(params);
         TypeReference<List<GetObjectsOutput>> retType = new TypeReference<List<GetObjectsOutput>>() {};
-        List<GetObjectsOutput> res = caller.jsonrpcCall("KBaseSearchEngine.get_objects", args, retType, true, false, jsonRpcContext, this.serviceVersion);
+        List<GetObjectsOutput> res = caller.jsonrpcCall("KBaseSearchEngine.get_objects", args, retType, true, true , jsonRpcContext, this.serviceVersion);
         return res.get(0);
     }
 
