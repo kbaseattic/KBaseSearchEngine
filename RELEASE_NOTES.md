@@ -3,6 +3,11 @@ Search Service MKII release notes
 
 0.2.1
 -----
+* Changed search_objects and search_types to optionally require auth. Unauthorized calls will only
+see results from public data.
+
+0.2.1
+-----
 ****  Made the following changes that affect the interface.
 
 * In KBaseSearchEngine.spec, renamed the usage of workspace_info to access_group_info,

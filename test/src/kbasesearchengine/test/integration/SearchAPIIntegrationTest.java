@@ -621,12 +621,10 @@ public class SearchAPIIntegrationTest {
     public void optionalAuthSearchObjects() throws Exception{
         setUpOptionalAuthForSearch();
 
-        final ObjectData expected1 = setUpOptionalAuthForSearchGetRes("WS:1/1/1","objname1");
         final ObjectData expected2 = setUpOptionalAuthForSearchGetRes("WS:2/1/1","objname2");
 
-        SearchObjectsOutput authSearchObjsOut;
-        SearchObjectsOutput noAuthSearchObjsOut;
-
+        final SearchObjectsOutput authSearchObjsOut;
+        final SearchObjectsOutput noAuthSearchObjsOut;
 
         try {
             noAuthSearchObjsOut =  noAuthSearchCli.searchObjects(new SearchObjectsInput()
@@ -644,14 +642,6 @@ public class SearchAPIIntegrationTest {
         assertThat("incorrect search objects count", noAuthSearchObjsOut.getObjects().size(), is(1));
         TestCommon.compare(noAuthSearchObjsOut.getObjects().get(0), expected2);
 
-//        assertThat("incorrect search objects count", authSearchObjsOut.getObjects().size(), is(2));
-//
-//        Set<String> res = new HashSet<>();
-//        res.add(expected1.getGuid());
-//        res.add(expected2.getGuid());
-//        assertThat("incorrect results", res.contains(authSearchObjsOut.getObjects().get(0).getGuid()), is(true));
-//        assertThat("incorrect results", res.contains(authSearchObjsOut.getObjects().get(1).getGuid()), is(true));
-
         final Set<String> got = authSearchObjsOut.getObjects().stream()
                 .map(o -> o.getGuid()).collect(Collectors.toSet());
         assertThat("incorrect results", got, is(set("WS:1/1/1", "WS:2/1/1")));
@@ -661,8 +651,8 @@ public class SearchAPIIntegrationTest {
     public void optionalAuthForSearchTypes() throws Exception {
         setUpOptionalAuthForSearch();
 
-        SearchTypesOutput authSearchTypesOut;
-        SearchTypesOutput noAuthSearchTypesOut;
+        final SearchTypesOutput authSearchTypesOut;
+        final SearchTypesOutput noAuthSearchTypesOut;
 
         try {
             noAuthSearchTypesOut = noAuthSearchCli.searchTypes(new SearchTypesInput()
@@ -678,15 +668,15 @@ public class SearchAPIIntegrationTest {
             throw e;
         }
 
-        Map<String, Long> typeToCount = noAuthSearchTypesOut.getTypeToCount();
-        assertThat("incorrect search types map size", typeToCount.size(), is(1));
-        assertThat("Incorrect search types type name", typeToCount.keySet(), is(set("Deco")));
-        assertThat("Incorrect search types type count", typeToCount.get("Deco"), is(Long.valueOf(1)));
+        final Map<String, Long> typeToCountNoAuth = noAuthSearchTypesOut.getTypeToCount();
+        assertThat("incorrect search types map size", typeToCountNoAuth.size(), is(1));
+        assertThat("Incorrect search types type name", typeToCountNoAuth.keySet(), is(set("Deco")));
+        assertThat("Incorrect search types type count", typeToCountNoAuth.get("Deco"), is(Long.valueOf(1)));
 
-        typeToCount = authSearchTypesOut.getTypeToCount();
-        assertThat("incorrect search types map size", typeToCount.size(), is(1));
-        assertThat("Incorrect search types type name", typeToCount.keySet(), is(set("Deco")));
-        assertThat("Incorrect search types type count", typeToCount.get("Deco"), is(Long.valueOf(2)));
+        final Map<String, Long> typeToCountWithAuth = authSearchTypesOut.getTypeToCount();
+        assertThat("incorrect search types map size", typeToCountWithAuth.size(), is(1));
+        assertThat("Incorrect search types type name", typeToCountWithAuth.keySet(), is(set("Deco")));
+        assertThat("Incorrect search types type count", typeToCountWithAuth.get("Deco"), is(Long.valueOf(2)));
     }
 
     @Test
