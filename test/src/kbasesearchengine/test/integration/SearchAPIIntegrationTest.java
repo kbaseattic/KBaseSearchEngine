@@ -690,30 +690,6 @@ public class SearchAPIIntegrationTest {
     }
 
     @Test
-    public void optionalAuthForGetObjects() throws Exception {
-        setUpOptionalAuthForSearch();
-
-        GetObjectsOutput authGetObjsOut;
-        GetObjectsOutput noAuthGetObjsOut;
-
-        try {
-            noAuthGetObjsOut = noAuthSearchCli.getObjects(new GetObjectsInput()
-                    .withGuids(Arrays.asList("WS:1/1/1", "WS:2/1/1")));
-
-            authGetObjsOut = searchCli.getObjects(new GetObjectsInput()
-                    .withGuids(Arrays.asList("WS:1/1/1", "WS:2/1/1")));
-
-        } catch (ServerException e) {
-            System.out.println("Exception server side trace:\n" + e.getData());
-            throw e;
-        }
-
-        assertThat("incorrect get objects count", noAuthGetObjsOut.getObjects().size(), is(0));
-        assertThat("incorrect get objects count", authGetObjsOut.getObjects().size(), is(2));
-
-    }
-
-    @Test
     public void accessGroupInfoDecorationDisabled() throws Exception {
 
         wsCli1.createWorkspace(new CreateWorkspaceParams()
