@@ -35,7 +35,6 @@ import java.util.Set;
 import java.util.HashSet;
 
 import static kbasesearchengine.test.common.TestCommon.set;
-import static org.hamcrest.CoreMatchers.any;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -678,11 +677,11 @@ public class SearchMethodsTest {
         final IndexingStorage is = mock(IndexingStorage.class);
         final TypeStorage ts = mock(TypeStorage.class);
 
-        final Set<String> admins = new HashSet<>(Arrays.asList("auser"));
-        final SearchInterface sm = new SearchMethods(agp, is, ts, admins);
+        final SearchInterface sm = new SearchMethods(agp, is, ts, new HashSet<>());
 
         final List<Integer> adminList = new ArrayList<>();
         adminList.add(2);
+
         final Map<String, Integer> privateData = new HashMap<>();
         privateData.put("test", 1);
 
@@ -699,7 +698,6 @@ public class SearchMethodsTest {
         when(is.searchTypes( kbasesearchengine.search.MatchFilter.getBuilder().build(),
                 new kbasesearchengine.search.AccessFilter()
                         .withAccessGroups(new LinkedHashSet(adminList))
-                        .withAdmin(true)
                         .withPublic(true)))
                 .thenReturn(allData);
 
@@ -707,7 +705,6 @@ public class SearchMethodsTest {
         when(is.searchTypes( kbasesearchengine.search.MatchFilter.getBuilder().build(),
                 new kbasesearchengine.search.AccessFilter()
                         .withAccessGroups(new LinkedHashSet(adminList))
-                        .withAdmin(true)
                         .withPublic(false)))
                 .thenReturn(privateData);
 
@@ -715,7 +712,6 @@ public class SearchMethodsTest {
         when(is.searchTypes( kbasesearchengine.search.MatchFilter.getBuilder().build(),
                 new kbasesearchengine.search.AccessFilter()
                         .withAccessGroups(set())
-                        .withAdmin(true)
                         .withPublic(true)))
                 .thenReturn(publicData);
 
@@ -725,12 +721,6 @@ public class SearchMethodsTest {
                         .withPublic(true)))
                 .thenReturn(publicData);
 
-        //should not happen
-        when(is.searchTypes( kbasesearchengine.search.MatchFilter.getBuilder().build(),
-                new kbasesearchengine.search.AccessFilter()
-                        .withAccessGroups(set())
-                        .withPublic(false)))
-                .thenReturn(new HashMap<>());
         return sm;
     }
     @Test
@@ -768,20 +758,25 @@ public class SearchMethodsTest {
                 "auser");
         assertThat("should show only private", res3.getTypeToCount(), is(privateData));
 
-
-        final SearchTypesOutput res4 = sm.searchTypes(new SearchTypesInput()
-                        .withAccessFilter(new AccessFilter().withWithPrivate(0L).withWithPublic(0L))
-                        .withMatchFilter(new MatchFilter()),
-                "auser");
-        assertThat("should show only private", res4.getTypeToCount(), is(new HashMap<>()));
+        //should not happen
+        try{
+            final SearchTypesOutput res4 = sm.searchTypes(new SearchTypesInput()
+                            .withAccessFilter(new AccessFilter().withWithPrivate(0L).withWithPublic(0L))
+                            .withMatchFilter(new MatchFilter()),
+                    "auser");
+        }catch(IllegalArgumentException e){
+            assertThat("should throw exception if private and public set to false"
+                    , e.getMessage(), is("should have either public or private data"));
+        }catch(Exception e){
+            e.printStackTrace();
+        }
 
     }
 
     @Test
     public void testAccessFilterUnauthorizedUser() throws Exception{
         SearchInterface sm = setUpTestAccessFilter();
-        final Map<String, Long> publicData = new HashMap<>();
-        publicData.put("notdefault", 1L);
+        final Map<String, Long> publicData = ImmutableMap.of("notdefault", 1L);
 
         //unauth users have public and private hardcoded so not testing the other cases
         final SearchTypesOutput res2 = sm.searchTypes(new SearchTypesInput()
@@ -793,55 +788,4 @@ public class SearchMethodsTest {
 
     }
 
-    @Test
-    public void testAccessFilter() throws Exception{
-        final AccessGroupProvider agp = mock(AccessGroupProvider.class);
-        final IndexingStorage is = mock(IndexingStorage.class);
-        final TypeStorage ts = mock(TypeStorage.class);
-
-        final Set<String> admins = new HashSet<>(Arrays.asList("auser"));
-        final SearchInterface sm = new SearchMethods(agp, is, ts, admins);
-
-        final List<Integer> adminList = new ArrayList<>();
-        adminList.add(2);
-        final Map<String, Integer> exMap = new HashMap<>();
-        exMap.put("test", 1);
-
-        when(agp.findAccessGroupIds("auser"))
-                .thenReturn(adminList);
-
-        when(is.searchTypes( kbasesearchengine.search.MatchFilter.getBuilder().build(),
-                new kbasesearchengine.search.AccessFilter()
-                        .withAccessGroups(new LinkedHashSet(adminList))
-                        .withAdmin(true)))
-        .thenReturn(exMap);
-
-
-        //expected private results: SearchMethods changes integer results to longs
-        final Map<String, Long> expectedRes = new HashMap<>();
-        expectedRes.put("test", 1L);
-
-        final SearchTypesInput input1 = new SearchTypesInput()
-                .withAccessFilter(new AccessFilter().withWithPrivate(1L))
-                .withMatchFilter(new MatchFilter());
-
-        //authorized and showing private data
-        final SearchTypesOutput res = sm.searchTypes(input1,
-                "auser");
-
-        assertThat("incorrect res", res.getTypeToCount(), is(expectedRes));
-
-        //unauthorized user
-        final SearchTypesOutput res2 = sm.searchTypes(input1,
-                null);
-        assertThat("incorrect counts", res2.getTypeToCount(), is(Collections.emptyMap()));
-
-        //authorized user with private data set to false
-        final SearchTypesOutput res3 = sm.searchTypes(new SearchTypesInput()
-                .withAccessFilter(new AccessFilter().withWithPrivate(0L))
-                .withMatchFilter(new MatchFilter()),
-                "auser");
-        assertThat("incorrect counts", res3.getTypeToCount(), is(Collections.emptyMap()));
-
-    }
 }
