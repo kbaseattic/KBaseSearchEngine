@@ -25,6 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -1675,11 +1676,17 @@ public class ElasticIndexingStorageTest {
 
     @Test
     public void testDeleteObjectWithSubobject() throws Exception {
+        SearchObjectType objType = new SearchObjectType("DeleteObjectWithSubObject", 1);
+        IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                .withFullText().build();
+        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
+                objType, new StorageObjectType("foo", "bar"))
+                .withIndexingRule(ir).build();
         //index regular object with its sub object
         // regular object
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
-                        new SearchObjectType("ExcludeSubObjectsNorm", 1),
+                        new SearchObjectType("DeleteObjectWithSubObject", 1),
                         new StorageObjectType("foo", "bar"))
                         .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
                                 .build())
@@ -1696,7 +1703,7 @@ public class ElasticIndexingStorageTest {
         // sub object
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
-                        new SearchObjectType("ExcludeSubObjectsSub", 1),
+                        new SearchObjectType("DeleteObjectWithSubObject", 1),
                         new StorageObjectType("foo", "bar"))
                         .toSubObjectRule(
                                 "sub", new ObjectJsonPath("subpath"), new ObjectJsonPath("id"))
@@ -1712,6 +1719,7 @@ public class ElasticIndexingStorageTest {
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
                 false);
 
+
         //check that both objects are found
         final Set<GUID> res = indexStorage.searchIds(
                 Collections.emptyList(),
@@ -1723,14 +1731,17 @@ public class ElasticIndexingStorageTest {
 
         //delete the object
         indexStorage.deleteAllVersions(new GUID("WS:2000/1/1"));
+        indexStorage.refreshIndexByType(rule);
+
+        //
+//        TimeUnit.SECONDS.sleep(2);
 
         final Set<GUID> res2 = indexStorage.searchIds(
                 Collections.emptyList(),
                 MatchFilter.getBuilder().withNullableFullTextInAll("imaprettypony").build(),
                 null,
                 AccessFilter.create().withAccessGroups(2000));
-        System.out.println(res2);
-        assertThat("incorrect objects found", res2, is(set()));
+        assertThat("objects not deleted", res2, is(set()));
 
 
 

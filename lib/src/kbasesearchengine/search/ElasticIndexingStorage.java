@@ -878,7 +878,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (allVersions) {
             query = createFilter("term", "prefix", toGUIDPrefix(object));
         } else {
-            query = createFilter("term", "guid", object.toString());
+            query = createFilter("prefix", "guid", object.toString());
         }
         final Map<String, Object> script = ImmutableMap.of(
                 "inline", "ctx._source[params.field] = params.value",
