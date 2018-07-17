@@ -759,18 +759,15 @@ public class SearchMethodsTest {
         assertThat("should show only private", res3.getTypeToCount(), is(privateData));
 
         //should not happen
-        try{
+        try {
             final SearchTypesOutput res4 = sm.searchTypes(new SearchTypesInput()
                             .withAccessFilter(new AccessFilter().withWithPrivate(0L).withWithPublic(0L))
                             .withMatchFilter(new MatchFilter()),
                     "auser");
-        }catch(IllegalArgumentException e){
-            assertThat("should throw exception if private and public set to false"
-                    , e.getMessage(), is("should have either public or private data"));
-        }catch(Exception e){
-            e.printStackTrace();
+        } catch(IllegalArgumentException e) {
+            assertThat("should throw exception if private and public set to false",
+                    e.getMessage(), is("with_public and with_private cannot both be set to false"));
         }
-
     }
 
     @Test

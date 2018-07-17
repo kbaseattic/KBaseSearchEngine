@@ -126,9 +126,8 @@ public class SearchMethods implements SearchInterface {
         List<Integer> accessGroupIds;
         final boolean withPublic = (user == null) ? true : toBool(af.getWithPublic());
 
-        boolean test = !toBool(af.getWithPrivate(), true);
-        if(!withPublic &&  !toBool(af.getWithPrivate(), true)){
-            throw new IllegalArgumentException("should have either public or private data");
+        if (!withPublic && !toBool(af.getWithPrivate(), true)) {
+            throw new IllegalArgumentException("with_public and with_private cannot both be set to false");
         }
 
         if ((user != null)  && toBool(af.getWithPrivate(), true)) {
