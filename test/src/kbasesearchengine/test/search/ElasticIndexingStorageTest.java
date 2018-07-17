@@ -1674,13 +1674,6 @@ public class ElasticIndexingStorageTest {
 
     @Test
     public void testDeleteObjectWithSubobject() throws Exception {
-        SearchObjectType objType = new SearchObjectType("DeleteObjectWithSubObject", 1);
-        IndexingRules ir = IndexingRules.fromPath(new ObjectJsonPath("whee"))
-                .withFullText().build();
-        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
-                objType, new StorageObjectType("foo", "bar"))
-                .withIndexingRule(ir).build();
-
         // regular object
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -1729,7 +1722,7 @@ public class ElasticIndexingStorageTest {
 
         //delete the object
         indexStorage.deleteAllVersions(new GUID("WS:2000/1/1"));
-        indexStorage.refreshIndexByType(rule);
+        indexStorage.refreshIndex("*");
 
         final Set<GUID> res2 = indexStorage.searchIds(
                 Collections.emptyList(),
