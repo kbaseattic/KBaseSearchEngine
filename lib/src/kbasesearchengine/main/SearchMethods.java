@@ -122,15 +122,22 @@ public class SearchMethods implements SearchInterface {
     }
 
     private kbasesearchengine.search.AccessFilter toSearch(AccessFilter af, String user)
-            throws IOException {
+            throws IOException, IllegalArgumentException {
         List<Integer> accessGroupIds;
-        if (toBool(af.getWithPrivate(), true)) {
+        final boolean withPublic = (user == null) ? true : toBool(af.getWithPublic());
+
+        if (!withPublic && !toBool(af.getWithPrivate(), true)) {
+            throw new IllegalArgumentException("with_public and with_private cannot both be set to false");
+        }
+
+        if ((user != null)  && toBool(af.getWithPrivate(), true)) {
             accessGroupIds = accessGroupProvider.findAccessGroupIds(user);
         } else {
             accessGroupIds = Collections.emptyList();
         }
+
         return new kbasesearchengine.search.AccessFilter()
-                .withPublic(toBool(af.getWithPublic()))
+                .withPublic(withPublic)
                 .withAllHistory(toBool(af.getWithAllHistory()))
                 .withAccessGroups(new LinkedHashSet<>(accessGroupIds))
                 .withAdmin(admins.contains(user));
@@ -231,8 +238,7 @@ public class SearchMethods implements SearchInterface {
     public SearchTypesOutput searchTypes(SearchTypesInput params, String user) throws Exception {
         long t1 = System.currentTimeMillis();
         kbasesearchengine.search.MatchFilter matchFilter = toSearch(params.getMatchFilter());
-        kbasesearchengine.search.AccessFilter accessFilter = toSearch(params.getAccessFilter(),
-                user);
+        kbasesearchengine.search.AccessFilter accessFilter = toSearch(params.getAccessFilter(), user);
         Map<String, Integer> ret = indexingStorage.searchTypes(matchFilter, accessFilter);
         return new SearchTypesOutput().withTypeToCount(ret.keySet().stream().collect(
                 Collectors.toMap(Function.identity(), c -> (long)(int)ret.get(c))))
@@ -256,8 +262,7 @@ public class SearchMethods implements SearchInterface {
             sorting = params.getSortingRules().stream().map(this::toSearch).collect(
                     Collectors.toList());
         }
-        kbasesearchengine.search.AccessFilter accessFilter = toSearch(params.getAccessFilter(),
-                user);
+        kbasesearchengine.search.AccessFilter accessFilter = toSearch(params.getAccessFilter(), user);
         kbasesearchengine.search.Pagination pagination = toSearch(params.getPagination());
         kbasesearchengine.search.PostProcessing postProcessing = 
                 toSearch(params.getPostProcessing());
@@ -282,10 +287,9 @@ public class SearchMethods implements SearchInterface {
     @Override
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
-
+        final Set<Integer> accessGroupIDs = new HashSet<>(accessGroupProvider.findAccessGroupIds(user));
         final long t1 = System.currentTimeMillis();
-        final Set<Integer> accessGroupIDs =
-                new HashSet<>(accessGroupProvider.findAccessGroupIds(user));
+
         final Set<GUID> guids = new LinkedHashSet<>();
         for (final String guid : params.getGuids()) {
             final GUID g = new GUID(guid);

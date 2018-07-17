@@ -2,8 +2,8 @@
 
 # Search MongoDB information. This is used when running any event generators or starting
 # the indexer coordinator or workers.
-search-mongo-host=localhost
-search-mongo-db=TestDB
+search-mongo-host=
+search-mongo-db=
 search-mongo-user=
 search-mongo-pwd=
 
@@ -18,20 +18,20 @@ worker-codes=
 
 # INDEXER
 
-# ElasticSearch information. This is used when starting the indexer coordinator or workers.
-elastic-host=localhost
-elastic-port=9200
+# ElasticSearch information. This is used when starting the indexer workers.
+elastic-host=
+elastic-port=
 elastic-user=
 elastic-password=
-elastic-namespace=kbasereske.1
-scratch=/home/crusherofheads/RESKE/temp
+elastic-namespace=kbase.1
+scratch=
 
 # Workspace and auth urls and token information. This is used when starting the indexer
-# coordinator or workers.
-workspace-url=http://localhost:4200
-auth-service-url=https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login
+# workers.
+workspace-url=
+auth-service-url=https://kbase.us/services/auth/api/legacy/KBase/Sessions/Login
 auth-service-url-allow-insecure=false
-indexer-token=RAMNGJRH4YKUXQXNBIXMLQJFA5AFBEGW
+indexer-token=
 
 # Type information. This is used when starting the indexer workers.
 types-dir=
@@ -40,13 +40,13 @@ type-mappings-dir=
 ### EVENT GENERATION
 
 # workspace MongoDB information. This is used when running the workspace event generator.
-workspace-mongo-host=localhost
-workspace-mongo-db=ws_test_gfs
+workspace-mongo-host=
+workspace-mongo-db=
 workspace-mongo-user=
 workspace-mongo-pwd=
 
 # a comma delimited list of workspace ids or names to ignore when generating workspace events.
-workspace-blacklist=wspub
+workspace-blacklist=
 
 # a comma delimited list of workspace types to process. A prefix of the type name of any length
 # greater than 1 may be provided.

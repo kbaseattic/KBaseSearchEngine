@@ -14,7 +14,7 @@ RUN cd /kb/dev_container/modules/jars \
 	&& git pull \
 	&& . /kb/dev_container/user-env.sh \
 	&& make deploy \
-	&& echo docker is annoying 3
+	&& echo docker is annoying 2
 
 RUN apt-get install nano \
 	&& add-apt-repository ppa:openjdk-r/ppa \
@@ -30,18 +30,11 @@ RUN apt-get install nano \
 	&& ln -s /usr/lib/jvm/java-8-openjdk-amd64 java \
 	&& ls -l
 
-#add user 
-RUN useradd -ms /bin/bash nonrootuser
-
 # Need to think about how to get tests to run in TravisCI with different versions
 RUN cd /opt \
 	&& wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.0.tar.gz \
 	&& tar xfz elasticsearch-5.5.0.tar.gz \
 	&& ln -s elasticsearch-5.5.0 elasticsearch
-
-#change ownership	
-RUN chown -R nonrootuser /opt/elasticsearch \
-	&& chown -R nonrootuser /opt/elasticsearch-5.5.0 
 
 RUN cd /opt \
 	&& wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.6.12.tgz \
@@ -62,10 +55,6 @@ WORKDIR /kb/module
 
 RUN make all
 
-USER nonrootuser
-
 ENTRYPOINT [ "./scripts/entrypoint.sh" ]
-
-
 
 CMD [ ]

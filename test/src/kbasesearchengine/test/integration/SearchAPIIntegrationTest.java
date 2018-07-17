@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
+
 import java.util.stream.Collectors;
 
 import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
@@ -34,12 +36,9 @@ import org.apache.http.HttpHost;
 import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
 import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.Ignore;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -56,6 +55,8 @@ import kbasesearchengine.PostProcessing;
 import kbasesearchengine.ObjectData;
 import kbasesearchengine.SearchObjectsInput;
 import kbasesearchengine.SearchObjectsOutput;
+import kbasesearchengine.SearchTypesInput;
+import kbasesearchengine.SearchTypesOutput;
 import kbasesearchengine.SortingRule;
 import kbasesearchengine.authorization.TemporaryAuth2Client;
 import kbasesearchengine.authorization.TemporaryAuth2Client.Auth2Exception;
@@ -124,6 +125,7 @@ public class SearchAPIIntegrationTest {
     private static WorkspaceClient wsCli1;
     private static KBaseSearchEngineServer searchServer;
     private static KBaseSearchEngineClient searchCli;
+    private static KBaseSearchEngineClient noAuthSearchCli;
     private static URL authURL;
     private static int wsid;
     private static WorkspaceEventHandler weh;
@@ -203,6 +205,14 @@ public class SearchAPIIntegrationTest {
         searchCli = new KBaseSearchEngineClient(
                 new URL("http://localhost:" + searchServer.getServerPort()), userToken);
         searchCli.setIsInsecureHttpConnectionAllowed(true);
+
+        // create a search client without authentication to test
+        // optional authentication for search API
+
+        noAuthSearchCli = new KBaseSearchEngineClient(
+                new URL("http://localhost:" + searchServer.getServerPort()));
+        noAuthSearchCli.setIsInsecureHttpConnectionAllowed(true);
+        
         loadWSTypes(wsUrl, wsadmintoken);
     }
     
@@ -338,6 +348,11 @@ public class SearchAPIIntegrationTest {
         searchCli = new KBaseSearchEngineClient(
                 new URL("http://localhost:" + searchServer.getServerPort()), userToken);
         searchCli.setIsInsecureHttpConnectionAllowed(true);
+
+        noAuthSearchCli = new KBaseSearchEngineClient(
+                new URL("http://localhost:" + searchServer.getServerPort()));
+        noAuthSearchCli.setIsInsecureHttpConnectionAllowed(true);
+
     }
     
     @AfterClass
@@ -549,6 +564,119 @@ public class SearchAPIIntegrationTest {
         final Map<Long, Tuple5<String, Long, Long, String, String>> expected = ImmutableMap.of(
                 1L, narrInfoTuple("Kevin", 6L, wsdate, userToken.getUserName(), "display1"));
         NarrativeInfoDecoratorTest.compare(res.getAccessGroupNarrativeInfo(), expected);
+    }
+
+    private void setUpOptionalAuthForSearch() throws Exception{
+        wsCli1.createWorkspace(new CreateWorkspaceParams().withWorkspace("optionalAuth1"));
+        wsCli1.createWorkspace(new CreateWorkspaceParams().withWorkspace("optionalAuth2"));
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Deco", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/1/1"),
+                ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
+                false);  // isPublic set to false
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("Deco", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname2", "creator")
+                        .build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2/1/1"),
+                ImmutableMap.of(new GUID("WS:2/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony1\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony1")))),
+                true);  // isPublic set to true
+    }
+
+    private ObjectData setUpOptionalAuthForSearchGetRes(final String guid, final String objName) throws Exception{
+        return new ObjectData()
+                .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
+                .withGuid(guid)
+                .withKeyProps(ImmutableMap.of("whee", "imaprettypony1"))
+                .withCreator("creator")
+                .withType("Deco")
+                .withTypeVer(1L)
+                .withObjectName(objName)
+                .withTimestamp(10000L)
+                .withHighlight(new HashMap<>());
+    }
+    @Test
+    public void optionalAuthSearchObjects() throws Exception{
+        setUpOptionalAuthForSearch();
+
+        final ObjectData expected2 = setUpOptionalAuthForSearchGetRes("WS:2/1/1","objname2");
+
+        final SearchObjectsOutput authSearchObjsOut;
+        final SearchObjectsOutput noAuthSearchObjsOut;
+
+        try {
+            noAuthSearchObjsOut =  noAuthSearchCli.searchObjects(new SearchObjectsInput()
+                    .withAccessFilter(new AccessFilter())
+                    .withMatchFilter(new MatchFilter()));
+
+            authSearchObjsOut =  searchCli.searchObjects(new SearchObjectsInput()
+                    .withAccessFilter(new AccessFilter())
+                    .withMatchFilter(new MatchFilter()));
+        } catch (ServerException e) {
+            System.out.println("Exception server side trace:\n" + e.getData());
+            throw e;
+        }
+
+        assertThat("incorrect search objects count", noAuthSearchObjsOut.getObjects().size(), is(1));
+        TestCommon.compare(noAuthSearchObjsOut.getObjects().get(0), expected2);
+
+        final Set<String> got = authSearchObjsOut.getObjects().stream()
+                .map(o -> o.getGuid()).collect(Collectors.toSet());
+        assertThat("incorrect results", got, is(set("WS:1/1/1", "WS:2/1/1")));
+
+    }
+    @Test
+    public void optionalAuthForSearchTypes() throws Exception {
+        setUpOptionalAuthForSearch();
+
+        final SearchTypesOutput authSearchTypesOut;
+        final SearchTypesOutput noAuthSearchTypesOut;
+
+        try {
+            noAuthSearchTypesOut = noAuthSearchCli.searchTypes(new SearchTypesInput()
+                    .withMatchFilter(new MatchFilter())
+                    .withAccessFilter(new AccessFilter()));
+
+            authSearchTypesOut = searchCli.searchTypes(new SearchTypesInput()
+                    .withMatchFilter(new MatchFilter())
+                    .withAccessFilter(new AccessFilter()));
+
+        } catch (ServerException e) {
+            System.out.println("Exception server side trace:\n" + e.getData());
+            throw e;
+        }
+
+        final Map<String, Long> typeToCountNoAuth = noAuthSearchTypesOut.getTypeToCount();
+        assertThat("incorrect search types map size", typeToCountNoAuth.size(), is(1));
+        assertThat("Incorrect search types type name", typeToCountNoAuth.keySet(), is(set("Deco")));
+        assertThat("Incorrect search types type count", typeToCountNoAuth.get("Deco"), is(Long.valueOf(1)));
+
+        final Map<String, Long> typeToCountWithAuth = authSearchTypesOut.getTypeToCount();
+        assertThat("incorrect search types map size", typeToCountWithAuth.size(), is(1));
+        assertThat("Incorrect search types type name", typeToCountWithAuth.keySet(), is(set("Deco")));
+        assertThat("Incorrect search types type count", typeToCountWithAuth.get("Deco"), is(Long.valueOf(2)));
     }
 
     @Test
