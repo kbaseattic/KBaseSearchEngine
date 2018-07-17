@@ -5,6 +5,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import kbasesearchengine.tools.Utils;
 
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.Ticker;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -79,12 +81,14 @@ public class NarrativeInfoCache implements NarrativeInfoProvider {
     }
 
     @Override
-    public NarrativeInfo findNarrativeInfo(final Long wsId) throws IOException {
+    public NarrativeInfo findNarrativeInfo(final Long wsId) {
         try {
             return cache.get(wsId);
-        } catch (ExecutionException e) {
-            throw (IOException) e.getCause(); // IOE is the only checked exception
-            // unchecked exceptions are wrapped in UncheckedExcecutionException
+        } catch (Exception e) {
+            LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving narrative info: Returning null:  {}",
+                    e.getMessage());
+            // unchecked exceptions are wrapped in UncheckedExecutionException
+            return null;
         }
     }
 }

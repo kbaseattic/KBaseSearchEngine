@@ -23,6 +23,8 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -36,6 +38,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
@@ -52,6 +55,7 @@ import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.SearchObjectType;
 import kbasesearchengine.tools.Utils;
+import org.slf4j.LoggerFactory;
 import us.kbase.common.service.UObject;
 
 //TODO CODE remove 'fake' group IDs (-1 public, -2 admin). use alternate mechanism.
@@ -354,7 +358,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 // the general object information
                 idToObjCopy.put(pguid, null);
             }
-            Map<GUID, String> esIds = lookupDocIds(indexName, idToObjCopy.keySet());
+
             for (GUID id : idToObjCopy.keySet()) {
                 final ParsedObject obj = idToObjCopy.get(id);
                 final Map<String, Object> doc = convertObject(id, rule.getGlobalObjectType(), obj,
@@ -363,22 +367,64 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 index.put("_index", indexName);
                 index.put("_type", getDataTableName());
                 index.put("parent", esParentId);
-                if (esIds.containsKey(id)) {
-                    index.put("_id", esIds.get(id));
-                }
+                index.put("_id", id.getURLEncoded());
+
                 final Map<String, Object> header = ImmutableMap.of("index", index);
                 pw.println(UObject.transformObjectToString(header));
                 pw.println(UObject.transformObjectToString(doc));
             }
             pw.close();
-            makeRequestBulk("POST", indexName, tempFile);
+            Response response = makeRequestBulk("POST", indexName, tempFile);
+
+            verify(response);
+
             updateLastVersionsInData(indexName, pguid, lastVersion);
         } finally {
             tempFile.delete();
         }
         refreshIndex(indexName);
     }
-    
+
+
+    private void verify(Response response) throws IOException {
+        // convert JSON string to Map
+        String responseJsonStr = EntityUtils.toString(response.getEntity());
+
+        ObjectMapper mapper = new ObjectMapper();
+        final Map<String, Object> responseMap = mapper.readValue(responseJsonStr,
+                new TypeReference<Map<String, Object>>() {});
+
+        // check for and collect response data from index operations that failed
+        final List errorItems = new ArrayList();
+        if (responseMap.get("errors").equals(Boolean.TRUE)) {
+            for (Map item: (List<Map>)responseMap.get("items")) {
+                for (Object itemData: item.values()) {
+                    if (!((Map) itemData).get("status")
+                            .toString().startsWith("20")) {  // status code 200, 201 etc
+                        errorItems.add(itemData);
+                    }
+                }
+            }
+        }
+        else {
+            logInfo("Indexed {} item(s).", ((List)responseMap.get("items")).size());
+        }
+
+        // log response data from failed index operations
+        for (Object item: errorItems) {
+            logErr("Indexing error: {} ", item.toString());
+        }
+    }
+
+    private void logInfo(final String format, final Object... params) {
+        LoggerFactory.getLogger(getClass()).info(format, params);
+    }
+
+    private void logErr(final String format, final Object... params) {
+        LoggerFactory.getLogger(getClass()).error(format, params);
+    }
+
+
     private Map<String, Object> convertObject(
             final GUID id,
             final SearchObjectType objectType,
@@ -428,37 +474,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public void flushIndexing(final ObjectTypeParsingRules rule) throws IOException {
         refreshIndex(checkIndex(rule, true));
-    }
-    
-    private Map<GUID, String> lookupDocIds(String indexName, Set<GUID> guids) throws IOException {
-
-        // doc = {"query": {"bool": {"filter": [{"terms": {"guid": [guids]}}]}}}
-        Map<String, Object> doc = ImmutableMap.of(
-                "query", ImmutableMap.of(
-                        "bool", ImmutableMap.of(
-                                "filter", Arrays.asList(ImmutableMap.of(
-                                        "terms", ImmutableMap.of(
-                                                "guid", guids.stream().map(u -> u.toString())
-                                                        .collect(Collectors.toList())))))));
-
-        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_search";
-        Response resp = makeRequestNoConflict("GET", urlPath, doc);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> data = UObject.getMapper().readValue(
-                resp.getEntity().getContent(), Map.class);
-        Map<GUID, String> ret = new LinkedHashMap<>();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> hitMap = (Map<String, Object>) data.get("hits");
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> hitList = (List<Map<String, Object>>) hitMap.get("hits");
-        for (Map<String, Object> hit : hitList) {
-            String id = (String)hit.get("_id");
-            @SuppressWarnings("unchecked")
-            Map<String, Object> obj = (Map<String, Object>) hit.get("_source");
-            GUID guid = new GUID((String) obj.get("guid"));
-            ret.put(guid, id);
-        }
-        return ImmutableMap.copyOf(ret);
     }
 
     private Map<GUID, String> lookupParentDocIds(String indexName, Set<GUID> guids) throws IOException {
@@ -1227,7 +1242,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         //because elastic sometimes returns highlight as null instead of empty map.
         if (pp.objectHighlight && highlight != null) {
-            for(final String key : highlight.keySet()) {
+            for (final String key : highlight.keySet()) {
                 b.withHighlight(getReadableKeyNames(key, guid), highlight.get(key));
             }    
         }
@@ -1239,7 +1254,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             throws IllegalStateException{
         if (key.startsWith("key.")) {
             return stripKeyPrefix(key);
-        } else if(READABLE_NAMES.containsKey(key)) {
+        } else if (READABLE_NAMES.containsKey(key)) {
             return READABLE_NAMES.get(key);
         } else {
             //this should not happen. Untested
@@ -1817,8 +1832,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
         tmp = ImmutableMap.of("type", "integer");
         props.put("extpub", tmp);
 
-        // mappings = {"access": {}}
-        Map<String, Object> table = ImmutableMap.of("properties", ImmutableMap.copyOf(props));
+        // mappings = { "access": {
+        //                "dynamic": "strict",
+        //                "properties": {...}
+        //              }
+        //             }
+        Map<String, Object> table = ImmutableMap.of(
+                "dynamic", "strict",
+                "properties", ImmutableMap.copyOf(props));
 
         String tableName = getAccessTableName();
         Map<String, Object> mappings = ImmutableMap.of(tableName, table);
@@ -1880,16 +1901,18 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         // table = {"data": {},
         //          "_parent": { "type": "access"},
-        //                       "properties": {"guid": {"type": "keyword"},
-        //                                     {"otype": {"type": "keyword"},
-        //                                     {"otypever": {"type": "integer"},
-        //                                     {"oname": {"type": "text"},
-        //                                     {"creator": {"type": "keyword"},
-        //                                     ...}}}
+        //          "dynamic": "strict",
+        //          "properties": {"guid": {"type": "keyword"},
+        //                        {"otype": {"type": "keyword"},
+        //                        {"otypever": {"type": "integer"},
+        //                        {"oname": {"type": "text"},
+        //                        {"creator": {"type": "keyword"},
+        //                            ...}}}
         Map<String, Object> table = new LinkedHashMap<>();
 
 
         table.put("_parent", ImmutableMap.of("type", getAccessTableName()));
+        table.put("dynamic", "strict");
         table.put("properties", ImmutableMap.copyOf(props));
 
         // Access (parent)

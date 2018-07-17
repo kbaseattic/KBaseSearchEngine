@@ -10,6 +10,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -23,7 +24,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,9 +34,12 @@ import org.apache.http.HttpHost;
 import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
 import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -49,6 +52,7 @@ import kbasesearchengine.GetObjectsOutput;
 import kbasesearchengine.KBaseSearchEngineClient;
 import kbasesearchengine.KBaseSearchEngineServer;
 import kbasesearchengine.MatchFilter;
+import kbasesearchengine.PostProcessing;
 import kbasesearchengine.ObjectData;
 import kbasesearchengine.SearchObjectsInput;
 import kbasesearchengine.SearchObjectsOutput;
@@ -478,8 +482,22 @@ public class SearchAPIIntegrationTest {
 
         final SearchObjectsOutput res = searchObjects(new MatchFilter());
 
-        assertNull(res.getWorkspacesInfo());
+        // Narrative info set to null, as the postprocessing input is not given
+        assertNull(res.getAccessGroupNarrativeInfo());
+        assertNull(res.getAccessGroupsInfo());
         assertNull(res.getObjectsInfo());
+
+        final SearchObjectsOutput res2 = searchCli.searchObjects(
+                new SearchObjectsInput()
+                        .withMatchFilter(new MatchFilter())
+                        .withAccessFilter(new AccessFilter())
+                        .withPostProcessing(new PostProcessing().withAddNarrativeInfo(0L)));
+
+        // Narrative info set to null, as the addNarrativeInfo flag was set to 0
+        assertNull(res2.getAccessGroupNarrativeInfo());
+        // workspaces and objects info set to null, by default
+        assertNull(res2.getAccessGroupsInfo());
+        assertNull(res2.getObjectsInfo());
     }
 
     @Test
@@ -520,7 +538,11 @@ public class SearchAPIIntegrationTest {
                 .withObjectName("objname1")
                 .withTimestamp(10000L);
 
-        final SearchObjectsOutput res = searchObjects(new MatchFilter().withAddNarrativeInfo(1L));
+        final SearchObjectsOutput res = searchCli.searchObjects(
+                new SearchObjectsInput()
+                        .withMatchFilter(new MatchFilter())
+                        .withAccessFilter(new AccessFilter())
+                        .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L)));
 
         assertThat("incorrect object count", res.getObjects().size(), is(1));
         TestCommon.compare(res.getObjects().get(0), expected1);
@@ -530,7 +552,7 @@ public class SearchAPIIntegrationTest {
     }
 
     @Test
-    public void workspaceInfoDecorationDisabled() throws Exception {
+    public void accessGroupInfoDecorationDisabled() throws Exception {
 
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("foo1")
@@ -597,13 +619,46 @@ public class SearchAPIIntegrationTest {
                         ImmutableMap.of("whee2", Arrays.asList("imaprettypony2")))),
                 false);
 
+        // test searchObjects. postprocessing input is not given
         final SearchObjectsOutput res = searchObjects(new MatchFilter());
-        assertNull(res.getWorkspacesInfo());
+        assertNull(res.getAccessGroupNarrativeInfo());
+        assertNull(res.getAccessGroupsInfo());
         assertNull(res.getObjectsInfo());
+
+        final SearchObjectsOutput searchResults = searchCli.searchObjects(
+                new SearchObjectsInput()
+                        .withMatchFilter(new MatchFilter())
+                        .withAccessFilter(new AccessFilter())
+                        .withPostProcessing(new PostProcessing().withAddAccessGroupInfo(0L)));
+
+        // Narrative info not added, set to null by default
+        assertNull(searchResults.getAccessGroupNarrativeInfo());
+        // set to null, since the addAccessGroupInfo flag was set to 0
+        assertNull(searchResults.getAccessGroupsInfo());
+        assertNull(searchResults.getObjectsInfo());
+
+        // test get objects. postprocessing input is not given
+        GetObjectsOutput getObjResults = searchCli.getObjects(
+                new GetObjectsInput()
+                        .withGuids(Arrays.asList("WS:1/1/1", "WS:2/1/1")));
+        assertNull(getObjResults.getAccessGroupNarrativeInfo());
+        assertNull(getObjResults.getAccessGroupsInfo());
+        assertNull(getObjResults.getObjectsInfo());
+
+        getObjResults = searchCli.getObjects(
+                new GetObjectsInput()
+                        .withGuids(Arrays.asList("WS:1/1/1", "WS:2/1/1"))
+                        .withPostProcessing(new PostProcessing().withAddAccessGroupInfo(0L)));
+
+        // Narrative info not added, set to null by default
+        assertNull(getObjResults.getAccessGroupNarrativeInfo());
+        // set to null, since the addAccessGroupInfo flag was set to 0
+        assertNull(getObjResults.getAccessGroupsInfo());
+        assertNull(getObjResults.getObjectsInfo());
     }
 
     @Test
-    public void workspaceInfoDecoration() throws Exception {
+    public void accessGroupInfoDecoration() throws Exception {
 
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("foo1")
@@ -670,7 +725,11 @@ public class SearchAPIIntegrationTest {
                         ImmutableMap.of("whee2", Arrays.asList("imaprettypony2")))),
                 false);
 
-        final SearchObjectsOutput searchResults = searchObjects(new MatchFilter().withAddWorkspaceInfo(1L));
+        final SearchObjectsOutput searchResults = searchCli.searchObjects(
+                new SearchObjectsInput()
+                        .withMatchFilter(new MatchFilter())
+                        .withAccessFilter(new AccessFilter())
+                        .withPostProcessing(new PostProcessing().withAddAccessGroupInfo(1L)));
 
         final Tuple9<Long, String, String, String, Long, String, String, String,
                 Map<String, String>> wsInfoExpected1 =
@@ -690,11 +749,40 @@ public class SearchAPIIntegrationTest {
                 objTuple(1, "objname2", "NoIndexingRules.Type-1.0", "date2",1,"user1",
                         2, "foo2", "chksum2", 44, Collections.emptyMap());
 
-        compareWsInfo(searchResults.getWorkspacesInfo().get(1L), wsInfoExpected1);
-        compareWsInfo(searchResults.getWorkspacesInfo().get(2L), wsInfoExpected2);
+        // verify the values in workspacesInfo map
+        compareWsInfo(searchResults.getAccessGroupsInfo().get(1L), wsInfoExpected1);
+        compareWsInfo(searchResults.getAccessGroupsInfo().get(2L), wsInfoExpected2);
 
+        // verify the values in objectsInfo map
         compareObjInfo(searchResults.getObjectsInfo().get("1/1/1"), objInfoExpected1);
         compareObjInfo(searchResults.getObjectsInfo().get("2/1/1"), objInfoExpected2);
+
+        final GetObjectsOutput getObjResults = searchCli.getObjects(
+                new GetObjectsInput()
+                        .withGuids(Arrays.asList("WS:1/1/1", "WS:2/1/1"))
+                        .withPostProcessing(new PostProcessing().withAddAccessGroupInfo(1L)));
+
+        // verify the values in workspacesInfo map
+        compareWsInfo(getObjResults.getAccessGroupsInfo().get(1L), wsInfoExpected1);
+        compareWsInfo(getObjResults.getAccessGroupsInfo().get(2L), wsInfoExpected2);
+
+        // verify the values in objectsInfo map
+        compareObjInfo(getObjResults.getObjectsInfo().get("1/1/1"), objInfoExpected1);
+        compareObjInfo(getObjResults.getObjectsInfo().get("2/1/1"), objInfoExpected2);
+    }
+
+    @Test
+    public void accessGroupInfoDecorationNoObjects() throws Exception {
+
+        // test when search results is empty, getObjectsInfo3 is not called to get objectsInfo
+        // and the mappings for workspaces info and objects info are empty
+        final SearchObjectsOutput searchResults = searchCli.searchObjects(
+                new SearchObjectsInput()
+                        .withMatchFilter(new MatchFilter())
+                        .withAccessFilter(new AccessFilter())
+                        .withPostProcessing(new PostProcessing().withAddAccessGroupInfo(1L)));
+        assertEquals(searchResults.getAccessGroupsInfo().size(), 0);
+        assertEquals(searchResults.getObjectsInfo().size(), 0);
     }
 
     @Test
@@ -739,8 +827,7 @@ public class SearchAPIIntegrationTest {
                 .withObjectName("objname1")
                 .withHighlight(highlight)
                 .withTimestamp(10000L);
-
-
+        
         SearchObjectsInput params = new SearchObjectsInput()
                 .withPostProcessing(pp)
                 .withAccessFilter(new AccessFilter())
@@ -865,27 +952,38 @@ public class SearchAPIIntegrationTest {
      * these should be removed once the narratives are indexed
      * with custom code
      */
-
     @Test
     public void pruneNarrative() throws Exception {
 
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("narprune"));
 
-        final Map<String, Object> data = new HashMap<>();
-        data.put("source", "a long string");
-        data.put("code_output", "another long string");
-        data.put("app_output", "yet another long string");
-        data.put("app_info", "yup, another long string here");
-        data.put("app_input", "my god will this reign of long string terror every end");
-        data.put("job_ids", "3");
-        data.put("title", "a title");
+        final Map<String, Object> parsedData = new HashMap<>();
+        parsedData.put("source", "a long string");
+        parsedData.put("code_output", "another long string");
+        parsedData.put("app_output", "yet another long string");
+        parsedData.put("app_info", "yup, another long string here");
+        parsedData.put("app_input", "my god will this reign of long string terror every end");
+        parsedData.put("job_ids", "3");
+        parsedData.put("title", "a title");
 
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
                         new SearchObjectType("Narrative", 1),
                         new StorageObjectType("WS", "Narrative"))
-                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("source"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("code_output"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("app_output"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("app_info"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("app_input"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("job_ids"))
+                                .build())
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("title"))
                                 .build())
                         .build(),
                 SourceData.getBuilder(new UObject(new HashMap<>()), "objname1", "creator1")
@@ -894,14 +992,15 @@ public class SearchAPIIntegrationTest {
                 null,
                 new GUID("WS:1/1/1"),
                 ImmutableMap.of(new GUID("WS:1/1/1"), new ParsedObject(
-                        new ObjectMapper().writeValueAsString(data),
-                        data.entrySet().stream().collect(Collectors.toMap(
+                        new ObjectMapper().writeValueAsString(parsedData),
+                        parsedData.entrySet().stream().collect(Collectors.toMap(
                                 e -> e.getKey(), e -> Arrays.asList(e.getValue()))))),
                 false);
-        
+
         final GetObjectsOutput ret = searchCli.getObjects(new GetObjectsInput()
-                .withGuids(Arrays.asList("WS:1/1/1")).withMatchFilter(new MatchFilter().withAddNarrativeInfo(1L)));
-        
+                .withGuids(Arrays.asList("WS:1/1/1"))
+                .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L)));
+
         assertThat("incorrect data count", ret.getObjects().size(), is(1));
         final ObjectData od2 = ret.getObjects().get(0);
         assertThat("incorrect data", od2.getData(), is((UObject) null));
@@ -909,15 +1008,16 @@ public class SearchAPIIntegrationTest {
                 is(ImmutableMap.of("title", "a title")));
 
         final SearchObjectsOutput res = searchObjects(new MatchFilter());
-        
+
         assertThat("incorrect data count", res.getObjects().size(), is(1));
         final ObjectData od = res.getObjects().get(0);
         assertThat("incorrect data", od.getData(), is((UObject) null));
         assertThat("incorrect keyprops", od.getKeyProps(),
                 is(ImmutableMap.of("title", "a title")));
     }
-    
-    /* ****** Auth client tests - to be moved to their own suite *** 
+
+
+    /* ****** Auth client tests - to be moved to their own suite ***
      *     //TODO TEST move the auth client tests to a separate suite
      * Will need a mock server to test cases where the client gets a response that would never
      * be returned from auth

@@ -6,18 +6,18 @@ import java.util.Map;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.JsonClientException;
-import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.Tuple9;
 import us.kbase.common.service.UObject;
 import us.kbase.workspace.ListWorkspaceIDsParams;
 import us.kbase.workspace.ListWorkspaceIDsResults;
 import us.kbase.workspace.WorkspaceClient;
+import org.slf4j.LoggerFactory;
 
 /** A provider for KBase workspace and narrative info.
  * @author gaprice@lbl.gov
  *
  */
-public class WorkspaceNarrativeInfoProvider implements NarrativeInfoProvider {
+public class AccessGroupNarrativeInfoProvider implements NarrativeInfoProvider {
 
     //TODO TEST
 
@@ -30,28 +30,29 @@ public class WorkspaceNarrativeInfoProvider implements NarrativeInfoProvider {
     /** Create the provider.
      * @param wsClient a workspace client initialized with administrator credentials.
      */
-    public WorkspaceNarrativeInfoProvider(final WorkspaceEventHandler wsHandler) {
+    public AccessGroupNarrativeInfoProvider(final WorkspaceEventHandler wsHandler) {
         Utils.nonNull(wsHandler, "WorkspaceHandler");
         this.wsHandler = wsHandler;
     }
 
-    /** For the given workspace ID, returns workspace info related to the narrative.
+    /** For the given access group ID, returns workspace info related to the narrative
+     * or null if no workspace info could be retrieved or found.
      * @param wsid workspace id.
      */
     @Override
-    public NarrativeInfo findNarrativeInfo(final Long wsid)
-            throws IOException, JsonClientException {
-        final Tuple9 <Long, String, String, String, Long, String, String,
+    public NarrativeInfo findNarrativeInfo(final Long accessGroupID) {
+        Tuple9 <Long, String, String, String, Long, String, String,
                 String, Map<String,String>> wsInfo;
 
         try {
-            wsInfo = wsHandler.getWorkspaceInfo(wsid);
-        } catch (IOException e) {
-            throw new IOException("Failed retrieving workspace info: " + e.getMessage(), e);
-        } catch (JsonClientException e) {
-            throw new JsonClientException("Failed retrieving workspace info: "
-                    + e.getMessage(), e);
+            wsInfo = wsHandler.getWorkspaceInfo(accessGroupID);
+        } catch (IOException | JsonClientException e) {
+            LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving workspace info: Returning null: {}",
+                    e.getMessage());
+            wsInfo = null;
         }
+
+        if (wsInfo == null) return null;
 
         final long timeMilli = WorkspaceEventHandler.parseDateToEpochMillis(wsInfo.getE4());
 

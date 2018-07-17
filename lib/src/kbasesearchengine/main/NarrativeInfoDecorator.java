@@ -22,6 +22,7 @@ import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.JsonClientException;
+import org.slf4j.LoggerFactory;
 
 /**
  * Decorates the results from a {@link SearchInterface} with information about workspaces that
@@ -79,31 +80,36 @@ public class NarrativeInfoDecorator implements SearchInterface {
     @Override
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
-        final SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
-        if (params.getMatchFilter().getAddNarrativeInfo() != null)
-            return searchObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
-                    searchObjsOutput.getObjects(),
-                    searchObjsOutput.getAccessGroupNarrativeInfo()));
-        else
-            return searchObjsOutput;
+        SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
+        if (params.getPostProcessing() != null) {
+            if (params.getPostProcessing().getAddNarrativeInfo() != null &&
+                    params.getPostProcessing().getAddNarrativeInfo() == 1) {
+                searchObjsOutput = searchObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
+                        searchObjsOutput.getObjects(),
+                        searchObjsOutput.getAccessGroupNarrativeInfo()));
+            }
+        }
+        return searchObjsOutput;
     }
 
     @Override
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
-        final GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
-        if (params.getMatchFilter().getAddNarrativeInfo() != null)
-            return getObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
-                    getObjsOutput.getObjects(),
-                    getObjsOutput.getAccessGroupNarrativeInfo()));
-        else
-            return getObjsOutput;
+        GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
+        if (params.getPostProcessing() != null) {
+            if (params.getPostProcessing().getAddNarrativeInfo() != null &&
+                    params.getPostProcessing().getAddNarrativeInfo() == 1) {
+                getObjsOutput = getObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
+                        getObjsOutput.getObjects(),
+                        getObjsOutput.getAccessGroupNarrativeInfo()));
+            }
+        }
+        return getObjsOutput;
     }
 
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(
             final List<ObjectData> objects,
-            final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo)
-            throws IOException, JsonClientException, Auth2Exception {
+            final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo) {
 
         final Map<Long, Tuple5 <String, Long, Long, String, String>> retVal = new HashMap<>();
 
@@ -121,21 +127,35 @@ public class NarrativeInfoDecorator implements SearchInterface {
         final Set<String> userNames = new HashSet<>();
         for (final long workspaceId: wsIdsSet) {
             final NarrativeInfo narrInfo = narrInfoProvider.findNarrativeInfo(workspaceId);
-            final Tuple5<String, Long, Long, String, String> tempNarrInfo =
-                    new Tuple5<String, Long, Long, String, String>()
-                            .withE1(narrInfo.getNarrativeName())
-                            .withE2(narrInfo.getNarrativeId())
-                            .withE3(narrInfo.getTimeLastSaved())
-                            .withE4(narrInfo.getWsOwnerUsername());
-            userNames.add(tempNarrInfo.getE4());
-            retVal.put(workspaceId, tempNarrInfo);
+            if (narrInfo != null) {
+                final Tuple5<String, Long, Long, String, String> tempNarrInfo =
+                        new Tuple5<String, Long, Long, String, String>()
+                                .withE1(narrInfo.getNarrativeName())
+                                .withE2(narrInfo.getNarrativeId())
+                                .withE3(narrInfo.getTimeLastSaved())
+                                .withE4(narrInfo.getWsOwnerUsername());
+                userNames.add(tempNarrInfo.getE4());
+                retVal.put(workspaceId, tempNarrInfo);
+            }
+            else {
+                retVal.put(workspaceId, null);
+            }
         }
-
-        final Map<String, String> displayNames = authInfoProvider.findUserDisplayNames(userNames);
-        // e5 is the full / display name, e4 is the user name
-        // defaults to the existing name so names from previous decorator layers aren't set to null
-        retVal.values().stream().forEach(t -> t.withE5(
-                displayNames.getOrDefault(t.getE4(), t.getE5())));
+        try {
+            final Map<String, String> displayNames = authInfoProvider.findUserDisplayNames(userNames);
+            // e5 is the full / display name, e4 is the user name
+            // defaults to the existing name so names from previous decorator layers aren't set to null
+            for (Map.Entry<Long, Tuple5<String, Long, Long, String, String>> entry : retVal.entrySet()) {
+                Tuple5<String, Long, Long, String, String> value = entry.getValue();
+                if (value != null) {
+                    value.withE5(displayNames.getOrDefault(value.getE4(), value.getE5()));
+                }
+            }
+        }
+        catch (IOException | Auth2Exception e) {
+            LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving workspace owner realname(s): " +
+                            "setting to null: {}", e.getMessage());
+        }
         return retVal;
     }
 }

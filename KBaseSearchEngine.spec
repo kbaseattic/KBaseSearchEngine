@@ -56,8 +56,6 @@ module KBaseSearchEngine {
       source_tags_blacklist - if true, the source_tags list behaves as a blacklist and any
           data with at least one of the tags will be excluded from the search results. If missing
           or false, the default behavior is maintained.
-      addNarrativeInfo - if true, narrative info gets added to the search results. Default is false.
-      addWorkspaceInfo - if true, workspaces and objects info get added to the search results. Default is false.
     */
     typedef structure {
         string full_text_in_all;
@@ -67,8 +65,6 @@ module KBaseSearchEngine {
         mapping<string, MatchValue> lookup_in_keys;
         list<string> source_tags;
         boolean source_tags_blacklist;
-        boolean addNarrativeInfo;
-        boolean addWorkspaceInfo;
     } MatchFilter;
 
     /*
@@ -143,12 +139,18 @@ module KBaseSearchEngine {
            matched query,
       ids_only - shortcut to mark both skips as true and 
            include_highlight as false.
+      add_narrative_info - if true, narrative info gets added to the
+           search results. Default is false.
+      add_access_group_info - if true, access groups and objects info get added
+           to the search results. Default is false.
     */
     typedef structure {
         boolean ids_only;
         boolean skip_keys;
         boolean skip_data;
         boolean include_highlight;
+        boolean add_narrative_info;
+        boolean add_access_group_info;
     } PostProcessing;
 
     /*
@@ -156,9 +158,9 @@ module KBaseSearchEngine {
       object_types - list of the types of objects to search on (optional). The
                      function will search on all objects if the list is not specified
                      or is empty. The list size must be less than 50.
-      match_filter - see MatchFilter (optional).
+      match_filter - see MatchFilter.
       sorting_rules - see SortingRule (optional).
-      access_filter - see AccessFilter (optional).
+      access_filter - see AccessFilter.
       pagination - see Pagination (optional).
       post_processing - see PostProcessing (optional).
     */
@@ -244,6 +246,16 @@ module KBaseSearchEngine {
                   > narrative_info;
 
     /*
+    The access_group_info and object_info are meant to be abstractions for info from multiple data sources.
+    Until other data sources become available, definitions pertaining to Workspace are being used.
+    When other data sources are available, the following variables will be moved from
+    this concrete workspace definitions, to structures with higher level abstractions.
+    */
+
+    typedef Workspace.workspace_info  access_group_info;
+    typedef Workspace.object_info     object_info;
+
+    /*
       Output results for 'search_objects' method.
       'pagination' and 'sorting_rules' fields show actual input for
           pagination and sorting.
@@ -252,13 +264,15 @@ module KBaseSearchEngine {
       mapping<access_group_id, narrative_info> access_group_narrative_info - information about
          the workspaces in which the objects in the results reside. This data only applies to
          workspace objects.
-      mapping<access_group_id, Workspace.workspace_info> workspaces_info - information about
-         the workspaces in which the objects in the results reside. This data only applies to
+      mapping<access_group_id, access_group_info> access_groups_info - information about
+         the access groups in which the objects in the results reside. Currently this data only applies to
          workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
-         in the search results is saved in this mapping.
-      mapping<obj_ref, Workspace.object_info> objects_info - information about each object in the
-         search results. This data only applies to workspace objects. The tuple11 value returned by
-         get_object_info3() for each object in the search results is saved in the mapping.
+         in the search results is saved in this mapping. In future the access_group_info will be
+         replaced with a higher level abstraction.
+      mapping<obj_ref, object_info> objects_info - information about each object in the
+         search results. Currently this data only applies to workspace objects. The tuple11 value
+         returned by get_object_info3() for each object in the search results is saved in the mapping.
+         In future the object_info will be replaced with a higher level abstraction.
     */
     typedef structure {
         Pagination pagination;
@@ -267,8 +281,8 @@ module KBaseSearchEngine {
         int total;
         int search_time;
         mapping<access_group_id, narrative_info> access_group_narrative_info;
-        mapping<access_group_id, Workspace.workspace_info> workspaces_info;
-        mapping<obj_ref, Workspace.object_info> objects_info;
+        mapping<access_group_id, access_group_info> access_groups_info;
+        mapping<obj_ref, object_info> objects_info;
     } SearchObjectsOutput;
 
     /*
@@ -295,19 +309,21 @@ module KBaseSearchEngine {
       mapping<access_group_id, narrative_info> access_group_narrative_info - information about
          the workspaces in which the objects in the results reside. This data only applies to
          workspace objects.
-      mapping<access_group_id, Workspace.workspace_info> workspaces_info - information about
-         the workspaces in which the objects in the results reside. This data only applies to
+      mapping<access_group_id, access_group_info> access_groups_info - information about
+         the access groups in which the objects in the results reside. Currently this data only applies to
          workspace objects. The tuple9 value returned by get_workspace_info() for each workspace
-         in the search results is saved in this mapping.
-      mapping<obj_ref, Workspace.object_info> objects_info - information about each object in the
-         search results. This data only applies to workspace objects. The tuple11 value returned by
-         get_object_info3() for each object in the search results is saved in the mapping.
+         in the search results is saved in this mapping. In future the access_group_info will be
+         replaced with a higher level abstraction.
+      mapping<obj_ref, object_info> objects_info - information about each object in the
+         search results. Currently this data only applies to workspace objects. The tuple11 value
+         returned by get_object_info3() for each object in the search results is saved in the mapping.
+         In future the object_info will be replaced with a higher level abstraction.
     */
     typedef structure {
         list<ObjectData> objects;
         int search_time;
         mapping<access_group_id, narrative_info> access_group_narrative_info;
-        mapping<access_group_id, Workspace.workspace_info> workspaces_info;
+        mapping<access_group_id, access_group_info> access_groups_info;
         mapping<obj_ref, Workspace.object_info> objects_info;
     } GetObjectsOutput;
 
