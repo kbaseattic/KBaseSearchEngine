@@ -872,17 +872,21 @@ public class IndexerWorker implements Stoppable {
                     final ParseObjectsRet parsedRet = parseObjects(guid, this,
                             Arrays.asList(resRef.getResolvedReference()), obj, rules);
 
-                    final GUID parsedGUID = parsedRet.guidToObj.keySet().iterator().next();
+                    Iterator<GUID> iter = parsedRet.guidToObj.keySet().iterator();
 
-                    final ObjectData objData = buildObjectDataFrom(
-                            guid,
-                            rules.getGlobalObjectType(),
-                            obj.getName(),
-                            obj.getCreator(),
-                            obj.getCommitHash(),
-                            parsedRet.guidToObj.get(parsedGUID).getKeywords());
+                    while(iter.hasNext()) {
+                        final GUID parsedGUID = iter.next();
 
-                    data.add(objData);
+                        final ObjectData objData = buildObjectDataFrom(
+                                guid,
+                                rules.getGlobalObjectType(),
+                                obj.getName(),
+                                obj.getCreator(),
+                                obj.getCommitHash(),
+                                parsedRet.guidToObj.get(parsedGUID).getKeywords());
+
+                        data.add(objData);
+                    }
                 } finally {
                     tempFile.delete();
                 }
