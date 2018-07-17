@@ -24,7 +24,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -147,7 +146,7 @@ public class ElasticIndexingStorageTest {
             @Override
             public ObjectTypeParsingRules getTypeDescriptor(SearchObjectType type) {
                 try {
-                    final File rulesFile = new File("/Users/dianezheng/work/KBaseSearchEngine/resources/types/" + type.getType() + ".yaml");
+                    final File rulesFile = new File("resources/types/" + type.getType() + ".yaml");
                     return ObjectTypeParsingRulesFileParser.fromFile(rulesFile)
                             .get(type.getVersion() - 1);
                 } catch (Exception ex) {
@@ -214,7 +213,7 @@ public class ElasticIndexingStorageTest {
             final GUID ref,
             final String objName)
             throws Exception {
-        final File file = new File("/Users/dianezheng/work/KBaseSearchEngine/resources/types/" + type + ".yaml");
+        final File file = new File("resources/types/" + type + ".yaml");
         ObjectTypeParsingRules parsingRules = ObjectTypeParsingRulesFileParser.fromFile(file).get(version);
         Map<ObjectJsonPath, String> pathToJson = new LinkedHashMap<>();
         SubObjectConsumer subObjConsumer = new SimpleSubObjectConsumer(pathToJson);
