@@ -85,6 +85,11 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME))
                 .setLevel(Level.INFO);
     }
+
+    private String getUserName(final AuthToken authPart){
+        return authPart == null ? null : authPart.getUserName();
+    }
+
     //END_CLASS_HEADER
 
     public KBaseSearchEngineServer() throws Exception {
@@ -216,10 +221,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     public SearchTypesOutput searchTypes(SearchTypesInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         SearchTypesOutput returnVal = null;
         //BEGIN search_types
-        if (authPart != null)
-            returnVal = search.searchTypes(params, authPart.getUserName());
-        else
-            returnVal = search.searchTypes(params, null);
+        returnVal = search.searchTypes(params, getUserName(authPart));
         //END search_types
         return returnVal;
     }
@@ -236,10 +238,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
     public SearchObjectsOutput searchObjects(SearchObjectsInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         SearchObjectsOutput returnVal = null;
         //BEGIN search_objects
-        if (authPart != null)
-            returnVal = search.searchObjects(params, authPart.getUserName());
-        else
-            returnVal = search.searchObjects(params, null);
+        returnVal = search.searchObjects(params, getUserName(authPart));
         //END search_objects
         return returnVal;
     }
@@ -252,14 +251,11 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
      * @param   params   instance of type {@link kbasesearchengine.GetObjectsInput GetObjectsInput}
      * @return   instance of type {@link kbasesearchengine.GetObjectsOutput GetObjectsOutput}
      */
-    @JsonServerMethod(rpc = "KBaseSearchEngine.get_objects", authOptional=true, async=true)
+    @JsonServerMethod(rpc = "KBaseSearchEngine.get_objects", async=true)
     public GetObjectsOutput getObjects(GetObjectsInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         GetObjectsOutput returnVal = null;
         //BEGIN get_objects
-        if (authPart != null)
-            returnVal = search.getObjects(params, authPart.getUserName());
-        else
-            returnVal = search.getObjects(params, null);
+        returnVal = search.getObjects(params, authPart.getUserName());
         //END get_objects
         return returnVal;
     }

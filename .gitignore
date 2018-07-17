@@ -1,5 +1,4 @@
 test_local
-data
 sdk.cfg
 bin
 /temp_test/
@@ -19,3 +18,4 @@ bin
 KBaseSearchEngine.iml
 /deployment/jettybase/logs/
 /test_types
+/temp

@@ -760,7 +760,7 @@ Retrieve objects by their GUIDs.
 {
     my($self, @args) = @_;
 
-# Authentication: optional
+# Authentication: required
 
     if ((my $n = @args) != 1)
     {
