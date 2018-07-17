@@ -605,7 +605,7 @@ public class SearchAPIIntegrationTest {
                 true);  // isPublic set to true
     }
 
-    private ObjectData setUpOptionalAuthForSearchGetRes(String guid, String objName) throws Exception{
+    private ObjectData setUpOptionalAuthForSearchGetRes(final String guid, final String objName) throws Exception{
         return new ObjectData()
                 .withData(new UObject(ImmutableMap.of("whee", "imaprettypony1")))
                 .withGuid(guid)

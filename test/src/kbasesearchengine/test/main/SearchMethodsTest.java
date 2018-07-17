@@ -758,7 +758,16 @@ public class SearchMethodsTest {
                 "auser");
         assertThat("should show only private", res3.getTypeToCount(), is(privateData));
 
-        //should not happen
+    }
+
+    @Test
+    public void testAccessFilterIllegalArgument() throws Exception {
+        final AccessGroupProvider agp = mock(AccessGroupProvider.class);
+        final IndexingStorage is = mock(IndexingStorage.class);
+        final TypeStorage ts = mock(TypeStorage.class);
+
+        final SearchInterface sm = new SearchMethods(agp, is, ts, new HashSet<>());
+
         try {
             final SearchTypesOutput res4 = sm.searchTypes(new SearchTypesInput()
                             .withAccessFilter(new AccessFilter().withWithPrivate(0L).withWithPublic(0L))
