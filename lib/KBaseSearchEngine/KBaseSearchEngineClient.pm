@@ -206,7 +206,7 @@ Search for number of objects of each type matching constraints.
 {
     my($self, @args) = @_;
 
-# Authentication: required
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -486,7 +486,7 @@ Search for objects of particular type matching constraints.
 {
     my($self, @args) = @_;
 
-# Authentication: required
+# Authentication: optional
 
     if ((my $n = @args) != 1)
     {
@@ -1227,9 +1227,9 @@ source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 
 Optional rules of access constraints.
   - with_private - include data found in workspaces not marked 
-      as public, default value is true,
+              as public, default value is true for authenticated users and false for unauthenticated users.
   - with_public - include data found in public workspaces,
-      default value is false,
+              default value is false for authenticated users and true for unauthenticated users.
   - with_all_history - include all versions (last one and all
       old versions) of objects matching constrains, default
       value is false.

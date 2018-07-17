@@ -5,10 +5,17 @@ bin
 /dist/
 /search_tools.cfg
 /classes/
+/out
 /search_tools.cfg.bak
 *.jar
 *.war
+*.iml
 /work/
 .idea/
+
+.metadata/
+.DS_Store
 KBaseSearchEngine.iml
 /deployment/jettybase/logs/
+/test_types
+/temp
