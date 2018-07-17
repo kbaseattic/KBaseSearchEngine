@@ -672,7 +672,7 @@ public class SearchMethodsTest {
                 is(expected.getIsObjectProperty() == null ? 1L : expected.getIsObjectProperty()));
     }
 
-    private SearchInterface setUpTestAccessFilter () throws Exception{
+    private SearchInterface setUpTestAccessFilter() throws Exception{
         final AccessGroupProvider agp = mock(AccessGroupProvider.class);
         final IndexingStorage is = mock(IndexingStorage.class);
         final TypeStorage ts = mock(TypeStorage.class);

@@ -85,6 +85,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME))
                 .setLevel(Level.INFO);
     }
+
     private String getUserName(final AuthToken authPart){
         return authPart == null ? null : authPart.getUserName();
     }
