@@ -1681,7 +1681,7 @@ public class ElasticIndexingStorageTest {
         final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
                 objType, new StorageObjectType("foo", "bar"))
                 .withIndexingRule(ir).build();
-        //index regular object with its sub object
+
         // regular object
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
@@ -1732,17 +1732,12 @@ public class ElasticIndexingStorageTest {
         indexStorage.deleteAllVersions(new GUID("WS:2000/1/1"));
         indexStorage.refreshIndexByType(rule);
 
-        //
-//        TimeUnit.SECONDS.sleep(2);
-
         final Set<GUID> res2 = indexStorage.searchIds(
                 Collections.emptyList(),
                 MatchFilter.getBuilder().withNullableFullTextInAll("imaprettypony").build(),
                 null,
                 AccessFilter.create().withAccessGroups(2000));
+
         assertThat("objects not deleted", res2, is(set()));
-
-
-
     }
 }
