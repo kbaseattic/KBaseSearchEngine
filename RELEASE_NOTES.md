@@ -1,6 +1,12 @@
 Search Service MKII release notes
 =================================
 
+0.2.2
+-----
+
+* Removed recursive indexing to prevent race conditions during indexing (this change
+   has no impact on existing indexes).
+
 0.2.1
 -----
 ****  Made the following changes that affect the interface.
@@ -13,8 +19,6 @@ Search Service MKII release notes
 * In KBaseSearchEngine.spec, moved the flags addNarrativeInfo and addAccessGroupInfo
   from match filter parameter to the postprocessing parameter provided to the search API.
 
-* Removed recursive indexing to prevent race conditions during indexing (this change
-   has no impact on existing indexes).
 
 0.1.3
 -----
