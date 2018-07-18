@@ -287,6 +287,7 @@ public class ElasticIndexingStorageTest {
 
         FoundHits hits = indexStorage.searchObjects(Arrays.asList("GenomeFeature"),
                                        filter, null, accessFilter, null, null);
+        // genome01 has 3 features
         Assert.assertEquals("expected 3 guid", 3, hits.guids.size());
         Assert.assertTrue("expected WS:1/1/4:Feature/NewGenome.CDS",
                 hits.guids.iterator().next().toString().startsWith("WS:1/1/4:Feature/NewGenome.CDS"));
