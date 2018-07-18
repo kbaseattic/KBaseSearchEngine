@@ -1731,7 +1731,17 @@ public class ElasticIndexingStorage implements IndexingStorage {
             throws IOException, IndexingConflictException {
         return makeRequest(reqType, urlPath, doc, Collections.emptyMap());
     }
-    
+
+    /**
+     * This method causes an immediate refresh of the indexed objects.
+     *
+     * @param reqType
+     * @param indexName
+     * @param jsonData
+     * @return
+     * @throws IOException
+     * @throws IndexingConflictException
+     */
     public Response makeRequestBulk(
             final String reqType,
             final String indexName,
