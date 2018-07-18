@@ -1,6 +1,11 @@
 Search Service MKII release notes
 =================================
 
+0.2.2
+-----
+* Changed search_objects and search_types to optionally require auth. Unauthorized calls will only
+see results from public data. Will throw exception if with_public and with_private are both false.
+
 0.2.1
 -----
 ****  Made the following changes that affect the interface.

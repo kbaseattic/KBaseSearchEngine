@@ -7,7 +7,7 @@ MAINTAINER KBase Developer
 # installation scripts.
 
 # RUN apt-get update
-RUN echo 1
+RUN echo 11
 
 # update jars
 RUN cd /kb/dev_container/modules/jars \
@@ -35,8 +35,7 @@ RUN cd /opt \
 	&& wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.0.tar.gz \
 	&& tar xfz elasticsearch-5.5.0.tar.gz \
 	&& ln -s elasticsearch-5.5.0 elasticsearch
-	
-	
+
 RUN cd /opt \
 	&& wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.6.12.tgz \
 	&& tar xfz mongodb-linux-x86_64-2.6.12.tgz \
