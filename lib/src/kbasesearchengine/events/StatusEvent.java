@@ -130,7 +130,8 @@ public class StatusEvent {
 
     /** Get whether the corresponding record for this event should be overwritten
      * if the record already exists in the index."
-     * @return whether to overwrite existing data.
+     * @return whether to overwrite existing data. An absent field indicates that
+     * the record must not be overwritten.
      */
     public Optional<Boolean> isOverwriteExistingData() {
         return overwriteExistingData;
@@ -404,6 +405,7 @@ public class StatusEvent {
         /** Specify whether the corresponding record for this event should be overwritten
          * if the record already exists in the index."
          * @param overwriteExistingData true if the existing record should be overwritten, else false.
+         *                              An absent field indicates that the record must not be overwritten.
          * @return this builder.
          */
         public Builder withNullableOverwriteExistingData(final Boolean overwriteExistingData) {
