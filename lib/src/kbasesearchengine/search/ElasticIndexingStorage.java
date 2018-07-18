@@ -382,7 +382,6 @@ public class ElasticIndexingStorage implements IndexingStorage {
         } finally {
             tempFile.delete();
         }
-        refreshIndex(indexName);
     }
 
 
