@@ -631,7 +631,23 @@ public class ElasticIndexingStorage implements IndexingStorage {
         }
         return ret;
     }
-    
+
+    /** This method forces a refresh that is required mainly for sub-objects.
+     * The reason for the forced refresh is as follows:
+     * The indexing steps are,
+     * 1. _index,
+     * 2. get ids of records whose last version field needs to be updated (done with a _search!)
+     * 3. _update field in records
+     * The search in step 2 requires the refresh on every bulk indexing and update operation,
+     * else we get the version conflict exceptions.
+     *
+      * @param indexName
+     * @param parentGUID
+     * @param lastVersion
+     * @return
+     * @throws IOException
+     * @throws IndexingConflictException
+     */
     private int updateLastVersionsInData(String indexName, GUID parentGUID,
             int lastVersion) throws IOException, IndexingConflictException {
         if (indexName == null) {
