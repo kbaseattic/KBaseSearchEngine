@@ -85,6 +85,11 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
         ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME))
                 .setLevel(Level.INFO);
     }
+
+    private String getUserName(final AuthToken authPart){
+        return authPart == null ? null : authPart.getUserName();
+    }
+
     //END_CLASS_HEADER
 
     public KBaseSearchEngineServer() throws Exception {
@@ -212,11 +217,11 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
      * @param   params   instance of type {@link kbasesearchengine.SearchTypesInput SearchTypesInput}
      * @return   instance of type {@link kbasesearchengine.SearchTypesOutput SearchTypesOutput}
      */
-    @JsonServerMethod(rpc = "KBaseSearchEngine.search_types", async=true)
+    @JsonServerMethod(rpc = "KBaseSearchEngine.search_types", authOptional=true, async=true)
     public SearchTypesOutput searchTypes(SearchTypesInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         SearchTypesOutput returnVal = null;
         //BEGIN search_types
-        returnVal = search.searchTypes(params, authPart.getUserName());
+        returnVal = search.searchTypes(params, getUserName(authPart));
         //END search_types
         return returnVal;
     }
@@ -229,11 +234,11 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
      * @param   params   instance of type {@link kbasesearchengine.SearchObjectsInput SearchObjectsInput}
      * @return   instance of type {@link kbasesearchengine.SearchObjectsOutput SearchObjectsOutput}
      */
-    @JsonServerMethod(rpc = "KBaseSearchEngine.search_objects", async=true)
+    @JsonServerMethod(rpc = "KBaseSearchEngine.search_objects", authOptional=true, async=true)
     public SearchObjectsOutput searchObjects(SearchObjectsInput params, AuthToken authPart, RpcContext jsonRpcContext) throws Exception {
         SearchObjectsOutput returnVal = null;
         //BEGIN search_objects
-        returnVal = search.searchObjects(params, authPart.getUserName());
+        returnVal = search.searchObjects(params, getUserName(authPart));
         //END search_objects
         return returnVal;
     }

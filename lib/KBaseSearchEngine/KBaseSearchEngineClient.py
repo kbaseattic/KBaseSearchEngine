@@ -87,8 +87,10 @@ class KBaseSearchEngine(object):
            other = true.), parameter "access_filter" of type "AccessFilter"
            (Optional rules of access constraints. - with_private - include
            data found in workspaces not marked as public, default value is
-           true, - with_public - include data found in public workspaces,
-           default value is false, - with_all_history - include all versions
+           true for authenticated users and false for unauthenticated users.
+           - with_public - include data found in public workspaces, default
+           value is false for authenticated users and true for
+           unauthenticated users. - with_all_history - include all versions
            (last one and all old versions) of objects matching constrains,
            default value is false.) -> structure: parameter "with_private" of
            type "boolean" (A boolean. 0 = false, other = true.), parameter
@@ -174,12 +176,14 @@ class KBaseSearchEngine(object):
            "ascending" of type "boolean" (A boolean. 0 = false, other =
            true.), parameter "access_filter" of type "AccessFilter" (Optional
            rules of access constraints. - with_private - include data found
-           in workspaces not marked as public, default value is true, -
+           in workspaces not marked as public, default value is true for
+           authenticated users and false for unauthenticated users. -
            with_public - include data found in public workspaces, default
-           value is false, - with_all_history - include all versions (last
-           one and all old versions) of objects matching constrains, default
-           value is false.) -> structure: parameter "with_private" of type
-           "boolean" (A boolean. 0 = false, other = true.), parameter
+           value is false for authenticated users and true for
+           unauthenticated users. - with_all_history - include all versions
+           (last one and all old versions) of objects matching constrains,
+           default value is false.) -> structure: parameter "with_private" of
+           type "boolean" (A boolean. 0 = false, other = true.), parameter
            "with_public" of type "boolean" (A boolean. 0 = false, other =
            true.), parameter "with_all_history" of type "boolean" (A boolean.
            0 = false, other = true.), parameter "pagination" of type
