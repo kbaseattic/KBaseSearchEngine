@@ -959,10 +959,11 @@ public class IndexerWorker implements Stoppable {
                 throws InterruptedException, IndexingException {
             Map<GUID, SearchObjectType> ret = new LinkedHashMap<>();
             Set<ResolvedReference> guidsToLoad = new LinkedHashSet<>();
+            final Set<ResolvedReference> rrs = resolveRefs(objectRefPath, unresolvedGUIDs);
+            final Map<GUID, ResolvedReference> rrmap =  rrs.stream().
+                    collect(Collectors.toMap(ResolvedReference::getReference, rr -> rr));
             for (GUID unresolvedGUID : unresolvedGUIDs) {
-                ResolvedReference resRef =
-                        resolveRefs(objectRefPath, ImmutableSet.of(unresolvedGUID)).
-                                iterator().next();
+                ResolvedReference resRef = rrmap.get(unresolvedGUID.getParentGUID());
                 GUID guid = resRef.getResolvedReference();
                 guid = new GUID(guid.getStorageCode(),
                         guid.getAccessGroupId(),
