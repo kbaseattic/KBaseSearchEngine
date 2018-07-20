@@ -690,7 +690,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> doc = ImmutableMap.of("query", query,
                                                   "script", script);
 
-        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_update_by_query?refresh";
+        String urlPath = "/" + indexName + "/" + getDataTableName() + "/_update_by_query?refresh=wait_for";
         Response resp = makeRequest("POST", urlPath, doc);
         @SuppressWarnings("unchecked")
         Map<String, Object> data = UObject.getMapper().readValue(
