@@ -643,6 +643,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
      * 1. _index,
      * 2. get ids of records whose last version field needs to be updated (done with a _search!)
      * 3. _update field in records
+     *
+     * Here, step 1 occures when the object is indexed (prior to this method call). Steps 2&3
+     * occur in the update_by_query call (in this method).
+     *
      * The search in step 2 requires the refresh on every bulk indexing and update operation,
      * else we get the version conflict exceptions.
      *
