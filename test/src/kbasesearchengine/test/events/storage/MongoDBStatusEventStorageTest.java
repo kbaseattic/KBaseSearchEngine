@@ -181,10 +181,10 @@ public class MongoDBStatusEventStorageTest {
     }
 
     @Test
-    public void storeAndGetFalseFields() throws Exception {
-        // tests with all possible fields in status event
+    public void storeAndGetAllBooleanFields() throws Exception {
+        // tests boolean fields
         when(clock.instant()).thenReturn(Instant.ofEpochMilli(30000L));
-        final StoredStatusEvent sse = storage.store(StatusEvent.getBuilder(
+        final StoredStatusEvent sse1 = storage.store(StatusEvent.getBuilder(
                 "WS", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
                         .withNullableisPublic(false)
                         .withNullableOverwriteExistingData(false)
@@ -193,8 +193,40 @@ public class MongoDBStatusEventStorageTest {
                 set(),
                 "Baldrick");
 
-        assertThat("incorrect access group id", sse.getEvent().isPublic(), is(Optional.of(false)));
-        assertThat("incorrect access group id", sse.getEvent().isOverwriteExistingData(), is(Optional.of(false)));
+        assertThat("incorrect access group id", sse1.getEvent().isPublic(), is(Optional.of(false)));
+        assertThat("incorrect access group id", sse1.getEvent().isOverwriteExistingData(), is(Optional.of(false)));
+
+
+        final StoredStatusEvent  sse2 = storage.store(StatusEvent.getBuilder(
+                "WS", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
+                        .withNullableisPublic(true)
+                        .withNullableOverwriteExistingData(true)
+                        .build(),
+                StatusEventProcessingState.UNPROC,
+                set(),
+                "Baldrick");
+
+        assertThat("incorrect access group id", sse2.getEvent().isPublic(), is(Optional.of(true)));
+        assertThat("incorrect access group id", sse2.getEvent().isOverwriteExistingData(), is(Optional.of(true)));
+    }
+
+    @Test
+    public void storeAndGetNullableDefaults() throws Exception {
+        // tests all nullable defaults
+        when(clock.instant()).thenReturn(Instant.ofEpochMilli(30000L));
+        final StoredStatusEvent  sse = storage.store(StatusEvent.getBuilder(
+                "WS", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
+                        .build(),
+                StatusEventProcessingState.UNPROC,
+                set(),
+                "Baldrick");
+
+        assertThat("incorrect access group id", sse.getEvent().getAccessGroupId(), is(Optional.absent()));
+        assertThat("incorrect access group id", sse.getEvent().isPublic(), is(Optional.absent()));
+        assertThat("incorrect access group id", sse.getEvent().getNewName(), is(Optional.absent()));
+        assertThat("incorrect access group id", sse.getEvent().isOverwriteExistingData(), is(Optional.absent()));
+        assertThat("incorrect access group id", sse.getEvent().getAccessGroupObjectId(), is(Optional.absent()));
+        assertThat("incorrect access group id", sse.getEvent().getVersion(), is(Optional.absent()));
     }
 
     @Test
