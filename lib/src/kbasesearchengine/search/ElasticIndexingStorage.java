@@ -597,6 +597,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
         if (reqIndexName == null) {
             reqIndexName = getAnyIndexPattern();
         }
+        else if (reqIndexName.endsWith(SUBTYPE_INDEX_SUFFIX)) {
+            reqIndexName = reqIndexName.replaceAll("_\\d+_sub$", "_*");
+        } else {
+            reqIndexName = reqIndexName.replaceAll("_\\d+$", "_*");
+        }
+
         String prefix = toGUIDPrefix(parentGUID);
 
         // doc = {"query": {"bool": {"filter": [{"term": {"prefix": prefix}}]}}}
