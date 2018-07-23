@@ -2,17 +2,8 @@ package kbasesearchengine.main;
 
 import kbasesearchengine.tools.Utils;
 
-import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import us.kbase.common.service.JsonClientException;
-import kbasesearchengine.tools.Utils;
 
 import com.google.common.base.Ticker;
 import com.google.common.cache.CacheBuilder;
@@ -20,6 +11,8 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.Weigher;
 import us.kbase.common.service.Tuple11;
+
+import org.slf4j.LoggerFactory;
 
 /** A caching layer for object info. Caches the results from the wrapped
  * {@link ObjectInfoProvider} in memory for quick access.
@@ -101,25 +94,29 @@ public class ObjectInfoCache implements ObjectInfoProvider {
 
     @Override
     public Tuple11<Long, String, String, String, Long,
-            String, Long, String, String, Long, Map<String, String>> getObjectInfo(final String objRef)
-            throws IOException, JsonClientException {
+            String, Long, String, String, Long, Map<String, String>> getObjectInfo(final String objRef) {
         try {
             return cache.get(objRef);
-        } catch (ExecutionException e) {
-            throw (IOException) e.getCause(); // IOE is the only checked exception
+        } catch (Exception e) {
+            LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving object info: Returning null:  {}",
+                    e.getMessage());
             // unchecked exceptions are wrapped in UncheckedExcecutionException
+            return null;
         }
     }
 
     @Override
     public Map<String, Tuple11<Long, String, String, String, Long, String, Long, String, String, Long,
-            Map<String, String>>> getObjectsInfo(final Iterable <? extends String> objRefs)
-            throws IOException, JsonClientException {
+            Map<String, String>>> getObjectsInfo(final Iterable <? extends String> objRefs) {
         try {
-            return cache.getAll(objRefs);
-        } catch (ExecutionException e) {
-            throw (IOException) e.getCause(); // IOE is the only checked exception
+            Map<String, Tuple11<Long, String, String, String, Long, String, Long, String, String, Long,
+                    Map<String, String>>> retVal = cache.getAll(objRefs);
+            return retVal;
+        } catch (Exception e) {
+            LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving objects info: Returning null:  {}",
+                    e.getMessage());
             // unchecked exceptions are wrapped in UncheckedExcecutionException
+            return null;
         }
     }
 }

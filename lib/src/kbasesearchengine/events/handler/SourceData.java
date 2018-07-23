@@ -25,6 +25,7 @@ public class SourceData {
     private final Optional<String> version;
     private final Optional<String> md5;
     private final Set<String> sourceTags;
+    private boolean isPublic;
     
     private SourceData(
             final UObject data,
@@ -119,6 +120,13 @@ public class SourceData {
         return sourceTags;
     }
 
+    /** Return the flag if this source data is public or not.
+     * @return the public or private flag from the data source.
+     */
+    public boolean isPublic() {
+        return isPublic;
+    }
+
     /** Get a builder for a SourceData instance.
      * @param data the data.
      * @param name the name of the data.
@@ -145,6 +153,7 @@ public class SourceData {
         private Optional<String> version = Optional.absent();
         private Optional<String> md5 = Optional.absent();
         private final Set<String> sourceTags = new HashSet<>();
+        private boolean isPublic;
         
         private Builder(final UObject data, final String name, final String creator) {
             Utils.nonNull(data, "data");
@@ -226,7 +235,16 @@ public class SourceData {
             sourceTags.add(sourceTag);
             return this;
         }
-        
+
+        /** Add a public or private flag of the data.
+         * @param private or public flag.
+         * @return this builder.
+         */
+        public Builder withIsPublic(final boolean isPublic) {
+            this.isPublic = isPublic;
+            return this;
+        }
+
         /** Build the SourceData instance.
          * @return the SourceData.
          */

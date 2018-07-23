@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import kbasesearchengine.*;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import org.junit.Test;
 
@@ -30,6 +29,7 @@ import kbasesearchengine.SearchObjectsOutput;
 import kbasesearchengine.SearchTypesInput;
 import kbasesearchengine.SearchTypesOutput;
 import kbasesearchengine.TypeDescriptor;
+import kbasesearchengine.PostProcessing;
 import kbasesearchengine.main.SearchInterface;
 import kbasesearchengine.main.NarrativeInfoDecorator;
 import kbasesearchengine.main.NarrativeInfoProvider;

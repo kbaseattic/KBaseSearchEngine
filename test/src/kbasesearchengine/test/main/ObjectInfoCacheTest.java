@@ -1,12 +1,17 @@
 package kbasesearchengine.test.main;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
 
 import java.util.Collections;
 import java.io.IOException;
+
+import kbasesearchengine.events.handler.CloneableWorkspaceClient;
 import us.kbase.common.service.JsonClientException;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -23,10 +28,15 @@ import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.ob
 import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.compareObjInfo;
 import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.compareObjInfoMap;
 import static kbasesearchengine.test.common.TestCommon.set;
+import kbasesearchengine.events.handler.WorkspaceEventHandler;
+import kbasesearchengine.main.AccessGroupNarrativeInfoProvider;
 import kbasesearchengine.main.ObjectInfoProvider;
 import kbasesearchengine.main.ObjectInfoCache;
 import kbasesearchengine.test.common.TestCommon;
+import us.kbase.common.service.UObject;
 import us.kbase.common.service.Tuple11;
+import us.kbase.workspace.WorkspaceClient;
+import us.kbase.workspace.GetObjectInfo3Results;
 
 public class ObjectInfoCacheTest {
 
@@ -46,6 +56,15 @@ public class ObjectInfoCacheTest {
             Long, String, String, Long, Map<String, String>> obj_2_1_1_var22 =
             objTuple(1L, "objName22", "sometype", "date22", 1L, "copier22",
                     2L, "wsname22", "checksum", 44, Collections.emptyMap());
+
+    private final Tuple11<Long, String, String, String, Long, String,
+            Long, String, String, Long, Map<String, String>> objTuple_65_2_7 =
+            objTuple(2L, "objName2", "sometype", "date2", 7L,"copier2",
+                    65L, "wsname65", "checksum", 44, Collections.emptyMap());
+    private final Tuple11<Long, String, String, String, Long, String,
+            Long, String, String, Long, Map<String, String>> objTuple_42_7_21 =
+            objTuple(7L, "objName7", "sometype", "date7", 21L, "copier7",
+                    42L, "wsname42", "checksum", 44, Collections.emptyMap());
 
     @SuppressWarnings("unchecked")
     @Test
@@ -149,6 +168,8 @@ public class ObjectInfoCacheTest {
     public void cacheLookupException() throws Exception {
         // test the non-test constructor
 
+        final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
+        final ObjectInfoProvider oip = new AccessGroupNarrativeInfoProvider(weh);
         final ObjectInfoProvider wrapped = mock(ObjectInfoProvider.class);
         final Ticker ticker = mock(Ticker.class);
         final ObjectInfoCache cache = new ObjectInfoCache(
@@ -157,12 +178,7 @@ public class ObjectInfoCacheTest {
                 10000,
                 ticker);
 
-        try {
-            cache.getObjectInfo("65/1/1");
-            fail("CacheLoader DID NOT throw an exception for a lookup of non-existing key.");
-        } catch (Exception e) {
-            assertThat(e.getMessage(), is("CacheLoader returned null for key 65/1/1."));
-        }
+        assertNull(cache.getObjectInfo("65/1/1"));
     }
 
     @SuppressWarnings("unchecked")
@@ -288,24 +304,41 @@ public class ObjectInfoCacheTest {
     }
 
     @Test
-    public void getFailIOE() throws Exception {
-        final ObjectInfoProvider wrapped = mock(ObjectInfoProvider.class);
-        final ObjectInfoCache cache = new ObjectInfoCache(wrapped, 10000, 10);
+    public void failGetObjectsInfo() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClient()).thenReturn(wscli);
 
-        when(wrapped.getObjectsInfo(set("65/1/1"))).thenThrow(new IOException("Test Exception Message"));
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+        final ObjectInfoProvider oip = new AccessGroupNarrativeInfoProvider(weh);
+        final ObjectInfoCache cache = new ObjectInfoCache(oip, 10000, 15);
 
-        failFindObjectInfo(cache, ImmutableList.of("65/1/1"), new IOException("Test Exception Message"));
-    }
+        List<Tuple11<Long, String, String, String,
+                Long, String, Long, String, String, Long, Map<String, String>>> objList =
+                new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
+        objList.add(objTuple_65_2_7);
+        objList.add(null);
+        objList.add(objTuple_42_7_21);
+        List<List<String>> pathList = new ArrayList<>();
+        List<String> path1 = new ArrayList<>();
+        path1.add("65/2/7");
+        List<String> path2 = new ArrayList<>();
+        path2.add("42/7/21");
+        pathList.add(path1);
+        pathList.add(null);
+        pathList.add(path2);
+        pathList.add(null);
 
-    private void failFindObjectInfo(
-            final ObjectInfoCache cache,
-            final ImmutableList<String> objRefs,
-            final Exception expected) {
-        try {
-            cache.getObjectsInfo(objRefs);
-            fail("expected exception");
-        } catch (Exception got) {
-            TestCommon.assertExceptionCorrect(got, expected);
-        }
+        when(wscli.administer(any()))
+                .thenReturn(new UObject(new GetObjectInfo3Results().withInfos(objList).withPaths(pathList)));
+
+        Map<String, Tuple11<Long, String, String, String, Long, String,
+                Long, String, String, Long, Map<String, String>>> retVal = cache.getObjectsInfo(set("65/2/7", "1/2/1", "42/7/21", "2/2/2"));
+
+        System.out.println("??????????????????????????????   RetVal:  " + retVal);
+//        compareObjInfo(retVal.get("42/7/21"), objTuple_42_7_21);
+//        compareObjInfo(retVal.get("65/2/7"), objTuple_65_2_7);
+//        assertNull("Obj Info not null", retVal.get("1/2/1"));
+//        assertNull("Obj Info not null", retVal.get("2/2/2"));
     }
 }

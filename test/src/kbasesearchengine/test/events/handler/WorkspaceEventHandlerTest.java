@@ -18,10 +18,10 @@ import java.net.ConnectException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 
 import junit.framework.Assert;
@@ -118,72 +118,6 @@ public class WorkspaceEventHandlerTest {
                 "r", "unlocked", Collections.emptyMap()));
     }
 
-    @Test
-    public void getObjectInfo() throws Exception {
-        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
-        final WorkspaceClient wscli = mock(WorkspaceClient.class);
-        when(clonecli.getClient()).thenReturn(wscli);
-
-        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
-
-        final String objName1 = "ObjectName1";
-
-        List<Tuple11<Long, String, String, String,
-                Long, String, Long, String, String, Long, Map<String, String>>> objList =
-                new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
-        objList.add(objTuple(1L, objName1, "sometype", "date1", 1L, "copier1",
-                1L, "wsname1", "checksum", 44, Collections.emptyMap()));
-
-        List<List<String>> pathList = new ArrayList<>();
-        List<String> path1 = new ArrayList<>();
-        path1.add("1/1/1");
-        pathList.add(path1);
-
-        when(wscli.administer(any()))
-                .thenReturn(new UObject(new GetObjectInfo3Results().withInfos(objList).withPaths(pathList)));
-
-        compareObjInfo(weh.getObjectInfo("1/1/1"),
-                objTuple(1L, objName1, "sometype", "date1", 1L, "copier1",
-                                1L, "wsname1", "checksum", 44, Collections.emptyMap()));
-    }
-
-    @Test
-    public void getObjectsInfo() throws Exception {
-        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
-        final WorkspaceClient wscli = mock(WorkspaceClient.class);
-        when(clonecli.getClient()).thenReturn(wscli);
-
-        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
-
-        final String objName1 = "ObjectName1";
-        final String objName2 = "ObjectName2";
-
-        List<Tuple11<Long, String, String, String,
-                Long, String, Long, String, String, Long, Map<String, String>>> objList =
-                new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
-        objList.add(objTuple(1L, objName1, "sometype", "date1", 1L, "copier1",
-                1L, "wsname1", "checksum", 44, Collections.emptyMap()));
-        objList.add(objTuple(1L, objName2, "sometype", "date2", 1L, "copier2",
-                2L, "wsname2", "checksum", 44, Collections.emptyMap()));
-        List<List<String>> pathList = new ArrayList<>();
-        List<String> path1 = new ArrayList<>();
-        path1.add("1/1/1");
-        List<String> path2 = new ArrayList<>();
-        path2.add("1/2/1");
-        pathList.add(path1);
-        pathList.add(path2);
-
-        when(wscli.administer(any()))
-                .thenReturn(new UObject(new GetObjectInfo3Results().withInfos(objList).withPaths(pathList)));
-
-        compareObjInfoMap(weh.getObjectsInfo(ImmutableList.of("1/1/1", "1/2/1")),
-                ImmutableMap.of(
-                        "1/1/1", objTuple(1L, objName1, "sometype", "date1", 1L, "copier1",
-                                1L, "wsname1", "checksum", 44, Collections.emptyMap()),
-                        "1/2/1", objTuple(1L, objName2, "sometype", "date2", 1L, "copier2",
-                                2L, "wsname2", "checksum", 44, Collections.emptyMap())));
-    }
-
     public static void compareWsInfo(
             final Tuple9<Long, String, String, String, Long, String, String, String,
                     Map<String, String>> got,
@@ -205,6 +139,7 @@ public class WorkspaceEventHandlerTest {
                     Map<String, String>> got,
             final Tuple11<Long, String, String, String, Long, String, Long, String, String, Long,
                     Map<String, String>> expected) {
+
         assertThat("incorrect obj id", got.getE1(), is(expected.getE1()));
         assertThat("incorrect obj name", got.getE2(), is(expected.getE2()));
         assertThat("incorrect obj type", got.getE3(), is(expected.getE3()));

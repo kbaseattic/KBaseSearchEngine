@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.util.Map;
 
 import us.kbase.common.service.JsonClientException;
+import us.kbase.common.service.Tuple9;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertNull;
@@ -21,12 +23,12 @@ import com.google.common.collect.ImmutableMap;
 import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.wsTuple;
 import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.compareWsInfo;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
-import kbasesearchengine.main.WorkspaceInfoProvider;
-import kbasesearchengine.main.WorkspaceInfoCache;
+import kbasesearchengine.main.AccessGroupInfoProvider;
+import kbasesearchengine.main.AccessGroupNarrativeInfoProvider;
+import kbasesearchengine.main.AccessGroupInfoCache;
 import kbasesearchengine.test.common.TestCommon;
-import us.kbase.common.service.Tuple9;
 
-public class WorkspaceInfoCacheTest {
+public class AccessGroupInfoCacheTest {
 
     private final Tuple9<Long, String, String, String, Long, String, String, String,
             Map<String, String>> wsTuple_65_v1 = wsTuple(65, "myws1", "owner1", "date1", 32, "a",
@@ -59,45 +61,45 @@ public class WorkspaceInfoCacheTest {
     @Test
     public void standardConstructor() throws Exception {
         // test the non-test constructor
-        final WorkspaceInfoProvider wrapped = mock(WorkspaceInfoProvider.class);
-        final WorkspaceInfoCache cache = new WorkspaceInfoCache(
+        final AccessGroupInfoProvider wrapped = mock(AccessGroupInfoProvider.class);
+        final AccessGroupInfoCache cache = new AccessGroupInfoCache(
                 wrapped,
                 1,
                 10000);
 
-        when(wrapped.getWorkspaceInfo(65L)).thenReturn(
+        when(wrapped.getAccessGroupInfo(65L)).thenReturn(
                 wsTuple_65_v1, wsTuple_65_v2, null);
 
-        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v1);
-        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v1);
+        compareWsInfo(cache.getAccessGroupInfo(65L), wsTuple_65_v1);
+        compareWsInfo(cache.getAccessGroupInfo(65L), wsTuple_65_v1);
         // sleep little more than cacheLifeTimeInSec
         Thread.sleep(1001);
 
         // check if the cache data had expired
-        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v2);
-        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v2);
+        compareWsInfo(cache.getAccessGroupInfo(65L), wsTuple_65_v2);
+        compareWsInfo(cache.getAccessGroupInfo(65L), wsTuple_65_v2);
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void expiresEveryGet() throws Exception {
         // test that expires the value from the cache every time
-        final WorkspaceInfoProvider wrapped = mock(WorkspaceInfoProvider.class);
+        final AccessGroupInfoProvider wrapped = mock(AccessGroupInfoProvider.class);
         final Ticker ticker = mock(Ticker.class);
-        final WorkspaceInfoCache cache = new WorkspaceInfoCache(
+        final AccessGroupInfoCache cache = new AccessGroupInfoCache(
                 wrapped,
                 10,
                 10000,
                 ticker);
 
-        when(wrapped.getWorkspaceInfo(65L)).thenReturn(
+        when(wrapped.getAccessGroupInfo(65L)).thenReturn(
                 wsTuple_65_v1, wsTuple_65_v2, null);
         // ticker returns little more than mutiples of cacheLifeTimeInSec
         when(ticker.read()).thenReturn(0L, 10000000001L, 20000000001L);
 
         // because of ticker values, the data in cache should expire on every get
-        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v1);
-        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v2);
+        compareWsInfo(cache.getAccessGroupInfo(65L), wsTuple_65_v1);
+        compareWsInfo(cache.getAccessGroupInfo(65L), wsTuple_65_v2);
     }
 
     @SuppressWarnings("unchecked")
@@ -105,71 +107,66 @@ public class WorkspaceInfoCacheTest {
     public void cacheLookupException() throws Exception {
         // test the non-test constructor
 
-        final WorkspaceInfoProvider wrapped = mock(WorkspaceInfoProvider.class);
+        final AccessGroupInfoProvider wrapped = mock(AccessGroupInfoProvider.class);
         final Ticker ticker = mock(Ticker.class);
-        final WorkspaceInfoCache cache = new WorkspaceInfoCache(
+        final AccessGroupInfoCache cache = new AccessGroupInfoCache(
                 wrapped,
                 10,
                 10000,
                 ticker);
-        try {
-            cache.getWorkspaceInfo(65L);
-            fail("CacheLoader DID NOT throw an exception for a lookup of non-existing key.");
-        } catch (Exception e) {
-            assertThat(e.getMessage(), is("CacheLoader returned null for key 65."));
-        }
+        assertNull(cache.getAccessGroupInfo(65L));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void cacheAccessOnGet() throws Exception {
         // test that the cache is accessed when available
-        final WorkspaceInfoProvider wrapped = mock(WorkspaceInfoProvider.class);
+        final AccessGroupInfoProvider wrapped = mock(AccessGroupInfoProvider.class);
         final Ticker ticker = mock(Ticker.class);
-        final WorkspaceInfoCache cache = new WorkspaceInfoCache(
+        final AccessGroupInfoCache cache = new AccessGroupInfoCache(
                 wrapped,
                 10,
                 10000,
                 ticker);
 
-        when(wrapped.getWorkspaceInfo(65L)).thenReturn(wsTuple_65_v1, wsTuple_65_v2, null);
+        when(wrapped.getAccessGroupInfo(65L)).thenReturn(wsTuple_65_v1, wsTuple_65_v2, null);
         // ticker values are multiples of half of cacheLifeTimeInSec
         when(ticker.read()).thenReturn(0L, 5000000001L, 10000000001L, 15000000001L, 20000000001L);
 
         // check to see if cache expires after 2 gets
-        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v1);
-        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v1);
+        compareWsInfo(cache.getAccessGroupInfo(65L), wsTuple_65_v1);
+        compareWsInfo(cache.getAccessGroupInfo(65L), wsTuple_65_v1);
 
-        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v2);
-        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_v2);
+        compareWsInfo(cache.getAccessGroupInfo(65L), wsTuple_65_v2);
+        compareWsInfo(cache.getAccessGroupInfo(65L), wsTuple_65_v2);
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void expiresOnSize() throws Exception {
         // test that the cache expires values when it reaches the max size
-        final WorkspaceInfoProvider wrapped = mock(WorkspaceInfoProvider.class);
-        final WorkspaceInfoCache cache = new WorkspaceInfoCache(wrapped, 10000, 16);
+        final AccessGroupInfoProvider wrapped = mock(AccessGroupInfoProvider.class);
+        final AccessGroupInfoCache cache = new AccessGroupInfoCache(wrapped, 10000, 16);
 
-        when(wrapped.getWorkspaceInfo(65L)).thenReturn(
+        when(wrapped.getAccessGroupInfo(65L)).thenReturn(
                 wsTuple_65_var1, wsTuple_65_var11, wsTuple_65_var111, null);
-        when(wrapped.getWorkspaceInfo(2L)).thenReturn(
+        when(wrapped.getAccessGroupInfo(2L)).thenReturn(
                 wsTuple_65_var2, wsTuple_65_var22, wsTuple_65_var222, null);
 
         // load 18 workspace infos into a max 16 cache
-        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_var1);
+        compareWsInfo(cache.getAccessGroupInfo(65L), wsTuple_65_var1);
         // check cache access
-        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_var1);
+        compareWsInfo(cache.getAccessGroupInfo(65L), wsTuple_65_var1);
         // force an expiration based on cache size
-        compareWsInfo(cache.getWorkspaceInfo(2L), wsTuple_65_var2);
+        compareWsInfo(cache.getAccessGroupInfo(2L), wsTuple_65_var2);
         // check that with every access, the oldest value had expired
-        compareWsInfo(cache.getWorkspaceInfo(65L), wsTuple_65_var11);
-        compareWsInfo(cache.getWorkspaceInfo(2L), wsTuple_65_var22);
+        compareWsInfo(cache.getAccessGroupInfo(65L), wsTuple_65_var11);
+        compareWsInfo(cache.getAccessGroupInfo(2L), wsTuple_65_var22);
     }
 
     @Test
     public void constructFail() throws Exception {
-        final WorkspaceInfoProvider wrapped = mock(WorkspaceInfoProvider.class);
+        final AccessGroupInfoProvider wrapped = mock(AccessGroupInfoProvider.class);
         failConstruct(null, 10, 10, new NullPointerException("provider"));
         failConstruct(wrapped, 0, 10,
                 new IllegalArgumentException("cache lifetime must be at least one second"));
@@ -178,12 +175,12 @@ public class WorkspaceInfoCacheTest {
     }
 
     private void failConstruct(
-            final WorkspaceInfoProvider provider,
+            final AccessGroupInfoProvider provider,
             final int lifetimeSec,
             final int size,
             final Exception exception) {
         try {
-            new WorkspaceInfoCache(provider, lifetimeSec, size);
+            new AccessGroupInfoCache(provider, lifetimeSec, size);
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, exception);
@@ -213,5 +210,25 @@ public class WorkspaceInfoCacheTest {
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
         }
+    }
+
+    @Test
+    public void failAccessGroupInfoProvider() throws Exception {
+        failGetAccessGroupsInfo(new IOException("Test IO Exception"));
+        failGetAccessGroupsInfo(new JsonClientException("workspace is turned off"));
+    }
+
+    private void failGetAccessGroupsInfo(
+            final Exception toThrow)
+            throws Exception {
+        final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
+        final AccessGroupInfoProvider agip = new AccessGroupNarrativeInfoProvider(weh);
+        final AccessGroupInfoCache cache = new AccessGroupInfoCache(agip, 10000, 15);
+
+        when(weh.getWorkspaceInfo(65L)).thenThrow(toThrow);
+
+        assertNull(agip.getAccessGroupInfo(65L));
+
+        assertNull(cache.getAccessGroupInfo(65L));
     }
 }

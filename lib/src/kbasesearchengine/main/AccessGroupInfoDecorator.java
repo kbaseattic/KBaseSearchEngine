@@ -3,7 +3,6 @@ package kbasesearchengine.main;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,7 +28,7 @@ import us.kbase.common.service.JsonClientException;
 /**
  * Decorates the results from a {@link SearchInterface} with information about workspaces
  * and objects in the search results. See
- * {@link SearchObjectsOutput#getWorkspacesInfo()} and
+ * {@link SearchObjectsOutput#getAccessGroupsInfo()} and
  * {@link GetObjectsOutput#getObjectsInfo()}, which is where the information is
  * stored.
  *
@@ -37,19 +36,19 @@ import us.kbase.common.service.JsonClientException;
  * narrative information, it will be overwritten if any workspace IDs in the {@link ObjectData}
  * match with the IDs in the narrative information.
  *
- * @author Uma Ganapathy
+ * @author ganapathy@bnl.gov
  *
  */
 public class AccessGroupInfoDecorator implements SearchInterface {
 
-    private final WorkspaceInfoProvider wsInfoProvider;
+    private final AccessGroupInfoProvider accessGroupInfoProvider;
     private final ObjectInfoProvider objInfoProvider;
     private final SearchInterface searchInterface;
 
     /** Create a decorator.
      * @param searchInterface the search interface to decorate. This may be a root interface that
      * produces data from a search storage system or another decorator.
-     * @param wsInfoProvider a workspace info provider using which the workspace info is retrieved
+     * @param accessGroupInfoProvider a workspace info provider using which the workspace info is retrieved
      *                       from workspace info cache, or from the workspace if not cached.
      *                       The workspace should be the same as that from which the data is indexed.
      * @param objInfoProvider an object info provider using which the objects info is retrieved
@@ -58,13 +57,13 @@ public class AccessGroupInfoDecorator implements SearchInterface {
      */
     public AccessGroupInfoDecorator(
             final SearchInterface searchInterface,
-            final WorkspaceInfoProvider wsInfoProvider,
+            final AccessGroupInfoProvider accessGroupInfoProvider,
             final ObjectInfoProvider objInfoProvider) {
         Utils.nonNull(searchInterface, "searchInterface");
-        Utils.nonNull(wsInfoProvider, "wsInfoProvider");
-        Utils.nonNull(objInfoProvider, "objInfoProvider");
+        Utils.nonNull(accessGroupInfoProvider, "accessGroupInfoProvider");
+        Utils.nonNull(objInfoProvider, "objectInfoProvider");
         this.searchInterface = searchInterface;
-        this.wsInfoProvider = wsInfoProvider;
+        this.accessGroupInfoProvider = accessGroupInfoProvider;
         this.objInfoProvider = objInfoProvider;
     }
 
@@ -121,8 +120,7 @@ public class AccessGroupInfoDecorator implements SearchInterface {
             String, String, Map<String, String>>> addAccessGroupsInfo(
             final List<ObjectData> objects,
             final Map<Long, Tuple9<Long, String, String, String, Long, String,
-                    String, String, Map<String, String>>> accessGroupInfoMap)
-            throws IOException, JsonClientException {
+                    String, String, Map<String, String>>> accessGroupInfoMap) {
 
         final Map<Long, Tuple9<Long, String, String, String, Long, String,
                 String, String, Map<String, String>>> retVal = new HashMap<>();
@@ -141,7 +139,7 @@ public class AccessGroupInfoDecorator implements SearchInterface {
         for (final long workspaceId: wsIdsSet) {
             final Tuple9<Long, String, String, String, Long, String,
                     String, String, Map<String, String>> tempWorkspaceInfo =
-                    wsInfoProvider.getWorkspaceInfo(workspaceId);
+                    accessGroupInfoProvider.getAccessGroupInfo(workspaceId);
             retVal.put(workspaceId, tempWorkspaceInfo);
         }
         return retVal;
@@ -151,8 +149,7 @@ public class AccessGroupInfoDecorator implements SearchInterface {
             Long, String, Long, String, String, Long, Map<String, String>>> addObjectsInfo(
             final List<ObjectData> objects,
             final Map<String, Tuple11<Long, String, String, String,
-            Long, String, Long, String, String, Long, Map<String, String>>> objectInfoMap)
-            throws IOException, JsonClientException {
+            Long, String, Long, String, String, Long, Map<String, String>>> objectInfoMap) {
 
         final Map<String, Tuple11<Long, String, String, String,
                 Long, String, Long, String, String, Long, Map<String, String>>> retVal = new HashMap<>();
@@ -160,18 +157,13 @@ public class AccessGroupInfoDecorator implements SearchInterface {
         if (Objects.nonNull(objectInfoMap)) {
             retVal.putAll(objectInfoMap);
         }
-        final Set<GUID> guidsSet = new HashSet<>();
+        final Set<String> objRefs = new HashSet<>();
         for (final ObjectData objData: objects) {
             final GUID guid = new GUID(objData.getGuid());
             if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
-                guidsSet.add(guid);
+                objRefs.add(guid.toRefString());
             }
         }
-        final List<String> objRefs = new ArrayList<>();
-        for (final GUID guid: guidsSet) {
-            objRefs.add(guid.toRefString());
-        }
-
         final Map<String, Tuple11<Long, String, String, String, Long,
                 String, Long, String, String, Long, Map<String, String>>> objsInfo =
                 objInfoProvider.getObjectsInfo(objRefs);
