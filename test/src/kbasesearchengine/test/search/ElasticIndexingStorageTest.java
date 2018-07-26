@@ -1671,4 +1671,65 @@ public class ElasticIndexingStorageTest {
             }
         }));
     }
+
+    @Test
+    public void testDeleteObjectWithSubobject() throws Exception {
+        // regular object
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("DeleteObjectWithSubObject", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "creator").build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2000/1/1"),
+                ImmutableMap.of(new GUID("WS:2000/1/1"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
+                false);
+
+        // sub object
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("DeleteObjectWithSubObject", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .toSubObjectRule(
+                                "sub", new ObjectJsonPath("subpath"), new ObjectJsonPath("id"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "creator").build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:2000/1/1"),
+                ImmutableMap.of(new GUID("WS:2000/1/1:sub/yay"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
+                false);
+
+
+        //check that both objects are found
+        final Set<GUID> res = indexStorage.searchIds(
+                Collections.emptyList(),
+                MatchFilter.getBuilder().withNullableFullTextInAll("imaprettypony").build(),
+                null,
+                AccessFilter.create().withAccessGroups(2000));
+        assertThat("incorrect objects found", res,
+                is(set(new GUID("WS:2000/1/1"), new GUID("WS:2000/1/1:sub/yay"))));
+
+        //delete the object
+        indexStorage.deleteAllVersions(new GUID("WS:2000/1/1"));
+        indexStorage.refreshIndex("*");
+
+        final Set<GUID> res2 = indexStorage.searchIds(
+                Collections.emptyList(),
+                MatchFilter.getBuilder().withNullableFullTextInAll("imaprettypony").build(),
+                null,
+                AccessFilter.create().withAccessGroups(2000));
+
+        assertThat("objects not deleted", res2, is(set()));
+    }
 }

@@ -221,7 +221,6 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
 
     /** Get the workspace information for an object from the workspace service
      * to which this handler is communicating.
-     * @param an object ref: workspaceId/objectId/verId.
      * @return object info (Tuple11<>) as returned from the workspace API.
      * @throws IOException if an IO exception occurs.
      * @throws JsonClientException if an error retrieving the data occurs.
@@ -241,7 +240,6 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
 
     /** Get the workspace information for an object from the workspace service
      * to which this handler is communicating.
-     * @param list of object refs: workspaceId/objectId/verId.
      * @return a map of object ref and object info (Tuple11<>) as returned from the workspace API.
      * @throws IOException if an IO exception occurs.
      * @throws JsonClientException if an error retrieving the data occurs.
@@ -840,6 +838,11 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
             return ev;
         }
 
+        //should not need to update object event if event is to delete
+        if(ev.getEventType().name().equals("DELETE_ALL_VERSIONS")){
+            return ev;
+        }
+
         // brute force get latest state and update event as event can be played
         // out of order in the case of failed events being replayed.
 
@@ -848,6 +851,7 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
             final StatusEvent updatedEvent = updateEventForDeletion(ev);
             // if event was updated (event type gets changed to
             // StatusEventType.DELETE_ALL_VERSIONS
+
             if (!updatedEvent.equals(ev)) {
                 return updatedEvent;
             }
