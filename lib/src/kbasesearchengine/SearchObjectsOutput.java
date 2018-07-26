@@ -221,6 +221,17 @@ public class SearchObjectsOutput {
         this.additionalProperties.put(name, value);
     }
 
+    public SearchObjectsOutput combineWithOtherSearchObjectsOuput(SearchObjectsOutput other) {
+        //use first object for pagination, sorting_rules, total
+        this.searchTime += other.searchTime;
+        this.objects.addAll(other.getObjects());
+        this.accessGroupNarrativeInfo.putAll(other.getAccessGroupNarrativeInfo());
+        this.accessGroupsInfo.putAll(other.getAccessGroupsInfo());
+        this.objectsInfo.putAll(other.getObjectsInfo());
+
+        return this;
+    }
+    
     @Override
     public java.lang.String toString() {
         return ((((((((((((((((((("SearchObjectsOutput"+" [pagination=")+ pagination)+", sortingRules=")+ sortingRules)+", objects=")+ objects)+", total=")+ total)+", searchTime=")+ searchTime)+", accessGroupNarrativeInfo=")+ accessGroupNarrativeInfo)+", accessGroupsInfo=")+ accessGroupsInfo)+", objectsInfo=")+ objectsInfo)+", additionalProperties=")+ additionalProperties)+"]");

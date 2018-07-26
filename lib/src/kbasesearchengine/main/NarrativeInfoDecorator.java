@@ -80,15 +80,25 @@ public class NarrativeInfoDecorator implements SearchInterface {
     @Override
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
-        SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
-        if (params.getPostProcessing() != null) {
-            if (params.getPostProcessing().getAddNarrativeInfo() != null &&
-                    params.getPostProcessing().getAddNarrativeInfo() == 1) {
-                searchObjsOutput = searchObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
-                        searchObjsOutput.getObjects(),
-                        searchObjsOutput.getAccessGroupNarrativeInfo()));
+        SearchObjectsOutput searchObjsOutput = null;
+
+        while(searchObjsOutput == null || searchObjsOutput.getObjects().size() < params.getPagination().getCount()){
+            SearchObjectsOutput temp = searchInterface.searchObjects(params, user);
+            if (params.getPostProcessing() != null) {
+                if (params.getPostProcessing().getAddNarrativeInfo() != null &&
+                        params.getPostProcessing().getAddNarrativeInfo() == 1) {
+                    temp = temp.withAccessGroupNarrativeInfo(addNarrativeInfo(
+                            temp.getObjects(),
+                            temp.getAccessGroupNarrativeInfo()));
+                }
+            }
+            if(searchObjsOutput == null){
+                searchObjsOutput = temp;
+            }else{
+                searchObjsOutput.combineWithOtherSearchObjectsOuput(temp);
             }
         }
+
         return searchObjsOutput;
     }
 
@@ -117,6 +127,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
             retVal.putAll(accessGroupNarrInfo);
         }
         final Set<Long> wsIdsSet = new HashSet<>();
+        final Set<Long> deletedWsIdsSet = new HashSet<>();
 
         for (final ObjectData objData: objects) {
             final GUID guid = new GUID(objData.getGuid());
