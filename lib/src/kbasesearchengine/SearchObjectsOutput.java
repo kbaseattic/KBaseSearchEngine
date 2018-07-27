@@ -222,8 +222,9 @@ public class SearchObjectsOutput {
     }
 
     public SearchObjectsOutput combineWithOtherSearchObjectsOuput(SearchObjectsOutput other) {
-        //use first object for pagination, sorting_rules, total
+        //use first object for pagination, sorting_rules
         this.searchTime += other.searchTime;
+        this.total += other.total;
         this.objects.addAll(other.getObjects());
         this.accessGroupNarrativeInfo.putAll(other.getAccessGroupNarrativeInfo());
         this.accessGroupsInfo.putAll(other.getAccessGroupsInfo());

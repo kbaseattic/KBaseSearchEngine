@@ -3,6 +3,7 @@ package kbasesearchengine.main;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -10,6 +11,7 @@ import java.util.Set;
 import kbasesearchengine.GetObjectsInput;
 import kbasesearchengine.GetObjectsOutput;
 import kbasesearchengine.ObjectData;
+import kbasesearchengine.Pagination;
 import kbasesearchengine.SearchObjectsInput;
 import kbasesearchengine.SearchObjectsOutput;
 import kbasesearchengine.SearchTypesInput;
@@ -81,9 +83,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
         SearchObjectsOutput searchObjsOutput = null;
-
         while(searchObjsOutput == null || searchObjsOutput.getObjects().size() < params.getPagination().getCount()){
-            SearchObjectsOutput temp = searchInterface.searchObjects(params, user);
+            SearchObjectsOutput temp = reSearchObjects(params, user, searchObjsOutput);
             if (params.getPostProcessing() != null) {
                 if (params.getPostProcessing().getAddNarrativeInfo() != null &&
                         params.getPostProcessing().getAddNarrativeInfo() == 1) {
@@ -92,14 +93,41 @@ public class NarrativeInfoDecorator implements SearchInterface {
                             temp.getAccessGroupNarrativeInfo()));
                 }
             }
+
             if(searchObjsOutput == null){
                 searchObjsOutput = temp;
             }else{
                 searchObjsOutput.combineWithOtherSearchObjectsOuput(temp);
             }
+
+            if(temp.getTotal() < params.getPagination().getCount()){
+                break;
+            }
         }
 
         return searchObjsOutput;
+    }
+
+    private SearchObjectsOutput reSearchObjects(final SearchObjectsInput params, final String user, final SearchObjectsOutput prevRes)
+            throws Exception {
+        SearchObjectsOutput res = null;
+        if(prevRes == null){
+            res = searchInterface.searchObjects(params, user);
+        }else{
+            final long newStart = params.getPagination().getStart() + prevRes.getTotal();
+            Pagination newPag = new Pagination()
+                                    .withCount(params.getPagination().getCount())
+                                    .withStart(newStart);
+            SearchObjectsInput newParams = new SearchObjectsInput()
+                                                .withSortingRules(params.getSortingRules())
+                                                .withPostProcessing(params.getPostProcessing())
+                                                .withObjectTypes(params.getObjectTypes())
+                                                .withMatchFilter(params.getMatchFilter())
+                                                .withAccessFilter(params.getAccessFilter())
+                                                .withPagination(newPag);
+            res = searchInterface.searchObjects(newParams, user);
+        }
+        return res;
     }
 
     @Override
@@ -128,29 +156,39 @@ public class NarrativeInfoDecorator implements SearchInterface {
         }
         final Set<Long> wsIdsSet = new HashSet<>();
         final Set<Long> deletedWsIdsSet = new HashSet<>();
+        final Set<String> userNames = new HashSet<>();
+        final Iterator<ObjectData> iter = objects.iterator();
 
-        for (final ObjectData objData: objects) {
+        while(iter.hasNext()){
+            final ObjectData objData = iter.next();
             final GUID guid = new GUID(objData.getGuid());
             if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
-                wsIdsSet.add((long) guid.getAccessGroupId());
+                final long workspaceId = (long) guid.getAccessGroupId();
+
+                if(wsIdsSet.contains(workspaceId)){
+                    continue;
+                }else if(deletedWsIdsSet.contains(workspaceId)){
+                    iter.remove();
+                    continue;
+                }
+
+                final NarrativeInfo narrInfo = narrInfoProvider.findNarrativeInfo(workspaceId);
+                if (narrInfo != null) {
+                    final Tuple5<String, Long, Long, String, String> tempNarrInfo =
+                            new Tuple5<String, Long, Long, String, String>()
+                                    .withE1(narrInfo.getNarrativeName())
+                                    .withE2(narrInfo.getNarrativeId())
+                                    .withE3(narrInfo.getTimeLastSaved())
+                                    .withE4(narrInfo.getWsOwnerUsername());
+                    userNames.add(tempNarrInfo.getE4());
+                    retVal.put(workspaceId, tempNarrInfo);
+                    wsIdsSet.add(workspaceId);
+                } else{
+                    deletedWsIdsSet.add(workspaceId);
+                    iter.remove();
+                }
             }
-        }
-        final Set<String> userNames = new HashSet<>();
-        for (final long workspaceId: wsIdsSet) {
-            final NarrativeInfo narrInfo = narrInfoProvider.findNarrativeInfo(workspaceId);
-            if (narrInfo != null) {
-                final Tuple5<String, Long, Long, String, String> tempNarrInfo =
-                        new Tuple5<String, Long, Long, String, String>()
-                                .withE1(narrInfo.getNarrativeName())
-                                .withE2(narrInfo.getNarrativeId())
-                                .withE3(narrInfo.getTimeLastSaved())
-                                .withE4(narrInfo.getWsOwnerUsername());
-                userNames.add(tempNarrInfo.getE4());
-                retVal.put(workspaceId, tempNarrInfo);
-            }
-            else {
-                retVal.put(workspaceId, null);
-            }
+
         }
         try {
             final Map<String, String> displayNames = authInfoProvider.findUserDisplayNames(userNames);
