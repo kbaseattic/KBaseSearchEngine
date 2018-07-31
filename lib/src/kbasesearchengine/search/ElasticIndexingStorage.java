@@ -1780,7 +1780,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             final File jsonData) 
             throws IOException, IndexingConflictException {
         try (InputStream is = new FileInputStream(jsonData)) {
-            return makeRequest(reqType, "/" + indexName + "/_bulk?refresh", Collections.emptyMap(),
+            return makeRequest(reqType, "/" + indexName + "/_bulk?refresh=wait_for", Collections.emptyMap(),
                     new InputStreamEntity(is));
         }
     }
