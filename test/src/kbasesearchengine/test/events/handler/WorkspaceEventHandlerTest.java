@@ -932,6 +932,25 @@ public class WorkspaceEventHandlerTest {
 
         Assert.assertEquals(expectedEvent, updatedEvent);
     }
+    @Test
+    public void updateObjectEventDeleteAll() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                "WS",
+                Instant.ofEpochMilli(20000),
+                StatusEventType.DELETE_ALL_VERSIONS)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .build();
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+        Assert.assertEquals(event, weh.updateObjectEvent(event));
+    }
 
     @Test
     public void updateEventObjectDeleted() throws Exception {
