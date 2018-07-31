@@ -29,6 +29,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableList;
+import kbasesearchengine.parse.KeywordParser;
+import kbasesearchengine.search.ObjectData;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
@@ -1106,10 +1109,10 @@ public class IndexerWorkerTest {
 
         assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
 
-        verify(logger).logError("Error processing event for event NEW_VERSION with parent ID " +
-                "pid: kbasesearchengine.events.exceptions." +
-                "UnprocessableEventIndexingException: " +
-                "During recursive processing of WS:1/2/3, found GUID WS:4/5/6 has type Assy v1, expected Assembly v1");
+        verify(logger).logError("Error processing event for event NEW_VERSION with parent ID pid: " +
+                "kbasesearchengine.events.exceptions.UnprocessableEventIndexingException: " +
+                "During recursive processing of WS:1/2/3, found GUID WS:4/5/6 has type Assembly v1, " +
+                "expected one of [SearchObjectType [type=Assy, version=1]]");
 
 
         verify(idxStore, never()).indexObjects(
@@ -1117,7 +1120,8 @@ public class IndexerWorkerTest {
 
         verify(storage).store(eq(event), eq("OTHER"), argThat(new ThrowableMatcher(
                 new UnprocessableEventIndexingException(ErrorType.OTHER,
-                        "During recursive processing of WS:1/2/3, found GUID WS:4/5/6 has type Assy v1, expected Assembly v1"))));
+                        "During recursive processing of WS:1/2/3, found GUID WS:4/5/6 has type Assembly v1, " +
+                                "expected one of [SearchObjectType [type=Assy, version=1]]"))));
     }
     
     @Test

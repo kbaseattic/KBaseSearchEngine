@@ -300,18 +300,25 @@ public class KeywordParser {
                             typeDescr.getSubObjectType().get(), subId));
                 }
             }
-            final Map<GUID, SearchObjectType> guidToType = lookup.getTypesForGuids(objectRefPath, guids);
+            final Map<GUID, List<SearchObjectType>> guidToType = lookup.getTypesForGuids(objectRefPath, guids);
             for (final GUID guid : guids) {
                 if (!guidToType.containsKey(guid)) {
                     throw new GUIDNotFoundException("GUID " + guid + " not found");
                 }
-                final SearchObjectType actualType = guidToType.get(guid);
-                if (!actualType.equals(type)) {
+                boolean match = false;
+                List<SearchObjectType> actualTypeList = guidToType.get(guid);
+                for ( SearchObjectType actualType:  actualTypeList ) {
+                    if (actualType.equals(type)) {
+                        match = true;
+                        break;
+                    }
+                }
+
+                if (!match) {
                     throw new ObjectParseException(String.format(
                             "During recursive processing of %s, found GUID %s has type %s v%s, " +
-                            "expected %s v%s",
-                            subObjectGuid, guid, actualType.getType(), actualType.getVersion(),
-                            type.getType(), type.getVersion()));
+                            "expected one of %s",
+                            subObjectGuid, guid, type.getType(), type.getVersion(), actualTypeList));
                 }
             }
             return guids.stream().map(GUID::toString).collect(Collectors.toList());
@@ -428,7 +435,18 @@ public class KeywordParser {
     public interface ObjectLookupProvider {
         public Set<ResolvedReference> resolveRefs(List<GUID> objectRefPath, Set<GUID> unresolvedGUIDs)
                 throws IndexingException, InterruptedException;
-        public Map<GUID, SearchObjectType> getTypesForGuids(List<GUID> objectRefPath, Set<GUID> unresolvedGUIDs)
+
+        /** Return a map of GUID to list of SearchObjectTypes. Note that two or more search
+         * object types may be associated with a particular GUID's StorageObjectType if
+         * there is more than one type specification defined for that StorageObjectType.
+         *
+         * @param objectRefPath
+         * @param unresolvedGUIDs
+         * @return
+         * @throws InterruptedException
+         * @throws IndexingException
+         */
+        public Map<GUID, List<SearchObjectType>> getTypesForGuids(List<GUID> objectRefPath, Set<GUID> unresolvedGUIDs)
                 throws InterruptedException, IndexingException;
         public Map<GUID, ObjectData> lookupObjectsByGuid(List<GUID> objectRefPath, Set<GUID> unresolvedGUIDs )
                 throws InterruptedException, IndexingException;

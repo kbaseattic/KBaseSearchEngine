@@ -721,7 +721,7 @@ public class IndexerWorker implements Stoppable {
         // storage code -> full ref path -> resolved guid
         private Map<String, Map<String, ResolvedReference>> refResolvingCache = new LinkedHashMap<>();
         private Map<GUID, ObjectData> objLookupCache = new LinkedHashMap<>();
-        private Map<GUID, SearchObjectType> guidToTypeCache = new LinkedHashMap<>();
+        private Map<GUID, List<SearchObjectType>> guidToTypeCache = new LinkedHashMap<>();
         
         @Override
         public Set<ResolvedReference> resolveRefs(List<GUID> callerRefPath, Set<GUID> refs)
@@ -861,31 +861,28 @@ public class IndexerWorker implements Stoppable {
                     refPath.add(resRef.getReference());
                     final SourceData obj = handler.load(refPath, tempFile.toPath());
 
-                    final ObjectTypeParsingRules rules;
-                    try {
-                        rules = getObjectTypeParsingRules(resRef);
-                    } catch (ObjectParseException ex ) {
-                        throw new UnprocessableEventIndexingException(ErrorType.OTHER,
-                                ex.getMessage());
-                    }
+                    final List<ObjectTypeParsingRules> rulesList = getObjectTypeParsingRules(resRef);
 
-                    final ParseObjectsRet parsedRet = parseObjects(guid, this,
-                            Arrays.asList(resRef.getResolvedReference()), obj, rules);
+                    for(ObjectTypeParsingRules rules: rulesList) {
 
-                    Iterator<GUID> iter = parsedRet.guidToObj.keySet().iterator();
+                        final ParseObjectsRet parsedRet = parseObjects(guid, this,
+                                Arrays.asList(resRef.getResolvedReference()), obj, rules);
 
-                    while(iter.hasNext()) {
-                        final GUID parsedGUID = iter.next();
+                        Iterator<GUID> iter = parsedRet.guidToObj.keySet().iterator();
 
-                        final ObjectData objData = buildObjectDataFrom(
-                                guid,
-                                rules.getGlobalObjectType(),
-                                obj.getName(),
-                                obj.getCreator(),
-                                obj.getCommitHash(),
-                                parsedRet.guidToObj.get(parsedGUID).getKeywords());
+                        while (iter.hasNext()) {
+                            final GUID parsedGUID = iter.next();
 
-                        data.add(objData);
+                            final ObjectData objData = buildObjectDataFrom(
+                                    guid,
+                                    rules.getGlobalObjectType(),
+                                    obj.getName(),
+                                    obj.getCreator(),
+                                    obj.getCommitHash(),
+                                    parsedRet.guidToObj.get(parsedGUID).getKeywords());
+
+                            data.add(objData);
+                        }
                     }
                 } finally {
                     tempFile.delete();
@@ -894,8 +891,17 @@ public class IndexerWorker implements Stoppable {
             return data;
         }
 
-        private ObjectTypeParsingRules getObjectTypeParsingRules(
-                ResolvedReference ref) throws ObjectParseException {
+        /**
+         *
+         * @param ref resolved reference
+         * @return a list of zero or more ObjectTypeParsingRules. Two or more
+         * parsing rules may be found for a given ref is two or more specs have
+         * been defined for the ref's storage object type. i.e. the ref's storage
+         * object type maps to two or more search object types.
+         */
+        private List<ObjectTypeParsingRules> getObjectTypeParsingRules(
+                ResolvedReference ref) {
+            List<ObjectTypeParsingRules> rulesList = new ArrayList<>();
 
             final List<ObjectTypeParsingRules> parsingRules = new ArrayList<>(
                     typeStorage.listObjectTypeParsingRules(ref.getType()));
@@ -905,15 +911,15 @@ public class IndexerWorker implements Stoppable {
             for (final ObjectTypeParsingRules rule : parsingRules) {
                 final String ruleSubObjectType = rule.getSubObjectType().orNull();
                 if (refSubObjectType == null && ruleSubObjectType == null) {
-                    return rule;
+                    rulesList.add(rule);
                 }
                 else if (refSubObjectType != null &&
                         refSubObjectType.equals(ruleSubObjectType)) {
-                    return rule;
+                    rulesList.add(rule);
                 }
             }
 
-            throw new ObjectParseException("Unable to get ObjectTypeParsingRules for ref: "+ref.toString());
+            return rulesList;
         }
 
 
@@ -955,9 +961,9 @@ public class IndexerWorker implements Stoppable {
         }
         
         @Override
-        public Map<GUID, SearchObjectType> getTypesForGuids(final List<GUID> objectRefPath, final Set<GUID> unresolvedGUIDs)
+        public Map<GUID, List<SearchObjectType>> getTypesForGuids(final List<GUID> objectRefPath, final Set<GUID> unresolvedGUIDs)
                 throws InterruptedException, IndexingException {
-            Map<GUID, SearchObjectType> ret = new LinkedHashMap<>();
+            Map<GUID, List<SearchObjectType>> ret = new LinkedHashMap<>();
             Set<ResolvedReference> guidsToLoad = new LinkedHashSet<>();
             final Set<ResolvedReference> rrs = resolveRefs(objectRefPath, unresolvedGUIDs);
             final Map<GUID, ResolvedReference> rrmap =  rrs.stream().
@@ -983,17 +989,16 @@ public class IndexerWorker implements Stoppable {
             }
             if (guidsToLoad.size() > 0) {
                 for(ResolvedReference resRef: guidsToLoad) {
-                    final ObjectTypeParsingRules rules;
-                    try {
-                        rules = getObjectTypeParsingRules(resRef);
-                    } catch (ObjectParseException ex ) {
-                        throw new FatalIndexingException(ErrorType.OTHER,
-                                ex.getMessage());
-                    }
+                    final List<ObjectTypeParsingRules> rulesList = getObjectTypeParsingRules(resRef);
 
-                    SearchObjectType type = rules.getGlobalObjectType();
-                    guidToTypeCache.put(resRef.getResolvedReference(), type);
-                    ret.put(resRef.getResolvedReference(), type);
+                    List<SearchObjectType> searchTypeList = new ArrayList<>();
+                    for( ObjectTypeParsingRules rules: rulesList) {
+                        searchTypeList.add(rules.getGlobalObjectType());
+                    }
+                    if( searchTypeList.size() > 0) {
+                        guidToTypeCache.put(resRef.getResolvedReference(), searchTypeList);
+                        ret.put(resRef.getResolvedReference(), searchTypeList);
+                    }
                 }
             }
             return ret;
