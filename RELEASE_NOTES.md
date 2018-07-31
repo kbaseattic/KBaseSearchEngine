@@ -1,7 +1,7 @@
 Search Service MKII release notes
 =================================
 
-0.2.2
+0.2.2-dev1
 -----
 
 * Removed recursive indexing to prevent race conditions during indexing (this change
