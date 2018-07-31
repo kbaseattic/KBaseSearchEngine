@@ -594,14 +594,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     private Integer loadLastVersion(String reqIndexName, GUID parentGUID, 
             Integer processedVersion) throws IOException {
-        if (reqIndexName == null) {
-            reqIndexName = getAnyIndexPattern();
-        }
-        else if (reqIndexName.endsWith(SUBTYPE_INDEX_SUFFIX)) {
-            reqIndexName = reqIndexName.replaceAll("_\\d+_sub$", "_*");
-        } else {
-            reqIndexName = reqIndexName.replaceAll("_\\d+$", "_*");
-        }
+
+        reqIndexName = getGeneralIndexName(reqIndexName);
 
         String prefix = toGUIDPrefix(parentGUID);
 
@@ -659,14 +653,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
      */
     private int updateLastVersionsInData(String indexName, GUID parentGUID,
             int lastVersion) throws IOException, IndexingConflictException {
-        if (indexName == null) {
-            indexName = getAnyIndexPattern();
-        }
-        else if (indexName.endsWith(SUBTYPE_INDEX_SUFFIX)) {
-            indexName = indexName.replaceAll("_\\d+_sub$", "_*");
-        } else {
-            indexName = indexName.replaceAll("_\\d+$", "_*");
-        }
+
+        indexName = getGeneralIndexName(indexName);
 
         // query = {"bool": {"filter": [{"term": {"prefix": prefix}}]}}
         Map<String, Object> query = ImmutableMap.of("bool",
@@ -696,6 +684,25 @@ public class ElasticIndexingStorage implements IndexingStorage {
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         return (Integer)data.get("updated");
+    }
+
+    /** Get a general index name that uses a wildcard from a specific index name.
+     * The general index name may be used to perform operations on all versions of
+     * an index. For example the index name genomefeature_1_sub is converted to
+     * genomefeature_* to represent all versions of the genomefeature index.
+     *
+     * @param specificIndexName
+     * @return
+     */
+    private String getGeneralIndexName( String specificIndexName ) {
+        if (specificIndexName == null) {
+            return getAnyIndexPattern();
+        }
+        else if (specificIndexName.endsWith(SUBTYPE_INDEX_SUFFIX)) {
+            return specificIndexName.replaceAll("_\\d+_sub$", "_*");
+        } else {
+            return specificIndexName.replaceAll("_\\d+$", "_*");
+        }
     }
 
     private Map<GUID, String> checkParentDoc(String indexName, Set<GUID> parentGUIDs, 
