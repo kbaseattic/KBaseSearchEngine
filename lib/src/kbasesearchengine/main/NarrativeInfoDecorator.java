@@ -87,9 +87,9 @@ public class NarrativeInfoDecorator implements SearchInterface {
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
         SearchObjectsOutput searchObjsOutput = getEmptySearchObjectsOutput();
-        while(searchObjsOutput == null || searchObjsOutput.getObjects().size() < params.getPagination().getCount()){
+        long count = (params.getPagination() == null) ? 50 : params.getPagination().getCount();
+        while(searchObjsOutput == null || searchObjsOutput.getObjects().size() < count){
             final SearchObjectsOutput searchRes = reSearchObjects(params, user, searchObjsOutput);
-//            SearchObjectsOutput modifiedSearchRes = combineWithOtherSearchObjectsOuput(getEmptySearchObjectsOutput(), searchRes, 0);
 
             if (params.getPostProcessing() != null && params.getPostProcessing().getAddNarrativeInfo() != null
                     && params.getPostProcessing().getAddNarrativeInfo() == 1) {
@@ -99,12 +99,12 @@ public class NarrativeInfoDecorator implements SearchInterface {
                 SearchObjectsOutput modifiedSearchRes = searchRes.withAccessGroupNarrativeInfo(addNarrativeInfo(
                         searchRes.getObjects(),
                         searchRes.getAccessGroupNarrativeInfo()
-                        ,curTotalObs, params.getPagination().getCount()));
+                        ,curTotalObs, count));
 
                 searchObjsOutput = combineWithOtherSearchObjectsOuput(searchObjsOutput, modifiedSearchRes,
                         searchRes.getObjects().size() -  modifiedSearchRes.getObjects().size());
 
-                if(modifiedSearchRes.getTotal() < params.getPagination().getCount()){
+                if(searchRes.getTotal() < count){
                     return searchObjsOutput;
                 }
             }else{
@@ -120,9 +120,9 @@ public class NarrativeInfoDecorator implements SearchInterface {
     private SearchObjectsOutput getEmptySearchObjectsOutput(){
         return new SearchObjectsOutput()
                 .withObjects(new ArrayList<>())
-                .withAccessGroupNarrativeInfo(new HashMap<>())
-                .withAccessGroupsInfo(new HashMap<>())
-                .withObjectsInfo(new HashMap<>())
+                .withAccessGroupNarrativeInfo(null)
+                .withAccessGroupsInfo(null)
+                .withObjectsInfo(null)
                 .withSearchTime(0L)
                 .withTotal(0L)
                 .withPagination(null)
@@ -137,17 +137,39 @@ public class NarrativeInfoDecorator implements SearchInterface {
         objs.addAll(other.getObjects());
         target.setObjects(objs);
 
-        Map<Long, Tuple5 <String, Long, Long, String, String>> accessGrpNarInfo = target.getAccessGroupNarrativeInfo();
-        accessGrpNarInfo.putAll(other.getAccessGroupNarrativeInfo());
-        target.setAccessGroupNarrativeInfo(accessGrpNarInfo);
+        if(other.getAccessGroupNarrativeInfo() != null){
+            Map<Long, Tuple5 <String, Long, Long, String, String>> accessGrpNarInfo;
+            if(target.getAccessGroupNarrativeInfo() != null){
+                accessGrpNarInfo = target.getAccessGroupNarrativeInfo();
+            }else{
+                accessGrpNarInfo = new HashMap<>();
+            }
+            accessGrpNarInfo.putAll(other.getAccessGroupNarrativeInfo());
+            target.setAccessGroupNarrativeInfo(accessGrpNarInfo);
+        }
 
-        Map<Long, Tuple9<Long, String, String, String, Long, String, String, String, Map<String, String>>> accessGrpInfo = target.getAccessGroupsInfo();
-        accessGrpInfo.putAll(other.getAccessGroupsInfo());
-        target.setAccessGroupsInfo(accessGrpInfo);
+        if(other.getAccessGroupsInfo() != null){
+            Map<Long, Tuple9<Long, String, String, String, Long, String, String, String, Map<String, String>>> accessGrpInfo;
+            if(target.getAccessGroupsInfo() != null){
+                accessGrpInfo = target.getAccessGroupsInfo();
+            } else{
+                accessGrpInfo = new HashMap<>();
+            }
+            accessGrpInfo.putAll(other.getAccessGroupsInfo());
+            target.setAccessGroupsInfo(accessGrpInfo);
+        }
 
-        Map<String, Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> objInfo = target.getObjectsInfo();
-        objInfo.putAll(other.getObjectsInfo());
-        target.setObjectsInfo(objInfo);
+        if(other.getObjectsInfo() != null){
+            Map<String, Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> objInfo;
+            if(target.getObjectsInfo() != null){
+                objInfo = target.getObjectsInfo();
+            }else{
+                objInfo = new HashMap<>();
+            }
+            objInfo.putAll(other.getObjectsInfo());
+            target.setObjectsInfo(objInfo);
+        }
+
 
         if(target.getPagination() == null){
             target.setPagination(other.getPagination());
@@ -163,14 +185,13 @@ public class NarrativeInfoDecorator implements SearchInterface {
     private SearchObjectsOutput reSearchObjects(final SearchObjectsInput params, final String user, final SearchObjectsOutput prevRes)
             throws Exception {
         SearchObjectsOutput res = getEmptySearchObjectsOutput();
-        if(prevRes == null){
-            System.out.println(params);
-
+        if(prevRes.getTotal() == 0L){
             res = combineWithOtherSearchObjectsOuput(res, searchInterface.searchObjects(params, user), 0);
         }else{
-            final long newStart = params.getPagination().getStart() + prevRes.getTotal();
+            final long newStart = prevRes.getPagination().getStart() + prevRes.getTotal();
+
             Pagination newPag = new Pagination()
-                                    .withCount(params.getPagination().getCount())
+                                    .withCount(prevRes.getPagination().getCount())
                                     .withStart(newStart);
             SearchObjectsInput newParams = new SearchObjectsInput()
                                                 .withSortingRules(params.getSortingRules())

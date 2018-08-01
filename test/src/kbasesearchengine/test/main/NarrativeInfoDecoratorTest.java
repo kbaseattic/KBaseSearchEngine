@@ -101,7 +101,7 @@ public class NarrativeInfoDecoratorTest {
         final SearchObjectsInput dummyInput = new SearchObjectsInput()
                 .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L));
 
-        when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
+        when(search.searchObjects(dummyInput, "user")).thenReturn(getEmptySearchObjectsOutput()
                 .withObjects(Collections.emptyList())
                 .withAccessGroupNarrativeInfo(null));
 
@@ -138,7 +138,7 @@ public class NarrativeInfoDecoratorTest {
                 new ObjectData().withGuid("WS:1/61/1"),
                 new ObjectData().withGuid("FS:6/22/3"), // expect skip
                 new ObjectData().withGuid("WS:2/345/1000"));
-        when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
+        when(search.searchObjects(dummyInput, "user")).thenReturn(getEmptySearchObjectsOutput()
                 .withObjects(objectdata)
                 .withAccessGroupNarrativeInfo(null));
 
@@ -195,7 +195,7 @@ public class NarrativeInfoDecoratorTest {
         final List<ObjectData> objectdata = Arrays.asList(
                 new ObjectData().withGuid("WS:65/2/7"),
                 new ObjectData().withGuid("WS:2/345/1000"));
-        when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
+        when(search.searchObjects(dummyInput, "user")).thenReturn(getEmptySearchObjectsOutput()
                 .withObjects(objectdata)
                 .withAccessGroupNarrativeInfo(ImmutableMap.of(
                         // expect overwrite
@@ -252,12 +252,11 @@ public class NarrativeInfoDecoratorTest {
         final List<ObjectData> objectdata = Arrays.asList(
                 new ObjectData().withGuid("WS:65/2/7"),
                 new ObjectData().withGuid("WS:42/1/1"));
-        when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
+        when(search.searchObjects(dummyInput, "user")).thenReturn(getEmptySearchObjectsOutput()
                 .withObjects(objectdata));
 
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
-        assertThat("Incorrect size", res.getAccessGroupNarrativeInfo().size(), is(2));
-        assertNull("Null expected", res.getAccessGroupNarrativeInfo().get(65L));
+        assertThat("Incorrect size", res.getAccessGroupNarrativeInfo().size(), is(1));
         compare(res.getAccessGroupNarrativeInfo().get(42L),
                 narrInfoTuple("mylovelynarrative", 3L, 1518126950678L, "owner4", "Fred"));
     }
@@ -291,12 +290,11 @@ public class NarrativeInfoDecoratorTest {
                 new ObjectData().withGuid("WS:35/2/7"),
                 new ObjectData().withGuid("WS:12/2/7"));
 
-        when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
+        when(search.searchObjects(dummyInput, "user")).thenReturn(getEmptySearchObjectsOutput()
                 .withObjects(objectdata));
 
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
-        assertThat("Incorrect size", res.getAccessGroupNarrativeInfo().size(), is(2));
-        assertNull("Null expected", res.getAccessGroupNarrativeInfo().get(35L));
+        assertThat("Incorrect size", res.getAccessGroupNarrativeInfo().size(), is(1));
         compare(res.getAccessGroupNarrativeInfo().get(12L),
                 narrInfoTuple("mylovelynarrative", 3L, 1518126950678L, "owner4", null));
     }
@@ -388,17 +386,15 @@ public class NarrativeInfoDecoratorTest {
                 .withPagination(pag);
 
         final ArrayList<ObjectData> expectedObjs = new ArrayList<>();
+        expectedObjs.add(new ObjectData().withGuid("WS:4/1/7").withCreator("user"));
         expectedObjs.add(new ObjectData().withGuid("WS:4/2/1").withCreator("user"));
-        expectedObjs.add(new ObjectData().withGuid("WS:4/2/1").withCreator("user"));
-        expectedObjs.add(new ObjectData().withGuid("WS:4/2/1").withCreator("user"));
+        expectedObjs.add(new ObjectData().withGuid("WS:4/1/7").withCreator("user"));
 
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
 
-        assertThat("incorrect object data", res.getObjects(), is(expectedObjs));
-        assertThat("incorrect number of hits looked at", res.getTotal(), is(5));
-
-        //check narrative info
-
+        compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
+        assertThat("incorrect number of hits looked at", res.getTotal(), is(6L));
+        compare( res.getAccessGroupNarrativeInfo().get(4L), narrInfoTuple("test", 1L, 1L, "user", null));
     }
     public NarrativeInfoDecorator setUpSearchObjectsWithDeletedWs() throws Exception {
         final SearchInterface search = mock(SearchInterface.class);
@@ -408,12 +404,10 @@ public class NarrativeInfoDecoratorTest {
         final NarrativeInfoDecorator nid = new NarrativeInfoDecorator(search, nip, aip);
 
         final Pagination pag = new Pagination().withCount(3L).withStart(0L);
-        SearchObjectsInput dummyInput = new SearchObjectsInput()
-                .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L))
-                .withPagination(pag);
+
 
         final ObjectData obj = new ObjectData().withGuid("WS:3/5/6").withCreator("user");
-        final ObjectData obj2 = new ObjectData().withGuid("WS:3/5/7").withCreator("user");
+        final ObjectData obj2 = new ObjectData().withGuid("WS:4/1/7").withCreator("user");
         final ObjectData obj3 = new ObjectData().withGuid("WS:4/2/1").withCreator("user");
 
 
@@ -425,32 +419,22 @@ public class NarrativeInfoDecoratorTest {
         when(nip.findNarrativeInfo(3L)).thenReturn(null);
         when(nip.findNarrativeInfo(4L)).thenReturn(new NarrativeInfo("test", 1L, 1L, "user"));
 
-//        when(search.searchObjects(Mockito.any(SearchObjectsInput.class), eq("user"))).thenReturn(new SearchObjectsOutput()
-//                .withObjects(objs)
-//                .withAccessGroupNarrativeInfo(null)
-//                .withTotal(3L)
-//                .withSearchTime(1L)
-//                .withAccessGroupNarrativeInfo(new HashMap<>())
-//                .withAccessGroupsInfo(new HashMap<>())
-//                .withObjectsInfo(new HashMap<>()));
-
-        for (int i = 0; i <= 3; i++) {
-            doReturn(new SearchObjectsOutput()
-                    .withObjects(objs)
-                    .withAccessGroupNarrativeInfo(null)
-                    .withTotal(3L)
-                    .withSearchTime(1L)
-                    .withAccessGroupNarrativeInfo(new HashMap<>())
-                    .withAccessGroupsInfo(new HashMap<>())
-                    .withObjectsInfo(new HashMap<>()))
-                    .when(search).searchObjects(any(), anyString());
-        }
-
-//        when(search.searchObjects(Mockito.any(SearchObjectsInput.class), eq("user"))).thenReturn(new SearchObjectsOutput()
-//                .withObjects(objs)
-//                .withTotal(3L));
+        when(search.searchObjects(Mockito.any(SearchObjectsInput.class), eq("user"))).thenReturn(getEmptySearchObjectsOutput()
+                .withObjects(objs)
+                .withTotal(3L)
+                .withSearchTime(1L)
+                .withAccessGroupNarrativeInfo(new HashMap<>())
+                .withAccessGroupsInfo(new HashMap<>())
+                .withObjectsInfo(new HashMap<>())
+                .withPagination(pag));
 
         return nid;
+    }
+    public static void compareSearchObjectOutputRes(List<ObjectData> expected, List<ObjectData> res ){
+        assertThat("incorrect number of results", expected.size(), is(res.size()));
+        for(int i =0; i<Math.min(expected.size(), res.size()); i++){
+            assertThat("incorrect object", expected.get(i).getGuid(), is(res.get(i).getGuid()));
+        }
     }
 
     public static void compare(
@@ -484,5 +468,17 @@ public class NarrativeInfoDecoratorTest {
                 .withE3(epoch)
                 .withE4(owner)
                 .withE5(displayName);
+    }
+
+    private SearchObjectsOutput getEmptySearchObjectsOutput(){
+        return new SearchObjectsOutput()
+                .withObjects(new ArrayList<>())
+                .withAccessGroupNarrativeInfo(new HashMap<>())
+                .withAccessGroupsInfo(new HashMap<>())
+                .withObjectsInfo(new HashMap<>())
+                .withSearchTime(0L)
+                .withTotal(0L)
+                .withPagination(null)
+                .withSortingRules(null);
     }
 }
