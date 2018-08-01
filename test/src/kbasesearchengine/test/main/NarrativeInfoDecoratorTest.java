@@ -2,14 +2,22 @@ package kbasesearchengine.test.main;
 
 import static kbasesearchengine.test.common.TestCommon.set;
 import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.wsTuple;
+import static org.hamcrest.CoreMatchers.any;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.any;
+
 
 import java.io.IOException;
+import java.sql.Time;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,7 +25,9 @@ import java.util.List;
 import java.util.Map;
 
 import kbasesearchengine.*;
+import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
+import kbasesearchengine.system.SearchObjectType;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
@@ -38,6 +48,7 @@ import kbasesearchengine.main.NarrativeInfo;
 import kbasesearchengine.main.AccessGroupNarrativeInfoProvider;
 
 import kbasesearchengine.test.common.TestCommon;
+import org.mockito.Mockito;
 import us.kbase.common.service.JsonClientException;
 import kbasesearchengine.authorization.TemporaryAuth2Client.Auth2Exception;
 import us.kbase.common.service.Tuple5;
@@ -359,10 +370,6 @@ public class NarrativeInfoDecoratorTest {
 
         final NarrativeInfoDecorator nid = new NarrativeInfoDecorator(search, nip, aip);
 
-        /* since a) the generated output class has no hashcode or equals and
-         * b) the method is just a straight pass through, we just use an identity match
-         * for mockito to recognize the class
-         */
 
         final TypeDescriptor dummyOutput = new TypeDescriptor();
 
@@ -370,6 +377,80 @@ public class NarrativeInfoDecoratorTest {
 
         assertThat("incorrect output", nid.listTypes("type"), is(ImmutableMap.of(
                 "type", dummyOutput)));
+    }
+
+    @Test
+    public void searchObjectsWithDeletedWs() throws Exception {
+        final NarrativeInfoDecorator nid = setUpSearchObjectsWithDeletedWs();
+        final Pagination pag = new Pagination().withCount(3L).withStart(0L);
+        final SearchObjectsInput dummyInput = new SearchObjectsInput()
+                .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L))
+                .withPagination(pag);
+
+        final ArrayList<ObjectData> expectedObjs = new ArrayList<>();
+        expectedObjs.add(new ObjectData().withGuid("WS:4/2/1").withCreator("user"));
+        expectedObjs.add(new ObjectData().withGuid("WS:4/2/1").withCreator("user"));
+        expectedObjs.add(new ObjectData().withGuid("WS:4/2/1").withCreator("user"));
+
+        final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
+
+        assertThat("incorrect object data", res.getObjects(), is(expectedObjs));
+        assertThat("incorrect number of hits looked at", res.getTotal(), is(5));
+
+        //check narrative info
+
+    }
+    public NarrativeInfoDecorator setUpSearchObjectsWithDeletedWs() throws Exception {
+        final SearchInterface search = mock(SearchInterface.class);
+        final NarrativeInfoProvider nip = mock(NarrativeInfoProvider.class);
+        final AuthInfoProvider aip = mock(AuthInfoProvider.class);
+
+        final NarrativeInfoDecorator nid = new NarrativeInfoDecorator(search, nip, aip);
+
+        final Pagination pag = new Pagination().withCount(3L).withStart(0L);
+        SearchObjectsInput dummyInput = new SearchObjectsInput()
+                .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L))
+                .withPagination(pag);
+
+        final ObjectData obj = new ObjectData().withGuid("WS:3/5/6").withCreator("user");
+        final ObjectData obj2 = new ObjectData().withGuid("WS:3/5/7").withCreator("user");
+        final ObjectData obj3 = new ObjectData().withGuid("WS:4/2/1").withCreator("user");
+
+
+        final ArrayList<ObjectData> objs = new ArrayList<>();
+        objs.add(obj);
+        objs.add(obj2);
+        objs.add(obj3);
+
+        when(nip.findNarrativeInfo(3L)).thenReturn(null);
+        when(nip.findNarrativeInfo(4L)).thenReturn(new NarrativeInfo("test", 1L, 1L, "user"));
+
+//        when(search.searchObjects(Mockito.any(SearchObjectsInput.class), eq("user"))).thenReturn(new SearchObjectsOutput()
+//                .withObjects(objs)
+//                .withAccessGroupNarrativeInfo(null)
+//                .withTotal(3L)
+//                .withSearchTime(1L)
+//                .withAccessGroupNarrativeInfo(new HashMap<>())
+//                .withAccessGroupsInfo(new HashMap<>())
+//                .withObjectsInfo(new HashMap<>()));
+
+        for (int i = 0; i <= 3; i++) {
+            doReturn(new SearchObjectsOutput()
+                    .withObjects(objs)
+                    .withAccessGroupNarrativeInfo(null)
+                    .withTotal(3L)
+                    .withSearchTime(1L)
+                    .withAccessGroupNarrativeInfo(new HashMap<>())
+                    .withAccessGroupsInfo(new HashMap<>())
+                    .withObjectsInfo(new HashMap<>()))
+                    .when(search).searchObjects(any(), anyString());
+        }
+
+//        when(search.searchObjects(Mockito.any(SearchObjectsInput.class), eq("user"))).thenReturn(new SearchObjectsOutput()
+//                .withObjects(objs)
+//                .withTotal(3L));
+
+        return nid;
     }
 
     public static void compare(

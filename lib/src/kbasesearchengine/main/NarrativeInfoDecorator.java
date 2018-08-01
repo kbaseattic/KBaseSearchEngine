@@ -1,6 +1,8 @@
 package kbasesearchengine.main;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -22,9 +24,11 @@ import kbasesearchengine.authorization.TemporaryAuth2Client.Auth2Exception;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
+import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.JsonClientException;
 import org.slf4j.LoggerFactory;
+import us.kbase.common.service.Tuple9;
 
 /**
  * Decorates the results from a {@link SearchInterface} with information about workspaces that
@@ -82,37 +86,87 @@ public class NarrativeInfoDecorator implements SearchInterface {
     @Override
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
-        SearchObjectsOutput searchObjsOutput = null;
+        SearchObjectsOutput searchObjsOutput = getEmptySearchObjectsOutput();
         while(searchObjsOutput == null || searchObjsOutput.getObjects().size() < params.getPagination().getCount()){
-            SearchObjectsOutput temp = reSearchObjects(params, user, searchObjsOutput);
-            if (params.getPostProcessing() != null) {
-                if (params.getPostProcessing().getAddNarrativeInfo() != null &&
-                        params.getPostProcessing().getAddNarrativeInfo() == 1) {
-                    temp = temp.withAccessGroupNarrativeInfo(addNarrativeInfo(
-                            temp.getObjects(),
-                            temp.getAccessGroupNarrativeInfo()));
+            final SearchObjectsOutput searchRes = reSearchObjects(params, user, searchObjsOutput);
+//            SearchObjectsOutput modifiedSearchRes = combineWithOtherSearchObjectsOuput(getEmptySearchObjectsOutput(), searchRes, 0);
+
+            if (params.getPostProcessing() != null && params.getPostProcessing().getAddNarrativeInfo() != null
+                    && params.getPostProcessing().getAddNarrativeInfo() == 1) {
+
+                Long curTotalObs = (searchObjsOutput == null) ? 0L : searchObjsOutput.getObjects().size();
+
+                SearchObjectsOutput modifiedSearchRes = searchRes.withAccessGroupNarrativeInfo(addNarrativeInfo(
+                        searchRes.getObjects(),
+                        searchRes.getAccessGroupNarrativeInfo()
+                        ,curTotalObs, params.getPagination().getCount()));
+
+                searchObjsOutput = combineWithOtherSearchObjectsOuput(searchObjsOutput, modifiedSearchRes,
+                        searchRes.getObjects().size() -  modifiedSearchRes.getObjects().size());
+
+                if(modifiedSearchRes.getTotal() < params.getPagination().getCount()){
+                    return searchObjsOutput;
                 }
-            }
-
-            if(searchObjsOutput == null){
-                searchObjsOutput = temp;
             }else{
-                searchObjsOutput.combineWithOtherSearchObjectsOuput(temp);
+                return searchRes;
             }
 
-            if(temp.getTotal() < params.getPagination().getCount()){
-                break;
-            }
+
         }
 
         return searchObjsOutput;
     }
 
+    private SearchObjectsOutput getEmptySearchObjectsOutput(){
+        return new SearchObjectsOutput()
+                .withObjects(new ArrayList<>())
+                .withAccessGroupNarrativeInfo(new HashMap<>())
+                .withAccessGroupsInfo(new HashMap<>())
+                .withObjectsInfo(new HashMap<>())
+                .withSearchTime(0L)
+                .withTotal(0L)
+                .withPagination(null)
+                .withSortingRules(null);
+    }
+
+    private SearchObjectsOutput combineWithOtherSearchObjectsOuput(final SearchObjectsOutput target, final SearchObjectsOutput other, int removedObjs){
+        target.setTotal(target.getTotal() + other.getTotal() - (long) removedObjs);
+        target.setSearchTime(target.getSearchTime() + other.getSearchTime());
+
+        List<ObjectData> objs= target.getObjects();
+        objs.addAll(other.getObjects());
+        target.setObjects(objs);
+
+        Map<Long, Tuple5 <String, Long, Long, String, String>> accessGrpNarInfo = target.getAccessGroupNarrativeInfo();
+        accessGrpNarInfo.putAll(other.getAccessGroupNarrativeInfo());
+        target.setAccessGroupNarrativeInfo(accessGrpNarInfo);
+
+        Map<Long, Tuple9<Long, String, String, String, Long, String, String, String, Map<String, String>>> accessGrpInfo = target.getAccessGroupsInfo();
+        accessGrpInfo.putAll(other.getAccessGroupsInfo());
+        target.setAccessGroupsInfo(accessGrpInfo);
+
+        Map<String, Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> objInfo = target.getObjectsInfo();
+        objInfo.putAll(other.getObjectsInfo());
+        target.setObjectsInfo(objInfo);
+
+        if(target.getPagination() == null){
+            target.setPagination(other.getPagination());
+        }
+
+        if(target.getSortingRules() == null){
+            target.setSortingRules(other.getSortingRules());
+        }
+
+        return target;
+    }
+
     private SearchObjectsOutput reSearchObjects(final SearchObjectsInput params, final String user, final SearchObjectsOutput prevRes)
             throws Exception {
-        SearchObjectsOutput res = null;
+        SearchObjectsOutput res = getEmptySearchObjectsOutput();
         if(prevRes == null){
-            res = searchInterface.searchObjects(params, user);
+            System.out.println(params);
+
+            res = combineWithOtherSearchObjectsOuput(res, searchInterface.searchObjects(params, user), 0);
         }else{
             final long newStart = params.getPagination().getStart() + prevRes.getTotal();
             Pagination newPag = new Pagination()
@@ -125,7 +179,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
                                                 .withMatchFilter(params.getMatchFilter())
                                                 .withAccessFilter(params.getAccessFilter())
                                                 .withPagination(newPag);
-            res = searchInterface.searchObjects(newParams, user);
+            res = combineWithOtherSearchObjectsOuput(res, searchInterface.searchObjects(newParams, user), 0);
+
         }
         return res;
     }
@@ -139,7 +194,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
                     params.getPostProcessing().getAddNarrativeInfo() == 1) {
                 getObjsOutput = getObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
                         getObjsOutput.getObjects(),
-                        getObjsOutput.getAccessGroupNarrativeInfo()));
+                        getObjsOutput.getAccessGroupNarrativeInfo(),
+                        0L, Long.MAX_VALUE));
             }
         }
         return getObjsOutput;
@@ -147,7 +203,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
 
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(
             final List<ObjectData> objects,
-            final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo) {
+            final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo,
+            Long curTotal, final Long targetTotal) {
 
         final Map<Long, Tuple5 <String, Long, Long, String, String>> retVal = new HashMap<>();
 
@@ -157,6 +214,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
         final Set<Long> wsIdsSet = new HashSet<>();
         final Set<Long> deletedWsIdsSet = new HashSet<>();
         final Set<String> userNames = new HashSet<>();
+
+
         final Iterator<ObjectData> iter = objects.iterator();
 
         while(iter.hasNext()){
@@ -165,7 +224,14 @@ public class NarrativeInfoDecorator implements SearchInterface {
             if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
                 final long workspaceId = (long) guid.getAccessGroupId();
 
-                if(wsIdsSet.contains(workspaceId)){
+                if(curTotal == targetTotal){
+                    //remove extra results
+                    do{
+                        iter.remove();
+                    }while(iter.hasNext());
+                    break;
+                }if(wsIdsSet.contains(workspaceId)){
+                    curTotal = curTotal + 1L;
                     continue;
                 }else if(deletedWsIdsSet.contains(workspaceId)){
                     iter.remove();
@@ -183,6 +249,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
                     userNames.add(tempNarrInfo.getE4());
                     retVal.put(workspaceId, tempNarrInfo);
                     wsIdsSet.add(workspaceId);
+                    curTotal = curTotal + 1L;
                 } else{
                     deletedWsIdsSet.add(workspaceId);
                     iter.remove();
