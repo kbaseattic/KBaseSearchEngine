@@ -262,6 +262,7 @@ public class SearchTools {
                         out,
                         args.ref,
                         args.lastVersionOnly,
+                        args.overwriteExistingData,
                         getWsBlackList(args.wsBlacklist, cfg.getWorkspaceBlackList()),
                         getWsTypes(args.wsTypes, cfg.getWorkspaceTypes()),
                         cfg.getWorkerCodes());
@@ -574,6 +575,7 @@ public class SearchTools {
             final PrintStream logtarget,
             final String ref,
             final boolean lastVersionOnly,
+            final boolean overwriteExistingData,
             final List<WorkspaceIdentifier> wsBlackList,
             final List<String> wsTypes,
             final Set<String> workerCodes)
@@ -584,6 +586,7 @@ public class SearchTools {
                 .withWorkspaceBlacklist(wsBlackList)
                 .withWorkerCodes(workerCodes)
                 .withLastVersionOnly(lastVersionOnly)
+                .withOverwriteExistingData(overwriteExistingData)
                 .withWorkspaceTypes(wsTypes);
         gen.build().generateEvents();
     }
@@ -718,6 +721,11 @@ public class SearchTools {
                 "object. This parameter is ignored if a full ref including a version is " +
                 "provided in the ref argument.")
         private boolean lastVersionOnly;
+
+        @Parameter(names = {"--overwrite-existing-data"}, description =
+                "When generating events, tag events to overwrite the corresponding records " +
+                " in the indexes if these records already exist. Default value is false.")
+        private boolean overwriteExistingData = false;
                         
         @Parameter(names = {"--version"}, description = "Print the software version and exit")
         private boolean version;

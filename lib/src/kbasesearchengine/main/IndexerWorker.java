@@ -426,9 +426,10 @@ public class IndexerWorker implements Stoppable {
                 GUID pguid = updatedEvent.toGUID();
                 boolean indexed = indexingStorage.checkParentGuidsExist(new LinkedHashSet<>(
                         Arrays.asList(pguid))).get(pguid);
-                if (indexed) {
+                boolean overwriteExistingData = updatedEvent.isOverwriteExistingData().or(false);
+                if (indexed && !overwriteExistingData) {
                     logger.logInfo("[Indexer]   skipping " + pguid +
-                            " creation (already indexed)");
+                            " creation (already indexed and overwriteExistingData flag is set to false)");
                     // TODO: we should fix public access for all sub-objects too (maybe already works. Anyway, ensure all subobjects are set correctly as well as the parent)
                     if (updatedEvent.isPublic().get()) {
                         publish(pguid);
