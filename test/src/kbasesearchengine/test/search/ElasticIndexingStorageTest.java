@@ -255,11 +255,11 @@ public class ElasticIndexingStorageTest {
      */
     @Test
     public void testLastVersionForParentObjects() throws Exception {
-        indexObject("Genome", 0, "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
-        indexObject("Genome", 0, "genome01", new GUID("WS:1/1/2"), "MyGenome.1");
-
-        indexObject("Genome", 1, "genome01", new GUID("WS:1/1/3"), "MyGenome.1");
         indexObject("Genome", 1, "genome01", new GUID("WS:1/1/4"), "MyGenome.1");
+        indexObject("Genome", 1, "genome01", new GUID("WS:1/1/3"), "MyGenome.1");
+
+        indexObject("Genome", 0, "genome01", new GUID("WS:1/1/2"), "MyGenome.1");
+        indexObject("Genome", 0, "genome01", new GUID("WS:1/1/1"), "MyGenome.1");
 
         MatchFilter filter = MatchFilter.getBuilder().build();
         AccessFilter accessFilter = AccessFilter.create().withAllHistory(false).withAdmin(true);
@@ -273,14 +273,14 @@ public class ElasticIndexingStorageTest {
 
     @Test
     public void testLastVersionForSubObjects() throws Exception {
-        indexObject("GenomeFeature", 0, "genome01",
-                new GUID("WS:1/1/1"), "MyGenome.1");
-        indexObject("GenomeFeature", 0, "genome01",
-                new GUID("WS:1/1/2"), "MyGenome.1");
-        indexObject("GenomeFeature", 1, "genome01",
-                new GUID("WS:1/1/3"), "MyGenome.1");
         indexObject("GenomeFeature", 1, "genome01",
                 new GUID("WS:1/1/4"), "MyGenome.1");
+        indexObject("GenomeFeature", 1, "genome01",
+                new GUID("WS:1/1/3"), "MyGenome.1");
+        indexObject("GenomeFeature", 0, "genome01",
+                new GUID("WS:1/1/2"), "MyGenome.1");
+        indexObject("GenomeFeature", 0, "genome01",
+                new GUID("WS:1/1/1"), "MyGenome.1");
 
         MatchFilter filter = MatchFilter.getBuilder().build();
         AccessFilter accessFilter = AccessFilter.create().withAllHistory(false).withAdmin(true);
