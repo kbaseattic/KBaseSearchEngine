@@ -430,6 +430,51 @@ public class NarrativeInfoDecoratorTest {
 
         return nid;
     }
+    @Test
+    public void searchObjectsWithDeletedWsLessThanPagination() throws Exception {
+        final SearchInterface search = mock(SearchInterface.class);
+        final NarrativeInfoProvider nip = mock(NarrativeInfoProvider.class);
+        final AuthInfoProvider aip = mock(AuthInfoProvider.class);
+
+        final NarrativeInfoDecorator nid = new NarrativeInfoDecorator(search, nip, aip);
+
+        final Pagination pag = new Pagination().withCount(3L).withStart(0L);
+
+
+        final ObjectData obj = new ObjectData().withGuid("WS:3/5/6").withCreator("user");
+        final ObjectData obj2 = new ObjectData().withGuid("WS:4/1/7").withCreator("user");
+
+
+        final ArrayList<ObjectData> objs = new ArrayList<>();
+        objs.add(obj);
+        objs.add(obj2);
+
+        when(nip.findNarrativeInfo(3L)).thenReturn(null);
+        when(nip.findNarrativeInfo(4L)).thenReturn(new NarrativeInfo("test", 1L, 1L, "user"));
+
+        when(search.searchObjects(Mockito.any(SearchObjectsInput.class), eq("user"))).thenReturn(getEmptySearchObjectsOutput()
+                .withObjects(objs)
+                .withTotal(2L)
+                .withSearchTime(1L)
+                .withAccessGroupNarrativeInfo(new HashMap<>())
+                .withAccessGroupsInfo(new HashMap<>())
+                .withObjectsInfo(new HashMap<>())
+                .withPagination(pag));
+
+        final SearchObjectsInput dummyInput = new SearchObjectsInput()
+                .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L))
+                .withPagination(pag);
+
+        final ArrayList<ObjectData> expectedObjs = new ArrayList<>();
+        expectedObjs.add(new ObjectData().withGuid("WS:4/1/7").withCreator("user"));
+
+        final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
+
+        compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
+        assertThat("incorrect number of hits looked at", res.getTotal(), is(2L));
+        compare( res.getAccessGroupNarrativeInfo().get(4L), narrInfoTuple("test", 1L, 1L, "user", null));
+    }
+
     public static void compareSearchObjectOutputRes(List<ObjectData> expected, List<ObjectData> res ){
         assertThat("incorrect number of results", expected.size(), is(res.size()));
         for(int i =0; i<Math.min(expected.size(), res.size()); i++){

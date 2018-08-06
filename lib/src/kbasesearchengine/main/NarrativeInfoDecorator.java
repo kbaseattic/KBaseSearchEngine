@@ -88,7 +88,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
             throws Exception {
         SearchObjectsOutput searchObjsOutput = getEmptySearchObjectsOutput();
         long count = (params.getPagination() == null) ? 50 : params.getPagination().getCount();
-        while(searchObjsOutput == null || searchObjsOutput.getObjects().size() < count){
+        while(searchObjsOutput.getObjects().size() < count){
             final SearchObjectsOutput searchRes = reSearchObjects(params, user, searchObjsOutput);
 
             if (params.getPostProcessing() != null && params.getPostProcessing().getAddNarrativeInfo() != null
@@ -200,7 +200,9 @@ public class NarrativeInfoDecorator implements SearchInterface {
                                                 .withMatchFilter(params.getMatchFilter())
                                                 .withAccessFilter(params.getAccessFilter())
                                                 .withPagination(newPag);
-            res = combineWithOtherSearchObjectsOuput(res, searchInterface.searchObjects(newParams, user), 0);
+
+            SearchObjectsOutput temp =  searchInterface.searchObjects(newParams, user);
+            res = combineWithOtherSearchObjectsOuput(res, temp, 0);
 
         }
         return res;
