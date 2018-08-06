@@ -125,16 +125,13 @@ public class SearchMethods implements SearchInterface {
             throws IOException, IllegalArgumentException {
         List<Integer> accessGroupIds;
         final boolean withPublic = (user == null) ? true : toBool(af.getWithPublic());
-
-        if (!withPublic && !toBool(af.getWithPrivate(), true)) {
+        final boolean withPrivate = (user == null) ? false : toBool(af.getWithPrivate(), true);
+        
+        if (!withPublic && !withPrivate) {
             throw new IllegalArgumentException("with_public and with_private cannot both be set to false");
         }
 
-        if ((user != null)  && toBool(af.getWithPrivate(), true)) {
-            accessGroupIds = accessGroupProvider.findAccessGroupIds(user);
-        } else {
-            accessGroupIds = Collections.emptyList();
-        }
+        accessGroupIds = withPrivate ?  accessGroupProvider.findAccessGroupIds(user) : Collections.emptyList();
 
         return new kbasesearchengine.search.AccessFilter()
                 .withPublic(withPublic)
