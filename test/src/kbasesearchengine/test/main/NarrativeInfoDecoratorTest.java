@@ -393,7 +393,7 @@ public class NarrativeInfoDecoratorTest {
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
 
         compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
-        assertThat("incorrect number of hits looked at", res.getTotal(), is(6L));
+        assertThat("incorrect number of hits looked at", res.getTotalInPage(), is(6L));
         compare( res.getAccessGroupNarrativeInfo().get(4L), narrInfoTuple("test", 1L, 1L, "user", null));
     }
     public NarrativeInfoDecorator setUpSearchObjectsWithDeletedWs() throws Exception {
@@ -421,7 +421,8 @@ public class NarrativeInfoDecoratorTest {
 
         when(search.searchObjects(Mockito.any(SearchObjectsInput.class), eq("user"))).thenReturn(getEmptySearchObjectsOutput()
                 .withObjects(objs)
-                .withTotal(3L)
+                .withTotal(10L)
+                .withTotalInPage(3L)
                 .withSearchTime(1L)
                 .withAccessGroupNarrativeInfo(new HashMap<>())
                 .withAccessGroupsInfo(new HashMap<>())
@@ -454,8 +455,9 @@ public class NarrativeInfoDecoratorTest {
 
         when(search.searchObjects(Mockito.any(SearchObjectsInput.class), eq("user"))).thenReturn(getEmptySearchObjectsOutput()
                 .withObjects(objs)
-                .withTotal(2L)
+                .withTotal(10L)
                 .withSearchTime(1L)
+                .withTotalInPage(2L)
                 .withAccessGroupNarrativeInfo(new HashMap<>())
                 .withAccessGroupsInfo(new HashMap<>())
                 .withObjectsInfo(new HashMap<>())
@@ -471,7 +473,7 @@ public class NarrativeInfoDecoratorTest {
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
 
         compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
-        assertThat("incorrect number of hits looked at", res.getTotal(), is(2L));
+        assertThat("incorrect number of hits looked at", res.getTotalInPage(), is(2L));
         compare( res.getAccessGroupNarrativeInfo().get(4L), narrInfoTuple("test", 1L, 1L, "user", null));
     }
 
@@ -523,6 +525,7 @@ public class NarrativeInfoDecoratorTest {
                 .withObjectsInfo(new HashMap<>())
                 .withSearchTime(0L)
                 .withTotal(0L)
+                .withTotalInPage(0L)
                 .withPagination(null)
                 .withSortingRules(null);
     }

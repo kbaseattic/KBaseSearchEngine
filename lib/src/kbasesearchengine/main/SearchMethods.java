@@ -281,6 +281,7 @@ public class SearchMethods implements SearchInterface {
         }
         ret.withTotal((long)hits.total);
         ret.withSearchTime(System.currentTimeMillis() - t1);
+        ret.withTotalInPage((long) ret.getObjects().size());
         return ret;
     }
 

@@ -104,7 +104,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
                 searchObjsOutput = combineWithOtherSearchObjectsOuput(searchObjsOutput, modifiedSearchRes,
                         searchRes.getObjects().size() -  modifiedSearchRes.getObjects().size());
 
-                if(searchRes.getTotal() < count){
+                if(searchRes.getTotalInPage() < count){
                     return searchObjsOutput;
                 }
             }else{
@@ -125,17 +125,22 @@ public class NarrativeInfoDecorator implements SearchInterface {
                 .withObjectsInfo(null)
                 .withSearchTime(0L)
                 .withTotal(0L)
+                .withTotalInPage(0L)
                 .withPagination(null)
                 .withSortingRules(null);
     }
 
     private SearchObjectsOutput combineWithOtherSearchObjectsOuput(final SearchObjectsOutput target, final SearchObjectsOutput other, int removedObjs){
-        target.setTotal(target.getTotal() + other.getTotal() - (long) removedObjs);
+        target.setTotalInPage(target.getTotalInPage() + other.getTotalInPage() - (long) removedObjs);
         target.setSearchTime(target.getSearchTime() + other.getSearchTime());
 
         List<ObjectData> objs= target.getObjects();
         objs.addAll(other.getObjects());
         target.setObjects(objs);
+
+        if(target.getTotal() < other.getTotal()){
+            target.setTotal(other.getTotal());
+        }
 
         if(other.getAccessGroupNarrativeInfo() != null){
             Map<Long, Tuple5 <String, Long, Long, String, String>> accessGrpNarInfo;
