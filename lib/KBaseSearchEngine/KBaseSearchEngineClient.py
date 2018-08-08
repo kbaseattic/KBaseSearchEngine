@@ -85,18 +85,19 @@ class KBaseSearchEngine(object):
            Double, parameter "source_tags" of list of String, parameter
            "source_tags_blacklist" of type "boolean" (A boolean. 0 = false,
            other = true.), parameter "access_filter" of type "AccessFilter"
-           (Optional rules of access constraints. - with_private - include
-           data found in workspaces not marked as public, default value is
-           true for authenticated users and false for unauthenticated users.
-           - with_public - include data found in public workspaces, default
-           value is false for authenticated users and true for
-           unauthenticated users. - with_all_history - include all versions
-           (last one and all old versions) of objects matching constrains,
-           default value is false.) -> structure: parameter "with_private" of
-           type "boolean" (A boolean. 0 = false, other = true.), parameter
-           "with_public" of type "boolean" (A boolean. 0 = false, other =
-           true.), parameter "with_all_history" of type "boolean" (A boolean.
-           0 = false, other = true.)
+           (Optional rules of access constraints. Will throw exception if
+           with_public and with_private are both false. - with_private -
+           include data found in workspaces not marked as public, default
+           value is true for authenticated users. Value set to false for
+           unauthenticated users. - with_public - include data found in
+           public workspaces, default value is false for authenticated users.
+           Value set to true for unauthenticated users. - with_all_history -
+           include all versions (last one and all old versions) of objects
+           matching constrains, default value is false.) -> structure:
+           parameter "with_private" of type "boolean" (A boolean. 0 = false,
+           other = true.), parameter "with_public" of type "boolean" (A
+           boolean. 0 = false, other = true.), parameter "with_all_history"
+           of type "boolean" (A boolean. 0 = false, other = true.)
         :returns: instance of type "SearchTypesOutput" (Output results of
            search_types method.) -> structure: parameter "type_to_count" of
            mapping from String to Long, parameter "search_time" of Long
@@ -175,45 +176,47 @@ class KBaseSearchEngine(object):
            "boolean" (A boolean. 0 = false, other = true.), parameter
            "ascending" of type "boolean" (A boolean. 0 = false, other =
            true.), parameter "access_filter" of type "AccessFilter" (Optional
-           rules of access constraints. - with_private - include data found
-           in workspaces not marked as public, default value is true for
-           authenticated users and false for unauthenticated users. -
-           with_public - include data found in public workspaces, default
-           value is false for authenticated users and true for
-           unauthenticated users. - with_all_history - include all versions
-           (last one and all old versions) of objects matching constrains,
-           default value is false.) -> structure: parameter "with_private" of
-           type "boolean" (A boolean. 0 = false, other = true.), parameter
-           "with_public" of type "boolean" (A boolean. 0 = false, other =
-           true.), parameter "with_all_history" of type "boolean" (A boolean.
-           0 = false, other = true.), parameter "pagination" of type
-           "Pagination" (Pagination rules. Default values are: start = 0,
-           count = 50.) -> structure: parameter "start" of Long, parameter
-           "count" of Long, parameter "post_processing" of type
-           "PostProcessing" (Rules for what to return about found objects.
-           skip_keys - do not include keyword values for object ('key_props'
-           field in ObjectData structure), skip_data - do not include raw
-           data for object ('data' and 'parent_data' fields in ObjectData
-           structure), include_highlight - include highlights of fields that
-           matched query, ids_only - shortcut to mark both skips as true and
-           include_highlight as false. add_narrative_info - if true,
-           narrative info gets added to the search results. Default is false.
-           add_access_group_info - if true, access groups and objects info
-           get added to the search results. Default is false.) -> structure:
-           parameter "ids_only" of type "boolean" (A boolean. 0 = false,
-           other = true.), parameter "skip_keys" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter "skip_data" of type
+           rules of access constraints. Will throw exception if with_public
+           and with_private are both false. - with_private - include data
+           found in workspaces not marked as public, default value is true
+           for authenticated users. Value set to false for unauthenticated
+           users. - with_public - include data found in public workspaces,
+           default value is false for authenticated users. Value set to true
+           for unauthenticated users. - with_all_history - include all
+           versions (last one and all old versions) of objects matching
+           constrains, default value is false.) -> structure: parameter
+           "with_private" of type "boolean" (A boolean. 0 = false, other =
+           true.), parameter "with_public" of type "boolean" (A boolean. 0 =
+           false, other = true.), parameter "with_all_history" of type
            "boolean" (A boolean. 0 = false, other = true.), parameter
-           "include_highlight" of type "boolean" (A boolean. 0 = false, other
-           = true.), parameter "add_narrative_info" of type "boolean" (A
-           boolean. 0 = false, other = true.), parameter
-           "add_access_group_info" of type "boolean" (A boolean. 0 = false,
-           other = true.)
+           "pagination" of type "Pagination" (Pagination rules. Default
+           values are: start = 0, count = 50.) -> structure: parameter
+           "start" of Long, parameter "count" of Long, parameter
+           "post_processing" of type "PostProcessing" (Rules for what to
+           return about found objects. skip_keys - do not include keyword
+           values for object ('key_props' field in ObjectData structure),
+           skip_data - do not include raw data for object ('data' and
+           'parent_data' fields in ObjectData structure), include_highlight -
+           include highlights of fields that matched query, ids_only -
+           shortcut to mark both skips as true and include_highlight as
+           false. add_narrative_info - if true, narrative info gets added to
+           the search results. Default is false. add_access_group_info - if
+           true, access groups and objects info get added to the search
+           results. Default is false.) -> structure: parameter "ids_only" of
+           type "boolean" (A boolean. 0 = false, other = true.), parameter
+           "skip_keys" of type "boolean" (A boolean. 0 = false, other =
+           true.), parameter "skip_data" of type "boolean" (A boolean. 0 =
+           false, other = true.), parameter "include_highlight" of type
+           "boolean" (A boolean. 0 = false, other = true.), parameter
+           "add_narrative_info" of type "boolean" (A boolean. 0 = false,
+           other = true.), parameter "add_access_group_info" of type
+           "boolean" (A boolean. 0 = false, other = true.)
         :returns: instance of type "SearchObjectsOutput" (Output results for
            'search_objects' method. 'pagination' and 'sorting_rules' fields
            show actual input for pagination and sorting. total - total number
-           of found objects. search_time - common time in milliseconds spent.
-           mapping<access_group_id, narrative_info>
+           of found objects. total_in_page - total number of objects looked
+           at to get one page of results. search_time - common time in
+           milliseconds spent. mapping<access_group_id, narrative_info>
            access_group_narrative_info - information about the workspaces in
            which the objects in the results reside. This data only applies to
            workspace objects. mapping<access_group_id, access_group_info>
@@ -283,8 +286,9 @@ class KBaseSearchEngine(object):
            "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "highlight" of mapping from String to list of
-           String, parameter "total" of Long, parameter "search_time" of
-           Long, parameter "access_group_narrative_info" of mapping from type
+           String, parameter "total" of Long, parameter "total_in_page" of
+           Long, parameter "search_time" of Long, parameter
+           "access_group_narrative_info" of mapping from type
            "access_group_id" (A data source access group ID (for instance,
            the integer ID of a workspace).) to type "narrative_info"
            (Information about a workspace, which may or may not contain a
