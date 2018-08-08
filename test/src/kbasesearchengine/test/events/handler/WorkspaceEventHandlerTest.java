@@ -1474,10 +1474,15 @@ public class WorkspaceEventHandlerTest {
     }
 
     /*
-    Test that a NEW_VERSION object event with the isPublic flag set to false will be updated
-    with the isPublic flag to true if the current state of the associated workspace
-    has the public permission field set to "r".
-    This triggers the isPublic logic in WorkspaceEventHandler.updateObjectEvent. 
+    Test that a NEW_VERSION object event with the isPublic flag set to false 
+    will be updated setting the isPublic flag to true if the current state of 
+    the associated workspace has the public permission field set to "r".
+
+    This is accomplished by the isPublic logic in WorkspaceEventHandler.updateObjectEvent.
+
+    This test, and the following one, were created to address 
+    https://kbase-jira.atlassian.net/browse/SCT-1203 in which the isPublic flag was 
+    updated incorrectly.
     */
     @Test
     public void newVersionPublicFlagUpdatedFromWorkspaceCase1() throws Exception {
@@ -1527,13 +1532,13 @@ public class WorkspaceEventHandlerTest {
                 .withNullableVersion(1)
                 .build();
 
-        Assert.assertNotSame("expected same event object after update", event, updatedEvent);
-        Assert.assertEquals("expected updated event to have been properly modified", expectedEvent, updatedEvent);
+        Assert.assertEquals("expected updated event to be the same as original event other than isPublic field being set to TRUE", expectedEvent, updatedEvent);
     }
 
     /*
     This second case sets the event's isPublic field to true, the workspace to "n",
     and the resulting updated event should be false.
+    This is the inverse of the above test (Case1).
     */
     @Test
     public void newVersionPublicFlagUpdatedFromWorkspaceCase2() throws Exception {
@@ -1560,9 +1565,6 @@ public class WorkspaceEventHandlerTest {
         objList.add(objTuple(1L, null, "sometype", "date", 1L, "copier",
                 3L, "wsname", "checksum", 44, Collections.emptyMap()));
 
-        // This usage of mockito ensures that ANY calls to the mocked workspace client
-        // will return the three values in sequence, as noted in the comments. These calls 
-        // are buried in other code...
         when(wscli.administer(any()))
                 // for deleted objects check
                 .thenReturn(new UObject(objList))
@@ -1587,8 +1589,7 @@ public class WorkspaceEventHandlerTest {
                 .withNullableVersion(1)
                 .build();
 
-        Assert.assertNotSame("expected same event object after update", event, updatedEvent);
-        Assert.assertEquals("expected updated event to have been properly modified", expectedEvent, updatedEvent);
+        Assert.assertEquals("expected updated event to be the same as original event other than isPublic field being set to FALSE", expectedEvent, updatedEvent);
     }
 
 
