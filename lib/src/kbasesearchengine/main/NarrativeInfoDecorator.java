@@ -193,7 +193,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
         if(prevRes.getTotal() == 0L){
             res = combineWithOtherSearchObjectsOuput(res, searchInterface.searchObjects(params, user), 0);
         }else{
-            final long newStart = prevRes.getPagination().getStart() + prevRes.getTotal();
+            final long newStart = prevRes.getPagination().getStart() + prevRes.getTotalInPage();
 
             Pagination newPag = new Pagination()
                                     .withCount(prevRes.getPagination().getCount())
