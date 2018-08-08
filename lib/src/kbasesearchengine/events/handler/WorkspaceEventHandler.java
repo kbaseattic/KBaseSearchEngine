@@ -819,7 +819,7 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
                                    RetriableIndexingException {
         try {
             final Long wsId = Long.valueOf(ev.getAccessGroupId().get()).longValue();
-            final String isPublic = getWorkspaceInfo(wsId).getE6();
+            final String isPublic = getWorkspaceInfo(wsId).getE7();
 
             return (isPublic == "n") ? false: true;
 
