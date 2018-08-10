@@ -821,7 +821,7 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
             final Long wsId = Long.valueOf(ev.getAccessGroupId().get()).longValue();
             final String isPublic = getWorkspaceInfo(wsId).getE7();
 
-            return (isPublic == "n") ? false: true;
+            return isPublic.equals("n") ? false: true;
 
         } catch (IOException ex) {
             throw handleException(ex);

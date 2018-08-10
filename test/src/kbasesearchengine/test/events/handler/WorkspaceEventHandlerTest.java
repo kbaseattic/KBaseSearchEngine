@@ -1514,7 +1514,7 @@ public class WorkspaceEventHandlerTest {
                 // for name check
                 .thenReturn(new UObject(new GetObjectInfo3Results().withInfos(objList)))
                 // for isPublic check
-                .thenReturn(new UObject(wsTuple(3L, "wsname", "username", "date", 7, "n", "r",
+                .thenReturn(new UObject(wsTuple(3L, "wsname", "username", "date", 7, "n", new String("r"),
                         "unlocked", Collections.emptyMap())));
 
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
@@ -1571,7 +1571,7 @@ public class WorkspaceEventHandlerTest {
                 // for name check
                 .thenReturn(new UObject(new GetObjectInfo3Results().withInfos(objList)))
                 // for isPublic check
-                .thenReturn(new UObject(wsTuple(3L, "wsname", "username", "date", 7, "n", "n",
+                .thenReturn(new UObject(wsTuple(3L, "wsname", "username", "date", 7, "n", new String("n"),
                         "unlocked", Collections.emptyMap())));
 
         final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
