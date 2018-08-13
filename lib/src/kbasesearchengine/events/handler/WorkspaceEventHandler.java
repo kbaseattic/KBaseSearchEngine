@@ -821,7 +821,12 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
             final Long wsId = Long.valueOf(ev.getAccessGroupId().get()).longValue();
             final String isPublic = getWorkspaceInfo(wsId).getE7();
 
-            return (isPublic == "n") ? false: true;
+            // The workspace info array element 6 (tuple element 7) is the public permission, 
+            // and represents the access permitted to the workspace without authentication,
+            // i.e. without an identified kbase user.
+            // It is either "n" indicating not publicly accessible, or "r" indicating
+            // that it is publicly readable.
+            return isPublic.equals("r");
 
         } catch (IOException ex) {
             throw handleException(ex);
