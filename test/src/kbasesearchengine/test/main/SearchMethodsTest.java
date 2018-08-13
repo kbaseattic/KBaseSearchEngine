@@ -790,6 +790,7 @@ public class SearchMethodsTest {
         when(agp.findAccessGroupIds("auser"))
                 .thenReturn(adminList);
 
+        //both public and private
         when(is.searchObjects(any(List.class), eq(kbasesearchengine.search.MatchFilter.getBuilder().build()),
                 any(List.class),
                 eq(new kbasesearchengine.search.AccessFilter()
@@ -799,7 +800,7 @@ public class SearchMethodsTest {
                 ,any(PostProcessing.class)))
                 .thenReturn(allData);
 
-
+        //just private
         when(is.searchObjects(any(List.class), eq(kbasesearchengine.search.MatchFilter.getBuilder().build()),
                 any(List.class),
                 eq(new kbasesearchengine.search.AccessFilter()
@@ -809,6 +810,7 @@ public class SearchMethodsTest {
                 ,any(PostProcessing.class)))
                 .thenReturn(privateData);
 
+        //just public
         when(is.searchObjects(any(List.class), eq(kbasesearchengine.search.MatchFilter.getBuilder().build()),
                 any(List.class),
                 eq(new kbasesearchengine.search.AccessFilter()
@@ -821,6 +823,11 @@ public class SearchMethodsTest {
 
         return sm;
     }
+
+    /**
+     * Tests that an searchObjects handles auth and unauth users correctly.
+     * @throws Exception
+     */
     @Test
     public void testAccessFilterAuthorizedUserSearchObjects() throws Exception{
         SearchInterface sm = setUpTestAccessFilterSearchObjects();

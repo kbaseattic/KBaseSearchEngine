@@ -121,6 +121,14 @@ public class SearchMethods implements SearchInterface {
         return ret.build();
     }
 
+    /**
+     * @param af
+     * @param user
+     * @return kbasesearchengine.search.AccessFilter
+     * @throws IOException
+     * @throws IllegalArgumentException
+     * if user is null (unauth user), wihtPrivate is set to false and withPublic is set to true
+     */
     private kbasesearchengine.search.AccessFilter toSearch(AccessFilter af, String user)
             throws IOException, IllegalArgumentException {
         List<Integer> accessGroupIds;
