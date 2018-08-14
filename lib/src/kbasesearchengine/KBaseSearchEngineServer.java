@@ -299,6 +299,7 @@ public class KBaseSearchEngineServer extends JsonServerServlet {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 1) {
+            System.setProperty("KB_DEPLOYMENT_CONFIG", "/Users/dianezheng/work/KBaseSearchEngine/local_deploy.cfg");
             new KBaseSearchEngineServer().startupServer(Integer.parseInt(args[0]));
         } else if (args.length == 3) {
             JsonServerSyslog.setStaticUseSyslog(false);
