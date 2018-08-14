@@ -54,11 +54,13 @@ public class SearchMethods implements SearchInterface {
         this.typeStorage = typeStorage;
         this.indexingStorage = indexingStorage;
     }
-    
-    private static boolean toBool(Long value) {
-        return value != null && value == 1L;
-    }
 
+    /**
+     * Changes Long to Boolean. 1L = true. Anything else is False. Accepts default value
+     * @param value       Intended value
+     * @param defaultRet  Default boolean
+     * @return
+     */
     private static boolean toBool(Long value, boolean defaultRet) {
         if (value == null) {
             return defaultRet;
@@ -84,7 +86,7 @@ public class SearchMethods implements SearchInterface {
             return new kbasesearchengine.search.MatchValue(mv.getDoubleValue());
         }
         if (mv.getBoolValue() != null) {
-            return new kbasesearchengine.search.MatchValue(toBool(mv.getBoolValue()));
+            return new kbasesearchengine.search.MatchValue(toBool(mv.getBoolValue(), false));
         }
         if (mv.getMinInt() != null || mv.getMaxInt() != null) {
             return new kbasesearchengine.search.MatchValue(toInteger(mv.getMinInt()),
@@ -105,8 +107,8 @@ public class SearchMethods implements SearchInterface {
                 .withNullableFullTextInAll(mf.getFullTextInAll())
                 .withNullableObjectName(mf.getObjectName())
                 .withNullableTimestamp(toSearch(mf.getTimestamp(), "timestamp"))
-                .withExcludeSubObjects(toBool(mf.getExcludeSubobjects()))
-                .withIsSourceTagsBlackList(toBool(mf.getSourceTagsBlacklist()));
+                .withExcludeSubObjects(toBool(mf.getExcludeSubobjects(), false))
+                .withIsSourceTagsBlackList(toBool(mf.getSourceTagsBlacklist(), false));
         if (mf.getSourceTags() != null) {
             for (final String tag: mf.getSourceTags()) {
                 ret.withSourceTag(tag);
@@ -122,17 +124,18 @@ public class SearchMethods implements SearchInterface {
     }
 
     /**
-     * @param af
-     * @param user
+     * Modifies AccessFilter to kbasesearchengine.search.AccessFilter. Requested access is changed if user does not have access.
+     * If user is null (unauth user), wihtPrivate is set to false and withPublic is set to true
+     * @param af   requested Accessfilter
+     * @param user username
      * @return kbasesearchengine.search.AccessFilter
      * @throws IOException
      * @throws IllegalArgumentException
-     * if user is null (unauth user), wihtPrivate is set to false and withPublic is set to true
      */
     private kbasesearchengine.search.AccessFilter toSearch(AccessFilter af, String user)
             throws IOException, IllegalArgumentException {
         List<Integer> accessGroupIds;
-        final boolean withPublic = (user == null) ? true : toBool(af.getWithPublic());
+        final boolean withPublic = (user == null) ? true : toBool(af.getWithPublic(), false);
         final boolean withPrivate = (user == null) ? false : toBool(af.getWithPrivate(), true);
         
         if (!withPublic && !withPrivate) {
@@ -143,7 +146,7 @@ public class SearchMethods implements SearchInterface {
 
         return new kbasesearchengine.search.AccessFilter()
                 .withPublic(withPublic)
-                .withAllHistory(toBool(af.getWithAllHistory()))
+                .withAllHistory(toBool(af.getWithAllHistory(), false))
                 .withAccessGroups(new LinkedHashSet<>(accessGroupIds))
                 .withAdmin(admins.contains(user));
     }
@@ -196,11 +199,11 @@ public class SearchMethods implements SearchInterface {
             ret.objectKeys = true;
             ret.objectHighlight = false;
         } else {
-            boolean idsOnly = toBool(pp.getIdsOnly());
-            ret.objectData = !(toBool(pp.getSkipData()) || idsOnly);
-            ret.objectKeys = !(toBool(pp.getSkipKeys()) || idsOnly);
+            boolean idsOnly = toBool(pp.getIdsOnly(), false);
+            ret.objectData = !(toBool(pp.getSkipData(), false) || idsOnly);
+            ret.objectKeys = !(toBool(pp.getSkipKeys(), false) || idsOnly);
             //default to false currently b/c of search tags. TODO: add search tags to black list?
-            ret.objectHighlight = toBool(pp.getIncludeHighlight()) && !idsOnly;
+            ret.objectHighlight = toBool(pp.getIncludeHighlight(), false) && !idsOnly;
         }
         return ret;
     }
