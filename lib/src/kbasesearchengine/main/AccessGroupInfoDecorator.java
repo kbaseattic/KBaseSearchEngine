@@ -102,7 +102,9 @@ public class AccessGroupInfoDecorator implements SearchInterface {
                                 count))
                         .withObjectsInfo(addObjectsInfo(
                                 searchObjsOutput.getObjects(),
-                                searchObjsOutput.getObjectsInfo()));
+                                searchObjsOutput.getObjectsInfo(),
+                                curTotalObs,
+                                count));
 
                 searchObjsOutput = combineWithOtherSearchObjectsOuput(searchObjsOutput, modifiedSearchRes,
                         searchRes.getObjects().size() -  modifiedSearchRes.getObjects().size());
@@ -135,7 +137,8 @@ public class AccessGroupInfoDecorator implements SearchInterface {
                                 0L, Long.MAX_VALUE))
                         .withObjectsInfo(addObjectsInfo(
                                 getObjsOutput.getObjects(),
-                                getObjsOutput.getObjectsInfo()));
+                                getObjsOutput.getObjectsInfo(),
+                                0L, Long.MAX_VALUE));
             }
         }
         return getObjsOutput;
@@ -238,11 +241,14 @@ public class AccessGroupInfoDecorator implements SearchInterface {
             Long, String, Long, String, String, Long, Map<String, String>>> addObjectsInfo(
             final List<ObjectData> objects,
             final Map<String, Tuple11<Long, String, String, String,
-            Long, String, Long, String, String, Long, Map<String, String>>> objectInfoMap)
+            Long, String, Long, String, String, Long, Map<String, String>>> objectInfoMap,
+            final Long curTotal,
+            final Long targetTotal)
             throws IOException, JsonClientException {
 
         final Map<String, Tuple11<Long, String, String, String,
                 Long, String, Long, String, String, Long, Map<String, String>>> retVal = new HashMap<>();
+        long count = curTotal;
 
         if (Objects.nonNull(objectInfoMap)) {
             retVal.putAll(objectInfoMap);
@@ -250,8 +256,12 @@ public class AccessGroupInfoDecorator implements SearchInterface {
         final Set<GUID> guidsSet = new HashSet<>();
         for (final ObjectData objData: objects) {
             final GUID guid = new GUID(objData.getGuid());
+            if(count >=targetTotal){
+                break;
+            }
             if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
                 guidsSet.add(guid);
+                count+=1;
             }
         }
         final List<String> objRefs = new ArrayList<>();
