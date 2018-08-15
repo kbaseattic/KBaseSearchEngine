@@ -83,17 +83,25 @@ public class NarrativeInfoDecorator implements SearchInterface {
         return searchInterface.listTypes(uniqueType);
     }
 
+    /**
+     * Given a match filter, searches for objects from elasticsearch. If addNarrativeInfo is set to true,
+     * removes objects that are in deleted workspaces.
+     * Keep call elasticsearch until enough objects are collected to satisfy pagination.
+     * @param params  Input params
+     * @param user    username
+     * @return
+     * @throws Exception
+     */
     @Override
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
         SearchObjectsOutput searchObjsOutput = getEmptySearchObjectsOutput();
         long count = (params.getPagination() == null) ? 50 : params.getPagination().getCount();
+
         while(searchObjsOutput.getObjects().size() < count){
             final SearchObjectsOutput searchRes = reSearchObjects(params, user, searchObjsOutput);
 
-            if (params.getPostProcessing() != null && params.getPostProcessing().getAddNarrativeInfo() != null
-                    && params.getPostProcessing().getAddNarrativeInfo() == 1) {
-
+            if (hasAddNarrativeInfo(params)) {
                 Long curTotalObs = (searchObjsOutput == null) ? 0L : searchObjsOutput.getObjects().size();
 
                 SearchObjectsOutput modifiedSearchRes = searchRes.withAccessGroupNarrativeInfo(addNarrativeInfo(
@@ -104,19 +112,51 @@ public class NarrativeInfoDecorator implements SearchInterface {
                 searchObjsOutput = combineWithOtherSearchObjectsOuput(searchObjsOutput, modifiedSearchRes,
                         searchRes.getObjects().size() -  modifiedSearchRes.getObjects().size());
 
+                //return results if search returns less objects than required by pagination
                 if(searchRes.getTotalInPage() < count){
                     return searchObjsOutput;
                 }
             }else{
+                //return raw search results, if addNarrativeInfo is not set. Note that this may include deleted workspaces.
                 return searchRes;
             }
-
 
         }
 
         return searchObjsOutput;
     }
 
+    /**
+     * Given a list of guids, get the objects from elasticsearch. If addNarrativeInfo is set to true,
+     * filters out objects that are in deleted workspaces.
+     * Note that GetObjectInput params does not support pagination
+     * @param params Input parameters
+     * @param user   username
+     * @return
+     * @throws Exception
+     */
+    @Override
+    public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
+            throws Exception {
+        GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
+        if (hasAddNarrativeInfo(params)) {
+                getObjsOutput = getObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
+                        getObjsOutput.getObjects(),
+                        getObjsOutput.getAccessGroupNarrativeInfo(),
+                        0L, Long.MAX_VALUE));
+
+        }
+        return getObjsOutput;
+    }
+
+    private boolean hasAddNarrativeInfo(final SearchObjectsInput params){
+        return params.getPostProcessing() != null && params.getPostProcessing().getAddNarrativeInfo() != null
+                && params.getPostProcessing().getAddNarrativeInfo() == 1;
+    }
+    private boolean hasAddNarrativeInfo(final GetObjectsInput params){
+        return params.getPostProcessing() != null && params.getPostProcessing().getAddNarrativeInfo() != null
+                && params.getPostProcessing().getAddNarrativeInfo() == 1;
+    }
     private SearchObjectsOutput getEmptySearchObjectsOutput(){
         return new SearchObjectsOutput()
                 .withObjects(new ArrayList<>())
@@ -213,22 +253,6 @@ public class NarrativeInfoDecorator implements SearchInterface {
         return res;
     }
 
-    @Override
-    public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
-            throws Exception {
-        GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
-        if (params.getPostProcessing() != null) {
-            if (params.getPostProcessing().getAddNarrativeInfo() != null &&
-                    params.getPostProcessing().getAddNarrativeInfo() == 1) {
-                getObjsOutput = getObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
-                        getObjsOutput.getObjects(),
-                        getObjsOutput.getAccessGroupNarrativeInfo(),
-                        0L, Long.MAX_VALUE));
-            }
-        }
-        return getObjsOutput;
-    }
-
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(
             final List<ObjectData> objects,
             final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo,
@@ -239,7 +263,6 @@ public class NarrativeInfoDecorator implements SearchInterface {
         if (accessGroupNarrInfo != null) {
             retVal.putAll(accessGroupNarrInfo);
         }
-        final Set<Long> wsIdsSet = new HashSet<>();
         final Set<Long> deletedWsIdsSet = new HashSet<>();
         final Set<String> userNames = new HashSet<>();
 
@@ -252,15 +275,12 @@ public class NarrativeInfoDecorator implements SearchInterface {
             if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
                 final long workspaceId = (long) guid.getAccessGroupId();
 
-                if(curTotal == targetTotal){
+                if(curTotal >= targetTotal){
                     //remove extra results
                     do{
                         iter.remove();
                     }while(iter.hasNext());
                     break;
-                }if(wsIdsSet.contains(workspaceId)){
-                    curTotal = curTotal + 1L;
-                    continue;
                 }else if(deletedWsIdsSet.contains(workspaceId)){
                     iter.remove();
                     continue;
@@ -276,7 +296,6 @@ public class NarrativeInfoDecorator implements SearchInterface {
                                     .withE4(narrInfo.getWsOwnerUsername());
                     userNames.add(tempNarrInfo.getE4());
                     retVal.put(workspaceId, tempNarrInfo);
-                    wsIdsSet.add(workspaceId);
                     curTotal = curTotal + 1L;
                 } else{
                     deletedWsIdsSet.add(workspaceId);
