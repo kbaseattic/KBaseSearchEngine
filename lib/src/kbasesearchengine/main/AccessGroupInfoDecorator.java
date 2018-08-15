@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -12,6 +13,7 @@ import java.util.Objects;
 import kbasesearchengine.GetObjectsInput;
 import kbasesearchengine.GetObjectsOutput;
 import kbasesearchengine.ObjectData;
+import kbasesearchengine.Pagination;
 import kbasesearchengine.SearchObjectsInput;
 import kbasesearchengine.SearchObjectsOutput;
 import kbasesearchengine.SearchTypesInput;
@@ -21,6 +23,7 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
 import us.kbase.common.service.Tuple11;
+import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.Tuple9;
 import us.kbase.workspace.GetObjectInfo3Results;
 import com.google.common.base.Optional;
@@ -82,19 +85,39 @@ public class AccessGroupInfoDecorator implements SearchInterface {
     @Override
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
-        SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
-        if (Objects.nonNull(params.getPostProcessing())) {
-            if (Objects.nonNull(params.getPostProcessing().getAddAccessGroupInfo()) &&
-                    params.getPostProcessing().getAddAccessGroupInfo() == 1) {
-                searchObjsOutput = searchObjsOutput
+        SearchObjectsOutput searchObjsOutput = getEmptySearchObjectsOutput();
+        long count = (params.getPagination() == null) ? 50 : params.getPagination().getCount();
+
+        while(searchObjsOutput.getObjects().size() < count){
+            final SearchObjectsOutput searchRes = reSearchObjects(params, user, searchObjsOutput);
+
+            if (hasAddNarrativeInfo(params)) {
+                Long curTotalObs = (searchObjsOutput == null) ? 0L : searchObjsOutput.getObjects().size();
+
+                SearchObjectsOutput modifiedSearchRes = searchRes
                         .withAccessGroupsInfo(addAccessGroupsInfo(
                                 searchObjsOutput.getObjects(),
-                                searchObjsOutput.getAccessGroupsInfo()))
+                                searchObjsOutput.getAccessGroupsInfo(),
+                                curTotalObs,
+                                count))
                         .withObjectsInfo(addObjectsInfo(
                                 searchObjsOutput.getObjects(),
                                 searchObjsOutput.getObjectsInfo()));
+
+                searchObjsOutput = combineWithOtherSearchObjectsOuput(searchObjsOutput, modifiedSearchRes,
+                        searchRes.getObjects().size() -  modifiedSearchRes.getObjects().size());
+
+                //return results if search returns less objects than required by pagination
+                if(searchRes.getTotalInPage() < count){
+                    return searchObjsOutput;
+                }
+            }else{
+                //return raw search results, if addNarrativeInfo is not set. Note that this may include deleted workspaces.
+                return searchRes;
             }
+
         }
+
         return searchObjsOutput;
     }
 
@@ -108,7 +131,8 @@ public class AccessGroupInfoDecorator implements SearchInterface {
                 getObjsOutput = getObjsOutput
                         .withAccessGroupsInfo(addAccessGroupsInfo(
                                 getObjsOutput.getObjects(),
-                                getObjsOutput.getAccessGroupsInfo()))
+                                getObjsOutput.getAccessGroupsInfo(),
+                                0L, Long.MAX_VALUE))
                         .withObjectsInfo(addObjectsInfo(
                                 getObjsOutput.getObjects(),
                                 getObjsOutput.getObjectsInfo()));
@@ -117,33 +141,96 @@ public class AccessGroupInfoDecorator implements SearchInterface {
         return getObjsOutput;
     }
 
+    private boolean hasAddNarrativeInfo(final SearchObjectsInput params){
+        return params.getPostProcessing() != null && params.getPostProcessing().getAddAccessGroupInfo() != null
+                && params.getPostProcessing().getAddAccessGroupInfo() == 1;
+    }
+    private boolean hasAddNarrativeInfo(final GetObjectsInput params){
+        return params.getPostProcessing() != null && params.getPostProcessing().getAddAccessGroupInfo() != null
+                && params.getPostProcessing().getAddAccessGroupInfo() == 1;
+    }
+
+    private SearchObjectsOutput reSearchObjects(final SearchObjectsInput params, final String user, final SearchObjectsOutput prevRes)
+            throws Exception {
+        SearchObjectsOutput res = getEmptySearchObjectsOutput();
+        if(prevRes.getTotal() == 0L){
+            res = combineWithOtherSearchObjectsOuput(res, searchInterface.searchObjects(params, user), 0);
+        }else{
+            final long newStart = prevRes.getPagination().getStart() + prevRes.getTotalInPage();
+
+            Pagination newPag = new Pagination()
+                    .withCount(prevRes.getPagination().getCount())
+                    .withStart(newStart);
+            SearchObjectsInput newParams = new SearchObjectsInput()
+                    .withSortingRules(params.getSortingRules())
+                    .withPostProcessing(params.getPostProcessing())
+                    .withObjectTypes(params.getObjectTypes())
+                    .withMatchFilter(params.getMatchFilter())
+                    .withAccessFilter(params.getAccessFilter())
+                    .withPagination(newPag);
+
+            SearchObjectsOutput temp =  searchInterface.searchObjects(newParams, user);
+            res = combineWithOtherSearchObjectsOuput(res, temp, 0);
+
+        }
+        return res;
+    }
+
     private Map<Long, Tuple9<Long, String, String, String, Long, String,
             String, String, Map<String, String>>> addAccessGroupsInfo(
             final List<ObjectData> objects,
             final Map<Long, Tuple9<Long, String, String, String, Long, String,
-                    String, String, Map<String, String>>> accessGroupInfoMap)
+                    String, String, Map<String, String>>> accessGroupInfoMap,
+            final Long curTotal,
+            final Long targetTotal)
             throws IOException, JsonClientException {
 
         final Map<Long, Tuple9<Long, String, String, String, Long, String,
                 String, String, Map<String, String>>> retVal = new HashMap<>();
+        long count = curTotal;
 
         if (Objects.nonNull(accessGroupInfoMap)) {
             retVal.putAll(accessGroupInfoMap);
         }
-        final Set<Long> wsIdsSet = new HashSet<>();
 
-        for (final ObjectData objData: objects) {
+        final Set<Long> inAccessibleWsIds = new HashSet<>();
+        final Iterator<ObjectData> iter = objects.iterator();
+
+        while(iter.hasNext()){
+            final ObjectData objData = iter.next();
             final GUID guid = new GUID(objData.getGuid());
+            final long workspaceId = (long) guid.getAccessGroupId();
+
+            if(curTotal >= targetTotal){
+                //remove extra results
+                do{
+                    iter.remove();
+                }while(iter.hasNext());
+                break;
+            }
+
+            if(inAccessibleWsIds.contains(workspaceId)){
+                iter.remove();
+                continue;
+            }
+
             if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
-                wsIdsSet.add((long) guid.getAccessGroupId());
+                final Tuple9<Long, String, String, String, Long, String,
+                        String, String, Map<String, String>> tempWorkspaceInfo =
+                        wsInfoProvider.getWorkspaceInfo(workspaceId);
+                if(tempWorkspaceInfo != null){
+                    retVal.put(workspaceId, tempWorkspaceInfo);
+                    count += 1L;
+                }else{
+                    inAccessibleWsIds.add(workspaceId);
+                    iter.remove();
+                }
+            }else{
+                inAccessibleWsIds.add(workspaceId);
+                iter.remove();
             }
         }
-        for (final long workspaceId: wsIdsSet) {
-            final Tuple9<Long, String, String, String, Long, String,
-                    String, String, Map<String, String>> tempWorkspaceInfo =
-                    wsInfoProvider.getWorkspaceInfo(workspaceId);
-            retVal.put(workspaceId, tempWorkspaceInfo);
-        }
+
         return retVal;
     }
 
@@ -179,5 +266,74 @@ public class AccessGroupInfoDecorator implements SearchInterface {
         if (objsInfo != null)
             retVal.putAll(objsInfo);
         return retVal;
+    }
+    private SearchObjectsOutput combineWithOtherSearchObjectsOuput(final SearchObjectsOutput target, final SearchObjectsOutput other, int removedObjs){
+        target.setTotalInPage(target.getTotalInPage() + other.getTotalInPage() - (long) removedObjs);
+        target.setSearchTime(target.getSearchTime() + other.getSearchTime());
+
+        List<ObjectData> objs= target.getObjects();
+        objs.addAll(other.getObjects());
+        target.setObjects(objs);
+
+        if(target.getTotal() < other.getTotal()){
+            target.setTotal(other.getTotal());
+        }
+
+        if(other.getAccessGroupNarrativeInfo() != null){
+            Map<Long, Tuple5<String, Long, Long, String, String>> accessGrpNarInfo;
+            if(target.getAccessGroupNarrativeInfo() != null){
+                accessGrpNarInfo = target.getAccessGroupNarrativeInfo();
+            }else{
+                accessGrpNarInfo = new HashMap<>();
+            }
+            accessGrpNarInfo.putAll(other.getAccessGroupNarrativeInfo());
+            target.setAccessGroupNarrativeInfo(accessGrpNarInfo);
+        }
+
+        if(other.getAccessGroupsInfo() != null){
+            Map<Long, Tuple9<Long, String, String, String, Long, String, String, String, Map<String, String>>> accessGrpInfo;
+            if(target.getAccessGroupsInfo() != null){
+                accessGrpInfo = target.getAccessGroupsInfo();
+            } else{
+                accessGrpInfo = new HashMap<>();
+            }
+            accessGrpInfo.putAll(other.getAccessGroupsInfo());
+            target.setAccessGroupsInfo(accessGrpInfo);
+        }
+
+        if(other.getObjectsInfo() != null){
+            Map<String, Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> objInfo;
+            if(target.getObjectsInfo() != null){
+                objInfo = target.getObjectsInfo();
+            }else{
+                objInfo = new HashMap<>();
+            }
+            objInfo.putAll(other.getObjectsInfo());
+            target.setObjectsInfo(objInfo);
+        }
+
+
+        if(target.getPagination() == null){
+            target.setPagination(other.getPagination());
+        }
+
+        if(target.getSortingRules() == null){
+            target.setSortingRules(other.getSortingRules());
+        }
+
+        return target;
+    }
+
+    private SearchObjectsOutput getEmptySearchObjectsOutput(){
+        return new SearchObjectsOutput()
+                .withObjects(new ArrayList<>())
+                .withAccessGroupNarrativeInfo(null)
+                .withAccessGroupsInfo(null)
+                .withObjectsInfo(null)
+                .withSearchTime(0L)
+                .withTotal(0L)
+                .withTotalInPage(0L)
+                .withPagination(null)
+                .withSortingRules(null);
     }
 }
