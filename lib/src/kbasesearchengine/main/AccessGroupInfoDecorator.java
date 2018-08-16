@@ -96,13 +96,13 @@ public class AccessGroupInfoDecorator implements SearchInterface {
 
                 SearchObjectsOutput modifiedSearchRes = searchRes
                         .withAccessGroupsInfo(addAccessGroupsInfo(
-                                searchObjsOutput.getObjects(),
-                                searchObjsOutput.getAccessGroupsInfo(),
+                                searchRes.getObjects(),
+                                searchRes.getAccessGroupsInfo(),
                                 curTotalObs,
                                 count))
                         .withObjectsInfo(addObjectsInfo(
-                                searchObjsOutput.getObjects(),
-                                searchObjsOutput.getObjectsInfo(),
+                                searchRes.getObjects(),
+                                searchRes.getObjectsInfo(),
                                 curTotalObs,
                                 count));
 
@@ -197,18 +197,21 @@ public class AccessGroupInfoDecorator implements SearchInterface {
         }
 
         final Set<Long> inAccessibleWsIds = new HashSet<>();
+        final List<ObjectData> newList = new ArrayList<>();
         final Iterator<ObjectData> iter = objects.iterator();
 
         while(iter.hasNext()){
-            final ObjectData objData = iter.next();
+            ObjectData objData = iter.next();
             final GUID guid = new GUID(objData.getGuid());
             final long workspaceId = (long) guid.getAccessGroupId();
 
-            if(curTotal >= targetTotal){
+            if(count >= targetTotal){
                 //remove extra results
-                do{
+                while(iter.hasNext()){
                     iter.remove();
-                }while(iter.hasNext());
+                    iter.next();
+                }
+                iter.remove();
                 break;
             }
 
@@ -221,12 +224,15 @@ public class AccessGroupInfoDecorator implements SearchInterface {
                 final Tuple9<Long, String, String, String, Long, String,
                         String, String, Map<String, String>> tempWorkspaceInfo =
                         wsInfoProvider.getWorkspaceInfo(workspaceId);
-                if(tempWorkspaceInfo != null){
-                    retVal.put(workspaceId, tempWorkspaceInfo);
-                    count += 1L;
-                }else{
+
+                //if user has not permission to see
+                if(tempWorkspaceInfo.getE6().equals("n") && tempWorkspaceInfo.getE7().equals("n") ){
                     inAccessibleWsIds.add(workspaceId);
                     iter.remove();
+                }else{
+                    retVal.put(workspaceId, tempWorkspaceInfo);
+                    newList.add(objData);
+                    count += 1L;
                 }
             }else{
                 inAccessibleWsIds.add(workspaceId);
