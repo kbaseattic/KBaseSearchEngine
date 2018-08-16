@@ -277,9 +277,11 @@ public class NarrativeInfoDecorator implements SearchInterface {
 
                 if(curTotal >= targetTotal){
                     //remove extra results
-                    do{
+                    while(iter.hasNext()){
                         iter.remove();
-                    }while(iter.hasNext());
+                        iter.next();
+                    };
+                    iter.remove();
                     break;
                 }else if(deletedWsIdsSet.contains(workspaceId)){
                     iter.remove();
