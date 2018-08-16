@@ -33,6 +33,10 @@ public class AccessGroupInfoDecoratorTest {
 
     @Test
     public void searchObjectsWithDeletedWs() throws Exception {
+        final HashMap<Long, Tuple9> expectedRes = new HashMap<>();
+        expectedRes.put(4L, AccessInfoTuple(4L, "test", "owner", "1", 5L, "r", "n", "unlocked", new HashMap()));
+        expectedRes.put(5L, AccessInfoTuple(5L, "test", "owner", "1", 5L, "n", "r", "unlocked", new HashMap()));
+        expectedRes.put(6L, AccessInfoTuple(6L, "test", "owner", "1", 5L, "r", "r", "unlocked", new HashMap()));
         final AccessGroupInfoDecorator nid = setUpSearchObjectsWithDeletedWs();
         final Pagination pag = new Pagination().withCount(4L).withStart(0L);
         final SearchObjectsInput dummyInput = new SearchObjectsInput()
@@ -48,8 +52,34 @@ public class AccessGroupInfoDecoratorTest {
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
 
         compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
+        compareAccessGroupInfo((HashMap) res.getAccessGroupsInfo(), expectedRes);
         assertThat("incorrect number of hits looked at", res.getTotalInPage(), is(8L));
     }
+
+    @Test
+    public void searchObjectsWithDeletedWsUnderPagination() throws Exception {
+        final HashMap<Long, Tuple9> expectedRes = new HashMap<>();
+        expectedRes.put(4L, AccessInfoTuple(4L, "test", "owner", "1", 5L, "r", "n", "unlocked", new HashMap()));
+        expectedRes.put(5L, AccessInfoTuple(5L, "test", "owner", "1", 5L, "n", "r", "unlocked", new HashMap()));
+
+        final AccessGroupInfoDecorator nid = setUpSearchObjectsWithDeletedWs();
+        final Pagination pag = new Pagination().withCount(2L).withStart(0L);
+        final SearchObjectsInput dummyInput = new SearchObjectsInput()
+                .withPostProcessing(new PostProcessing().withAddAccessGroupInfo(1L))
+                .withPagination(pag);
+
+        final ArrayList<ObjectData> expectedObjs = new ArrayList<>();
+        expectedObjs.add(new ObjectData().withGuid("WS:4/1/7").withCreator("user"));
+        expectedObjs.add(new ObjectData().withGuid("WS:5/2/1").withCreator("user"));
+
+        final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
+
+        compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
+        compareAccessGroupInfo((HashMap) res.getAccessGroupsInfo(), expectedRes);
+        assertThat("incorrect number of hits looked at", res.getTotalInPage(), is(4L));
+    }
+
+
     public AccessGroupInfoDecorator setUpSearchObjectsWithDeletedWs() throws Exception {
         final SearchInterface search = mock(SearchInterface.class);
         final WorkspaceInfoProvider wip = mock(WorkspaceInfoProvider.class);
@@ -57,7 +87,7 @@ public class AccessGroupInfoDecoratorTest {
 
         final AccessGroupInfoDecorator agid = new AccessGroupInfoDecorator(search, wip, oip);
 
-        final Pagination pag = new Pagination().withCount(3L).withStart(0L);
+        final Pagination pag = new Pagination().withCount(4L).withStart(0L);
 
 
         final ObjectData obj = new ObjectData().withGuid("WS:3/5/6").withCreator("user");
@@ -112,18 +142,6 @@ public class AccessGroupInfoDecoratorTest {
         }
     }
 
-
-    public void compare(
-            final Tuple5<String, Long, Long, String, String> got,
-            final Tuple5<String, Long, Long, String, String> expected) {
-        assertThat("incorrect narrative name", got.getE1(), is(expected.getE1()));
-        assertThat("incorrect narrative id", got.getE2(), is(expected.getE2()));
-        assertThat("incorrect epoch", got.getE3(), is(expected.getE3()));
-        assertThat("incorrect owner", got.getE4(), is(expected.getE4()));
-        assertThat("incorrect display name", got.getE5(), is(expected.getE5()));
-    }
-
-
     public Tuple9<Long, String, String, String, Long, String,
                    String, String, Map<String, String>> AccessInfoTuple(
             final Long wsId,
@@ -148,6 +166,22 @@ public class AccessGroupInfoDecoratorTest {
                 .withE9(metadata);
     }
 
+    public static void compare(
+            final Tuple9<Long, String, String, String, Long, String,
+                    String, String, Map<String, String>> got,
+            final Tuple9<Long, String, String, String, Long, String,
+                    String, String, Map<String, String>> expected) {
+        assertThat("incorrect workspace id", got.getE1(), is(expected.getE1()));
+        assertThat("incorrect workspace name", got.getE2(), is(expected.getE2()));
+        assertThat("incorrect owner", got.getE3(), is(expected.getE3()));
+        assertThat("incorrect time", got.getE4(), is(expected.getE4()));
+        assertThat("incorrect max object id", got.getE5(), is(expected.getE5()));
+        assertThat("incorrect user permission", got.getE6(), is(expected.getE6()));
+        assertThat("incorrect global permission", got.getE7(), is(expected.getE7()));
+        assertThat("incorrect lock status", got.getE8(), is(expected.getE8()));
+        assertThat("incorrect metadata", got.getE9(), is(expected.getE9()));
+    }
+
     private SearchObjectsOutput getEmptySearchObjectsOutput(){
         return new SearchObjectsOutput()
                 .withObjects(new ArrayList<>())
@@ -159,6 +193,13 @@ public class AccessGroupInfoDecoratorTest {
                 .withTotalInPage(0L)
                 .withPagination(null)
                 .withSortingRules(null);
+    }
+
+    public void compareAccessGroupInfo(final HashMap<Long, Tuple9> map1, final HashMap<Long, Tuple9> map2){
+        assertThat("incorrect keys", map1.keySet(), is(map2.keySet()));
+        for(Long key : map1.keySet()){
+            compare(map1.get(key), map2.get(key));
+        }
     }
 
 }
