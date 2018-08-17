@@ -14,11 +14,11 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 /**
  * <p>Original spec-file type: AccessFilter</p>
  * <pre>
- * Optional rules of access constraints.
+ * Optional rules of access constraints. Will throw exception if with_public and with_private are both false.
  *   - with_private - include data found in workspaces not marked 
- *               as public, default value is true for authenticated users and false for unauthenticated users.
+ *               as public, default value is true for authenticated users. Value set to false for unauthenticated users.
  *   - with_public - include data found in public workspaces,
- *               default value is false for authenticated users and true for unauthenticated users.
+ *               default value is false for authenticated users. Value set to true for unauthenticated users.
  *   - with_all_history - include all versions (last one and all
  *       old versions) of objects matching constrains, default
  *       value is false.
