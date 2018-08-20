@@ -116,29 +116,29 @@ public class NarrativeInfoDecorator implements SearchInterface {
         if (accessGroupNarrInfo != null) {
             retVal.putAll(accessGroupNarrInfo);
         }
-        final Set<Long> wsIdsSet = new HashSet<>();
+        final Set<String> userNames = new HashSet<>();
 
-        for (final ObjectData objData: objects) {
+        for (int i =0; i<objects.size(); i++) {
+            final ObjectData objData = objects.get(i);
             final GUID guid = new GUID(objData.getGuid());
             if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
-                wsIdsSet.add((long) guid.getAccessGroupId());
-            }
-        }
-        final Set<String> userNames = new HashSet<>();
-        for (final long workspaceId: wsIdsSet) {
-            final NarrativeInfo narrInfo = narrInfoProvider.findNarrativeInfo(workspaceId);
-            if (narrInfo != null) {
-                final Tuple5<String, Long, Long, String, String> tempNarrInfo =
-                        new Tuple5<String, Long, Long, String, String>()
-                                .withE1(narrInfo.getNarrativeName())
-                                .withE2(narrInfo.getNarrativeId())
-                                .withE3(narrInfo.getTimeLastSaved())
-                                .withE4(narrInfo.getWsOwnerUsername());
-                userNames.add(tempNarrInfo.getE4());
-                retVal.put(workspaceId, tempNarrInfo);
-            }
-            else {
-                retVal.put(workspaceId, null);
+                final long workspaceId = guid.getAccessGroupId();
+                final NarrativeInfo narrInfo = narrInfoProvider.findNarrativeInfo(workspaceId);
+
+                if (narrInfo != null) {
+                    final Tuple5<String, Long, Long, String, String> tempNarrInfo =
+                            new Tuple5<String, Long, Long, String, String>()
+                                    .withE1(narrInfo.getNarrativeName())
+                                    .withE2(narrInfo.getNarrativeId())
+                                    .withE3(narrInfo.getTimeLastSaved())
+                                    .withE4(narrInfo.getWsOwnerUsername());
+                    userNames.add(tempNarrInfo.getE4());
+                    retVal.put(workspaceId, tempNarrInfo);
+                }
+                else {
+                    objects.set(i, null);
+                    retVal.put(workspaceId, null);
+                }
             }
         }
         try {
