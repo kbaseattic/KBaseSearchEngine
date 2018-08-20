@@ -1815,4 +1815,45 @@ public class ElasticIndexingStorageTest {
 
         assertThat("objects not deleted", res2, is(set()));
     }
+    @Test
+    public void testLastVersionIndexForObjectsWithSubobjects() throws Exception {
+        // regular object
+        indexObject("WS:2000/1/2", "WS:2000/1/2", 1);
+        indexObject("WS:2000/1/2", "WS:2000/1/2:sub/yay", 1);
+
+        indexStorage.refreshIndex("*");
+
+        indexObject("WS:2000/1/1", "WS:2000/1/1", 2);
+        indexObject("WS:2000/1/1", "WS:2000/1/1:sub/yay", 2);
+
+
+        //check that both objects are found
+        final Set<GUID> res = indexStorage.searchIds(
+                Collections.emptyList(),
+                MatchFilter.getBuilder().withNullableFullTextInAll("imaprettypony").build(),
+                null,
+                AccessFilter.create().withAccessGroups(2000));
+        assertThat("incorrect objects found", res,
+                is(set(new GUID("WS:2000/1/2"), new GUID("WS:2000/1/2:sub/yay"))));
+
+    }
+
+    public void indexObject(final String pguid, final String guid, final int ver)throws Exception{
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("ObjectWithSubObject", ver),
+                        new StorageObjectType("foo", "bar"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "creator").build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID(pguid),
+                ImmutableMap.of(new GUID(guid), new ParsedObject(
+                        "{\"whee\": \"imaprettypony\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
+                false);
+    }
+
 }
