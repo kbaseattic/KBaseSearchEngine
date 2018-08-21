@@ -40,8 +40,6 @@ import kbasesearchengine.events.exceptions.FatalRetriableIndexingException;
 import kbasesearchengine.system.StorageObjectType;
 import kbasesearchengine.tools.Utils;
 
-import javax.swing.event.DocumentEvent;
-
 import static com.mongodb.client.model.Filters.eq;
 
 /** An implementation of {@link StatusEventStorage} with MongoDB as the backend.
@@ -81,6 +79,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
     private static final String FLD_OBJECT_TYPE_VER = "objtypever";
     private static final String FLD_PUBLIC = "public";
     private static final String FLD_NEW_NAME = "newname";
+    private static final String FLD_OVERWRITE_EXISTING_DATA = "overwrite";
     private static final String FLD_WORKER_CODES = "wrkcde";
     private static final String FLD_UPDATE_TIME = "updte";
     // the ID, if any, of the operator that last changed the event status. Arbitrary string.
@@ -312,6 +311,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 .append(FLD_STORAGE_CODE, newEvent.getStorageCode())
                 .append(FLD_EVENT_TYPE, newEvent.getEventType().toString())
                 .append(FLD_NEW_NAME, newEvent.getNewName().orNull())
+                .append(FLD_OVERWRITE_EXISTING_DATA, newEvent.isOverwriteExistingData().orNull())
                 .append(FLD_PUBLIC, newEvent.isPublic().orNull())
                 .append(FLD_TIMESTAMP, Date.from(newEvent.getTimestamp()))
                 .append(FLD_STATUS, state.toString())
@@ -406,6 +406,7 @@ public class MongoDBStatusEventStorage implements StatusEventStorage {
                 .withNullableObjectID(event.getString(FLD_OBJECT_ID))
                 .withNullableVersion(event.getInteger(FLD_VERSION))
                 .withNullableNewName(event.getString(FLD_NEW_NAME))
+                .withNullableOverwriteExistingData(event.getBoolean(FLD_OVERWRITE_EXISTING_DATA))
                 .withNullableisPublic(event.getBoolean(FLD_PUBLIC))
                 .build();
     }

@@ -53,7 +53,8 @@ public class StoredStatusEventTest {
                 "eventType=DELETE_ALL_VERSIONS, storageCode=foo, " +
                 "storageObjectType=Optional.absent(), accessGroupID=Optional.absent(), " +
                 "objectID=Optional.absent(), version=Optional.absent(), " +
-                "isPublic=Optional.absent(), newName=Optional.absent()], " +
+                "isPublic=Optional.absent(), newName=Optional.absent(), " +
+                        "isOverwriteExistingData=Optional.absent()], " +
                 "id=StatusEventID [id=bar], state=UNPROC, updateTime=Optional.absent(), " +
                 "updater=Optional.absent(), workerCodes=[], storedBy=Optional.absent(), " +
                 "storeTime=Optional.absent(), errorCode=Optional.absent(), " +
@@ -92,7 +93,8 @@ public class StoredStatusEventTest {
                 "eventType=DELETE_ALL_VERSIONS, storageCode=foo, " +
                 "storageObjectType=Optional.absent(), accessGroupID=Optional.absent(), " +
                 "objectID=Optional.absent(), version=Optional.absent(), " +
-                "isPublic=Optional.absent(), newName=Optional.absent()], " +
+                "isPublic=Optional.absent(), newName=Optional.absent(), " +
+                        "isOverwriteExistingData=Optional.absent()], " +
                 "id=StatusEventID [id=bar], state=UNPROC, updateTime=Optional.absent(), " +
                 "updater=Optional.absent(), workerCodes=[], storedBy=Optional.absent(), " +
                 "storeTime=Optional.absent(), errorCode=Optional.absent(), " +
@@ -132,7 +134,8 @@ public class StoredStatusEventTest {
                 "eventType=DELETE_ALL_VERSIONS, storageCode=foo, " +
                 "storageObjectType=Optional.absent(), accessGroupID=Optional.absent(), " +
                 "objectID=Optional.absent(), version=Optional.absent(), " +
-                "isPublic=Optional.absent(), newName=Optional.absent()], " +
+                "isPublic=Optional.absent(), newName=Optional.absent(), " +
+                "isOverwriteExistingData=Optional.absent()], " +
                 "id=StatusEventID [id=bar], state=UNPROC, " +
                 "updateTime=Optional.of(1970-01-01T00:00:20Z), " +
                 "updater=Optional.absent(), workerCodes=[], storedBy=Optional.absent(), " +
@@ -169,7 +172,8 @@ public class StoredStatusEventTest {
                 "eventType=DELETE_ALL_VERSIONS, storageCode=foo, " +
                 "storageObjectType=Optional.absent(), accessGroupID=Optional.absent(), " +
                 "objectID=Optional.absent(), version=Optional.absent(), " +
-                "isPublic=Optional.absent(), newName=Optional.absent()], " +
+                "isPublic=Optional.absent(), newName=Optional.absent(), " +
+                        "isOverwriteExistingData=Optional.absent()], " +
                 "id=StatusEventID [id=baz], state=UNPROC, " +
                 "updateTime=Optional.of(1970-01-01T00:00:20Z), " +
                 "updater=Optional.of(bar), workerCodes=[], storedBy=Optional.absent(), " +
@@ -206,7 +210,8 @@ public class StoredStatusEventTest {
                 "eventType=DELETE_ALL_VERSIONS, storageCode=foo, " +
                 "storageObjectType=Optional.absent(), accessGroupID=Optional.absent(), " +
                 "objectID=Optional.absent(), version=Optional.absent(), " +
-                "isPublic=Optional.absent(), newName=Optional.absent()], " +
+                "isPublic=Optional.absent(), newName=Optional.absent(), " +
+                        "isOverwriteExistingData=Optional.absent()], " +
                 "id=StatusEventID [id=baz], state=UNPROC, " +
                 "updateTime=Optional.of(1970-01-01T00:00:20Z), " +
                 "updater=Optional.absent(), workerCodes=[], storedBy=Optional.absent(), " +
@@ -248,7 +253,8 @@ public class StoredStatusEventTest {
                 "eventType=DELETE_ALL_VERSIONS, storageCode=foo, " +
                 "storageObjectType=Optional.absent(), accessGroupID=Optional.absent(), " +
                 "objectID=Optional.absent(), version=Optional.absent(), " +
-                "isPublic=Optional.absent(), newName=Optional.absent()], " +
+                "isPublic=Optional.absent(), newName=Optional.absent(), " +
+                "isOverwriteExistingData=Optional.absent()], " +
                 "id=StatusEventID [id=foo], state=UNPROC, " +
                 "updateTime=Optional.of(1970-01-01T00:00:20Z), updater=Optional.of(foo), " +
                 "workerCodes=[bar, foo], storedBy=Optional.of(my man), " +

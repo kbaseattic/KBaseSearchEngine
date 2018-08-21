@@ -33,6 +33,7 @@ public class StatusEvent {
     private final Optional<Integer> version;
     private final Optional<Boolean> isPublic;
     private final Optional<String> newName;
+    private final Optional<Boolean> overwriteExistingData;
     
     private StatusEvent(
             final StatusEventType eventType,
@@ -43,7 +44,8 @@ public class StatusEvent {
             final Optional<StorageObjectType> storageObjectType,
             final Instant time,
             final Optional<Boolean> isPublic,
-            final Optional<String> newName) {
+            final Optional<String> newName,
+            final Optional<Boolean> overwriteExistingData) {
         this.eventType = eventType;
         this.storageCode = storageCode;
         this.accessGroupID = accessGroupID;
@@ -53,6 +55,7 @@ public class StatusEvent {
         this.time = time;
         this.isPublic = isPublic;
         this.newName = newName;
+        this.overwriteExistingData = overwriteExistingData;
     }
 
     /** The GUID of the data involved in the event. All fields except the storage code may be null.
@@ -125,6 +128,15 @@ public class StatusEvent {
         return isPublic;
     }
 
+    /** Get whether the corresponding record for this event should be overwritten
+     * if the record already exists in the index."
+     * @return whether to overwrite existing data. An absent field indicates that
+     * the record must not be overwritten.
+     */
+    public Optional<Boolean> isOverwriteExistingData() {
+        return overwriteExistingData;
+    }
+
     /** Get the new name for the data involved in the event.
      * @return the new name if available.
      */
@@ -153,6 +165,8 @@ public class StatusEvent {
         builder2.append(isPublic);
         builder2.append(", newName=");
         builder2.append(newName);
+        builder2.append(", isOverwriteExistingData=");
+        builder2.append(overwriteExistingData);
         builder2.append("]");
         return builder2.toString();
     }
@@ -168,6 +182,7 @@ public class StatusEvent {
         result = prime * result
                 + ((isPublic == null) ? 0 : isPublic.hashCode());
         result = prime * result + ((newName == null) ? 0 : newName.hashCode());
+        result = prime * result + ((overwriteExistingData == null) ? 0 : overwriteExistingData.hashCode());
         result = prime * result
                 + ((objectID == null) ? 0 : objectID.hashCode());
         result = prime * result
@@ -213,6 +228,13 @@ public class StatusEvent {
                 return false;
             }
         } else if (!newName.equals(other.newName)) {
+            return false;
+        }
+        if (overwriteExistingData == null) {
+            if (other.overwriteExistingData != null) {
+                return false;
+            }
+        } else if (!overwriteExistingData.equals(other.overwriteExistingData)) {
             return false;
         }
         if (objectID == null) {
@@ -294,6 +316,7 @@ public class StatusEvent {
         private Optional<Integer> version = Optional.absent();
         private Optional<Boolean> isPublic = Optional.absent();
         private Optional<String> newName = Optional.absent();
+        private Optional<Boolean> overwriteExistingData = Optional.absent();
         
         private Builder(
                 final String storageCode,
@@ -367,7 +390,7 @@ public class StatusEvent {
         
         /** Add a new object name to the event. Null values will remove any previously set
          * name in the builder.
-         * @param accessGroupID the name to add to the builder.
+         * @param newName the name to add to the builder.
          * @return this builder.
          */
         public Builder withNullableNewName(final String newName) {
@@ -378,13 +401,28 @@ public class StatusEvent {
             }
             return this;
         }
+
+        /** Specify whether the corresponding record for this event should be overwritten
+         * if the record already exists in the index."
+         * @param overwriteExistingData true if the existing record should be overwritten, else false.
+         *                              An absent field indicates that the record must not be overwritten.
+         * @return this builder.
+         */
+        public Builder withNullableOverwriteExistingData(final Boolean overwriteExistingData) {
+            if (overwriteExistingData == null) {
+                this.overwriteExistingData = Optional.absent();
+            } else {
+                this.overwriteExistingData = Optional.of(overwriteExistingData);
+            }
+            return this;
+        }
         
         /** Build the status event.
          * @return the new event.
          */
         public StatusEvent build() {
             return new StatusEvent(eventType, storageCode, accessGroupID, objectID,
-                    version, storageObjectType, time, isPublic, newName);
+                    version, storageObjectType, time, isPublic, newName, overwriteExistingData);
         }
     }
 }

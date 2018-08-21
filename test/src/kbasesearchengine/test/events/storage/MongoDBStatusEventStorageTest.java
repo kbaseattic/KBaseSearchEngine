@@ -127,6 +127,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withNullableOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build(),
@@ -142,6 +143,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withNullableOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build()));
@@ -165,8 +167,98 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withNullableOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
+                .build()));
+        assertThat("incorrect worker codes", got.getWorkerCodes(), is(set("default")));
+        assertThat("incorrect stored by", got.getStoredBy(), is(Optional.of("Baldrick")));
+        assertThat("incorrect store time", got.getStoreTime(),
+                is(Optional.of(Instant.ofEpochMilli(30000L))));
+        assertThat("incorrect error code", got.getErrorCode(), is(Optional.absent()));
+        assertThat("incorrect error msg", got.getErrorMessage(), is(Optional.absent()));
+        assertThat("incorrect error trace", got.getErrorStackTrace(), is(Optional.absent()));
+    }
+
+    @Test
+    public void storeAndGetAllBooleanFields() throws Exception {
+        // tests boolean fields
+        when(clock.instant()).thenReturn(Instant.ofEpochMilli(30000L));
+        {
+            final StoredStatusEvent sse = storage.store(StatusEvent.getBuilder(
+                    "WS", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
+                            .withNullableisPublic(false)
+                            .withNullableOverwriteExistingData(false)
+                            .build(),
+                    StatusEventProcessingState.UNPROC,
+                    set(),
+                    "Baldrick");
+
+            final StoredStatusEvent got = storage.get(sse.getID()).get();
+
+            assertThat("incorrect isPublic flag", got.getEvent().isPublic(),
+                    is(Optional.of(false)));
+            assertThat("incorrect overwriteExistingData flag",
+                    got.getEvent().isOverwriteExistingData(), is(Optional.of(false)));
+        }
+
+
+        {
+            final StoredStatusEvent sse = storage.store(StatusEvent.getBuilder(
+                    "WS", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
+                            .withNullableisPublic(true)
+                            .withNullableOverwriteExistingData(true)
+                            .build(),
+                    StatusEventProcessingState.UNPROC,
+                    set(),
+                    "Baldrick");
+
+            final StoredStatusEvent got = storage.get(sse.getID()).get();
+
+            assertThat("incorrect isPublic flag", got.getEvent().isPublic(), is(Optional.of(true)));
+            assertThat("incorrect isPublic flag", got.getEvent().isOverwriteExistingData(), is(Optional.of(true)));
+        }
+    }
+
+    @Test
+    public void storeAndGetNullFields() throws Exception {
+        // tests nullable field values when not specified
+        when(clock.instant()).thenReturn(Instant.ofEpochMilli(30000L));
+        final StoredStatusEvent sse = storage.store(StatusEvent.getBuilder(
+                "WS", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
+                        .build(),
+                StatusEventProcessingState.UNPROC,
+                set(),
+                "Baldrick");
+
+        assertThat("incorrect state", sse.getState(), is(StatusEventProcessingState.UNPROC));
+        assertThat("incorrect updater", sse.getUpdater(), is(Optional.absent()));
+        assertThat("incorrect update time", sse.getUpdateTime(), is(Optional.absent()));
+        assertThat("incorrect access group id", sse.getEvent().getAccessGroupId(), is(Optional.absent()));
+        assertThat("incorrect isPublic flag", sse.getEvent().isPublic(), is(Optional.absent()));
+        assertThat("incorrect event name", sse.getEvent().getNewName(), is(Optional.absent()));
+        assertThat("incorrect overwriteExistingData flag", sse.getEvent().isOverwriteExistingData(), is(Optional.absent()));
+        assertThat("incorrect access group object id", sse.getEvent().getAccessGroupObjectId(), is(Optional.absent()));
+        assertThat("incorrect version", sse.getEvent().getVersion(), is(Optional.absent()));
+
+
+        assertThat("incorrect worker codes", sse.getWorkerCodes(), is(set("default")));
+        assertThat("incorrect stored by", sse.getStoredBy(), is(Optional.of("Baldrick")));
+        assertThat("incorrect store time", sse.getStoreTime(),
+                is(Optional.of(Instant.ofEpochMilli(30000L))));
+        assertThat("incorrect error code", sse.getErrorCode(), is(Optional.absent()));
+        assertThat("incorrect error msg", sse.getErrorMessage(), is(Optional.absent()));
+        assertThat("incorrect error trace", sse.getErrorStackTrace(), is(Optional.absent()));
+        assertNotNull("id is null", sse.getID());
+
+        final StoredStatusEvent got = storage.get(sse.getID()).get();
+
+        assertThat("ids don't match", got.getID(), is(sse.getID()));
+        assertThat("incorrect state", got.getState(), is(StatusEventProcessingState.UNPROC));
+        assertThat("incorrect updater", got.getUpdater(), is(Optional.absent()));
+        assertThat("incorrect update time", got.getUpdateTime(), is(Optional.absent()));
+        assertThat("incorrect event", got.getEvent(), is(StatusEvent.getBuilder(
+                "WS", Instant.ofEpochMilli(10000), StatusEventType.COPY_ACCESS_GROUP)
                 .build()));
         assertThat("incorrect worker codes", got.getWorkerCodes(), is(set("default")));
         assertThat("incorrect stored by", got.getStoredBy(), is(Optional.of("Baldrick")));
@@ -374,6 +466,7 @@ public class MongoDBStatusEventStorageTest {
                     .withNullableAccessGroupID(6)
                     .withNullableisPublic(true)
                     .withNullableNewName("foo")
+                    .withNullableOverwriteExistingData(true)
                     .withNullableObjectID("bar")
                     .withNullableVersion(7)
                     .build(),
@@ -388,6 +481,7 @@ public class MongoDBStatusEventStorageTest {
                         .withNullableAccessGroupID(6)
                         .withNullableisPublic(true)
                         .withNullableNewName("foo")
+                        .withNullableOverwriteExistingData(true)
                         .withNullableObjectID("bar")
                         .withNullableVersion(7)
                         .build(),
@@ -409,6 +503,7 @@ public class MongoDBStatusEventStorageTest {
                         .withNullableAccessGroupID(6)
                         .withNullableisPublic(true)
                         .withNullableNewName("foo")
+                        .withNullableOverwriteExistingData(true)
                         .withNullableObjectID("bar")
                         .withNullableVersion(7)
                         .build(),
@@ -825,6 +920,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withNullableOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build(),
@@ -848,6 +944,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withNullableOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build()));
@@ -867,6 +964,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withNullableOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build()));
@@ -890,6 +988,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withNullableOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build(),
@@ -911,6 +1010,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withNullableOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build()));
@@ -930,6 +1030,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withNullableOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build()));
@@ -949,6 +1050,7 @@ public class MongoDBStatusEventStorageTest {
                 .withNullableAccessGroupID(6)
                 .withNullableisPublic(true)
                 .withNullableNewName("foo")
+                .withNullableOverwriteExistingData(true)
                 .withNullableObjectID("bar")
                 .withNullableVersion(7)
                 .build(),

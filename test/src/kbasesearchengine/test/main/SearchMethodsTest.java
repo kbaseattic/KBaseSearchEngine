@@ -33,11 +33,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.stream.Collectors;
 
 import static kbasesearchengine.test.common.TestCommon.set;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -758,6 +761,105 @@ public class SearchMethodsTest {
                 "auser");
         assertThat("should show only private", res3.getTypeToCount(), is(privateData));
 
+    }
+    private SearchInterface setUpTestAccessFilterSearchObjects() throws Exception{
+        final AccessGroupProvider agp = mock(AccessGroupProvider.class);
+        final IndexingStorage is = mock(IndexingStorage.class);
+        final TypeStorage ts = mock(TypeStorage.class);
+
+        final SearchInterface sm = new SearchMethods(agp, is, ts, new HashSet<>());
+
+        final List<Integer> adminList = new ArrayList<>();
+        adminList.add(2);
+
+        FoundHits allData = new FoundHits();
+        allData.guids = set(new GUID("WS:1/2/3"), new GUID("WS:2/3/4"));
+        allData.sortingRules = Collections.EMPTY_LIST;
+        allData.total=2;
+
+        FoundHits publicData = new FoundHits();
+        publicData.guids = set(new GUID("WS:1/2/3"));
+        publicData.sortingRules = Collections.EMPTY_LIST;
+        publicData.total=1;
+
+        FoundHits privateData = new FoundHits();
+        privateData.guids = set(new GUID("WS:2/3/4"));
+        privateData.sortingRules=Collections.EMPTY_LIST;
+        privateData.total=1;
+
+        when(agp.findAccessGroupIds("auser"))
+                .thenReturn(adminList);
+
+        //both public and private
+        when(is.searchObjects(any(List.class), eq(kbasesearchengine.search.MatchFilter.getBuilder().build()),
+                any(List.class),
+                eq(new kbasesearchengine.search.AccessFilter()
+                        .withAccessGroups(new LinkedHashSet(adminList))
+                        .withPublic(true))
+                ,eq(null)
+                ,any(PostProcessing.class)))
+                .thenReturn(allData);
+
+        //just private
+        when(is.searchObjects(any(List.class), eq(kbasesearchengine.search.MatchFilter.getBuilder().build()),
+                any(List.class),
+                eq(new kbasesearchengine.search.AccessFilter()
+                        .withAccessGroups(new LinkedHashSet(adminList))
+                        .withPublic(false))
+                ,eq(null)
+                ,any(PostProcessing.class)))
+                .thenReturn(privateData);
+
+        //just public
+        when(is.searchObjects(any(List.class), eq(kbasesearchengine.search.MatchFilter.getBuilder().build()),
+                any(List.class),
+                eq(new kbasesearchengine.search.AccessFilter()
+                        .withAccessGroups()
+                        .withPublic(true))
+                ,eq(null)
+                ,any(PostProcessing.class)))
+                .thenReturn(publicData);
+
+
+        return sm;
+    }
+
+    /**
+     * Tests that an searchObjects handles auth and unauth users correctly.
+     * @throws Exception
+     */
+    @Test
+    public void testAccessFilterAuthorizedUserSearchObjects() throws Exception{
+        SearchInterface sm = setUpTestAccessFilterSearchObjects();
+
+        //public and private
+        final SearchObjectsOutput res = sm.searchObjects(new SearchObjectsInput()
+                        .withAccessFilter(new AccessFilter().withWithPrivate(1L).withWithPublic(1L))
+                        .withMatchFilter(new MatchFilter())
+                        .withSortingRules(Collections.EMPTY_LIST)
+                , "auser");
+
+        assertThat("should show both public and private", res.getObjects().stream().map(kbasesearchengine.ObjectData::getGuid).collect(Collectors.toSet()),
+                is(set("WS:1/2/3", "WS:2/3/4")));
+
+        //private only
+        final SearchObjectsOutput res2 = sm.searchObjects(new SearchObjectsInput()
+                        .withAccessFilter(new AccessFilter().withWithPrivate(1L).withWithPublic(0L))
+                        .withMatchFilter(new MatchFilter())
+                        .withSortingRules(Collections.EMPTY_LIST)
+                , "auser");
+
+        assertThat("should show only private", res2.getObjects().stream().map(kbasesearchengine.ObjectData::getGuid).collect(Collectors.toSet()),
+                is(set( "WS:2/3/4")));
+
+        final SearchObjectsOutput res3 = sm.searchObjects(new SearchObjectsInput()
+                        .withAccessFilter(new AccessFilter().withWithPrivate(1L).withWithPublic(1L))
+                        .withMatchFilter(new MatchFilter())
+                        .withSortingRules(Collections.EMPTY_LIST)
+                , "unauthUser");
+
+        assertThat("should show only public", res3.getObjects().stream().map(kbasesearchengine.ObjectData::getGuid).collect(Collectors.toSet()),
+                is(set("WS:1/2/3")));
     }
 
     @Test

@@ -313,6 +313,7 @@ SearchObjectsOutput is a reference to a hash where the following keys are define
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	total has a value which is an int
+	total_in_page has a value which is an int
 	search_time has a value which is an int
 	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
@@ -421,6 +422,7 @@ SearchObjectsOutput is a reference to a hash where the following keys are define
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	total has a value which is an int
+	total_in_page has a value which is an int
 	search_time has a value which is an int
 	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
@@ -1225,11 +1227,11 @@ source_tags_blacklist has a value which is a KBaseSearchEngine.boolean
 
 =item Description
 
-Optional rules of access constraints.
+Optional rules of access constraints. Will throw exception if with_public and with_private are both false.
   - with_private - include data found in workspaces not marked 
-              as public, default value is true for authenticated users and false for unauthenticated users.
+              as public, default value is true for authenticated users. Value set to false for unauthenticated users.
   - with_public - include data found in public workspaces,
-              default value is false for authenticated users and true for unauthenticated users.
+              default value is false for authenticated users. Value set to true for unauthenticated users.
   - with_all_history - include all versions (last one and all
       old versions) of objects matching constrains, default
       value is false.
@@ -1806,6 +1808,7 @@ Output results for 'search_objects' method.
 'pagination' and 'sorting_rules' fields show actual input for
     pagination and sorting.
 total - total number of found objects.
+total_in_page - total number of objects looked at to get one page of results. 
 search_time - common time in milliseconds spent.
 mapping<access_group_id, narrative_info> access_group_narrative_info - information about
    the workspaces in which the objects in the results reside. This data only applies to
@@ -1831,6 +1834,7 @@ pagination has a value which is a KBaseSearchEngine.Pagination
 sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 total has a value which is an int
+total_in_page has a value which is an int
 search_time has a value which is an int
 access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
@@ -1847,6 +1851,7 @@ pagination has a value which is a KBaseSearchEngine.Pagination
 sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 total has a value which is an int
+total_in_page has a value which is an int
 search_time has a value which is an int
 access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info

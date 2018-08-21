@@ -1,3 +1,4 @@
+
 package kbasesearchengine.test.events.handler;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -1417,4 +1418,179 @@ public class WorkspaceEventHandlerTest {
             Assert.assertTrue(exceptionCaught);
         }
     }
+
+    @Test
+    public void newVersionEventWithOverwriteExistingData() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.NEW_VERSION)
+                .withNullableOverwriteExistingData(true)  // overwrite existing data
+                .withNullableisPublic(Boolean.TRUE)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+
+        List<Tuple11<Long, String, String, String,
+                Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
+        objList.add(objTuple(1L, null, "sometype", "date", 1L, "copier",
+                1L, "wsname", "checksum", 44, Collections.emptyMap()));
+
+        when(wscli.administer(any()))
+                // for deleted objects check
+                .thenReturn(new UObject(objList))
+                // for name check
+                .thenReturn(new UObject(new GetObjectInfo3Results().withInfos(objList)))
+                // for isPublic check
+                .thenReturn(new UObject(wsTuple(1L, "wsname", "username", "date", 7, "n", "n",
+                        "unlocked", Collections.emptyMap())));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
+
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.NEW_VERSION)
+                .withNullableOverwriteExistingData(true)  // overwrite existing data
+                .withNullableisPublic(Boolean.FALSE)
+                .withNullableAccessGroupID(1)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        // since name and isPublic flag are different in the mocked workspace and object, we expect to get back an updated event
+        Assert.assertNotSame("expected different event object", event, updatedEvent);
+        Assert.assertEquals(expectedEvent, updatedEvent);
+    }
+
+    /*
+    Test that a NEW_VERSION object event with the isPublic flag set to false 
+    will be updated setting the isPublic flag to true if the current state of 
+    the associated workspace has the public permission field set to "r".
+
+    This is accomplished by the isPublic logic in WorkspaceEventHandler.updateObjectEvent.
+
+    This test, and the following one, were created to address 
+    https://kbase-jira.atlassian.net/browse/SCT-1203 in which the isPublic flag was 
+    updated incorrectly.
+    */
+    @Test
+    public void newVersionPublicFlagUpdatedFromWorkspaceCase1() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.NEW_VERSION)
+                .withNullableOverwriteExistingData(true)  // overwrite existing data
+                .withNullableisPublic(Boolean.FALSE)
+                .withNullableAccessGroupID(3)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        List<Tuple11<Long, String, String, String,
+                Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
+        objList.add(objTuple(1L, null, "sometype", "date", 1L, "copier",
+                3L, "wsname", "checksum", 44, Collections.emptyMap()));
+
+        when(wscli.administer(any()))
+                // for deleted objects check
+                .thenReturn(new UObject(objList))
+                // for name check
+                .thenReturn(new UObject(new GetObjectInfo3Results().withInfos(objList)))
+                // for isPublic check
+                .thenReturn(new UObject(wsTuple(3L, "wsname", "username", "date", 7, "n", new String("r"),
+                        "unlocked", Collections.emptyMap())));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
+
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.NEW_VERSION)
+                .withNullableOverwriteExistingData(true)  // overwrite existing data
+                .withNullableisPublic(Boolean.TRUE)
+                .withNullableAccessGroupID(3)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        Assert.assertEquals("expected updated event to be the same as original event other than isPublic field being set to TRUE", expectedEvent, updatedEvent);
+    }
+
+    /*
+    This second case sets the event's isPublic field to true, the workspace to "n",
+    and the resulting updated event should be false.
+    This is the inverse of the above test (Case1).
+    */
+    @Test
+    public void newVersionPublicFlagUpdatedFromWorkspaceCase2() throws Exception {
+        final CloneableWorkspaceClient clonecli = mock(CloneableWorkspaceClient.class);
+        final WorkspaceClient cloned = mock(WorkspaceClient.class);
+        final WorkspaceClient wscli = mock(WorkspaceClient.class);
+        when(clonecli.getClientClone()).thenReturn(cloned);
+        when(clonecli.getClient()).thenReturn(wscli);
+
+        StatusEvent event = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.NEW_VERSION)
+                .withNullableOverwriteExistingData(true)  // overwrite existing data
+                .withNullableisPublic(Boolean.TRUE)
+                .withNullableAccessGroupID(3)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+
+        List<Tuple11<Long, String, String, String,
+                Long, String, Long, String, String, Long, Map<String, String>>> objList = new ArrayList<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>>();
+        objList.add(objTuple(1L, null, "sometype", "date", 1L, "copier",
+                3L, "wsname", "checksum", 44, Collections.emptyMap()));
+
+        when(wscli.administer(any()))
+                // for deleted objects check
+                .thenReturn(new UObject(objList))
+                // for name check
+                .thenReturn(new UObject(new GetObjectInfo3Results().withInfos(objList)))
+                // for isPublic check
+                .thenReturn(new UObject(wsTuple(3L, "wsname", "username", "date", 7, "n", new String("n"),
+                        "unlocked", Collections.emptyMap())));
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        StatusEvent updatedEvent = weh.updateObjectEvent(event);
+
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
+                StorageObjectType.fromNullableVersion("WS", "foo", 1),
+                Instant.ofEpochMilli(20000),
+                StatusEventType.NEW_VERSION)
+                .withNullableOverwriteExistingData(true)  // overwrite existing data
+                .withNullableisPublic(Boolean.FALSE)
+                .withNullableAccessGroupID(3)
+                .withNullableObjectID("1")
+                .withNullableVersion(1)
+                .build();
+
+        Assert.assertEquals("expected updated event to be the same as original event other than isPublic field being set to FALSE", expectedEvent, updatedEvent);
+    }
+
+
 }
