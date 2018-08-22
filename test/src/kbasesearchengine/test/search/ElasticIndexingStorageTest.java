@@ -1818,13 +1818,13 @@ public class ElasticIndexingStorageTest {
     @Test
     public void testLastVersionIndexForObjectsWithSubobjects() throws Exception {
         // regular object
-        indexObject("WS:2000/1/2", "WS:2000/1/2", 1);
-        indexObject("WS:2000/1/2", "WS:2000/1/2:sub/yay", 1);
+        indexObject("WS:2000/1/2", "WS:2000/1/2", "ObjectWithSubObject", 1);
+        indexObject("WS:2000/1/2", "WS:2000/1/2:sub/yay", "SubObject", 1);
 
         indexStorage.refreshIndex("*");
 
-        indexObject("WS:2000/1/1", "WS:2000/1/1", 2);
-        indexObject("WS:2000/1/1", "WS:2000/1/1:sub/yay", 2);
+        indexObject("WS:2000/1/1", "WS:2000/1/1", "newObjectWithSubObject", 2);
+        indexObject("WS:2000/1/1", "WS:2000/1/1:sub/yay", "newSubObject", 2);
 
 
         //check that both objects are found
@@ -1838,10 +1838,10 @@ public class ElasticIndexingStorageTest {
 
     }
 
-    public void indexObject(final String pguid, final String guid, final int ver)throws Exception{
+    public void indexObject(final String pguid, final String guid, final String searchObjectType, final int searchObjectTypeVer)throws Exception{
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
-                        new SearchObjectType("ObjectWithSubObject", ver),
+                        new SearchObjectType(searchObjectType, searchObjectTypeVer),
                         new StorageObjectType("foo", "bar"))
                         .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
                                 .build())
