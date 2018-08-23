@@ -29,6 +29,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableList;
+import kbasesearchengine.parse.KeywordParser;
+import kbasesearchengine.search.ObjectData;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
@@ -986,84 +989,113 @@ public class IndexerWorkerTest {
     }
     
     @Test
-    public void guidNotFoundError() throws Exception {
+    public void recursiveProcessingError() throws Exception {
         /* tests the handling of missing guids when indexing an object. */
-        
-        final GUID guid = new GUID("code:1/2/3");
-        final GUID dependencyGUID = new GUID("code:4/5/6");
+
+        final GUID guid = new GUID("WS:1/2/3");
+        final GUID dependencyGUID = new GUID("WS:4/5/6");
         final SearchObjectType dependentType = new SearchObjectType("Assembly", 1);
-        
+
         final Map<String, Object> data = ImmutableMap.of("assy_ref", dependencyGUID.toString());
-        
+
         final EventHandler ws = mock(EventHandler.class);
         final StatusEventStorage storage = mock(StatusEventStorage.class);
         final IndexingStorage idxStore = mock(IndexingStorage.class);
         final TypeStorage typeStore = mock(TypeStorage.class);
         final LineLogger logger = mock(LineLogger.class);
-        
+
         final Path tempDir = Paths.get(TestCommon.getTempDir()).toAbsolutePath()
                 .resolve("IndexerWorkerTest");
         deleteRecursively(tempDir);
-        
-        when(ws.getStorageCode()).thenReturn("code");
-        
+
+        when(ws.getStorageCode()).thenReturn("WS");
+
         final IndexerWorkerConfigurator.Builder wrkCfg = IndexerWorkerConfigurator.getBuilder(
                 "myid", tempDir, logger)
                 .withStorage(storage, typeStore, idxStore)
                 .withEventHandler(ws);
-        
+
         final IndexerWorker worker = new IndexerWorker(wrkCfg.build());
-        
+
         when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, false));
-        
+
         when(ws.load(eq(Arrays.asList(guid)), any(Path.class)))
                 .thenAnswer(new Answer<SourceData>() {
 
-                        @Override
-                        public SourceData answer(final InvocationOnMock inv) throws Throwable {
-                            final Path path = inv.getArgument(1);
-                            new ObjectMapper().writeValue(path.toFile(), data);
-                            return SourceData.getBuilder(
-                                    new UObject(path.toFile()), "myobj", "somedude")
-                                    .withNullableMD5("md5")
-                                    .build();
-                        }
-        });
+                    @Override
+                    public SourceData answer(final InvocationOnMock inv) throws Throwable {
+                        final Path path = inv.getArgument(1);
+                        new ObjectMapper().writeValue(path.toFile(), data);
+                        return SourceData.getBuilder(
+                                new UObject(path.toFile()), "myobj", "somedude")
+                                .withNullableMD5("md5")
+                                .build();
+                    }
+                });
 
-        final StorageObjectType storageObjectType = StorageObjectType
-                .fromNullableVersion("code", "KBaseGenome.Genome", 3);
-        
-        final ObjectTypeParsingRules rule = ObjectTypeParsingRules.getBuilder(
-                new SearchObjectType("foo", 1), storageObjectType)
+        when(ws.load(eq(Arrays.asList(dependencyGUID)), any(Path.class)))
+                .thenAnswer(new Answer<SourceData>() {
+
+                    @Override
+                    public SourceData answer(final InvocationOnMock inv) throws Throwable {
+                        final Path path = inv.getArgument(1);
+                        new ObjectMapper().writeValue(path.toFile(), data);
+                        return SourceData.getBuilder(
+                                new UObject(path.toFile()), "myobj", "somedude")
+                                .withNullableMD5("md5")
+                                .build();
+                    }
+                });
+
+        final StorageObjectType storageObjectTypeGenome = StorageObjectType
+                .fromNullableVersion("WS", "KBaseGenome.Genome", 3);
+
+        final StorageObjectType storageObjectTypeAssemby = StorageObjectType
+                .fromNullableVersion("WS", "KBaseGenome.Assembly", null);
+
+        final ObjectTypeParsingRules ruleGenome = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("Genome", 1), storageObjectTypeGenome)
                 .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("assy_ref"))
                         .withTransform(Transform.guid(dependentType))
                         .build())
                 .build();
-        when(typeStore.listObjectTypeParsingRules(storageObjectType)).thenReturn(set(rule));
-        
+        final ObjectTypeParsingRules ruleAssembly = ObjectTypeParsingRules.getBuilder(
+                new SearchObjectType("Assy", 1), storageObjectTypeAssemby)
+                .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("assy_ref"))
+                        .withTransform(Transform.guid(dependentType))
+                        .build())
+                .build();
+
+        when(typeStore.listObjectTypeParsingRules(storageObjectTypeGenome)).thenReturn(set(ruleGenome));
+        when(typeStore.listObjectTypeParsingRules(storageObjectTypeAssemby)).
+                thenReturn(set(ruleAssembly)).
+                thenReturn(set()).
+                thenReturn(set()).
+                thenReturn(set());
+
         when(typeStore.getObjectTypeParsingRules(dependentType)).thenReturn(
                 ObjectTypeParsingRules.getBuilder(
                         dependentType,
-                        new StorageObjectType("code", "KBaseAssy.Assembly"))
+                        new StorageObjectType("WS", "KBaseGenome.Assembly"))
                         .build());
-        
+
         when(ws.buildReferencePaths(Arrays.asList(guid), set(dependencyGUID)))
-                .thenReturn(ImmutableMap.of(dependencyGUID, "code:1/2/3;code:4/5/6"));
-        
+                .thenReturn(ImmutableMap.of(dependencyGUID, "WS:1/2/3;WS:4/5/6"));
+
         when(ws.resolveReferences(Arrays.asList(guid), set(dependencyGUID)))
                 .thenReturn(set(new ResolvedReference(dependencyGUID, dependencyGUID,
-                        new StorageObjectType("code", "Assembly"), Instant.ofEpochMilli(10000))));
-        
+                        new StorageObjectType("WS", "KBaseGenome.Assembly"), Instant.ofEpochMilli(10000))));
+
         when(idxStore.checkParentGuidsExist(set(dependencyGUID)))
                 .thenReturn(ImmutableMap.of(dependencyGUID, true));
-        
+
         // i.e. checkParentGuidsExist *does not* imply the indexing records exist
         // because it appears that it doesn't because the parent / access document is written
         // before the data documents, so race conditions can cause a problem
         when(idxStore.getObjectsByIds(set(dependencyGUID))).thenReturn(Collections.emptyList());
 
         final ChildStatusEvent event = new ChildStatusEvent(StatusEvent.getBuilder(
-                storageObjectType,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
+                storageObjectTypeGenome,Instant.ofEpochMilli(10000), StatusEventType.NEW_VERSION)
                 .withNullableAccessGroupID(1)
                 .withNullableObjectID("2")
                 .withNullableVersion(3)
@@ -1076,22 +1108,20 @@ public class IndexerWorkerTest {
         final StatusEventProcessingState res = worker.processEvent(event);
 
         assertThat("incorrect state", res, is(StatusEventProcessingState.FAIL));
-        
-        verify(logger).logError("Error processing event for event NEW_VERSION with parent ID " +
-                "pid: kbasesearchengine.events.exceptions." +
-                "UnprocessableEventIndexingException: " +
-                "GUID code:4/5/6 not found");
-        
-        verify(logger).logError(argThat(new ThrowableMatcher(
-                new UnprocessableEventIndexingException(ErrorType.GUID_NOT_FOUND,
-                        "GUID code:4/5/6 not found"))));
-        
+
+        verify(logger).logError("Error processing event for event NEW_VERSION with parent ID pid: " +
+                "kbasesearchengine.events.exceptions.UnprocessableEventIndexingException: " +
+                "During recursive processing of WS:1/2/3, found GUID WS:4/5/6 has type Assembly v1, " +
+                "expected one of [SearchObjectType [type=Assy, version=1]]");
+
+
         verify(idxStore, never()).indexObjects(
                 any(), any(), any(), any(), any(), any(), anyBoolean());
-        
-        verify(storage).store(eq(event), eq("GUID_NOT_FOUND"), argThat(new ThrowableMatcher(
-                new UnprocessableEventIndexingException(ErrorType.GUID_NOT_FOUND,
-                        "GUID code:4/5/6 not found"))));
+
+        verify(storage).store(eq(event), eq("OTHER"), argThat(new ThrowableMatcher(
+                new UnprocessableEventIndexingException(ErrorType.OTHER,
+                        "During recursive processing of WS:1/2/3, found GUID WS:4/5/6 has type Assembly v1, " +
+                                "expected one of [SearchObjectType [type=Assy, version=1]]"))));
     }
     
     @Test

@@ -33,6 +33,7 @@ import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.Appender;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import kbasesearchengine.events.handler.ResolvedReference;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.junit.After;
@@ -112,7 +113,7 @@ public class ElasticIndexingStorageTest {
         objLookup = new ObjectLookupProvider() {
 
             @Override
-            public Set<GUID> resolveRefs(List<GUID> callerRefPath, Set<GUID> refs) {
+            public Set<ResolvedReference> resolveRefs(List<GUID> callerRefPath, Set<GUID> refs) {
                 for (GUID pguid : refs) {
                     try {
                         boolean indexed = indexStorage.checkParentGuidsExist(new LinkedHashSet<>(
@@ -127,11 +128,17 @@ public class ElasticIndexingStorageTest {
                         throw new IllegalStateException(ex);
                     }
                 }
-                return refs;
+
+                Set resrefs = new HashSet();
+                for(GUID ref: refs) {
+                    resrefs.add(new ResolvedReference(ref, ref, new StorageObjectType("WS", "Assembly"), Instant.now()));
+                }
+
+                return resrefs;
             }
 
             @Override
-            public Map<GUID, ObjectData> lookupObjectsByGuid(Set<GUID> guids)
+            public Map<GUID, ObjectData> lookupObjectsByGuid(List<GUID> objectRefPath, Set<GUID> guids)
                     throws FatalIndexingException {
                 List<ObjectData> objList;
                 try {
@@ -155,14 +162,19 @@ public class ElasticIndexingStorageTest {
             }
 
             @Override
-            public Map<GUID, SearchObjectType> getTypesForGuids(Set<GUID> guids)
+            public Map<GUID, List<SearchObjectType>> getTypesForGuids(final List<GUID> objectRefPath, Set<GUID> guids)
                     throws FatalIndexingException {
                 PostProcessing pp = new PostProcessing();
                 pp.objectData = false;
                 pp.objectKeys = false;
                 try {
-                    return indexStorage.getObjectsByIds(guids, pp).stream().collect(
-                            Collectors.toMap(od -> od.getGUID(), od -> od.getType()));
+                    List<ObjectData> odList = indexStorage.getObjectsByIds(guids, pp);
+                    Map<GUID, List<SearchObjectType>> map = new HashMap<>();
+                    for(ObjectData od: odList) {
+                        map.put(od.getGUID(), ImmutableList.of(od.getType()));
+                    }
+
+                    return map;
                 } catch (IOException e) {
                     throw new FatalIndexingException(ErrorType.OTHER, e.getMessage(), e);
                 }
@@ -703,7 +715,7 @@ public class ElasticIndexingStorageTest {
 
         // list exceeding max size
         List<String> objectTypes = new ArrayList<>();
-        for(int ii=0; ii< ElasticIndexingStorage.MAX_OBJECT_TYPES_SIZE+1; ii++) {
+        for (int ii=0; ii< ElasticIndexingStorage.MAX_OBJECT_TYPES_SIZE+1; ii++) {
             objectTypes.add("Narrative");
         }
 
@@ -1622,7 +1634,7 @@ public class ElasticIndexingStorageTest {
         List<ObjectData> objIdsData = indexStorage.getObjectsByIds(guids, pp);
         Map<String, List<String>> result2 = new HashMap<>();
         result2.put("guid", Arrays.asList("<em>WS:11/1/2</em>"));
-        for(ObjectData obj: objIdsData) {
+        for (ObjectData obj: objIdsData) {
             Map<String, List<String>> res = obj.getHighlight();
             assertThat("Incorrect highlighting", res, is(result2));
         }

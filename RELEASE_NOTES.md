@@ -3,8 +3,13 @@ Search Service MKII release notes
 
 0.2.2-dev1
 -----
+
+* Removed recursive indexing to prevent race conditions during indexing (this change
+   has no impact on existing indexes).
+
 * Changed search_objects and search_types to optionally require auth. Unauthorized calls will only
 see results from public data. Will throw exception if with_public and with_private are both false.
+
 
 0.2.1
 -----
@@ -17,6 +22,7 @@ see results from public data. Will throw exception if with_public and with_priva
 
 * In KBaseSearchEngine.spec, moved the flags addNarrativeInfo and addAccessGroupInfo
   from match filter parameter to the postprocessing parameter provided to the search API.
+
 
 0.1.3
 -----

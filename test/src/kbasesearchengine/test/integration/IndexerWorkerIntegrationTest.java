@@ -210,6 +210,7 @@ public class IndexerWorkerIntegrationTest {
         loadData(wc, wsid, "Genome", "KBaseGenomes.Genome-1.0", "GenomeObject");
         loadData(wc, wsid, "Paired", "KBaseFile.PairedEndLibrary-1.0", "PairedEndLibraryObject");
         loadData(wc, wsid, "reads.2", "KBaseFile.SingleEndLibrary-1.0", "SingleEndLibraryObject");
+        loadData(wc, wsid, "FBAMod", "KBaseFBA.FBAModel", "FBAModel01");
         return wsid;
     }
     
@@ -223,6 +224,8 @@ public class IndexerWorkerIntegrationTest {
         loadType(wc, "KBaseGenomes", "KBaseGenomes_ci_1482357978770", Arrays.asList("Genome"));
         loadType(wc, "KBaseNarrative", "KBaseNarrative_ci_1436483557716",
                 Arrays.asList("Narrative"));
+        loadType(wc, "KBaseFBA", "KBaseFBA",
+                Arrays.asList("FBAModel"));
     }
 
     private static void loadData(
@@ -287,6 +290,7 @@ public class IndexerWorkerIntegrationTest {
     @Before
     public void init() throws Exception {
         TestCommon.destroyDB(db);
+        storage.dropData();
     }
     
     @Test
@@ -304,32 +308,142 @@ public class IndexerWorkerIntegrationTest {
                 StatusEventProcessingState.UNPROC)
                 .build();
         worker.processEvent(ev);
-        PostProcessing pp = new PostProcessing();
+
+        final PostProcessing pp = new PostProcessing();
         pp.objectData = true;
         pp.objectKeys = true;
 
-        List<String> objectTypes = ImmutableList.of("Genome");
+        {
+            final List<String> objectTypes = ImmutableList.of("Genome");
+            final FoundHits hits = storage.searchObjects(objectTypes,
+                    MatchFilter.getBuilder().build(), null,
+                    AccessFilter.create().withAdmin(true), null, pp
+            );
+            // main/parent object is indexed
+            Assert.assertEquals("expected 1 genome", 1, hits.guids.size());
+        }
 
-        System.out.println("Genome: " + storage.getObjectsByIds(
-                storage.searchIds(objectTypes,
-                        MatchFilter.getBuilder().withNullableFullTextInAll("test").build(), null, 
-                        AccessFilter.create().withAdmin(true), null).guids, pp).get(0));
-        String query = "TrkA";
-        Map<String, Integer> typeToCount = storage.searchTypes(
+        {
+            final List<String> objectTypes = ImmutableList.of("GenomeFeature");
+            final FoundHits hits = storage.searchObjects(objectTypes,
+                    MatchFilter.getBuilder().build(), null,
+                    AccessFilter.create().withAdmin(true), null, pp
+                    );
+            // sub-objects are indexed
+            Assert.assertEquals("expected 30 genome features", 30, hits.guids.size());
+        }
+
+        {
+            final List<String> objectTypes = ImmutableList.of("Assembly");
+            String message = "Exception check failed!";
+            try {
+                storage.searchObjects(objectTypes,
+                        MatchFilter.getBuilder().build(), null,
+                        AccessFilter.create().withAdmin(true), null, pp
+                );
+            } catch(IOException ex) {
+                message = ex.getMessage();
+            } finally {
+                // referenced objects are not recursively indexed
+                Assert.assertEquals("not the expected error message",
+                        "No indexes exist for search type Assembly",
+                        message);
+            }
+        }
+
+        {
+            List<String> objectTypes = ImmutableList.of("AssemblyContig");
+            String message = "Exception check failed!";
+            try {
+                storage.searchObjects(objectTypes,
+                        MatchFilter.getBuilder().build(), null,
+                        AccessFilter.create().withAdmin(true), null, pp
+                );
+            } catch(IOException ex) {
+                message = ex.getMessage();
+            } finally {
+                // referenced objects are not recursively indexed
+                Assert.assertEquals("not the expected error message",
+                        "No indexes exist for search type AssemblyContig",
+                        message);
+            }
+        }
+
+        // verify a feature
+        final String query = "TrkA";
+        final Map<String, Integer> typeToCount = storage.searchTypes(
                 MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), 
                 AccessFilter.create().withAdmin(true));
-        System.out.println("Counts per type: " + typeToCount);
-        if (typeToCount.size() == 0) {
-            return;
-        }
-        List<String> types = ImmutableList.of(typeToCount.keySet().iterator().next());
+        Assert.assertEquals("expected 1 type (GenomeFeature)", 1, typeToCount.size());
 
-        Set<GUID> guids = storage.searchIds(types,
+        final List<String> types = ImmutableList.of(typeToCount.keySet().iterator().next());
+
+        final Set<GUID> guids = storage.searchIds(types,
                 MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), null, 
                 AccessFilter.create().withAdmin(true), null).guids;
-        System.out.println("GUIDs found: " + guids);
-        ObjectData obj = storage.getObjectsByIds(guids, pp).get(0);
-        System.out.println("Feature: " + obj);
+        Assert.assertEquals("expected 1 guid", 1, guids.size());
+        final ObjectData obj = storage.getObjectsByIds(guids, pp).get(0);
+        Assert.assertEquals("wrong feature id", "PROKKA_00027", obj.getGUID().getSubObjectId());
+    }
+
+
+    @Test
+    public void testFBAModelManually() throws Exception {
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                new StorageObjectType("WS", "KBaseFBA.FBAModel"),
+                Instant.now(),
+                StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID(wsid)
+                        .withNullableObjectID("6")
+                        .withNullableVersion(1)
+                        .withNullableisPublic(false)
+                        .build(),
+                new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC)
+                .build();
+        worker.processEvent(ev);
+
+        final PostProcessing pp = new PostProcessing();
+        pp.objectData = true;
+        pp.objectKeys = true;
+
+        // verify that the referenced genome object was not recursively indexed
+        {
+            final List<String> objectTypes = ImmutableList.of("Genome");
+            String message = "Exception check failed!";
+            try {
+                storage.searchObjects(objectTypes,
+                        MatchFilter.getBuilder().build(), null,
+                        AccessFilter.create().withAdmin(true), null, pp
+                );
+            } catch(IOException ex) {
+                message = ex.getMessage();
+            } finally {
+                Assert.assertEquals("not the expected error message",
+                        "No indexes exist for search type Genome",
+                        message);
+            }
+        }
+
+        {
+            final List<String> objectTypes = ImmutableList.of("FBAModel");
+            final FoundHits hits = storage.searchObjects(objectTypes,
+                    MatchFilter.getBuilder().build(), null,
+                    AccessFilter.create().withAdmin(true), null, pp
+            );
+            // main/parent object is indexed
+            Assert.assertEquals("expected 1 FBAModel", 1, hits.guids.size());
+
+            final ObjectData data = hits.objects.get(0);
+
+            // verify that lookup transforms recursively obtained genome data from data source
+            Assert.assertEquals("expected scientific_name", "test",
+                    data.getKeyProperties().get("scientific_name"));
+            Assert.assertEquals("expected taxonomy", "",
+                    data.getKeyProperties().get("taxonomy"));
+            Assert.assertEquals("expected genome_name", "Unknown",
+                    data.getKeyProperties().get("genome_name"));
+        }
     }
 
     private void indexFewVersions(final StoredStatusEvent evid) throws Exception {
@@ -350,7 +464,7 @@ public class IndexerWorkerIntegrationTest {
             worker.processEvent(ev2);
         }
     }
-    
+
     private void checkSearch(
             final int expectedCount,
             final List<String> types,
@@ -358,11 +472,11 @@ public class IndexerWorkerIntegrationTest {
             final int accessGroupId,
             final boolean debugOutput)
             throws Exception {
-        Set<GUID> ids = storage.searchIds(types,
-                MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), null, 
+        final Set<GUID> ids = storage.searchIds(types,
+                MatchFilter.getBuilder().withNullableFullTextInAll(query).build(), null,
                 AccessFilter.create().withAccessGroups(accessGroupId), null).guids;
         if (debugOutput) {
-            PostProcessing pp = new PostProcessing();
+            final PostProcessing pp = new PostProcessing();
             pp.objectData = true;
             pp.objectKeys = true;
             System.out.println("DEBUG: " + storage.getObjectsByIds(ids, pp));

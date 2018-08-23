@@ -95,6 +95,13 @@ public class GUID {
     public String getSubObjectId() {
         return subObjectId;
     }
+
+    public GUID getParentGUID() {
+        return new GUID(getStorageCode(),
+                getAccessGroupId(),
+                getAccessGroupObjectId(),
+                getVersion(), null, null);
+    }
     
     public static GUID fromRef(final String storageCode, final String ref) {
         Utils.notNullOrEmpty(storageCode, "storageCode cannot be null or empty");

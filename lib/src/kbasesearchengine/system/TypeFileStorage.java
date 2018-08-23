@@ -283,15 +283,23 @@ public class TypeFileStorage implements TypeStorage {
     @Override
     public Set<ObjectTypeParsingRules> listObjectTypeParsingRules(
             final StorageObjectType storageObjectType) {
-        final TypeMapping mapping = storageTypes.get(new CodeAndType(storageObjectType));
-        if (mapping == null) {
-            return Collections.emptySet();
-        }
-        final Set<SearchObjectType> types = mapping.getSearchTypes(storageObjectType.getVersion());
+
+        final Set<SearchObjectType> types = getSearchObjectType(storageObjectType);
+
         final Set<ObjectTypeParsingRules> ret = new HashSet<>();
         for (final SearchObjectType t: types) {
             ret.add(searchTypes.get(t.getType()).get(t.getVersion() - 1));
         }
         return ret;
+    }
+
+    @Override
+    public Set<SearchObjectType> getSearchObjectType(StorageObjectType type) {
+        final TypeMapping mapping = storageTypes.get(new CodeAndType(type));
+        if (mapping == null) {
+            return Collections.emptySet();
+        }
+
+        return mapping.getSearchTypes(type.getVersion());
     }
 }

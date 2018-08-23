@@ -35,4 +35,12 @@ public interface TypeStorage {
      * available for the type.
      */
     Set<ObjectTypeParsingRules> listObjectTypeParsingRules(StorageObjectType storageObjectType);
+
+    /** Get the set of SearchObjectTypes that correspond to the specified StorageObjectType.
+     * If not SearchObjectTypes were found, an empty set is returned.
+     *
+     * @param type storage object type
+     * @return set of search object types or an empty set
+     */
+    Set<SearchObjectType> getSearchObjectType(StorageObjectType type);
 }
