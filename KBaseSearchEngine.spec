@@ -261,6 +261,8 @@ module KBaseSearchEngine {
           pagination and sorting.
       total - total number of found objects.
       search_time - common time in milliseconds spent.
+      list<GUID> removedGuids - list of result GUIDs that are inaccessible or deleted in the workspace but have
+          not been updated in search
       mapping<access_group_id, narrative_info> access_group_narrative_info - information about
          the workspaces in which the objects in the results reside. This data only applies to
          workspace objects.
@@ -280,6 +282,7 @@ module KBaseSearchEngine {
         list<ObjectData> objects;
         int total;
         int search_time;
+        list<GUID> removedGuids;
         mapping<access_group_id, narrative_info> access_group_narrative_info;
         mapping<access_group_id, access_group_info> access_groups_info;
         mapping<obj_ref, object_info> objects_info;
@@ -305,7 +308,8 @@ module KBaseSearchEngine {
 
     /*
       Output results of get_objects method.
-      
+      list<GUID> removedGuids - list of result GUIDs that are inaccessible or deleted in the workspace but have
+          not been updated in search
       mapping<access_group_id, narrative_info> access_group_narrative_info - information about
          the workspaces in which the objects in the results reside. This data only applies to
          workspace objects.
@@ -322,6 +326,7 @@ module KBaseSearchEngine {
     typedef structure {
         list<ObjectData> objects;
         int search_time;
+        list<GUID> removedGuids;
         mapping<access_group_id, narrative_info> access_group_narrative_info;
         mapping<access_group_id, access_group_info> access_groups_info;
         mapping<obj_ref, Workspace.object_info> objects_info;

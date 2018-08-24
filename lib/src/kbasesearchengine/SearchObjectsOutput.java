@@ -23,6 +23,8 @@ import us.kbase.common.service.Tuple9;
  *     pagination and sorting.
  * total - total number of found objects.
  * search_time - common time in milliseconds spent.
+ * list<GUID> removedGuids - list of result GUIDs that are inaccessible or deleted in the workspace but have
+ *     not been updated in search
  * mapping<access_group_id, narrative_info> access_group_narrative_info - information about
  *    the workspaces in which the objects in the results reside. This data only applies to
  *    workspace objects.
@@ -46,6 +48,7 @@ import us.kbase.common.service.Tuple9;
     "objects",
     "total",
     "search_time",
+    "removedGuids",
     "access_group_narrative_info",
     "access_groups_info",
     "objects_info"
@@ -69,6 +72,8 @@ public class SearchObjectsOutput {
     private java.lang.Long total;
     @JsonProperty("search_time")
     private java.lang.Long searchTime;
+    @JsonProperty("removedGuids")
+    private List<String> removedGuids;
     @JsonProperty("access_group_narrative_info")
     private Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrativeInfo;
     @JsonProperty("access_groups_info")
@@ -166,6 +171,21 @@ public class SearchObjectsOutput {
         return this;
     }
 
+    @JsonProperty("removedGuids")
+    public List<String> getRemovedGuids() {
+        return removedGuids;
+    }
+
+    @JsonProperty("removedGuids")
+    public void setRemovedGuids(List<String> removedGuids) {
+        this.removedGuids = removedGuids;
+    }
+
+    public SearchObjectsOutput withRemovedGuids(List<String> removedGuids) {
+        this.removedGuids = removedGuids;
+        return this;
+    }
+
     @JsonProperty("access_group_narrative_info")
     public Map<Long, Tuple5 <String, Long, Long, String, String>> getAccessGroupNarrativeInfo() {
         return accessGroupNarrativeInfo;
@@ -223,7 +243,7 @@ public class SearchObjectsOutput {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((((("SearchObjectsOutput"+" [pagination=")+ pagination)+", sortingRules=")+ sortingRules)+", objects=")+ objects)+", total=")+ total)+", searchTime=")+ searchTime)+", accessGroupNarrativeInfo=")+ accessGroupNarrativeInfo)+", accessGroupsInfo=")+ accessGroupsInfo)+", objectsInfo=")+ objectsInfo)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((((("SearchObjectsOutput"+" [pagination=")+ pagination)+", sortingRules=")+ sortingRules)+", objects=")+ objects)+", total=")+ total)+", searchTime=")+ searchTime)+", removedGuids=")+ removedGuids)+", accessGroupNarrativeInfo=")+ accessGroupNarrativeInfo)+", accessGroupsInfo=")+ accessGroupsInfo)+", objectsInfo=")+ objectsInfo)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

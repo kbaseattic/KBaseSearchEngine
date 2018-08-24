@@ -124,12 +124,12 @@ public class NarrativeInfoDecoratorTest {
         final SearchObjectsInput dummyInput = new SearchObjectsInput()
                 .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L));
 
-        final List<ObjectData> objectdata = Arrays.asList(
+        final List<ObjectData> objectdata = new ArrayList<>(Arrays.asList(
                 new ObjectData().withGuid("WS:65/2/7"),
                 new ObjectData().withGuid("WS:42/7/21"),
                 new ObjectData().withGuid("WS:1/61/1"),
                 new ObjectData().withGuid("FS:6/22/3"), // expect skip
-                new ObjectData().withGuid("WS:2/345/1000"));
+                new ObjectData().withGuid("WS:2/345/1000")));
         when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
                 .withObjects(objectdata)
                 .withAccessGroupNarrativeInfo(null));
@@ -184,9 +184,9 @@ public class NarrativeInfoDecoratorTest {
         final SearchObjectsInput dummyInput = new SearchObjectsInput()
                 .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L));
 
-        final List<ObjectData> objectdata = Arrays.asList(
+        final List<ObjectData> objectdata = new ArrayList<>(Arrays.asList(
                 new ObjectData().withGuid("WS:65/2/7"),
-                new ObjectData().withGuid("WS:2/345/1000"));
+                new ObjectData().withGuid("WS:2/345/1000")));
         when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
                 .withObjects(objectdata)
                 .withAccessGroupNarrativeInfo(ImmutableMap.of(
@@ -241,9 +241,9 @@ public class NarrativeInfoDecoratorTest {
         when(aip.findUserDisplayNames(set("owner4"))).thenReturn(ImmutableMap.of(
                 "owner4", "Fred"));
 
-        final List<ObjectData> objectdata = Arrays.asList(
+        final List<ObjectData> objectdata = new ArrayList<>(Arrays.asList(
                 new ObjectData().withGuid("WS:65/2/7"),
-                new ObjectData().withGuid("WS:42/1/1"));
+                new ObjectData().withGuid("WS:42/1/1")));
         when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
                 .withObjects(objectdata));
 
@@ -279,9 +279,9 @@ public class NarrativeInfoDecoratorTest {
         when(aip.findUserDisplayNames(set("owner4"))).thenThrow(new Auth2Exception(
                 "Failed retrieving auth info"));
 
-        final List<ObjectData> objectdata = Arrays.asList(
+        final List<ObjectData> objectdata = new ArrayList<>(Arrays.asList(
                 new ObjectData().withGuid("WS:35/2/7"),
-                new ObjectData().withGuid("WS:12/2/7"));
+                new ObjectData().withGuid("WS:12/2/7")));
 
         when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
                 .withObjects(objectdata));
@@ -309,7 +309,7 @@ public class NarrativeInfoDecoratorTest {
         final GetObjectsInput dummyInput = new GetObjectsInput()
                 .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L));
 
-        final List<ObjectData> objectdata = Arrays.asList(new ObjectData().withGuid("WS:42/7/21"));
+        final List<ObjectData> objectdata = new ArrayList<>(Arrays.asList(new ObjectData().withGuid("WS:42/7/21")));
         when(search.getObjects(dummyInput, "user")).thenReturn(new GetObjectsOutput()
                 .withObjects(objectdata)
                 .withAccessGroupNarrativeInfo(null));
@@ -384,7 +384,6 @@ public class NarrativeInfoDecoratorTest {
                 .withPagination(pag);
 
         final ArrayList<ObjectData> expectedObjs = new ArrayList<>();
-        expectedObjs.add(null);
         expectedObjs.add(new ObjectData().withGuid("WS:4/1/7").withCreator("user"));
         expectedObjs.add(new ObjectData().withGuid("WS:4/2/1").withCreator("user"));
 
@@ -392,6 +391,7 @@ public class NarrativeInfoDecoratorTest {
 
         compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
         compare( res.getAccessGroupNarrativeInfo().get(4L), narrInfoTuple("test", 1L, 1L, "user", null));
+        assertThat("incorrect guid removed", res.getRemovedGuids().get(0), is("WS:3/5/6"));
         assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
 
 

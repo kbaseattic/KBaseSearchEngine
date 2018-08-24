@@ -1,8 +1,10 @@
 package kbasesearchengine.main;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -81,12 +83,16 @@ public class NarrativeInfoDecorator implements SearchInterface {
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
         SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
+        if(searchObjsOutput.getRemovedGuids() == null){
+            searchObjsOutput.setRemovedGuids(new ArrayList<>());
+        }
         if (params.getPostProcessing() != null) {
             if (params.getPostProcessing().getAddNarrativeInfo() != null &&
                     params.getPostProcessing().getAddNarrativeInfo() == 1) {
                 searchObjsOutput = searchObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
                         searchObjsOutput.getObjects(),
-                        searchObjsOutput.getAccessGroupNarrativeInfo()));
+                        searchObjsOutput.getAccessGroupNarrativeInfo(),
+                        searchObjsOutput.getRemovedGuids()));
             }
         }
         return searchObjsOutput;
@@ -101,15 +107,25 @@ public class NarrativeInfoDecorator implements SearchInterface {
                     params.getPostProcessing().getAddNarrativeInfo() == 1) {
                 getObjsOutput = getObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
                         getObjsOutput.getObjects(),
-                        getObjsOutput.getAccessGroupNarrativeInfo()));
+                        getObjsOutput.getAccessGroupNarrativeInfo(),
+                        getObjsOutput.getRemovedGuids()));
             }
         }
         return getObjsOutput;
     }
 
+    /**
+     * Adds narrative information for non deleted and valid narrative workspaces. Removes results otherwise and
+     * add the removed result's guid to removedGuids list.
+     * @param objects
+     * @param accessGroupNarrInfo
+     * @param removedGuids
+     * @return
+     */
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(
             final List<ObjectData> objects,
-            final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo) {
+            final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo,
+            final List<String> removedGuids) {
 
         final Map<Long, Tuple5 <String, Long, Long, String, String>> retVal = new HashMap<>();
 
@@ -117,9 +133,9 @@ public class NarrativeInfoDecorator implements SearchInterface {
             retVal.putAll(accessGroupNarrInfo);
         }
         final Set<String> userNames = new HashSet<>();
-
-        for (int i =0; i<objects.size(); i++) {
-            final ObjectData objData = objects.get(i);
+        final Iterator<ObjectData> iter = objects.iterator();
+        while(iter.hasNext()) {
+            final ObjectData objData = iter.next();
             final GUID guid = new GUID(objData.getGuid());
             if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
                 final long workspaceId = guid.getAccessGroupId();
@@ -136,11 +152,17 @@ public class NarrativeInfoDecorator implements SearchInterface {
                     retVal.put(workspaceId, tempNarrInfo);
                 }
                 else {
-                    objects.set(i, null);
+                    iter.remove();
+                    removedGuids.add(objData.getGuid());
                     retVal.put(workspaceId, null);
                 }
+            //if workspace is not a narrative, remove results from search
+            } else{
+                iter.remove();
+                removedGuids.add(objData.getGuid());
             }
         }
+
         try {
             final Map<String, String> displayNames = authInfoProvider.findUserDisplayNames(userNames);
             // e5 is the full / display name, e4 is the user name

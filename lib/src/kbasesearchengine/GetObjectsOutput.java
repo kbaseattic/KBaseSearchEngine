@@ -19,6 +19,8 @@ import us.kbase.common.service.Tuple9;
  * <p>Original spec-file type: GetObjectsOutput</p>
  * <pre>
  * Output results of get_objects method.
+ * list<GUID> removedGuids - list of result GUIDs that are inaccessible or deleted in the workspace but have
+ *     not been updated in search
  * mapping<access_group_id, narrative_info> access_group_narrative_info - information about
  *    the workspaces in which the objects in the results reside. This data only applies to
  *    workspace objects.
@@ -39,6 +41,7 @@ import us.kbase.common.service.Tuple9;
 @JsonPropertyOrder({
     "objects",
     "search_time",
+    "removedGuids",
     "access_group_narrative_info",
     "access_groups_info",
     "objects_info"
@@ -49,6 +52,8 @@ public class GetObjectsOutput {
     private List<ObjectData> objects;
     @JsonProperty("search_time")
     private java.lang.Long searchTime;
+    @JsonProperty("removedGuids")
+    private List<String> removedGuids;
     @JsonProperty("access_group_narrative_info")
     private Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrativeInfo;
     @JsonProperty("access_groups_info")
@@ -84,6 +89,21 @@ public class GetObjectsOutput {
 
     public GetObjectsOutput withSearchTime(java.lang.Long searchTime) {
         this.searchTime = searchTime;
+        return this;
+    }
+
+    @JsonProperty("removedGuids")
+    public List<String> getRemovedGuids() {
+        return removedGuids;
+    }
+
+    @JsonProperty("removedGuids")
+    public void setRemovedGuids(List<String> removedGuids) {
+        this.removedGuids = removedGuids;
+    }
+
+    public GetObjectsOutput withRemovedGuids(List<String> removedGuids) {
+        this.removedGuids = removedGuids;
         return this;
     }
 
@@ -144,7 +164,7 @@ public class GetObjectsOutput {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((("GetObjectsOutput"+" [objects=")+ objects)+", searchTime=")+ searchTime)+", accessGroupNarrativeInfo=")+ accessGroupNarrativeInfo)+", accessGroupsInfo=")+ accessGroupsInfo)+", objectsInfo=")+ objectsInfo)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((("GetObjectsOutput"+" [objects=")+ objects)+", searchTime=")+ searchTime)+", removedGuids=")+ removedGuids)+", accessGroupNarrativeInfo=")+ accessGroupNarrativeInfo)+", accessGroupsInfo=")+ accessGroupsInfo)+", objectsInfo=")+ objectsInfo)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

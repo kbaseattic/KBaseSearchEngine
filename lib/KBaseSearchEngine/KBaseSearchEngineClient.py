@@ -214,9 +214,10 @@ class KBaseSearchEngine(object):
         :returns: instance of type "SearchObjectsOutput" (Output results for
            'search_objects' method. 'pagination' and 'sorting_rules' fields
            show actual input for pagination and sorting. total - total number
-           of found objects. total_in_page - total number of objects looked
-           at to get one page of results. search_time - common time in
-           milliseconds spent. mapping<access_group_id, narrative_info>
+           of found objects. search_time - common time in milliseconds spent.
+           list<GUID> removedGuids - list of result GUIDs that are
+           inaccessible or deleted in the workspace but have not been updated
+           in search mapping<access_group_id, narrative_info>
            access_group_narrative_info - information about the workspaces in
            which the objects in the results reside. This data only applies to
            workspace objects. mapping<access_group_id, access_group_info>
@@ -286,9 +287,11 @@ class KBaseSearchEngine(object):
            "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "highlight" of mapping from String to list of
-           String, parameter "total" of Long, parameter "total_in_page" of
-           Long, parameter "search_time" of Long, parameter
-           "access_group_narrative_info" of mapping from type
+           String, parameter "total" of Long, parameter "search_time" of
+           Long, parameter "removedGuids" of list of type "GUID" (Global user
+           identificator. It has structure like this:
+           <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
+           parameter "access_group_narrative_info" of mapping from type
            "access_group_id" (A data source access group ID (for instance,
            the integer ID of a workspace).) to type "narrative_info"
            (Information about a workspace, which may or may not contain a
@@ -477,7 +480,9 @@ class KBaseSearchEngine(object):
            "source_tags_blacklist" of type "boolean" (A boolean. 0 = false,
            other = true.)
         :returns: instance of type "GetObjectsOutput" (Output results of
-           get_objects method. mapping<access_group_id, narrative_info>
+           get_objects method. list<GUID> removedGuids - list of result GUIDs
+           that are inaccessible or deleted in the workspace but have not
+           been updated in search mapping<access_group_id, narrative_info>
            access_group_narrative_info - information about the workspaces in
            which the objects in the results reside. This data only applies to
            workspace objects. mapping<access_group_id, access_group_info>
@@ -534,8 +539,11 @@ class KBaseSearchEngine(object):
            "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "highlight" of mapping from String to list of
-           String, parameter "search_time" of Long, parameter
-           "access_group_narrative_info" of mapping from type
+           String, parameter "search_time" of Long, parameter "removedGuids"
+           of list of type "GUID" (Global user identificator. It has
+           structure like this:
+           <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
+           parameter "access_group_narrative_info" of mapping from type
            "access_group_id" (A data source access group ID (for instance,
            the integer ID of a workspace).) to type "narrative_info"
            (Information about a workspace, which may or may not contain a
