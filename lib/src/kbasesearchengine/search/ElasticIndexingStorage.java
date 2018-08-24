@@ -350,7 +350,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         File tempFile = File.createTempFile("es_bulk_", ".json", tempDir);
         try {
             PrintWriter pw = new PrintWriter(tempFile);
-            int lastVersion = loadLastVersion(indexName, pguid, pguid.getVersion());
+            int lastVersion = loadLastVersion(pguid, pguid.getVersion());
             final String esParentId = checkParentDoc(indexName, new LinkedHashSet<>(
                     Arrays.asList(pguid)), isPublic, lastVersion).get(pguid);
             if (idToObjCopy.isEmpty()) {
@@ -378,7 +378,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
             verify(response);
 
-            updateLastVersionsInData(indexName, pguid, lastVersion);
+            updateLastVersionsInData(pguid, lastVersion);
         } finally {
             tempFile.delete();
         }
@@ -592,10 +592,10 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 Collectors.toMap(Function.identity(), guid -> map.containsKey(guid))));
     }
 
-    private Integer loadLastVersion(String reqIndexName, GUID parentGUID, 
+    private Integer loadLastVersion(GUID parentGUID,
             Integer processedVersion) throws IOException {
 
-        reqIndexName = getGeneralIndexName(reqIndexName);
+        final String reqIndexName = "*";
 
         String prefix = toGUIDPrefix(parentGUID);
 
@@ -644,17 +644,16 @@ public class ElasticIndexingStorage implements IndexingStorage {
      * The search in step 2 requires the refresh on every bulk indexing and update operation,
      * else we get the version conflict exceptions.
      *
-      * @param indexName
      * @param parentGUID
      * @param lastVersion
      * @return
      * @throws IOException
      * @throws IndexingConflictException
      */
-    private int updateLastVersionsInData(String indexName, GUID parentGUID,
+    private int updateLastVersionsInData(GUID parentGUID,
             int lastVersion) throws IOException, IndexingConflictException {
 
-        indexName = getGeneralIndexName(indexName);
+        final String indexName = "*";
 
         // query = {"bool": {"filter": [{"term": {"prefix": prefix}}]}}
         Map<String, Object> query = ImmutableMap.of("bool",
@@ -681,6 +680,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         String urlPath = "/" + indexName + "/" + getDataTableName() + "/_update_by_query?refresh=wait_for";
         Response resp = makeRequest("POST", urlPath, doc);
         @SuppressWarnings("unchecked")
+
         Map<String, Object> data = UObject.getMapper().readValue(
                 resp.getEntity().getContent(), Map.class);
         return (Integer)data.get("updated");
@@ -1002,7 +1002,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     @Override
     public void deleteAllVersions(final GUID guid) throws IOException, IndexingConflictException {
         // could optimize later by making LLV return the index name
-        final Integer ver = loadLastVersion(null, guid, null);
+        final Integer ver = loadLastVersion(guid, null);
         if (ver == null) {
             //TODO NOW throw exception? means a delete event occurred when there were no objects
             return;
@@ -1025,12 +1025,12 @@ public class ElasticIndexingStorage implements IndexingStorage {
     public void undeleteAllVersions(final GUID guid)
             throws IOException, IndexingConflictException {
         // could optimize later by making LLV return the index name
-        final Integer ver = loadLastVersion(null, guid, null);
+        final Integer ver = loadLastVersion(guid, null);
         if (ver == null) {
             //TODO NOW throw exception? means an undelete event occurred when there were no objects
             return;
         }
-        updateLastVersionsInData(null, guid, ver);
+        updateLastVersionsInData(guid, ver);
         updateAccessGroupForVersions(null, guid, ver, guid.getAccessGroupId(), false, true);
         // TODO NOW remove deleted flag from delete all versions
         
