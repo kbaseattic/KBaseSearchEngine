@@ -595,7 +595,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private Integer loadLastVersion(GUID parentGUID,
             Integer processedVersion) throws IOException {
 
-        final String reqIndexName = "*";
+        final String reqIndexName = getAnyIndexPattern();
 
         String prefix = toGUIDPrefix(parentGUID);
 
@@ -653,7 +653,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
     private int updateLastVersionsInData(GUID parentGUID,
             int lastVersion) throws IOException, IndexingConflictException {
 
-        final String indexName = "*";
+        final String indexName = getAnyIndexPattern();
 
         // query = {"bool": {"filter": [{"term": {"prefix": prefix}}]}}
         Map<String, Object> query = ImmutableMap.of("bool",
