@@ -12,6 +12,11 @@ Search Service MKII release notes
 
 * In KBaseSearchEngine.spec, moved the flags addNarrativeInfo and addAccessGroupInfo
   from match filter parameter to the postprocessing parameter provided to the search API.
+  
+* If index records for corresponding events already exist in the system, the events are ignored.
+  The new CLI option `overwriteExistingData` is added to overwrite existing index records. When 
+  generating events, tag events to overwrite the corresponding records in the indexes if these
+  records already exist. Default value is false.
 
 0.1.3
 -----
