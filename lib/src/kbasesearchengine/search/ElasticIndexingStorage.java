@@ -174,12 +174,46 @@ public class ElasticIndexingStorage implements IndexingStorage {
      */
     public static final int MAX_OBJECT_TYPES_SIZE = 50;
 
+    /**
+     * Constructor for the Elasticsearch implementation of IndexingStorage.
+     * 
+     * @param esHost          http host for the Elasticsearch server; the scheme (protocol), 
+     *    hostname, and port.
+     * @param tempDir         directory into which temporary files may be created by instances
+     *    of this storage class. A temporary file is used to contain ES documents as part of 
+     *    the indexing process. Any temporary files created in this directory should be 
+     *    removed after the indexing operation.
+     * @return                an Elasticsearch indexing storage object.
+     * @see                   IndexingStorage
+     * @throws IOException
+     */
     public ElasticIndexingStorage(HttpHost esHost, File tempDir) throws IOException {
         this.esHost = esHost;
         this.indexNamePrefix = "";
         this.tempDir = tempDir;
     }
 
+
+    /**
+     * Constructor for the Elasticsearch implementation of IndexingStorage. This constructor 
+     * should only be used for testing. It allows overriding of the aggregation size, which
+     * is useful for testing or debugging, but ordinariliy the default value set for 
+     * searchTypesAggregationSize should be used
+     * 
+     * @param esHost          http host for the Elasticsearch server; the scheme (protocol), 
+     *    hostname, and port.
+     * @param tempDir         directory into which temporary files may be created by instances
+     *    of this storage class. A temporary file is used to contain ES documents as part of 
+     *    the indexing process. Any temporary files created in this directory should be 
+     *    removed after the indexing operation.
+     * @param aggregationSize overrides the instance variable "searchTypesAggregationSize". This
+     *    controls the maximum number of buckets returned for for the aggregation query
+     *    conducted by searchTypes. Useful for testing because the default value of 1000
+     *    would be very difficult to perform boundary testing on. If null, the default value is used.
+     * @return                an Elasticsearch indexing storage object.
+     * @see                   IndexingStorage
+     * @throws IOException
+     */
     public ElasticIndexingStorage(HttpHost esHost, File tempDir, Integer aggregationSize) throws IOException {
         this.esHost = esHost;
         this.indexNamePrefix = "";
