@@ -184,7 +184,9 @@ public class ElasticIndexingStorage implements IndexingStorage {
         this.esHost = esHost;
         this.indexNamePrefix = "";
         this.tempDir = tempDir;
-        this.searchTypesAggregationSize = aggregationSize;
+        if (aggregationSize != null) {
+            this.searchTypesAggregationSize = aggregationSize;
+        }
     }
     
     public HttpHost getEsHost() {

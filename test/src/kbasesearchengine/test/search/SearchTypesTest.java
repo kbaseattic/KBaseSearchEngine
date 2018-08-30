@@ -180,7 +180,7 @@ public class SearchTypesTest {
     }
 
     /*
-        searchTypesGreaterThan10() tests a query over 11 types with the
+        searchTypes_GreaterThan10TypesIndexed() tests a query over 11 types with the
         default aggregation size, which should be 1000. 
         Without the default aggregation size set as such, the total number 
         of buckets returned is 10 and this test would fail. In fact,
@@ -215,7 +215,7 @@ public class SearchTypesTest {
     }
 
     /*
-        searchTypesJust10() uses the default aggregation size, as above, but
+        searchTypes_Just10TypesIndexed() uses the default aggregation size, as above, but
         indexes just 10 types, which is the natural limit for ES aggregations.
         As above, this should always succeed, and is included because should, for
         some reason, the aggregation size be removed, the above test will fail,
@@ -247,7 +247,7 @@ public class SearchTypesTest {
     }
 
     /*
-        searchTypesNone() tests the boundary condition of nothing indexed.
+        searchTypes_NothingIndexed() tests the boundary condition of nothing indexed.
         The query should result in an empty set of types.
     */
     @Test
@@ -276,7 +276,7 @@ public class SearchTypesTest {
     }
 
     /*
-        searchTypesNothingFound() tests the boundary condition of applying
+        searchTypes_NothingFound() tests the boundary condition of applying
         a query which matches nothing. The aggregation set should be empty.
     */
     @Test
@@ -310,7 +310,7 @@ public class SearchTypesTest {
     }
 
     /*
-        searchTypesExactlySize() tests a query over N types with an
+        searchTypes_TypesExactlyAggregationSize() tests a query over N types with an
         aggregation size of N. This should exactly the same number of
         types (15) returned as may possibly be returned (15).
     */
@@ -341,7 +341,7 @@ public class SearchTypesTest {
     }
    
     /*
-        searchTypesGreaterThanSize() tests a query over N+1 types with an
+        searchTypes_TypesGreaterThanAggregationSize() tests a query over N+1 types with an
         aggregation size of N. This should lead fewer (15) types returned in
         the aggregation than actually exist (16).
         This simulates the boundary condition for the error which motivated 
@@ -372,5 +372,36 @@ public class SearchTypesTest {
         assertThat("incorrect type count", typeCounts.size(), is(aggregationSize));
         assertThat("incorrect type count", typeCounts.size(), not(is(itemCount)));
         assertThat("unexpectly correct type count", typeCounts, not(is(expected)));
+    }
+
+    /*
+        searchTypes_NullAggregationSize() Ensures that the default aggregation size
+        kicks in if the aggregation size is supplied as null; We simply ensure that
+        we can get more than 10, the default.
+    */
+    @Test
+    public void searchTypes_NullAggregationSize() throws Exception {
+        int itemCount = 15;
+        int aggregationSize = 15;
+
+        IndexingStorage indexStorage = createIndexingStorage(aggregationSize);
+
+        ImmutableMap.Builder<String, Integer> expectedBuilder = ImmutableMap.<String, Integer>builder();
+        for (int i = 0; i < itemCount; i += 1) {
+                indexOne(indexStorage, new Integer(i), true);
+                expectedBuilder.put("SearchType" + i, 1);
+        }
+        ImmutableMap<String, Integer> expected =  expectedBuilder.build();
+
+        final Map<String, Integer> typeCounts = indexStorage.searchTypes(
+                MatchFilter.getBuilder()
+                        .withNullableFullTextInAll(null)
+                        .withExcludeSubObjects(true)
+                        .build(),
+                AccessFilter.create()
+                        .withPublic(true));
+        
+        assertThat("incorrect type count", typeCounts.size(), is(itemCount));                
+        assertThat("incorrect type count", typeCounts, is(expected));
     }
 }
