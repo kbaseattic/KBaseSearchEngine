@@ -137,6 +137,20 @@ public class ElasticIndexingStorage implements IndexingStorage {
             .put(OBJ_SHARED, R_OBJ_SHARED)
             .build();
 
+    /** Note that searchTypesAggregationSize has a default value, and is expected to 
+     *  always use the default value in real use; it is overridable in the 
+     *  constructor so that testing can trigger boundary conditions. Creating
+     *  enough items with unique types to exceed the boundary is excessively 
+     *  time consuming.
+     * 
+     *  This setting should be higher than the forseeable number of indexed types.
+     *  Advice from the ES community includes setting it an order of magnitude higher
+     *  than the scale of the current number of unique values one is doing a term 
+     *  aggregation over. Since at this time (8/29/18) there are around 20 types 
+     *  defined, choose 100 as the scale, and 1000 as the limit.
+     */
+    private Integer searchTypesAggregationSize = 1000;
+
     private HttpHost esHost;
     private String esUser;
     private String esPassword;
@@ -164,6 +178,13 @@ public class ElasticIndexingStorage implements IndexingStorage {
         this.esHost = esHost;
         this.indexNamePrefix = "";
         this.tempDir = tempDir;
+    }
+
+    public ElasticIndexingStorage(HttpHost esHost, File tempDir, Integer aggregationSize) throws IOException {
+        this.esHost = esHost;
+        this.indexNamePrefix = "";
+        this.tempDir = tempDir;
+        this.searchTypesAggregationSize = aggregationSize;
     }
     
     public HttpHost getEsHost() {
@@ -353,7 +374,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             int lastVersion = loadLastVersion(indexName, pguid, pguid.getVersion());
             final String esParentId = checkParentDoc(indexName, new LinkedHashSet<>(
                     Arrays.asList(pguid)), isPublic, lastVersion).get(pguid);
-            if (idToObjCopy.isEmpty()) {
+            if (idToObjCopy.isEmpty()) { 
                 // there were no search objects parsed from the source object, so just index
                 // the general object information
                 idToObjCopy.put(pguid, null);
@@ -1356,7 +1377,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
         //TODO VERS if this aggregates by type version, need to add the version field to the terms
         Map<String, Object> aggs = ImmutableMap.of("types",
                                       ImmutableMap.of("terms",
-                                         ImmutableMap.of("field", SEARCH_OBJ_TYPE)));
+                                         ImmutableMap.of("field", SEARCH_OBJ_TYPE,
+                                                         "size", this.searchTypesAggregationSize)));
 
         Map<String, Object> doc = ImmutableMap.of(
                 "query", createObjectQuery(matchFilter, accessFilter),
@@ -1372,16 +1394,33 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 resp.getEntity().getContent(), Map.class);
         @SuppressWarnings("unchecked")
         Map<String, Object> aggMap = (Map<String, Object>) data.get("aggregations");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> typeMap = (Map<String, Object>) aggMap.get("types");
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> buckets = (List<Map<String, Object>>) typeMap.get("buckets");
+        
+        // This is the map of object type to object (document) count.
         Map<String, Integer> ret = new TreeMap<>();
-        for (Map<String, Object> bucket : buckets) {
-            String objType = (String)bucket.get("key");
-            Integer count = (Integer)bucket.get("doc_count");
-            ret.put(objType, count);
+
+        // Note that for an empty ES db (no indexes), and perhaps other conditions, the 
+        // aggregations term field is null, so we just leave the type summary as an empty 
+        // map. I could not find this behavior documented.
+        // Yes, this is an edge case.
+        // See https://www.elastic.co/guide/en/elasticsearch/reference/5.5/search-aggregations-bucket-terms-aggregation.html
+        // for expected structure. 
+        // If this behavior changes in the future, e.g. the aggregations is the expected structure 
+        // and buckets is empty rather than setting the entire aggregations to null, 
+        // this should be safe.
+        if (aggMap != null) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> typeMap = (Map<String, Object>) aggMap.get("types");
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> buckets = (List<Map<String, Object>>) typeMap.get("buckets");
+            
+            for (Map<String, Object> bucket : buckets) {
+                String objType = (String)bucket.get("key");
+                Integer count = (Integer)bucket.get("doc_count");
+                ret.put(objType, count);
+            }
         }
+
         return ImmutableMap.copyOf(ret);
     }
 
