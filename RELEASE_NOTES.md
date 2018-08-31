@@ -6,6 +6,10 @@ Search Service MKII release notes
 * Changed search_objects and search_types to optionally require auth. Unauthorized calls will only
 see results from public data. Will throw exception if with_public and with_private are both false.
 
+* searchapi method "search_types" now returns up to 1000 types and document counts; was limited to 
+  10 previously. This is hardcoded in ElasticIndexingStorage.java, and can be overriden in the 
+  constructor for testing.
+
 0.2.1
 -----
 ****  Made the following changes that affect the interface.
