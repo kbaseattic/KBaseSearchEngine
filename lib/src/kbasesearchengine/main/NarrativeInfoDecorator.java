@@ -46,6 +46,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
     private final SearchInterface searchInterface;
     private final NarrativeInfoProvider narrInfoProvider;
     private final AuthInfoProvider authInfoProvider;
+    private final String removedGuids = "removedGuids";
+    private final String removedGuidsEnv = "SHOWREMOVEDGUIDS";
 
     /** Create a decorator.
      * @param searchInterface the search interface to decorate. This may be a root interface that
@@ -83,8 +85,9 @@ public class NarrativeInfoDecorator implements SearchInterface {
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
         SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
-        if(searchObjsOutput.getRemovedGuids() == null){
-            searchObjsOutput.setRemovedGuids(new ArrayList<>());
+
+        if(searchObjsOutput.getAdditionalProperties().get(removedGuids) == null && System.getProperty(removedGuidsEnv) != null){
+            searchObjsOutput.getAdditionalProperties().put(removedGuids, new ArrayList<>());
         }
         if (params.getPostProcessing() != null) {
             if (params.getPostProcessing().getAddNarrativeInfo() != null &&
@@ -92,7 +95,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
                 searchObjsOutput = searchObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
                         searchObjsOutput.getObjects(),
                         searchObjsOutput.getAccessGroupNarrativeInfo(),
-                        searchObjsOutput.getRemovedGuids()));
+                        (List<String>) searchObjsOutput.getAdditionalProperties().get(removedGuids)));
             }
         }
         return searchObjsOutput;
@@ -102,13 +105,16 @@ public class NarrativeInfoDecorator implements SearchInterface {
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
         GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
+        if(getObjsOutput.getAdditionalProperties().get(removedGuids) == null && System.getProperty(removedGuidsEnv) != null){
+            getObjsOutput.getAdditionalProperties().put(removedGuids, new ArrayList<>());
+        }
         if (params.getPostProcessing() != null) {
             if (params.getPostProcessing().getAddNarrativeInfo() != null &&
                     params.getPostProcessing().getAddNarrativeInfo() == 1) {
                 getObjsOutput = getObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
                         getObjsOutput.getObjects(),
                         getObjsOutput.getAccessGroupNarrativeInfo(),
-                        getObjsOutput.getRemovedGuids()));
+                        (List<String>) getObjsOutput.getAdditionalProperties().get(removedGuids)));
             }
         }
         return getObjsOutput;
@@ -116,7 +122,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
 
     /**
      * Adds narrative information for non deleted and valid narrative workspaces. Removes results otherwise and
-     * add the removed result's guid to removedGuids list.
+     * add the removed result's guid to removedGuids list, if list is not null.
      * @param objects
      * @param accessGroupNarrInfo
      * @param removedGuids
@@ -153,13 +159,17 @@ public class NarrativeInfoDecorator implements SearchInterface {
                 }
                 else {
                     iter.remove();
-                    removedGuids.add(objData.getGuid());
                     retVal.put(workspaceId, null);
+                    if(removedGuids != null) {
+                        removedGuids.add(objData.getGuid());
+                    }
                 }
             //if workspace is not a narrative, remove results from search
             } else{
                 iter.remove();
-                removedGuids.add(objData.getGuid());
+                if(removedGuids != null) {
+                    removedGuids.add(objData.getGuid());
+                }
             }
         }
 

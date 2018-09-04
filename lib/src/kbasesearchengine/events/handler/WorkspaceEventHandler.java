@@ -764,7 +764,6 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
         try {
             final List<List> objList = ws.getClient().administer(new UObject(command))
                     .asClassInstance(List.class);
-
             if (objList.isEmpty()) {
                 return StatusEvent.
                         getBuilder(ev.getStorageCode(),
@@ -845,11 +844,6 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
             return ev;
         }
 
-        //should not need to update object event if event is to delete
-        if(ev.getEventType().name().equals("DELETE_ALL_VERSIONS")){
-            return ev;
-        }
-
         // brute force get latest state and update event as event can be played
         // out of order in the case of failed events being replayed.
 
@@ -858,8 +852,7 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
             final StatusEvent updatedEvent = updateEventForDeletion(ev);
             // if event was updated (event type gets changed to
             // StatusEventType.DELETE_ALL_VERSIONS
-
-            if (!updatedEvent.equals(ev)) {
+            if (!updatedEvent.equals(ev) || updatedEvent.getEventType().name().equals("DELETE_ALL_VERSIONS")) {
                 return updatedEvent;
             }
         }
