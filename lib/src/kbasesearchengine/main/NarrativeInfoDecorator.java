@@ -22,8 +22,8 @@ import kbasesearchengine.authorization.TemporaryAuth2Client.Auth2Exception;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
+import org.slf4j.Logger;
 import us.kbase.common.service.Tuple5;
-import us.kbase.common.service.JsonClientException;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
  */
 public class NarrativeInfoDecorator implements SearchInterface {
 
+    private final Logger logger = LoggerFactory.getLogger(NarrativeInfoDecorator.class);
     private final SearchInterface searchInterface;
     private final NarrativeInfoProvider narrInfoProvider;
     private final AuthInfoProvider authInfoProvider;
@@ -185,8 +186,12 @@ public class NarrativeInfoDecorator implements SearchInterface {
             }
         }
         catch (IOException | Auth2Exception e) {
-            LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving workspace owner realname(s): " +
+            logger.error("ERROR: Failed retrieving workspace owner realname(s): " +
                             "setting to null: {}", e.getMessage());
+        }
+
+        if(removedGuids != null && removedGuids.size() > 0){
+            logger.info("inaccessible guids: {}", removedGuids);
         }
         return retVal;
     }
