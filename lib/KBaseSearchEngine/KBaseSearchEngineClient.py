@@ -215,30 +215,31 @@ class KBaseSearchEngine(object):
            'search_objects' method. 'pagination' and 'sorting_rules' fields
            show actual input for pagination and sorting. total - total number
            of found objects. search_time - common time in milliseconds spent.
-           list<GUID> removedGuids - list of result GUIDs that are
-           inaccessible or deleted in the workspace but have not been updated
-           in search mapping<access_group_id, narrative_info>
-           access_group_narrative_info - information about the workspaces in
-           which the objects in the results reside. This data only applies to
-           workspace objects. mapping<access_group_id, access_group_info>
-           access_groups_info - information about the access groups in which
-           the objects in the results reside. Currently this data only
-           applies to workspace objects. The tuple9 value returned by
-           get_workspace_info() for each workspace in the search results is
-           saved in this mapping. In future the access_group_info will be
-           replaced with a higher level abstraction. mapping<obj_ref,
-           object_info> objects_info - information about each object in the
-           search results. Currently this data only applies to workspace
-           objects. The tuple11 value returned by get_object_info3() for each
-           object in the search results is saved in the mapping. In future
-           the object_info will be replaced with a higher level abstraction.)
-           -> structure: parameter "pagination" of type "Pagination"
-           (Pagination rules. Default values are: start = 0, count = 50.) ->
-           structure: parameter "start" of Long, parameter "count" of Long,
-           parameter "sorting_rules" of list of type "SortingRule" (Rule for
-           sorting results. string property - the property to sort on. This
-           may be a an object property - e.g. a field inside the object - or
-           a standard property possessed by all objects, like a timestamp or
+           list<ObjectData> objects - Result of search. Deleted or
+           inaccessible objects are removed. List, before removal of objects
+           will match input from pagination. mapping<access_group_id,
+           narrative_info> access_group_narrative_info - information about
+           the workspaces in which the objects in the results reside. This
+           data only applies to workspace objects. mapping<access_group_id,
+           access_group_info> access_groups_info - information about the
+           access groups in which the objects in the results reside.
+           Currently this data only applies to workspace objects. The tuple9
+           value returned by get_workspace_info() for each workspace in the
+           search results is saved in this mapping. In future the
+           access_group_info will be replaced with a higher level
+           abstraction. mapping<obj_ref, object_info> objects_info -
+           information about each object in the search results. Currently
+           this data only applies to workspace objects. The tuple11 value
+           returned by get_object_info3() for each object in the search
+           results is saved in the mapping. In future the object_info will be
+           replaced with a higher level abstraction.) -> structure: parameter
+           "pagination" of type "Pagination" (Pagination rules. Default
+           values are: start = 0, count = 50.) -> structure: parameter
+           "start" of Long, parameter "count" of Long, parameter
+           "sorting_rules" of list of type "SortingRule" (Rule for sorting
+           results. string property - the property to sort on. This may be a
+           an object property - e.g. a field inside the object - or a
+           standard property possessed by all objects, like a timestamp or
            creator. boolean is_object_property - true (the default) to
            specify an object property, false to specify a standard property.
            boolean ascending - true (the default) to sort ascending, false to
@@ -288,10 +289,7 @@ class KBaseSearchEngine(object):
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "highlight" of mapping from String to list of
            String, parameter "total" of Long, parameter "search_time" of
-           Long, parameter "removedGuids" of list of type "GUID" (Global user
-           identificator. It has structure like this:
-           <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
-           parameter "access_group_narrative_info" of mapping from type
+           Long, parameter "access_group_narrative_info" of mapping from type
            "access_group_id" (A data source access group ID (for instance,
            the integer ID of a workspace).) to type "narrative_info"
            (Information about a workspace, which may or may not contain a
@@ -480,9 +478,9 @@ class KBaseSearchEngine(object):
            "source_tags_blacklist" of type "boolean" (A boolean. 0 = false,
            other = true.)
         :returns: instance of type "GetObjectsOutput" (Output results of
-           get_objects method. list<GUID> removedGuids - list of result GUIDs
-           that are inaccessible or deleted in the workspace but have not
-           been updated in search mapping<access_group_id, narrative_info>
+           get_objects method. list<ObjectData> objects - Result of search.
+           Deleted or inaccessible objects are removed.
+           mapping<access_group_id, narrative_info>
            access_group_narrative_info - information about the workspaces in
            which the objects in the results reside. This data only applies to
            workspace objects. mapping<access_group_id, access_group_info>
@@ -539,11 +537,8 @@ class KBaseSearchEngine(object):
            "parent_data" of unspecified object, parameter "data" of
            unspecified object, parameter "key_props" of mapping from String
            to String, parameter "highlight" of mapping from String to list of
-           String, parameter "search_time" of Long, parameter "removedGuids"
-           of list of type "GUID" (Global user identificator. It has
-           structure like this:
-           <data-source-code>:<full-reference>[:<sub-type>/<sub-id>]),
-           parameter "access_group_narrative_info" of mapping from type
+           String, parameter "search_time" of Long, parameter
+           "access_group_narrative_info" of mapping from type
            "access_group_id" (A data source access group ID (for instance,
            the integer ID of a workspace).) to type "narrative_info"
            (Information about a workspace, which may or may not contain a

@@ -314,7 +314,6 @@ SearchObjectsOutput is a reference to a hash where the following keys are define
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	total has a value which is an int
 	search_time has a value which is an int
-	removedGuids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
 	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
@@ -423,7 +422,6 @@ SearchObjectsOutput is a reference to a hash where the following keys are define
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	total has a value which is an int
 	search_time has a value which is an int
-	removedGuids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
 	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
@@ -580,7 +578,6 @@ MatchValue is a reference to a hash where the following keys are defined:
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	search_time has a value which is an int
-	removedGuids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
 	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
@@ -686,7 +683,6 @@ MatchValue is a reference to a hash where the following keys are defined:
 GetObjectsOutput is a reference to a hash where the following keys are defined:
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	search_time has a value which is an int
-	removedGuids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
 	objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
@@ -1811,8 +1807,8 @@ Output results for 'search_objects' method.
     pagination and sorting.
 total - total number of found objects.
 search_time - common time in milliseconds spent.
-list<GUID> removedGuids - list of result GUIDs that are inaccessible or deleted in the workspace but have
-    not been updated in search
+list<ObjectData> objects - Result of search. Deleted or inaccessible objects are removed. List, before removal of
+   objects will match input from pagination.
 mapping<access_group_id, narrative_info> access_group_narrative_info - information about
    the workspaces in which the objects in the results reside. This data only applies to
    workspace objects.
@@ -1838,7 +1834,6 @@ sorting_rules has a value which is a reference to a list where each element is a
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 total has a value which is an int
 search_time has a value which is an int
-removedGuids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
 objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
@@ -1855,7 +1850,6 @@ sorting_rules has a value which is a reference to a list where each element is a
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 total has a value which is an int
 search_time has a value which is an int
-removedGuids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
 objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a KBaseSearchEngine.object_info
@@ -1918,8 +1912,7 @@ match_filter has a value which is a KBaseSearchEngine.MatchFilter
 =item Description
 
 Output results of get_objects method.
-list<GUID> removedGuids - list of result GUIDs that are inaccessible or deleted in the workspace but have
-    not been updated in search
+list<ObjectData> objects - Result of search. Deleted or inaccessible objects are removed.
 mapping<access_group_id, narrative_info> access_group_narrative_info - information about
    the workspaces in which the objects in the results reside. This data only applies to
    workspace objects.
@@ -1942,7 +1935,6 @@ mapping<obj_ref, object_info> objects_info - information about each object in th
 a reference to a hash where the following keys are defined:
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 search_time has a value which is an int
-removedGuids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
 objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
@@ -1956,7 +1948,6 @@ objects_info has a value which is a reference to a hash where the key is a KBase
 a reference to a hash where the following keys are defined:
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 search_time has a value which is an int
-removedGuids has a value which is a reference to a list where each element is a KBaseSearchEngine.GUID
 access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
 objects_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.obj_ref and the value is a Workspace.object_info
