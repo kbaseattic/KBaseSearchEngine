@@ -86,6 +86,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
             throws Exception {
         SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
         if (searchObjsOutput.getAdditionalProperties().get(removedGuids) == null &&
+                System.getProperty(removedGuidsEnv) != null &&
                 System.getProperty(removedGuidsEnv).equals("true")){
             searchObjsOutput.getAdditionalProperties().put(removedGuids, new ArrayList<>());
         }
@@ -106,6 +107,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
             throws Exception {
         GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
         if (getObjsOutput.getAdditionalProperties().get(removedGuids) == null &&
+                System.getProperty(removedGuidsEnv) != null &&
                 System.getProperty(removedGuidsEnv).equals("true")){
             getObjsOutput.getAdditionalProperties().put(removedGuids, new ArrayList<>());
         }
