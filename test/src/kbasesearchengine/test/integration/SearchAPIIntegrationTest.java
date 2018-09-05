@@ -790,6 +790,7 @@ public class SearchAPIIntegrationTest {
 
         wsCli1.createWorkspace(new CreateWorkspaceParams()
                 .withWorkspace("foo1")
+                .withGlobalread("r")
                 .withMeta(ImmutableMap.of(
                         "narrative", "6",
                         "narrative_nice_name", "Kevin")));
@@ -806,6 +807,7 @@ public class SearchAPIIntegrationTest {
                 ))
         );
         wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withGlobalread("r")
                 .withWorkspace("foo2"));
         wsCli1.saveObjects(new SaveObjectsParams()
                 .withWorkspace("foo2")
@@ -861,11 +863,11 @@ public class SearchAPIIntegrationTest {
 
         final Tuple9<Long, String, String, String, Long, String, String, String,
                 Map<String, String>> wsInfoExpected1 =
-                wsTuple(1, "foo1", "user1", "date1", 1, "n", "n", "unlocked",
+                wsTuple(1, "foo1", "user1", "date1", 1, "n", "r", "unlocked",
                         ImmutableMap.of("narrative", "6", "narrative_nice_name", "Kevin"));
         final Tuple9<Long, String, String, String, Long, String, String, String,
                 Map<String, String>> wsInfoExpected2 =
-                wsTuple(2, "foo2", "user1", "date2", 1, "n", "n", "unlocked", Collections.emptyMap());
+                wsTuple(2, "foo2", "user1", "date2", 1, "n", "r", "unlocked", Collections.emptyMap());
 
         final Tuple11<Long, String, String, String, Long, String,
                 Long, String, String, Long, Map<String, String>> objInfoExpected1 =

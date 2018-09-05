@@ -1,8 +1,11 @@
 package kbasesearchengine.main;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -10,6 +13,7 @@ import java.util.Set;
 import kbasesearchengine.GetObjectsInput;
 import kbasesearchengine.GetObjectsOutput;
 import kbasesearchengine.ObjectData;
+import kbasesearchengine.Pagination;
 import kbasesearchengine.SearchObjectsInput;
 import kbasesearchengine.SearchObjectsOutput;
 import kbasesearchengine.SearchTypesInput;
@@ -20,9 +24,11 @@ import kbasesearchengine.authorization.TemporaryAuth2Client.Auth2Exception;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
+import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.JsonClientException;
 import org.slf4j.LoggerFactory;
+import us.kbase.common.service.Tuple9;
 
 /**
  * Decorates the results from a {@link SearchInterface} with information about workspaces that
@@ -77,69 +83,226 @@ public class NarrativeInfoDecorator implements SearchInterface {
         return searchInterface.listTypes(uniqueType);
     }
 
+    /**
+     * Given a match filter, searches for objects from elasticsearch. If addNarrativeInfo is set to true,
+     * removes objects that are in deleted workspaces.
+     * Keep call elasticsearch until enough objects are collected to satisfy pagination.
+     * @param params  Input params
+     * @param user    username
+     * @return
+     * @throws Exception
+     */
     @Override
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
-        SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
-        if (params.getPostProcessing() != null) {
-            if (params.getPostProcessing().getAddNarrativeInfo() != null &&
-                    params.getPostProcessing().getAddNarrativeInfo() == 1) {
-                searchObjsOutput = searchObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
-                        searchObjsOutput.getObjects(),
-                        searchObjsOutput.getAccessGroupNarrativeInfo()));
+        SearchObjectsOutput searchObjsOutput = getEmptySearchObjectsOutput();
+        long count = (params.getPagination() == null) ? 50 : params.getPagination().getCount();
+
+        while(searchObjsOutput.getObjects().size() < count){
+            final SearchObjectsOutput searchRes = reSearchObjects(params, user, searchObjsOutput);
+
+            if (hasAddNarrativeInfo(params)) {
+                Long curTotalObs = (searchObjsOutput == null) ? 0L : searchObjsOutput.getObjects().size();
+
+                SearchObjectsOutput modifiedSearchRes = searchRes.withAccessGroupNarrativeInfo(addNarrativeInfo(
+                        searchRes.getObjects(),
+                        searchRes.getAccessGroupNarrativeInfo()
+                        ,curTotalObs, count));
+
+                searchObjsOutput = combineWithOtherSearchObjectsOuput(searchObjsOutput, modifiedSearchRes,
+                        searchRes.getObjects().size() -  modifiedSearchRes.getObjects().size());
+
+                //return results if search returns less objects than required by pagination
+                if(searchRes.getTotalInPage() < count){
+                    return searchObjsOutput;
+                }
+            }else{
+                //return raw search results, if addNarrativeInfo is not set. Note that this may include deleted workspaces.
+                return searchRes;
             }
+
         }
+
         return searchObjsOutput;
     }
 
+    /**
+     * Given a list of guids, get the objects from elasticsearch. If addNarrativeInfo is set to true,
+     * filters out objects that are in deleted workspaces.
+     * Note that GetObjectInput params does not support pagination
+     * @param params Input parameters
+     * @param user   username
+     * @return
+     * @throws Exception
+     */
     @Override
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
         GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
-        if (params.getPostProcessing() != null) {
-            if (params.getPostProcessing().getAddNarrativeInfo() != null &&
-                    params.getPostProcessing().getAddNarrativeInfo() == 1) {
+        if (hasAddNarrativeInfo(params)) {
                 getObjsOutput = getObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
                         getObjsOutput.getObjects(),
-                        getObjsOutput.getAccessGroupNarrativeInfo()));
-            }
+                        getObjsOutput.getAccessGroupNarrativeInfo(),
+                        0L, Long.MAX_VALUE));
+
         }
         return getObjsOutput;
     }
 
+    private boolean hasAddNarrativeInfo(final SearchObjectsInput params){
+        return params.getPostProcessing() != null && params.getPostProcessing().getAddNarrativeInfo() != null
+                && params.getPostProcessing().getAddNarrativeInfo() == 1;
+    }
+    private boolean hasAddNarrativeInfo(final GetObjectsInput params){
+        return params.getPostProcessing() != null && params.getPostProcessing().getAddNarrativeInfo() != null
+                && params.getPostProcessing().getAddNarrativeInfo() == 1;
+    }
+    private SearchObjectsOutput getEmptySearchObjectsOutput(){
+        return new SearchObjectsOutput()
+                .withObjects(new ArrayList<>())
+                .withAccessGroupNarrativeInfo(null)
+                .withAccessGroupsInfo(null)
+                .withObjectsInfo(null)
+                .withSearchTime(0L)
+                .withTotal(0L)
+                .withTotalInPage(0L)
+                .withPagination(null)
+                .withSortingRules(null);
+    }
+
+    private SearchObjectsOutput combineWithOtherSearchObjectsOuput(final SearchObjectsOutput target, final SearchObjectsOutput other, int removedObjs){
+        target.setTotalInPage(target.getTotalInPage() + other.getTotalInPage() - (long) removedObjs);
+        target.setSearchTime(target.getSearchTime() + other.getSearchTime());
+
+        List<ObjectData> objs= target.getObjects();
+        objs.addAll(other.getObjects());
+        target.setObjects(objs);
+
+        if(target.getTotal() < other.getTotal()){
+            target.setTotal(other.getTotal());
+        }
+
+        if(other.getAccessGroupNarrativeInfo() != null){
+            Map<Long, Tuple5 <String, Long, Long, String, String>> accessGrpNarInfo;
+            if(target.getAccessGroupNarrativeInfo() != null){
+                accessGrpNarInfo = target.getAccessGroupNarrativeInfo();
+            }else{
+                accessGrpNarInfo = new HashMap<>();
+            }
+            accessGrpNarInfo.putAll(other.getAccessGroupNarrativeInfo());
+            target.setAccessGroupNarrativeInfo(accessGrpNarInfo);
+        }
+
+        if(other.getAccessGroupsInfo() != null){
+            Map<Long, Tuple9<Long, String, String, String, Long, String, String, String, Map<String, String>>> accessGrpInfo;
+            if(target.getAccessGroupsInfo() != null){
+                accessGrpInfo = target.getAccessGroupsInfo();
+            } else{
+                accessGrpInfo = new HashMap<>();
+            }
+            accessGrpInfo.putAll(other.getAccessGroupsInfo());
+            target.setAccessGroupsInfo(accessGrpInfo);
+        }
+
+        if(other.getObjectsInfo() != null){
+            Map<String, Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> objInfo;
+            if(target.getObjectsInfo() != null){
+                objInfo = target.getObjectsInfo();
+            }else{
+                objInfo = new HashMap<>();
+            }
+            objInfo.putAll(other.getObjectsInfo());
+            target.setObjectsInfo(objInfo);
+        }
+
+
+        if(target.getPagination() == null){
+            target.setPagination(other.getPagination());
+        }
+
+        if(target.getSortingRules() == null){
+            target.setSortingRules(other.getSortingRules());
+        }
+
+        return target;
+    }
+
+    private SearchObjectsOutput reSearchObjects(final SearchObjectsInput params, final String user, final SearchObjectsOutput prevRes)
+            throws Exception {
+        SearchObjectsOutput res = getEmptySearchObjectsOutput();
+        if(prevRes.getTotal() == 0L){
+            res = combineWithOtherSearchObjectsOuput(res, searchInterface.searchObjects(params, user), 0);
+        }else{
+            final long newStart = prevRes.getPagination().getStart() + prevRes.getTotalInPage();
+
+            Pagination newPag = new Pagination()
+                                    .withCount(prevRes.getPagination().getCount())
+                                    .withStart(newStart);
+            SearchObjectsInput newParams = new SearchObjectsInput()
+                                                .withSortingRules(params.getSortingRules())
+                                                .withPostProcessing(params.getPostProcessing())
+                                                .withObjectTypes(params.getObjectTypes())
+                                                .withMatchFilter(params.getMatchFilter())
+                                                .withAccessFilter(params.getAccessFilter())
+                                                .withPagination(newPag);
+
+            SearchObjectsOutput temp =  searchInterface.searchObjects(newParams, user);
+            res = combineWithOtherSearchObjectsOuput(res, temp, 0);
+
+        }
+        return res;
+    }
+
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(
             final List<ObjectData> objects,
-            final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo) {
+            final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo,
+            Long curTotal, final Long targetTotal) {
 
         final Map<Long, Tuple5 <String, Long, Long, String, String>> retVal = new HashMap<>();
 
         if (accessGroupNarrInfo != null) {
             retVal.putAll(accessGroupNarrInfo);
         }
-        final Set<Long> wsIdsSet = new HashSet<>();
+        final Set<Long> deletedWsIdsSet = new HashSet<>();
+        final Set<String> userNames = new HashSet<>();
 
-        for (final ObjectData objData: objects) {
+
+        final Iterator<ObjectData> iter = objects.iterator();
+
+        while(iter.hasNext()){
+            final ObjectData objData = iter.next();
             final GUID guid = new GUID(objData.getGuid());
             if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
-                wsIdsSet.add((long) guid.getAccessGroupId());
+                final long workspaceId = (long) guid.getAccessGroupId();
+
+                if(curTotal >= targetTotal){
+                    //remove extra results
+                    do{
+                        iter.remove();
+                    }while(iter.hasNext());
+                    break;
+                }else if(deletedWsIdsSet.contains(workspaceId)){
+                    iter.remove();
+                    continue;
+                }
+
+                final NarrativeInfo narrInfo = narrInfoProvider.findNarrativeInfo(workspaceId);
+                if (narrInfo != null) {
+                    final Tuple5<String, Long, Long, String, String> tempNarrInfo =
+                            new Tuple5<String, Long, Long, String, String>()
+                                    .withE1(narrInfo.getNarrativeName())
+                                    .withE2(narrInfo.getNarrativeId())
+                                    .withE3(narrInfo.getTimeLastSaved())
+                                    .withE4(narrInfo.getWsOwnerUsername());
+                    userNames.add(tempNarrInfo.getE4());
+                    retVal.put(workspaceId, tempNarrInfo);
+                    curTotal = curTotal + 1L;
+                } else{
+                    deletedWsIdsSet.add(workspaceId);
+                    iter.remove();
+                }
             }
-        }
-        final Set<String> userNames = new HashSet<>();
-        for (final long workspaceId: wsIdsSet) {
-            final NarrativeInfo narrInfo = narrInfoProvider.findNarrativeInfo(workspaceId);
-            if (narrInfo != null) {
-                final Tuple5<String, Long, Long, String, String> tempNarrInfo =
-                        new Tuple5<String, Long, Long, String, String>()
-                                .withE1(narrInfo.getNarrativeName())
-                                .withE2(narrInfo.getNarrativeId())
-                                .withE3(narrInfo.getTimeLastSaved())
-                                .withE4(narrInfo.getWsOwnerUsername());
-                userNames.add(tempNarrInfo.getE4());
-                retVal.put(workspaceId, tempNarrInfo);
-            }
-            else {
-                retVal.put(workspaceId, null);
-            }
+
         }
         try {
             final Map<String, String> displayNames = authInfoProvider.findUserDisplayNames(userNames);
