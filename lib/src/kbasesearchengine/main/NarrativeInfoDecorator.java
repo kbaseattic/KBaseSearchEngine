@@ -86,17 +86,18 @@ public class NarrativeInfoDecorator implements SearchInterface {
             throws Exception {
         SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
         if (searchObjsOutput.getAdditionalProperties().get(removedGuids) == null &&
-                System.getProperty(removedGuidsEnv) != null &&
-                System.getProperty(removedGuidsEnv).equals("true")){
+                "true".equals(System.getProperty(removedGuidsEnv))){
             searchObjsOutput.getAdditionalProperties().put(removedGuids, new ArrayList<>());
         }
+        final List<String> inputArr = "true".equals(System.getProperty(removedGuidsEnv)) ?
+                (List<String>) searchObjsOutput.getAdditionalProperties().get(removedGuids) : new ArrayList<>();
         if (params.getPostProcessing() != null) {
             if (params.getPostProcessing().getAddNarrativeInfo() != null &&
                     params.getPostProcessing().getAddNarrativeInfo() == 1) {
                 searchObjsOutput = searchObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
                         searchObjsOutput.getObjects(),
                         searchObjsOutput.getAccessGroupNarrativeInfo(),
-                        (List<String>) searchObjsOutput.getAdditionalProperties().get(removedGuids)));
+                        inputArr));
             }
         }
         return searchObjsOutput;
@@ -107,17 +108,18 @@ public class NarrativeInfoDecorator implements SearchInterface {
             throws Exception {
         GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
         if (getObjsOutput.getAdditionalProperties().get(removedGuids) == null &&
-                System.getProperty(removedGuidsEnv) != null &&
-                System.getProperty(removedGuidsEnv).equals("true")){
+                "true".equals(System.getProperty(removedGuidsEnv))){
             getObjsOutput.getAdditionalProperties().put(removedGuids, new ArrayList<>());
         }
+        final List<String> inputArr = "true".equals(System.getProperty(removedGuidsEnv)) ?
+                (List<String>) getObjsOutput.getAdditionalProperties().get(removedGuids) : new ArrayList<>();
         if (params.getPostProcessing() != null) {
             if (params.getPostProcessing().getAddNarrativeInfo() != null &&
                     params.getPostProcessing().getAddNarrativeInfo() == 1) {
                 getObjsOutput = getObjsOutput.withAccessGroupNarrativeInfo(addNarrativeInfo(
                         getObjsOutput.getObjects(),
                         getObjsOutput.getAccessGroupNarrativeInfo(),
-                        (List<String>) getObjsOutput.getAdditionalProperties().get(removedGuids)));
+                        inputArr));
             }
         }
         return getObjsOutput;
@@ -163,16 +165,13 @@ public class NarrativeInfoDecorator implements SearchInterface {
                 else {
                     iter.remove();
                     retVal.put(workspaceId, null);
-                    if(removedGuids != null) {
-                        removedGuids.add(objData.getGuid());
-                    }
+                    removedGuids.add(objData.getGuid());
+
                 }
             //if workspace is not a narrative, remove results from search
             } else{
                 iter.remove();
-                if(removedGuids != null) {
-                    removedGuids.add(objData.getGuid());
-                }
+                removedGuids.add(objData.getGuid());
             }
         }
 
@@ -192,7 +191,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
                             "setting to null: {}", e.getMessage());
         }
 
-        if(removedGuids != null && removedGuids.size() > 0){
+        if (removedGuids.size() > 0) {
             getLogger().info("inaccessible guids: {}", removedGuids);
         }
         return retVal;
