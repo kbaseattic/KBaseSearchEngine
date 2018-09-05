@@ -43,12 +43,11 @@ import org.slf4j.LoggerFactory;
  */
 public class NarrativeInfoDecorator implements SearchInterface {
 
-    private final Logger logger = LoggerFactory.getLogger(NarrativeInfoDecorator.class);
     private final SearchInterface searchInterface;
     private final NarrativeInfoProvider narrInfoProvider;
     private final AuthInfoProvider authInfoProvider;
     private final String removedGuids = "removedGuids";
-    private final String removedGuidsEnv = "SHOWREMOVEDGUIDS";
+    private final String removedGuidsEnv = "KBASE_SEARCH_SHOW_REMOVED_GUIDS";
 
     /** Create a decorator.
      * @param searchInterface the search interface to decorate. This may be a root interface that
@@ -86,8 +85,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
         SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
-
-        if(searchObjsOutput.getAdditionalProperties().get(removedGuids) == null && System.getProperty(removedGuidsEnv) != null){
+        if (searchObjsOutput.getAdditionalProperties().get(removedGuids) == null &&
+                System.getProperty(removedGuidsEnv).equals("true")){
             searchObjsOutput.getAdditionalProperties().put(removedGuids, new ArrayList<>());
         }
         if (params.getPostProcessing() != null) {
@@ -106,7 +105,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
         GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
-        if(getObjsOutput.getAdditionalProperties().get(removedGuids) == null && System.getProperty(removedGuidsEnv) != null){
+        if (getObjsOutput.getAdditionalProperties().get(removedGuids) == null &&
+                System.getProperty(removedGuidsEnv).equals("true")){
             getObjsOutput.getAdditionalProperties().put(removedGuids, new ArrayList<>());
         }
         if (params.getPostProcessing() != null) {
@@ -141,7 +141,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
         }
         final Set<String> userNames = new HashSet<>();
         final Iterator<ObjectData> iter = objects.iterator();
-        while(iter.hasNext()) {
+        while (iter.hasNext()) {
             final ObjectData objData = iter.next();
             final GUID guid = new GUID(objData.getGuid());
             if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
@@ -186,13 +186,17 @@ public class NarrativeInfoDecorator implements SearchInterface {
             }
         }
         catch (IOException | Auth2Exception e) {
-            logger.error("ERROR: Failed retrieving workspace owner realname(s): " +
+            getLogger().error("ERROR: Failed retrieving workspace owner realname(s): " +
                             "setting to null: {}", e.getMessage());
         }
 
         if(removedGuids != null && removedGuids.size() > 0){
-            logger.info("inaccessible guids: {}", removedGuids);
+            getLogger().info("inaccessible guids: {}", removedGuids);
         }
         return retVal;
+    }
+
+    private Logger getLogger() {
+        return LoggerFactory.getLogger(NarrativeInfoDecorator.class);
     }
 }

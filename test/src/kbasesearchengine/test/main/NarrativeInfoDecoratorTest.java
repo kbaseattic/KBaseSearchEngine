@@ -407,7 +407,7 @@ public class NarrativeInfoDecoratorTest {
         expectedObjs.add(new ObjectData().withGuid("WS:4/1/7").withCreator("user"));
         expectedObjs.add(new ObjectData().withGuid("WS:4/2/1").withCreator("user"));
 
-        System.setProperty("SHOWREMOVEDGUIDS", "dummy");
+        System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "true");
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
 
         compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
@@ -428,7 +428,7 @@ public class NarrativeInfoDecoratorTest {
         expectedObjs.add(new ObjectData().withGuid("WS:4/1/7").withCreator("user"));
         expectedObjs.add(new ObjectData().withGuid("WS:4/2/1").withCreator("user"));
 
-        System.setProperty("SHOWREMOVEDGUIDS", "dummy");
+        System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "true");
         final GetObjectsOutput res = nid.getObjects(dummyInput, "user");
 
         compareSearchObjectOutputRes(res.getObjects(), expectedObjs);

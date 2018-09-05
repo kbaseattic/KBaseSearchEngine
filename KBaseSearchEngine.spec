@@ -261,8 +261,8 @@ module KBaseSearchEngine {
           pagination and sorting.
       total - total number of found objects.
       search_time - common time in milliseconds spent.
-      list<GUID> removedGuids - list of result GUIDs that are inaccessible or deleted in the workspace but have
-          not been updated in search. Returned when setting env SHOWREMOVEDGUIDS to anything. Returned in additional properties
+      list<ObjectData> objects - Result of search. Deleted or inaccessible objects are removed. List, before removal of
+         objects will match input from pagination.
       mapping<access_group_id, narrative_info> access_group_narrative_info - information about
          the workspaces in which the objects in the results reside. This data only applies to
          workspace objects.
@@ -307,8 +307,7 @@ module KBaseSearchEngine {
 
     /*
       Output results of get_objects method.
-      list<GUID> removedGuids - list of result GUIDs that are inaccessible or deleted in the workspace but have
-          not been updated in search. Returned when setting env SHOWREMOVEDGUIDS to anything. Returned in additional properties
+      list<ObjectData> objects - Result of search. Deleted or inaccessible objects are removed.
       mapping<access_group_id, narrative_info> access_group_narrative_info - information about
          the workspaces in which the objects in the results reside. This data only applies to
          workspace objects.
