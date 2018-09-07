@@ -37,7 +37,7 @@ before_install:
 
 install:
 - cd ..
-# install elastic search
+# install elastic search 5
 - wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.0.tar.gz
 - tar xfz elasticsearch-5.5.0.tar.gz
 - ln -s elasticsearch-5.5.0 elasticsearch
