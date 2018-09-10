@@ -128,10 +128,6 @@ public class NarrativeInfoDecorator implements SearchInterface {
     /**
      * Adds narrative information for non deleted and valid narrative workspaces. Removes results otherwise and
      * add the removed result's guid to removedGuids list, if list is not null.
-     * @param objects
-     * @param accessGroupNarrInfo
-     * @param removedGuids
-     * @return
      */
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(
             final List<ObjectData> objects,
@@ -164,7 +160,6 @@ public class NarrativeInfoDecorator implements SearchInterface {
                 }
                 else {
                     iter.remove();
-                    retVal.put(workspaceId, null);
                     removedGuids.add(objData.getGuid());
 
                 }
