@@ -248,7 +248,7 @@ public class NarrativeInfoDecoratorTest {
                 .withObjects(objectdata));
 
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
-        assertThat("Incorrect size", res.getAccessGroupNarrativeInfo().size(), is(2));
+        assertThat("Incorrect size", res.getAccessGroupNarrativeInfo().size(), is(1));
         assertNull("Null expected", res.getAccessGroupNarrativeInfo().get(65L));
         compare(res.getAccessGroupNarrativeInfo().get(42L),
                 narrInfoTuple("mylovelynarrative", 3L, 1518126950678L, "owner4", "Fred"));
@@ -287,7 +287,7 @@ public class NarrativeInfoDecoratorTest {
                 .withObjects(objectdata));
 
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
-        assertThat("Incorrect size", res.getAccessGroupNarrativeInfo().size(), is(2));
+        assertThat("Incorrect size", res.getAccessGroupNarrativeInfo().size(), is(1));
         assertNull("Null expected", res.getAccessGroupNarrativeInfo().get(35L));
         compare(res.getAccessGroupNarrativeInfo().get(12L),
                 narrInfoTuple("mylovelynarrative", 3L, 1518126950678L, "owner4", null));
