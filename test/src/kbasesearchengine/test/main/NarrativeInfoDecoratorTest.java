@@ -397,48 +397,53 @@ public class NarrativeInfoDecoratorTest {
 
     @Test
     public void searchObjectsWithDeletedWsWithShowingRemovedGuids() throws Exception {
-        final NarrativeInfoDecorator nid = setUpSearchObjectsWithDeletedWs();
-        final Pagination pag = new Pagination().withCount(3L).withStart(0L);
-        final SearchObjectsInput dummyInput = new SearchObjectsInput()
-                .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L))
-                .withPagination(pag);
+        try {
+            final NarrativeInfoDecorator nid = setUpSearchObjectsWithDeletedWs();
+            final Pagination pag = new Pagination().withCount(3L).withStart(0L);
+            final SearchObjectsInput dummyInput = new SearchObjectsInput()
+                    .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L))
+                    .withPagination(pag);
 
-        final ArrayList<ObjectData> expectedObjs = new ArrayList<>();
-        expectedObjs.add(new ObjectData().withGuid("WS:4/1/7").withCreator("user"));
-        expectedObjs.add(new ObjectData().withGuid("WS:4/2/1").withCreator("user"));
+            final ArrayList<ObjectData> expectedObjs = new ArrayList<>();
+            expectedObjs.add(new ObjectData().withGuid("WS:4/1/7").withCreator("user"));
+            expectedObjs.add(new ObjectData().withGuid("WS:4/2/1").withCreator("user"));
 
-        System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "true");
-        final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
+            System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "true");
+            final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
 
-        compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
-        compare( res.getAccessGroupNarrativeInfo().get(4L), narrInfoTuple("test", 1L, 1L, "user", null));
+            compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
+            compare( res.getAccessGroupNarrativeInfo().get(4L), narrInfoTuple("test", 1L, 1L, "user", null));
 
-        assertThat("removed guids shown", res.getAdditionalProperties().get("removedGuids"), is(Arrays.asList("WS:3/5/6")));
-        assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
-        System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
+            assertThat("removed guids shown", res.getAdditionalProperties().get("removedGuids"), is(Arrays.asList("WS:3/5/6")));
+            assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
+        } finally {
+            System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
+        }
     }
 
 
     @Test
     public void getObjectsWithDeletedWsWithShowingRemovedGuids() throws Exception {
-        final NarrativeInfoDecorator nid = setUpSearchObjectsWithDeletedWs();
-        final GetObjectsInput dummyInput = new GetObjectsInput()
-                .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L));
+        try{
+            final NarrativeInfoDecorator nid = setUpSearchObjectsWithDeletedWs();
+            final GetObjectsInput dummyInput = new GetObjectsInput()
+                    .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L));
 
-        final ArrayList<ObjectData> expectedObjs = new ArrayList<>();
-        expectedObjs.add(new ObjectData().withGuid("WS:4/1/7").withCreator("user"));
-        expectedObjs.add(new ObjectData().withGuid("WS:4/2/1").withCreator("user"));
+            final ArrayList<ObjectData> expectedObjs = new ArrayList<>();
+            expectedObjs.add(new ObjectData().withGuid("WS:4/1/7").withCreator("user"));
+            expectedObjs.add(new ObjectData().withGuid("WS:4/2/1").withCreator("user"));
 
-        System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "true");
-        final GetObjectsOutput res = nid.getObjects(dummyInput, "user");
+            System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "true");
+            final GetObjectsOutput res = nid.getObjects(dummyInput, "user");
 
-        compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
-        compare( res.getAccessGroupNarrativeInfo().get(4L), narrInfoTuple("test", 1L, 1L, "user", null));
+            compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
+            compare( res.getAccessGroupNarrativeInfo().get(4L), narrInfoTuple("test", 1L, 1L, "user", null));
 
-        assertThat("removed guids shown", res.getAdditionalProperties().get("removedGuids"), is(Arrays.asList("WS:3/5/6")));
-        assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
-        System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
-
+            assertThat("removed guids shown", res.getAdditionalProperties().get("removedGuids"), is(Arrays.asList("WS:3/5/6")));
+            assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
+        }finally {
+            System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
+        }
     }
 
     public NarrativeInfoDecorator setUpSearchObjectsWithDeletedWs() throws Exception {
