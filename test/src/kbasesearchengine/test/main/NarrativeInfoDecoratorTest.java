@@ -391,7 +391,7 @@ public class NarrativeInfoDecoratorTest {
 
         compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
         compare( res.getAccessGroupNarrativeInfo().get(4L), narrInfoTuple("test", 1L, 1L, "user", null));
-        assertThat("incorrect guid removed", res.getAdditionalProperties().get("removedGuids") == null, is(true));
+        assertThat("removed guids not shown", res.getAdditionalProperties().get("removedGuids") == null, is(true));
         assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
     }
 
@@ -413,8 +413,9 @@ public class NarrativeInfoDecoratorTest {
         compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
         compare( res.getAccessGroupNarrativeInfo().get(4L), narrInfoTuple("test", 1L, 1L, "user", null));
 
-        assertThat("incorrect guid removed", res.getAdditionalProperties().get("removedGuids"), is(Arrays.asList("WS:3/5/6")));
+        assertThat("removed guids shown", res.getAdditionalProperties().get("removedGuids"), is(Arrays.asList("WS:3/5/6")));
         assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
+        System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
     }
 
 
@@ -434,8 +435,10 @@ public class NarrativeInfoDecoratorTest {
         compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
         compare( res.getAccessGroupNarrativeInfo().get(4L), narrInfoTuple("test", 1L, 1L, "user", null));
 
-        assertThat("incorrect guid removed", res.getAdditionalProperties().get("removedGuids"), is(Arrays.asList("WS:3/5/6")));
+        assertThat("removed guids shown", res.getAdditionalProperties().get("removedGuids"), is(Arrays.asList("WS:3/5/6")));
         assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
+        System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
+
     }
 
     public NarrativeInfoDecorator setUpSearchObjectsWithDeletedWs() throws Exception {
