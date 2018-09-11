@@ -119,6 +119,7 @@ public class AccessGroupInfoDecorator implements SearchInterface {
         }
         final List<String> inputArr = "true".equals(System.getProperty(removedGuidsEnv)) ?
                 (List<String>) getObjsOutput.getAdditionalProperties().get(removedGuids) : new ArrayList<>();
+
         if (Objects.nonNull(params.getPostProcessing())) {
             if (Objects.nonNull(params.getPostProcessing().getAddAccessGroupInfo()) &&
                     params.getPostProcessing().getAddAccessGroupInfo() == 1) {
@@ -173,9 +174,7 @@ public class AccessGroupInfoDecorator implements SearchInterface {
             }
         }
 
-        if (removedGuids.size() > 0) {
-            getLogger().info("inaccessible guids: {}", removedGuids);
-        }
+
 
         return retVal;
     }
@@ -223,6 +222,10 @@ public class AccessGroupInfoDecorator implements SearchInterface {
                 }
             }
             retVal.putAll(filteredObjsInfo);
+        }
+
+        if (removedGuids.size() > 0) {
+            getLogger().info("inaccessible guids: {}", removedGuids);
         }
         return retVal;
     }
