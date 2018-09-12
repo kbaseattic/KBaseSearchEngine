@@ -11,6 +11,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -397,6 +398,8 @@ public class NarrativeInfoDecoratorTest {
 
     @Test
     public void searchObjectsWithDeletedWsWithShowingRemovedGuids() throws Exception {
+        Map<String, String> env = TestCommon.getenv();
+
         try {
             final NarrativeInfoDecorator nid = setUpSearchObjectsWithDeletedWs();
             final Pagination pag = new Pagination().withCount(3L).withStart(0L);
@@ -408,7 +411,7 @@ public class NarrativeInfoDecoratorTest {
             expectedObjs.add(new ObjectData().withGuid("WS:4/1/7").withCreator("user"));
             expectedObjs.add(new ObjectData().withGuid("WS:4/2/1").withCreator("user"));
 
-            System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "true");
+            env.put("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "true");
             final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
 
             compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
@@ -417,13 +420,15 @@ public class NarrativeInfoDecoratorTest {
             assertThat("removed guids shown", res.getAdditionalProperties().get("removedGuids"), is(Arrays.asList("WS:3/5/6")));
             assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
         } finally {
-            System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
+            env.put("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
         }
     }
 
 
     @Test
     public void getObjectsWithDeletedWsWithShowingRemovedGuids() throws Exception {
+        Map<String, String> env = TestCommon.getenv();
+
         try{
             final NarrativeInfoDecorator nid = setUpSearchObjectsWithDeletedWs();
             final GetObjectsInput dummyInput = new GetObjectsInput()
@@ -433,7 +438,7 @@ public class NarrativeInfoDecoratorTest {
             expectedObjs.add(new ObjectData().withGuid("WS:4/1/7").withCreator("user"));
             expectedObjs.add(new ObjectData().withGuid("WS:4/2/1").withCreator("user"));
 
-            System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "true");
+            env.put("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "true");
             final GetObjectsOutput res = nid.getObjects(dummyInput, "user");
 
             compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
@@ -442,7 +447,7 @@ public class NarrativeInfoDecoratorTest {
             assertThat("removed guids shown", res.getAdditionalProperties().get("removedGuids"), is(Arrays.asList("WS:3/5/6")));
             assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
         }finally {
-            System.setProperty("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
+            env.put("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
         }
     }
 
@@ -533,4 +538,5 @@ public class NarrativeInfoDecoratorTest {
                 .withE4(owner)
                 .withE5(displayName);
     }
+
 }

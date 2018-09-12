@@ -85,12 +85,10 @@ public class NarrativeInfoDecorator implements SearchInterface {
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
         SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
-        if (searchObjsOutput.getAdditionalProperties().get(removedGuids) == null &&
-                "true".equals(System.getProperty(removedGuidsEnv))){
-            searchObjsOutput.getAdditionalProperties().put(removedGuids, new ArrayList<>());
+        final List<String> inputArr = new ArrayList<>();
+        if ("true".equals(System.getenv(removedGuidsEnv))){
+            searchObjsOutput.getAdditionalProperties().put(removedGuids, inputArr);
         }
-        final List<String> inputArr = "true".equals(System.getProperty(removedGuidsEnv)) ?
-                (List<String>) searchObjsOutput.getAdditionalProperties().get(removedGuids) : new ArrayList<>();
         if (params.getPostProcessing() != null) {
             if (params.getPostProcessing().getAddNarrativeInfo() != null &&
                     params.getPostProcessing().getAddNarrativeInfo() == 1) {
@@ -107,12 +105,10 @@ public class NarrativeInfoDecorator implements SearchInterface {
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
         GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
-        if (getObjsOutput.getAdditionalProperties().get(removedGuids) == null &&
-                "true".equals(System.getProperty(removedGuidsEnv))){
-            getObjsOutput.getAdditionalProperties().put(removedGuids, new ArrayList<>());
+        final List<String> inputArr = new ArrayList<>();
+        if ("true".equals(System.getenv(removedGuidsEnv))){
+            getObjsOutput.getAdditionalProperties().put(removedGuids, inputArr);
         }
-        final List<String> inputArr = "true".equals(System.getProperty(removedGuidsEnv)) ?
-                (List<String>) getObjsOutput.getAdditionalProperties().get(removedGuids) : new ArrayList<>();
         if (params.getPostProcessing() != null) {
             if (params.getPostProcessing().getAddNarrativeInfo() != null &&
                     params.getPostProcessing().getAddNarrativeInfo() == 1) {
@@ -127,7 +123,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
 
     /**
      * Adds narrative information for non deleted and valid narrative workspaces. Removes results otherwise and
-     * add the removed result's guid to removedGuids list, if list is not null.
+     * log list of removed guids. If env "KBASE_SEARCH_SHOW_REMOVED_GUIDS", is set to true, list of removed guids
+     * is added to additionalProperties.
      */
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(
             final List<ObjectData> objects,
@@ -163,10 +160,6 @@ public class NarrativeInfoDecorator implements SearchInterface {
                     removedGuids.add(objData.getGuid());
 
                 }
-            //if workspace is not a narrative, remove results from search
-            } else{
-                iter.remove();
-                removedGuids.add(objData.getGuid());
             }
         }
 

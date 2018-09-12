@@ -1807,8 +1807,11 @@ Output results for 'search_objects' method.
     pagination and sorting.
 total - total number of found objects.
 search_time - common time in milliseconds spent.
-list<ObjectData> objects - Result of search. Deleted or inaccessible objects are removed. List, before removal of
-   objects will match input from pagination.
+list<ObjectData> objects - Results of search. In rare cases, due to time delay in updating the search
+  index from  changes in the source data, objects returned from the search
+  index may not be accessible at the data source. The API will remove
+  these objects from the returned search results which means the returned
+  results may have fewer objects than a full page.
 mapping<access_group_id, narrative_info> access_group_narrative_info - information about
    the workspaces in which the objects in the results reside. This data only applies to
    workspace objects.
@@ -1912,7 +1915,10 @@ match_filter has a value which is a KBaseSearchEngine.MatchFilter
 =item Description
 
 Output results of get_objects method.
-list<ObjectData> objects - Result of search. Deleted or inaccessible objects are removed.
+list<ObjectData> objects - Results of search. In rare cases, due to time delay in updating the search
+  index from  changes in the source data, objects returned from the search
+  index may not be accessible at the data source. The API will remove
+  these objects from the returned search results.
 mapping<access_group_id, narrative_info> access_group_narrative_info - information about
    the workspaces in which the objects in the results reside. This data only applies to
    workspace objects.
