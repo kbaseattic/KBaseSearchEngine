@@ -726,7 +726,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
         // script = {"inline": "ctx._source.islast = (ctx._source.version == params.lastver)",
         //           "params": {"lastver": lastVersion}}
         Map<String, Object> script = ImmutableMap.of(
-                "inline", "ctx._source.islast = (ctx._source.version == params.lastver);",
+                "source", "ctx._source.islast = (ctx._source.version == params.lastver);",
                 "params", params);
 
         // doc = {"query": {"bool": {"filter": [{"term": {"prefix": prefix}}]}},
@@ -848,23 +848,23 @@ public class ElasticIndexingStorage implements IndexingStorage {
         //           ("accgrp": accessGroupId)?,
         //           ("pubaccgrp": -1)?,
         //           ("pubaccgrp": -2)?}
-        StringBuilder inline = new StringBuilder();
+        StringBuilder source = new StringBuilder();
         final Map<String, Object> params = new HashMap<>();
         params.put("lastver", lastVersion);
         if (accessGroupId != null) {
-            inline.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "accgrp"));
+            source.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "accgrp"));
             params.put("accgrp", accessGroupId);
         }
         if (includePublicAccessID) {
-            inline.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "pubaccgrp"));
+            source.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "pubaccgrp"));
             params.put("pubaccgrp", PUBLIC_ACCESS_GROUP);
         }
         if (includeAdminAccessID) {
-            inline.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "adminaccgrp"));
+            source.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "adminaccgrp"));
             params.put("adminaccgrp", ADMIN_ACCESS_GROUP);
         }
         Map<String, Object> script = new LinkedHashMap<>();
-        script.put("inline", inline.toString());
+        script.put("source", source.toString());
         script.put("params", ImmutableMap.copyOf(params));
 
         Map<String, Object> doc = ImmutableMap.of("query", query,
@@ -897,7 +897,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         final Map<String, Object> params = ImmutableMap.of("accgrp", accessGroupId);
         Map<String, Object> script = ImmutableMap.of(
-                "inline",
+                "source",
                 "ctx._source.lastin.remove(ctx._source.lastin.indexOf(params.accgrp));\n" +
                 "if (ctx._source.extpub.indexOf(params.accgrp) >= 0) {\n" +
                 "  ctx._source.extpub.remove(ctx._source.extpub.indexOf(params.accgrp));\n" +
@@ -933,7 +933,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         final Map<String, Object> params = ImmutableMap.of("field", field,
                                                            "value", value);
-        Map<String, Object> script = ImmutableMap.of("inline",
+        Map<String, Object> script = ImmutableMap.of("source",
                                                      "ctx._source[params.field] = params.value;",
                                                      "params", params);
 
@@ -975,7 +975,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             query = createFilter("prefix", "guid", object.toString());
         }
         final Map<String, Object> script = ImmutableMap.of(
-                "inline", "ctx._source[params.field] = params.value",
+                "source", "ctx._source[params.field] = params.value",
                 "params", ImmutableMap.of("field", field, "value", value));
         final Map<String, Object> doc = ImmutableMap.of(
                 "query", query,
@@ -1141,7 +1141,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         final Map<String, Object> params = ImmutableMap.of("accgrp", accessGroupId);
         Map<String, Object> script = ImmutableMap.of(
-                "inline",
+                "source",
                 "if (ctx._source.extpub.indexOf(params.accgrp) < 0) {\n" +
                 "  ctx._source.extpub.add(params.accgrp);\n" +
                 "}\n",
@@ -1194,7 +1194,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         final Map<String, Object> params = ImmutableMap.of("accgrp", accessGroupId);
         Map<String, Object> script = ImmutableMap.of(
-                "inline",
+                "source",
                 "ctx._source.extpub.remove(ctx._source.extpub.indexOf(params.accgrp));\n",
                 "params", params);
 
