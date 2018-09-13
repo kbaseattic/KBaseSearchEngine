@@ -424,8 +424,8 @@ public class IndexerWorker implements Stoppable {
             switch (updatedEvent.getEventType()) {
             case NEW_VERSION:
                 GUID pguid = updatedEvent.toGUID();
-                boolean indexed = indexingStorage.checkParentGuidsExist(new LinkedHashSet<>(
-                        Arrays.asList(pguid))).get(pguid);
+                boolean indexed = indexingStorage.lookupParentId(
+                        updatedEvent.getStorageObjectType().get().getType(), updatedEvent.toGUID());
                 boolean overwriteExistingData = updatedEvent.isOverwriteExistingData().or(false);
                 if (indexed && !overwriteExistingData) {
                     logger.logInfo("[Indexer]   skipping " + pguid +
