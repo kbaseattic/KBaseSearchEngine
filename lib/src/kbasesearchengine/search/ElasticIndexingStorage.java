@@ -723,14 +723,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
         // params = {"lastver": lastVersion}
         final Map<String, Object> params = ImmutableMap.of("lastver", lastVersion);
 
-        // script = {"inline": "ctx._source.islast = (ctx._source.version == params.lastver)",
+        // script = {"source": "ctx._source.islast = (ctx._source.version == params.lastver)",
         //           "params": {"lastver": lastVersion}}
         Map<String, Object> script = ImmutableMap.of(
                 "source", "ctx._source.islast = (ctx._source.version == params.lastver);",
                 "params", params);
 
         // doc = {"query": {"bool": {"filter": [{"term": {"prefix": prefix}}]}},
-        //        "script": {"inline": "ctx._source.islast = (ctx._source.version == params.lastver)",
+        //        "script": {"source": "ctx._source.islast = (ctx._source.version == params.lastver)",
         //                   "params": {"lastver": lastVersion}}}
         Map<String, Object> doc = ImmutableMap.of("query", query,
                                                   "script", script);
