@@ -1818,6 +1818,9 @@ public class ElasticIndexingStorageTest {
 
     @Test
     public void testSearchObjectType() throws Exception {
+        final boolean res0 = indexStorage.hasParentId("someobject", new GUID("WS:2000/1/1"));
+        assertThat("parent id should not exist", res0, is(false));
+
         indexStorage.indexObjects(
                 ObjectTypeParsingRules.getBuilder(
                         new SearchObjectType("Someobject", 1),
@@ -1833,7 +1836,7 @@ public class ElasticIndexingStorageTest {
                         "{\"whee\": \"imaprettypony\"}",
                         ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
                 false);
-        final boolean res = indexStorage.lookupParentId("someobject", new GUID("WS:2000/1/1"));
+        final boolean res = indexStorage.hasParentId("someobject", new GUID("WS:2000/1/1"));
         assertThat("could not find parent id", res, is(true));
     }
 

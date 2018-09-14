@@ -58,7 +58,7 @@ public interface IndexingStorage {
     public Map<GUID, Boolean> checkParentGuidsExist(Set<GUID> parentGuids)
             throws IOException;
 
-    public boolean lookupParentId(String type, GUID guid) throws IOException;
+    public boolean hasParentId(String type, GUID guid) throws IOException;
 
     public void flushIndexing(ObjectTypeParsingRules objectType) throws IOException;
     

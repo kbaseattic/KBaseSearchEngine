@@ -1216,7 +1216,7 @@ public class IndexerWorkerTest {
         when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
 
         // simulate to show that index record for corresponding event already exists
-        when(idxStore.lookupParentId("KBaseGenome.Genome", new GUID("code:1/2/3"))).thenReturn(true);
+        when(idxStore.hasParentId("KBaseGenome.Genome", new GUID("code:1/2/3"))).thenReturn(true);
 
         final StatusEventProcessingState res = worker.processEvent(event);
         assertThat("incorrect state", res, is(StatusEventProcessingState.INDX));
