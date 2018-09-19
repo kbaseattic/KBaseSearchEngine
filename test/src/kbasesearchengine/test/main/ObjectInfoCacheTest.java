@@ -2,15 +2,12 @@ package kbasesearchengine.test.main;
 
 import java.util.Map;
 
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doThrow;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doAnswer;
 
 import java.util.Collections;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 
 import us.kbase.common.service.JsonClientException;
 import static org.hamcrest.CoreMatchers.is;
@@ -296,7 +293,10 @@ public class ObjectInfoCacheTest {
         final ObjectInfoCache cache = new ObjectInfoCache(wrapped, 10000, 10);
 
         when(wrapped.getObjectsInfo(set("65/1/1"))).thenThrow(new IOException("Test Exception Message"));
-        failFindObjectInfo(cache, ImmutableList.of("65/1/1"), new IOException("Test Exception Message"));
+        when(wrapped.getObjectInfo("6/1/1")).thenThrow(new IOException("Test Exception Message2"));
+
+        failFindObjectsInfo(cache, ImmutableList.of("65/1/1"), new IOException("Test Exception Message"));
+        failFindObjectInfo(cache, "6/1/1", new IOException("Test Exception Message2"));
     }
 
 
@@ -306,7 +306,10 @@ public class ObjectInfoCacheTest {
         final ObjectInfoCache cache = new ObjectInfoCache(wrapped, 10000, 10);
 
         when(wrapped.getObjectsInfo(set("65/1/1"))).thenThrow(new IOException("is deleted"));
-        assertThat("should be null", cache.getObjectsInfo(ImmutableList.of("65/1/1")) == null, is(true));
+        when(wrapped.getObjectInfo("6/1/1")).thenThrow(new IOException("is deleted 2"));
+
+        assertNull(cache.getObjectsInfo(ImmutableList.of("65/1/1")));
+        assertNull(cache.getObjectInfo("6/1/1"));
     }
 
     @Test
@@ -315,15 +318,29 @@ public class ObjectInfoCacheTest {
         final ObjectInfoCache cache = new ObjectInfoCache(wrapped, 10000, 10);
 
         when(wrapped.getObjectsInfo(set("65/1/1"))).thenThrow(new JsonClientException("Test Exception Message"));
-        failFindObjectInfo(cache, ImmutableList.of("65/1/1"), new JsonClientException("Test Exception Message"));
+        when(wrapped.getObjectInfo("6/1/1")).thenThrow(new JsonClientException("Test Exception Message2"));
+
+        failFindObjectsInfo(cache, ImmutableList.of("65/1/1"), new JsonClientException("Test Exception Message"));
+        failFindObjectInfo(cache, "6/1/1", new JsonClientException("Test Exception Message2"));
     }
 
-    private void failFindObjectInfo(
+    private void failFindObjectsInfo(
             final ObjectInfoCache cache,
             final ImmutableList<String> objRefs,
             final Exception expected) {
         try {
             cache.getObjectsInfo(objRefs);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
+    }
+    private void failFindObjectInfo(
+            final ObjectInfoCache cache,
+            final String objRefs,
+            final Exception expected) {
+        try {
+            cache.getObjectInfo(objRefs);
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);

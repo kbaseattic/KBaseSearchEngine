@@ -49,14 +49,15 @@ public class AccessGroupNarrativeInfoProvider implements NarrativeInfoProvider {
             } catch (IOException e) {
                 if (e.getMessage().toLowerCase().contains("is deleted") ||
                         e.getMessage().toLowerCase().contains("has been deleted")) {
-                    wsInfo = null;
+                    LoggerFactory.getLogger(getClass()).info("Workspace is deleted but remains in search: {}",
+                            e.getMessage());
+                } else {
+                    LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving workspace info: {}",
+                            e.getMessage());
                 }
-                LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving workspace info: {}",
-                        e.getMessage());
             } catch (JsonClientException e) {
                 LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving workspace info: {}",
                         e.getMessage());
-                wsInfo = null;
             }
 
 
