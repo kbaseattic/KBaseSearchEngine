@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import org.slf4j.LoggerFactory;
 import us.kbase.common.service.JsonClientException;
 import kbasesearchengine.tools.Utils;
 
@@ -106,8 +108,21 @@ public class ObjectInfoCache implements ObjectInfoProvider {
         try {
             return cache.get(objRef);
         } catch (ExecutionException e) {
-            throw (IOException) e.getCause(); // IOE is the only checked exception
-            // unchecked exceptions are wrapped in UncheckedExcecutionException
+            final Throwable ex = e.getCause();
+            if (ex instanceof IOException ) {
+                //special case for deleted objects
+                if (ex.getMessage().toLowerCase().contains("is deleted") ||
+                        ex.getMessage().toLowerCase().contains("has been deleted")) {
+                    return null;
+                }
+                throw (IOException) ex;
+            } else if (ex instanceof JsonClientException) {
+                throw (JsonClientException) ex;
+            } else {
+                LoggerFactory.getLogger(getClass()).error("This exception should not happen: {}",
+                        ex.getMessage());
+                return null;
+            }
         }
     }
 
@@ -118,8 +133,21 @@ public class ObjectInfoCache implements ObjectInfoProvider {
         try {
             return cache.getAll(objRefs);
         } catch (ExecutionException e) {
-            throw (IOException) e.getCause(); // IOE is the only checked exception
-            // unchecked exceptions are wrapped in UncheckedExcecutionException
+            final Throwable ex = e.getCause();
+            if (ex instanceof IOException ) {
+                //special case for deleted objects
+                if (ex.getMessage().toLowerCase().contains("is deleted") ||
+                        ex.getMessage().toLowerCase().contains("has been deleted")) {
+                    return null;
+                }
+                throw (IOException) ex;
+            } else if (ex instanceof JsonClientException) {
+                throw (JsonClientException) ex;
+            } else {
+                LoggerFactory.getLogger(getClass()).error("This exception should not happen: {}",
+                        ex.getMessage());
+                return null;
+            }
         }
     }
 }

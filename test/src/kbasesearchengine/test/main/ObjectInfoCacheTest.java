@@ -2,16 +2,19 @@ package kbasesearchengine.test.main;
 
 import java.util.Map;
 
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doAnswer;
 
 import java.util.Collections;
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+
 import us.kbase.common.service.JsonClientException;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 
@@ -295,6 +298,15 @@ public class ObjectInfoCacheTest {
         when(wrapped.getObjectsInfo(set("65/1/1"))).thenThrow(new IOException("Test Exception Message"));
 
         failFindObjectInfo(cache, ImmutableList.of("65/1/1"), new IOException("Test Exception Message"));
+    }
+
+    @Test
+    public void getFailJSONE() throws Exception {
+        final ObjectInfoProvider wrapped = mock(ObjectInfoProvider.class);
+        final ObjectInfoCache cache = new ObjectInfoCache(wrapped, 10000, 10);
+
+        when(wrapped.getObjectsInfo(set("65/1/1"))).thenThrow(new JsonClientException("Test Exception Message"));
+        failFindObjectInfo(cache, ImmutableList.of("65/1/1"), new JsonClientException("Test Exception Message"));
     }
 
     private void failFindObjectInfo(
