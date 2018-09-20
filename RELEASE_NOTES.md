@@ -1,5 +1,12 @@
 Search Service MKII release notes
 =================================
+0.2.3
+----
+* Upgrade ES from 5.5 to 5.6.11
+* Fix bugs in error handling: 
+    - Information requested of deleted objects returns nulls instead of throwing errors. 
+    - Errors casting bugs fixed
+
 
 0.2.2-dev1
 -----
