@@ -122,7 +122,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
     }
 
     /**
-     * Adds narrative information for non deleted and valid narrative workspaces. Removes results otherwise and
+     * Adds narrative information for non deleted workspaces. Removes results otherwise and
      * log list of removed guids. If env "KBASE_SEARCH_SHOW_REMOVED_GUIDS", is set to true, list of removed guids
      * is added to additionalProperties.
      */
@@ -152,6 +152,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
                 seenWorkspaces.add(workspaceId);
                 final NarrativeInfo narrInfo = narrInfoProvider.findNarrativeInfo(workspaceId);
 
+                //provider sets narrative info null for deleted workspaces
                 if (narrInfo != null) {
                     final Tuple5<String, Long, Long, String, String> tempNarrInfo =
                             new Tuple5<String, Long, Long, String, String>()
