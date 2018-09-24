@@ -138,11 +138,18 @@ public class NarrativeInfoDecorator implements SearchInterface {
         }
         final Set<String> userNames = new HashSet<>();
         final Iterator<ObjectData> iter = objects.iterator();
+        final Set<Long> seenWorkspaces = new HashSet<>();
         while (iter.hasNext()) {
             final ObjectData objData = iter.next();
             final GUID guid = new GUID(objData.getGuid());
             if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
                 final long workspaceId = guid.getAccessGroupId();
+
+                if(seenWorkspaces.contains(workspaceId)){
+                    continue;
+                }
+
+                seenWorkspaces.add(workspaceId);
                 final NarrativeInfo narrInfo = narrInfoProvider.findNarrativeInfo(workspaceId);
 
                 if (narrInfo != null) {

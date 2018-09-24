@@ -391,8 +391,10 @@ public class NarrativeInfoDecoratorTest {
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
 
         compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
-        compare( res.getAccessGroupNarrativeInfo().get(4L), narrInfoTuple("test", 1L, 1L, "user", null));
-        assertThat("removed guids not shown", res.getAdditionalProperties().get("removedGuids") == null, is(true));
+        compare( res.getAccessGroupNarrativeInfo().get(4L),
+                narrInfoTuple("test", 1L, 1L, "user", null));
+        assertThat("removed guids not shown",
+                res.getAdditionalProperties().get("removedGuids") == null, is(true));
         assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
     }
 
@@ -415,9 +417,10 @@ public class NarrativeInfoDecoratorTest {
             final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
 
             compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
-            compare( res.getAccessGroupNarrativeInfo().get(4L), narrInfoTuple("test", 1L, 1L, "user", null));
-
-            assertThat("removed guids shown", res.getAdditionalProperties().get("removedGuids"), is(Arrays.asList("WS:3/5/6")));
+            compare( res.getAccessGroupNarrativeInfo().get(4L),
+                    narrInfoTuple("test", 1L, 1L, "user", null));
+            assertThat("removed guids shown",
+                    res.getAdditionalProperties().get("removedGuids"), is(Arrays.asList("WS:3/5/6")));
             assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
         } finally {
             env.put("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
@@ -442,7 +445,8 @@ public class NarrativeInfoDecoratorTest {
             final GetObjectsOutput res = nid.getObjects(dummyInput, "user");
 
             compareSearchObjectOutputRes(res.getObjects(), expectedObjs);
-            compare( res.getAccessGroupNarrativeInfo().get(4L), narrInfoTuple("test", 1L, 1L, "user", null));
+            compare( res.getAccessGroupNarrativeInfo().get(4L),
+                    narrInfoTuple("test", 1L, 1L, "user", null));
 
             assertThat("removed guids shown", res.getAdditionalProperties().get("removedGuids"), is(Arrays.asList("WS:3/5/6")));
             assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
@@ -505,9 +509,9 @@ public class NarrativeInfoDecoratorTest {
 
     public static void compareSearchObjectOutputRes(List<ObjectData> expected, List<ObjectData> res ){
         assertThat("incorrect number of results", expected.size(), is(res.size()));
-        for(int i =0; i<Math.min(expected.size(), res.size()); i++){
-            if(res.get(i) == null){
-                assertThat("incorrect object", expected.get(i) == null, is(true));
+        for (int i =0; i < Math.min(expected.size(), res.size()); i++){
+            if (res.get(i) == null) {
+                assertNull(expected.get(i));
             }else{
                 assertThat("incorrect object", expected.get(i).getGuid(), is(res.get(i).getGuid()));
             }
