@@ -850,9 +850,8 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
         // check deletion state
         {
             final StatusEvent updatedEvent = updateEventForDeletion(ev);
-            // if event was updated (event type gets changed to
-            // StatusEventType.DELETE_ALL_VERSIONS
-            if (!updatedEvent.equals(ev) || updatedEvent.getEventType().equals(StatusEventType.DELETE_ALL_VERSIONS)) {
+            // event only checked for deletion. 
+            if (updatedEvent.getEventType().equals(StatusEventType.DELETE_ALL_VERSIONS)) {
                 return updatedEvent;
             }
         }
