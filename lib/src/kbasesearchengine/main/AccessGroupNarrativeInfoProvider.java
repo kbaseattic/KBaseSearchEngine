@@ -42,15 +42,24 @@ public class AccessGroupNarrativeInfoProvider implements NarrativeInfoProvider {
     @Override
     public NarrativeInfo findNarrativeInfo(final Long accessGroupID) {
         Tuple9 <Long, String, String, String, Long, String, String,
-                String, Map<String,String>> wsInfo;
+                String, Map<String,String>> wsInfo = null;
 
-        try {
-            wsInfo = wsHandler.getWorkspaceInfo(accessGroupID);
-        } catch (IOException | JsonClientException e) {
-            LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving workspace info: Returning null: {}",
-                    e.getMessage());
-            wsInfo = null;
-        }
+            try {
+                wsInfo = wsHandler.getWorkspaceInfo(accessGroupID);
+            } catch (IOException e) {
+                if (e.getMessage().toLowerCase().contains("is deleted") ||
+                        e.getMessage().toLowerCase().contains("has been deleted")) {
+                    LoggerFactory.getLogger(getClass()).info("Workspace is deleted but remains in search: {}",
+                            e.getMessage());
+                } else {
+                    LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving workspace info: {}",
+                            e.getMessage());
+                }
+            } catch (JsonClientException e) {
+                LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving workspace info: {}",
+                        e.getMessage());
+            }
+
 
         if (wsInfo == null) return null;
 

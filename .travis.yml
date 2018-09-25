@@ -38,9 +38,9 @@ before_install:
 install:
 - cd ..
 # install elastic search
-- wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.0.tar.gz
-- tar xfz elasticsearch-5.5.0.tar.gz
-- ln -s elasticsearch-5.5.0 elasticsearch
+- wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.6.11.tar.gz
+- tar xfz elasticsearch-5.6.11.tar.gz
+- ln -s elasticsearch-5.6.11 elasticsearch
 
 # install mongodb
 - wget http://fastdl.mongodb.org/linux/$MONGODB_VER.tgz

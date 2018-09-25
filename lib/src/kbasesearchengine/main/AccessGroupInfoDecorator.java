@@ -142,7 +142,9 @@ public class AccessGroupInfoDecorator implements SearchInterface {
             final Tuple9<Long, String, String, String, Long, String,
                     String, String, Map<String, String>> tempWorkspaceInfo =
                     wsInfoProvider.getWorkspaceInfo(workspaceId);
-            retVal.put(workspaceId, tempWorkspaceInfo);
+            if(tempWorkspaceInfo != null){
+                retVal.put(workspaceId, tempWorkspaceInfo);
+            }
         }
         return retVal;
     }

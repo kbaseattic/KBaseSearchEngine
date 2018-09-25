@@ -11,6 +11,8 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.Weigher;
+import org.slf4j.LoggerFactory;
+import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple9;
 
 /** A caching layer for workspace info. Caches the results in memory for quick access.
@@ -87,12 +89,25 @@ public class WorkspaceInfoCache implements WorkspaceInfoProvider {
 
     @Override
     public Tuple9<Long, String, String, String, Long, String,
-            String, String, Map<String, String>> getWorkspaceInfo(final Long wsId) throws IOException {
+            String, String, Map<String, String>> getWorkspaceInfo(final Long wsId) throws IOException, JsonClientException {
         try {
             return cache.get(wsId);
         } catch (ExecutionException e) {
-            throw (IOException) e.getCause(); // IOE is the only checked exception
-            // unchecked exceptions are wrapped in UncheckedExcecutionException
+            final Throwable ex = e.getCause();
+            if (ex instanceof IOException ) {
+                //special case for deleted objects
+                if (ex.getMessage().toLowerCase().contains("is deleted") ||
+                        ex.getMessage().toLowerCase().contains("has been deleted")) {
+                    return null;
+                }
+                throw (IOException) ex;
+            } else if (ex instanceof JsonClientException) {
+                throw (JsonClientException) ex;
+            } else {
+                LoggerFactory.getLogger(getClass()).error("This exception should not happen: {}",
+                        ex.getMessage());
+                return null;
+            }
         }
     }
 }
