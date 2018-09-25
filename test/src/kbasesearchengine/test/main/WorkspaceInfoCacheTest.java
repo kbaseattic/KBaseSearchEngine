@@ -199,16 +199,31 @@ public class WorkspaceInfoCacheTest {
                         "workspace is turned off"));
     }
 
+    @Test
+    public void wsInfoProviderDelete() throws  Exception {
+        final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
+        when(weh.getWorkspaceInfo(65L)).thenThrow(new IOException("is deleted"));
+
+        final WorkspaceInfoCache cache = new WorkspaceInfoCache(
+                weh,
+                1,
+                10000);
+        assertNull(cache.getWorkspaceInfo(65L));
+    }
+
     private void failGetWorkspaceInfo(
             final Exception toThrow,
             final Exception expected)
             throws Exception {
         final WorkspaceEventHandler weh = mock(WorkspaceEventHandler.class);
+        final WorkspaceInfoCache cache = new WorkspaceInfoCache(
+                weh,
+                1,
+                10000);
 
         when(weh.getWorkspaceInfo(65L)).thenThrow(toThrow);
-
         try {
-            weh.getWorkspaceInfo(65L);
+            cache.getWorkspaceInfo(65L);
             fail("expected exception");
         } catch (Exception got) {
             TestCommon.assertExceptionCorrect(got, expected);
