@@ -394,7 +394,7 @@ public class NarrativeInfoDecoratorTest {
         compare( res.getAccessGroupNarrativeInfo().get(4L),
                 narrInfoTuple("test", 1L, 1L, "user", null));
         assertThat("removed guids not shown",
-                res.getAdditionalProperties().get("REMOVED_GUIDS") == null, is(true));
+                res.getAdditionalProperties().get("removed_guids") == null, is(true));
         assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
     }
 
@@ -420,7 +420,7 @@ public class NarrativeInfoDecoratorTest {
             compare( res.getAccessGroupNarrativeInfo().get(4L),
                     narrInfoTuple("test", 1L, 1L, "user", null));
             assertThat("removed guids shown",
-                    res.getAdditionalProperties().get("REMOVED_GUIDS"), is(Arrays.asList("WS:3/5/6")));
+                    res.getAdditionalProperties().get("removed_guids"), is(Arrays.asList("WS:3/5/6")));
             assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
         } finally {
             env.put("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
@@ -448,7 +448,7 @@ public class NarrativeInfoDecoratorTest {
             compare( res.getAccessGroupNarrativeInfo().get(4L),
                     narrInfoTuple("test", 1L, 1L, "user", null));
 
-            assertThat("removed guids shown", res.getAdditionalProperties().get("REMOVED_GUIDS"),
+            assertThat("removed guids shown", res.getAdditionalProperties().get("removed_guids"),
                     is(Arrays.asList("WS:3/5/6")));
             assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
         }finally {

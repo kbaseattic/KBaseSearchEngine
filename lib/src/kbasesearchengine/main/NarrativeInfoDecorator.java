@@ -46,7 +46,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
     private final SearchInterface searchInterface;
     private final NarrativeInfoProvider narrInfoProvider;
     private final AuthInfoProvider authInfoProvider;
-    private final static String REMOVED_GUIDS = "REMOVED_GUIDS";
+    private final static String REMOVED_GUIDS = "removed_guids";
     private final static String REMOVED_GUIDS_ENV = "KBASE_SEARCH_SHOW_REMOVED_GUIDS";
 
     /** Create a decorator.
