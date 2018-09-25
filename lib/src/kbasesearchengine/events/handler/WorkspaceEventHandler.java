@@ -844,13 +844,20 @@ public class WorkspaceEventHandler implements EventHandler, WorkspaceInfoProvide
             return ev;
         }
 
+
+        // if delete event is out of sync and comes after undelete event, object will be incorrectly shown as deleted.
+        if (ev.getEventType().equals(StatusEventType.DELETE_ALL_VERSIONS)) {
+            return ev;
+        }
+
         // brute force get latest state and update event as event can be played
         // out of order in the case of failed events being replayed.
 
         // check deletion state
         {
             final StatusEvent updatedEvent = updateEventForDeletion(ev);
-            // event only checked for deletion. 
+
+            // updateEventForDeletion only checked for deletion
             if (updatedEvent.getEventType().equals(StatusEventType.DELETE_ALL_VERSIONS)) {
                 return updatedEvent;
             }
