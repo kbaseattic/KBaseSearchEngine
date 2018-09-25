@@ -51,8 +51,8 @@ public class SearchTypesInput {
     /**
      * <p>Original spec-file type: AccessFilter</p>
      * <pre>
-     * Optional rules of access constraints.
-     *   - with_private - include data found in workspaces not marked
+     * Optional rules of access constraints. Will throw exception if with_public and with_private are both false.
+     *   - with_private - include data found in workspaces not marked 
      *               as public, default value is true for authenticated users. Value set to false for unauthenticated users.
      *   - with_public - include data found in public workspaces,
      *               default value is false for authenticated users. Value set to true for unauthenticated users.
@@ -62,7 +62,6 @@ public class SearchTypesInput {
      * </pre>
      * 
      */
-
     @JsonProperty("access_filter")
     private AccessFilter accessFilter;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
@@ -125,8 +124,8 @@ public class SearchTypesInput {
     /**
      * <p>Original spec-file type: AccessFilter</p>
      * <pre>
-     * Optional rules of access constraints.
-     *   - with_private - include data found in workspaces not marked
+     * Optional rules of access constraints. Will throw exception if with_public and with_private are both false.
+     *   - with_private - include data found in workspaces not marked 
      *               as public, default value is true for authenticated users. Value set to false for unauthenticated users.
      *   - with_public - include data found in public workspaces,
      *               default value is false for authenticated users. Value set to true for unauthenticated users.
@@ -144,8 +143,8 @@ public class SearchTypesInput {
     /**
      * <p>Original spec-file type: AccessFilter</p>
      * <pre>
-     * Optional rules of access constraints.
-     *   - with_private - include data found in workspaces not marked
+     * Optional rules of access constraints. Will throw exception if with_public and with_private are both false.
+     *   - with_private - include data found in workspaces not marked 
      *               as public, default value is true for authenticated users. Value set to false for unauthenticated users.
      *   - with_public - include data found in public workspaces,
      *               default value is false for authenticated users. Value set to true for unauthenticated users.

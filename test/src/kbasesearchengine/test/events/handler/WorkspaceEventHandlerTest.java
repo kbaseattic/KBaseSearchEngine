@@ -9,6 +9,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,6 +47,7 @@ import kbasesearchengine.events.handler.CloneableWorkspaceClientImpl;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.test.common.TestCommon;
+import org.mockito.Mockito;
 import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple9;
 import us.kbase.common.service.UObject;
@@ -941,7 +943,14 @@ public class WorkspaceEventHandlerTest {
         when(clonecli.getClientClone()).thenReturn(cloned);
         when(clonecli.getClient()).thenReturn(wscli);
 
-        StatusEvent event = StatusEvent.getBuilder(
+        when(wscli.administer(argThat(new AdminListObjectsAnswerMatcher(1L, 1L, 1L))))
+                .thenThrow(new JsonClientException("No workspace with id 1 exists"));
+
+        verify(wscli, Mockito.times(0)).getWorkspaceInfo(any());
+
+        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
+
+        StatusEvent expectedEvent = StatusEvent.getBuilder(
                 "WS",
                 Instant.ofEpochMilli(20000),
                 StatusEventType.DELETE_ALL_VERSIONS)
@@ -949,8 +958,8 @@ public class WorkspaceEventHandlerTest {
                 .withNullableObjectID("1")
                 .build();
 
-        final WorkspaceEventHandler weh = new WorkspaceEventHandler(clonecli);
-        Assert.assertEquals(event, weh.updateObjectEvent(event));
+        Assert.assertEquals(expectedEvent, weh.updateObjectEvent(expectedEvent));
+
     }
 
     @Test
