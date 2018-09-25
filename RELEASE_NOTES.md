@@ -1,5 +1,11 @@
 Search Service MKII release notes
 =================================
+0.2.4
+---
+* Remove objects in deleted/inaccessible workspaces from search results. This should be a rare event that, 
+  due to time delay in updating the searchvindex from  changes in the source data,
+  objects returned from the search index may not be accessible at the data source. 
+
 0.2.3
 ----
 * Upgrade ES from 5.5 to 5.6.11
