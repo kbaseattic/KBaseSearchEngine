@@ -46,8 +46,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
     private final SearchInterface searchInterface;
     private final NarrativeInfoProvider narrInfoProvider;
     private final AuthInfoProvider authInfoProvider;
-    private final String removedGuids = "removedGuids";
-    private final String removedGuidsEnv = "KBASE_SEARCH_SHOW_REMOVED_GUIDS";
+    private final static String REMOVED_GUIDS = "REMOVED_GUIDS";
+    private final static String REMOVED_GUIDS_ENV = "KBASE_SEARCH_SHOW_REMOVED_GUIDS";
 
     /** Create a decorator.
      * @param searchInterface the search interface to decorate. This may be a root interface that
@@ -86,8 +86,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
             throws Exception {
         SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
         final List<String> inputArr = new ArrayList<>();
-        if ("true".equals(System.getenv(removedGuidsEnv))){
-            searchObjsOutput.getAdditionalProperties().put(removedGuids, inputArr);
+        if ("true".equals(System.getenv(REMOVED_GUIDS_ENV))){
+            searchObjsOutput.getAdditionalProperties().put(REMOVED_GUIDS, inputArr);
         }
         if (params.getPostProcessing() != null) {
             if (params.getPostProcessing().getAddNarrativeInfo() != null &&
@@ -106,8 +106,8 @@ public class NarrativeInfoDecorator implements SearchInterface {
             throws Exception {
         GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
         final List<String> inputArr = new ArrayList<>();
-        if ("true".equals(System.getenv(removedGuidsEnv))){
-            getObjsOutput.getAdditionalProperties().put(removedGuids, inputArr);
+        if ("true".equals(System.getenv(REMOVED_GUIDS_ENV))){
+            getObjsOutput.getAdditionalProperties().put(REMOVED_GUIDS, inputArr);
         }
         if (params.getPostProcessing() != null) {
             if (params.getPostProcessing().getAddNarrativeInfo() != null &&
@@ -152,7 +152,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
                 seenWorkspaces.add(workspaceId);
                 final NarrativeInfo narrInfo = narrInfoProvider.findNarrativeInfo(workspaceId);
 
-                //provider sets narrative info null for deleted workspaces
+                //provider sets narrative info to null for any workspace errors. 
                 if (narrInfo != null) {
                     final Tuple5<String, Long, Long, String, String> tempNarrInfo =
                             new Tuple5<String, Long, Long, String, String>()

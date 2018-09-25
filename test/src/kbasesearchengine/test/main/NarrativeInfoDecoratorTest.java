@@ -448,7 +448,8 @@ public class NarrativeInfoDecoratorTest {
             compare( res.getAccessGroupNarrativeInfo().get(4L),
                     narrInfoTuple("test", 1L, 1L, "user", null));
 
-            assertThat("removed guids shown", res.getAdditionalProperties().get("removedGuids"), is(Arrays.asList("WS:3/5/6")));
+            assertThat("removed guids shown", res.getAdditionalProperties().get("removedGuids"),
+                    is(Arrays.asList("WS:3/5/6")));
             assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
         }finally {
             env.put("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
@@ -478,14 +479,15 @@ public class NarrativeInfoDecoratorTest {
         when(nip.findNarrativeInfo(3L)).thenReturn(null);
         when(nip.findNarrativeInfo(4L)).thenReturn(new NarrativeInfo("test", 1L, 1L, "user"));
 
-        when(search.searchObjects(Mockito.any(SearchObjectsInput.class), eq("user"))).thenReturn(new SearchObjectsOutput()
-                .withObjects(objs)
-                .withTotal(10L)
-                .withSearchTime(1L)
-                .withAccessGroupNarrativeInfo(new HashMap<>())
-                .withAccessGroupsInfo(new HashMap<>())
-                .withObjectsInfo(new HashMap<>())
-                .withPagination(pag));
+        when(search.searchObjects(Mockito.any(SearchObjectsInput.class), eq("user")))
+                .thenReturn(new SearchObjectsOutput()
+                    .withObjects(objs)
+                    .withTotal(10L)
+                    .withSearchTime(1L)
+                    .withAccessGroupNarrativeInfo(new HashMap<>())
+                    .withAccessGroupsInfo(new HashMap<>())
+                    .withObjectsInfo(new HashMap<>())
+                    .withPagination(pag));
 
 
         when(search.getObjects(Mockito.any(GetObjectsInput.class), eq("user"))).thenReturn(new GetObjectsOutput()
@@ -512,7 +514,7 @@ public class NarrativeInfoDecoratorTest {
         for (int i =0; i < Math.min(expected.size(), res.size()); i++){
             if (res.get(i) == null) {
                 assertNull(expected.get(i));
-            }else{
+            } else {
                 assertThat("incorrect object", expected.get(i).getGuid(), is(res.get(i).getGuid()));
             }
         }
