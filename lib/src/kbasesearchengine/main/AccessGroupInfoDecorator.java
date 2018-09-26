@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,6 +21,8 @@ import kbasesearchengine.TypeDescriptor;
 import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple9;
 import us.kbase.workspace.GetObjectInfo3Results;
@@ -45,6 +48,8 @@ public class AccessGroupInfoDecorator implements SearchInterface {
     private final WorkspaceInfoProvider wsInfoProvider;
     private final ObjectInfoProvider objInfoProvider;
     private final SearchInterface searchInterface;
+    private final static String REMOVED_GUIDS = "removed_guids";
+    private final static String REMOVED_GUIDS_ENV = "KBASE_SEARCH_SHOW_REMOVED_GUIDS";
 
     /** Create a decorator.
      * @param searchInterface the search interface to decorate. This may be a root interface that
@@ -83,16 +88,22 @@ public class AccessGroupInfoDecorator implements SearchInterface {
     public SearchObjectsOutput searchObjects(final SearchObjectsInput params, final String user)
             throws Exception {
         SearchObjectsOutput searchObjsOutput = searchInterface.searchObjects(params, user);
+        final List<String> inputArr = new ArrayList<>();
+        if ("true".equals(System.getenv(REMOVED_GUIDS_ENV))){
+            searchObjsOutput.getAdditionalProperties().put(REMOVED_GUIDS, inputArr);
+        }
         if (Objects.nonNull(params.getPostProcessing())) {
             if (Objects.nonNull(params.getPostProcessing().getAddAccessGroupInfo()) &&
                     params.getPostProcessing().getAddAccessGroupInfo() == 1) {
                 searchObjsOutput = searchObjsOutput
                         .withAccessGroupsInfo(addAccessGroupsInfo(
                                 searchObjsOutput.getObjects(),
-                                searchObjsOutput.getAccessGroupsInfo()))
+                                searchObjsOutput.getAccessGroupsInfo(),
+                                inputArr))
                         .withObjectsInfo(addObjectsInfo(
                                 searchObjsOutput.getObjects(),
-                                searchObjsOutput.getObjectsInfo()));
+                                searchObjsOutput.getObjectsInfo(),
+                                inputArr));
             }
         }
         return searchObjsOutput;
@@ -102,16 +113,20 @@ public class AccessGroupInfoDecorator implements SearchInterface {
     public GetObjectsOutput getObjects(final GetObjectsInput params, final String user)
             throws Exception {
         GetObjectsOutput getObjsOutput = searchInterface.getObjects(params, user);
+        final List<String> inputArr = new ArrayList<>();
+
         if (Objects.nonNull(params.getPostProcessing())) {
             if (Objects.nonNull(params.getPostProcessing().getAddAccessGroupInfo()) &&
                     params.getPostProcessing().getAddAccessGroupInfo() == 1) {
                 getObjsOutput = getObjsOutput
                         .withAccessGroupsInfo(addAccessGroupsInfo(
                                 getObjsOutput.getObjects(),
-                                getObjsOutput.getAccessGroupsInfo()))
+                                getObjsOutput.getAccessGroupsInfo(),
+                                inputArr))
                         .withObjectsInfo(addObjectsInfo(
                                 getObjsOutput.getObjects(),
-                                getObjsOutput.getObjectsInfo()));
+                                getObjsOutput.getObjectsInfo(),
+                                inputArr));
             }
         }
         return getObjsOutput;
@@ -121,7 +136,8 @@ public class AccessGroupInfoDecorator implements SearchInterface {
             String, String, Map<String, String>>> addAccessGroupsInfo(
             final List<ObjectData> objects,
             final Map<Long, Tuple9<Long, String, String, String, Long, String,
-                    String, String, Map<String, String>>> accessGroupInfoMap)
+                    String, String, Map<String, String>>> accessGroupInfoMap,
+            final List<String> removedGuids)
             throws IOException, JsonClientException {
 
         final Map<Long, Tuple9<Long, String, String, String, Long, String,
@@ -130,22 +146,41 @@ public class AccessGroupInfoDecorator implements SearchInterface {
         if (Objects.nonNull(accessGroupInfoMap)) {
             retVal.putAll(accessGroupInfoMap);
         }
-        final Set<Long> wsIdsSet = new HashSet<>();
+        final Iterator<ObjectData> iter = objects.iterator();
+        final Set<Long> seenWorkspaces = new HashSet<>();
+        final Set<Long> deletedWorkspaces = new HashSet<>();
 
-        for (final ObjectData objData: objects) {
+        while (iter.hasNext()) {
+            final ObjectData objData = iter.next();
             final GUID guid = new GUID(objData.getGuid());
             if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
-                wsIdsSet.add((long) guid.getAccessGroupId());
+                final long workspaceId = guid.getAccessGroupId();
+
+                if(seenWorkspaces.contains(workspaceId)){
+                    continue;
+                }
+
+                if(deletedWorkspaces.contains(workspaceId)){
+                    iter.remove();
+                    removedGuids.add(objData.getGuid());
+                    continue;
+                }
+
+                //provider sets narrative info to null for any workspace errors.
+                final Tuple9<Long, String, String, String, Long, String,
+                        String, String, Map<String, String>> tempWorkspaceInfo =
+                        wsInfoProvider.getWorkspaceInfo(workspaceId);
+                if (tempWorkspaceInfo != null) {
+                    retVal.put(workspaceId, tempWorkspaceInfo);
+                    seenWorkspaces.add(workspaceId);
+                } else {
+                    iter.remove();
+                    removedGuids.add(objData.getGuid());
+                    deletedWorkspaces.add(workspaceId);
+                }
             }
         }
-        for (final long workspaceId: wsIdsSet) {
-            final Tuple9<Long, String, String, String, Long, String,
-                    String, String, Map<String, String>> tempWorkspaceInfo =
-                    wsInfoProvider.getWorkspaceInfo(workspaceId);
-            if(tempWorkspaceInfo != null){
-                retVal.put(workspaceId, tempWorkspaceInfo);
-            }
-        }
+
         return retVal;
     }
 
@@ -153,7 +188,8 @@ public class AccessGroupInfoDecorator implements SearchInterface {
             Long, String, Long, String, String, Long, Map<String, String>>> addObjectsInfo(
             final List<ObjectData> objects,
             final Map<String, Tuple11<Long, String, String, String,
-            Long, String, Long, String, String, Long, Map<String, String>>> objectInfoMap)
+            Long, String, Long, String, String, Long, Map<String, String>>> objectInfoMap,
+            final List<String> removedGuids)
             throws IOException, JsonClientException {
 
         final Map<String, Tuple11<Long, String, String, String,
@@ -162,6 +198,8 @@ public class AccessGroupInfoDecorator implements SearchInterface {
         if (Objects.nonNull(objectInfoMap)) {
             retVal.putAll(objectInfoMap);
         }
+
+
         final Set<GUID> guidsSet = new HashSet<>();
         for (final ObjectData objData: objects) {
             final GUID guid = new GUID(objData.getGuid());
@@ -178,8 +216,32 @@ public class AccessGroupInfoDecorator implements SearchInterface {
                 String, Long, String, String, Long, Map<String, String>>> objsInfo =
                 objInfoProvider.getObjectsInfo(objRefs);
 
-        if (objsInfo != null)
+        if (objsInfo != null) {
             retVal.putAll(objsInfo);
+            final Set<String> objsInfoKeys = objsInfo.keySet();
+            final Iterator<ObjectData> iter = objects.iterator();
+
+            while (iter.hasNext()) {
+                final ObjectData objData = iter.next();
+                final GUID guid = new GUID(objData.getGuid());
+                if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
+                    if (! objsInfoKeys.contains(guid.toRefString())){
+                        iter.remove();
+                        removedGuids.add(objData.getGuid());
+                    }
+                }
+            }
+
+        }
+
+        if (removedGuids.size() > 0) {
+            getLogger().info("inaccessible guids: {}", removedGuids);
+        }
+
         return retVal;
+    }
+
+    private Logger getLogger() {
+        return LoggerFactory.getLogger(NarrativeInfoDecorator.class);
     }
 }
