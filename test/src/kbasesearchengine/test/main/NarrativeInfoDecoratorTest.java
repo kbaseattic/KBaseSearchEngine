@@ -420,7 +420,7 @@ public class NarrativeInfoDecoratorTest {
             compare( res.getAccessGroupNarrativeInfo().get(4L),
                     narrInfoTuple("test", 1L, 1L, "user", null));
             assertThat("removed guids shown",
-                    res.getAdditionalProperties().get("removed_guids"), is(Arrays.asList("WS:3/5/6")));
+                    res.getAdditionalProperties().get("removed_guids"), is(Arrays.asList("WS:3/5/6", "WS:3/5/7")));
             assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
         } finally {
             env.put("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
@@ -449,7 +449,7 @@ public class NarrativeInfoDecoratorTest {
                     narrInfoTuple("test", 1L, 1L, "user", null));
 
             assertThat("removed guids shown", res.getAdditionalProperties().get("removed_guids"),
-                    is(Arrays.asList("WS:3/5/6")));
+                    is(Arrays.asList("WS:3/5/6", "WS:3/5/7")));
             assertThat("incorrect key", res.getAccessGroupNarrativeInfo().get(3L) == null, is(true));
         }finally {
             env.put("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
@@ -467,12 +467,14 @@ public class NarrativeInfoDecoratorTest {
 
 
         final ObjectData obj = new ObjectData().withGuid("WS:3/5/6").withCreator("user");
+        final ObjectData obj1 = new ObjectData().withGuid("WS:3/5/7").withCreator("user");
         final ObjectData obj2 = new ObjectData().withGuid("WS:4/1/7").withCreator("user");
         final ObjectData obj3 = new ObjectData().withGuid("WS:4/2/1").withCreator("user");
 
 
         final ArrayList<ObjectData> objs = new ArrayList<>();
         objs.add(obj);
+        objs.add(obj1);
         objs.add(obj2);
         objs.add(obj3);
 

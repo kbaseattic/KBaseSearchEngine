@@ -139,6 +139,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
         final Set<String> userNames = new HashSet<>();
         final Iterator<ObjectData> iter = objects.iterator();
         final Set<Long> seenWorkspaces = new HashSet<>();
+        final Set<Long> deletedWorkspaces = new HashSet<>();
         while (iter.hasNext()) {
             final ObjectData objData = iter.next();
             final GUID guid = new GUID(objData.getGuid());
@@ -149,7 +150,12 @@ public class NarrativeInfoDecorator implements SearchInterface {
                     continue;
                 }
 
-                seenWorkspaces.add(workspaceId);
+                if(deletedWorkspaces.contains(workspaceId)){
+                    iter.remove();
+                    removedGuids.add(objData.getGuid());
+                    continue;
+                }
+
                 final NarrativeInfo narrInfo = narrInfoProvider.findNarrativeInfo(workspaceId);
 
                 //provider sets narrative info to null for any workspace errors. 
@@ -162,11 +168,12 @@ public class NarrativeInfoDecorator implements SearchInterface {
                                     .withE4(narrInfo.getWsOwnerUsername());
                     userNames.add(tempNarrInfo.getE4());
                     retVal.put(workspaceId, tempNarrInfo);
+                    seenWorkspaces.add(workspaceId);
                 }
                 else {
                     iter.remove();
                     removedGuids.add(objData.getGuid());
-
+                    deletedWorkspaces.add(workspaceId);
                 }
             }
         }
