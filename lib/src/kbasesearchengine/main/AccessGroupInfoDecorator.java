@@ -225,7 +225,7 @@ public class AccessGroupInfoDecorator implements SearchInterface {
                 final ObjectData objData = iter.next();
                 final GUID guid = new GUID(objData.getGuid());
                 if (WorkspaceEventHandler.STORAGE_CODE.equals(guid.getStorageCode())) {
-                    if (! objsInfoKeys.contains(guid.toRefString())){
+                    if (!objsInfoKeys.contains(guid.toRefString())) {
                         iter.remove();
                         removedGuids.add(objData.getGuid());
                     }
