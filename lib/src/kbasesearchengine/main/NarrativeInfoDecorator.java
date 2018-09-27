@@ -24,6 +24,7 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
 import org.slf4j.Logger;
+import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple5;
 import org.slf4j.LoggerFactory;
 import us.kbase.common.service.Tuple9;
@@ -104,102 +105,6 @@ public class NarrativeInfoDecorator implements SearchInterface {
         }
 
         return searchObjsOutput;
-    }
-
-    private SearchObjectsOutput getEmptySearchObjectsOutput(){
-        return new SearchObjectsOutput()
-                .withObjects(new ArrayList<>())
-                .withAccessGroupNarrativeInfo(null)
-                .withAccessGroupsInfo(null)
-                .withObjectsInfo(null)
-                .withSearchTime(0L)
-                .withTotal(0L)
-                .withTotalInPage(0L)
-                .withPagination(null)
-                .withSortingRules(null);
-    }
-
-    private SearchObjectsOutput combineWithOtherSearchObjectsOuput(final SearchObjectsOutput target, final SearchObjectsOutput other, int removedObjs){
-        target.setTotalInPage(target.getTotalInPage() + other.getTotalInPage() - (long) removedObjs);
-        target.setSearchTime(target.getSearchTime() + other.getSearchTime());
-
-        List<ObjectData> objs= target.getObjects();
-        objs.addAll(other.getObjects());
-        target.setObjects(objs);
-
-        if(target.getTotal() < other.getTotal()){
-            target.setTotal(other.getTotal());
-        }
-
-        if(other.getAccessGroupNarrativeInfo() != null){
-            Map<Long, Tuple5 <String, Long, Long, String, String>> accessGrpNarInfo;
-            if(target.getAccessGroupNarrativeInfo() != null){
-                accessGrpNarInfo = target.getAccessGroupNarrativeInfo();
-            }else{
-                accessGrpNarInfo = new HashMap<>();
-            }
-            accessGrpNarInfo.putAll(other.getAccessGroupNarrativeInfo());
-            target.setAccessGroupNarrativeInfo(accessGrpNarInfo);
-        }
-
-        if(other.getAccessGroupsInfo() != null){
-            Map<Long, Tuple9<Long, String, String, String, Long, String, String, String, Map<String, String>>> accessGrpInfo;
-            if(target.getAccessGroupsInfo() != null){
-                accessGrpInfo = target.getAccessGroupsInfo();
-            } else{
-                accessGrpInfo = new HashMap<>();
-            }
-            accessGrpInfo.putAll(other.getAccessGroupsInfo());
-            target.setAccessGroupsInfo(accessGrpInfo);
-        }
-
-        if(other.getObjectsInfo() != null){
-            Map<String, Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> objInfo;
-            if(target.getObjectsInfo() != null){
-                objInfo = target.getObjectsInfo();
-            }else{
-                objInfo = new HashMap<>();
-            }
-            objInfo.putAll(other.getObjectsInfo());
-            target.setObjectsInfo(objInfo);
-        }
-
-
-        if(target.getPagination() == null){
-            target.setPagination(other.getPagination());
-        }
-
-        if(target.getSortingRules() == null){
-            target.setSortingRules(other.getSortingRules());
-        }
-
-        return target;
-    }
-
-    private SearchObjectsOutput reSearchObjects(final SearchObjectsInput params, final String user, final SearchObjectsOutput prevRes)
-            throws Exception {
-        SearchObjectsOutput res = getEmptySearchObjectsOutput();
-        if(prevRes.getTotal() == 0L){
-            res = combineWithOtherSearchObjectsOuput(res, searchInterface.searchObjects(params, user), 0);
-        }else{
-            final long newStart = prevRes.getPagination().getStart() + prevRes.getTotalInPage();
-
-            Pagination newPag = new Pagination()
-                                    .withCount(prevRes.getPagination().getCount())
-                                    .withStart(newStart);
-            SearchObjectsInput newParams = new SearchObjectsInput()
-                                                .withSortingRules(params.getSortingRules())
-                                                .withPostProcessing(params.getPostProcessing())
-                                                .withObjectTypes(params.getObjectTypes())
-                                                .withMatchFilter(params.getMatchFilter())
-                                                .withAccessFilter(params.getAccessFilter())
-                                                .withPagination(newPag);
-
-            SearchObjectsOutput temp =  searchInterface.searchObjects(newParams, user);
-            res = combineWithOtherSearchObjectsOuput(res, temp, 0);
-
-        }
-        return res;
     }
 
     @Override
