@@ -292,8 +292,14 @@ public class SearchMethods implements SearchInterface {
         ret.withTotal((long)hits.total);
         ret.withSearchTime(System.currentTimeMillis() - t1);
 
-        getLogger().info("user: {}", user );
-        getLogger().info("query: {}, with postProcessing: {}", params.getMatchFilter().toString(), params.getPostProcessing().toString() );
+        if(user != null) {
+            getLogger().info("user: {}", user );
+        }
+
+        if (params.getPostProcessing() != null && params.getMatchFilter() != null) {
+            getLogger().info("query: {}, with postProcessing: {}", params.getMatchFilter().toString(), params.getPostProcessing().toString() );
+        }
+        
         getLogger().info("Number of hits returned: {}", ret.getTotal());
 
 
