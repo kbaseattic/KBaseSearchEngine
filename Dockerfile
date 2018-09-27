@@ -32,9 +32,9 @@ RUN apt-get install nano \
 
 # Need to think about how to get tests to run in TravisCI with different versions
 RUN cd /opt \
-	&& wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.0.tar.gz \
-	&& tar xfz elasticsearch-5.5.0.tar.gz \
-	&& ln -s elasticsearch-5.5.0 elasticsearch
+	&& wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.6.11.tar.gz \
+	&& tar xfz elasticsearch-5.6.11.tar.gz \
+	&& ln -s elasticsearch-5.6.11 elasticsearch
 	
 	
 RUN cd /opt \
