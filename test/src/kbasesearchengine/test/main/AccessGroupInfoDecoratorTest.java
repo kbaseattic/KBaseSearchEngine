@@ -10,6 +10,7 @@ import kbasesearchengine.main.AccessGroupInfoDecorator;
 import kbasesearchengine.main.ObjectInfoProvider;
 import kbasesearchengine.main.SearchInterface;
 import kbasesearchengine.main.WorkspaceInfoProvider;
+import kbasesearchengine.test.common.TestCommon;
 import org.junit.Test;
 import org.mockito.Mockito;
 import us.kbase.common.service.Tuple11;
@@ -53,6 +54,32 @@ public class AccessGroupInfoDecoratorTest {
         compareAccessGroupInfo((HashMap) res.getAccessGroupsInfo(), expectedRes);
     }
 
+    @Test
+    public void searchObjectsWithShowingRemovedGuids() throws Exception {
+        Map<String, String> env = TestCommon.getenv();
+        try {
+            env.put("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "true");
+
+            final HashMap<Long, Tuple9> expectedRes = new HashMap<>();
+            expectedRes.put(4L, AccessInfoTuple(4L, "test", "owner", "1", 5L, "r", "n", "unlocked", new HashMap()));
+            expectedRes.put(5L, AccessInfoTuple(5L, "test", "owner", "1", 5L, "n", "r", "unlocked", new HashMap()));
+            expectedRes.put(6L, AccessInfoTuple(6L, "test", "owner", "1", 5L, "r", "r", "unlocked", new HashMap()));
+            final AccessGroupInfoDecorator nid = setUpSearchObjectsWithDeletedWs();
+            final Pagination pag = new Pagination().withCount(4L).withStart(0L);
+            final SearchObjectsInput dummyInput = new SearchObjectsInput()
+                    .withPostProcessing(new PostProcessing().withAddAccessGroupInfo(1L))
+                    .withPagination(pag);
+
+            final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
+
+            assertThat("removed guids shown",
+                    res.getAdditionalProperties().get("removed_guids"), is(Arrays.asList("WS:3/5/6", "WS:3/5/7")));
+
+        } finally {
+            env.put("KBASE_SEARCH_SHOW_REMOVED_GUIDS", "");
+        }
+    }
+
 
     public AccessGroupInfoDecorator setUpSearchObjectsWithDeletedWs() throws Exception {
         final SearchInterface search = mock(SearchInterface.class);
@@ -65,6 +92,7 @@ public class AccessGroupInfoDecoratorTest {
 
 
         final ObjectData obj = new ObjectData().withGuid("WS:3/5/6").withCreator("user");
+        final ObjectData obj1 = new ObjectData().withGuid("WS:3/5/7").withCreator("user");
         final ObjectData obj2 = new ObjectData().withGuid("WS:4/1/7").withCreator("user");
         final ObjectData obj3 = new ObjectData().withGuid("WS:5/2/1").withCreator("user");
         final ObjectData obj4 = new ObjectData().withGuid("WS:6/2/1").withCreator("user");
@@ -72,6 +100,7 @@ public class AccessGroupInfoDecoratorTest {
 
         final ArrayList<ObjectData> objs = new ArrayList<>();
         objs.add(obj);
+        objs.add(obj1);
         objs.add(obj2);
         objs.add(obj3);
         objs.add(obj4);
