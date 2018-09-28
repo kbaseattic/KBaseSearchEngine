@@ -3,6 +3,7 @@ package kbasesearchengine.main;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -292,16 +293,16 @@ public class SearchMethods implements SearchInterface {
         ret.withTotal((long)hits.total);
         ret.withSearchTime(System.currentTimeMillis() - t1);
 
-        if(user != null) {
-            getLogger().info("user: {}", user );
+        final Map<String, String> logInfo = new HashMap<>();
+        logInfo.put("user", user);
+        if(params.getPostProcessing() != null) {
+            logInfo.put("post-processed", params.getPostProcessing().toString());
         }
-
-        if (params.getPostProcessing() != null && params.getMatchFilter() != null) {
-            getLogger().info("query: {}, with postProcessing: {}", params.getMatchFilter().toString(), params.getPostProcessing().toString() );
+        if(params.getMatchFilter() != null) {
+            logInfo.put("query", params.getMatchFilter().toString());
         }
-        
-        getLogger().info("Number of hits returned: {}", ret.getTotal());
-
+        logInfo.put("hits", ret.getTotal().toString());
+        getLogger().info(logInfo.toString());
 
         return ret;
     }
