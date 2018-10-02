@@ -41,16 +41,15 @@ public class AccessGroupNarrativeInfoProvider implements NarrativeInfoProvider {
      */
     @Override
     public NarrativeInfo findNarrativeInfo(final Long accessGroupID) throws IOException, JsonClientException {
-        Tuple9 <Long, String, String, String, Long, String, String,
-                String, Map<String,String>> wsInfo = null;
+        final Tuple9 <Long, String, String, String, Long, String, String,
+                String, Map<String,String>> wsInfo;
 
             try {
                 wsInfo = wsHandler.getWorkspaceInfo(accessGroupID);
             } catch (IOException e) {
                 if (e.getMessage().toLowerCase().contains("is deleted") ||
                         e.getMessage().toLowerCase().contains("has been deleted")) {
-                    LoggerFactory.getLogger(getClass()).info("Workspace is deleted but remains in search: {}",
-                            e.getMessage());
+                    return null;
                 } else {
                     throw e;
                 }
@@ -60,10 +59,8 @@ public class AccessGroupNarrativeInfoProvider implements NarrativeInfoProvider {
                 //should not occur
                 LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving workspace info: {}",
                         e.getMessage());
+                return null;
             }
-
-
-        if (wsInfo == null) return null;
 
         final long timeMilli = WorkspaceEventHandler.parseDateToEpochMillis(wsInfo.getE4());
 
