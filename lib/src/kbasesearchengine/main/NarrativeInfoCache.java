@@ -12,6 +12,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.Weigher;
+import us.kbase.common.service.JsonClientException;
 
 /** A caching layer for workspace and narrative info. Caches the results in memory for quick access.
  * @author gaprice@lbl.gov
@@ -81,13 +82,23 @@ public class NarrativeInfoCache implements NarrativeInfoProvider {
     }
 
     @Override
-    public NarrativeInfo findNarrativeInfo(final Long wsId) {
+    public NarrativeInfo findNarrativeInfo(final Long wsId) throws IOException, JsonClientException {
         try {
             return cache.get(wsId);
-        } catch (Exception e) {
+        } catch (ExecutionException e) {
+            final Throwable ex = e.getCause();
+            if (ex instanceof IOException ) {
+                throw (IOException) ex;
+            } else if (ex instanceof JsonClientException) {
+                throw (JsonClientException) ex;
+            } else {
+                LoggerFactory.getLogger(getClass()).error("This exception should not happen: {}",
+                        ex.getMessage());
+                return null;
+            }
+        } catch (Exception ex) {
             LoggerFactory.getLogger(getClass()).error("ERROR: Failed retrieving narrative info: Returning null:  {}",
-                    e.getMessage());
-            // unchecked exceptions are wrapped in UncheckedExecutionException
+                    ex.getMessage());
             return null;
         }
     }

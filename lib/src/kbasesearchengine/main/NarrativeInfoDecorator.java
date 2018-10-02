@@ -23,6 +23,7 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
 import org.slf4j.Logger;
+import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.Tuple5;
 import org.slf4j.LoggerFactory;
 
@@ -129,7 +130,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
     private Map<Long, Tuple5 <String, Long, Long, String, String>> addNarrativeInfo(
             final List<ObjectData> objects,
             final Map<Long, Tuple5 <String, Long, Long, String, String>> accessGroupNarrInfo,
-            final List<String> removedGuids) {
+            final List<String> removedGuids) throws IOException, JsonClientException {
 
         final Map<Long, Tuple5 <String, Long, Long, String, String>> retVal = new HashMap<>();
 
