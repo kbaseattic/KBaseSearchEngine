@@ -248,11 +248,8 @@ public class NarrativeInfoDecoratorTest {
         when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
                 .withObjects(objectdata));
 
-        final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
-        assertThat("Incorrect size", res.getAccessGroupNarrativeInfo().size(), is(1));
-        assertNull("Null expected", res.getAccessGroupNarrativeInfo().get(65L));
-        compare(res.getAccessGroupNarrativeInfo().get(42L),
-                narrInfoTuple("mylovelynarrative", 3L, 1518126950678L, "owner4", "Fred"));
+        failException(nid, dummyInput, "user", new JsonClientException(
+                "Failed retrieving workspace info: workspace is turned off"));
     }
 
     @Test
@@ -272,8 +269,8 @@ public class NarrativeInfoDecoratorTest {
         final SearchObjectsInput dummyInput = new SearchObjectsInput()
                 .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L));
 
-        when(weh.getWorkspaceInfo(35L)).thenThrow(new JsonClientException(
-                "Failed retrieving workspace info: workspace is turned off"));
+        when(weh.getWorkspaceInfo(35L)).thenThrow(new IOException(
+                "is deleted"));
         when(weh.getWorkspaceInfo(12L)).thenReturn(wsTuple(
                 12, "name4", "owner4", "2018-02-08T21:55:50.678Z", 0, "r", "n", "unlocked",
                 ImmutableMap.of("narrative", "3", "narrative_nice_name", "mylovelynarrative")));
@@ -286,6 +283,7 @@ public class NarrativeInfoDecoratorTest {
 
         when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
                 .withObjects(objectdata));
+
 
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");
         assertThat("Incorrect size", res.getAccessGroupNarrativeInfo().size(), is(1));
@@ -543,6 +541,20 @@ public class NarrativeInfoDecoratorTest {
                 .withE3(epoch)
                 .withE4(owner)
                 .withE5(displayName);
+    }
+
+
+    private void failException(
+            final NarrativeInfoDecorator nid,
+            final SearchObjectsInput dummyInput,
+            final String user,
+            final Exception expected) {
+        try {
+            nid.searchObjects(dummyInput, user);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, expected);
+        }
     }
 
 }
