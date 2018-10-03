@@ -313,7 +313,6 @@ SearchObjectsOutput is a reference to a hash where the following keys are define
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	total has a value which is an int
-	total_in_page has a value which is an int
 	search_time has a value which is an int
 	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
@@ -422,7 +421,6 @@ SearchObjectsOutput is a reference to a hash where the following keys are define
 	sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 	objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 	total has a value which is an int
-	total_in_page has a value which is an int
 	search_time has a value which is an int
 	access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 	access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
@@ -1808,8 +1806,12 @@ Output results for 'search_objects' method.
 'pagination' and 'sorting_rules' fields show actual input for
     pagination and sorting.
 total - total number of found objects.
-total_in_page - total number of objects looked at to get one page of results. 
 search_time - common time in milliseconds spent.
+list<ObjectData> objects - Results of search. In rare cases, due to time delay in updating the search
+  index from  changes in the source data, objects returned from the search
+  index may not be accessible at the data source. The API will remove
+  these objects from the returned search results which means the returned
+  results may have fewer objects than a full page.
 mapping<access_group_id, narrative_info> access_group_narrative_info - information about
    the workspaces in which the objects in the results reside. This data only applies to
    workspace objects.
@@ -1834,7 +1836,6 @@ pagination has a value which is a KBaseSearchEngine.Pagination
 sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 total has a value which is an int
-total_in_page has a value which is an int
 search_time has a value which is an int
 access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
@@ -1851,7 +1852,6 @@ pagination has a value which is a KBaseSearchEngine.Pagination
 sorting_rules has a value which is a reference to a list where each element is a KBaseSearchEngine.SortingRule
 objects has a value which is a reference to a list where each element is a KBaseSearchEngine.ObjectData
 total has a value which is an int
-total_in_page has a value which is an int
 search_time has a value which is an int
 access_group_narrative_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.narrative_info
 access_groups_info has a value which is a reference to a hash where the key is a KBaseSearchEngine.access_group_id and the value is a KBaseSearchEngine.access_group_info
@@ -1915,7 +1915,10 @@ match_filter has a value which is a KBaseSearchEngine.MatchFilter
 =item Description
 
 Output results of get_objects method.
-
+list<ObjectData> objects - Results of search. In rare cases, due to time delay in updating the search
+  index from  changes in the source data, objects returned from the search
+  index may not be accessible at the data source. The API will remove
+  these objects from the returned search results.
 mapping<access_group_id, narrative_info> access_group_narrative_info - information about
    the workspaces in which the objects in the results reside. This data only applies to
    workspace objects.

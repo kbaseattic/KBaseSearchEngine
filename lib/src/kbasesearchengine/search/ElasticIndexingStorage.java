@@ -138,6 +138,20 @@ public class ElasticIndexingStorage implements IndexingStorage {
             .put(OBJ_SHARED, R_OBJ_SHARED)
             .build();
 
+    /** Note that searchTypesAggregationSize has a default value, and is expected to 
+     *  always use the default value in real use; it is overridable in the 
+     *  constructor so that testing can trigger boundary conditions. Creating
+     *  enough items with unique types to exceed the boundary is excessively 
+     *  time consuming.
+     * 
+     *  This setting should be higher than the forseeable number of indexed types.
+     *  Advice from the ES community includes setting it an order of magnitude higher
+     *  than the scale of the current number of unique values one is doing a term 
+     *  aggregation over. Since at this time (8/29/18) there are around 20 types 
+     *  defined, choose 100 as the scale, and 1000 as the limit.
+     */
+    private Integer searchTypesAggregationSize = 1000;
+
     private HttpHost esHost;
     private String esUser;
     private String esPassword;
@@ -161,10 +175,53 @@ public class ElasticIndexingStorage implements IndexingStorage {
      */
     public static final int MAX_OBJECT_TYPES_SIZE = 50;
 
+    /**
+     * Constructor for the Elasticsearch implementation of IndexingStorage.
+     * 
+     * @param esHost          http host for the Elasticsearch server; the scheme (protocol), 
+     *    hostname, and port.
+     * @param tempDir         directory into which temporary files may be created by instances
+     *    of this storage class. A temporary file is used to contain ES documents as part of 
+     *    the indexing process. Any temporary files created in this directory should be 
+     *    removed after the indexing operation.
+     * @return                an Elasticsearch indexing storage object.
+     * @see                   IndexingStorage
+     * @throws IOException
+     */
     public ElasticIndexingStorage(HttpHost esHost, File tempDir) throws IOException {
         this.esHost = esHost;
         this.indexNamePrefix = "";
         this.tempDir = tempDir;
+    }
+
+
+    /**
+     * Constructor for the Elasticsearch implementation of IndexingStorage. This constructor 
+     * should only be used for testing. It allows overriding of the aggregation size, which
+     * is useful for testing or debugging, but ordinariliy the default value set for 
+     * searchTypesAggregationSize should be used
+     * 
+     * @param esHost          http host for the Elasticsearch server; the scheme (protocol), 
+     *    hostname, and port.
+     * @param tempDir         directory into which temporary files may be created by instances
+     *    of this storage class. A temporary file is used to contain ES documents as part of 
+     *    the indexing process. Any temporary files created in this directory should be 
+     *    removed after the indexing operation.
+     * @param aggregationSize overrides the instance variable "searchTypesAggregationSize". This
+     *    controls the maximum number of buckets returned for for the aggregation query
+     *    conducted by searchTypes. Useful for testing because the default value of 1000
+     *    would be very difficult to perform boundary testing on. If null, the default value is used.
+     * @return                an Elasticsearch indexing storage object.
+     * @see                   IndexingStorage
+     * @throws IOException
+     */
+    public ElasticIndexingStorage(HttpHost esHost, File tempDir, Integer aggregationSize) throws IOException {
+        this.esHost = esHost;
+        this.indexNamePrefix = "";
+        this.tempDir = tempDir;
+        if (aggregationSize != null) {
+            this.searchTypesAggregationSize = aggregationSize;
+        }
     }
     
     public HttpHost getEsHost() {
@@ -354,7 +411,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             int lastVersion = loadLastVersion(indexName, pguid, pguid.getVersion());
             final String esParentId = checkParentDoc(indexName, new LinkedHashSet<>(
                     Arrays.asList(pguid)), isPublic, lastVersion).get(pguid);
-            if (idToObjCopy.isEmpty()) {
+            if (idToObjCopy.isEmpty()) { 
                 // there were no search objects parsed from the source object, so just index
                 // the general object information
                 idToObjCopy.put(pguid, null);
@@ -693,14 +750,14 @@ public class ElasticIndexingStorage implements IndexingStorage {
         // params = {"lastver": lastVersion}
         final Map<String, Object> params = ImmutableMap.of("lastver", lastVersion);
 
-        // script = {"inline": "ctx._source.islast = (ctx._source.version == params.lastver)",
+        // script = {"source": "ctx._source.islast = (ctx._source.version == params.lastver)",
         //           "params": {"lastver": lastVersion}}
         Map<String, Object> script = ImmutableMap.of(
-                "inline", "ctx._source.islast = (ctx._source.version == params.lastver);",
+                "source", "ctx._source.islast = (ctx._source.version == params.lastver);",
                 "params", params);
 
         // doc = {"query": {"bool": {"filter": [{"term": {"prefix": prefix}}]}},
-        //        "script": {"inline": "ctx._source.islast = (ctx._source.version == params.lastver)",
+        //        "script": {"source": "ctx._source.islast = (ctx._source.version == params.lastver)",
         //                   "params": {"lastver": lastVersion}}}
         Map<String, Object> doc = ImmutableMap.of("query", query,
                                                   "script", script);
@@ -818,23 +875,23 @@ public class ElasticIndexingStorage implements IndexingStorage {
         //           ("accgrp": accessGroupId)?,
         //           ("pubaccgrp": -1)?,
         //           ("pubaccgrp": -2)?}
-        StringBuilder inline = new StringBuilder();
+        StringBuilder source = new StringBuilder();
         final Map<String, Object> params = new HashMap<>();
         params.put("lastver", lastVersion);
         if (accessGroupId != null) {
-            inline.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "accgrp"));
+            source.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "accgrp"));
             params.put("accgrp", accessGroupId);
         }
         if (includePublicAccessID) {
-            inline.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "pubaccgrp"));
+            source.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "pubaccgrp"));
             params.put("pubaccgrp", PUBLIC_ACCESS_GROUP);
         }
         if (includeAdminAccessID) {
-            inline.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "adminaccgrp"));
+            source.append(String.format(UPDATE_ACC_GRP_VERS_TEMPLATE, "adminaccgrp"));
             params.put("adminaccgrp", ADMIN_ACCESS_GROUP);
         }
         Map<String, Object> script = new LinkedHashMap<>();
-        script.put("inline", inline.toString());
+        script.put("source", source.toString());
         script.put("params", ImmutableMap.copyOf(params));
 
         Map<String, Object> doc = ImmutableMap.of("query", query,
@@ -867,7 +924,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         final Map<String, Object> params = ImmutableMap.of("accgrp", accessGroupId);
         Map<String, Object> script = ImmutableMap.of(
-                "inline",
+                "source",
                 "ctx._source.lastin.remove(ctx._source.lastin.indexOf(params.accgrp));\n" +
                 "if (ctx._source.extpub.indexOf(params.accgrp) >= 0) {\n" +
                 "  ctx._source.extpub.remove(ctx._source.extpub.indexOf(params.accgrp));\n" +
@@ -903,7 +960,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         final Map<String, Object> params = ImmutableMap.of("field", field,
                                                            "value", value);
-        Map<String, Object> script = ImmutableMap.of("inline",
+        Map<String, Object> script = ImmutableMap.of("source",
                                                      "ctx._source[params.field] = params.value;",
                                                      "params", params);
 
@@ -945,7 +1002,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
             query = createFilter("prefix", "guid", object.toString());
         }
         final Map<String, Object> script = ImmutableMap.of(
-                "inline", "ctx._source[params.field] = params.value",
+                "source", "ctx._source[params.field] = params.value",
                 "params", ImmutableMap.of("field", field, "value", value));
         final Map<String, Object> doc = ImmutableMap.of(
                 "query", query,
@@ -1111,7 +1168,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         final Map<String, Object> params = ImmutableMap.of("accgrp", accessGroupId);
         Map<String, Object> script = ImmutableMap.of(
-                "inline",
+                "source",
                 "if (ctx._source.extpub.indexOf(params.accgrp) < 0) {\n" +
                 "  ctx._source.extpub.add(params.accgrp);\n" +
                 "}\n",
@@ -1164,7 +1221,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
         final Map<String, Object> params = ImmutableMap.of("accgrp", accessGroupId);
         Map<String, Object> script = ImmutableMap.of(
-                "inline",
+                "source",
                 "ctx._source.extpub.remove(ctx._source.extpub.indexOf(params.accgrp));\n",
                 "params", params);
 
@@ -1383,7 +1440,8 @@ public class ElasticIndexingStorage implements IndexingStorage {
         //TODO VERS if this aggregates by type version, need to add the version field to the terms
         Map<String, Object> aggs = ImmutableMap.of("types",
                                       ImmutableMap.of("terms",
-                                         ImmutableMap.of("field", SEARCH_OBJ_TYPE)));
+                                         ImmutableMap.of("field", SEARCH_OBJ_TYPE,
+                                                         "size", this.searchTypesAggregationSize)));
 
         Map<String, Object> doc = ImmutableMap.of(
                 "query", createObjectQuery(matchFilter, accessFilter),
@@ -1399,16 +1457,33 @@ public class ElasticIndexingStorage implements IndexingStorage {
                 resp.getEntity().getContent(), Map.class);
         @SuppressWarnings("unchecked")
         Map<String, Object> aggMap = (Map<String, Object>) data.get("aggregations");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> typeMap = (Map<String, Object>) aggMap.get("types");
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> buckets = (List<Map<String, Object>>) typeMap.get("buckets");
+        
+        // This is the map of object type to object (document) count.
         Map<String, Integer> ret = new TreeMap<>();
-        for (Map<String, Object> bucket : buckets) {
-            String objType = (String)bucket.get("key");
-            Integer count = (Integer)bucket.get("doc_count");
-            ret.put(objType, count);
+
+        // Note that for an empty ES db (no indexes), and perhaps other conditions, the 
+        // aggregations term field is null, so we just leave the type summary as an empty 
+        // map. I could not find this behavior documented.
+        // Yes, this is an edge case.
+        // See https://www.elastic.co/guide/en/elasticsearch/reference/5.5/search-aggregations-bucket-terms-aggregation.html
+        // for expected structure. 
+        // If this behavior changes in the future, e.g. the aggregations is the expected structure 
+        // and buckets is empty rather than setting the entire aggregations to null, 
+        // this should be safe.
+        if (aggMap != null) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> typeMap = (Map<String, Object>) aggMap.get("types");
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> buckets = (List<Map<String, Object>>) typeMap.get("buckets");
+            
+            for (Map<String, Object> bucket : buckets) {
+                String objType = (String)bucket.get("key");
+                Integer count = (Integer)bucket.get("doc_count");
+                ret.put(objType, count);
+            }
         }
+
         return ImmutableMap.copyOf(ret);
     }
 
