@@ -10,6 +10,7 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.SearchObjectType;
 
 public interface IndexingStorage {
     
@@ -58,6 +59,7 @@ public interface IndexingStorage {
     public Map<GUID, Boolean> checkParentGuidsExist(Set<GUID> parentGuids)
             throws IOException;
 
+    public boolean hasParentId(final SearchObjectType type, final GUID guid) throws IOException;
     public void flushIndexing(ObjectTypeParsingRules objectType) throws IOException;
     
     public void shareObjects(Set<GUID> guids, int accessGroupId, boolean isPublicGroup)

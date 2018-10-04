@@ -1,5 +1,9 @@
 package kbasesearchengine.events.exceptions;
 
+import kbasesearchengine.search.IndexingConflictException;
+
+import java.io.IOException;
+
 /** A retriable "function" that returns no value.
  * @author gaprice@lbl.gov
  *
@@ -17,5 +21,5 @@ public interface RetryConsumer<T> {
      * @throws InterruptedException if the function is interrupted.
      * @see Consumer
      */
-    void accept(T t) throws IndexingException, RetriableIndexingException, InterruptedException;
+    void accept(T t) throws IndexingException, RetriableIndexingException, InterruptedException, IOException, IndexingConflictException;
 }

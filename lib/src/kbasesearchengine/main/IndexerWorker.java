@@ -423,23 +423,8 @@ public class IndexerWorker implements Stoppable {
         try {
             switch (updatedEvent.getEventType()) {
             case NEW_VERSION:
-                GUID pguid = updatedEvent.toGUID();
-                boolean indexed = indexingStorage.checkParentGuidsExist(new LinkedHashSet<>(
-                        Arrays.asList(pguid))).get(pguid);
-                boolean overwriteExistingData = updatedEvent.isOverwriteExistingData().or(false);
-                if (indexed && !overwriteExistingData) {
-                    logger.logInfo("[Indexer]   skipping " + pguid +
-                            " creation (already indexed and overwriteExistingData flag is set to false)");
-                    // TODO: we should fix public access for all sub-objects too (maybe already works. Anyway, ensure all subobjects are set correctly as well as the parent)
-                    if (updatedEvent.isPublic().get()) {
-                        publish(pguid);
-                    } else {
-                        unpublish(pguid);
-                    }
-                } else {
-                    indexObject(pguid, updatedEvent.getStorageObjectType().get(), updatedEvent.getTimestamp(),
-                            updatedEvent.isPublic().get(), null, new LinkedList<>());
-                }
+                indexObject(updatedEvent.toGUID(), updatedEvent.getStorageObjectType().get(), updatedEvent.getTimestamp(),
+                        updatedEvent.isPublic().get(),  updatedEvent.isOverwriteExistingData().or(false), null, new LinkedList<>());
                 break;
             // currently unused
 //            case DELETED:
@@ -487,6 +472,7 @@ public class IndexerWorker implements Stoppable {
      * @param storageObjectType type of object that is to be indexed.
      * @param timestamp time at which this object was updated.
      * @param isPublic object access level (true if public, else false).
+     * @param overwriteExistingData override existing data
      * @param indexLookup
      * @param objectRefPath
      * @throws IndexingException
@@ -498,9 +484,10 @@ public class IndexerWorker implements Stoppable {
             final StorageObjectType storageObjectType,
             final Instant timestamp,
             final boolean isPublic,
+            final boolean overwriteExistingData,
             ObjectLookupProvider indexLookup,
             final List<GUID> objectRefPath) 
-            throws IndexingException, InterruptedException, RetriableIndexingException {
+            throws IndexingException, InterruptedException, RetriableIndexingException, IOException, IndexingConflictException {
         /* it'd be nice to be able to log the event ID with retry logging in sub methods,
          * but this method handles calls from recursive indexing where the event id isn't
          * available. Changing that would require passing the event all the way through the
@@ -513,6 +500,7 @@ public class IndexerWorker implements Stoppable {
          * https://sites.google.com/site/unclebobconsultingllc/thread-local-a-convenient-abomination
          * 
          */
+
         long t1 = System.currentTimeMillis();
         final File tempFile;
         try {
@@ -537,20 +525,37 @@ public class IndexerWorker implements Stoppable {
                     typeStorage.listObjectTypeParsingRules(storageObjectType));
             Collections.sort(parsingRules, new ParsingRulesSubtypeFirstComparator());
             for (final ObjectTypeParsingRules rule : parsingRules) {
-                final long t2 = System.currentTimeMillis();
-                final ParseObjectsRet parsedRet = parseObjects(guid, indexLookup,
-                        newRefPath, obj, rule);
-                long parsingTime = System.currentTimeMillis() - t2;
-                logger.logInfo(String.format("[Indexer]   Parsed %s %s in %s ms.",
-                        parsedRet.guidToObj.size(), toVerRep(rule.getGlobalObjectType()),
-                        parsingTime));
-                long t3 = System.currentTimeMillis();
-                indexObjectInStorage(guid, timestamp, isPublic, obj, rule,
-                        parsedRet.guidToObj, parsedRet.parentJson);
-                long indexTime = System.currentTimeMillis() - t3;
-                logger.logInfo("[Indexer]   " + toVerRep(rule.getGlobalObjectType()) +
-                        ", indexing time: " + indexTime + " ms.");
-                logger.timeStat(guid, 0, parsingTime, indexTime);
+
+                final SearchObjectType globalIdx = rule.getGlobalObjectType();
+
+                //pass into indexingStorage
+                boolean indexed = indexingStorage.hasParentId(globalIdx, guid);
+
+                if (indexed && !overwriteExistingData) {
+                    logger.logInfo("[Indexer]   skipping " + guid +
+                            " creation (already indexed and overwriteExistingData flag is set to false)");
+                    // TODO: we should fix public access for all sub-objects too (maybe already works. Anyway, ensure all subobjects are set correctly as well as the parent)
+                    if (isPublic) {
+                        publish(guid);
+                    } else {
+                        unpublish(guid);
+                    }
+                } else {
+                    final long t2 = System.currentTimeMillis();
+                    final ParseObjectsRet parsedRet = parseObjects(guid, indexLookup,
+                            newRefPath, obj, rule);
+                    long parsingTime = System.currentTimeMillis() - t2;
+                    logger.logInfo(String.format("[Indexer]   Parsed %s %s in %s ms.",
+                            parsedRet.guidToObj.size(), toVerRep(rule.getGlobalObjectType()),
+                            parsingTime));
+                    long t3 = System.currentTimeMillis();
+                    indexObjectInStorage(guid, timestamp, isPublic, obj, rule,
+                            parsedRet.guidToObj, parsedRet.parentJson);
+                    long indexTime = System.currentTimeMillis() - t3;
+                    logger.logInfo("[Indexer]   " + toVerRep(rule.getGlobalObjectType()) +
+                            ", indexing time: " + indexTime + " ms.");
+                    logger.timeStat(guid, 0, parsingTime, indexTime);
+                }
             }
         } finally {
             tempFile.delete();
@@ -807,7 +812,7 @@ public class IndexerWorker implements Stoppable {
         }
 
         private void indexObjectWrapperFn(final List<Object> input)
-                throws IndexingException, InterruptedException, RetriableIndexingException {
+                throws IndexingException, InterruptedException, RetriableIndexingException, IOException, IndexingConflictException {
             final GUID guid = (GUID) input.get(0);
             final StorageObjectType storageObjectType = (StorageObjectType) input.get(1);
             final Instant timestamp = (Instant) input.get(2);
@@ -816,7 +821,7 @@ public class IndexerWorker implements Stoppable {
             @SuppressWarnings("unchecked")
             final List<GUID> objectRefPath = (List<GUID>) input.get(5);
             
-            indexObject(guid, storageObjectType, timestamp, isPublic, indexLookup, objectRefPath);
+            indexObject(guid, storageObjectType, timestamp, isPublic, false, indexLookup, objectRefPath);
         }
 
         @Override
