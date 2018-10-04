@@ -1,5 +1,6 @@
 package kbasesearchengine.events.exceptions;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.base.Optional;
 
 import kbasesearchengine.events.StatusEventWithId;
+import kbasesearchengine.search.IndexingConflictException;
 import kbasesearchengine.tools.Utils;
 
 /** Generic code for retrying functions. Expects the code to throw
@@ -110,6 +112,10 @@ public class Retrier {
                 } else {
                     retries++;
                 }
+            } catch (IOException | IndexingConflictException e) {
+                //TODO:: figure out where these are not caught
+                fatalRetries++;
+
             }
         }
     }

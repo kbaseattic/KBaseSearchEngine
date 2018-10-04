@@ -165,20 +165,27 @@ public class TypeFileStorage implements TypeStorage {
         storageTypes = processTypesDir(typesDir, searchSpecParser, fileLister, logger);
 
         //not sure what the purpose of this is. We could just pair the types together based on storage type
-//        final Map<CodeAndType, TypeMapping> mappings = processMappingsDir(
-//                mappingsDir, mappingParsers, fileLister, logger);
-//        for (final CodeAndType cnt: mappings.keySet()) {
-//            if (storageTypes.containsKey(cnt)) {
-//                final String mappingSource = mappings.get(cnt).getSourceInfo().orNull();
-//                logger.logInfo(String.format(
-//                        "%s Overriding type mapping for storage code %s and storage type %s " +
-//                        "from type transformation file with definition from type mapping file%s",
-//                        TYPE_STORAGE, cnt.storageCode, cnt.storageType,
-//                        mappingSource == null ? "" : " " + mappingSource));
-//            } // ok to set up a mapping for a storage type not explicitly listed in a search
-//              // type file, so we don't throw an exception here
-//            storageTypes.put(cnt, mappings.get(cnt));
-//        }
+        final Map<CodeAndType, TypeMapping> mappings = processMappingsDir(
+                mappingsDir, mappingParsers, fileLister, logger);
+        for (final CodeAndType cnt: mappings.keySet()) {
+            if (storageTypes.containsKey(cnt)) {
+                final String mappingSource = mappings.get(cnt).getSourceInfo().orNull();
+                logger.logInfo(String.format(
+                        "%s Overriding type mapping for storage code %s and storage type %s " +
+                        "from type transformation file with definition from type mapping file%s",
+                        TYPE_STORAGE, cnt.storageCode, cnt.storageType,
+                        mappingSource == null ? "" : " " + mappingSource));
+                storageTypes.get(cnt).add(mappings.get(cnt));
+
+            } else {
+                final ArrayList<TypeMapping> list = new ArrayList<>();
+                list.add(mappings.get(cnt));
+                storageTypes.put(cnt, list);
+            }
+            // ok to set up a mapping for a storage type not explicitly listed in a search
+              // type file, so we don't throw an exception here
+
+        }
     }
     
     private Map<CodeAndType, TypeMapping> processMappingsDir(

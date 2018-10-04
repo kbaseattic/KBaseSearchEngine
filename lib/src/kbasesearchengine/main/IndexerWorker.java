@@ -487,7 +487,7 @@ public class IndexerWorker implements Stoppable {
             final boolean overwriteExistingData,
             ObjectLookupProvider indexLookup,
             final List<GUID> objectRefPath) 
-            throws IndexingException, InterruptedException, RetriableIndexingException, IOException, IndexingConflictException {
+            throws IndexingException, InterruptedException, RetriableIndexingException {
         /* it'd be nice to be able to log the event ID with retry logging in sub methods,
          * but this method handles calls from recursive indexing where the event id isn't
          * available. Changing that would require passing the event all the way through the
@@ -557,8 +557,14 @@ public class IndexerWorker implements Stoppable {
                     logger.timeStat(guid, 0, parsingTime, indexTime);
                 }
             }
-        } finally {
-            tempFile.delete();
+        } catch (IOException e) {
+            // may want to make IndexingStorage throw more specific exceptions, but this will work
+            // for now. Need to look more carefully at the code before that happens.
+            throw new RetriableIndexingException(ErrorType.OTHER, e.getMessage(), e);
+        } catch (IndexingConflictException e) {
+            throw new RetriableIndexingException(ErrorType.INDEXING_CONFLICT, e.getMessage(), e);
+        }finally {
+                tempFile.delete();
         }
     }
 
@@ -812,7 +818,7 @@ public class IndexerWorker implements Stoppable {
         }
 
         private void indexObjectWrapperFn(final List<Object> input)
-                throws IndexingException, InterruptedException, RetriableIndexingException, IOException, IndexingConflictException {
+                throws IndexingException, InterruptedException, RetriableIndexingException {
             final GUID guid = (GUID) input.get(0);
             final StorageObjectType storageObjectType = (StorageObjectType) input.get(1);
             final Instant timestamp = (Instant) input.get(2);
@@ -820,8 +826,9 @@ public class IndexerWorker implements Stoppable {
             final ObjectLookupProvider indexLookup = (ObjectLookupProvider) input.get(4);
             @SuppressWarnings("unchecked")
             final List<GUID> objectRefPath = (List<GUID>) input.get(5);
-            
+
             indexObject(guid, storageObjectType, timestamp, isPublic, false, indexLookup, objectRefPath);
+
         }
 
         @Override

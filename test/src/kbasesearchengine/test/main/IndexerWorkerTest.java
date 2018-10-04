@@ -1154,8 +1154,6 @@ public class IndexerWorkerTest {
         final LineLogger logger = mock(LineLogger.class);
 
         final GUID guid = new GUID("code:1/2/3");
-        final GUID dependencyGUID = new GUID("code:4/5/6");
-        final SearchObjectType dependentType = new SearchObjectType("Assembly", 1);
 
         final Path tempDir = Paths.get(TestCommon.getTempDir()).toAbsolutePath()
                 .resolve("IndexerWorkerTest");
@@ -1218,7 +1216,7 @@ public class IndexerWorkerTest {
         when(ws.updateObjectEvent(event.getEvent())).thenReturn(event.getEvent());
 
         // simulate to show that index record for corresponding event already exists
-        when(idxStore.checkParentGuidsExist(set(guid))).thenReturn(ImmutableMap.of(guid, true));
+        when(idxStore.hasParentId(any(SearchObjectType.class), eq(guid))).thenReturn(true);
 
         final StatusEventProcessingState res = worker.processEvent(event);
         assertThat("incorrect state", res, is(StatusEventProcessingState.INDX));
