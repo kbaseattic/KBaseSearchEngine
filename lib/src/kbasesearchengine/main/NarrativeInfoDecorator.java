@@ -12,6 +12,7 @@ import java.util.Set;
 import kbasesearchengine.GetObjectsInput;
 import kbasesearchengine.GetObjectsOutput;
 import kbasesearchengine.ObjectData;
+import kbasesearchengine.Pagination;
 import kbasesearchengine.SearchObjectsInput;
 import kbasesearchengine.SearchObjectsOutput;
 import kbasesearchengine.SearchTypesInput;
@@ -23,8 +24,10 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
 import kbasesearchengine.tools.Utils;
 import org.slf4j.Logger;
+import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple5;
 import org.slf4j.LoggerFactory;
+import us.kbase.common.service.Tuple9;
 
 /**
  * Decorates the results from a {@link SearchInterface} with information about workspaces that
@@ -97,7 +100,10 @@ public class NarrativeInfoDecorator implements SearchInterface {
                         searchObjsOutput.getAccessGroupNarrativeInfo(),
                         inputArr));
             }
+
+
         }
+
         return searchObjsOutput;
     }
 
@@ -176,6 +182,7 @@ public class NarrativeInfoDecorator implements SearchInterface {
                     deletedWorkspaces.add(workspaceId);
                 }
             }
+
         }
 
         try {

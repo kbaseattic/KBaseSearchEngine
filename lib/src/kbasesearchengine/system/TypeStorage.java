@@ -1,5 +1,6 @@
 package kbasesearchengine.system;
 
+import java.util.ArrayList;
 import java.util.Set;
 
 /** Stores a) type documents ({@link ObjectTypeParsingRules}) that describe how to transform an
@@ -35,4 +36,6 @@ public interface TypeStorage {
      * available for the type.
      */
     Set<ObjectTypeParsingRules> listObjectTypeParsingRules(StorageObjectType storageObjectType);
+
+    ArrayList<String> getMappingsNames();
 }

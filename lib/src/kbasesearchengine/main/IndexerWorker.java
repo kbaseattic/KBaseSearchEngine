@@ -311,6 +311,8 @@ public class IndexerWorker implements Stoppable {
     public StatusEventProcessingState processEvent(final StatusEventWithId ev)
             throws InterruptedException, FatalIndexingException {
         final Optional<StorageObjectType> type = ev.getEvent().getStorageObjectType();
+        System.out.println(type.isPresent());
+        System.out.println( !isStorageTypeSupported(type.get()));
         if (type.isPresent() && !isStorageTypeSupported(type.get())) {
             logger.logInfo("[Indexer] skipping " + ev.getEvent().getEventType() + ", " + 
                     toLogString(type) + ev.getEvent().toGUID());
@@ -423,23 +425,28 @@ public class IndexerWorker implements Stoppable {
         try {
             switch (updatedEvent.getEventType()) {
             case NEW_VERSION:
-                GUID pguid = updatedEvent.toGUID();
-                boolean indexed = indexingStorage.checkParentGuidsExist(new LinkedHashSet<>(
-                        Arrays.asList(pguid))).get(pguid);
-                boolean overwriteExistingData = updatedEvent.isOverwriteExistingData().or(false);
-                if (indexed && !overwriteExistingData) {
-                    logger.logInfo("[Indexer]   skipping " + pguid +
-                            " creation (already indexed and overwriteExistingData flag is set to false)");
-                    // TODO: we should fix public access for all sub-objects too (maybe already works. Anyway, ensure all subobjects are set correctly as well as the parent)
-                    if (updatedEvent.isPublic().get()) {
-                        publish(pguid);
+                final ArrayList<String> allTypes = typeStorage.getMappingsNames();
+
+                for (String type : allTypes) {
+                    GUID pguid = updatedEvent.toGUID();
+                    boolean indexed = indexingStorage.hasParentId(
+                            type, updatedEvent.toGUID());
+                    boolean overwriteExistingData = updatedEvent.isOverwriteExistingData().or(false);
+                    if (indexed && !overwriteExistingData) {
+                        logger.logInfo("[Indexer]   skipping " + pguid +
+                                " creation (already indexed and overwriteExistingData flag is set to false)");
+                        // TODO: we should fix public access for all sub-objects too (maybe already works. Anyway, ensure all subobjects are set correctly as well as the parent)
+                        if (updatedEvent.isPublic().get()) {
+                            publish(pguid);
+                        } else {
+                            unpublish(pguid);
+                        }
                     } else {
-                        unpublish(pguid);
+                        indexObject(pguid, updatedEvent.getStorageObjectType().get(), updatedEvent.getTimestamp(),
+                                updatedEvent.isPublic().get(), null, new LinkedList<>());
                     }
-                } else {
-                    indexObject(pguid, updatedEvent.getStorageObjectType().get(), updatedEvent.getTimestamp(),
-                            updatedEvent.isPublic().get(), null, new LinkedList<>());
                 }
+
                 break;
             // currently unused
 //            case DELETED:

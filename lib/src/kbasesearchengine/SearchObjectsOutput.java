@@ -22,6 +22,7 @@ import us.kbase.common.service.Tuple9;
  * 'pagination' and 'sorting_rules' fields show actual input for
  *     pagination and sorting.
  * total - total number of found objects.
+ * total_in_page - total number of objects looked at to get one page of results. 
  * search_time - common time in milliseconds spent.
  * list<ObjectData> objects - Results of search. In rare cases, due to time delay in updating the search
  *   index from  changes in the source data, objects returned from the search
@@ -50,6 +51,7 @@ import us.kbase.common.service.Tuple9;
     "sorting_rules",
     "objects",
     "total",
+    "total_in_page",
     "search_time",
     "access_group_narrative_info",
     "access_groups_info",
@@ -72,6 +74,8 @@ public class SearchObjectsOutput {
     private List<ObjectData> objects;
     @JsonProperty("total")
     private java.lang.Long total;
+    @JsonProperty("total_in_page")
+    private java.lang.Long totalInPage;
     @JsonProperty("search_time")
     private java.lang.Long searchTime;
     @JsonProperty("access_group_narrative_info")
@@ -156,6 +160,21 @@ public class SearchObjectsOutput {
         return this;
     }
 
+    @JsonProperty("total_in_page")
+    public java.lang.Long getTotalInPage() {
+        return totalInPage;
+    }
+
+    @JsonProperty("total_in_page")
+    public void setTotalInPage(java.lang.Long totalInPage) {
+        this.totalInPage = totalInPage;
+    }
+
+    public SearchObjectsOutput withTotalInPage(java.lang.Long totalInPage) {
+        this.totalInPage = totalInPage;
+        return this;
+    }
+
     @JsonProperty("search_time")
     public java.lang.Long getSearchTime() {
         return searchTime;
@@ -228,7 +247,7 @@ public class SearchObjectsOutput {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((((("SearchObjectsOutput"+" [pagination=")+ pagination)+", sortingRules=")+ sortingRules)+", objects=")+ objects)+", total=")+ total)+", searchTime=")+ searchTime)+", accessGroupNarrativeInfo=")+ accessGroupNarrativeInfo)+", accessGroupsInfo=")+ accessGroupsInfo)+", objectsInfo=")+ objectsInfo)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((((("SearchObjectsOutput"+" [pagination=")+ pagination)+", sortingRules=")+ sortingRules)+", objects=")+ objects)+", total=")+ total)+", totalInPage=")+ totalInPage)+", searchTime=")+ searchTime)+", accessGroupNarrativeInfo=")+ accessGroupNarrativeInfo)+", accessGroupsInfo=")+ accessGroupsInfo)+", objectsInfo=")+ objectsInfo)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

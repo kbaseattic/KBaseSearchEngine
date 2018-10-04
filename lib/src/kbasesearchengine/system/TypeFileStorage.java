@@ -2,6 +2,7 @@ package kbasesearchengine.system;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,6 +20,8 @@ import org.apache.commons.io.FilenameUtils;
 import kbasesearchengine.main.LineLogger;
 import kbasesearchengine.tools.Utils;
 
+import static java.util.Arrays.*;
+
 /** Flat file based storage for search transformation specifications and
  * storage type / version -> search transformation type / version mappings.
  * 
@@ -34,19 +37,20 @@ public class TypeFileStorage implements TypeStorage {
     private static final String TYPE_STORAGE = "[TypeStorage]";
     // as opposed to file types for mappings
     private static final Set<String> ALLOWED_FILE_TYPES_FOR_TYPES =
-            new HashSet<>(Arrays.asList(".json", ".yaml"));
+            new HashSet<>(asList(".json", ".yaml"));
     
     private final Map<String, ArrayList<ObjectTypeParsingRules>> searchTypes = new HashMap<>();
-    private final Map<CodeAndType, TypeMapping> storageTypes;
-    
-    private Map<CodeAndType, TypeMapping> processTypesDir(
+    private final Map<CodeAndType, ArrayList<TypeMapping>> storageTypes;
+    private final Map<CodeAndType, TypeMapping> mappingTypes;
+
+    private Map<CodeAndType, ArrayList<TypeMapping>> processTypesDir(
             final Path typesDir,
             final ObjectTypeParsingRulesFileParser searchSpecParser,
             final FileLister fileLister,
             final LineLogger logger)
             throws IOException, TypeParseException {
         final Map<String, Path> typeToFile = new HashMap<>();
-        final Map<CodeAndType, TypeMapping.Builder> storageTypes = new HashMap<>(); 
+        final Map<CodeAndType,  ArrayList<TypeMapping>> storageTypes = new HashMap<>();
         for (final Path file: fileLister.list(typesDir)) {
             if (fileLister.isRegularFile(file) && isAllowedFileType(file)) {
                 final List<ObjectTypeParsingRules> types;
@@ -62,13 +66,15 @@ public class TypeFileStorage implements TypeStorage {
                 typeToFile.put(searchType, file);
                 searchTypes.put(searchType, new ArrayList<>(types));
                 final CodeAndType cnt = new CodeAndType(types.get(0).getStorageObjectType());
+                final TypeMapping typeMapping = TypeMapping.getBuilder(cnt.storageCode, cnt.storageType)
+                        .withDefaultSearchType(new SearchObjectType(searchType, types.size()))
+                        .withNullableSourceInfo(file.toString()).build();
                 if (!storageTypes.containsKey(cnt)) {
-                    storageTypes.put(cnt, TypeMapping.getBuilder(cnt.storageCode, cnt.storageType)
-                            .withDefaultSearchType(new SearchObjectType(searchType, types.size()))
-                            .withNullableSourceInfo(file.toString()));
+                    final ArrayList<TypeMapping> list = new ArrayList<>();
+                    list.add(typeMapping);
+                    storageTypes.put(cnt, list);
                 } else {
-                    storageTypes.get(cnt)
-                            .withDefaultSearchType(new SearchObjectType(searchType, types.size()));
+                    storageTypes.get(cnt).add(typeMapping);
                 }
                 logger.logInfo(String.format("%s Processed type tranformation file with storage " +
                         "code %s, storage type %s and search type %s: %s",
@@ -78,8 +84,8 @@ public class TypeFileStorage implements TypeStorage {
                         file);
             }
         }
-        final Map<CodeAndType, TypeMapping> ret = new HashMap<>();
-        storageTypes.keySet().stream().forEach(k -> ret.put(k, storageTypes.get(k).build()));
+        final Map<CodeAndType, ArrayList<TypeMapping>> ret = new HashMap<>();
+        storageTypes.keySet().stream().forEach(k -> ret.put(k, storageTypes.get(k)));
         return ret;
     }
 
@@ -159,20 +165,24 @@ public class TypeFileStorage implements TypeStorage {
         Utils.nonNull(fileLister, "fileLister");
         Utils.nonNull(logger, "logger");
         storageTypes = processTypesDir(typesDir, searchSpecParser, fileLister, logger);
-        final Map<CodeAndType, TypeMapping> mappings = processMappingsDir(
+        mappingTypes = processMappingsDir(
                 mappingsDir, mappingParsers, fileLister, logger);
-        for (final CodeAndType cnt: mappings.keySet()) {
-            if (storageTypes.containsKey(cnt)) {
-                final String mappingSource = mappings.get(cnt).getSourceInfo().orNull();
-                logger.logInfo(String.format(
-                        "%s Overriding type mapping for storage code %s and storage type %s " +
-                        "from type transformation file with definition from type mapping file%s",
-                        TYPE_STORAGE, cnt.storageCode, cnt.storageType,
-                        mappingSource == null ? "" : " " + mappingSource));
-            } // ok to set up a mapping for a storage type not explicitly listed in a search
-              // type file, so we don't throw an exception here
-            storageTypes.put(cnt, mappings.get(cnt));
-        }
+//        final Map<CodeAndType, TypeMapping> mappings = processMappingsDir(
+//                mappingsDir, mappingParsers, fileLister, logger);
+
+        //remove override?
+//        for (final CodeAndType cnt: mappings.keySet()) {
+//            if (storageTypes.containsKey(cnt)) {
+//                final String mappingSource = mappings.get(cnt).getSourceInfo().orNull();
+//                logger.logInfo(String.format(
+//                        "%s Overriding type mapping for storage code %s and storage type %s " +
+//                        "from type transformation file with definition from type mapping file%s",
+//                        TYPE_STORAGE, cnt.storageCode, cnt.storageType,
+//                        mappingSource == null ? "" : " " + mappingSource));
+//            } // ok to set up a mapping for a storage type not explicitly listed in a search
+//              // type file, so we don't throw an exception here
+//            storageTypes.put(cnt, mappings.get(cnt));
+//        }
     }
     
     private Map<CodeAndType, TypeMapping> processMappingsDir(
@@ -283,14 +293,28 @@ public class TypeFileStorage implements TypeStorage {
     @Override
     public Set<ObjectTypeParsingRules> listObjectTypeParsingRules(
             final StorageObjectType storageObjectType) {
-        final TypeMapping mapping = storageTypes.get(new CodeAndType(storageObjectType));
+        final ArrayList<TypeMapping> mapping = storageTypes.get(new CodeAndType(storageObjectType));
         if (mapping == null) {
             return Collections.emptySet();
         }
-        final Set<SearchObjectType> types = mapping.getSearchTypes(storageObjectType.getVersion());
         final Set<ObjectTypeParsingRules> ret = new HashSet<>();
-        for (final SearchObjectType t: types) {
-            ret.add(searchTypes.get(t.getType()).get(t.getVersion() - 1));
+
+        for(TypeMapping map: mapping) {
+            final Set<SearchObjectType> types = map.getSearchTypes(storageObjectType.getVersion());
+            for (final SearchObjectType t: types) {
+                ret.add(searchTypes.get(t.getType()).get(t.getVersion() - 1));
+            }
+        }
+
+        return ret;
+    }
+
+    @Override
+    public ArrayList<String> getMappingsNames() {
+        final ArrayList<String> ret = new ArrayList<>();
+
+        for(CodeAndType key : mappingTypes.keySet()) {
+            mappingTypes.get(key).getSearchTypes().stream().forEach(k -> ret.add(k.getType()));
         }
         return ret;
     }

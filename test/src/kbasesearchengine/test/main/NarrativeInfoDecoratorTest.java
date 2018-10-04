@@ -2,6 +2,7 @@ package kbasesearchengine.test.main;
 
 import static kbasesearchengine.test.common.TestCommon.set;
 import static kbasesearchengine.test.events.handler.WorkspaceEventHandlerTest.wsTuple;
+import static org.hamcrest.CoreMatchers.any;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertNull;
@@ -9,6 +10,8 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.any;
+
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -20,7 +23,9 @@ import java.util.List;
 import java.util.Map;
 
 import kbasesearchengine.*;
+import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.WorkspaceEventHandler;
+import kbasesearchengine.system.SearchObjectType;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
@@ -363,10 +368,6 @@ public class NarrativeInfoDecoratorTest {
 
         final NarrativeInfoDecorator nid = new NarrativeInfoDecorator(search, nip, aip);
 
-        /* since a) the generated output class has no hashcode or equals and
-         * b) the method is just a straight pass through, we just use an identity match
-         * for mockito to recognize the class
-         */
 
         final TypeDescriptor dummyOutput = new TypeDescriptor();
 

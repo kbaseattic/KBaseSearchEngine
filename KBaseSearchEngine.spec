@@ -260,6 +260,7 @@ module KBaseSearchEngine {
       'pagination' and 'sorting_rules' fields show actual input for
           pagination and sorting.
       total - total number of found objects.
+      total_in_page - total number of objects looked at to get one page of results.
       search_time - common time in milliseconds spent.
       list<ObjectData> objects - Results of search. In rare cases, due to time delay in updating the search
         index from  changes in the source data, objects returned from the search
@@ -284,6 +285,7 @@ module KBaseSearchEngine {
         list<SortingRule> sorting_rules;
         list<ObjectData> objects;
         int total;
+        int total_in_page;
         int search_time;
         mapping<access_group_id, narrative_info> access_group_narrative_info;
         mapping<access_group_id, access_group_info> access_groups_info;
