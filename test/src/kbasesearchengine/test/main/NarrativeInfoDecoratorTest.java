@@ -99,7 +99,7 @@ public class NarrativeInfoDecoratorTest {
         final SearchObjectsInput dummyInput = new SearchObjectsInput()
                 .withPostProcessing(new PostProcessing().withAddNarrativeInfo(1L));
 
-        when(search.searchObjects(dummyInput, "user")).thenReturn(getEmptySearchObjectsOutput()
+        when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
                 .withObjects(Collections.emptyList())
                 .withAccessGroupNarrativeInfo(null));
 
@@ -289,7 +289,7 @@ public class NarrativeInfoDecoratorTest {
                 new ObjectData().withGuid("WS:35/2/7"),
                 new ObjectData().withGuid("WS:12/2/7")));
 
-        when(search.searchObjects(dummyInput, "user")).thenReturn(getEmptySearchObjectsOutput()
+        when(search.searchObjects(dummyInput, "user")).thenReturn(new SearchObjectsOutput()
                 .withObjects(objectdata));
 
         final SearchObjectsOutput res = nid.searchObjects(dummyInput, "user");

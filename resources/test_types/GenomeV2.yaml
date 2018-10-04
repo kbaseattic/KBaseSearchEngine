@@ -2,11 +2,11 @@
 # indexed by the KBaseSeachEngine.
 
 # The name of the type in the search system.
-global-object-type: Genome
+global-object-type: GenomeV2
 # The data source of the objects, in this case the Workspace.
 storage-type: WS
 # The name of the type in the data source.
-storage-object-type: KBaseGenomes.GenomeV2 
+storage-object-type: KBaseGenomes.Genome
 
 # IMPORTANT NOTE: Once a type version is established in the search system, the type version
 # CANNOT be changed or given a new version number (i.e. by changing the ordering of the versions)
