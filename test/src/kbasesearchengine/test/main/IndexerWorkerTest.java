@@ -1224,7 +1224,7 @@ public class IndexerWorkerTest {
         // event was skipped as corresponding index record was found to already exist
         // and overwriteExistingData was set to false
         verify(logger).logInfo(
-                "[Indexer]   skipping code:1/2/3 creation (already indexed and " +
+                "[Indexer]   skipping code:1/2/3 at index genome creation (already indexed and " +
                         "overwriteExistingData flag is set to false)");
 
         verify(idxStore, never()).indexObjects(
@@ -1327,7 +1327,7 @@ public class IndexerWorkerTest {
 
         // event was not skipped even though corresponding index record was found to already exist
         verify(logger, never()).logInfo(
-                "[Indexer]   skipping code:1/2/3 creation (already indexed and " +
+                "[Indexer]   skipping code:1/2/3 at index genome creation (already indexed and " +
                         "overwriteExistingData flag is set to false)");
     }
 
