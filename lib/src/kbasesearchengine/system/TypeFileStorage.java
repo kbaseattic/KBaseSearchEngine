@@ -164,7 +164,6 @@ public class TypeFileStorage implements TypeStorage {
         Utils.nonNull(logger, "logger");
         storageTypes = processTypesDir(typesDir, searchSpecParser, fileLister, logger);
 
-        //not sure what the purpose of this is. We could just pair the types together based on storage type
         final Map<CodeAndType, TypeMapping> mappings = processMappingsDir(
                 mappingsDir, mappingParsers, fileLister, logger);
         for (final CodeAndType cnt: mappings.keySet()) {

@@ -112,10 +112,6 @@ public class Retrier {
                 } else {
                     retries++;
                 }
-            } catch (IOException | IndexingConflictException e) {
-                //TODO:: figure out where these are not caught
-                fatalRetries++;
-
             }
         }
     }

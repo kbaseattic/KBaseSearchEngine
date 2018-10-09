@@ -532,7 +532,7 @@ public class IndexerWorker implements Stoppable {
                 boolean indexed = indexingStorage.hasParentId(globalIdx, guid);
 
                 if (indexed && !overwriteExistingData) {
-                    logger.logInfo("[Indexer]   skipping " + guid +
+                    logger.logInfo("[Indexer]   skipping " + guid + " at index " + globalIdx.getType() + 
                             " creation (already indexed and overwriteExistingData flag is set to false)");
                     // TODO: we should fix public access for all sub-objects too (maybe already works. Anyway, ensure all subobjects are set correctly as well as the parent)
                     if (isPublic) {
