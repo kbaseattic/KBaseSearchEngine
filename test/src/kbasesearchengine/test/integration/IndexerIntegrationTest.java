@@ -2,6 +2,7 @@ package kbasesearchengine.test.integration;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -613,6 +614,9 @@ public class IndexerIntegrationTest {
 //
         assertThat("incorrect indexed objects", returned.equals(expected), is(true));
 //        assertWSTimestampCloseToIndexedTimestamp(timestamp1, indexedTimestamp1);
+
+        assertTrue("object should exist in index", indexStorage.hasParentId(new SearchObjectType("TwoIndex", 1), new GUID("WS:1/1/1")));
+        assertTrue("object should exist in index", indexStorage.hasParentId(new SearchObjectType("TwoIndexB", 1), new GUID("WS:1/1/1")));
 //
 
     }

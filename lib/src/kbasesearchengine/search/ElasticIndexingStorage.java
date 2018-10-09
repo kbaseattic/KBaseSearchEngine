@@ -691,7 +691,7 @@ public class ElasticIndexingStorage implements IndexingStorage {
 
     @Override
     public boolean hasParentId(final SearchObjectType type, final GUID guid) throws IOException {
-        final String indexName = indexNamePrefix + type.getType() + ".*";
+        final String indexName = indexNamePrefix + type.getType().toLowerCase() + "_*";
         final Set<GUID> guids = new HashSet<>();
         guids.add(guid);
 
