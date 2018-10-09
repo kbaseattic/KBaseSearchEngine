@@ -13,8 +13,11 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import kbasesearchengine.common.FileUtil;
 import org.apache.commons.io.FileUtils;
@@ -203,6 +206,8 @@ public class IndexerIntegrationTest {
         installTestFile("EmptyAType.json", target);
         installTestFile("OneStringThreeKeyNames.yaml", target);
         installTestFile("TwoVersions.yaml", target);
+        installTestFile("TwoIndex.yaml", target);
+        installTestFile("TwoIndexB.yaml", target);
         installTestFile("NoIndexingRules.yaml", target);
     }
     
@@ -214,6 +219,7 @@ public class IndexerIntegrationTest {
     
     private static void installSearchMappings(final Path target) throws IOException {
         installTestFile("TwoVersionsMapping.yaml", target);
+        installTestFile("TwoIndexMapping.yaml", target);
     }
     
     private static void loadWSTypes(final URL wsURL, final AuthToken wsadmintoken)
@@ -223,10 +229,12 @@ public class IndexerIntegrationTest {
         ownModule(wc, "Empty");
         ownModule(wc, "OneString");
         ownModule(wc, "TwoVersions");
+        ownModule(wc, "TwoIndex");
         ownModule(wc, "TwoVersionsMapped");
         ownModule(wc, "NoIndexingRules");
         loadType(wc, "Empty", "Empty.spec", Arrays.asList("AType"));
         loadType(wc, "OneString", "OneString.spec", Arrays.asList("AType"));
+        loadType(wc, "TwoIndex", "TwoIndex.spec", Arrays.asList("Type"));
         loadType(wc, "TwoVersions", "TwoVersions1.spec", Arrays.asList("Type"));
         loadType(wc, "TwoVersions", "TwoVersions2.spec", Collections.emptyList());
         loadType(wc, "TwoVersionsMapped", "TwoVersionsMapped1.spec", Arrays.asList("Type"));
@@ -540,6 +548,73 @@ public class IndexerIntegrationTest {
         
         assertThat("incorrect indexed object", indexedObj2, is(expected2));
         assertWSTimestampCloseToIndexedTimestamp(timestamp2, indexedTimestamp2);
+    }
+    @Test
+    public void twoIndex() throws Exception {
+
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("foo"));
+        wsCli1.saveObjects(new SaveObjectsParams()
+                .withWorkspace("foo")
+                .withObjects(Arrays.asList(
+                        new ObjectSaveData()
+                                .withData(new UObject(ImmutableMap.of(
+                                        "whee", "wugga",
+                                        "whoo", "thingy",
+                                        "req", "one")))
+                                .withName("obj1")
+                                .withType("TwoIndex.Type-1.0")
+                ))
+        );
+
+        final long timestamp1 = getWSTimeStamp("1/1/1");
+
+        System.out.println("waiting 5s for events to trickle through the system");
+        Thread.sleep(10000); // wait for the indexer & worker to process the event
+
+        final List<ObjectData> indexedObj1 =
+                indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/1/1")));
+
+        assertThat("incorrect number of objects indexed", indexedObj1.size(), is(2));
+        final Instant indexedTimestamp1 = indexedObj1.get(0).getTimestamp().get();
+
+
+        final ObjectData expected1 = ObjectData.getBuilder(
+                new GUID("WS:1/1/1"), new SearchObjectType("TwoIndex", 1))
+                .withNullableObjectName("obj1")
+                .withNullableCreator(userToken.getUserName())
+                .withNullableMD5("d20dd9b7a7cd69471b2b13ae7593de90")
+                .withNullableTimestamp(indexedTimestamp1)
+                .withNullableData(ImmutableMap.of("whee", "wugga"))
+                .withKeyProperty("whee", "wugga")
+                .build();
+
+        final ObjectData expected2 = ObjectData.getBuilder(
+                new GUID("WS:1/1/1"), new SearchObjectType("TwoIndexB", 1))
+                .withNullableObjectName("obj1")
+                .withNullableCreator(userToken.getUserName())
+                .withNullableMD5("d20dd9b7a7cd69471b2b13ae7593de90")
+                .withNullableTimestamp(indexedTimestamp1)
+                .withNullableData(ImmutableMap.of("whee", "wugga"))
+                .withKeyProperty("whee", "wugga")
+                .build();
+
+        final Set<ObjectData> expected = new HashSet<>();
+        expected.add(expected1);
+        expected.add(expected2);
+
+        final Set<ObjectData> returned = new HashSet<>();
+
+        for(ObjectData obj : indexedObj1) {
+            returned.add(obj);
+        }
+
+//
+//
+        assertThat("incorrect indexed objects", returned.equals(expected), is(true));
+//        assertWSTimestampCloseToIndexedTimestamp(timestamp1, indexedTimestamp1);
+//
+
     }
     
     @Test
