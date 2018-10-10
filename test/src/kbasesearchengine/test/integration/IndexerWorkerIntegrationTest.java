@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,6 +16,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import kbasesearchengine.common.FileUtil;
 import kbasesearchengine.search.FoundHits;
+import kbasesearchengine.system.SearchObjectType;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHost;
 import org.junit.AfterClass;
@@ -74,6 +76,10 @@ import us.kbase.workspace.SaveObjectsParams;
 import us.kbase.workspace.WorkspaceClient;
 import us.kbase.workspace.WorkspaceIdentity;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
 public class IndexerWorkerIntegrationTest {
     
     /* these tests bring up mongodb, elasticsearch, and the workspace and test the worker
@@ -89,8 +95,10 @@ public class IndexerWorkerIntegrationTest {
     private static ElasticSearchController es;
     private static WorkspaceController ws;
     private static String token1;
+    private static AuthToken userToken;
     private static int wsid;
-    
+    private static WorkspaceClient wsCli1;
+
     private static Path tempDirPath;
     
     @BeforeClass
@@ -123,9 +131,9 @@ public class IndexerWorkerIntegrationTest {
         TestCommon.createAuthUser(authURL, "user2", "display2");
         token1 = TestCommon.createLoginToken(authURL, "user1");
         final String token2 = TestCommon.createLoginToken(authURL, "user2");
-        final AuthToken userToken = new AuthToken(token1, "user1");
+        userToken = new AuthToken(token1, "user1");
         final AuthToken wsadmintoken = new AuthToken(token2, "user2");
-        
+
         // set up elastic search
         es = new ElasticSearchController(TestCommon.getElasticSearchExe(), tempDirPath);
         
@@ -140,11 +148,14 @@ public class IndexerWorkerIntegrationTest {
                 authURL,
                 tempDirPath);
         System.out.println("Started workspace on port " + ws.getServerPort());
-        
+
         final Path typesDir = Paths.get(TestCommon.TYPES_REPO_DIR);
         final Path mappingsDir = Paths.get(TestCommon.TYPE_MAP_REPO_DIR);
         
         URL wsUrl = new URL("http://localhost:" + ws.getServerPort());
+
+        wsCli1 = new WorkspaceClient(wsUrl, userToken);
+        wsCli1.setIsInsecureHttpConnectionAllowed(true);
 
         final String esIndexPrefix = "test_" + System.currentTimeMillis() + ".";
         final HttpHost esHostPort = new HttpHost("localhost", es.getServerPort());
@@ -205,7 +216,7 @@ public class IndexerWorkerIntegrationTest {
         loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject3");
         loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject4");
         loadData(wc, wsid, "Narr", "KBaseNarrative.Narrative-1.0", "NarrativeObject5");
-        
+
         loadData(wc, wsid, "Assy", "KBaseGenomeAnnotations.Assembly-1.0", "AssemblyObject");
         loadData(wc, wsid, "Genome", "KBaseGenomes.Genome-1.0", "GenomeObject");
         loadData(wc, wsid, "Paired", "KBaseFile.PairedEndLibrary-1.0", "PairedEndLibraryObject");
@@ -223,6 +234,8 @@ public class IndexerWorkerIntegrationTest {
         loadType(wc, "KBaseGenomes", "KBaseGenomes_ci_1482357978770", Arrays.asList("Genome"));
         loadType(wc, "KBaseNarrative", "KBaseNarrative_ci_1436483557716",
                 Arrays.asList("Narrative"));
+        loadType(wc, "TwoIndex", "TwoIndex.spec", Arrays.asList("Type"));
+
     }
 
     private static void loadData(
@@ -576,5 +589,54 @@ public class IndexerWorkerIntegrationTest {
         Assert.assertEquals("incorrect genome name",
                 newObjName,
                 data.get(0).getObjectName().get());
+    }
+
+    @Test
+    public void twoIndexIndexing() throws Exception {
+
+        wsCli1.createWorkspace(new CreateWorkspaceParams()
+                .withWorkspace("foo"));
+        wsCli1.saveObjects(new SaveObjectsParams()
+                .withWorkspace("foo")
+                .withObjects(Arrays.asList(
+                        new ObjectSaveData()
+                                .withData(new UObject(ImmutableMap.of(
+                                        "whee", "wugga",
+                                        "whoo", "thingy",
+                                        "req", "one")))
+                                .withName("Narr")
+                                .withType("TwoIndex.Type-1.0")
+                ))
+        );
+
+        final StoredStatusEvent ev = StoredStatusEvent.getBuilder(StatusEvent.getBuilder(
+                new StorageObjectType("WS", "TwoIndex.Type"),
+                Instant.now(),
+                StatusEventType.NEW_VERSION)
+                        .withNullableAccessGroupID(1)
+                        .withNullableObjectID("1")
+                        .withNullableVersion(1)
+                        .build(),
+                new StatusEventID("-1"),
+                StatusEventProcessingState.UNPROC)
+                .build();
+        worker.processEvent(ev);
+        System.out.println("waiting 5s for event to trickle through the system");
+        Thread.sleep(5000); // wait for the indexer & worker to process the event
+
+        //Test that both indexes have guid
+        assertTrue("object should exist in index", storage.hasParentId(new SearchObjectType("TwoIndex", 1), new GUID("WS:1/1/1")));
+        assertTrue("object should exist in index", storage.hasParentId(new SearchObjectType("TwoIndexB", 1), new GUID("WS:1/1/1")));
+
+        //drop one index
+        storage.deleteIndex(storage.getIndexNamePrefix() + "twoindexb_1");
+        storage.refreshIndex("*");
+        assertTrue("object should exist in index", storage.hasParentId(new SearchObjectType("TwoIndex", 1), new GUID("WS:1/1/1")));
+        assertTrue("object should not exist", !storage.hasParentId(new SearchObjectType("TwoIndexB", 1), new GUID("WS:1/1/1")));
+
+        //process event again
+        worker.processEvent(ev);
+        assertTrue("object should exist in index", storage.hasParentId(new SearchObjectType("TwoIndex", 1), new GUID("WS:1/1/1")));
+        assertTrue("object should exist in index", storage.hasParentId(new SearchObjectType("TwoIndexB", 1), new GUID("WS:1/1/1")));
     }
 }

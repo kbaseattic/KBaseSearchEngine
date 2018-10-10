@@ -18,7 +18,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import kbasesearchengine.common.FileUtil;
 import org.apache.commons.io.FileUtils;
@@ -568,10 +567,9 @@ public class IndexerIntegrationTest {
                 ))
         );
 
-        final long timestamp1 = getWSTimeStamp("1/1/1");
 
         System.out.println("waiting 5s for events to trickle through the system");
-        Thread.sleep(10000); // wait for the indexer & worker to process the event
+        Thread.sleep(9000); // wait for the indexer & worker to process the event
 
         final List<ObjectData> indexedObj1 =
                 indexStorage.getObjectsByIds(TestCommon.set(new GUID("WS:1/1/1")));
@@ -616,7 +614,7 @@ public class IndexerIntegrationTest {
         assertTrue("object should exist in index", indexStorage.hasParentId(new SearchObjectType("TwoIndexB", 1), new GUID("WS:1/1/1")));
 
     }
-    
+
     @Test
     public void noIndexingRules() throws Exception {
         // tests that a search spec without any indexing rules still indexes the general object
