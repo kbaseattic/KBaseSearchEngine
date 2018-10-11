@@ -1,0 +1,19 @@
+storage-type: WS
+
+types:
+    TwoIndexMapping.Type:
+        default:
+           -
+               type: TwoIndex
+               version: 1
+           -
+               type: TwoIndexB
+               version: 1
+        versions:
+            1:
+                -
+                    type: TwoIndex
+                    version: 1
+                -
+                    type: TwoIndexB
+                    version: 1

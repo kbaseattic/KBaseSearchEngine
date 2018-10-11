@@ -1,0 +1,11 @@
+# a test spec.
+
+global-object-type: TwoIndex
+storage-type: WS
+storage-object-type: TwoIndex.Type
+versions:
+    -
+        indexing-rules:
+            -
+                path: whee
+                keyword-type: string

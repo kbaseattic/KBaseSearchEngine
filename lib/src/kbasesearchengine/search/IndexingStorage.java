@@ -10,6 +10,8 @@ import kbasesearchengine.common.GUID;
 import kbasesearchengine.events.handler.SourceData;
 import kbasesearchengine.parse.ParsedObject;
 import kbasesearchengine.system.ObjectTypeParsingRules;
+import kbasesearchengine.system.SearchObjectType;
+import org.elasticsearch.client.Response;
 
 public interface IndexingStorage {
     
@@ -48,6 +50,8 @@ public interface IndexingStorage {
             Map<GUID, ParsedObject> idToObj,
             boolean isPublic) 
             throws IOException, IndexingConflictException;
+
+    public String getIndexNamePrefix();
     
     /** Check that the parent objects (e.g. the access information) exists for a set of GUIDS.
      * Equivalent to {@link #checkParentGuidsExist(String, Set)} with a null String.
@@ -58,6 +62,10 @@ public interface IndexingStorage {
     public Map<GUID, Boolean> checkParentGuidsExist(Set<GUID> parentGuids)
             throws IOException;
 
+    public boolean hasParentId(final SearchObjectType type, final GUID guid) throws IOException;
+
+    public Response deleteIndex(String indexName) throws IOException;
+    public Response refreshIndex(String indexName) throws IOException;
     public void flushIndexing(ObjectTypeParsingRules objectType) throws IOException;
     
     public void shareObjects(Set<GUID> guids, int accessGroupId, boolean isPublicGroup)

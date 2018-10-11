@@ -1815,4 +1815,34 @@ public class ElasticIndexingStorageTest {
 
         assertThat("objects not deleted", res2, is(set()));
     }
+
+    @Test
+    public void testHasParentId() throws Exception {
+        final SearchObjectType type = new SearchObjectType("testtype", 1);
+        final GUID guid = new GUID("WS:1/1/1");
+        assertThat("should not be indexed" , indexStorage.hasParentId(type, guid), is(false));
+
+        indexStorage.indexObjects(
+                ObjectTypeParsingRules.getBuilder(
+                        new SearchObjectType("testtype", 1),
+                        new StorageObjectType("foo", "bar"))
+                        .toSubObjectRule(
+                                "sub", new ObjectJsonPath("subpath"), new ObjectJsonPath("id"))
+                        .withIndexingRule(IndexingRules.fromPath(new ObjectJsonPath("whee"))
+                                .build())
+                        .build(),
+                SourceData.getBuilder(new UObject(new HashMap<>()), "objname", "creator").build(),
+                Instant.ofEpochMilli(10000),
+                null,
+                new GUID("WS:1/1/1"),
+                ImmutableMap.of(new GUID("WS:1/1/1:sub/yay"), new ParsedObject(
+                        "{\"whee\": \"imaprettypony\"}",
+                        ImmutableMap.of("whee", Arrays.asList("imaprettypony")))),
+                false);
+
+        indexStorage.refreshIndex("*");
+
+        assertThat("should be indexed" , indexStorage.hasParentId(type, guid), is(true));
+
+    }
 }
