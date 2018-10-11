@@ -25,14 +25,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple9;
-import us.kbase.workspace.GetObjectInfo3Results;
-import com.google.common.base.Optional;
 import us.kbase.common.service.JsonClientException;
 
 /**
  * Decorates the results from a {@link SearchInterface} with information about workspaces
  * and objects in the search results. See
- * {@link SearchObjectsOutput#getWorkspacesInfo()} and
  * {@link GetObjectsOutput#getObjectsInfo()}, which is where the information is
  * stored.
  *

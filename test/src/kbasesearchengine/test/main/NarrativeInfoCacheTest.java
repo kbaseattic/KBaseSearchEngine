@@ -293,7 +293,13 @@ public class NarrativeInfoCacheTest {
                 42, "name4", "owner4", "2018-02-08T21:55:50.678Z", 0, "r", "n", "unlocked",
                 ImmutableMap.of("narrative", "3", "narrative_nice_name", "mylovelynarrative")));
 
-        assertNull(agnip.findNarrativeInfo(65L));
+
+        try {
+            agnip.findNarrativeInfo(65L);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, new JsonClientException("workspace is turned off"));
+        }
         compare(agnip.findNarrativeInfo(1L),
                 new NarrativeInfo(null, null, 1518126957000L, "owner2"));
         compare(agnip.findNarrativeInfo(2L),
@@ -317,8 +323,21 @@ public class NarrativeInfoCacheTest {
 
         when(weh.getWorkspaceInfo(65L)).thenThrow(toThrow);
 
-        assertNull(nip.findNarrativeInfo(65L));
 
-        assertNull(cache.findNarrativeInfo(65L));
+        try {
+            nip.findNarrativeInfo(65L);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, toThrow);
+
+        }
+
+        try {
+            cache.findNarrativeInfo(65L);
+            fail("expected exception");
+        } catch (Exception got) {
+            TestCommon.assertExceptionCorrect(got, toThrow);
+
+        }
     }
 }
