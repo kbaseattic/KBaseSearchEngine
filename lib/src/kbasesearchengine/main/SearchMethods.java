@@ -3,6 +3,7 @@ package kbasesearchengine.main;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -35,6 +36,8 @@ import kbasesearchengine.search.MatchFilter.Builder;
 import kbasesearchengine.system.IndexingRules;
 import kbasesearchengine.system.ObjectTypeParsingRules;
 import kbasesearchengine.system.TypeStorage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import us.kbase.common.service.UObject;
 
 public class SearchMethods implements SearchInterface {
@@ -289,6 +292,18 @@ public class SearchMethods implements SearchInterface {
         }
         ret.withTotal((long)hits.total);
         ret.withSearchTime(System.currentTimeMillis() - t1);
+
+        final Map<String, String> logInfo = new HashMap<>();
+        logInfo.put("user", user);
+        if(params.getPostProcessing() != null) {
+            logInfo.put("post-processed", params.getPostProcessing().toString());
+        }
+        if(params.getMatchFilter() != null) {
+            logInfo.put("query", params.getMatchFilter().toString());
+        }
+        logInfo.put("hits", ret.getTotal().toString());
+        getLogger().info(logInfo.toString());
+
         return ret;
     }
 
@@ -355,6 +370,10 @@ public class SearchMethods implements SearchInterface {
             ret.put(typeName, td);
         }
         return ret;
+    }
+
+    private Logger getLogger() {
+        return LoggerFactory.getLogger(NarrativeInfoDecorator.class);
     }
 
     private static String guessUIName(String id) {
